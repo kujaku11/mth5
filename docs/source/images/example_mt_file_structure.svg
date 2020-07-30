@@ -1,0 +1,1403 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="297mm"
+   height="210mm"
+   viewBox="0 0 297 210"
+   version="1.1"
+   id="svg8"
+   inkscape:version="0.92.3 (2405546, 2018-03-11)"
+   sodipodi:docname="example_mt_file_structure.svg">
+  <defs
+     id="defs2">
+    <marker
+       inkscape:isstock="true"
+       style="overflow:visible"
+       id="marker3835"
+       refX="0"
+       refY="0"
+       orient="auto"
+       inkscape:stockid="Arrow1Mend">
+      <path
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.00000003pt;stroke-opacity:1"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         id="path3833"
+         inkscape:connector-curvature="0" />
+    </marker>
+    <marker
+       inkscape:isstock="true"
+       style="overflow:visible"
+       id="marker2903"
+       refX="0"
+       refY="0"
+       orient="auto"
+       inkscape:stockid="Arrow1Mend">
+      <path
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.00000003pt;stroke-opacity:1"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         id="path2901"
+         inkscape:connector-curvature="0" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Lend"
+       orient="auto"
+       refY="0.0"
+       refX="0.0"
+       id="Arrow1Lend"
+       style="overflow:visible;"
+       inkscape:isstock="true">
+      <path
+         id="path2490"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt;stroke-opacity:1;fill:#000000;fill-opacity:1"
+         transform="scale(0.8) rotate(180) translate(12.5,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow1Mend"
+       style="overflow:visible"
+       inkscape:isstock="true">
+      <path
+         id="path1240"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.00000003pt;stroke-opacity:1"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         inkscape:connector-curvature="0" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow1Mend-3"
+       style="overflow:visible"
+       inkscape:isstock="true">
+      <path
+         inkscape:connector-curvature="0"
+         id="path1240-5"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.00000003pt;stroke-opacity:1"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow1Mend-1"
+       style="overflow:visible"
+       inkscape:isstock="true">
+      <path
+         inkscape:connector-curvature="0"
+         id="path1240-7"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.00000003pt;stroke-opacity:1"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow1Mend-1-1"
+       style="overflow:visible"
+       inkscape:isstock="true">
+      <path
+         inkscape:connector-curvature="0"
+         id="path1240-7-2"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.00000003pt;stroke-opacity:1"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow1Mend-3-4"
+       style="overflow:visible"
+       inkscape:isstock="true">
+      <path
+         inkscape:connector-curvature="0"
+         id="path1240-5-3"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.00000003pt;stroke-opacity:1"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow1Mend-38"
+       style="overflow:visible"
+       inkscape:isstock="true">
+      <path
+         inkscape:connector-curvature="0"
+         id="path1240-0"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.00000003pt;stroke-opacity:1"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow1Mend-1-9"
+       style="overflow:visible"
+       inkscape:isstock="true">
+      <path
+         inkscape:connector-curvature="0"
+         id="path1240-7-8"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.00000003pt;stroke-opacity:1"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)" />
+    </marker>
+    <marker
+       inkscape:stockid="Arrow1Mend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow1Mend-3-3"
+       style="overflow:visible"
+       inkscape:isstock="true"
+       inkscape:collect="always">
+      <path
+         inkscape:connector-curvature="0"
+         id="path1240-5-5"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.00000003pt;stroke-opacity:1"
+         transform="matrix(-0.4,0,0,-0.4,-4,0)" />
+    </marker>
+    <marker
+       inkscape:isstock="true"
+       style="overflow:visible"
+       id="marker2903-0"
+       refX="0"
+       refY="0"
+       orient="auto"
+       inkscape:stockid="Arrow1Mend">
+      <path
+         transform="matrix(-0.4,0,0,-0.4,-4,0)"
+         style="fill:#000000;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-width:1.00000003pt;stroke-opacity:1"
+         d="M 0,0 5,-5 -12.5,0 5,5 Z"
+         id="path2901-5"
+         inkscape:connector-curvature="0" />
+    </marker>
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.7"
+     inkscape:cx="145.09194"
+     inkscape:cy="636.51511"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:window-width="3200"
+     inkscape:window-height="1271"
+     inkscape:window-x="-9"
+     inkscape:window-y="-9"
+     inkscape:window-maximized="1" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0,-87)">
+    <g
+       id="g929"
+       transform="matrix(0.83217127,0,0,0.83217127,114.44081,108.55617)">
+      <rect
+         y="3.0357351"
+         x="7.8969688"
+         height="12.851191"
+         width="26.458332"
+         id="rect841"
+         style="opacity:1;fill:#de8787;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
+      <text
+         id="text821"
+         y="11.104642"
+         x="11.120544"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+         xml:space="preserve"><tspan
+           style="font-size:6.3499999px;stroke-width:0.26458332"
+           y="11.104642"
+           x="11.120544"
+           id="tspan819"
+           sodipodi:role="line">Survey</tspan></text>
+    </g>
+    <g
+       id="g2471"
+       transform="translate(-26.726953,115.46044)">
+      <g
+         transform="matrix(0.83217127,0,0,0.83217127,29.688757,-8.7718945)"
+         id="g869">
+        <rect
+           style="opacity:1;fill:#ff9955;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1"
+           id="rect841-9"
+           width="34.773808"
+           height="12.851191"
+           x="37.358845"
+           y="26.709852" />
+        <text
+           xml:space="preserve"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+           x="40.774658"
+           y="35.408176"
+           id="text817"><tspan
+             sodipodi:role="line"
+             id="tspan815"
+             x="40.774658"
+             y="35.408176"
+             style="font-size:6.3499999px;stroke-width:0.26458332">Station 01</tspan></text>
+      </g>
+      <path
+         sodipodi:nodetypes="cc"
+         inkscape:connector-curvature="0"
+         id="path1229-7"
+         d="m 46.560446,25.35972 0.125822,9.193033"
+         style="fill:none;stroke:#000000;stroke-width:0.5533939;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Arrow1Mend-3)" />
+      <path
+         sodipodi:nodetypes="ccc"
+         inkscape:connector-curvature="0"
+         id="path1229-0"
+         d="m 46.560446,25.35972 66.057844,0.123139 0.34827,9.121686"
+         style="fill:none;stroke:#000000;stroke-width:0.5533939;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Arrow1Mend-1)" />
+      <g
+         id="g1255">
+        <g
+           id="g880-5"
+           transform="matrix(0.83217127,0,0,0.83217127,58.44848,-26.205685)">
+          <rect
+             y="73.767891"
+             x="50.965988"
+             height="12.851191"
+             width="26.458334"
+             id="rect841-6-3"
+             style="opacity:1;fill:#ffd42a;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
+          <text
+             id="text825-1"
+             y="81.844543"
+             x="53.398918"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+             xml:space="preserve"><tspan
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="81.844543"
+               x="53.398918"
+               id="tspan823-1"
+               sodipodi:role="line">Run 02</tspan></text>
+        </g>
+        <g
+           id="g891-4"
+           transform="matrix(0.83217127,0,0,0.83217127,92.45976,-21.576556)">
+          <rect
+             y="73.767891"
+             x="42.272537"
+             height="12.851189"
+             width="43.845242"
+             id="rect841-4-6"
+             style="opacity:1;fill:#cdde87;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
+          <text
+             id="text829-8"
+             y="81.798035"
+             x="47.303165"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+             xml:space="preserve"><tspan
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="81.798035"
+               x="47.303165"
+               id="tspan827-8"
+               sodipodi:role="line">DataLogger</tspan></text>
+        </g>
+        <g
+           id="g903-2"
+           transform="matrix(0.83217127,0,0,0.83217127,83.12536,8.8398637)">
+          <rect
+             y="73.767891"
+             x="32.823132"
+             height="12.851189"
+             width="62.744049"
+             id="rect841-97-4"
+             style="opacity:1;fill:#afdde9;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
+          <text
+             id="text833-2"
+             y="82.466209"
+             x="36.976662"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+             xml:space="preserve"><tspan
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="82.466209"
+               x="36.976662"
+               id="tspan831-0"
+               sodipodi:role="line">Electric Channel 01</tspan><tspan
+               id="tspan835-5"
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="90.403709"
+               x="36.976662"
+               sodipodi:role="line" /></text>
+        </g>
+        <g
+           id="g918-7"
+           transform="matrix(0.83217127,0,0,0.83217127,76.362734,14.643654)">
+          <g
+             id="g924-2">
+            <g
+               id="g912-2">
+              <rect
+                 y="106.92859"
+                 x="40.949619"
+                 height="12.851196"
+                 width="67.657738"
+                 id="rect841-40-6"
+                 style="opacity:1;fill:#c6afe9;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
+            </g>
+            <text
+               xml:space="preserve"
+               style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+               x="45.101231"
+               y="114.9975"
+               id="text839-0"><tspan
+                 sodipodi:role="line"
+                 id="tspan837-6"
+                 x="45.101231"
+                 y="114.9975"
+                 style="font-size:6.3499999px;stroke-width:0.26458332">Magnetic Channel 01</tspan></text>
+          </g>
+        </g>
+        <g
+           id="g966-6"
+           transform="matrix(0.83217127,0,0,0.83217127,74.896708,-2.328364)">
+          <rect
+             y="107.25595"
+             x="42.711308"
+             height="12.851189"
+             width="62.744049"
+             id="rect841-97-5-9"
+             style="opacity:1;fill:#aaccff;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
+          <text
+             id="text833-1-5"
+             y="115.95427"
+             x="46.864838"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+             xml:space="preserve"><tspan
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="115.95427"
+               x="46.864838"
+               id="tspan831-2-8"
+               sodipodi:role="line">Electric Channel 02</tspan><tspan
+               id="tspan835-8-7"
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="123.89177"
+               x="46.864838"
+               sodipodi:role="line" /></text>
+        </g>
+        <g
+           id="g1023-2"
+           transform="matrix(0.83217127,0,0,0.83217127,74.110355,-7.9322689)">
+          <g
+             style="fill:#cd87de"
+             transform="translate(2.7066306,47.196408)"
+             id="g912-4-42">
+            <rect
+               style="opacity:1;fill:#cd87de;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1"
+               id="rect841-40-3-9"
+               width="67.657738"
+               height="12.851196"
+               x="40.949619"
+               y="106.92859" />
+          </g>
+          <text
+             id="text839-8-1"
+             y="162.19391"
+             x="47.807861"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+             xml:space="preserve"><tspan
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="162.19391"
+               x="47.807861"
+               id="tspan837-1-1"
+               sodipodi:role="line">Magnetic Channel 02</tspan></text>
+        </g>
+        <g
+           id="g1041-6"
+           transform="matrix(0.83217127,0,0,0.83217127,65.617755,-16.081412)">
+          <g
+             style="fill:#de87cd"
+             transform="translate(12.911988,77.056527)"
+             id="g912-4-4-4">
+            <rect
+               style="opacity:1;fill:#de87cd;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1"
+               id="rect841-40-3-3-8"
+               width="67.657738"
+               height="12.851196"
+               x="40.949619"
+               y="106.92859" />
+          </g>
+          <text
+             id="text839-8-0-0"
+             y="192.05403"
+             x="58.013222"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+             xml:space="preserve"><tspan
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="192.05403"
+               x="58.013222"
+               id="tspan837-1-5-6"
+               sodipodi:role="line">Magnetic Channel 03</tspan></text>
+        </g>
+        <g
+           transform="matrix(0.83217127,0,0,0.83217127,64.602273,0.54748156)"
+           id="g4391-4">
+          <path
+             sodipodi:nodetypes="cc"
+             inkscape:connector-curvature="0"
+             id="path4341-7"
+             d="M 51.850287,54.319267 V 170.58151"
+             style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+          <path
+             sodipodi:nodetypes="cc"
+             inkscape:connector-curvature="0"
+             id="path4343-4"
+             d="m 51.817829,170.58151 h 3.123389"
+             style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+          <path
+             sodipodi:nodetypes="cc"
+             inkscape:connector-curvature="0"
+             id="path4343-3-8"
+             d="m 51.817829,150.39467 h 3.123389"
+             style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+          <path
+             sodipodi:nodetypes="cc"
+             inkscape:connector-curvature="0"
+             id="path4343-9-2"
+             d="m 51.817829,130.20783 h 3.123389"
+             style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+          <path
+             sodipodi:nodetypes="cc"
+             inkscape:connector-curvature="0"
+             id="path4343-32-6"
+             d="m 51.817829,110.02101 h 3.123389"
+             style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+          <path
+             sodipodi:nodetypes="cc"
+             inkscape:connector-curvature="0"
+             id="path4343-1-3"
+             d="m 51.817829,89.834157 h 3.123389"
+             style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+          <path
+             sodipodi:nodetypes="cc"
+             inkscape:connector-curvature="0"
+             id="path4343-6-3"
+             d="m 51.817829,69.647337 h 3.123389"
+             style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+        </g>
+        <g
+           id="g1204"
+           transform="translate(-0.39566029)">
+          <rect
+             y="53.527805"
+             x="110.83549"
+             height="10.69439"
+             width="36.486752"
+             id="rect841-4-6-7"
+             style="opacity:1;fill:#afe9c6;fill-opacity:1;stroke:none;stroke-width:0.38695961;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
+          <text
+             id="text829-8-1"
+             y="60.218002"
+             x="115.89911"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.28428745px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.22017863"
+             xml:space="preserve"><tspan
+               style="font-size:5.28428745px;stroke-width:0.22017863"
+               y="60.218002"
+               x="115.89911"
+               id="tspan827-8-2"
+               sodipodi:role="line">Auxiliary 01</tspan></text>
+        </g>
+        <path
+           style="fill:none;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+           d="m 122.87878,45.876223 v 0 l 4.87717,-0.0414"
+           id="path1206"
+           inkscape:connector-curvature="0" />
+      </g>
+      <g
+         id="g1255-2"
+         transform="translate(-69.923811)">
+        <g
+           id="g880-5-0"
+           transform="matrix(0.83217127,0,0,0.83217127,58.44848,-26.205685)">
+          <rect
+             y="73.767891"
+             x="50.965988"
+             height="12.851191"
+             width="26.458334"
+             id="rect841-6-3-1"
+             style="opacity:1;fill:#ffd42a;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
+          <text
+             id="text825-1-4"
+             y="81.844543"
+             x="53.398918"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+             xml:space="preserve"><tspan
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="81.844543"
+               x="53.398918"
+               id="tspan823-1-3"
+               sodipodi:role="line">Run 01</tspan></text>
+        </g>
+        <g
+           id="g891-4-9"
+           transform="matrix(0.83217127,0,0,0.83217127,92.45976,-21.576556)">
+          <rect
+             y="73.767891"
+             x="42.272537"
+             height="12.851189"
+             width="43.845242"
+             id="rect841-4-6-8"
+             style="opacity:1;fill:#cdde87;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
+          <text
+             id="text829-8-87"
+             y="81.798035"
+             x="47.303165"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+             xml:space="preserve"><tspan
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="81.798035"
+               x="47.303165"
+               id="tspan827-8-4"
+               sodipodi:role="line">DataLogger</tspan></text>
+        </g>
+        <g
+           id="g903-2-3"
+           transform="matrix(0.83217127,0,0,0.83217127,83.12536,8.8398637)">
+          <rect
+             y="73.767891"
+             x="32.823132"
+             height="12.851189"
+             width="62.744049"
+             id="rect841-97-4-4"
+             style="opacity:1;fill:#afdde9;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
+          <text
+             id="text833-2-5"
+             y="82.466209"
+             x="36.976662"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+             xml:space="preserve"><tspan
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="82.466209"
+               x="36.976662"
+               id="tspan831-0-7"
+               sodipodi:role="line">Electric Channel 01</tspan><tspan
+               id="tspan835-5-6"
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="90.403709"
+               x="36.976662"
+               sodipodi:role="line" /></text>
+        </g>
+        <g
+           id="g918-7-0"
+           transform="matrix(0.83217127,0,0,0.83217127,76.362734,14.643654)">
+          <g
+             id="g924-2-4">
+            <g
+               id="g912-2-8">
+              <rect
+                 y="106.92859"
+                 x="40.949619"
+                 height="12.851196"
+                 width="67.657738"
+                 id="rect841-40-6-7"
+                 style="opacity:1;fill:#c6afe9;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
+            </g>
+            <text
+               xml:space="preserve"
+               style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+               x="45.101231"
+               y="114.9975"
+               id="text839-0-5"><tspan
+                 sodipodi:role="line"
+                 id="tspan837-6-2"
+                 x="45.101231"
+                 y="114.9975"
+                 style="font-size:6.3499999px;stroke-width:0.26458332">Magnetic Channel 01</tspan></text>
+          </g>
+        </g>
+        <g
+           id="g966-6-7"
+           transform="matrix(0.83217127,0,0,0.83217127,74.896708,-2.328364)">
+          <rect
+             y="107.25595"
+             x="42.711308"
+             height="12.851189"
+             width="62.744049"
+             id="rect841-97-5-9-6"
+             style="opacity:1;fill:#aaccff;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
+          <text
+             id="text833-1-5-2"
+             y="115.95427"
+             x="46.864838"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+             xml:space="preserve"><tspan
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="115.95427"
+               x="46.864838"
+               id="tspan831-2-8-6"
+               sodipodi:role="line">Electric Channel 02</tspan><tspan
+               id="tspan835-8-7-6"
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="123.89177"
+               x="46.864838"
+               sodipodi:role="line" /></text>
+        </g>
+        <g
+           id="g1023-2-8"
+           transform="matrix(0.83217127,0,0,0.83217127,74.110355,-7.9322689)">
+          <g
+             style="fill:#cd87de"
+             transform="translate(2.7066306,47.196408)"
+             id="g912-4-42-8">
+            <rect
+               style="opacity:1;fill:#cd87de;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1"
+               id="rect841-40-3-9-6"
+               width="67.657738"
+               height="12.851196"
+               x="40.949619"
+               y="106.92859" />
+          </g>
+          <text
+             id="text839-8-1-3"
+             y="162.19391"
+             x="47.807861"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+             xml:space="preserve"><tspan
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="162.19391"
+               x="47.807861"
+               id="tspan837-1-1-2"
+               sodipodi:role="line">Magnetic Channel 02</tspan></text>
+        </g>
+        <g
+           id="g1041-6-07"
+           transform="matrix(0.83217127,0,0,0.83217127,65.617755,-16.081412)">
+          <g
+             style="fill:#de87cd"
+             transform="translate(12.911988,77.056527)"
+             id="g912-4-4-4-2">
+            <rect
+               style="opacity:1;fill:#de87cd;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1"
+               id="rect841-40-3-3-8-5"
+               width="67.657738"
+               height="12.851196"
+               x="40.949619"
+               y="106.92859" />
+          </g>
+          <text
+             id="text839-8-0-0-1"
+             y="192.05403"
+             x="58.013222"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+             xml:space="preserve"><tspan
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="192.05403"
+               x="58.013222"
+               id="tspan837-1-5-6-6"
+               sodipodi:role="line">Magnetic Channel 03</tspan></text>
+        </g>
+        <g
+           transform="matrix(0.83217127,0,0,0.83217127,64.602273,0.54748156)"
+           id="g4391-4-2">
+          <path
+             sodipodi:nodetypes="cc"
+             inkscape:connector-curvature="0"
+             id="path4341-7-0"
+             d="M 51.850287,54.319267 V 170.58151"
+             style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+          <path
+             sodipodi:nodetypes="cc"
+             inkscape:connector-curvature="0"
+             id="path4343-4-2"
+             d="m 51.817829,170.58151 h 3.123389"
+             style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+          <path
+             sodipodi:nodetypes="cc"
+             inkscape:connector-curvature="0"
+             id="path4343-3-8-0"
+             d="m 51.817829,150.39467 h 3.123389"
+             style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+          <path
+             sodipodi:nodetypes="cc"
+             inkscape:connector-curvature="0"
+             id="path4343-9-2-42"
+             d="m 51.817829,130.20783 h 3.123389"
+             style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+          <path
+             sodipodi:nodetypes="cc"
+             inkscape:connector-curvature="0"
+             id="path4343-32-6-1"
+             d="m 51.817829,110.02101 h 3.123389"
+             style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+          <path
+             sodipodi:nodetypes="cc"
+             inkscape:connector-curvature="0"
+             id="path4343-1-3-3"
+             d="m 51.817829,89.834157 h 3.123389"
+             style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+          <path
+             sodipodi:nodetypes="cc"
+             inkscape:connector-curvature="0"
+             id="path4343-6-3-46"
+             d="m 51.817829,69.647337 h 3.123389"
+             style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+        </g>
+        <g
+           id="g1204-6"
+           transform="translate(-0.39566029)">
+          <rect
+             y="53.527805"
+             x="110.83549"
+             height="10.69439"
+             width="36.486752"
+             id="rect841-4-6-7-2"
+             style="opacity:1;fill:#afe9c6;fill-opacity:1;stroke:none;stroke-width:0.38695961;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
+          <text
+             id="text829-8-1-1"
+             y="60.218002"
+             x="115.89911"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.28428745px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.22017863"
+             xml:space="preserve"><tspan
+               style="font-size:5.28428745px;stroke-width:0.22017863"
+               y="60.218002"
+               x="115.89911"
+               id="tspan827-8-2-7"
+               sodipodi:role="line">Auxiliary 01</tspan></text>
+        </g>
+        <path
+           style="fill:none;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+           d="m 122.87878,45.876223 v 0 l 4.87717,-0.0414"
+           id="path1206-5"
+           inkscape:connector-curvature="0" />
+      </g>
+    </g>
+    <g
+       id="g1893"
+       transform="translate(123.47852,-24.033714)">
+      <g
+         transform="matrix(0.83217126,0,0,0.83217126,29.99203,130.72226)"
+         id="g869-5">
+        <rect
+           style="opacity:1;fill:#ff9955;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1"
+           id="rect841-9-6"
+           width="34.773808"
+           height="12.851191"
+           x="37.358845"
+           y="26.709852" />
+        <text
+           xml:space="preserve"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+           x="40.774658"
+           y="35.408176"
+           id="text817-0"><tspan
+             sodipodi:role="line"
+             id="tspan815-2"
+             x="40.774658"
+             y="35.408176"
+             style="font-size:6.3499999px;stroke-width:0.26458332">Station 02</tspan></text>
+      </g>
+      <path
+         sodipodi:nodetypes="cc"
+         inkscape:connector-curvature="0"
+         id="path1229-7-8"
+         d="m 46.863718,164.85387 0.125822,9.19303"
+         style="fill:none;stroke:#000000;stroke-width:0.5533939;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Arrow1Mend-3-3)" />
+      <path
+         sodipodi:nodetypes="ccc"
+         inkscape:connector-curvature="0"
+         id="path1229-0-1"
+         d="m 46.863718,164.85387 66.057842,0.12314 0.34826,9.12169"
+         style="fill:none;stroke:#000000;stroke-width:0.5533939;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#Arrow1Mend-1-9)" />
+      <g
+         id="g1255-0"
+         transform="translate(0.30327126,139.49415)">
+        <g
+           id="g880-5-2"
+           transform="matrix(0.83217127,0,0,0.83217127,58.44848,-26.205685)">
+          <rect
+             y="73.767891"
+             x="50.965988"
+             height="12.851191"
+             width="26.458334"
+             id="rect841-6-3-6"
+             style="opacity:1;fill:#ffd42a;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
+          <text
+             id="text825-1-0"
+             y="81.844543"
+             x="53.398918"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+             xml:space="preserve"><tspan
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="81.844543"
+               x="53.398918"
+               id="tspan823-1-0"
+               sodipodi:role="line">Run 02</tspan></text>
+        </g>
+        <g
+           id="g891-4-2"
+           transform="matrix(0.83217127,0,0,0.83217127,92.45976,-21.576556)">
+          <rect
+             y="73.767891"
+             x="42.272537"
+             height="12.851189"
+             width="43.845242"
+             id="rect841-4-6-4"
+             style="opacity:1;fill:#cdde87;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
+          <text
+             id="text829-8-7"
+             y="81.798035"
+             x="47.303165"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+             xml:space="preserve"><tspan
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="81.798035"
+               x="47.303165"
+               id="tspan827-8-29"
+               sodipodi:role="line">DataLogger</tspan></text>
+        </g>
+        <g
+           id="g903-2-4"
+           transform="matrix(0.83217127,0,0,0.83217127,83.12536,8.8398637)">
+          <rect
+             y="73.767891"
+             x="32.823132"
+             height="12.851189"
+             width="62.744049"
+             id="rect841-97-4-2"
+             style="opacity:1;fill:#afdde9;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
+          <text
+             id="text833-2-4"
+             y="82.466209"
+             x="36.976662"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+             xml:space="preserve"><tspan
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="82.466209"
+               x="36.976662"
+               id="tspan831-0-6"
+               sodipodi:role="line">Electric Channel 01</tspan><tspan
+               id="tspan835-5-62"
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="90.403709"
+               x="36.976662"
+               sodipodi:role="line" /></text>
+        </g>
+        <g
+           id="g918-7-9"
+           transform="matrix(0.83217127,0,0,0.83217127,76.362734,14.643654)">
+          <g
+             id="g924-2-2">
+            <g
+               id="g912-2-2">
+              <rect
+                 y="106.92859"
+                 x="40.949619"
+                 height="12.851196"
+                 width="67.657738"
+                 id="rect841-40-6-0"
+                 style="opacity:1;fill:#c6afe9;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
+            </g>
+            <text
+               xml:space="preserve"
+               style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+               x="45.101231"
+               y="114.9975"
+               id="text839-0-7"><tspan
+                 sodipodi:role="line"
+                 id="tspan837-6-1"
+                 x="45.101231"
+                 y="114.9975"
+                 style="font-size:6.3499999px;stroke-width:0.26458332">Magnetic Channel 01</tspan></text>
+          </g>
+        </g>
+        <g
+           id="g966-6-8"
+           transform="matrix(0.83217127,0,0,0.83217127,74.896708,-2.328364)">
+          <rect
+             y="107.25595"
+             x="42.711308"
+             height="12.851189"
+             width="62.744049"
+             id="rect841-97-5-9-5"
+             style="opacity:1;fill:#aaccff;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
+          <text
+             id="text833-1-5-1"
+             y="115.95427"
+             x="46.864838"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+             xml:space="preserve"><tspan
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="115.95427"
+               x="46.864838"
+               id="tspan831-2-8-2"
+               sodipodi:role="line">Electric Channel 02</tspan><tspan
+               id="tspan835-8-7-64"
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="123.89177"
+               x="46.864838"
+               sodipodi:role="line" /></text>
+        </g>
+        <g
+           id="g1023-2-1"
+           transform="matrix(0.83217127,0,0,0.83217127,74.110355,-7.9322689)">
+          <g
+             style="fill:#cd87de"
+             transform="translate(2.7066306,47.196408)"
+             id="g912-4-42-0">
+            <rect
+               style="opacity:1;fill:#cd87de;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1"
+               id="rect841-40-3-9-5"
+               width="67.657738"
+               height="12.851196"
+               x="40.949619"
+               y="106.92859" />
+          </g>
+          <text
+             id="text839-8-1-8"
+             y="162.19391"
+             x="47.807861"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+             xml:space="preserve"><tspan
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="162.19391"
+               x="47.807861"
+               id="tspan837-1-1-4"
+               sodipodi:role="line">Magnetic Channel 02</tspan></text>
+        </g>
+        <g
+           id="g1041-6-4"
+           transform="matrix(0.83217127,0,0,0.83217127,65.617755,-16.081412)">
+          <g
+             style="fill:#de87cd"
+             transform="translate(12.911988,77.056527)"
+             id="g912-4-4-4-6">
+            <rect
+               style="opacity:1;fill:#de87cd;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1"
+               id="rect841-40-3-3-8-7"
+               width="67.657738"
+               height="12.851196"
+               x="40.949619"
+               y="106.92859" />
+          </g>
+          <text
+             id="text839-8-0-0-14"
+             y="192.05403"
+             x="58.013222"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+             xml:space="preserve"><tspan
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="192.05403"
+               x="58.013222"
+               id="tspan837-1-5-6-64"
+               sodipodi:role="line">Magnetic Channel 03</tspan></text>
+        </g>
+        <g
+           transform="matrix(0.83217127,0,0,0.83217127,64.602273,0.54748156)"
+           id="g4391-4-8">
+          <path
+             sodipodi:nodetypes="cc"
+             inkscape:connector-curvature="0"
+             id="path4341-7-4"
+             d="M 51.850287,54.319267 V 170.58151"
+             style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+          <path
+             sodipodi:nodetypes="cc"
+             inkscape:connector-curvature="0"
+             id="path4343-4-1"
+             d="m 51.817829,170.58151 h 3.123389"
+             style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+          <path
+             sodipodi:nodetypes="cc"
+             inkscape:connector-curvature="0"
+             id="path4343-3-8-05"
+             d="m 51.817829,150.39467 h 3.123389"
+             style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+          <path
+             sodipodi:nodetypes="cc"
+             inkscape:connector-curvature="0"
+             id="path4343-9-2-4"
+             d="m 51.817829,130.20783 h 3.123389"
+             style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+          <path
+             sodipodi:nodetypes="cc"
+             inkscape:connector-curvature="0"
+             id="path4343-32-6-8"
+             d="m 51.817829,110.02101 h 3.123389"
+             style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+          <path
+             sodipodi:nodetypes="cc"
+             inkscape:connector-curvature="0"
+             id="path4343-1-3-7"
+             d="m 51.817829,89.834157 h 3.123389"
+             style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+          <path
+             sodipodi:nodetypes="cc"
+             inkscape:connector-curvature="0"
+             id="path4343-6-3-5"
+             d="m 51.817829,69.647337 h 3.123389"
+             style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+        </g>
+        <g
+           id="g1204-1"
+           transform="translate(-0.39566029)">
+          <rect
+             y="53.527805"
+             x="110.83549"
+             height="10.69439"
+             width="36.486752"
+             id="rect841-4-6-7-7"
+             style="opacity:1;fill:#afe9c6;fill-opacity:1;stroke:none;stroke-width:0.38695961;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
+          <text
+             id="text829-8-1-4"
+             y="60.218002"
+             x="115.89911"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.28428745px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.22017863"
+             xml:space="preserve"><tspan
+               style="font-size:5.28428745px;stroke-width:0.22017863"
+               y="60.218002"
+               x="115.89911"
+               id="tspan827-8-2-8"
+               sodipodi:role="line">Auxiliary 01</tspan></text>
+        </g>
+        <path
+           style="fill:none;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+           d="m 122.87878,45.876223 v 0 l 4.87717,-0.0414"
+           id="path1206-55"
+           inkscape:connector-curvature="0" />
+      </g>
+      <g
+         id="g1255-2-7"
+         transform="translate(-69.620537,139.49415)">
+        <g
+           id="g880-5-0-2"
+           transform="matrix(0.83217127,0,0,0.83217127,58.44848,-26.205685)">
+          <rect
+             y="73.767891"
+             x="50.965988"
+             height="12.851191"
+             width="26.458334"
+             id="rect841-6-3-1-4"
+             style="opacity:1;fill:#ffd42a;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
+          <text
+             id="text825-1-4-7"
+             y="81.844543"
+             x="53.398918"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+             xml:space="preserve"><tspan
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="81.844543"
+               x="53.398918"
+               id="tspan823-1-3-8"
+               sodipodi:role="line">Run 01</tspan></text>
+        </g>
+        <g
+           id="g891-4-9-1"
+           transform="matrix(0.83217127,0,0,0.83217127,92.45976,-21.576556)">
+          <rect
+             y="73.767891"
+             x="42.272537"
+             height="12.851189"
+             width="43.845242"
+             id="rect841-4-6-8-5"
+             style="opacity:1;fill:#cdde87;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
+          <text
+             id="text829-8-87-6"
+             y="81.798035"
+             x="47.303165"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+             xml:space="preserve"><tspan
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="81.798035"
+               x="47.303165"
+               id="tspan827-8-4-5"
+               sodipodi:role="line">DataLogger</tspan></text>
+        </g>
+        <g
+           id="g903-2-3-6"
+           transform="matrix(0.83217127,0,0,0.83217127,83.12536,8.8398637)">
+          <rect
+             y="73.767891"
+             x="32.823132"
+             height="12.851189"
+             width="62.744049"
+             id="rect841-97-4-4-0"
+             style="opacity:1;fill:#afdde9;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
+          <text
+             id="text833-2-5-2"
+             y="82.466209"
+             x="36.976662"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+             xml:space="preserve"><tspan
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="82.466209"
+               x="36.976662"
+               id="tspan831-0-7-5"
+               sodipodi:role="line">Electric Channel 01</tspan><tspan
+               id="tspan835-5-6-8"
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="90.403709"
+               x="36.976662"
+               sodipodi:role="line" /></text>
+        </g>
+        <g
+           id="g918-7-0-9"
+           transform="matrix(0.83217127,0,0,0.83217127,76.362734,14.643654)">
+          <g
+             id="g924-2-4-5">
+            <g
+               id="g912-2-8-5">
+              <rect
+                 y="106.92859"
+                 x="40.949619"
+                 height="12.851196"
+                 width="67.657738"
+                 id="rect841-40-6-7-2"
+                 style="opacity:1;fill:#c6afe9;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
+            </g>
+            <text
+               xml:space="preserve"
+               style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+               x="45.101231"
+               y="114.9975"
+               id="text839-0-5-6"><tspan
+                 sodipodi:role="line"
+                 id="tspan837-6-2-9"
+                 x="45.101231"
+                 y="114.9975"
+                 style="font-size:6.3499999px;stroke-width:0.26458332">Magnetic Channel 01</tspan></text>
+          </g>
+        </g>
+        <g
+           id="g966-6-7-2"
+           transform="matrix(0.83217127,0,0,0.83217127,74.896708,-2.328364)">
+          <rect
+             y="107.25595"
+             x="42.711308"
+             height="12.851189"
+             width="62.744049"
+             id="rect841-97-5-9-6-2"
+             style="opacity:1;fill:#aaccff;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
+          <text
+             id="text833-1-5-2-6"
+             y="115.95427"
+             x="46.864838"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+             xml:space="preserve"><tspan
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="115.95427"
+               x="46.864838"
+               id="tspan831-2-8-6-0"
+               sodipodi:role="line">Electric Channel 02</tspan><tspan
+               id="tspan835-8-7-6-3"
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="123.89177"
+               x="46.864838"
+               sodipodi:role="line" /></text>
+        </g>
+        <g
+           id="g1023-2-8-1"
+           transform="matrix(0.83217127,0,0,0.83217127,74.110355,-7.9322689)">
+          <g
+             style="fill:#cd87de"
+             transform="translate(2.7066306,47.196408)"
+             id="g912-4-42-8-0">
+            <rect
+               style="opacity:1;fill:#cd87de;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1"
+               id="rect841-40-3-9-6-6"
+               width="67.657738"
+               height="12.851196"
+               x="40.949619"
+               y="106.92859" />
+          </g>
+          <text
+             id="text839-8-1-3-1"
+             y="162.19391"
+             x="47.807861"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+             xml:space="preserve"><tspan
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="162.19391"
+               x="47.807861"
+               id="tspan837-1-1-2-4"
+               sodipodi:role="line">Magnetic Channel 02</tspan></text>
+        </g>
+        <g
+           id="g1041-6-07-7"
+           transform="matrix(0.83217127,0,0,0.83217127,65.617755,-16.081412)">
+          <g
+             style="fill:#de87cd"
+             transform="translate(12.911988,77.056527)"
+             id="g912-4-4-4-2-9">
+            <rect
+               style="opacity:1;fill:#de87cd;fill-opacity:1;stroke:none;stroke-width:0.46499997;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1"
+               id="rect841-40-3-3-8-5-4"
+               width="67.657738"
+               height="12.851196"
+               x="40.949619"
+               y="106.92859" />
+          </g>
+          <text
+             id="text839-8-0-0-1-7"
+             y="192.05403"
+             x="58.013222"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.3499999px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+             xml:space="preserve"><tspan
+               style="font-size:6.3499999px;stroke-width:0.26458332"
+               y="192.05403"
+               x="58.013222"
+               id="tspan837-1-5-6-6-8"
+               sodipodi:role="line">Magnetic Channel 03</tspan></text>
+        </g>
+        <g
+           transform="matrix(0.83217127,0,0,0.83217127,64.602273,0.54748156)"
+           id="g4391-4-2-2">
+          <path
+             sodipodi:nodetypes="cc"
+             inkscape:connector-curvature="0"
+             id="path4341-7-0-4"
+             d="M 51.850287,54.319267 V 170.58151"
+             style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+          <path
+             sodipodi:nodetypes="cc"
+             inkscape:connector-curvature="0"
+             id="path4343-4-2-8"
+             d="m 51.817829,170.58151 h 3.123389"
+             style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+          <path
+             sodipodi:nodetypes="cc"
+             inkscape:connector-curvature="0"
+             id="path4343-3-8-0-0"
+             d="m 51.817829,150.39467 h 3.123389"
+             style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+          <path
+             sodipodi:nodetypes="cc"
+             inkscape:connector-curvature="0"
+             id="path4343-9-2-42-7"
+             d="m 51.817829,130.20783 h 3.123389"
+             style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+          <path
+             sodipodi:nodetypes="cc"
+             inkscape:connector-curvature="0"
+             id="path4343-32-6-1-8"
+             d="m 51.817829,110.02101 h 3.123389"
+             style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+          <path
+             sodipodi:nodetypes="cc"
+             inkscape:connector-curvature="0"
+             id="path4343-1-3-3-7"
+             d="m 51.817829,89.834157 h 3.123389"
+             style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+          <path
+             sodipodi:nodetypes="cc"
+             inkscape:connector-curvature="0"
+             id="path4343-6-3-46-0"
+             d="m 51.817829,69.647337 h 3.123389"
+             style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+        </g>
+        <g
+           id="g1204-6-6"
+           transform="translate(-0.39566029)">
+          <rect
+             y="53.527805"
+             x="110.83549"
+             height="10.69439"
+             width="36.486752"
+             id="rect841-4-6-7-2-2"
+             style="opacity:1;fill:#afe9c6;fill-opacity:1;stroke:none;stroke-width:0.38695961;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
+          <text
+             id="text829-8-1-1-4"
+             y="60.218002"
+             x="115.89911"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:5.28428745px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.22017863"
+             xml:space="preserve"><tspan
+               style="font-size:5.28428745px;stroke-width:0.22017863"
+               y="60.218002"
+               x="115.89911"
+               id="tspan827-8-2-7-2"
+               sodipodi:role="line">Auxiliary 01</tspan></text>
+        </g>
+        <path
+           style="fill:none;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+           d="m 122.87878,45.876223 v 0 l 4.87717,-0.0414"
+           id="path1206-5-9"
+           inkscape:connector-curvature="0" />
+      </g>
+    </g>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#marker2903)"
+       d="m 120.86135,116.33395 -72.102423,0 v 12.31546"
+       id="path2485"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccc" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#marker2903-0)"
+       d="m 143.31327,116.33395 59.62921,0 v 12.31546"
+       id="path2485-8"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccc" />
+    <g
+       id="g3823"
+       transform="translate(-1.4993814)">
+      <rect
+         y="132.6127"
+         x="120.29159"
+         height="9.0714283"
+         width="26.458332"
+         id="rect3810"
+         style="opacity:1;fill:#b3b3b3;fill-opacity:1;stroke:none;stroke-width:0.66499996;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+      <text
+         id="text3808"
+         y="139.38394"
+         x="124.73214"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:8.46666622px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+         xml:space="preserve"><tspan
+           style="font-size:6.3499999px;stroke:none;stroke-width:0.26458332"
+           y="139.38394"
+           x="124.73214"
+           id="tspan3806"
+           sodipodi:role="line">Filters</tspan></text>
+    </g>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.66500002;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#marker3835)"
+       d="m 132.02137,121.99703 0,9.4494"
+       id="path3825"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="cc" />
+  </g>
+</svg>
