@@ -1,6 +1,6 @@
 Welcome to MTH5's documentation!
 ======================================
-.. image:: source\images\mth5_logo.png
+.. image:: source/images/mth5_logo.png
 	:align: center
 
 .. toctree::
