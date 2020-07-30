@@ -26,4 +26,4 @@ formats:
 #    - requirements: docs/requirements.yml
     
 conda:
-    environment: docs/requirements.yml
+    environment: docs/environment.yml
