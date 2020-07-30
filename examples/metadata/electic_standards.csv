@@ -1,0 +1,38 @@
+attribute,type,required,units,style,description,options,alias,example
+ac.end,float,False,volts,number,ending AC value; if more than one measurement input as a list of number [1 2 3 ...],None,None,"[45.3, 49.5]"
+ac.start,float,False,volts,number,starting AC value; if more than one measurement input as a list of number [1 2 3 ...],None,None,"[52.1, 55.8]"
+channel_number,integer,True,None,number,channel number on the data logger,None,None,1
+comments,string,False,None,free form,any comments about the channel,None,None,ambient air temperature
+component,string,True,None,controlled vocabulary,name of the component measured,"[Ex| Ey| Hx| Hy| Hz| T| Battery| other]",None,T
+contact_resistance.end,float,False,ohms,number list,starting contact resistance; if more than one measurement input as a list of number [1 2 3 ...],None,None,"[1.5, 1.8]"
+contact_resistance.start,float,False,ohms,number list,starting contact resistance; if more than one measurement input as a list of number [1 2 3 ...],None,None,"[1.2, 1.4]"
+data_quality.rating.author,string,False,None,free form,author of who rated the data,None,None,gradstudet ace
+data_quality.rating.method,string,False,None,free form,the method used to rate the data,None,None,standard deviation
+data_quality.rating.value,integer,True,None,number,a rating from 1-5 where 1 is bad and 5 is good and 0 if unrated,"[0| 1| 2| 3| 4| 5]",None,4
+data_quality.warning,string,False,None,free form,any warnings about the data that should be noted,None,None,periodic pipeline noise
+dc.end,float,False,volts,number,ending DC value; if more than one measurement input as a list of number [1 2 3 ...],None,None,1.5
+dc.start,float,False,volts,number,starting DC value; if more than one measurement input as a list of number [1 2 3 ...],None,None,1.1
+dipole_length,float,True,meters,number,length of the dipole,None,None,55.25
+filter.applied,boolean,True,None,name list,boolean if filter has been applied or not. If more than one filter input as a comma separated list.  Needs to be the same length as name or if only one entry is given it is assumed to apply to all filters listed.,None,None,"[True, False]"
+filter.comments,string,False,None,name,any comments on filters,None,None,low pass is not calibrated
+filter.name,string,True,None,name list,name of filter applied or to be applies. If more than one filter input as a comma separated list,None,None,"[counts2mv, lowpass_magnetic]"
+measurement_azimuth,float,True,degrees,number,azimuth of channel in measurement coordinates,None,"[azimuth]",0
+negative.elevation,float,True,degrees,number,elevation of location in datum specified at survey level,None,"[elev]",123.4
+negative.id,string,True,None,free form,instrument ID number can be serial number or a designated ID,None,"[serial]",mt01
+negative.latitude,float,True,degrees,number,latitude of location in datum specified at survey level,None,"[lat]",23.134
+negative.longitude,float,True,degrees,number,longitude of location in datum specified at survey level,None,"[lon| long]",14.23
+negative.manufacturer,string,True,None,free form,who manufactured the instrument,None,None,mt gurus
+negative.model,string,False,None,free form,model version of the instrument,None,None,falcon5
+negative.type,string,True,None,free form,instrument type,None,None,broadband 32-bit
+positive.elevation,float,True,degrees,number,elevation of location in datum specified at survey level,None,"[elev]",123.4
+positive.id,string,True,None,free form,instrument ID number can be serial number or a designated ID,None,"[serial]",mt01
+positive.latitude,float,True,degrees,number,latitude of location in datum specified at survey level,None,"[lat]",23.134
+positive.longitude,float,True,degrees,number,longitude of location in datum specified at survey level,None,"[lon| long]",14.23
+positive.manufacturer,string,True,None,free form,who manufactured the instrument,None,None,mt gurus
+positive.model,string,False,None,free form,model version of the instrument,None,None,falcon5
+positive.type,string,True,None,free form,instrument type,None,None,broadband 32-bit
+sample_rate,float,True,samples per second,number,sample rate,None,"[sampling_rate]",8
+time_period.end,string,True,None,time,end date and time of collection in UTC,None,None,2020-02-04T16:23:45.453670+00:00
+time_period.start,string,True,None,time,start date and time of collection in UTC,None,None,2020-02-01T09:23:45.453670+00:00
+type,string,True,None,free form,data type for the channel,None,None,temperature
+units,string,True,None,controlled vocabulary,units of the data,"[metric| celsius| meters| degrees| kilograms| other]",None,celsius

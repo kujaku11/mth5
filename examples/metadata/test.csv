@@ -1,0 +1,27 @@
+attribute,type,required,units,style
+acquired_by.author,string,True,None,name
+acquired_by.email,string,True,None,email
+channels_recorded,string,True,None,name_list
+comments,string,False,None,name
+data_logger.firmware.author,string,True,None,name
+data_logger.firmware.name,string,True,None,name
+data_logger.firmware.version,string,True,None,name
+data_logger.id,string,True,None,name
+data_logger.manufacturer,string,True,None,name
+data_logger.power_source.comments,string,False,None,name
+data_logger.power_source.id,string,False,None,name
+data_logger.power_source.type,string,True,None,name
+data_logger.power_source.voltage.end,float,True,volts,number
+data_logger.power_source.voltage.start,float,True,volts,number
+data_logger.timing_system.drift,float,True,milliseconds,name
+data_logger.timing_system.notes,string,True,None,name
+data_logger.timing_system.type,string,True,None,name
+data_logger.timing_system.uncertainty,float,True,milliseconds,name
+data_logger.type,string,True,None,name
+data_type,string,True,None,name
+id,string,True,None,name
+provenance.comments,string,False,None,name
+provenance.log,string,False,None,name
+sampling_rate,float,True,samples per second,number
+time_period.end,string,True,None,time
+time_period.start,string,True,None,time

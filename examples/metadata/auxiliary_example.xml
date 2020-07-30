@@ -1,0 +1,25 @@
+<?xml version="1.0" ?>
+<channel>
+    <type>None</type>
+    <units>None</units>
+    <channel_number type="integer">None</channel_number>
+    <component>None</component>
+    <sample_rate type="float" units="samples per second">None</sample_rate>
+    <azimuth type="float" units="degrees">0.0</azimuth>
+    <notes>None</notes>
+    <data_quality type="integer">
+        <rating type="integer">None</rating>
+        <warning_notes>None</warning_notes>
+        <warning_flags>None</warning_flags>
+        <author>None</author>
+    </data_quality>
+    <filter type="boolean">
+        <name>None</name>
+        <applied type="boolean">None</applied>
+        <notes>None</notes>
+    </filter>
+    <datum>WGS84</datum>
+    <latitude type="float">None</latitude>
+    <longitude type="float">None</longitude>
+    <elevation type="float">None</elevation>
+</channel>

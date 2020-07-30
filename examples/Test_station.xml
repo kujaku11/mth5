@@ -1,0 +1,193 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1" schemaVersion="1.1">
+  <Source>MT Metadata</Source>
+  <Module>ObsPy 1.2.1</Module>
+  <ModuleURI>https://www.obspy.org</ModuleURI>
+  <Created>2020-06-11T00:11:59.045252Z</Created>
+  <Network code="EM" startDate="2020-01-01T00:00:00+00:00" endDate="1980-01-01T00:00:00+00:00" restrictedStatus="open">
+    <Comment id="0">
+      <Value>None</Value>
+    </Comment>
+    <ns0:MT xmlns:ns0="MT">
+      <ns0:acquired_by>
+        <ns0:author>MT</ns0:author>
+        <ns0:comments>tired</ns0:comments>
+      </ns0:acquired_by>
+      <ns0:archive_id>MT01</ns0:archive_id>
+      <ns0:citation_dataset>
+        <ns0:doi>http://doi.####</ns0:doi>
+      </ns0:citation_dataset>
+      <ns0:datum>WGS84</ns0:datum>
+      <ns0:geographic_name>earth</ns0:geographic_name>
+      <ns0:name>entire survey of the earth</ns0:name>
+      <ns0:project>EM-EARTH</ns0:project>
+    </ns0:MT>
+    <Operator>
+      <Agency>mt rules</Agency>
+      <Contact>
+        <Name>T. Lurric</Name>
+        <Email>mt@mt.org</Email>
+      </Contact>
+      <WebSite/>
+    </Operator>
+    <Station code="MT012" startDate="1980-01-01T00:00:00+00:00" endDate="1980-01-01T00:00:00+00:00">
+      <Comment id="0">
+        <Value>None</Value>
+      </Comment>
+      <ns1:MT xmlns:ns1="MT">
+        <ns1:channel_layout>L</ns1:channel_layout>
+        <ns1:data_type>MT</ns1:data_type>
+        <ns1:location>
+          <ns1:declination>
+            <ns1:model>WMM</ns1:model>
+            <ns1:value units="DEGREES">12.3</ns1:value>
+          </ns1:declination>
+        </ns1:location>
+        <ns1:orientation>
+          <ns1:method>compass</ns1:method>
+          <ns1:reference_frame>geomagnetic</ns1:reference_frame>
+        </ns1:orientation>
+        <ns1:provenance>
+          <ns1:creation_time>1980-01-01T00:00:00+00:00</ns1:creation_time>
+          <ns1:software>
+            <ns1:author>test</ns1:author>
+            <ns1:name>name</ns1:name>
+            <ns1:version>1.0a</ns1:version>
+          </ns1:software>
+          <ns1:submitter>
+            <ns1:author>name</ns1:author>
+            <ns1:email>test@here.org</ns1:email>
+          </ns1:submitter>
+        </ns1:provenance>
+      </ns1:MT>
+      <Latitude unit="DEGREES">10.0</Latitude>
+      <Longitude unit="DEGREES">-112.98</Longitude>
+      <Elevation unit="METERS">1234.0</Elevation>
+      <Site>
+        <Name>mt012</Name>
+        <Description>london</Description>
+      </Site>
+      <Operator>
+        <Agency>None</Agency>
+        <Contact>
+          <Name>mt</Name>
+        </Contact>
+        <WebSite/>
+      </Operator>
+      <CreationDate>1980-01-01T00:00:00.000000Z</CreationDate>
+      <TerminationDate>1980-01-01T00:00:00.000000Z</TerminationDate>
+      <Channel code="CQE" startDate="1980-01-01T00:00:00+00:00" endDate="1980-01-01T00:00:00+00:00" locationCode="E2">
+        <ns2:MT xmlns:ns2="MT">
+          <ns2:ac>
+            <ns2:end units="VOLTS">10.2</ns2:end>
+            <ns2:start units="VOLTS">12.1</ns2:start>
+          </ns2:ac>
+          <ns2:channel_number>2</ns2:channel_number>
+          <ns2:component>EX</ns2:component>
+          <ns2:contact_resistance>
+            <ns2:end units="OHMS">1.2</ns2:end>
+            <ns2:start units="OHMS">1.1</ns2:start>
+          </ns2:contact_resistance>
+          <ns2:data_quality>
+            <ns2:rating>
+              <ns2:author>mt</ns2:author>
+              <ns2:method>ml</ns2:method>
+              <ns2:value>4</ns2:value>
+            </ns2:rating>
+          </ns2:data_quality>
+          <ns2:dc>
+            <ns2:end units="VOLTS">1.0</ns2:end>
+            <ns2:start units="VOLTS">2.0</ns2:start>
+          </ns2:dc>
+          <ns2:dipole_length units="METERS">100.0</ns2:dipole_length>
+          <ns2:filter>
+            <ns2:applied>[False]</ns2:applied>
+            <ns2:name>['counts2mv', 'lowpass']</ns2:name>
+          </ns2:filter>
+          <ns2:measurement_azimuth units="DEGREES">90.0</ns2:measurement_azimuth>
+          <ns2:measurement_tilt units="DEGREES">0.0</ns2:measurement_tilt>
+          <ns2:negative>
+            <ns2:elevation units="DEGREES">100.0</ns2:elevation>
+            <ns2:id>a</ns2:id>
+            <ns2:latitude units="DEGREES">12.12</ns2:latitude>
+            <ns2:longitude units="DEGREES">-111.12</ns2:longitude>
+            <ns2:manufacturer>test</ns2:manufacturer>
+            <ns2:model>fats</ns2:model>
+            <ns2:type>pb-pbcl</ns2:type>
+          </ns2:negative>
+          <ns2:positive>
+            <ns2:elevation units="DEGREES">101.0</ns2:elevation>
+            <ns2:id>b</ns2:id>
+            <ns2:latitude units="DEGREES">12.123</ns2:latitude>
+            <ns2:longitude units="DEGREES">-111.14</ns2:longitude>
+            <ns2:manufacturer>test</ns2:manufacturer>
+            <ns2:model>fats</ns2:model>
+            <ns2:type>ag-agcl</ns2:type>
+          </ns2:positive>
+          <ns2:type>electric</ns2:type>
+          <ns2:units>counts</ns2:units>
+        </ns2:MT>
+        <Latitude unit="DEGREES">12.123</Latitude>
+        <Longitude unit="DEGREES">-111.14</Longitude>
+        <Elevation unit="METERS">101.0</Elevation>
+        <Depth unit="METERS">101.0</Depth>
+        <Azimuth unit="DEGREES">90.0</Azimuth>
+        <Dip unit="DEGREES">0.0</Dip>
+        <Type>GEOPHYSICAL</Type>
+        <SampleRate>256.0</SampleRate>
+        <CalibrationUnits>
+          <Name>counts</Name>
+        </CalibrationUnits>
+        <Sensor>
+          <Type>ag-agcl</Type>
+          <Manufacturer>test</Manufacturer>
+          <Model>fats</Model>
+        </Sensor>
+        <DataLogger>
+          <Type>broadband</Type>
+          <Manufacturer>T. Lurric</Manufacturer>
+          <Model>Ichiban</Model>
+          <SerialNumber>mt091</SerialNumber>
+        </DataLogger>
+      </Channel>
+      <Channel code="CKN" startDate="1980-01-01T00:00:00+00:00" endDate="1980-01-01T00:00:00+00:00" locationCode="T1">
+        <ns3:MT xmlns:ns3="MT">
+          <ns3:channel_number>1</ns3:channel_number>
+          <ns3:comments>great</ns3:comments>
+          <ns3:component>Temperature</ns3:component>
+          <ns3:data_quality>
+            <ns3:rating>
+              <ns3:author>mt</ns3:author>
+              <ns3:method>ml</ns3:method>
+              <ns3:value>4</ns3:value>
+            </ns3:rating>
+          </ns3:data_quality>
+          <ns3:filter>
+            <ns3:applied>[True]</ns3:applied>
+            <ns3:comments>test</ns3:comments>
+            <ns3:name>['lowpass', 'counts2mv']</ns3:name>
+          </ns3:filter>
+          <ns3:type>temperature</ns3:type>
+        </ns3:MT>
+        <Latitude unit="DEGREES">12.324</Latitude>
+        <Longitude unit="DEGREES">-112.03</Longitude>
+        <Elevation unit="METERS">1234.0</Elevation>
+        <Depth unit="METERS">1234.0</Depth>
+        <Azimuth unit="DEGREES">0.0</Azimuth>
+        <Dip unit="DEGREES">0.0</Dip>
+        <Type>GEOPHYSICAL</Type>
+        <SampleRate>256.0</SampleRate>
+        <CalibrationUnits>
+          <Name>celsius</Name>
+        </CalibrationUnits>
+        <Sensor/>
+        <DataLogger>
+          <Type>broadband</Type>
+          <Manufacturer>T. Lurric</Manufacturer>
+          <Model>Ichiban</Model>
+          <SerialNumber>mt091</SerialNumber>
+        </DataLogger>
+      </Channel>
+    </Station>
+  </Network>
+</FDSNStationXML>
