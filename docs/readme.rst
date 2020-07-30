@@ -1,4 +1,4 @@
-.. image:: images/mth5_logo.png
+.. image:: source/images/mth5_logo.png
    :alt: MTH5 Logo
    :align: center
 
@@ -25,6 +25,6 @@ MTH5 Format
 -  The basic format of MTH5 is illustrated below, where metadata is
    attached at each level.
 
-.. figure:: images/example_mt_file_structure.png
+.. figure:: source/images/example_mt_file_structure.png
    :alt: MTH5 Format
    :align: center
