@@ -319,8 +319,8 @@ Survey Attributes
        |                                              |                                |                |
        | Style: Alpha Numeric                         |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **citation_dataset.doi**                     | The full URL of the doi Number | \url{http://doi|
-       |                                              | provided by the archive that   | .10.adfabe}    |
+       | **citation_dataset.doi**                     | The full URL of the doi Number | http://doi.1.a |
+       |                                              | provided by the archive that   |                |
        | Required: True                               | describes the raw data         |                |
        |                                              |                                |                |
        | Units: None                                  |                                |                |
@@ -329,8 +329,8 @@ Survey Attributes
        |                                              |                                |                |
        | Style: URL                                   |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **citation_journal.doi**                     | The full URL of the doi Number | \url{http://do |
-       |                                              | for a journal article(s) that  | i.10.xbsfs2}   |
+       | **citation_journal.doi**                     | The full URL of the doi Number | http://doi.1.b |
+       |                                              | for a journal article(s) that  |                |
        | Required: False                              | uses these data.  If multiple  |                |
        |                                              | journal articles use these     |                |
        | Units: None                                  | data provide as a comma        |                |
@@ -373,8 +373,8 @@ Survey Attributes
        |                                              | encompass the survey.  These   | USA            |
        | Required: True                               | should be broad geographic     |                |
        |                                              | names.  Further information    |                |
-       | Units: None                                  | can be found at \url{https://w |                |
-       |                                              | ww.usgs.gov/core-science-      |                |
+       | Units: None                                  | can be found at https://www.   |                |
+       |                                              | usgs.gov/core-science-         |                |
        | Type: String                                 | systems/ngp/board-on-          |                |
        |                                              | geographic-names}              |                |
        | Style: Free Form                             |                                |                |
@@ -458,8 +458,8 @@ Survey Attributes
        |                                              | CC 0 | CC BY | CC BY-SA|       |                |
        | Units: None                                  | CC BY-ND | CC BY-NC-SA |       |                |
        |                                              | CC BY-NC-ND]. For details      |                |
-       | Type: String                                 | visit \url{https://creativecom |                |
-       |                                              | mons.org/licenses/             |                |
+       | Type: String                                 | visit https://creativecommons. |                |
+       |                                              | org/licenses/                  |                |
        | Style: Controlled Vocabulary                 |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
        | **southeast_corner.latitude**                | Latitude of the southeast      | 23.134         |
@@ -1457,7 +1457,7 @@ Electric Channel Attributes
        |                                              |                                |                |
        | Style: Number                                |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **dipole_length**                            | Length of the dipole           | 55.25          |
+       | **dipole_length**                            | Length of the dipole in meters | 55.25          |
        |                                              |                                |                |
        | Required: True                               |                                |                |
        |                                              |                                |                |
@@ -1469,7 +1469,7 @@ Electric Channel Attributes
        +----------------------------------------------+--------------------------------+----------------+
        | **filter.applied**                           | Boolean if filter has been     |  True          |
        |                                              | applied or not. If more than   |                |
-       | Required: True                               | one filter.                    |                |
+       | Required: True                               | one filter input as list.      |                |
        |                                              |                                |                |
        | Units: None                                  |                                |                |
        |                                              |                                |                |
@@ -1489,7 +1489,7 @@ Electric Channel Attributes
        +----------------------------------------------+--------------------------------+----------------+
        | **filter.name**                              | Name of filter applied or to   | lowpass_electr |
        |                                              | be applied. If more than one   | ic             |
-       | Required: True                               | filter.                        |                |
+       | Required: True                               | filter input as list           |                |
        |                                              |                                |                |
        | Units: None                                  |                                |                |
        |                                              |                                |                |
@@ -1839,15 +1839,15 @@ Magnetic Channel Attributes
        |                                              | data.  Should be a descriptive | deviation      |
        | Required: False                              | name and not just the name of  |                |
        |                                              | a software package.  If a      |                |
-       | Units: None                                  | rating is provided             |                |
+       | Units: None                                  | rating is provided.            |                |
        |                                              |                                |                |
        | Type: String                                 |                                |                |
        |                                              |                                |                |
        | Style: Free Form                             |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
        | **data_quality.rating.value**                | Rating from 1-5 where 1 is bad | 4              |
-       |                                              |                                |                |
-       | Required: True                               |                                |                |
+       |                                              | 5 is excellent. 0 means no     |                |
+       | Required: True                               | rating was quantified.         |                |
        |                                              |                                |                |
        | Units: None                                  |                                |                |
        |                                              |                                |                |
@@ -1867,7 +1867,7 @@ Magnetic Channel Attributes
        +----------------------------------------------+--------------------------------+----------------+
        | **filter.applied**                           | Boolean if filter has been     |  True          |
        |                                              | applied or not. If more than   |                |
-       | Required: True                               | one filter                     |                |
+       | Required: True                               | one filter input as list       |                |
        |                                              |                                |                |
        | Units: None                                  |                                |                |
        |                                              |                                |                |
@@ -1887,7 +1887,7 @@ Magnetic Channel Attributes
        +----------------------------------------------+--------------------------------+----------------+
        | **filter.name**                              | Name of filter applied or to   | lowpass_electr |
        |                                              | be applied. If more than one   | ic             |
-       | Required: True                               | filter.                        |                |
+       | Required: True                               | filter import as list          |                |
        |                                              |                                |                |
        | Units: None                                  |                                |                |
        |                                              |                                |                |
@@ -2332,8 +2332,8 @@ Auxiliary Channel Attributes
        | Style: Free Form                             |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
        | **data_quality.rating.value**                | Rating from 1-5 where 1 is bad | 4              |
-       |                                              |                                |                |
-       | Required: True                               |                                |                |
+       |                                              | 5 is excellent. 0 means no     |                |
+       | Required: True                               | rating was quantified.         |                |
        |                                              |                                |                |
        | Units: None                                  |                                |                |
        |                                              |                                |                |
@@ -2353,7 +2353,7 @@ Auxiliary Channel Attributes
        +----------------------------------------------+--------------------------------+----------------+
        | **filter.applied**                           | Boolean if filter has been     |  True          |
        |                                              | applied or not. If more than   |                |
-       | Required: True                               | one filter                     |                |
+       | Required: True                               | one filter input as list.      |                |
        |                                              |                                |                |
        | Units: None                                  |                                |                |
        |                                              |                                |                |
@@ -2373,7 +2373,7 @@ Auxiliary Channel Attributes
        +----------------------------------------------+--------------------------------+----------------+
        | **filter.name**                              | Name of filter applied or to   | lowpass_auxili |
        |                                              | be applied. If more than one   | ary            |
-       | Required: True                               | filter                         |                |
+       | Required: True                               | filter input as list.          |                |
        |                                              |                                |                |
        | Units: None                                  |                                |                |
        |                                              |                                |                |
