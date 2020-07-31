@@ -270,8 +270,9 @@ survey.
    :name: tab:survey
 
    .. table:: Attributes for Survey
+       :class: tight-table
        :widths: 30 50 20
-   
+	   
        +----------------------------------------------+--------------------------------+----------------+
        | **Metadata Key**                             | **Description**                | **Example**    |
        +==============================================+================================+================+
@@ -574,6 +575,8 @@ metadata but does not require a new station entry.
    :name: tab:station
 
    .. table:: Attributes for Station
+       :class: tight-table
+       :widths: 30 50 20
    
        +----------------------------------------------+--------------------------------+----------------+
        | **Metadata Key**                             | **Description**                | **Example**    |
@@ -928,6 +931,8 @@ time and maximum time for all channels recorded.
    :name: tab:run
 
    .. table:: Attributes for Run
+       :class: tight-table
+       :widths: 30 50 20
 
        +----------------------------------------------+--------------------------------+----------------+
        | **Metadata Key**                             | **Description**                | **Example**    |
@@ -1304,6 +1309,8 @@ for a single station for a single run.
    :name: tab:electric
 
    .. table:: Attributes for Electric
+       :class: tight-table
+       :widths: 30 50 20
 
        +----------------------------------------------+--------------------------------+----------------+
        | **Metadata Key**                             | **Description**                | **Example**    |
@@ -1767,6 +1774,8 @@ at a single station for a single run.
    :name: tab:magnetic
 
    .. table:: Attributes for Magnetic
+       :class: tight-table
+       :widths: 30 50 20
 
        +----------------------------------------------+--------------------------------+----------------+
        | **Metadata Key**                             | **Description**                | **Example**    |
@@ -2162,6 +2171,8 @@ For example ``name: "[counts2mv, notch_60hz, e_gain]"`` and
    :name: tab:filter
 
    .. table:: Attributes for Filter
+       :class: tight-table
+       :widths: 30 50 20
 
        +----------------------------------------------+--------------------------------+----------------+
        | **Metadata Key**                             | **Description**                | **Example**    |
@@ -2243,6 +2254,8 @@ Auxiliary channels include state of health channels, temperature, etc.
    :name: tab:auxiliary
 
    .. table:: Attributes for Auxiliary
+       :class: tight-table
+       :widths: 30 50 20
 
        +----------------------------------------------+--------------------------------+----------------+
        | **Metadata Key**                             | **Description**                | **Example**    |
