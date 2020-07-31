@@ -53,19 +53,6 @@ much of the suggested metadata as possible for a full description of the
 data.
 
 .. figure:: example_mt_file_structure.pdf
-   :alt: Schematic of a MT time series file structure with appropriate
-   metadata. The top level is the *Survey* that contains general
-   information about who, what, when, where, and how the data were
-   collected. Underneath *Survey* are the *Station* and *Filter*.
-   *Filter* contains information about different filters that need to be
-   applied to the raw data to get appropriate units and calibrated
-   measurements. Underneath *Station* are *Run*, which contain data that
-   were collected at a single sampling rate with common start and end
-   time at a single station. Finally, *Channel* describes each channel
-   of data collected and can be an *Auxiliary*, *Electric*, or
-   *Magnetic*. Metadata is attributed based on the type of data
-   collected in the channel.
-   :name: fig:example
 
    Schematic of a MT time series file structure with appropriate
    metadata. The top level is the *Survey* that contains general
@@ -166,13 +153,7 @@ upwards.
   transformed reference frame can then be recorded in
   ``station.orientation.transformed_reference_frame``.
 
-.. figure:: reference_frame.pdf
-   :alt: Diagram showing a right-handed geographic coordinate system.
-   The azimuth is measured positive clockwise along the horizontal axis
-   and tilt is measured from the vertical axis with positive down = 0,
-   positive up = 180, and horizontal = 90.
-   :name: fig:reference
-
+.. figure:: reference_frame.png
    Diagram showing a right-handed geographic coordinate system. The
    azimuth is measured positive clockwise along the horizontal axis and
    tilt is measured from the vertical axis with positive down = 0,
@@ -204,8 +185,6 @@ Acceptable units are only those from the International System of Units
       Time                 second
       Voltage              volt
       ==================== ===============
-
-[tab:units]
 
 String Formats
 --------------
@@ -277,7 +256,6 @@ Note that any list should be comma separated.
       |                      | web browser          |                      |
       +----------------------+----------------------+----------------------+
 
-[tab:values]
 
 Survey
 ======
@@ -288,248 +266,46 @@ episodes but should be confined to a specific experiment or project. The
 ``Survey`` metadata category describes the general parameters of the
 survey.
 
-	  +----------------------+----------------------+----------------------+
-      | **Metadata Key**     | **Description**      | **Example**          |
-      +======================+======================+======================+
-
-**acquired_by.author**
-
-None
-
-String
-
-Free Form
-
-| & Name of the person or persons who acquired the data. This can be
-  different from the project lead if a contractor or different group
-  collected the data. & person name
-
-**acquired_by.comments**
-
-None
-
-String
-
-Free Form
-
-| & Any comments about aspects of how the data were collected or any
-  inconsistencies in the data. & Lightning strike caused a time skip at
-  8 am UTC.
-
-**archive_id**
-
-None
-
-String
-
-Alpha Numeric
-
-| & Alphanumeric name provided by the archive. For IRIS this will be the
-  FDSN providing a code. & YKN20
-
-**archive_network**
-
-None
-
-String
-
-Alpha Numeric
-
-| & Network code given by PASSCAL/IRIS/FDSN. This will be a two
-  character String that describes who and where the network operates. &
-  EM
-
-**citation_dataset.doi**
-
-None
-
-String
-
-URL
-
-| & The full URL of the doi Number provided by the archive that
-  describes the raw data & http://doi.10.adfabe
-
-**citation_journal.doi**
-
-None
-
-String
-
-URL
-
-| & The full URL of the doi Number for a journal article(s) that uses
-  these data. If multiple journal articles use these data provide as a
-  comma separated String of urls. & http://doi.10.xbsfs, or
-  http://doi.10.xbsfs, http://doi.10.xbsfs2
-
-[tab:survey]
-
 .. container::
    :name: tab:survey2
 
-   .. table:: Attributes for Survey Continued
+   .. table:: Attributes for Survey
+   
+     +---------------------------------------------+------------------------------------------------+-------------------------------+
+	 | **Meadata Key**                             | **Description**                                | **Example**                   |
+	 +=============================================+================================================+===============================+
+	 | **acquired_by.author**                      | Name of the person or persons who acquired the | person name                   |
+	 |                                             |                                                |                               |
+	 | Required: True                              | data.  This can be different from the project  |                               |
+	 |                                             |                                                |                               |
+	 | Units: None                                 | lead if a contractor or different group        |                               |
+	 |                                             |                                                |                               |
+	 | Type: String                                | collected the data.                            |                               |
+	 |                                             |                                                |                               |
+	 | Style: Free Form                            |                                                |                               |
+	 +---------------------------------------------+------------------------------------------------+-------------------------------+
+	 | **acquired_by.comments**                    | Any comments about aspects of how the data     | Lightning strike caused a time|
+	 |                                             |                                                |                               |
+	 | Required: False                             | were collected or any inconsistencies in the   | skip at 8 am UTC.             |
+	 |                                             |                                                |                               |
+	 | Units: None                                 | data.                                          |                               |
+	 |                                             |                                                |                               |
+	 | Type: String                                |                                                |                               |
+	 |                                             |                                                |                               |
+	 | Style: Free Form                            |                                                |                               |
+	 +---------------------------------------------+------------------------------------------------+-------------------------------+
+	 | **archive_id**                              | Alphanumeric name provided by the archive. For | YKN20                         |
+	 |                                             |                                                |                               |
+	 | Required: True                              | IRIS this will be the FDSN providing a code.   |                               |
+	 |                                             |                                                |                               |
+	 | Units: None                                 |                                                |                               |
+	 |                                             |                                                |                               |
+	 | Type: String                                |                                                |                               |
+	 |                                             |                                                |                               |
+	 | Style: Alpha Numeric                        |                                                |                               |
+	 +---------------------------------------------+------------------------------------------------+-------------------------------+
+	
 
-      +----------------------+----------------------+----------------------+
-      | **Metadata Key**     | **Description**      | **Example**          |
-      +======================+======================+======================+
-      | **comments**         | Any comments about   | Solar activity low.  |
-      |                      | the survey that are  |                      |
-      | None                 | important for any    |                      |
-      |                      | user to know.        |                      |
-      | String               |                      |                      |
-      |                      |                      |                      |
-      | Free Form            |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **country**          | Country or countries | USA, Canada          |
-      |                      | that the survey is   |                      |
-      | None                 | located in. If       |                      |
-      |                      | multiple input as    |                      |
-      | String               | comma separated      |                      |
-      |                      | names.               |                      |
-      | Free Form            |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **datum**            | The reference datum  | WGS84                |
-      |                      | for all geographic   |                      |
-      | None                 | coordinates          |                      |
-      |                      | throughout the       |                      |
-      | String               | survey. It is up to  |                      |
-      |                      | the user to be sure  |                      |
-      | Controlled           | that all coordinates |                      |
-      | Vocabulary           | are projected into   |                      |
-      |                      | this datum. Should   |                      |
-      |                      | be a well-known      |                      |
-      |                      | datum: [ WGS84       |                      |
-      |                      | :math:`|` NAD83      |                      |
-      |                      | :math:`|` OSGB36     |                      |
-      |                      | :math:`|` GDA94      |                      |
-      |                      | :math:`|` ETRS89     |                      |
-      |                      | :math:`|` PZ-90.11   |                      |
-      |                      | :math:`|` ... ]      |                      |
-      +----------------------+----------------------+----------------------+
-      | **geographic_name**  | Geographic names     | Eastern Mojave,      |
-      |                      | that encompass the   | Southwestern USA     |
-      | None                 | survey. These should |                      |
-      |                      | be broad geographic  |                      |
-      | String               | names. Further       |                      |
-      |                      | information can be   |                      |
-      | Free Form            | found at             |                      |
-      |                      | https://www          |                      |
-      |                      | .usgs.gov/core-scien |                      |
-      |                      | ce-systems/ngp/board |                      |
-      |                      | -on-geographic-names |                      |
-      +----------------------+----------------------+----------------------+
-      | **name**             | Descriptive name of  | MT Characterization  |
-      |                      | the survey, similar  | of Yukon Terrane     |
-      | None                 | to the title of a    |                      |
-      |                      | journal article.     |                      |
-      | String               |                      |                      |
-      |                      |                      |                      |
-      | Free Form            |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **northwe            | Latitude of the      |                      |
-      | st_corner.latitude** | northwest corner of  |                      |
-      |                      | the survey in the    |                      |
-      | decimal degrees      | datum specified.     |                      |
-      |                      |                      |                      |
-      | Float                |                      |                      |
-      |                      |                      |                      |
-      | Number               |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **northwes           | Longitude of the     |                      |
-      | t_corner.longitude** | northwest corner of  |                      |
-      |                      | the survey in the    |                      |
-      | decimal degrees      | datum specified.     |                      |
-      |                      |                      |                      |
-      | Float                |                      |                      |
-      |                      |                      |                      |
-      | Number               |                      |                      |
-      +----------------------+----------------------+----------------------+
-
-[tab:survey2]
-
-.. container::
-   :name: tab:survey3
-
-   .. table:: Attributes for Survey Continued
-
-      +-------------------------+-------------------------+----------------+
-      | **Metadata Key**        | **Description**         | **Example**    |
-      +=========================+=========================+================+
-      | **project**             | Alphanumeric name for   | GEOMAG         |
-      |                         | the project. This is    |                |
-      | None                    | different than the      |                |
-      |                         | archive_id in that it   |                |
-      | String                  | describes a project as  |                |
-      |                         | having a common project |                |
-      | Free Form               | lead and source of      |                |
-      |                         | funding. There may be   |                |
-      |                         | multiple surveys within |                |
-      |                         | a project. For example  |                |
-      |                         | if the project is to    |                |
-      |                         | estimate geomagnetic    |                |
-      |                         | hazards that project =  |                |
-      |                         | GEOMAG but the          |                |
-      |                         | archive_id = YKN20.     |                |
-      +-------------------------+-------------------------+----------------+
-      | **project_lead.author** | Name of the project     | Magneto        |
-      |                         | lead. This should be a  |                |
-      | None                    | person who is           |                |
-      |                         | responsible for the     |                |
-      | String                  | data.                   |                |
-      |                         |                         |                |
-      | Free Form               |                         |                |
-      +-------------------------+-------------------------+----------------+
-      | **project_lead.email**  | Email of the project    | mt.guru@em.org |
-      |                         | lead. This is in case   |                |
-      | None                    | there are any questions |                |
-      |                         | about data.             |                |
-      | String                  |                         |                |
-      |                         |                         |                |
-      | Email                   |                         |                |
-      +-------------------------+-------------------------+----------------+
-      | **proj                  | Organization name of    | MT Gurus       |
-      | ect_lead.organization** | the project lead.       |                |
-      |                         |                         |                |
-      | None                    |                         |                |
-      |                         |                         |                |
-      | String                  |                         |                |
-      |                         |                         |                |
-      | Free Form               |                         |                |
-      +-------------------------+-------------------------+----------------+
-      | **release_license**     | How the data can be     | CC 0           |
-      |                         | used. The options are   |                |
-      | None                    | based on Creative       |                |
-      |                         | Commons licenses.       |                |
-      | String                  | Options: [ CC 0         |                |
-      |                         | :math:`|` CC BY         |                |
-      | Controlled Vocabulary   | :math:`|` CC            |                |
-      |                         | BY-SA\ :math:`|` CC     |                |
-      |                         | BY-ND :math:`|` CC      |                |
-      |                         | BY-NC-SA :math:`|` CC   |                |
-      |                         | BY-NC-ND]. For details  |                |
-      |                         | visit                   |                |
-      |                         | https://creati          |                |
-      |                         | vecommons.org/licenses/ |                |
-      +-------------------------+-------------------------+----------------+
-      | **sout                  | Latitude of the         |                |
-      | heast_corner.latitude** | southeast corner of the |                |
-      |                         | survey in the datum     |                |
-      | decimal degrees         | specified.              |                |
-      |                         |                         |                |
-      | Float                   |                         |                |
-      |                         |                         |                |
-      | Number                  |                         |                |
-      +-------------------------+-------------------------+----------------+
-      | **south                 | Longitude of the        |                |
-      | east_corner.longitude** | southeast corner of the |                |
-      |                         | survey in the datum     |                |
-      | decimal degrees         | specified.              |                |
-      |                         |                         |                |
-      | Float                   |                         |                |
-      |                         |                         |                |
-      | Number                  |                         |                |
-      +-------------------------+-------------------------+----------------+
 
 [tab:survey3]
 
