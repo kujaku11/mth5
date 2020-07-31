@@ -229,7 +229,7 @@ Note that any list should be comma separated.
       |                      | defined in the       |                      |
       |                      | standards yet        |                      |
       +----------------------+----------------------+----------------------+
-      | List                 | List of entries      | Ex, Ey, Hx, Hy, Hz,  |
+      | List                 | List of entries      | Ex, Ey, Bx, By, Bz,  |
       |                      | using a comma        | T                    |
       |                      | separator            |                      |
       +----------------------+----------------------+----------------------+
@@ -265,6 +265,9 @@ and region. This may include multiple PIs in multiple data collection
 episodes but should be confined to a specific experiment or project. The
 ``Survey`` metadata category describes the general parameters of the
 survey.
+
+Survey Attributes
+------------------
 
 .. container::
    :name: tab:survey
@@ -317,7 +320,7 @@ survey.
        | Style: Alpha Numeric                         |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
        | **citation_dataset.doi**                     | The full URL of the doi Number | \url{http://doi|
-       |                                              | provided by the archive that   | .10.adfabe     |
+       |                                              | provided by the archive that   | .10.adfabe}    |
        | Required: True                               | describes the raw data         |                |
        |                                              |                                |                |
        | Units: None                                  |                                |                |
@@ -346,7 +349,7 @@ survey.
        |                                              |                                |                |
        | Style: Free Form                             |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **country**                                  | Country or countries that the  |  Canada        |
+       | **country**                                  | Country or countries that the  | Canada         |
        |                                              | survey is located in. If       |                |
        | Required: True                               | multiple input as comma        |                |
        |                                              | separated names.               |                |
@@ -362,9 +365,9 @@ survey.
        |                                              | up to the user to be sure that |                |
        | Units: None                                  | all coordinates are projected  |                |
        |                                              | into this datum.  Should be a  |                |
-       | Type: String                                 | well-known datum: [ WGS84 $|$  |                |
-       |                                              | NAD83 $|$ OSGB36 $|$ GDA94 $|$ |                |
-       | Style: Controlled Vocabulary                 | ETRS89 $|$ PZ-90.11 $|$ ... ]  |                |
+       | Type: String                                 | well-known datum: [ WGS84 |    |                |
+       |                                              | NAD83 | OSGB36 | GDA94 |       |                |
+       | Style: Controlled Vocabulary                 | ETRS89 | PZ-90.11 | ... ]      |                |
        +----------------------------------------------+--------------------------------+----------------+
        | **geographic_name**                          | Geographic names that          | Southwestern   |
        |                                              | encompass the survey.  These   | USA            |
@@ -452,8 +455,8 @@ survey.
        | **release_license**                          | How the data can be used. The  | CC 0           |
        |                                              | options are based on Creative  |                |
        | Required: True                               | Commons licenses.  Options: [  |                |
-       |                                              | CC 0 $|$ CC BY $|$ CC BY-SA$|$ |                |
-       | Units: None                                  | CC BY-ND $|$ CC BY-NC-SA $|$   |                |
+       |                                              | CC 0 | CC BY | CC BY-SA|       |                |
+       | Units: None                                  | CC BY-ND | CC BY-NC-SA |       |                |
        |                                              | CC BY-NC-ND]. For details      |                |
        | Type: String                                 | visit \url{https://creativecom |                |
        |                                              | mons.org/licenses/             |                |
@@ -571,10 +574,13 @@ data logger, battery, etc. are replaced during a run but the station
 remains in the same location, then this can be recorded in the ``Run``
 metadata but does not require a new station entry.
 
+Station Attributes
+-------------------
+
 .. container::
    :name: tab:station
 
-   .. table:: Attributes for Station
+   .. table::
        :class: tight-table
        :widths: 30 50 20
    
@@ -591,7 +597,7 @@ metadata but does not require a new station entry.
        |                                              |                                |                |
        | Style: Free Form                             |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **acquired_by.comments**                     | Any comments about who         | Expert diggers.|
+       | **acquired_by.comments**                     | Any comments about who         | Expert diggers |
        |                                              | acquired the data.             |                |
        | Required: False                              |                                |                |
        |                                              |                                |                |
@@ -611,10 +617,10 @@ metadata but does not require a new station entry.
        |                                              |                                |                |
        | Style: Alpha Numeric                         |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **channel_layout**                           | How the dipoles and magnetic   | +              |
+       | **channel_layout**                           | How the dipoles and magnetic   | "+"            |
        |                                              | channels of the station were   |                |
-       | Required: False                              | laid out.  Options: [ L $|$ +  |                |
-       |                                              | $|$ ... ]                      |                |
+       | Required: False                              | laid out.  Options: [ L | +    |                |
+       |                                              | | ... ]                        |                |
        | Units: None                                  |                                |                |
        |                                              |                                |                |
        | Type: String                                 |                                |                |
@@ -626,9 +632,9 @@ metadata but does not require a new station entry.
        | Required: True                               | summary of all channels        |                |
        |                                              | recorded dropped channels will |                |
        | Units: None                                  | be recorded in Run.  \qquad    |                |
-       |                                              | Options: [ Ex $|$ Ey $|$ Hx    |                |
-       | Type: String                                 | $|$ Hy $|$ Hz $|$ T $|$        |                |
-       |                                              | Battery $|$ ... ]              |                |
+       |                                              | Options: [ Ex | Ey | Bx        |                |
+       | Type: String                                 | | By | Bz | T |                |                |
+       |                                              | Battery | ... ]                |                |
        | Style: Controlled Vocabulary                 |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
        | **comments**                                 | Any comments on the station    | Pipeline near  |
@@ -644,14 +650,14 @@ metadata but does not require a new station entry.
        | **data_type**                                | All types of data recorded by  | BBMT           |
        |                                              | the station. If multiple types |                |
        | Required: True                               | input as a comma separated     |                |
-       |                                              | list. \qquad Options: [ RMT    |                |
-       | Units: None                                  | $|$ AMT $|$ BBMT $|$ LPMT $|$  |                |
-       |                                              | ULPMT $|$ ... ]                |                |
+       |                                              | list. Options: [ AMT | BBMT |  |                |
+       | Units: None                                  | LPMT]                          |                |
+       |                                              |                                |                |
        | Type: String                                 |                                |                |
        |                                              |                                |                |
        | Style: Controlled Vocabulary                 |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **geographic_name**                          | Closest geographic name to the |  YK"           |
+       | **geographic_name**                          | Closest geographic name to the | Whitehorse, YK |
        |                                              | station                        |                |
        | Required: True                               |                                |                |
        |                                              |                                |                |
@@ -685,8 +691,8 @@ metadata but does not require a new station entry.
        |                                              | reference model as             |                |
        | Required: True                               | \{model_name\\{-\\{YYYY\.      |                |
        |                                              | Model options: \qquad [ EMAG2  |                |
-       | Units: None                                  | $|$ EMM $|$ HDGM $|$ IGRF $|$  |                |
-       |                                              | WMM ]                          |                |
+       | Units: None                                  | | EMM | HDGM | IGRF | WMM ]    |                |
+       |                                              |                                |                |
        | Type: String                                 |                                |                |
        |                                              |                                |                |
        | Style: Controlled Vocabulary                 |                                |                |
@@ -733,8 +739,8 @@ metadata but does not require a new station entry.
        +----------------------------------------------+--------------------------------+----------------+
        | **orientation.method**                       | Method for orienting station   | compass        |
        |                                              | channels.  Options: [ compass  |                |
-       | Required: True                               | $|$ GPS $|$ theodolite $|$     |                |
-       |                                              | electric_compass $|$ ... ]     |                |
+       | Required: True                               | | GPS | theodolite |           |                |
+       |                                              | electric_compass | ... ]       |                |
        | Units: None                                  |                                |                |
        |                                              |                                |                |
        | Type: String                                 |                                |                |
@@ -883,7 +889,7 @@ Example Station JSON
                "comments": null},
            "archive_id": "MT012",
            "channel_layout": "L",
-           "channels_recorded": "Ex, Ey, Hx, Hy",
+           "channels_recorded": "Ex, Ey, Bx, By",
            "comments": null,
            "data_type": "MT",
            "geographic_name": "Whitehorse, Yukon",
@@ -927,10 +933,13 @@ station is relocated then a new station should be created. If a run has
 channels that drop out, the start and end period will be the minimum
 time and maximum time for all channels recorded.
 
+Run Attributes
+---------------
+
 .. container::
    :name: tab:run
 
-   .. table:: Attributes for Run
+   .. table::
        :class: tight-table
        :widths: 30 50 20
 
@@ -977,7 +986,7 @@ time and maximum time for all channels recorded.
        |                                              |                                |                |
        | Style: name list                             |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **channels_recorded_magnetic**               | List of magnetic channels      |  Hz            |
+       | **channels_recorded_magnetic**               | List of magnetic channels      |  Bz            |
        |                                              | recorded.                      |                |
        | Required: True                               |                                |                |
        |                                              |                                |                |
@@ -1168,9 +1177,9 @@ time and maximum time for all channels recorded.
        | Style: Free Form                             |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
        | **data_type**                                | Type of data recorded for this | BBMT           |
-       |                                              | run.  Options: [ RMT $|$ AMT   |                |
-       | Required: True                               | $|$ BBMT $|$ LPMT $|$ ULPMT    |                |
-       |                                              | $|$ ... ]                      |                |
+       |                                              | run.  Options: [ AMT | BBMT |  |                |
+       | Required: True                               | LPMT ]                         |                |
+       |                                              |                                |                |
        | Units: None                                  |                                |                |
        |                                              |                                |                |
        | Type: String                                 |                                |                |
@@ -1269,7 +1278,7 @@ Example Run JSON
            "acquired_by.comments": "No hands all telekinesis.",
            "channels_recorded_auxiliary": ["temperature", "battery"],
            "channels_recorded_electric": ["Ex", "Ey"],
-           "channels_recorded_magnetic": ["Hx", "Hy", "Hz"],
+           "channels_recorded_magnetic": ["Bx", "By", "Bz"],
            "comments": "Good solar activity",
            "data_logger.firmware.author": "Engineer 01",
            "data_logger.firmware.name": "MTDL",
@@ -1305,10 +1314,13 @@ Electric Channel
 Electric channel refers to a dipole measurement of the electric field
 for a single station for a single run.
 
+Electric Channel Attributes
+----------------------------
+
 .. container::
    :name: tab:electric
 
-   .. table:: Attributes for Electric
+   .. table::
        :class: tight-table
        :widths: 30 50 20
 
@@ -1356,8 +1368,8 @@ for a single station for a single run.
        | Style: Free Form                             |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
        | **component**                                | Name of the component          | Ex             |
-       |                                              | measured.  Options: \quad [ Ex |                |
-       | Required: True                               | $|$ Ey $|$ ... ]               |                |
+       |                                              | measured.  Options:  [ Ex |    |                |
+       | Required: True                               | Ey | ... ]                     |                |
        |                                              |                                |                |
        | Units: None                                  |                                |                |
        |                                              |                                |                |
@@ -1367,7 +1379,7 @@ for a single station for a single run.
        +----------------------------------------------+--------------------------------+----------------+
        | **contact_resistance.end**                   | Starting contact resistance;   |  1.8           |
        |                                              | if more than one measurement   |                |
-       | Required: False                              | input as a list [1             |                |
+       | Required: False                              | input as a list [1, 2]         |                |
        |                                              |                                |                |
        | Units: ohms                                  |                                |                |
        |                                              |                                |                |
@@ -1377,7 +1389,7 @@ for a single station for a single run.
        +----------------------------------------------+--------------------------------+----------------+
        | **contact_resistance.start**                 | Starting contact resistance;   |  1.4           |
        |                                              | if more than one measurement   |                |
-       | Required: False                              | input as a list [1             |                |
+       | Required: False                              | input as a list [1, 2]         |                |
        |                                              |                                |                |
        | Units: ohms                                  |                                |                |
        |                                              |                                |                |
@@ -1399,15 +1411,15 @@ for a single station for a single run.
        |                                              | data.  Should be a descriptive | deviation      |
        | Required: False                              | name and not just the name of  |                |
        |                                              | a software package.  If a      |                |
-       | Units: None                                  | rating is provided             |                |
+       | Units: None                                  | rating is provided .           |                |
        |                                              |                                |                |
        | Type: String                                 |                                |                |
        |                                              |                                |                |
        | Style: Free Form                             |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
        | **data_quality.rating.value**                | Rating from 1-5 where 1 is bad | 4              |
-       |                                              |                                |                |
-       | Required: True                               |                                |                |
+       |                                              | 5 is excellent.  0 means no    |                |
+       | Required: True                               | rating was conducted.          |                |
        |                                              |                                |                |
        | Units: None                                  |                                |                |
        |                                              |                                |                |
@@ -1427,7 +1439,7 @@ for a single station for a single run.
        +----------------------------------------------+--------------------------------+----------------+
        | **dc.end**                                   | Ending DC value; if more than  | 1.5            |
        |                                              | one measurement input as a     |                |
-       | Required: False                              | list [1                        |                |
+       | Required: False                              | list [1, 2]                    |                |
        |                                              |                                |                |
        | Units: volts                                 |                                |                |
        |                                              |                                |                |
@@ -1437,7 +1449,7 @@ for a single station for a single run.
        +----------------------------------------------+--------------------------------+----------------+
        | **dc.start**                                 | Starting DC value; if more     | 1.1            |
        |                                              | than one measurement input as  |                |
-       | Required: False                              | a list [1                      |                |
+       | Required: False                              | a list [1, 2]                  |                |
        |                                              |                                |                |
        | Units: volts                                 |                                |                |
        |                                              |                                |                |
@@ -1770,10 +1782,13 @@ Magnetic Channel
 A magnetic channel is a recording of one component of the magnetic field
 at a single station for a single run.
 
+Magnetic Channel Attributes
+----------------------------
+
 .. container::
    :name: tab:magnetic
 
-   .. table:: Attributes for Magnetic
+   .. table::
        :class: tight-table
        :widths: 30 50 20
 
@@ -1800,9 +1815,9 @@ at a single station for a single run.
        |                                              |                                |                |
        | Style: Free Form                             |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **component**                                | Name of the component          | Hx             |
-       |                                              | measured.  Options: \quad [ Hx |                |
-       | Required: True                               | $|$ Hy $|$ Hz $|$ ... ]        |                |
+       | **component**                                | Name of the component          | Bx             |
+       |                                              | measured.  Options:  [ Bx      |                |
+       | Required: True                               | | By | Bz | ... ]              |                |
        |                                              |                                |                |
        | Units: None                                  |                                |                |
        |                                              |                                |                |
@@ -2072,7 +2087,7 @@ at a single station for a single run.
        +----------------------------------------------+--------------------------------+----------------+
        | **units**                                    | Units of the data.  if         | counts         |
        |                                              | archiving should always be     |                |
-       | Required: True                               | counts.  Options: [ counts $|$ |                |
+       | Required: True                               | counts.  Options: [ counts |   |                |
        |                                              | nanotesla ]                    |                |
        | Units: None                                  |                                |                |
        |                                              |                                |                |
@@ -2088,7 +2103,7 @@ Example Magnetic Channel JSON
 
    {    "magnetic": {
            "comments": null,
-           "component": "Hz",
+           "component": "Bz",
            "data_logger": {
                "channel_number": 2},
            "data_quality": {
@@ -2167,10 +2182,13 @@ For example ``name: "[counts2mv, notch_60hz, e_gain]"`` and
 ``applied: "[True, False, True]`` would indicate that ``counts2mv`` and
 ``e_gain`` have been applied but ``noth_60hz`` has not.
 
+Filter Attributes
+------------------ 
+
 .. container::
    :name: tab:filter
 
-   .. table:: Attributes for Filter
+   .. table::
        :class: tight-table
        :widths: 30 50 20
 
@@ -2178,8 +2196,8 @@ For example ``name: "[counts2mv, notch_60hz, e_gain]"`` and
        | **Metadata Key**                             | **Description**                | **Example**    |
        +==============================================+================================+================+
        | **type**                                     | Filter type. Options: [look up | lookup         |
-       |                                              | $|$ poles zeros $|$ converter  |                |
-       | Required: True                               | $|$ FIR $|$ ...]               |                |
+       |                                              | | poles zeros | converter      |                |
+       | Required: True                               | | FIR | ...]                   |                |
        |                                              |                                |                |
        | Units: None                                  |                                |                |
        |                                              |                                |                |
@@ -2250,10 +2268,13 @@ Auxiliary Channels
 
 Auxiliary channels include state of health channels, temperature, etc.
 
+Auxiliary Channel Attributes
+----------------------------- 
+
 .. container::
    :name: tab:auxiliary
 
-   .. table:: Attributes for Auxiliary
+   .. table::
        :class: tight-table
        :widths: 30 50 20
 
@@ -2282,7 +2303,7 @@ Auxiliary channels include state of health channels, temperature, etc.
        +----------------------------------------------+--------------------------------+----------------+
        | **component**                                | Name of the component          | temperature    |
        |                                              | measured.  Options: [          |                |
-       | Required: True                               | temperature $|$ battery $|$    |                |
+       | Required: True                               | temperature | battery |        |                |
        |                                              | ... ]                          |                |
        | Units: None                                  |                                |                |
        |                                              |                                |                |
@@ -2531,13 +2552,15 @@ Example Auxiliary XML
 Option Definitions
 ==================
 
+Electromagnetic Frequency Bands
+--------------------------------
 .. container::
    :name: em
 
    .. table:: Generalized electromagnetic period bands. Some overlap, use the closest definition.
 
       +---------------+------------------------------+---------------------------------+
-      | **Data Type** | **Definition**               | **Sample Rate [samples/s]**     |
+      | **Data Type** | **Definition**               | **Frequency Range**             |
       +===============+==============================+=================================+
       | AMT           | radio magnetotellurics       | :math:`>10^{3}`                 |
       +---------------+------------------------------+---------------------------------+
@@ -2547,8 +2570,10 @@ Option Definitions
       +---------------+------------------------------+---------------------------------+
 
 
+Channel Components
+-------------------
 .. container::
-   :name: tab:channel_types
+   :name: channel_types
 
    .. table:: These are the common channel components. More can be added.
 
@@ -2556,14 +2581,17 @@ Option Definitions
       **Channel Type** **Definition**
       ================ ==========================
       E                electric field measurement
-      H                magnetic field measurement
+      B                magnetic field measurement
       T                temperature
       Battery          battery
       SOH              state-of-health
       ================ ==========================
 
+Directions
+------------
+
 .. container::
-   :name: tab:diretions
+   :name: directions
 	
    .. table:: The convention for many MT setups follows the right-hand-rule (Figure `2 <#fig:reference>`__) with X in the northern direction, Y in the eastern direction, and Z positive down. If the setup has multiple channels in the same direction, they can be labeled with a Number. For instance, if you measure multiple electric fields Ex01, Ey01, Ex02, Ey02.
 
