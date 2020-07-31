@@ -1,6 +1,8 @@
 mth5 package
 ============
 
+.. contents::  :local:
+
 Subpackages
 -----------
 
