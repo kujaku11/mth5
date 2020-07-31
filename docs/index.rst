@@ -10,7 +10,6 @@ Welcome to MTH5's documentation!
     readme
     installation
     usage
-    modules
     contributing
     authors
     history

@@ -154,7 +154,6 @@ Each metadata keyword can have a specific string style, such as date and time or
 		\toprule
 		\textbf{Style} & \textbf{Description}  & \textbf{Example} \\ \midrule
 		Free Form & An unregulated string that can contain \{a-z, A-Z, 0-9\} and special characters & This is Free Form! \\ \midrule
-		
 		Alpha Numeric & A string that contains no spaces and only characters \{a-z, A-Z, 0-9, -, /, \_\} & WGS84 or GEOMAG-USGS \\ \midrule
 		Controlled Vocabulary & Only certain names or words are allowed. In this case, examples of acceptable values are provided in the documentation as [ option01 $|$ option02 $|$ ... ]. The ... indicates that other options are possible but have not been defined in the standards yet &  reference\_frame = geographic \\ \midrule
 		List & List of entries using a comma separator & Ex, Ey, Hx, Hy, Hz, T \\ \midrule
@@ -339,11 +338,9 @@ A station encompasses a single site where data are collected. If the location ch
 		\textbf{Metadata Key} & \textbf{Description} & \textbf{Example} \\ \toprule
 		\entry{location.latitude}{\True}{decimal degrees}{Float}{Number}{Latitude of station location in datum specified at survey level.}{23.134}
 		\entry{location.longitude}{\True}{decimal degrees}{Float}{Number}{Longitude of station location in datum specified at survey level.}{14.23}
-%		\entry{orientation.layout\_rotation\_angle}{\False}{degrees}{Float}{Number}{If the data were collected in a coordinate system that is neither geomagnetic or geographic but still orthogonal this angle will specify the rotation of the layout.  For example if you layout your x component N30W and your y component N60E, then the rotation angle would be N30E.}{0}
 		\entry{orientation.method}{\True}{None}{String}{Controlled Vocabulary}{Method for orienting station channels.  Options: [ compass $|$ GPS $|$ theodolite $|$ electric\_compass $|$ ... ]}{compass}
 		\entry{orientation.reference\_frame}{\True}{None}{String}{Controlled Vocabulary}{Reference frame for station layout.  There are only 2 options geographic and geomagnetic.  Both assume a right-handed coordinate system with North=0, E=90 and vertical positive downward.  Options: [ geographic $|$ geomagnetic ]}{geomagnetic}
 		\entry{orientation.transformed\_reference\_frame}{\False}{None}{Float}{Number}{Reference frame rotation angel relative to orientation.reference\_frame assuming positive clockwise. Should only be used if data are rotated.}{10}
-%		\entry{orientation.option}{\True}{None}{String}{Controlled Vocabulary}{How the data are archived with respect to channel orientation.  This will help a user orient the data into the proper coordinate system. \qquad Options: ['channel-measurement specific', 'geographic orthogonal', 'geomagnetic orthogonal', 'site-specific orthogonal']}{geomagnetic-orthogonal}
 		\entry{provenance.comments}{\False}{None}{String}{Free Form}{Any comments on provenance of the data.}{From a graduated graduate student.}
 		\entry{provenance.creation\_time}{\True}{None}{String}{Date Time}{Date and time the file was created.}{2020-02-08 T12:23:40.324600 +00:00}
 	\end{tabular}

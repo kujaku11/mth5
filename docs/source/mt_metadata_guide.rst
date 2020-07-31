@@ -2,8 +2,7 @@
 A Standard for Exchangeable Magnetotelluric Metadata
 ====================================================
 
-:Author: Working Group for Data Handling and Software - PASSCAL
-Magnetotelluric Program
+:Author: Working Group for Data Handling and Software - PASSCAL Magnetotelluric Program
 :Date:   **Version 0.0.16 – July 2020**\  [1]_
 
 Introduction
@@ -52,7 +51,7 @@ labeled as and suggested keywords are labeled as . A user should use as
 much of the suggested metadata as possible for a full description of the
 data.
 
-.. figure:: example_mt_file_structure.pdf
+.. figure:: images/example_mt_file_structure.png
 
    Schematic of a MT time series file structure with appropriate
    metadata. The top level is the *Survey* that contains general
@@ -153,7 +152,8 @@ upwards.
   transformed reference frame can then be recorded in
   ``station.orientation.transformed_reference_frame``.
 
-.. figure:: reference_frame.png
+.. figure:: images/reference_frame.svg
+
    Diagram showing a right-handed geographic coordinate system. The
    azimuth is measured positive clockwise along the horizontal axis and
    tilt is measured from the vertical axis with positive down = 0,
@@ -267,86 +267,248 @@ episodes but should be confined to a specific experiment or project. The
 survey.
 
 .. container::
-   :name: tab:survey2
+   :name: tab:survey
 
    .. table:: Attributes for Survey
+       :widths: 30 50 20
    
-     +---------------------------------------------+------------------------------------------------+-------------------------------+
-	 | **Meadata Key**                             | **Description**                                | **Example**                   |
-	 +=============================================+================================================+===============================+
-	 | **acquired_by.author**                      | Name of the person or persons who acquired the | person name                   |
-	 |                                             |                                                |                               |
-	 | Required: True                              | data.  This can be different from the project  |                               |
-	 |                                             |                                                |                               |
-	 | Units: None                                 | lead if a contractor or different group        |                               |
-	 |                                             |                                                |                               |
-	 | Type: String                                | collected the data.                            |                               |
-	 |                                             |                                                |                               |
-	 | Style: Free Form                            |                                                |                               |
-	 +---------------------------------------------+------------------------------------------------+-------------------------------+
-	 | **acquired_by.comments**                    | Any comments about aspects of how the data     | Lightning strike caused a time|
-	 |                                             |                                                |                               |
-	 | Required: False                             | were collected or any inconsistencies in the   | skip at 8 am UTC.             |
-	 |                                             |                                                |                               |
-	 | Units: None                                 | data.                                          |                               |
-	 |                                             |                                                |                               |
-	 | Type: String                                |                                                |                               |
-	 |                                             |                                                |                               |
-	 | Style: Free Form                            |                                                |                               |
-	 +---------------------------------------------+------------------------------------------------+-------------------------------+
-	 | **archive_id**                              | Alphanumeric name provided by the archive. For | YKN20                         |
-	 |                                             |                                                |                               |
-	 | Required: True                              | IRIS this will be the FDSN providing a code.   |                               |
-	 |                                             |                                                |                               |
-	 | Units: None                                 |                                                |                               |
-	 |                                             |                                                |                               |
-	 | Type: String                                |                                                |                               |
-	 |                                             |                                                |                               |
-	 | Style: Alpha Numeric                        |                                                |                               |
-	 +---------------------------------------------+------------------------------------------------+-------------------------------+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **Metadata Key**                             | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **acquired_by.author**                       | Name of the person or persons  | person name    |
+       |                                              | who acquired the data.  This   |                |
+       | Required: True                               | can be different from the      |                |
+       |                                              | project lead if a contractor   |                |
+       | Units: None                                  | or different group collected   |                |
+       |                                              | the data.                      |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **acquired_by.comments**                     | Any comments about aspects of  | Lightning      |
+       |                                              | how the data were collected or | strike caused a|
+       | Required: False                              | any inconsistencies in the     | time skip at 8 |
+       |                                              | data.                          | am UTC.        |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **archive_id**                               | Alphanumeric name provided by  | YKN20          |
+       |                                              | the archive. For IRIS this     |                |
+       | Required: True                               | will be the FDSN providing a   |                |
+       |                                              | code.                          |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Alpha Numeric                         |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **archive_network**                          | Network code given by          | EM             |
+       |                                              | PASSCAL/IRIS/FDSN.  This will  |                |
+       | Required: True                               | be a two character String that |                |
+       |                                              | describes who and where the    |                |
+       | Units: None                                  | network operates.              |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Alpha Numeric                         |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **citation_dataset.doi**                     | The full URL of the doi Number | \url{http://doi|
+       |                                              | provided by the archive that   | .10.adfabe     |
+       | Required: True                               | describes the raw data         |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: URL                                   |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **citation_journal.doi**                     | The full URL of the doi Number | \url{http://do |
+       |                                              | for a journal article(s) that  | i.10.xbsfs2}   |
+       | Required: False                              | uses these data.  If multiple  |                |
+       |                                              | journal articles use these     |                |
+       | Units: None                                  | data provide as a comma        |                |
+       |                                              | separated String of urls.      |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: URL                                   |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **comments**                                 | Any comments about the survey  | Solar activity |
+       |                                              | that are important for any     | low.           |
+       | Required: False                              | user to know.                  |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **country**                                  | Country or countries that the  |  Canada        |
+       |                                              | survey is located in. If       |                |
+       | Required: True                               | multiple input as comma        |                |
+       |                                              | separated names.               |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **datum**                                    | The reference datum for all    | WGS84          |
+       |                                              | geographic coordinates         |                |
+       | Required: True                               | throughout the survey. It is   |                |
+       |                                              | up to the user to be sure that |                |
+       | Units: None                                  | all coordinates are projected  |                |
+       |                                              | into this datum.  Should be a  |                |
+       | Type: String                                 | well-known datum: [ WGS84 $|$  |                |
+       |                                              | NAD83 $|$ OSGB36 $|$ GDA94 $|$ |                |
+       | Style: Controlled Vocabulary                 | ETRS89 $|$ PZ-90.11 $|$ ... ]  |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **geographic_name**                          | Geographic names that          | Southwestern   |
+       |                                              | encompass the survey.  These   | USA            |
+       | Required: True                               | should be broad geographic     |                |
+       |                                              | names.  Further information    |                |
+       | Units: None                                  | can be found at \url{https://w |                |
+       |                                              | ww.usgs.gov/core-science-      |                |
+       | Type: String                                 | systems/ngp/board-on-          |                |
+       |                                              | geographic-names}              |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **name**                                     | Descriptive name of the survey | MT Characteriza|
+       |                                              |                                | tion of Yukon  |
+       | Required: True                               |                                | Terrane        |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **northwest_corner.latitude**                | Latitude of the northwest      | 23.134         |
+       |                                              | corner of the survey in the    |                |
+       | Required: True                               | datum specified.               |                |
+       |                                              |                                |                |
+       | Units: decimal degrees                       |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **northwest_corner.longitude**               | Longitude of the northwest     | 14.23          |
+       |                                              | corner of the survey in the    |                |
+       | Required: True                               | datum specified.               |                |
+       |                                              |                                |                |
+       | Units: decimal degrees                       |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **project**                                  | Alphanumeric name for the      | GEOMAG         |
+       |                                              | project.  This is different    |                |
+       | Required: True                               | than the archive_id in that it |                |
+       |                                              | describes a project as having  |                |
+       | Units: None                                  | a common project lead and      |                |
+       |                                              | source of funding.  There may  |                |
+       | Type: String                                 | be multiple surveys within a   |                |
+       |                                              | project. For example if the    |                |
+       | Style: Free Form                             | project is to estimate         |                |
+       |                                              | geomagnetic hazards that       |                |
+       |                                              | project = GEOMAG but the       |                |
+       |                                              | archive_id = YKN20.            |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **project_lead.author**                      | Name of the project lead.      | Magneto        |
+       |                                              | This should be a person who is |                |
+       | Required: True                               | responsible for the data.      |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **project_lead.email**                       | Email of the project lead.     | mt.guru@em.org |
+       |                                              | This is in case there are any  |                |
+       | Required: True                               | questions about data.          |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Email                                 |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **project_lead.organization**                | Organization name of the       | MT Gurus       |
+       |                                              | project lead.                  |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **release_license**                          | How the data can be used. The  | CC 0           |
+       |                                              | options are based on Creative  |                |
+       | Required: True                               | Commons licenses.  Options: [  |                |
+       |                                              | CC 0 $|$ CC BY $|$ CC BY-SA$|$ |                |
+       | Units: None                                  | CC BY-ND $|$ CC BY-NC-SA $|$   |                |
+       |                                              | CC BY-NC-ND]. For details      |                |
+       | Type: String                                 | visit \url{https://creativecom |                |
+       |                                              | mons.org/licenses/             |                |
+       | Style: Controlled Vocabulary                 |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **southeast_corner.latitude**                | Latitude of the southeast      | 23.134         |
+       |                                              | corner of the survey in the    |                |
+       | Required: True                               | datum specified.               |                |
+       |                                              |                                |                |
+       | Units: decimal degrees                       |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **southeast_corner.longitude**               | Longitude of the southeast     | 14.23          |
+       |                                              | corner of the survey in the    |                |
+       | Required: True                               | datum specified.               |                |
+       |                                              |                                |                |
+       | Units: decimal degrees                       |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **summary**                                  | Summary paragraph of the       | Long project of|
+       |                                              | survey including the purpose;  | characterizing |
+       | Required: True                               | difficulties; data quality;    | mineral        |
+       |                                              | summary of outcomes if the     | resources in   |
+       | Units: None                                  | data have been processed and   | Yukon          |
+       |                                              | modeled.                       |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **time_period.end_date**                     | End date of the survey in UTC. | 2020-02-01     |
+       |                                              |                                |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Date                                  |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **time_period.start_date**                   | Start date of the survey in    | 1995-06-21     |
+       |                                              | UTC.                           |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Date                                  |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
 	
-
-
-[tab:survey3]
-
-.. container::
-   :name: tab:survey4
-
-   .. table:: Attributes for Survey Continued
-
-      +----------------------+----------------------+----------------------+
-      | **Metadata Key**     | **Description**      | **Example**          |
-      +======================+======================+======================+
-      | **summary**          | Summary paragraph of | Long project of      |
-      |                      | the survey including | characterizing       |
-      | None                 | the purpose;         | mineral resources in |
-      |                      | difficulties; data   | Yukon                |
-      | String               | quality; summary of  |                      |
-      |                      | outcomes if the data |                      |
-      | Free Form            | have been processed  |                      |
-      |                      | and modeled.         |                      |
-      +----------------------+----------------------+----------------------+
-      | **ti                 | End date of the      | -02-01               |
-      | me_period.end_date** | survey in UTC.       |                      |
-      |                      |                      |                      |
-      | None                 |                      |                      |
-      |                      |                      |                      |
-      | String               |                      |                      |
-      |                      |                      |                      |
-      | Date                 |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **time               | Start date of the    | -06-21               |
-      | _period.start_date** | survey in UTC.       |                      |
-      |                      |                      |                      |
-      | None                 |                      |                      |
-      |                      |                      |                      |
-      | String               |                      |                      |
-      |                      |                      |                      |
-      | Date                 |                      |                      |
-      +----------------------+----------------------+----------------------+
-
-[tab:survey4]
-
 Example Survey XML Element
 --------------------------
 
@@ -412,313 +574,300 @@ metadata but does not require a new station entry.
    :name: tab:station
 
    .. table:: Attributes for Station
-
-      +----------------------+----------------------+----------------------+
-      | **Metadata Key**     | **Description**      | **Example**          |
-      +======================+======================+======================+
-      | **                   | Name of person or    | person name          |
-      | acquired_by.author** | group that collected |                      |
-      |                      | the station data and |                      |
-      | None                 | will be the point of |                      |
-      |                      | contact if any       |                      |
-      | String               | questions arise      |                      |
-      |                      | about the data.      |                      |
-      | Free Form            |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **ac                 | Any comments about   | Expert diggers.      |
-      | quired_by.comments** | who acquired the     |                      |
-      |                      | data.                |                      |
-      | None                 |                      |                      |
-      |                      |                      |                      |
-      | String               |                      |                      |
-      |                      |                      |                      |
-      | Free Form            |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **archive_id**       | Station name that is | MT201                |
-      |                      | archived             |                      |
-      | None                 | a-z;A-Z;0-9. For     |                      |
-      |                      | IRIS this is a 5     |                      |
-      | String               | character String.    |                      |
-      |                      |                      |                      |
-      | Alpha Numeric        |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **channel_layout**   | How the dipoles and  | +                    |
-      |                      | magnetic channels of |                      |
-      | None                 | the station were     |                      |
-      |                      | laid out. Options: [ |                      |
-      | String               | L :math:`|` +        |                      |
-      |                      | :math:`|` ... ]      |                      |
-      | Controlled           |                      |                      |
-      | Vocabulary           |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | *                    | List of components   | Ex, Ey, Hx, Hy, Hz,  |
-      | *channels_recorded** | recorded by the      | T                    |
-      |                      | station. Should be a |                      |
-      | None                 | summary of all       |                      |
-      |                      | channels recorded    |                      |
-      | String               | dropped channels     |                      |
-      |                      | will be recorded in  |                      |
-      | Controlled           | Run. Options: [ Ex   |                      |
-      | Vocabulary           | :math:`|` Ey         |                      |
-      |                      | :math:`|` Hx         |                      |
-      |                      | :math:`|` Hy         |                      |
-      |                      | :math:`|` Hz         |                      |
-      |                      | :math:`|` T          |                      |
-      |                      | :math:`|` Battery    |                      |
-      |                      | :math:`|` ... ]      |                      |
-      +----------------------+----------------------+----------------------+
-      | **comments**         | Any comments on the  | Pipeline near by.    |
-      |                      | station that would   |                      |
-      | None                 | be important for a   |                      |
-      |                      | user.                |                      |
-      | String               |                      |                      |
-      |                      |                      |                      |
-      | Free Form            |                      |                      |
-      +----------------------+----------------------+----------------------+
-
-[tab:station]
-
-.. table:: Attributes for Station Continued
-
-   +----------------------+----------------------+----------------------+
-   | **Metadata Key**     | **Description**      | **Example**          |
-   +======================+======================+======================+
-   | **data_type**        | All types of data    | BBMT                 |
-   |                      | recorded by the      |                      |
-   | None                 | station. If multiple |                      |
-   |                      | types input as a     |                      |
-   | String               | comma separated      |                      |
-   |                      | list. Options: [ RMT |                      |
-   | Controlled           | :math:`|` AMT        |                      |
-   | Vocabulary           | :math:`|` BBMT       |                      |
-   |                      | :math:`|` LPMT       |                      |
-   |                      | :math:`|` ULPMT      |                      |
-   |                      | :math:`|` ... ]      |                      |
-   +----------------------+----------------------+----------------------+
-   | **geographic_name**  | Closest geographic   | "Whitehorse, YK"     |
-   |                      | name to the station, |                      |
-   | None                 | should be rather     |                      |
-   |                      | general. For further |                      |
-   | String               | details about        |                      |
-   |                      | geographic names see |                      |
-   | Free Form            | https://www          |                      |
-   |                      | .usgs.gov/core-scien |                      |
-   |                      | ce-systems/ngp/board |                      |
-   |                      | -on-geographic-names |                      |
-   +----------------------+----------------------+----------------------+
-   | **id**               | Station name. This   | bear hallabaloo      |
-   |                      | can be a longer name |                      |
-   | None                 | than the archive_id  |                      |
-   |                      | name and be a more   |                      |
-   | String               | explanatory name.    |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **location.de        | Any comments on      | Different than       |
-   | clination.comments** | declination that are | recorded declination |
-   |                      | important to an end  | from data logger.    |
-   | None                 | user.                |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **location           | Name of the          | WMM-2016             |
-   | .declination.model** | geomagnetic          |                      |
-   |                      | reference model as   |                      |
-   | None                 | {m                   |                      |
-   |                      | odel_name}{-}{YYYY}. |                      |
-   | String               | Model options:       |                      |
-   |                      |                      |                      |
-   | Controlled           |                      |                      |
-   | Vocabulary           |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **location           | Declination angle    |                      |
-   | .declination.value** | relative to          |                      |
-   |                      | geographic north     |                      |
-   | decimal degrees      | positive clockwise   |                      |
-   |                      | estimated from       |                      |
-   | Float                | location and         |                      |
-   |                      | geomagnetic model.   |                      |
-   | Number               |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **                   | Elevation of station |                      |
-   | location.elevation** | location in datum    |                      |
-   |                      | specified at survey  |                      |
-   | meters               | level.               |                      |
-   |                      |                      |                      |
-   | Float                |                      |                      |
-   |                      |                      |                      |
-   | Number               |                      |                      |
-   +----------------------+----------------------+----------------------+
-
-.. table:: Attributes for Station Continued
-
-   +----------------------+----------------------+----------------------+
-   | **Metadata Key**     | **Description**      | **Example**          |
-   +======================+======================+======================+
-   | *                    | Latitude of station  |                      |
-   | *location.latitude** | location in datum    |                      |
-   |                      | specified at survey  |                      |
-   | decimal degrees      | level.               |                      |
-   |                      |                      |                      |
-   | Float                |                      |                      |
-   |                      |                      |                      |
-   | Number               |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **                   | Longitude of station |                      |
-   | location.longitude** | location in datum    |                      |
-   |                      | specified at survey  |                      |
-   | decimal degrees      | level.               |                      |
-   |                      |                      |                      |
-   | Float                |                      |                      |
-   |                      |                      |                      |
-   | Number               |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **                   | Method for orienting | compass              |
-   | orientation.method** | station channels.    |                      |
-   |                      | Options: [ compass   |                      |
-   | None                 | :math:`|` GPS        |                      |
-   |                      | :math:`|` theodolite |                      |
-   | String               | :math:`|`            |                      |
-   |                      | electric_compass     |                      |
-   | Controlled           | :math:`|` ... ]      |                      |
-   | Vocabulary           |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **orientati          | Reference frame for  | geomagnetic          |
-   | on.reference_frame** | station layout.      |                      |
-   |                      | There are only 2     |                      |
-   | None                 | options geographic   |                      |
-   |                      | and geomagnetic.     |                      |
-   | String               | Both assume a        |                      |
-   |                      | right-handed         |                      |
-   | Controlled           | coordinate system    |                      |
-   | Vocabulary           | with North=0, E=90   |                      |
-   |                      | and vertical         |                      |
-   |                      | positive downward.   |                      |
-   |                      | Options: [           |                      |
-   |                      | geographic :math:`|` |                      |
-   |                      | geomagnetic ]        |                      |
-   +----------------------+----------------------+----------------------+
-   | **o                  | Reference frame      |                      |
-   | rientation.transform | rotation angel       |                      |
-   | ed_reference_frame** | relative to          |                      |
-   |                      | orienta              |                      |
-   | None                 | tion.reference_frame |                      |
-   |                      | assuming positive    |                      |
-   | Float                | clockwise. Should    |                      |
-   |                      | only be used if data |                      |
-   | Number               | are rotated.         |                      |
-   +----------------------+----------------------+----------------------+
-   | **p                  | Any comments on      | From a graduated     |
-   | rovenance.comments** | provenance of the    | graduate student.    |
-   |                      | data.                |                      |
-   | None                 |                      |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **proven             | Date and time the    | -02-08               |
-   | ance.creation_time** | file was created.    | T12:23:40.324600     |
-   |                      |                      | +00:00               |
-   | None                 |                      |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Date Time            |                      |                      |
-   +----------------------+----------------------+----------------------+
-
-.. table:: Attributes for Station Continued
-
-   +----------------------+----------------------+----------------------+
-   | **Metadata Key**     | **Description**      | **Example**          |
-   +======================+======================+======================+
-   | **provenance.log**   | A history of any     | -02-10               |
-   |                      | changes made to the  | T14:24:45+00:00      |
-   | None                 | data.                | updated station      |
-   |                      |                      | metadata.            |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **provenan           | Author of the        | programmer 01        |
-   | ce.software.author** | software used to     |                      |
-   |                      | create the data      |                      |
-   | None                 | files.               |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **proven             | Name of the software | mtrules              |
-   | ance.software.name** | used to create data  |                      |
-   |                      | files                |                      |
-   | None                 |                      |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **provenanc          | Version of the       | 12.01a               |
-   | e.software.version** | software used to     |                      |
-   |                      | create data files    |                      |
-   | None                 |                      |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **provenanc          | Name of the person   | person name          |
-   | e.submitter.author** | submitting the data  |                      |
-   |                      | to the archive.      |                      |
-   | None                 |                      |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **provenan           | Email of the person  | mt.guru@em.org       |
-   | ce.submitter.email** | submitting the data  |                      |
-   |                      | to the archive.      |                      |
-   | None                 |                      |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Email                |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **provenance.subm    | Name of the          | MT Gurus             |
-   | itter.organization** | organization that is |                      |
-   |                      | submitting data to   |                      |
-   | None                 | the archive.         |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-
-.. table:: Attributes for Station Continued
-
-   +----------------------+----------------------+----------------------+
-   | **Metadata Key**     | **Description**      | **Example**          |
-   +======================+======================+======================+
-   | **time_period.end**  | End date and time of | -02-04               |
-   |                      | collection in UTC.   | T16:23:45.453670     |
-   | None                 |                      | +00:00               |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Date Time            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | *                    | Start date and time  | -02-01               |
-   | *time_period.start** | of collection in     | T09:23:45.453670     |
-   |                      | UTC.                 | +00:00               |
-   | None                 |                      |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Date Time            |                      |                      |
-   +----------------------+----------------------+----------------------+
+   
+       +----------------------------------------------+--------------------------------+----------------+
+       | **Metadata Key**                             | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **acquired_by.author**                       | Name of person or group that   | person name    |
+       |                                              | collected the station data and |                |
+       | Required: True                               | will be the point of contact   |                |
+       |                                              | if any questions arise about   |                |
+       | Units: None                                  | the data.                      |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **acquired_by.comments**                     | Any comments about who         | Expert diggers.|
+       |                                              | acquired the data.             |                |
+       | Required: False                              |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **archive_id**                               | Station name that is archived  | MT201          |
+       |                                              | {a-z;A-Z;0-9.  For IRIS this   |                |
+       | Required: True                               | is a 5 character String.       |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Alpha Numeric                         |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **channel_layout**                           | How the dipoles and magnetic   | +              |
+       |                                              | channels of the station were   |                |
+       | Required: False                              | laid out.  Options: [ L $|$ +  |                |
+       |                                              | $|$ ... ]                      |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Controlled Vocabulary                 |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **channels_recorded**                        | List of components recorded by |  T             |
+       |                                              | the station. Should be a       |                |
+       | Required: True                               | summary of all channels        |                |
+       |                                              | recorded dropped channels will |                |
+       | Units: None                                  | be recorded in Run.  \qquad    |                |
+       |                                              | Options: [ Ex $|$ Ey $|$ Hx    |                |
+       | Type: String                                 | $|$ Hy $|$ Hz $|$ T $|$        |                |
+       |                                              | Battery $|$ ... ]              |                |
+       | Style: Controlled Vocabulary                 |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **comments**                                 | Any comments on the station    | Pipeline near  |
+       |                                              | that would be important for a  | by.            |
+       | Required: False                              | user.                          |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_type**                                | All types of data recorded by  | BBMT           |
+       |                                              | the station. If multiple types |                |
+       | Required: True                               | input as a comma separated     |                |
+       |                                              | list. \qquad Options: [ RMT    |                |
+       | Units: None                                  | $|$ AMT $|$ BBMT $|$ LPMT $|$  |                |
+       |                                              | ULPMT $|$ ... ]                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Controlled Vocabulary                 |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **geographic_name**                          | Closest geographic name to the |  YK"           |
+       |                                              | station                        |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **id**                                       | Station name.  This can be a   | bear hallabaloo|
+       |                                              | longer name than the           |                |
+       | Required: True                               | archive_id name and be a more  |                |
+       |                                              | explanatory name.              |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **location.declination.comments**            | Any comments on declination    | Different than |
+       |                                              | that are important to an end   | recorded       |
+       | Required: False                              | user.                          | declination    |
+       |                                              |                                | from data      |
+       | Units: None                                  |                                | logger.        |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **location.declination.model**               | Name of the geomagnetic        | WMM-2016       |
+       |                                              | reference model as             |                |
+       | Required: True                               | \{model_name\\{-\\{YYYY\.      |                |
+       |                                              | Model options: \qquad [ EMAG2  |                |
+       | Units: None                                  | $|$ EMM $|$ HDGM $|$ IGRF $|$  |                |
+       |                                              | WMM ]                          |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Controlled Vocabulary                 |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **location.declination.value**               | Declination angle relative to  | 12.3           |
+       |                                              | geographic north positive      |                |
+       | Required: True                               | clockwise estimated from       |                |
+       |                                              | location and geomagnetic       |                |
+       | Units: decimal degrees                       | model.                         |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **location.elevation**                       | Elevation of station location  | 123.4          |
+       |                                              | in datum specified at survey   |                |
+       | Required: True                               | level.                         |                |
+       |                                              |                                |                |
+       | Units: meters                                |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **location.latitude**                        | Latitude of station location   | 23.134         |
+       |                                              | in datum specified at survey   |                |
+       | Required: True                               | level.                         |                |
+       |                                              |                                |                |
+       | Units: decimal degrees                       |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **location.longitude**                       | Longitude of station location  | 14.23          |
+       |                                              | in datum specified at survey   |                |
+       | Required: True                               | level.                         |                |
+       |                                              |                                |                |
+       | Units: decimal degrees                       |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **orientation.method**                       | Method for orienting station   | compass        |
+       |                                              | channels.  Options: [ compass  |                |
+       | Required: True                               | $|$ GPS $|$ theodolite $|$     |                |
+       |                                              | electric_compass $|$ ... ]     |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Controlled Vocabulary                 |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **orientation.reference_frame**              | Reference frame for station    | geomagnetic    |
+       |                                              | layout.  There are only 2      |                |
+       | Required: True                               | options geographic and         |                |
+       |                                              | geomagnetic.  Both assume a    |                |
+       | Units: None                                  | right-handed coordinate system |                |
+       |                                              | with North=0                   |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Controlled Vocabulary                 |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **orientation.transformed_reference_frame**  | Reference frame rotation angel | 10             |
+       |                                              | relative to                    |                |
+       | Required: False                              | orientation.reference_frame    |                |
+       |                                              | assuming positive clockwise.   |                |
+       | Units: None                                  | Should only be used if data    |                |
+       |                                              | are rotated.                   |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **provenance.comments**                      | Any comments on provenance of  | From a         |
+       |                                              | the data.                      | graduated      |
+       | Required: False                              |                                | graduate       |
+       |                                              |                                | student.       |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **provenance.creation_time**                 | Date and time the file was     | 2020-02-08 T12:|
+       |                                              | created.                       | 23:40.324600   |
+       | Required: True                               |                                | +00:00         |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Date Time                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **provenance.log**                           | A history of any changes made  | 2020-02-10     |
+       |                                              | to the data.                   | T14:24:45+00:00|
+       | Required: False                              |                                | updated station|
+       |                                              |                                | metadata.      |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **provenance.software.author**               | Author of the software used to | programmer 01  |
+       |                                              | create the data files.         |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **provenance.software.name**                 | Name of the software used to   | mtrules        |
+       |                                              | create data files              |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **provenance.software.version**              | Version of the software used   | 12.01a         |
+       |                                              | to create data files           |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **provenance.submitter.author**              | Name of the person submitting  | person name    |
+       |                                              | the data to the archive.       |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **provenance.submitter.email**               | Email of the person submitting | mt.guru@em.org |
+       |                                              | the data to the archive.       |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Email                                 |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **provenance.submitter.organization**        | Name of the organization that  | MT Gurus       |
+       |                                              | is submitting data to the      |                |
+       | Required: True                               | archive.                       |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **time_period.end**                          | End date and time of           | 2020-02-04 T16:|
+       |                                              | collection in UTC.             | 23:45.453670   |
+       | Required: True                               |                                | +00:00         |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Date Time                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **time_period.start**                        | Start date and time of         | 2020-02-01 T09:|
+       |                                              | collection in UTC.             | 23:45.453670   |
+       | Required: True                               |                                | +00:00         |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Date Time                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
 
 Example Station JSON
 --------------------
@@ -780,322 +929,329 @@ time and maximum time for all channels recorded.
 
    .. table:: Attributes for Run
 
-      +----------------------+----------------------+----------------------+
-      | **Metadata Key**     | **Description**      | **Example**          |
-      +======================+======================+======================+
-      | **                   | Name of the person   | M.T. Nubee           |
-      | acquired_by.author** | or persons who       |                      |
-      |                      | acquired the run     |                      |
-      | None                 | data. This can be    |                      |
-      |                      | different from the   |                      |
-      | String               | station.acquired_by  |                      |
-      |                      | and                  |                      |
-      | Free Form            | survey.acquired_by.  |                      |
-      +----------------------+----------------------+----------------------+
-      | **ac                 | Any comments about   | Group of             |
-      | quired_by.comments** | who acquired the     | undergraduates.      |
-      |                      | data.                |                      |
-      | None                 |                      |                      |
-      |                      |                      |                      |
-      | String               |                      |                      |
-      |                      |                      |                      |
-      | Free Form            |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **channels_          | List of auxiliary    | T, battery           |
-      | recorded_auxiliary** | channels recorded.   |                      |
-      |                      |                      |                      |
-      | None                 |                      |                      |
-      |                      |                      |                      |
-      | String               |                      |                      |
-      |                      |                      |                      |
-      | name list            |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **channels           | List of electric     | Ex, Ey               |
-      | _recorded_electric** | channels recorded.   |                      |
-      |                      |                      |                      |
-      | None                 |                      |                      |
-      |                      |                      |                      |
-      | String               |                      |                      |
-      |                      |                      |                      |
-      | name list            |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **channels           | List of magnetic     | Hx, Hy, Hz           |
-      | _recorded_magnetic** | channels recorded.   |                      |
-      |                      |                      |                      |
-      | None                 |                      |                      |
-      |                      |                      |                      |
-      | String               |                      |                      |
-      |                      |                      |                      |
-      | name list            |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **comments**         | Any comments on the  | Badger attacked Ex.  |
-      |                      | run that would be    |                      |
-      | None                 | important for a      |                      |
-      |                      | user.                |                      |
-      | String               |                      |                      |
-      |                      |                      |                      |
-      | Free Form            |                      |                      |
-      +----------------------+----------------------+----------------------+
-
-[tab:run]
-
-.. table:: Attributes for Run Continued
-
-   +----------------------+----------------------+----------------------+
-   | **Metadata Key**     | **Description**      | **Example**          |
-   +======================+======================+======================+
-   | **comments**         | Any comments on the  | cows chewed cables   |
-   |                      | run that would be    | at 9am local time.   |
-   | None                 | important for a      |                      |
-   |                      | user.                |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **data_logg          | Author of the        | instrument engineer  |
-   | er.firmware.author** | firmware that runs   |                      |
-   |                      | the data logger.     |                      |
-   | None                 |                      |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **data_lo            | Name of the firmware | mtrules              |
-   | gger.firmware.name** | the data logger      |                      |
-   |                      | runs.                |                      |
-   | None                 |                      |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **data_logge         | Version of the       | 12.01a               |
-   | r.firmware.version** | firmware that runs   |                      |
-   |                      | the data logger.     |                      |
-   | None                 |                      |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **data_logger.id**   | Instrument ID Number | mt01                 |
-   |                      | can be serial Number |                      |
-   | None                 | or a designated ID.  |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **data_l             | Name of person or    | MT Gurus             |
-   | ogger.manufacturer** | company that         |                      |
-   |                      | manufactured the     |                      |
-   | None                 | data logger.         |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | *                    | Model version of the | falcon5              |
-   | *data_logger.model** | data logger.         |                      |
-   |                      |                      |                      |
-   | None                 |                      |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-
-.. table:: Attributes for Run Continued
-
-   +----------------------+----------------------+----------------------+
-   | **Metadata Key**     | **Description**      | **Example**          |
-   +======================+======================+======================+
-   | **data_logger.pow    | Any comment about    | Used a solar panel   |
-   | er_source.comments** | the power source.    | and it was cloudy.   |
-   |                      |                      |                      |
-   | None                 |                      |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Name                 |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **data_logg          | Battery ID or name   | battery01            |
-   | er.power_source.id** |                      |                      |
-   |                      |                      |                      |
-   | None                 |                      |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | name                 |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **data_logger        | Battery type         | pb-acid gel cell     |
-   | .power_source.type** |                      |                      |
-   |                      |                      |                      |
-   | None                 |                      |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | name                 |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **data_logger.power_ | End voltage          |                      |
-   | source.voltage.end** |                      |                      |
-   |                      |                      |                      |
-   | volts                |                      |                      |
-   |                      |                      |                      |
-   | Float                |                      |                      |
-   |                      |                      |                      |
-   | Number               |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **                   | Starting voltage     |                      |
-   | data_logger.power_so |                      |                      |
-   | urce.voltage.start** |                      |                      |
-   |                      |                      |                      |
-   | volts                |                      |                      |
-   |                      |                      |                      |
-   | Float                |                      |                      |
-   |                      |                      |                      |
-   | Number               |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **data_logger.timi   | Any comment on       | GPS locked with      |
-   | ng_system.comments** | timing system that   | internal quartz      |
-   |                      | might be useful for  | clock                |
-   | None                 | the user.            |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **data_logger.t      | Estimated drift of   |                      |
-   | iming_system.drift** | the timing system.   |                      |
-   |                      |                      |                      |
-   | seconds              |                      |                      |
-   |                      |                      |                      |
-   | Float                |                      |                      |
-   |                      |                      |                      |
-   | Number               |                      |                      |
-   +----------------------+----------------------+----------------------+
-
-.. table:: Attributes for Run Continued
-
-   +----------------------+----------------------+----------------------+
-   | **Metadata Key**     | **Description**      | **Example**          |
-   +======================+======================+======================+
-   | **data_logger.       | Type of timing       | GPS                  |
-   | timing_system.type** | system used in the   |                      |
-   |                      | data logger.         |                      |
-   | None                 |                      |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | *                    | Estimated            |                      |
-   | *data_logger.timing_ | uncertainty of the   |                      |
-   | system.uncertainty** | timing system.       |                      |
-   |                      |                      |                      |
-   | seconds              |                      |                      |
-   |                      |                      |                      |
-   | Float                |                      |                      |
-   |                      |                      |                      |
-   | Number               |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **data_logger.type** | Type of data logger, | broadband 32-bit     |
-   |                      | this should specify  |                      |
-   | None                 | the bit rate and any |                      |
-   |                      | other parameters of  |                      |
-   | String               | the data logger.     |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **data_type**        | Type of data         | BBMT                 |
-   |                      | recorded for this    |                      |
-   | None                 | run. Options: [ RMT  |                      |
-   |                      | :math:`|` AMT        |                      |
-   | String               | :math:`|` BBMT       |                      |
-   |                      | :math:`|` LPMT       |                      |
-   | Controlled           | :math:`|` ULPMT      |                      |
-   | Vocabulary           | :math:`|` ... ]      |                      |
-   +----------------------+----------------------+----------------------+
-   | **id**               | Name of the run.     | MT302b               |
-   |                      | Should be station    |                      |
-   | None                 | name followed by an  |                      |
-   |                      | alphabet letter for  |                      |
-   | String               | the run.             |                      |
-   |                      |                      |                      |
-   | Alpha Numeric        |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **                   | Person who input the | Metadata Zen         |
-   | metadata_by.author** | metadata.            |                      |
-   |                      |                      |                      |
-   | None                 |                      |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **me                 | Any comments about   | Undergraduate did    |
-   | tadata_by.comments** | the metadata that    | the input.           |
-   |                      | would be useful for  |                      |
-   | None                 | the user.            |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-
-.. container::
-   :name: tab:
-
-   .. table:: Attributes for Run
-
-      +----------------------+----------------------+----------------------+
-      | **Metadata Key**     | **Description**      | **Example**          |
-      +======================+======================+======================+
-      | **p                  | Any comments on      | all good             |
-      | rovenance.comments** | provenance of the    |                      |
-      |                      | data that would be   |                      |
-      | None                 | useful to users.     |                      |
-      |                      |                      |                      |
-      | String               |                      |                      |
-      |                      |                      |                      |
-      | Free Form            |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **provenance.log**   | A history of changes | -02-10 T14:24:45     |
-      |                      | made to the data.    | +00:00 updated       |
-      | None                 |                      | metadata             |
-      |                      |                      |                      |
-      | String               |                      |                      |
-      |                      |                      |                      |
-      | Free Form            |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **sampling_rate**    | Sampling rate for    |                      |
-      |                      | the recorded run.    |                      |
-      | samples per second   |                      |                      |
-      |                      |                      |                      |
-      | Float                |                      |                      |
-      |                      |                      |                      |
-      | Number               |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **time_period.end**  | End date and time of | -02-04               |
-      |                      | collection in UTC.   | T16:23:45.453670     |
-      | None                 |                      | +00:00               |
-      |                      |                      |                      |
-      | String               |                      |                      |
-      |                      |                      |                      |
-      | Date Time            |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | *                    | Start date and time  | -02-01               |
-      | *time_period.start** | of collection in     | T09:23:45.453670     |
-      |                      | UTC.                 | +00:00               |
-      | None                 |                      |                      |
-      |                      |                      |                      |
-      | String               |                      |                      |
-      |                      |                      |                      |
-      | Date Time            |                      |                      |
-      +----------------------+----------------------+----------------------+
-
-[tab:]
+       +----------------------------------------------+--------------------------------+----------------+
+       | **Metadata Key**                             | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **acquired_by.author**                       | Name of the person or persons  | M.T. Nubee     |
+       |                                              | who acquired the run data.     |                |
+       | Required: True                               | This can be different from the |                |
+       |                                              | station.acquired_by and        |                |
+       | Units: None                                  | survey.acquired_by.            |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **acquired_by.comments**                     | Any comments about who         | Group of       |
+       |                                              | acquired the data.             | undergraduates.|
+       | Required: False                              |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **channels_recorded_auxiliary**              | List of auxiliary channels     |  battery       |
+       |                                              | recorded.                      |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: name list                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **channels_recorded_electric**               | List of electric channels      |  Ey            |
+       |                                              | recorded.                      |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: name list                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **channels_recorded_magnetic**               | List of magnetic channels      |  Hz            |
+       |                                              | recorded.                      |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: name list                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **comments**                                 | Any comments on the run that   | Badger attacked|
+       |                                              | would be important for a user. | Ex.            |
+       | Required: False                              |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **comments**                                 | Any comments on the run that   | cows chewed    |
+       |                                              | would be important for a user. | cables at 9am  |
+       | Required: False                              |                                | local time.    |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_logger.firmware.author**              | Author of the firmware that    | instrument     |
+       |                                              | runs the data logger.          | engineer       |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_logger.firmware.name**                | Name of the firmware the data  | mtrules        |
+       |                                              | logger runs.                   |                |
+       | Required: False                              |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_logger.firmware.version**             | Version of the firmware that   | 12.01a         |
+       |                                              | runs the data logger.          |                |
+       | Required: False                              |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_logger.id**                           | Instrument ID Number can be    | mt01           |
+       |                                              | serial Number or a designated  |                |
+       | Required: False                              | ID.                            |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_logger.manufacturer**                 | Name of person or company that | MT Gurus       |
+       |                                              | manufactured the data logger.  |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_logger.model**                        | Model version of the data      | falcon5        |
+       |                                              | logger.                        |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_logger.power_source.comments**        | Any comment about the power    | Used a solar   |
+       |                                              | source.                        | panel and it   |
+       | Required: False                              |                                | was cloudy.    |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Name                                  |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_logger.power_source.id**              | Battery ID or name             | battery01      |
+       |                                              |                                |                |
+       | Required: False                              |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: name                                  |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_logger.power_source.type**            | Battery type                   | pb-acid gel    |
+       |                                              |                                | cell           |
+       | Required: False                              |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: name                                  |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_logger.power_source.voltage.end**     | End voltage                    | 12.1           |
+       |                                              |                                |                |
+       | Required: False                              |                                |                |
+       |                                              |                                |                |
+       | Units: volts                                 |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_logger.power_source.voltage.start**   | Starting voltage               | 14.3           |
+       |                                              |                                |                |
+       | Required: False                              |                                |                |
+       |                                              |                                |                |
+       | Units: volts                                 |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_logger.timing_system.comments**       | Any comment on timing system   | GPS locked with|
+       |                                              | that might be useful for the   | internal quartz|
+       | Required: False                              | user.                          | clock          |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_logger.timing_system.drift**          | Estimated drift of the timing  | 0.001          |
+       |                                              | system.                        |                |
+       | Required: False                              |                                |                |
+       |                                              |                                |                |
+       | Units: seconds                               |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_logger.timing_system.type**           | Type of timing system used in  | GPS            |
+       |                                              | the data logger.               |                |
+       | Required: False                              |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_logger.timing_system.uncertainty**    | Estimated uncertainty of the   | 0.0002         |
+       |                                              | timing system.                 |                |
+       | Required: False                              |                                |                |
+       |                                              |                                |                |
+       | Units: seconds                               |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_logger.type**                         | Type of data logger            | broadband      |
+       |                                              |                                | 32-bit         |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_type**                                | Type of data recorded for this | BBMT           |
+       |                                              | run.  Options: [ RMT $|$ AMT   |                |
+       | Required: True                               | $|$ BBMT $|$ LPMT $|$ ULPMT    |                |
+       |                                              | $|$ ... ]                      |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Controlled Vocabulary                 |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **id**                                       | Name of the run.  Should be    | MT302b         |
+       |                                              | station name followed by an    |                |
+       | Required: True                               | alphabet letter for the run.   |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Alpha Numeric                         |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **metadata_by.author**                       | Person who input the metadata. | Metadata Zen   |
+       |                                              |                                |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **metadata_by.comments**                     | Any comments about the         | Undergraduate  |
+       |                                              | metadata that would be useful  | did the input. |
+       | Required: False                              | for the user.                  |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **provenance.comments**                      | Any comments on provenance of  | all good       |
+       |                                              | the data that would be useful  |                |
+       | Required: False                              | to users.                      |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **provenance.log**                           | A history of changes made to   | 2020-02-10     |
+       |                                              | the data.                      | T14:24:45      |
+       | Required: False                              |                                | +00:00 updated |
+       |                                              |                                | metadata       |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **sampling_rate**                            | Sampling rate for the recorded | 100            |
+       |                                              | run.                           |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: samples per second                    |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **time_period.end**                          | End date and time of           | 2020-02-04 T16:|
+       |                                              | collection in UTC.             | 23:45.453670   |
+       | Required: True                               |                                | +00:00         |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Date Time                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **time_period.start**                        | Start date and time of         | 2020-02-01 T09:|
+       |                                              | collection in UTC.             | 23:45.453670   |
+       | Required: True                               |                                | +00:00         |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Date Time                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
 
 Example Run JSON
 ----------------
@@ -1149,385 +1305,409 @@ for a single station for a single run.
 
    .. table:: Attributes for Electric
 
-      +----------------------+----------------------+----------------------+
-      | **Metadata Key**     | **Description**      | **Example**          |
-      +======================+======================+======================+
-      | **ac.end**           | Ending AC value; if  | , 49.5               |
-      |                      | more than one        |                      |
-      | volts                | measurement input as |                      |
-      |                      | a list of Number [1  |                      |
-      | Float                | 2 ...]               |                      |
-      |                      |                      |                      |
-      | Number               |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **ac.start**         | Starting AC value;   | , 55.8               |
-      |                      | if more than one     |                      |
-      | volts                | measurement input as |                      |
-      |                      | a list of Number [1  |                      |
-      | Float                | 2 ...]               |                      |
-      |                      |                      |                      |
-      | Number               |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **channel_number**   | Channel number on    |                      |
-      |                      | the data logger of   |                      |
-      | None                 | the recorded         |                      |
-      |                      | channel.             |                      |
-      | Integer              |                      |                      |
-      |                      |                      |                      |
-      | Number               |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **comments**         | Any comments about   | Lightning storm at   |
-      |                      | the channel that     | 6pm local time       |
-      | None                 | would be useful to a |                      |
-      |                      | user.                |                      |
-      | String               |                      |                      |
-      |                      |                      |                      |
-      | Free Form            |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **component**        | Name of the          | Ex                   |
-      |                      | component measured.  |                      |
-      | None                 | Options:             |                      |
-      |                      |                      |                      |
-      | String               |                      |                      |
-      |                      |                      |                      |
-      | Controlled           |                      |                      |
-      | Vocabulary           |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **cont               | Starting contact     | , 1.8                |
-      | act_resistance.end** | resistance; if more  |                      |
-      |                      | than one measurement |                      |
-      | ohms                 | input as a list [1,  |                      |
-      |                      | 2, ... ]             |                      |
-      | Float                |                      |                      |
-      |                      |                      |                      |
-      | Number list          |                      |                      |
-      +----------------------+----------------------+----------------------+
-
-[tab:electric]
-
-.. table:: Attributes for Electric Continued
-
-   +----------------------+----------------------+----------------------+
-   | **Metadata Key**     | **Description**      | **Example**          |
-   +======================+======================+======================+
-   | **contac             | Starting contact     | , 1.4                |
-   | t_resistance.start** | resistance; if more  |                      |
-   |                      | than one measurement |                      |
-   | ohms                 | input as a list [1,  |                      |
-   |                      | 2, ... ]             |                      |
-   | Float                |                      |                      |
-   |                      |                      |                      |
-   | Number list          |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **data_qua           | Name of person or    | graduate student ace |
-   | lity.rating.author** | organization who     |                      |
-   |                      | rated the data.      |                      |
-   | None                 |                      |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **data_qua           | The method used to   | standard deviation   |
-   | lity.rating.method** | rate the data.       |                      |
-   |                      | Should be a          |                      |
-   | None                 | descriptive name and |                      |
-   |                      | not just the name of |                      |
-   | String               | a software package.  |                      |
-   |                      | If a rating is       |                      |
-   | Free Form            | provided, the method |                      |
-   |                      | should be recorded.  |                      |
-   +----------------------+----------------------+----------------------+
-   | **data_qu            | Rating from 1-5      |                      |
-   | ality.rating.value** | where 1 is bad, 5 is |                      |
-   |                      | good, and 0 is       |                      |
-   | None                 | unrated. Options: [  |                      |
-   |                      | 0 :math:`|` 1        |                      |
-   | Integer              | :math:`|` 2          |                      |
-   |                      | :math:`|` 3          |                      |
-   | Number               | :math:`|` 4          |                      |
-   |                      | :math:`|` 5 ]        |                      |
-   +----------------------+----------------------+----------------------+
-   | **da                 | Any warnings about   | periodic pipeline    |
-   | ta_quality.warning** | the data that should | noise                |
-   |                      | be noted for users.  |                      |
-   | None                 |                      |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **dc.end**           | Ending DC value; if  |                      |
-   |                      | more than one        |                      |
-   | volts                | measurement input as |                      |
-   |                      | a list [1, 2, ... ]  |                      |
-   | Float                |                      |                      |
-   |                      |                      |                      |
-   | Number               |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **dc.start**         | Starting DC value;   |                      |
-   |                      | if more than one     |                      |
-   | volts                | measurement input as |                      |
-   |                      | a list [1, 2, ... ]  |                      |
-   | Float                |                      |                      |
-   |                      |                      |                      |
-   | Number               |                      |                      |
-   +----------------------+----------------------+----------------------+
-
-.. table:: Attributes for Electric Continued
-
-   +----------------------+----------------------+----------------------+
-   | **Metadata Key**     | **Description**      | **Example**          |
-   +======================+======================+======================+
-   | **dipole_length**    | Length of the dipole |                      |
-   |                      |                      |                      |
-   | meters               |                      |                      |
-   |                      |                      |                      |
-   | Float                |                      |                      |
-   |                      |                      |                      |
-   | Number               |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **filter.applied**   | Boolean if filter    | True, True           |
-   |                      | has been applied or  |                      |
-   | None                 | not. If more than    |                      |
-   |                      | one filter, input as |                      |
-   | Boolean              | a comma separated    |                      |
-   |                      | list. Needs to be    |                      |
-   | List                 | the same length as   |                      |
-   |                      | filter.name. If only |                      |
-   |                      | one entry is given,  |                      |
-   |                      | it is assumed to     |                      |
-   |                      | apply to all filters |                      |
-   |                      | listed.              |                      |
-   +----------------------+----------------------+----------------------+
-   | **filter.comments**  | Any comments on      | low pass is not      |
-   |                      | filters that is      | calibrated           |
-   | None                 | important for users. |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **filter.name**      | Name of filter       | counts2mv,           |
-   |                      | applied or to be     | lowpass_electric     |
-   | None                 | applied. If more     |                      |
-   |                      | than one filter,     |                      |
-   | String               | input as a comma     |                      |
-   |                      | separated list.      |                      |
-   | List                 |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **m                  | Azimuth angle of the |                      |
-   | easurement_azimuth** | channel in the       |                      |
-   |                      | specified            |                      |
-   | decimal degrees      | survey.orientat      |                      |
-   |                      | ion.reference_frame. |                      |
-   | Float                |                      |                      |
-   |                      |                      |                      |
-   | Number               |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **measurement_tilt** | Tilt angle of        |                      |
-   |                      | channel in           |                      |
-   | decimal degrees      | survey.orientat      |                      |
-   |                      | ion.reference_frame. |                      |
-   | Float                |                      |                      |
-   |                      |                      |                      |
-   | Number               |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **                   | Elevation of         |                      |
-   | negative.elevation** | negative electrode   |                      |
-   |                      | in datum specified   |                      |
-   | meters               | at survey level.     |                      |
-   |                      |                      |                      |
-   | Float                |                      |                      |
-   |                      |                      |                      |
-   | Number               |                      |                      |
-   +----------------------+----------------------+----------------------+
-
-.. table:: Attributes for Electric Continued
-
-   +-------------------------+-------------------------+---------------+
-   | **Metadata Key**        | **Description**         | **Example**   |
-   +=========================+=========================+===============+
-   | **negative.id**         | Negative electrode ID   | electrode01   |
-   |                         | Number, can be serial   |               |
-   | None                    | number or a designated  |               |
-   |                         | ID.                     |               |
-   | String                  |                         |               |
-   |                         |                         |               |
-   | Free Form               |                         |               |
-   +-------------------------+-------------------------+---------------+
-   | **negative.latitude**   | Latitude of negative    |               |
-   |                         | electrode in datum      |               |
-   | decimal degrees         | specified at survey     |               |
-   |                         | level.                  |               |
-   | Float                   |                         |               |
-   |                         |                         |               |
-   | Number                  |                         |               |
-   +-------------------------+-------------------------+---------------+
-   | **negative.longitude**  | Longitude of negative   |               |
-   |                         | electrode in datum      |               |
-   | decimal degrees         | specified at survey     |               |
-   |                         | level.                  |               |
-   | Float                   |                         |               |
-   |                         |                         |               |
-   | Number                  |                         |               |
-   +-------------------------+-------------------------+---------------+
-   | **                      | Person or organization  | Electro-Dudes |
-   | negative.manufacturer** | that manufactured the   |               |
-   |                         | electrode.              |               |
-   | None                    |                         |               |
-   |                         |                         |               |
-   | String                  |                         |               |
-   |                         |                         |               |
-   | Free Form               |                         |               |
-   +-------------------------+-------------------------+---------------+
-   | **negative.model**      | Model version of the    | falcon5       |
-   |                         | electrode.              |               |
-   | None                    |                         |               |
-   |                         |                         |               |
-   | String                  |                         |               |
-   |                         |                         |               |
-   | Free Form               |                         |               |
-   +-------------------------+-------------------------+---------------+
-   | **negative.type**       | Type of electrode,      | Ag-AgCl       |
-   |                         | should specify the      |               |
-   | None                    | chemistry.              |               |
-   |                         |                         |               |
-   | String                  |                         |               |
-   |                         |                         |               |
-   | Free Form               |                         |               |
-   +-------------------------+-------------------------+---------------+
-   | **positive.elevation**  | Elevation of the        |               |
-   |                         | positive electrode in   |               |
-   | meters                  | datum specified at      |               |
-   |                         | survey level.           |               |
-   | Float                   |                         |               |
-   |                         |                         |               |
-   | Number                  |                         |               |
-   +-------------------------+-------------------------+---------------+
-
-.. table:: Attributes for Electric Continued
-
-   +-------------------------+-------------------------+---------------+
-   | **Metadata Key**        | **Description**         | **Example**   |
-   +=========================+=========================+===============+
-   | **positive.id**         | Positive electrode ID   | electrode02   |
-   |                         | Number, can be serial   |               |
-   | None                    | Number or a designated  |               |
-   |                         | ID.                     |               |
-   | String                  |                         |               |
-   |                         |                         |               |
-   | Free Form               |                         |               |
-   +-------------------------+-------------------------+---------------+
-   | **positive.latitude**   | Latitude of positive    |               |
-   |                         | electrode in datum      |               |
-   | decimal degrees         | specified at survey     |               |
-   |                         | level.                  |               |
-   | Float                   |                         |               |
-   |                         |                         |               |
-   | Number                  |                         |               |
-   +-------------------------+-------------------------+---------------+
-   | **positive.longitude**  | Longitude of positive   |               |
-   |                         | electrode in datum      |               |
-   | decimal degrees         | specified at survey     |               |
-   |                         | level.                  |               |
-   | Float                   |                         |               |
-   |                         |                         |               |
-   | Number                  |                         |               |
-   +-------------------------+-------------------------+---------------+
-   | **                      | Name of group or person | Electro-Dudes |
-   | positive.manufacturer** | that manufactured the   |               |
-   |                         | electrode.              |               |
-   | None                    |                         |               |
-   |                         |                         |               |
-   | String                  |                         |               |
-   |                         |                         |               |
-   | Free Form               |                         |               |
-   +-------------------------+-------------------------+---------------+
-   | **positive.model**      | Model version of the    | falcon5       |
-   |                         | electrode.              |               |
-   | None                    |                         |               |
-   |                         |                         |               |
-   | String                  |                         |               |
-   |                         |                         |               |
-   | Free Form               |                         |               |
-   +-------------------------+-------------------------+---------------+
-   | **positive.type**       | Type of electrode,      | Pb-PbCl       |
-   |                         | should include          |               |
-   | None                    | chemistry of the        |               |
-   |                         | electrode.              |               |
-   | String                  |                         |               |
-   |                         |                         |               |
-   | Free Form               |                         |               |
-   +-------------------------+-------------------------+---------------+
-   | **sample_rate**         | Sample rate of the      |               |
-   |                         | channel.                |               |
-   | samples per second      |                         |               |
-   |                         |                         |               |
-   | Float                   |                         |               |
-   |                         |                         |               |
-   | Number                  |                         |               |
-   +-------------------------+-------------------------+---------------+
-
-.. table:: Attributes for Electric Continued
-
-   +----------------------+----------------------+----------------------+
-   | **Metadata Key**     | **Description**      | **Example**          |
-   +======================+======================+======================+
-   | **time_period.end**  | End date and time of | -02-04               |
-   |                      | collection in UTC    | T16:23:45.453670     |
-   | None                 |                      | +00:00               |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Date Time            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | *                    | Start date and time  | -02-01T              |
-   | *time_period.start** | of collection in     | 09:23:45.453670      |
-   |                      | UTC.                 | +00:00               |
-   | None                 |                      |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Date Time            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **t                  | Azimuth angle of     |                      |
-   | ransformed_azimuth** | channel that has     |                      |
-   |                      | been transformed     |                      |
-   | decimal degrees      | into a specified     |                      |
-   |                      | coordinate system.   |                      |
-   | Float                | Note this value is   |                      |
-   |                      | only for derivative  |                      |
-   | Number               | products from the    |                      |
-   |                      | archived data.       |                      |
-   +----------------------+----------------------+----------------------+
-   | **transformed_tilt** | Tilt angle of        |                      |
-   |                      | channel that has     |                      |
-   | decimal degrees      | been transformed     |                      |
-   |                      | into a specified     |                      |
-   | Float                | coordinate system.   |                      |
-   |                      | Note this value is   |                      |
-   | Number               | only for derivative  |                      |
-   |                      | products from the    |                      |
-   |                      | archived data.       |                      |
-   +----------------------+----------------------+----------------------+
-   | **type**             | Data type for the    | electric             |
-   |                      | channel.             |                      |
-   | None                 |                      |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **units**            | Units of the data,   | counts               |
-   |                      | if archived data     |                      |
-   | None                 | should always be in  |                      |
-   |                      | counts. Options: [   |                      |
-   | String               | counts :math:`|`     |                      |
-   |                      | millivolts ]         |                      |
-   | Controlled           |                      |                      |
-   | Vocabulary           |                      |                      |
-   +----------------------+----------------------+----------------------+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **Metadata Key**                             | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **ac.end**                                   | Ending AC value; if more than  |  49.5          |
+       |                                              | one measurement input as a     |                |
+       | Required: False                              | list of Number [1 2 ...]       |                |
+       |                                              |                                |                |
+       | Units: volts                                 |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **ac.start**                                 | Starting AC value; if more     |  55.8          |
+       |                                              | than one measurement input as  |                |
+       | Required: False                              | a list of Number [1 2 ...]     |                |
+       |                                              |                                |                |
+       | Units: volts                                 |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **channel_number**                           | Channel number on the data     | 1              |
+       |                                              | logger of the recorded         |                |
+       | Required: True                               | channel.                       |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: Integer                                |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **comments**                                 | Any comments about the channel | Lightning storm|
+       |                                              | that would be useful to a      | at 6pm local   |
+       | Required: False                              | user.                          | time           |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **component**                                | Name of the component          | Ex             |
+       |                                              | measured.  Options: \quad [ Ex |                |
+       | Required: True                               | $|$ Ey $|$ ... ]               |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Controlled Vocabulary                 |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **contact_resistance.end**                   | Starting contact resistance;   |  1.8           |
+       |                                              | if more than one measurement   |                |
+       | Required: False                              | input as a list [1             |                |
+       |                                              |                                |                |
+       | Units: ohms                                  |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number list                           |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **contact_resistance.start**                 | Starting contact resistance;   |  1.4           |
+       |                                              | if more than one measurement   |                |
+       | Required: False                              | input as a list [1             |                |
+       |                                              |                                |                |
+       | Units: ohms                                  |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number list                           |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_quality.rating.author**               | Name of person or organization | graduate       |
+       |                                              | who rated the data.            | student ace    |
+       | Required: False                              |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_quality.rating.method**               | The method used to rate the    | standard       |
+       |                                              | data.  Should be a descriptive | deviation      |
+       | Required: False                              | name and not just the name of  |                |
+       |                                              | a software package.  If a      |                |
+       | Units: None                                  | rating is provided             |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_quality.rating.value**                | Rating from 1-5 where 1 is bad | 4              |
+       |                                              |                                |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: Integer                                |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_quality.warning**                     | Any warnings about the data    | periodic       |
+       |                                              | that should be noted for       | pipeline noise |
+       | Required: False                              | users.                         |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **dc.end**                                   | Ending DC value; if more than  | 1.5            |
+       |                                              | one measurement input as a     |                |
+       | Required: False                              | list [1                        |                |
+       |                                              |                                |                |
+       | Units: volts                                 |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **dc.start**                                 | Starting DC value; if more     | 1.1            |
+       |                                              | than one measurement input as  |                |
+       | Required: False                              | a list [1                      |                |
+       |                                              |                                |                |
+       | Units: volts                                 |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **dipole_length**                            | Length of the dipole           | 55.25          |
+       |                                              |                                |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: meters                                |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **filter.applied**                           | Boolean if filter has been     |  True          |
+       |                                              | applied or not. If more than   |                |
+       | Required: True                               | one filter.                    |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: Boolean                                |                                |                |
+       |                                              |                                |                |
+       | Style: List                                  |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **filter.comments**                          | Any comments on filters that   | low pass is not|
+       |                                              | is important for users.        | calibrated     |
+       | Required: False                              |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **filter.name**                              | Name of filter applied or to   | lowpass_electr |
+       |                                              | be applied. If more than one   | ic             |
+       | Required: True                               | filter.                        |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: List                                  |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **measurement_azimuth**                      | Azimuth angle of the channel   | 0              |
+       |                                              | in the specified survey.orient |                |
+       | Required: True                               | ation.reference_frame.         |                |
+       |                                              |                                |                |
+       | Units: decimal degrees                       |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **measurement_tilt**                         | Tilt angle of channel in surve | 0              |
+       |                                              | y.orientation.reference_frame. |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: decimal degrees                       |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **negative.elevation**                       | Elevation of negative          | 123.4          |
+       |                                              | electrode in datum specified   |                |
+       | Required: True                               | at survey level.               |                |
+       |                                              |                                |                |
+       | Units: meters                                |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **negative.id**                              | Negative electrode ID Number   | electrode01    |
+       |                                              |                                |                |
+       | Required: False                              |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **negative.latitude**                        | Latitude of negative electrode | 23.134         |
+       |                                              | in datum specified at survey   |                |
+       | Required: False                              | level.                         |                |
+       |                                              |                                |                |
+       | Units: decimal degrees                       |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **negative.longitude**                       | Longitude of negative          | 14.23          |
+       |                                              | electrode in datum specified   |                |
+       | Required: False                              | at survey level.               |                |
+       |                                              |                                |                |
+       | Units: decimal degrees                       |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **negative.manufacturer**                    | Person or organization that    | Electro-Dudes  |
+       |                                              | manufactured the electrode.    |                |
+       | Required: False                              |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **negative.model**                           | Model version of the           | falcon5        |
+       |                                              | electrode.                     |                |
+       | Required: False                              |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **negative.type**                            | Type of electrode              | Ag-AgCl        |
+       |                                              |                                |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **positive.elevation**                       | Elevation of the positive      | 123.4          |
+       |                                              | electrode in datum specified   |                |
+       | Required: False                              | at survey level.               |                |
+       |                                              |                                |                |
+       | Units: meters                                |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **positive.id**                              | Positive electrode ID Number   | electrode02    |
+       |                                              |                                |                |
+       | Required: False                              |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **positive.latitude**                        | Latitude of positive electrode | 23.134         |
+       |                                              | in datum specified at survey   |                |
+       | Required: False                              | level.                         |                |
+       |                                              |                                |                |
+       | Units: decimal degrees                       |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **positive.longitude**                       | Longitude of positive          | 14.23          |
+       |                                              | electrode in datum specified   |                |
+       | Required: False                              | at survey level.               |                |
+       |                                              |                                |                |
+       | Units: decimal degrees                       |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **positive.manufacturer**                    | Name of group or person that   | Electro-Dudes  |
+       |                                              | manufactured the electrode.    |                |
+       | Required: False                              |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **positive.model**                           | Model version of the           | falcon5        |
+       |                                              | electrode.                     |                |
+       | Required: False                              |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **positive.type**                            | Type of electrode              | Pb-PbCl        |
+       |                                              |                                |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **sample_rate**                              | Sample rate of the channel.    | 8              |
+       |                                              |                                |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: samples per second                    |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **time_period.end**                          | End date and time of           | 2020-02-04 T16:|
+       |                                              | collection in UTC              | 23:45.453670   |
+       | Required: True                               |                                | +00:00         |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Date Time                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **time_period.start**                        | Start date and time of         | 2020-02-01T    |
+       |                                              | collection in UTC.             | 09:23:45.453670|
+       | Required: True                               |                                | +00:00         |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Date Time                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **transformed_azimuth**                      | Azimuth angle of channel that  | 0              |
+       |                                              | has been transformed into a    |                |
+       | Required: False                              | specified coordinate system.   |                |
+       |                                              | Note this value is only for    |                |
+       | Units: decimal degrees                       | derivative products from the   |                |
+       |                                              | archived data.                 |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **transformed_tilt**                         | Tilt angle of channel that has | 0              |
+       |                                              | been transformed into a        |                |
+       | Required: False                              | specified coordinate system.   |                |
+       |                                              | Note this value is only for    |                |
+       | Units: decimal degrees                       | derivative products from the   |                |
+       |                                              | archived data.                 |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **type**                                     | Data type for the channel.     | electric       |
+       |                                              |                                |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **units**                                    | Units of the data              | counts         |
+       |                                              |                                |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Controlled Vocabulary                 |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
 
 Example Electric Channel JSON
 -----------------------------
@@ -1588,293 +1768,309 @@ at a single station for a single run.
 
    .. table:: Attributes for Magnetic
 
-      +----------------------+----------------------+----------------------+
-      | **Metadata Key**     | **Description**      | **Example**          |
-      +======================+======================+======================+
-      | **channel_number**   | Channel Number on    |                      |
-      |                      | the data logger.     |                      |
-      | None                 |                      |                      |
-      |                      |                      |                      |
-      | Integer              |                      |                      |
-      |                      |                      |                      |
-      | Number               |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **comments**         | Any comments about   | Pc1 at 6pm local     |
-      |                      | the channel that     | time.                |
-      | None                 | would be useful to a |                      |
-      |                      | user.                |                      |
-      | String               |                      |                      |
-      |                      |                      |                      |
-      | Free Form            |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **component**        | Name of the          | Hx                   |
-      |                      | component measured.  |                      |
-      | None                 | Options:             |                      |
-      |                      |                      |                      |
-      | String               |                      |                      |
-      |                      |                      |                      |
-      | Controlled           |                      |                      |
-      | Vocabulary           |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **data_qua           | Name of person or    | graduate student ace |
-      | lity.rating.author** | organization who     |                      |
-      |                      | rated the data.      |                      |
-      | None                 |                      |                      |
-      |                      |                      |                      |
-      | String               |                      |                      |
-      |                      |                      |                      |
-      | Free Form            |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **data_qua           | The method used to   | standard deviation   |
-      | lity.rating.method** | rate the data.       |                      |
-      |                      | Should be a          |                      |
-      | None                 | descriptive name and |                      |
-      |                      | not just the name of |                      |
-      | String               | a software package.  |                      |
-      |                      | If a rating is       |                      |
-      | Free Form            | provided, the method |                      |
-      |                      | should be recorded.  |                      |
-      +----------------------+----------------------+----------------------+
-      | **data_qu            | Rating from 1-5      |                      |
-      | ality.rating.value** | where 1 is bad, 5 is |                      |
-      |                      | good, and 0 is       |                      |
-      | None                 | unrated. Options: [  |                      |
-      |                      | 0 :math:`|` 1        |                      |
-      | Integer              | :math:`|` 2          |                      |
-      |                      | :math:`|` 3          |                      |
-      | Number               | :math:`|` 4          |                      |
-      |                      | :math:`|` 5 ]        |                      |
-      +----------------------+----------------------+----------------------+
-
-[tab:magnetic]
-
-.. table:: Attributes for Magnetic Continued
-
-   +----------------------+----------------------+----------------------+
-   | **Metadata Key**     | **Description**      | **Example**          |
-   +======================+======================+======================+
-   | **da                 | Any warnings about   | periodic pipeline    |
-   | ta_quality.warning** | the data that should | noise                |
-   |                      | be noted for users.  |                      |
-   | None                 |                      |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **filter.applied**   | Boolean if filter    | True, True           |
-   |                      | has been applied or  |                      |
-   | None                 | not. If more than    |                      |
-   |                      | one filter, input as |                      |
-   | Boolean              | a comma separated    |                      |
-   |                      | list. Needs to be    |                      |
-   | List                 | the same length as   |                      |
-   |                      | filter.name. If only |                      |
-   |                      | one entry is given,  |                      |
-   |                      | it is assumed to     |                      |
-   |                      | apply to all filters |                      |
-   |                      | listed.              |                      |
-   +----------------------+----------------------+----------------------+
-   | **filter.comments**  | Any comments on      | low pass is not      |
-   |                      | filters that is      | calibrated           |
-   | None                 | important for users. |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **filter.name**      | Name of filter       | counts2mv,           |
-   |                      | applied or to be     | lowpass_electric     |
-   | None                 | applied. If more     |                      |
-   |                      | than one filter,     |                      |
-   | String               | input as a comma     |                      |
-   |                      | separated list.      |                      |
-   | List                 |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **h_field_max.end**  | Maximum magnetic     |                      |
-   |                      | field strength at    |                      |
-   | nanotesla            | end of measurement.  |                      |
-   |                      |                      |                      |
-   | Float                |                      |                      |
-   |                      |                      |                      |
-   | Number               |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | *                    | Maximum magnetic     |                      |
-   | *h_field_max.start** | field strength at    |                      |
-   |                      | beginning of         |                      |
-   | nanotesla            | measurement.         |                      |
-   |                      |                      |                      |
-   | Float                |                      |                      |
-   |                      |                      |                      |
-   | Number               |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **h_field_min.end**  | Minimum magnetic     |                      |
-   |                      | field strength at    |                      |
-   | nanotesla            | end of measurement.  |                      |
-   |                      |                      |                      |
-   | Float                |                      |                      |
-   |                      |                      |                      |
-   | Number               |                      |                      |
-   +----------------------+----------------------+----------------------+
-
-.. table:: Attributes for Magnetic Continued
-
-   +-------------------------+--------------------------+-------------+
-   | **Metadata Key**        | **Description**          | **Example** |
-   +=========================+==========================+=============+
-   | **h_field_min.start**   | Minimum magnetic field   |             |
-   |                         | strength at beginning of |             |
-   | nt                      | measurement.             |             |
-   |                         |                          |             |
-   | Float                   |                          |             |
-   |                         |                          |             |
-   | Number                  |                          |             |
-   +-------------------------+--------------------------+-------------+
-   | **location.elevation**  | elevation of             |             |
-   |                         | magnetometer in datum    |             |
-   | meters                  | specified at survey      |             |
-   |                         | level.                   |             |
-   | Float                   |                          |             |
-   |                         |                          |             |
-   | Number                  |                          |             |
-   +-------------------------+--------------------------+-------------+
-   | **location.latitude**   | Latitude of magnetometer |             |
-   |                         | in datum specified at    |             |
-   | decimal degrees         | survey level.            |             |
-   |                         |                          |             |
-   | Float                   |                          |             |
-   |                         |                          |             |
-   | Number                  |                          |             |
-   +-------------------------+--------------------------+-------------+
-   | **location.longitude**  | Longitude of             |             |
-   |                         | magnetometer in datum    |             |
-   | decimal degrees         | specified at survey      |             |
-   |                         | level.                   |             |
-   | Float                   |                          |             |
-   |                         |                          |             |
-   | Number                  |                          |             |
-   +-------------------------+--------------------------+-------------+
-   | **measurement_azimuth** | Azimuth of channel in    |             |
-   |                         | the specified            |             |
-   | decimal degrees         | survey.orie              |             |
-   |                         | ntation.reference_frame. |             |
-   | Float                   |                          |             |
-   |                         |                          |             |
-   | Number                  |                          |             |
-   +-------------------------+--------------------------+-------------+
-   | **measurement_tilt**    | Tilt of channel in       |             |
-   |                         | survey.orie              |             |
-   | decimal degrees         | ntation.reference_frame. |             |
-   |                         |                          |             |
-   | Float                   |                          |             |
-   |                         |                          |             |
-   | Number                  |                          |             |
-   +-------------------------+--------------------------+-------------+
-   | **sample_rate**         | Sample rate of the       |             |
-   |                         | channel.                 |             |
-   | samples per second      |                          |             |
-   |                         |                          |             |
-   | Float                   |                          |             |
-   |                         |                          |             |
-   | Number                  |                          |             |
-   +-------------------------+--------------------------+-------------+
-
-.. table:: Attributes for Magnetic Continued
-
-   +----------------------+----------------------+----------------------+
-   | **Metadata Key**     | **Description**      | **Example**          |
-   +======================+======================+======================+
-   | **sensor.id**        | Sensor ID Number or  | mag01                |
-   |                      | serial Number.       |                      |
-   | None                 |                      |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **s                  | Person or            | Magnets              |
-   | ensor.manufacturer** | organization that    |                      |
-   |                      | manufactured the     |                      |
-   | None                 | magnetic sensor.     |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **sensor.model**     | Model version of the | falcon5              |
-   |                      | magnetic sensor.     |                      |
-   | None                 |                      |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **sensor.type**      | Type of magnetic     | induction coil       |
-   |                      | sensor, should       |                      |
-   | None                 | describe the type of |                      |
-   |                      | magnetic field       |                      |
-   | String               | measurement.         |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **time_period.end**  | End date and time of | -02-04               |
-   |                      | collection in UTC.   | T16:23:45.453670     |
-   | None                 |                      | +00:00               |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Date Time            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | *                    | Start date and time  | -02-01               |
-   | *time_period.start** | of collection in     | T09:23:45.453670     |
-   |                      | UTC.                 | +00:00               |
-   | None                 |                      |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Date Time            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **t                  | Azimuth angle of     |                      |
-   | ransformed_azimuth** | channel that has     |                      |
-   |                      | been transformed     |                      |
-   | decimal degrees      | into a specified     |                      |
-   |                      | coordinate system.   |                      |
-   | Float                | Note this value is   |                      |
-   |                      | only for derivative  |                      |
-   | Number               | products from the    |                      |
-   |                      | archived data.       |                      |
-   +----------------------+----------------------+----------------------+
-
-.. table:: Attributes for Magnetic Continued
-
-   +-----------------------+--------------------------+-------------+
-   | **Metadata Key**      | **Description**          | **Example** |
-   +=======================+==========================+=============+
-   | **transformed_tilt**  | Tilt angle of channel    |             |
-   |                       | that has been            |             |
-   | decimal degrees       | transformed into a       |             |
-   |                       | specified coordinate     |             |
-   | Float                 | system. Note this value  |             |
-   |                       | is only for derivative   |             |
-   | Number                | products from the        |             |
-   |                       | archived data.           |             |
-   +-----------------------+--------------------------+-------------+
-   | **type**              | Data type for the        | magnetic    |
-   |                       | channel                  |             |
-   | None                  |                          |             |
-   |                       |                          |             |
-   | String                |                          |             |
-   |                       |                          |             |
-   | Free Form             |                          |             |
-   +-----------------------+--------------------------+-------------+
-   | **units**             | Units of the data. if    | counts      |
-   |                       | archiving should always  |             |
-   | None                  | be counts. Options: [    |             |
-   |                       | counts :math:`|`         |             |
-   | String                | nanotesla ]              |             |
-   |                       |                          |             |
-   | Controlled Vocabulary |                          |             |
-   +-----------------------+--------------------------+-------------+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **Metadata Key**                             | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **channel_number**                           | Channel Number on the data     | 1              |
+       |                                              | logger.                        |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: Integer                                |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **comments**                                 | Any comments about the channel | Pc1 at 6pm     |
+       |                                              | that would be useful to a      | local time.    |
+       | Required: False                              | user.                          |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **component**                                | Name of the component          | Hx             |
+       |                                              | measured.  Options: \quad [ Hx |                |
+       | Required: True                               | $|$ Hy $|$ Hz $|$ ... ]        |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Controlled Vocabulary                 |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_quality.rating.author**               | Name of person or organization | graduate       |
+       |                                              | who rated the data.            | student ace    |
+       | Required: False                              |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_quality.rating.method**               | The method used to rate the    | standard       |
+       |                                              | data.  Should be a descriptive | deviation      |
+       | Required: False                              | name and not just the name of  |                |
+       |                                              | a software package.  If a      |                |
+       | Units: None                                  | rating is provided             |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_quality.rating.value**                | Rating from 1-5 where 1 is bad | 4              |
+       |                                              |                                |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: Integer                                |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_quality.warning**                     | Any warnings about the data    | periodic       |
+       |                                              | that should be noted for       | pipeline noise |
+       | Required: False                              | users.                         |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **filter.applied**                           | Boolean if filter has been     |  True          |
+       |                                              | applied or not. If more than   |                |
+       | Required: True                               | one filter                     |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: Boolean                                |                                |                |
+       |                                              |                                |                |
+       | Style: List                                  |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **filter.comments**                          | Any comments on filters that   | low pass is not|
+       |                                              | is important for users.        | calibrated     |
+       | Required: False                              |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **filter.name**                              | Name of filter applied or to   | lowpass_electr |
+       |                                              | be applied. If more than one   | ic             |
+       | Required: True                               | filter.                        |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: List                                  |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **h_field_max.end**                          | Maximum magnetic field         | 34526.1        |
+       |                                              | strength at end of             |                |
+       | Required: False                              | measurement.                   |                |
+       |                                              |                                |                |
+       | Units: nanotesla                             |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **h_field_max.start**                        | Maximum magnetic field         | 34565.2        |
+       |                                              | strength at beginning of       |                |
+       | Required: False                              | measurement.                   |                |
+       |                                              |                                |                |
+       | Units: nanotesla                             |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **h_field_min.end**                          | Minimum magnetic field         | 50453.2        |
+       |                                              | strength at end of             |                |
+       | Required: False                              | measurement.                   |                |
+       |                                              |                                |                |
+       | Units: nanotesla                             |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **h_field_min.start**                        | Minimum magnetic field         | 40345.1        |
+       |                                              | strength at beginning of       |                |
+       | Required: False                              | measurement.                   |                |
+       |                                              |                                |                |
+       | Units: nt                                    |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **location.elevation**                       | elevation of magnetometer in   | 123.4          |
+       |                                              | datum specified at survey      |                |
+       | Required: False                              | level.                         |                |
+       |                                              |                                |                |
+       | Units: meters                                |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **location.latitude**                        | Latitude of magnetometer in    | 23.134         |
+       |                                              | datum specified at survey      |                |
+       | Required: False                              | level.                         |                |
+       |                                              |                                |                |
+       | Units: decimal degrees                       |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **location.longitude**                       | Longitude of magnetometer in   | 14.23          |
+       |                                              | datum specified at survey      |                |
+       | Required: False                              | level.                         |                |
+       |                                              |                                |                |
+       | Units: decimal degrees                       |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **measurement_azimuth**                      | Azimuth of channel in the      | 0              |
+       |                                              | specified survey.orientation.r |                |
+       | Required: True                               | eference_frame.                |                |
+       |                                              |                                |                |
+       | Units: decimal degrees                       |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **measurement_tilt**                         | Tilt of channel in survey.orie | 0              |
+       |                                              | ntation.reference_frame.       |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: decimal degrees                       |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **sample_rate**                              | Sample rate of the channel.    | 8              |
+       |                                              |                                |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: samples per second                    |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **sensor.id**                                | Sensor ID Number or serial     | mag01          |
+       |                                              | Number.                        |                |
+       | Required: False                              |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **sensor.manufacturer**                      | Person or organization that    | Magnets        |
+       |                                              | manufactured the magnetic      |                |
+       | Required: False                              | sensor.                        |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **sensor.model**                             | Model version of the magnetic  | falcon5        |
+       |                                              | sensor.                        |                |
+       | Required: False                              |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **sensor.type**                              | Type of magnetic sensor        | induction coil |
+       |                                              |                                |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **time_period.end**                          | End date and time of           | 2020-02-04 T16:|
+       |                                              | collection in UTC.             | 23:45.453670   |
+       | Required: True                               |                                | +00:00         |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Date Time                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **time_period.start**                        | Start date and time of         | 2020-02-01 T09:|
+       |                                              | collection in UTC.             | 23:45.453670   |
+       | Required: True                               |                                | +00:00         |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Date Time                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **transformed_azimuth**                      | Azimuth angle of channel that  | 0              |
+       |                                              | has been transformed into a    |                |
+       | Required: False                              | specified coordinate system.   |                |
+       |                                              | Note this value is only for    |                |
+       | Units: decimal degrees                       | derivative products from the   |                |
+       |                                              | archived data.                 |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **transformed_tilt**                         | Tilt angle of channel that has | 0              |
+       |                                              | been transformed into a        |                |
+       | Required: False                              | specified coordinate system.   |                |
+       |                                              | Note this value is only for    |                |
+       | Units: decimal degrees                       | derivative products from the   |                |
+       |                                              | archived data.                 |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **type**                                     | Data type for the channel      | magnetic       |
+       |                                              |                                |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **units**                                    | Units of the data.  if         | counts         |
+       |                                              | archiving should always be     |                |
+       | Required: True                               | counts.  Options: [ counts $|$ |                |
+       |                                              | nanotesla ]                    |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Controlled Vocabulary                 |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
 
 Example Magnetic Channel JSON
 -----------------------------
@@ -1967,54 +2163,60 @@ For example ``name: "[counts2mv, notch_60hz, e_gain]"`` and
 
    .. table:: Attributes for Filter
 
-      +----------------------+----------------------+----------------------+
-      | **Metadata Key**     | **Description**      | **Example**          |
-      +======================+======================+======================+
-      | **type**             | Filter type.         | lookup               |
-      |                      | Options: [look up    |                      |
-      | None                 | :math:`|` poles      |                      |
-      |                      | zeros :math:`|`      |                      |
-      | String               | converter :math:`|`  |                      |
-      |                      | FIR :math:`|` ...]   |                      |
-      | Controlled           |                      |                      |
-      | Vocabulary           |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **name**             | Unique name for the  | counts2mv            |
-      |                      | filter such that it  |                      |
-      | None                 | is easy to query.    |                      |
-      |                      | See above for some   |                      |
-      | String               | examples.            |                      |
-      |                      |                      |                      |
-      | Alpha Numeric        |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **units_in**         | The input units for  | counts               |
-      |                      | the filter. Should   |                      |
-      | None                 | be SI units or       |                      |
-      |                      | counts.              |                      |
-      | String               |                      |                      |
-      |                      |                      |                      |
-      | Controlled           |                      |                      |
-      | Vocabulary           |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **units_out**        | The output units for | millivolts           |
-      |                      | the filter. Should   |                      |
-      | None                 | be SI units or       |                      |
-      |                      | counts.              |                      |
-      | String               |                      |                      |
-      |                      |                      |                      |
-      | Controlled           |                      |                      |
-      | Vocabulary           |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **calibration_date** | If the filter is a   | -01-01 T00:00:00     |
-      |                      | calibration, include | +00:00               |
-      | None                 | the calibration      |                      |
-      |                      | date.                |                      |
-      | String               |                      |                      |
-      |                      |                      |                      |
-      | Date Time            |                      |                      |
-      +----------------------+----------------------+----------------------+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **Metadata Key**                             | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **type**                                     | Filter type. Options: [look up | lookup         |
+       |                                              | $|$ poles zeros $|$ converter  |                |
+       | Required: True                               | $|$ FIR $|$ ...]               |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Controlled Vocabulary                 |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **name**                                     | Unique name for the filter     | counts2mv      |
+       |                                              | such that it is easy to query. |                |
+       | Required: True                               | See above for some examples.   |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Alpha Numeric                         |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **units_in**                                 | The input units for the        | counts         |
+       |                                              | filter. Should be SI units or  |                |
+       | Required: True                               | counts.                        |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Controlled Vocabulary                 |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **units_out**                                | The output units for the       | millivolts     |
+       |                                              | filter. Should be SI units or  |                |
+       | Required: True                               | counts.                        |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Controlled Vocabulary                 |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **calibration_date**                         | If the filter is a calibration | 2010-01-01     |
+       |                                              |                                | T00:00:00      |
+       | Required: True                               |                                | +00:00         |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Date Time                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
 
-[tab:filter]
 
 Example Filter JSON
 -------------------
@@ -2042,226 +2244,229 @@ Auxiliary channels include state of health channels, temperature, etc.
 
    .. table:: Attributes for Auxiliary
 
-      +----------------------+----------------------+----------------------+
-      | **Metadata Key**     | **Description**      | **Example**          |
-      +======================+======================+======================+
-      | **channel_number**   | Channel Number on    |                      |
-      |                      | the data logger.     |                      |
-      | None                 |                      |                      |
-      |                      |                      |                      |
-      | Integer              |                      |                      |
-      |                      |                      |                      |
-      | Number               |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **comments**         | Any comments about   | Pc1 at 6pm local     |
-      |                      | the channel that     | time.                |
-      | None                 | would be useful to a |                      |
-      |                      | user.                |                      |
-      | String               |                      |                      |
-      |                      |                      |                      |
-      | Free Form            |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **component**        | Name of the          | temperature          |
-      |                      | component measured.  |                      |
-      | None                 | Options: [           |                      |
-      |                      | temperature          |                      |
-      | String               | :math:`|` battery    |                      |
-      |                      | :math:`|` ... ]      |                      |
-      | Controlled           |                      |                      |
-      | Vocabulary           |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **data_qua           | Name of person or    | graduate student ace |
-      | lity.rating.author** | organization who     |                      |
-      |                      | rated the data.      |                      |
-      | None                 |                      |                      |
-      |                      |                      |                      |
-      | String               |                      |                      |
-      |                      |                      |                      |
-      | Free Form            |                      |                      |
-      +----------------------+----------------------+----------------------+
-      | **data_qua           | The method used to   | standard deviation   |
-      | lity.rating.method** | rate the data.       |                      |
-      |                      | Should be a          |                      |
-      | None                 | descriptive name and |                      |
-      |                      | not just the name of |                      |
-      | String               | a software package.  |                      |
-      |                      | If a rating is       |                      |
-      | Free Form            | provided, the method |                      |
-      |                      | should be recorded.  |                      |
-      +----------------------+----------------------+----------------------+
-      | **data_qu            | Rating from 1-5      |                      |
-      | ality.rating.value** | where 1 is bad, 5 is |                      |
-      |                      | good, and 0 is       |                      |
-      | None                 | unrated. Options: [  |                      |
-      |                      | 0 :math:`|` 1        |                      |
-      | Integer              | :math:`|` 2          |                      |
-      |                      | :math:`|` 3          |                      |
-      | Number               | :math:`|` 4          |                      |
-      |                      | :math:`|` 5 ]        |                      |
-      +----------------------+----------------------+----------------------+
-
-[tab:auxiliary]
-
-.. table:: Attributes for Auxiliary Continued
-
-   +----------------------+----------------------+----------------------+
-   | **Metadata Key**     | **Description**      | **Example**          |
-   +======================+======================+======================+
-   | **da                 | Any warnings about   | periodic pipeline    |
-   | ta_quality.warning** | the data that should | noise                |
-   |                      | be noted for users.  |                      |
-   | None                 |                      |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **filter.applied**   | Boolean if filter    | True, True           |
-   |                      | has been applied or  |                      |
-   | None                 | not. If more than    |                      |
-   |                      | one filter, input as |                      |
-   | Boolean              | a comma separated    |                      |
-   |                      | list. Needs to be    |                      |
-   | List                 | the same length as   |                      |
-   |                      | filter.name. If only |                      |
-   |                      | one entry is given,  |                      |
-   |                      | it is assumed to     |                      |
-   |                      | apply to all filters |                      |
-   |                      | listed.              |                      |
-   +----------------------+----------------------+----------------------+
-   | **filter.comments**  | Any comments on      | low pass is not      |
-   |                      | filters that is      | calibrated           |
-   | None                 | important for users. |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | Free Form            |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **filter.name**      | Name of filter       | counts2mv,           |
-   |                      | applied or to be     | lowpass_auxiliary    |
-   | None                 | applied. If more     |                      |
-   |                      | than one filter,     |                      |
-   | String               | input as a comma     |                      |
-   |                      | separated list.      |                      |
-   | List                 |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **                   | Elevation of channel |                      |
-   | location.elevation** | location in datum    |                      |
-   |                      | specified at survey  |                      |
-   | meters               | level.               |                      |
-   |                      |                      |                      |
-   | Float                |                      |                      |
-   |                      |                      |                      |
-   | Number               |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | *                    | Latitude of channel  |                      |
-   | *location.latitude** | location in datum    |                      |
-   |                      | specified at survey  |                      |
-   | decimal degrees      | level.               |                      |
-   |                      |                      |                      |
-   | Float                |                      |                      |
-   |                      |                      |                      |
-   | Number               |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **                   | Longitude of channel |                      |
-   | location.longitude** | location in datum    |                      |
-   |                      | specified at survey  |                      |
-   | decimal degrees      | level.               |                      |
-   |                      |                      |                      |
-   | Float                |                      |                      |
-   |                      |                      |                      |
-   | Number               |                      |                      |
-   +----------------------+----------------------+----------------------+
-
-.. table:: Attributes for Auxiliary Continued
-
-   +----------------------+----------------------+----------------------+
-   | **Metadata Key**     | **Description**      | **Example**          |
-   +======================+======================+======================+
-   | **m                  | Azimuth of channel   |                      |
-   | easurement_azimuth** | in the specified     |                      |
-   |                      | survey.orientat      |                      |
-   | decimal degrees      | ion.reference_frame. |                      |
-   |                      |                      |                      |
-   | Float                |                      |                      |
-   |                      |                      |                      |
-   | Number               |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **measurement_tilt** | Tilt of channel in   |                      |
-   |                      | survey.orientat      |                      |
-   | decimal degrees      | ion.reference_frame. |                      |
-   |                      |                      |                      |
-   | Float                |                      |                      |
-   |                      |                      |                      |
-   | Number               |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **sample_rate**      | Sample rate of the   |                      |
-   |                      | channel.             |                      |
-   | samples per second   |                      |                      |
-   |                      |                      |                      |
-   | Float                |                      |                      |
-   |                      |                      |                      |
-   | Number               |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **time_period.end**  | End date and time of | -02-04               |
-   |                      | collection in UTC.   | T16:23:45.453670     |
-   | None                 |                      | +00:00               |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | time                 |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | *                    | Start date and time  | -02-01               |
-   | *time_period.start** | of collection in     | T09:23:45.453670     |
-   |                      | UTC.                 | +00:00               |
-   | None                 |                      |                      |
-   |                      |                      |                      |
-   | String               |                      |                      |
-   |                      |                      |                      |
-   | time                 |                      |                      |
-   +----------------------+----------------------+----------------------+
-   | **t                  | Azimuth angle of     |                      |
-   | ransformed_azimuth** | channel that has     |                      |
-   |                      | been transformed     |                      |
-   | decimal degrees      | into a specified     |                      |
-   |                      | coordinate system.   |                      |
-   | Float                | Note this value is   |                      |
-   |                      | only for derivative  |                      |
-   | Number               | products from the    |                      |
-   |                      | archived data.       |                      |
-   +----------------------+----------------------+----------------------+
-   | **transformed_tilt** | Tilt angle of        |                      |
-   |                      | channel that has     |                      |
-   | decimal degrees      | been transformed     |                      |
-   |                      | into a specified     |                      |
-   | Float                | coordinate system.   |                      |
-   |                      | Note this value is   |                      |
-   | Number               | only for derivative  |                      |
-   |                      | products from the    |                      |
-   |                      | archived data.       |                      |
-   +----------------------+----------------------+----------------------+
-
-.. table:: Attributes for Auxiliary Continued
-
-   +-----------------------+--------------------------+-------------+
-   | **Metadata Key**      | **Description**          | **Example** |
-   +=======================+==========================+=============+
-   | **type**              | Data type for the        | temperature |
-   |                       | channel.                 |             |
-   | None                  |                          |             |
-   |                       |                          |             |
-   | String                |                          |             |
-   |                       |                          |             |
-   | Free Form             |                          |             |
-   +-----------------------+--------------------------+-------------+
-   | **units**             | Units of the data.       | celsius     |
-   |                       | Options: SI units or     |             |
-   | None                  | counts.                  |             |
-   |                       |                          |             |
-   | String                |                          |             |
-   |                       |                          |             |
-   | Controlled Vocabulary |                          |             |
-   +-----------------------+--------------------------+-------------+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **Metadata Key**                             | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **channel_number**                           | Channel Number on the data     | 1              |
+       |                                              | logger.                        |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: Integer                                |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **comments**                                 | Any comments about the channel | Pc1 at 6pm     |
+       |                                              | that would be useful to a      | local time.    |
+       | Required: False                              | user.                          |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **component**                                | Name of the component          | temperature    |
+       |                                              | measured.  Options: [          |                |
+       | Required: True                               | temperature $|$ battery $|$    |                |
+       |                                              | ... ]                          |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Controlled Vocabulary                 |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_quality.rating.author**               | Name of person or organization | graduate       |
+       |                                              | who rated the data.            | student ace    |
+       | Required: False                              |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_quality.rating.method**               | The method used to rate the    | standard       |
+       |                                              | data.  Should be a descriptive | deviation      |
+       | Required: False                              | name and not just the name of  |                |
+       |                                              | a software package.  If a      |                |
+       | Units: None                                  | rating is provided             |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_quality.rating.value**                | Rating from 1-5 where 1 is bad | 4              |
+       |                                              |                                |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: Integer                                |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_quality.warning**                     | Any warnings about the data    | periodic       |
+       |                                              | that should be noted for       | pipeline noise |
+       | Required: False                              | users.                         |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **filter.applied**                           | Boolean if filter has been     |  True          |
+       |                                              | applied or not. If more than   |                |
+       | Required: True                               | one filter                     |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: Boolean                                |                                |                |
+       |                                              |                                |                |
+       | Style: List                                  |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **filter.comments**                          | Any comments on filters that   | low pass is not|
+       |                                              | is important for users.        | calibrated     |
+       | Required: False                              |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **filter.name**                              | Name of filter applied or to   | lowpass_auxili |
+       |                                              | be applied. If more than one   | ary            |
+       | Required: True                               | filter                         |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: List                                  |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **location.elevation**                       | Elevation of channel location  | 123.4          |
+       |                                              | in datum specified at survey   |                |
+       | Required: False                              | level.                         |                |
+       |                                              |                                |                |
+       | Units: meters                                |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **location.latitude**                        | Latitude of channel location   | 23.134         |
+       |                                              | in datum specified at survey   |                |
+       | Required: False                              | level.                         |                |
+       |                                              |                                |                |
+       | Units: decimal degrees                       |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **location.longitude**                       | Longitude of channel location  | 14.23          |
+       |                                              | in datum specified at survey   |                |
+       | Required: False                              | level.                         |                |
+       |                                              |                                |                |
+       | Units: decimal degrees                       |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **measurement_azimuth**                      | Azimuth of channel in the      | 0              |
+       |                                              | specified survey.orientation.r |                |
+       | Required: True                               | eference_frame.                |                |
+       |                                              |                                |                |
+       | Units: decimal degrees                       |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **measurement_tilt**                         | Tilt of channel in survey.orie | 0              |
+       |                                              | ntation.reference_frame.       |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: decimal degrees                       |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **sample_rate**                              | Sample rate of the channel.    | 8              |
+       |                                              |                                |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: samples per second                    |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **time_period.end**                          | End date and time of           | 2020-02-04 T16:|
+       |                                              | collection in UTC.             | 23:45.453670   |
+       | Required: True                               |                                | +00:00         |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: time                                  |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **time_period.start**                        | Start date and time of         | 2020-02-01 T09:|
+       |                                              | collection in UTC.             | 23:45.453670   |
+       | Required: True                               |                                | +00:00         |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: time                                  |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **transformed_azimuth**                      | Azimuth angle of channel that  | 0              |
+       |                                              | has been transformed into a    |                |
+       | Required: False                              | specified coordinate system.   |                |
+       |                                              | Note this value is only for    |                |
+       | Units: decimal degrees                       | derivative products from the   |                |
+       |                                              | archived data.                 |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **transformed_tilt**                         | Tilt angle of channel that has | 0              |
+       |                                              | been transformed into a        |                |
+       | Required: False                              | specified coordinate system.   |                |
+       |                                              | Note this value is only for    |                |
+       | Units: decimal degrees                       | derivative products from the   |                |
+       |                                              | archived data.                 |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **type**                                     | Data type for the channel.     | temperature    |
+       |                                              |                                |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+       | **units**                                    | Units of the data.  Options:   | celsius        |
+       |                                              | SI units or counts.            |                |
+       | Required: True                               |                                |                |
+       |                                              |                                |                |
+       | Units: None                                  |                                |                |
+       |                                              |                                |                |
+       | Type: String                                 |                                |                |
+       |                                              |                                |                |
+       | Style: Controlled Vocabulary                 |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
 
 Example Auxiliary XML
 ---------------------
@@ -2314,10 +2519,9 @@ Option Definitions
 ==================
 
 .. container::
-   :name: tab:em
+   :name: em
 
-   .. table:: Generalized electromagnetic period bands. Some overlap,
-   use the closest definition.
+   .. table:: Generalized electromagnetic period bands. Some overlap, use the closest definition.
 
       +---------------+------------------------------+---------------------------------+
       | **Data Type** | **Definition**               | **Sample Rate [samples/s]**     |
@@ -2329,13 +2533,11 @@ Option Definitions
       | LPMT          | long-period magnetotellurics | :math:`<10^{0}`                 |
       +---------------+------------------------------+---------------------------------+
 
-[tab:em]
 
 .. container::
    :name: tab:channel_types
 
-   .. table:: These are the common channel components. More can be
-   added.
+   .. table:: These are the common channel components. More can be added.
 
       ================ ==========================
       **Channel Type** **Definition**
@@ -2347,17 +2549,10 @@ Option Definitions
       SOH              state-of-health
       ================ ==========================
 
-[tab:channel_types]
-
 .. container::
    :name: tab:diretions
-
-   .. table:: The convention for many MT setups follows the
-   right-hand-rule (Figure `2 <#fig:reference>`__) with X in the
-   northern direction, Y in the eastern direction, and Z positive down.
-   If the setup has multiple channels in the same direction, they can be
-   labeled with a Number. For instance, if you measure multiple electric
-   fields Ex01, Ey01, Ex02, Ey02.
+	
+   .. table:: The convention for many MT setups follows the right-hand-rule (Figure `2 <#fig:reference>`__) with X in the northern direction, Y in the eastern direction, and Z positive down. If the setup has multiple channels in the same direction, they can be labeled with a Number. For instance, if you measure multiple electric fields Ex01, Ey01, Ex02, Ey02.
 
       ============= ===================
       **Direction** **Definition**
@@ -2368,7 +2563,6 @@ Option Definitions
       # {0–9}       variable directions
       ============= ===================
 
-[tab:diretions]
 
 .. [1]
    **Corresponding Authors:**
