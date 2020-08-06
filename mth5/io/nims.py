@@ -390,12 +390,11 @@ class GPS(object):
 
     def _validate_elevation(self, elevation_str):
         """validate elevation, check for converstion to float"""
+        elevation_str = elevation_str.lower().replace('m', '')
         try:
-            float(elevation_str)
+            elevation_str = f"{float(elevation_str):0.2f}"
         except ValueError:
-            raise GPSError(
-                "Elevation could not be converted {0}".format(elevation_str)
-            )
+            raise GPSError( f"Elevation could not be converted {elevation_str}")
 
         return elevation_str
 
@@ -531,7 +530,7 @@ class NIMSHeader(object):
 
     def __init__(self, fn=None):
         self.logger = logging.getLogger(
-            f"{self.__class__}.{self.__class__.__name__}"
+            f"{__name__}.{self.__class__.__name__}"
         )
         self.fn = fn
         self._max_header_length = 1000
@@ -833,8 +832,8 @@ class NIMS(NIMSHeader):
                 "measurement_azimuth": 90,
                 "measurement_tilt": 0,
                 "sample_rate": self.sample_rate,
-                "time_period.start": self.start_time,
-                "time_period.end": self.end_time,
+                "time_period.start": self.start_time.isoformat(),
+                "time_period.end": self.end_time.isoformat(),
                 "type": "magnetic",
                 "units": "nanotesla",
             }
@@ -857,8 +856,8 @@ class NIMS(NIMSHeader):
                 "measurement_azimuth": 0,
                 "measurement_tilt": 90,
                 "sample_rate": self.sample_rate,
-                "time_period.start": self.start_time,
-                "time_period.end": self.end_time,
+                "time_period.start": self.start_time.isoformat(),
+                "time_period.end": self.end_time.isoformat(),
                 "type": "magnetic",
                 "units": "nanotesla",
             }
@@ -882,8 +881,8 @@ class NIMS(NIMSHeader):
                 "measurement_tilt": 0,
                 "sample_rate": self.sample_rate,
                 "dipole_length": self.ex_length,
-                "time_period.start": self.start_time,
-                "time_period.end": self.end_time,
+                "time_period.start": self.start_time.isoformat(),
+                "time_period.end": self.end_time.isoformat(),
                 "type": "electric",
                 "units": "millivolts per kilometer",
             }
@@ -907,8 +906,8 @@ class NIMS(NIMSHeader):
                 "measurement_tilt": 0,
                 "sample_rate": self.sample_rate,
                 "dipole_length": self.ey_length,
-                "time_period.start": self.start_time,
-                "time_period.end": self.end_time,
+                "time_period.start": self.start_time.isoformat(),
+                "time_period.end": self.end_time.isoformat(),
                 "type": "electric",
                 "units": "millivolts per kilometer",
             }
@@ -920,6 +919,32 @@ class NIMS(NIMSHeader):
             )
         else:
             return None
+        
+    @property
+    def run_xarray(self):
+        """ Get xarray for run """
+        meta_dict = {'run': {'channels_recorded_electric': 'ex, ey',
+                             'channels_recorded_magnetic': 'hx, hy, hz',
+                             'channels_recorded_auxiliary': 'temperature',
+                             'comments': self.comments,
+                             'data_logger.firmware.author': 'B. Narod',
+                             'data_logger.firmware.name': 'nims',
+                             'data_logger.firmware.version': '1.0',
+                             'data_logger.manufacturer': 'Narod',
+                             'data_logger.model': self.box_id,
+                             'data_logger.type': 'long period',
+                             'id': self.run_id,
+                             'data_type': 'MTLP',
+                             'sample_rate': self.sample_rate,
+                             'time_period.end': self.start_time.isoformat(),
+                             'time_period.start': self.end_time.isoformat()}}
+
+        return timeseries.RunTS(array_list=[self.hx, 
+                                                  self.hy, 
+                                                  self.hz, 
+                                                  self.ex, 
+                                                  self.ey],
+                                      run_metadata=meta_dict)
 
     def _make_index_values(self):
         """
@@ -1072,9 +1097,7 @@ class NIMS(NIMSHeader):
                         del gps_list[ii]
                         break
             if not stamp_find:
-                logging.warning(
-                    "No good GPS stamp at {0} seconds".format(index)
-                )
+                self.logger.warning(f"No good GPS stamp at {index} seconds")
 
         return gps_stamps
 
@@ -1271,8 +1294,8 @@ class NIMS(NIMSHeader):
 
         ### check the size of the data, should have an equal amount of blocks
         if (data.size % self.block_size) != 0:
-            logging.warning(
-                "odd number of bytes {0}, not even blocks".format(data.size)
+            self.logger.warning(
+                f"odd number of bytes {data.size}, not even blocks"
                 + "cutting down the data by {0}".format(
                     data.size % self.block_size
                 )
@@ -1280,6 +1303,7 @@ class NIMS(NIMSHeader):
             end_data = data.size - (data.size % self.block_size)
             data = data[0:end_data]
 
+        # resized the data into an even amount of blocks
         data = data.reshape((int(data.size / self.block_size), self.block_size))
 
         ### need to parse the data

@@ -409,17 +409,16 @@ class RunTS():
     
     """
     
-    def __init__(self, array_list=None):
-        self.logger = logging.getLogger(f"{__name__}.{self._class_name}")
+    def __init__(self, array_list=None, run_metadata=None):
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.metadata = metadata.Run()
         self._dataset = xr.Dataset()
         
+        if run_metadata is not None:
+            self.metadata.from_dict(run_metadata)
+        
         if array_list is not None:
             self.build_dataset(array_list)
-            
-    @property
-    def _class_name(self):
-        return self.__class__.__name__
     
     def _validate_array_list(self, array_list):
         """ check to make sure all entries are a :class:`MTTS` object"""

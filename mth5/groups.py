@@ -29,7 +29,7 @@ from mth5.utils.helpers import to_numpy_type, inherit_doc_string
 from mth5.helpers import get_tree
 from mth5.utils.exceptions import MTH5TableError, MTH5Error
 from mth5.utils.mttime import MTime
-from mth5.timeseries import MTTS
+from mth5.timeseries import MTTS, RunTS
 
 # make a dictionary of available metadata classes
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
@@ -1603,7 +1603,8 @@ class RunGroup(BaseGroup):
 
         """
         
-        pass
+        return RunTS([channel.to_mtts() for channel in self.group_list[1:]],
+                     run_metadata=self.metadata)
 
 
 class ChannelDataset:
