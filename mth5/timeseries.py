@@ -47,7 +47,7 @@ class MTTS():
     """
 
     def __init__(self, channel_type, data=None, channel_metadata=None, **kwargs):
-        self.logger = logging.getLogger("{0}.{1}".format(__name__, self._class_name))
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
         # get correct metadata class
         try:
@@ -150,8 +150,8 @@ class MTTS():
         :rtype: TYPE
 
         """
-        self.metadata.time_period.start = self.start_time_utc
-        self.metadata.time_period.end = self.end_time_utc
+        self.metadata.time_period.start = self.start.iso_no_tz
+        self.metadata.time_period.end = self.end.iso_no_tz
         self.metadata.sample_rate = self.sample_rate
 
         self._ts.attrs.update(self.metadata.to_dict()[self.metadata._class_name])
