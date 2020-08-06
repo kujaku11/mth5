@@ -12,7 +12,7 @@ from pathlib import Path
 class TestMTH5(unittest.TestCase):
     
     def setUp(self):
-        fn = Path(r'c:\Users\jpeacock\Documents\GitHub\MTarchive\tests\test.mth5')
+        fn = Path(r'c:\Users\jpeacock\Documents\GitHub\mth5\tests\test.mth5')
         self.base = mth5.MTH5()
         self.base.open_mth5(fn, mode='w')
         

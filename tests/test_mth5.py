@@ -17,6 +17,7 @@ import numpy as np
 from mth5 import mth5
 from mth5.standards import schema
 from mth5.utils.exceptions import MTH5Error, MTH5TableError
+from mth5.timeseries import MTTS, RunTS
 
 fn_path = Path(__file__).parent
 # =============================================================================
@@ -111,6 +112,30 @@ class TestMTH5(unittest.TestCase):
         new_station.add_run('MT001a')
         self.assertRaises(MTH5Error, self.mth5_obj.get_channel, 
                           'MT001', 'MT001a', 'Ey')
+        
+    def test_channel_mtts(self):
+        meta_dict = {'electric': {'component': 'Ex',
+                                  'dipole_length': 49.,
+                                  'measurement_azimuth': 12.,
+                                  'type': 'electric',
+                                  'units': 'millivolts',
+                                  'time_period.start': '2020-01-01T12:00:00',
+                                  'sample_rate': 1}}
+        channel_ts = MTTS('electric', 
+                          data=np.random.rand(4096),
+                          channel_metadata=meta_dict)
+        
+        station = self.mth5_obj.add_station('MT002')
+        run = station.add_run('MT002a')
+        ex = run.add_channel('Ex', 'electric', None)
+        ex.from_mtts(channel_ts)
+        new_ts = ex.to_mtts()
+        
+        self.assertEqual(channel_ts.start, new_ts.start)
+        self.assertTrue(channel_ts.ts.time.to_dict() == new_ts.ts.time.to_dict())
+        
+        
+        
 
     def tearDown(self):
         self.mth5_obj.close_mth5()

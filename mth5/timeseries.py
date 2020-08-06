@@ -96,10 +96,6 @@ class MTTS():
     ## make sure some attributes have the correct data type
     # make sure that the time series is a pandas data frame
     @property
-    def _class_name(self):
-        return self.__class__.__name__
-
-    @property
     def ts(self):
         return self._ts
 
