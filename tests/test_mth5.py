@@ -134,9 +134,6 @@ class TestMTH5(unittest.TestCase):
         self.assertEqual(channel_ts.start, new_ts.start)
         self.assertTrue(channel_ts.ts.time.to_dict() == new_ts.ts.time.to_dict())
         
-        
-        
-
     def tearDown(self):
         self.mth5_obj.close_mth5()
     

@@ -6,9 +6,12 @@ Created on Tue Jun  9 20:44:44 2020
 """
 
 import unittest
-from mth5.utils import translator
+from pathlib import Path
+from mth5.utils import stationxml_translator as translator
 from mth5 import metadata
+from obspy.core import inventory
 
+fn_path = Path(__file__).parent
 # =============================================================================
 # 
 # =============================================================================
@@ -33,7 +36,7 @@ class TestSurvey2Network(unittest.TestCase):
                            'project_lead.author': 'T. Lurric',
                            'project_lead.email': 'mt@mt.org',
                            'project_lead.organization': 'mt rules',
-                           'release_license': 'CC 0',
+                           'release_license': 'CC-0',
                            'southeast_corner.latitude': -80.,
                            'southeast_corner.longitude': -179.9,
                            'summary': None,
@@ -46,16 +49,15 @@ class TestSurvey2Network(unittest.TestCase):
             self.survey_obj)
         
         self.assertEqual(network_obj.code, self.survey_obj.archive_network)
-        self.assertEqual(network_obj.comments, self.survey_obj.comments)
         self.assertEqual(network_obj.start_date, 
-                         self.survey_obj.time_period.start_date)
+                         self.survey_obj.time_period.start)
         self.assertEqual(network_obj.end_date, 
-                         self.survey_obj.time_period.end_date)
+                         self.survey_obj.time_period.end)
         self.assertEqual(network_obj.restricted_status, 
-                         self.survey_obj.release_license)
+                         translator.release_dict[self.survey_obj.release_license])
         self.assertEqual(network_obj.operators[0].agency,
                          self.survey_obj.project_lead.organization)
-        self.assertEqual(network_obj.operators[0].contacts[0],
+        self.assertEqual(network_obj.operators[0].contacts[0].names[0],
                          self.survey_obj.project_lead.author)
         
 
@@ -113,8 +115,8 @@ class TestStationMetadata(unittest.TestCase):
                          self.station_obj.time_period.start)
         self.assertEqual(inv_station.end_date, 
                          self.station_obj.time_period.end)
-        self.assertListEqual(inv_station.channels, 
-                             self.station_obj.channels_recorded)
+        # self.assertListEqual(inv_station.channels, 
+        #                      self.station_obj.channels_recorded)
         self.assertEqual(inv_station.creation_date, 
                          self.station_obj.time_period.start)
         self.assertEqual(inv_station.termination_date, 
@@ -197,7 +199,7 @@ class TestElectric2Inventory(unittest.TestCase):
                            'provenance.log': None,
                            'metadata_by.author': 'MT guru',
                            'metadata_by.comments': 'lazy',
-                           'sampling_rate': 256.0,
+                           'sample_rate': 256.0,
                            'time_period.end': '1980-01-01T00:00:00+00:00',
                            'time_period.start': '1980-01-01T00:00:00+00:00'}}
 
@@ -205,8 +207,8 @@ class TestElectric2Inventory(unittest.TestCase):
         self.run_obj.from_dict(self.run_dict)
         
     def test_to_inventory_channel(self):
-        inv_channel = translator.mt_electric_to_inventory_channel(
-            self.electric_obj, self.run_obj)
+        inv_channel = translator.mt_channel_to_inventory_channel(
+            self.electric_obj, self.run_obj, 'MT')
         
         self.assertEqual(inv_channel.latitude,
                          self.electric_obj.positive.latitude)
@@ -247,7 +249,7 @@ class TestToXML(unittest.TestCase):
                            'project_lead.author': 'T. Lurric',
                            'project_lead.email': 'mt@mt.org',
                            'project_lead.organization': 'mt rules',
-                           'release_license': 'CC 0',
+                           'release_license': 'CC-0',
                            'southeast_corner.latitude': -80.,
                            'southeast_corner.longitude': -179.9,
                            'summary': None,
@@ -360,13 +362,13 @@ class TestToXML(unittest.TestCase):
                        'provenance.log': None,
                        'metadata_by.author': 'MT guru',
                        'metadata_by.comments': 'lazy',
-                       'sampling_rate': 256.0,
+                       'sample_rate': 256.0,
                        'time_period.end': '1980-01-01T00:00:00+00:00',
                        'time_period.start': '1980-01-01T00:00:00+00:00'}})
             
         self.to_stationxml.add_channel(channel, run, 'MT012')
         
-        self.to_stationxml.to_stationxml('Test_station.xml')
+        self.to_stationxml.to_stationxml(fn_path.joinpath('Test_station.xml'))
             
         
         
