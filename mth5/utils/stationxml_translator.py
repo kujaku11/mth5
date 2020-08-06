@@ -368,6 +368,8 @@ def mt_survey_to_inventory_network(survey_obj, namespace="MT"):
         "datum",
         "geographic_name",
         "name",
+        "hdf5_reference",
+        "mth5_type"
     ]
     for inv_key, mth5_key in network_translator.items():
         if mth5_key is None:
@@ -452,6 +454,8 @@ def mt_station_to_inventory_station(station_obj, namespace="MT"):
         "location.elevation",
         "archive_id",
         "channel_layout",
+        "hdf5_reference",
+        "mth5_type"
     ]
     for inv_key, mth5_key in station_translator.items():
         if mth5_key is None:
@@ -619,6 +623,8 @@ def mt_channel_to_inventory_channel(channel_obj, run_obj, namespace):
         "measurement_azimuth",
         "measurement_tilt",
         "units",
+        "hdf5_reference",
+        "mth5_type",
     ]
     for inv_key, mth5_key in channel_translator.items():
         if mth5_key is None:
