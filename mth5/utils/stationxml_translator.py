@@ -487,7 +487,7 @@ def mt_station_to_inventory_station(station_obj, namespace="MT"):
     # make declination entry
     dec_attrs = {
         "model": station_obj.location.declination.model,
-        "comment": station_obj.location.declination.comments,
+        "comment": str(station_obj.location.declination.comments),
         "units": "degrees",
     }
     inv_station.extra.declination = AttribDict(
