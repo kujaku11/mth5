@@ -369,7 +369,7 @@ def mt_survey_to_inventory_network(survey_obj, namespace="MT"):
         "geographic_name",
         "name",
         "hdf5_reference",
-        "mth5_type"
+        "mth5_type",
     ]
     for inv_key, mth5_key in network_translator.items():
         if mth5_key is None:
@@ -455,7 +455,7 @@ def mt_station_to_inventory_station(station_obj, namespace="MT"):
         "archive_id",
         "channel_layout",
         "hdf5_reference",
-        "mth5_type"
+        "mth5_type",
     ]
     for inv_key, mth5_key in station_translator.items():
         if mth5_key is None:

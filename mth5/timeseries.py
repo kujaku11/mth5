@@ -29,7 +29,7 @@ meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
 # ==============================================================================
 
 # ==============================================================================
-class MTTS():
+class MTTS:
     """
     
     .. note:: Assumes equally spaced samples from the start time.
@@ -79,7 +79,7 @@ class MTTS():
 
         self._ts = xr.DataArray([1], coords=[("time", [1])])
         self.update_xarray_metadata()
-        
+
         if data is not None:
             self.ts = data
 
@@ -270,27 +270,8 @@ class MTTS():
         the new start time.
         """
         self.logger.warning(
-            "Cannot set `end`. If you want a slice, then "
-            + "use MTTS.ts.sel['time'=slice(start, end)]"
+            "Cannot set `end`. If you want a slice, then " + "use get_slice method"
         )
-
-        # if not isinstance(end_time, MTime):
-        #     end_time = MTime(end_time)
-
-        # self.metadata.time_period.end = end_time.iso_str
-        # if self._check_for_index():
-        #     if start_time == MTime(self.ts.coords.indexes['time'][0].isoformat()):
-        #         return
-        #     else:
-        #         new_dt = self._make_dt_coordinates(start_time,
-        #                                            self.sample_rate,
-        #                                            self.n_samples)
-        #         self.ts.coords['time'] = new_dt
-
-        # # make a time series that the data can be indexed by
-        # else:
-        #     self.logger.warning("No data, just updating metadata start")
-
 
     def _make_dt_coordinates(self, start_time, sample_rate, n_samples):
         """
@@ -390,54 +371,59 @@ class MTTS():
         else:
             new_ts.attrs.update(self.metadata.to_dict()[self.metadata._class_name])
             # return new_ts
-            return MTTS(self.metadata.type,
-                             data=new_ts,
-                             metadata=self.metadata)
+            return MTTS(self.metadata.type, data=new_ts, metadata=self.metadata)
+
 
 # =============================================================================
 # run container
 # =============================================================================
-class RunTS():
+class RunTS:
     """
     holds all run ts in one aligned array
     
     components --> {'ex': ex_xarray, 'ey': ey_xarray}
     
     """
-    
+
     def __init__(self, array_list=None, run_metadata=None):
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.metadata = metadata.Run()
         self._dataset = xr.Dataset()
-        
+
         if run_metadata is not None:
             self.metadata.from_dict(run_metadata)
-        
+
         if array_list is not None:
             self.build_dataset(array_list)
-    
+
     def _validate_array_list(self, array_list):
         """ check to make sure all entries are a :class:`MTTS` object"""
-        
+
         if not isinstance(array_list, (tuple, list)):
             msg = f"array_list must be a list or tuple, not {type(array_list)}"
             self.logger.error(msg)
             raise TypeError(msg)
-            
+
         for index, item in enumerate(array_list):
             if not isinstance(item, MTTS):
                 msg = f"array entry {index} must be MTTS object not {type(item)}"
                 self.logger.error(msg)
                 raise TypeError(msg)
-                
+
         x_array_list = [x.ts for x in array_list]
-        meta_list = dict([(x.metadata.component, 
-                           x.metadata.to_dict()[list(x.metadata.to_dict().keys())[0]]) 
-                          for x in array_list])   
-            
+        meta_list = dict(
+            [
+                (
+                    x.metadata.component,
+                    x.metadata.to_dict()[list(x.metadata.to_dict().keys())[0]],
+                )
+                for x in array_list
+            ]
+        )
+
         return x_array_list, meta_list
-    
-    def build_dataset(self, array_list, align_type='outer'):
+
+    def build_dataset(self, array_list, align_type="outer"):
         """
         
         :param array_list: list of xarrays
@@ -456,45 +442,34 @@ class RunTS():
 
         """
         x_array_list, meta_dict = self._validate_array_list(array_list)
-        
+
         # first need to align the time series.
         x_array_list = xr.align(*x_array_list, join=align_type)
-        
+
         # input as a dictionary
         xdict = dict([(x.component, x) for x in x_array_list])
         self._dataset = xr.Dataset(xdict)
-        
+
         self._dataset.attrs.update(meta_dict)
-        
+
     @property
     def dataset(self):
         return self._dataset
-            
+
     @dataset.setter
     def dataset(self):
         msg = "Cannot set dataset, use build_dataset instead."
         self.logger.error(msg)
         raise AttributeError(msg)
-        
+
     @property
     def start(self):
-        return self.dataset.coords['time'].to_index()[0].isoformat()
-    
+        return self.dataset.coords["time"].to_index()[0].isoformat()
+
     @property
     def end(self):
-        return self.dataset.coords['time'].to_index()[-1].isoformat()
-    
+        return self.dataset.coords["time"].to_index()[-1].isoformat()
+
     @property
     def sample_rate(self):
-        return 1E9/self.dataset.coords['time'].to_index().freq.n
-        
-        
-        
-    
-    
-        
-    
-    
-
-
-
+        return 1e9 / self.dataset.coords["time"].to_index().freq.n

@@ -564,7 +564,7 @@ class Base:
                 sorted(meta_dict.items(), key=itemgetter(0))
             )
         }
-        
+
         if single:
             meta_dict = meta_dict[list(meta_dict.keys())[0]]
 
@@ -1660,17 +1660,19 @@ class Channel(Base):
         super().__init__(**kwargs)
         self._attr_dict = ATTR_DICT["channel"]
 
+
 # =============================================================================
-# auxiliary channel 
+# auxiliary channel
 # =============================================================================
 class Auxiliary(Channel):
     """
     auxiliary channel, anything that is not electric or magnetic
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-    
-    
+
+
 # =============================================================================
 # Electric Channel
 # =============================================================================

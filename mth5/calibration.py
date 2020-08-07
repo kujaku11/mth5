@@ -116,16 +116,16 @@ import numpy as np
 #     def from_csv(self, cal_csv, name=None, header=False):
 #         """
 #         Read a csv file that is in the format frequency,real,imaginary
-        
+
 #         :param cal_csv: full path to calibration csv file
 #         :type cal_csv: string
-        
+
 #         :param name: instrument id
 #         :type name: string
-        
+
 #         :param header: boolean if there is a header in the csv file
 #         :type header: [ True | False ]
-        
+
 #         """
 #         if not header:
 #             cal_df = pd.read_csv(cal_csv, header=None, names=self._col_list)

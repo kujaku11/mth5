@@ -1592,7 +1592,7 @@ class RunGroup(BaseGroup):
             )
             self.logger.exception(msg)
             raise MTH5Error(msg)
-            
+
     def to_runts(self):
         """
         create a :class:`mth5.timeseries.RunTS` object from channels of the 
@@ -1602,9 +1602,11 @@ class RunGroup(BaseGroup):
         :rtype: TYPE
 
         """
-        
-        return RunTS([channel.to_mtts() for channel in self.group_list[1:]],
-                     run_metadata=self.metadata)
+
+        return RunTS(
+            [channel.to_mtts() for channel in self.group_list[1:]],
+            run_metadata=self.metadata,
+        )
 
 
 class ChannelDataset:
@@ -1748,11 +1750,11 @@ class ChannelDataset:
     @property
     def _class_name(self):
         return self.__class__.__name__.split("Dataset")[0]
-    
+
     @property
     def start(self):
         return self.metadata.time_period._start_dt
-    
+
     @start.setter
     def start(self, value):
         """ set start time and validate through metadata validator """
@@ -1760,32 +1762,32 @@ class ChannelDataset:
             self.metadata.time_period.start = value.iso_str
         else:
             self.metadata.time_period.start = value
-        
+
     @property
     def end(self):
         """ return end time based on the data"""
-        return self.start + (self.n_samples / self.sample_rate) 
-    
+        return self.start + (self.n_samples / self.sample_rate)
+
     @property
     def sample_rate(self):
         return self.metadata.sample_rate
-    
+
     @sample_rate.setter
     def sample_rate(self, value):
         """ set sample rate through metadata validator """
         self.metadata.sample_rate = value
-    
+
     @property
     def n_samples(self):
         return self.hdf5_dataset.size
-    
+
     def read_metadata(self):
         """
         Read metadata from the HDF5 file into the metadata container, that
         way it can be validated.
 
         """
-        
+
         self.metadata.from_dict({self._class_name: self.hdf5_dataset.attrs})
 
     def write_metadata(self):
@@ -1799,7 +1801,7 @@ class ChannelDataset:
             value = to_numpy_type(value)
             self.logger.debug("wrote metadata {0} = {1}".format(key, value))
             self.hdf5_dataset.attrs.create(key, value)
-            
+
     def replace_dataset(self, new_data_array):
         """
         replace the entire dataset with a new one, nothing left behind
@@ -1815,18 +1817,27 @@ class ChannelDataset:
                 msg = f"{error} Input must be a numpy array not {type(new_data_array)}"
                 self.logger.exception(msg)
                 raise TypeError(msg)
-                
+
         if new_data_array.shape != self.hdf5_dataset.shape:
-            msg = (f"resizing dataset {self.hdf5_dataset.name} " +
-                    f"from {self.hdf5_dataset.shape} to " +
-                   f"{new_data_array.shape}")
+            msg = (
+                f"resizing dataset {self.hdf5_dataset.name} "
+                + f"from {self.hdf5_dataset.shape} to "
+                + f"{new_data_array.shape}"
+            )
             self.logger.debug(msg)
             self.hdf5_dataset.resize(new_data_array.shape)
         self.hdf5_dataset[...] = new_data_array.shape
-        self.logger.debug(f"replacing {self.hdf5_dataset.name}")  
-        
-    def extend_dataset(self, new_data_array, start_time, sample_rate, 
-                       fill=None, max_gap_seconds=1, fill_window=10):
+        self.logger.debug(f"replacing {self.hdf5_dataset.name}")
+
+    def extend_dataset(
+        self,
+        new_data_array,
+        start_time,
+        sample_rate,
+        fill=None,
+        max_gap_seconds=1,
+        fill_window=10,
+    ):
         """
         Append data according to how the start time aligns with existing
         data.  If the start time is before existing start time the data is
@@ -1896,12 +1907,14 @@ class ChannelDataset:
         fw = fill_window
         # check input parameters
         if sample_rate != self.sample_rate:
-            msg = ("new data must have the same sampling rate as existing data.\n" +
-                   f"\tnew sample rate =      {sample_rate}\n" +
-                   f"\texisting sample rate = {self.sample_rate}")
+            msg = (
+                "new data must have the same sampling rate as existing data.\n"
+                + f"\tnew sample rate =      {sample_rate}\n"
+                + f"\texisting sample rate = {self.sample_rate}"
+            )
             self.logger.error(msg)
             raise MTH5Error(msg)
-            
+
         if not isinstance(new_data_array, np.ndarray):
             try:
                 new_data_array = np.array(new_data_array)
@@ -1909,17 +1922,17 @@ class ChannelDataset:
                 msg = f"{error} Input must be a numpy array not {type(new_data_array)}"
                 self.logger.exception(msg)
                 raise TypeError(msg)
-        
+
         if not isinstance(start_time, MTime):
             start_time = MTime(start_time)
-       
-        # get end time will need later    
+
+        # get end time will need later
         end_time = start_time + (new_data_array.size / sample_rate)
-        
+
         # check start time
         start_t_diff = self._get_diff_new_array_start(start_time)
         end_t_diff = self._get_diff_new_array_end(end_time)
-        
+
         self.logger.debug("Extending data.")
         self.logger.debug(f"Existing start time {self.start}")
         self.logger.debug(f"New start time      {start_time}")
@@ -1927,154 +1940,227 @@ class ChannelDataset:
         self.logger.debug(f"New end time        {end_time}")
 
         # prepend data
-        if start_t_diff < 0: 
+        if start_t_diff < 0:
             self.logger.info("Prepending: ")
-            self.logger.info(f"new start time {start_time} is before existing {self.start}")
+            self.logger.info(
+                f"new start time {start_time} is before existing {self.start}"
+            )
             if end_time.iso_no_tz not in self.time_index:
                 gap = abs(end_time - self.start)
                 if gap > 0:
                     if gap > max_gap_seconds:
-                        msg = (f"Time gap of {gap} seconds " +
-                               f"is more than max_gap_seconds = {max_gap_seconds}." +
-                               " Consider making a new run.")
+                        msg = (
+                            f"Time gap of {gap} seconds "
+                            + f"is more than max_gap_seconds = {max_gap_seconds}."
+                            + " Consider making a new run."
+                        )
                         self.logger.error(msg)
                         raise MTH5Error(msg)
-                        
+
                     if fill is None:
-                        msg = (f"A time gap of {gap} seconds is found " +
-                               "between new and existing data sets. \n" +
-                               f"\tnew end time:        {end_time}\n" +
-                               f"\texisting start time: {self.start}")
+                        msg = (
+                            f"A time gap of {gap} seconds is found "
+                            + "between new and existing data sets. \n"
+                            + f"\tnew end time:        {end_time}\n"
+                            + f"\texisting start time: {self.start}"
+                        )
                         self.logger.error(msg)
                         raise MTH5Error(msg)
-                    
+
                     # set new start time
                     old_slice = self.time_slice(self.start, end_time=self.end)
                     old_start = self.start.copy()
                     self.start = start_time
-                    
-                    # resize the existing data to make room for new data 
-                    self.hdf5_dataset.resize((int(new_data_array.size + 
-                                             self.hdf5_dataset.size + 
-                                             gap * sample_rate),))
-                    
+
+                    # resize the existing data to make room for new data
+                    self.hdf5_dataset.resize(
+                        (
+                            int(
+                                new_data_array.size
+                                + self.hdf5_dataset.size
+                                + gap * sample_rate
+                            ),
+                        )
+                    )
+
                     # fill based on time, refill existing data first
-                    self.hdf5_dataset[self.get_index_from_time(old_start):] = \
-                        old_slice.ts.values
-                    self.hdf5_dataset[0:self.get_index_from_time(end_time)] = \
-                        new_data_array
-                        
-                    if fill == 'mean':
-                        fill_value = np.mean(np.array([new_data_array[-fw:].mean(),
-                                                       float(old_slice.ts[0:fw].mean())]))
-                    elif fill == 'median':
-                        fill_value = np.median(np.array([np.median(new_data_array[-fw:]),
-                                                       np.median(old_slice.ts[0:fw])]))
-                    elif fill == 'nan':
+                    self.hdf5_dataset[
+                        self.get_index_from_time(old_start) :
+                    ] = old_slice.ts.values
+                    self.hdf5_dataset[
+                        0 : self.get_index_from_time(end_time)
+                    ] = new_data_array
+
+                    if fill == "mean":
+                        fill_value = np.mean(
+                            np.array(
+                                [
+                                    new_data_array[-fw:].mean(),
+                                    float(old_slice.ts[0:fw].mean()),
+                                ]
+                            )
+                        )
+                    elif fill == "median":
+                        fill_value = np.median(
+                            np.array(
+                                [
+                                    np.median(new_data_array[-fw:]),
+                                    np.median(old_slice.ts[0:fw]),
+                                ]
+                            )
+                        )
+                    elif fill == "nan":
                         fill_value = np.nan
-                        
+
                     elif isinstance(fill, (int, float)):
                         fill_value = fill
-                        
+
                     else:
                         msg = f"fill value {fill} is not understood"
                         self.logger.error(msg)
                         raise MTH5Error(msg)
-                        
+
                     self.logger.info(f"filling data gap with {fill_value}")
-                    self.hdf5_dataset[self.get_index_from_time(end_time):
-                                      self.get_index_from_time(old_start)] = fill_value
+                    self.hdf5_dataset[
+                        self.get_index_from_time(end_time) : self.get_index_from_time(
+                            old_start
+                        )
+                    ] = fill_value
             else:
                 self.logger.debug("Prepending data with overlaps.")
-                new_size = (self.n_samples + int(abs(start_t_diff) * sample_rate), )
+                new_size = (self.n_samples + int(abs(start_t_diff) * sample_rate),)
                 overlap = abs(end_time - self.start)
-                self.logger.warning(f"New data is overlapping by {overlap} s." +
-                                    " Any overlap will be overwritten.")
+                self.logger.warning(
+                    f"New data is overlapping by {overlap} s."
+                    + " Any overlap will be overwritten."
+                )
                 # set new start time
                 old_slice = self.time_slice(self.start, end_time=self.end)
                 old_start = self.start.copy()
                 self.start = start_time
-                self.logger.debug(f"resizing data set from {self.n_samples} to {new_size}")
+                self.logger.debug(
+                    f"resizing data set from {self.n_samples} to {new_size}"
+                )
                 self.hdf5_dataset.resize(new_size)
-                
+
                 # put back the existing data, which any overlapping times
                 # will be overwritten
-                self.hdf5_dataset[self.get_index_from_time(old_start):] = old_slice.ts.values
-                self.hdf5_dataset[0: self.get_index_from_time(end_time)] = new_data_array
-                    
+                self.hdf5_dataset[
+                    self.get_index_from_time(old_start) :
+                ] = old_slice.ts.values
+                self.hdf5_dataset[
+                    0 : self.get_index_from_time(end_time)
+                ] = new_data_array
+
         # append data
-        elif start_t_diff > 0: 
+        elif start_t_diff > 0:
             old_end = self.end.copy()
             if start_time.iso_no_tz not in self.time_index:
                 gap = abs(self.end - start_time)
                 if gap > 0:
                     if gap > max_gap_seconds:
-                        msg = (f"Time gap of {gap} seconds " +
-                               f"is more than max_gap_seconds = {max_gap_seconds}." +
-                               " Consider making a new run.")
+                        msg = (
+                            f"Time gap of {gap} seconds "
+                            + f"is more than max_gap_seconds = {max_gap_seconds}."
+                            + " Consider making a new run."
+                        )
                         self.logger.error(msg)
                         raise MTH5Error(msg)
-                        
+
                     if fill is None:
-                        msg = (f"A time gap of {gap} seconds is found " +
-                               "between new and existing data sets. \n" +
-                               f"\tnew start time:        {start_time}\n" +
-                               f"\texisting end time:     {self.end}")
+                        msg = (
+                            f"A time gap of {gap} seconds is found "
+                            + "between new and existing data sets. \n"
+                            + f"\tnew start time:        {start_time}\n"
+                            + f"\texisting end time:     {self.end}"
+                        )
                         self.logger.error(msg)
                         raise MTH5Error(msg)
-                    
-                    # resize the existing data to make room for new data 
-                    self.hdf5_dataset.resize((int(new_data_array.size + 
-                                             self.hdf5_dataset.size + 
-                                             gap * sample_rate),))
-                    
-                    self.hdf5_dataset[self.get_index_from_time(start_time):] = new_data_array
+
+                    # resize the existing data to make room for new data
+                    self.hdf5_dataset.resize(
+                        (
+                            int(
+                                new_data_array.size
+                                + self.hdf5_dataset.size
+                                + gap * sample_rate
+                            ),
+                        )
+                    )
+
+                    self.hdf5_dataset[
+                        self.get_index_from_time(start_time) :
+                    ] = new_data_array
                     old_index = self.get_index_from_time(old_end)
-                    if fill == 'mean':
-                        fill_value = np.mean(np.array([new_data_array[0:fw].mean(),
-                                                       np.mean(self.hdf5_dataset[old_index-fw:])]))
-                    elif fill == 'median':
-                        fill_value = np.median(np.array([np.median(new_data_array[0:fw]),
-                                                       np.median(self.hdf5_dataset[old_index-fw:])]))
-                    elif fill == 'nan':
+                    if fill == "mean":
+                        fill_value = np.mean(
+                            np.array(
+                                [
+                                    new_data_array[0:fw].mean(),
+                                    np.mean(self.hdf5_dataset[old_index - fw :]),
+                                ]
+                            )
+                        )
+                    elif fill == "median":
+                        fill_value = np.median(
+                            np.array(
+                                [
+                                    np.median(new_data_array[0:fw]),
+                                    np.median(self.hdf5_dataset[old_index - fw :]),
+                                ]
+                            )
+                        )
+                    elif fill == "nan":
                         fill_value = np.nan
-                        
+
                     elif isinstance(fill, (int, float)):
                         fill_value = fill
-                        
+
                     else:
                         msg = f"fill value {fill} is not understood"
                         self.logger.error(msg)
                         raise MTH5Error(msg)
-                        
+
                     self.logger.info(f"filling data gap with {fill_value}")
-                    self.hdf5_dataset[self.get_index_from_time(old_end):
-                                      self.get_index_from_time(start_time)] = fill_value    
-                    
+                    self.hdf5_dataset[
+                        self.get_index_from_time(old_end) : self.get_index_from_time(
+                            start_time
+                        )
+                    ] = fill_value
+
             else:
                 # if the new data fits within the extisting time span
                 if end_t_diff < 0:
-                    self.logger.debug("New data fits within existing time span" +
-                                      " all data in the window : "
-                                      f"{start_time} -- {end_time} " +
-                                      "will be overwritten.")
-                    self.hdf5_dataset[self.get_index_from_time(start_time):
-                                      self.get_index_from_time(end_time)] = \
-                        new_data_array
+                    self.logger.debug(
+                        "New data fits within existing time span"
+                        + " all data in the window : "
+                        f"{start_time} -- {end_time} " + "will be overwritten."
+                    )
+                    self.hdf5_dataset[
+                        self.get_index_from_time(start_time) : self.get_index_from_time(
+                            end_time
+                        )
+                    ] = new_data_array
                 else:
                     self.logger.debug("Appending data with overlaps.")
-                    new_size = (self.n_samples + int(abs(start_t_diff) * sample_rate), )
+                    new_size = (self.n_samples + int(abs(start_t_diff) * sample_rate),)
                     overlap = abs(self.end - start_time)
-                    self.logger.warning(f"New data is overlapping by {overlap} s." +
-                                        " Any overlap will be overwritten.")
-                    
-                    self.logger.debug(f"resizing data set from {self.n_samples} to {new_size}")
+                    self.logger.warning(
+                        f"New data is overlapping by {overlap} s."
+                        + " Any overlap will be overwritten."
+                    )
+
+                    self.logger.debug(
+                        f"resizing data set from {self.n_samples} to {new_size}"
+                    )
                     self.hdf5_dataset.resize(new_size)
-                    
+
                     # put back the existing data, which any overlapping times
                     # will be overwritten
-                    self.hdf5_dataset[self.get_index_from_time(start_time):] = new_data_array
-    
+                    self.hdf5_dataset[
+                        self.get_index_from_time(start_time) :
+                    ] = new_data_array
+
     def to_mtts(self):
         """
         :return: a Timeseries with the appropriate time index and metadata
@@ -2083,11 +2169,13 @@ class ChannelDataset:
         loads from memory (nearly half the size of xarray alone, not sure why)
     
         """
-        
-        return MTTS(self.metadata.type,
-                    data=self.hdf5_dataset[()],
-                    channel_metadata=self.metadata)
-    
+
+        return MTTS(
+            self.metadata.type,
+            data=self.hdf5_dataset[()],
+            channel_metadata=self.metadata,
+        )
+
     def to_xarray(self):
         """
         :return: an xarray DataArray with appropriate metadata and the 
@@ -2099,10 +2187,12 @@ class ChannelDataset:
         loads from memory
         """
 
-        return xr.DataArray(self.hdf5_dataset[()],
-                            coords=[("time", self.time_index)],
-                            attrs=self.metadata.to_dict(single=True))
-    
+        return xr.DataArray(
+            self.hdf5_dataset[()],
+            coords=[("time", self.time_index)],
+            attrs=self.metadata.to_dict(single=True),
+        )
+
     def to_dataframe(self):
         """
         
@@ -2114,13 +2204,12 @@ class ChannelDataset:
         
         loads into RAM
         """
-        
-        df = pd.DataFrame({'data': self.hdf5_dataset[()]},
-                          index=self.time_index)
+
+        df = pd.DataFrame({"data": self.hdf5_dataset[()]}, index=self.time_index)
         df.attrs.update(self.metadata.to_dict(single=True))
-        
+
         return df
-    
+
     def to_numpy(self):
         """
         :return: a numpy structured array with 2 columns (time, channel_data)
@@ -2130,13 +2219,15 @@ class ChannelDataset:
         loads into RAM
         
         """
-        
-        return np.core.records.fromarrays([self.time_index.to_numpy(),
-                                           self.hdf5_dataset[()]],
-                                          names='time,channel_data')
-    
-    def from_mtts(self, mtts_obj, how='replace', fill=None, 
-                  max_gap_seconds=1, fill_window=10):
+
+        return np.core.records.fromarrays(
+            [self.time_index.to_numpy(), self.hdf5_dataset[()]],
+            names="time,channel_data",
+        )
+
+    def from_mtts(
+        self, mtts_obj, how="replace", fill=None, max_gap_seconds=1, fill_window=10
+    ):
         """
         fill data set from a :class:`mth5.timeseries.MTTS` object.
         
@@ -2170,27 +2261,27 @@ class ChannelDataset:
         :type fill_window: integer
 
         """
-        
+
         if not isinstance(mtts_obj, MTTS):
             msg = f"Input must be a MTTS object not {type(mtts_obj)}"
             self.logger.error(msg)
             raise TypeError(msg)
-                   
-        if how == 'replace':
+
+        if how == "replace":
             self.metadata = mtts_obj.metadata
             self.replace_dataset(mtts_obj.ts.values)
             self.write_metadata()
-        
-        elif how == 'extend':
-            self.extend_dataset(mtts_obj.ts.values, 
-                                mtts_obj.start,
-                                mtts_obj.sample_rate,
-                                fill=fill)
-            
+
+        elif how == "extend":
+            self.extend_dataset(
+                mtts_obj.ts.values, mtts_obj.start, mtts_obj.sample_rate, fill=fill
+            )
+
             # TODO need to check on metadata.
-            
-    def from_xarray(self, dataarray, how='replace', fill=None, 
-                    max_gap_seconds=1, fill_window=10):
+
+    def from_xarray(
+        self, dataarray, how="replace", fill=None, max_gap_seconds=1, fill_window=10
+    ):
         """
         fill data set from a :class:`xarray.DataArray` object.
         
@@ -2224,25 +2315,27 @@ class ChannelDataset:
         :type fill_window: integer
 
         """
-        
+
         if not isinstance(dataarray, xr.DataArray):
             msg = f"Input must be a xarray.DataArray object not {type(dataarray)}"
             self.logger.error(msg)
             raise TypeError(msg)
-                   
-        if how == 'replace':
+
+        if how == "replace":
             self.metadata.from_dict({self.metadata._class_name: dataarray.attrs})
             self.replace_dataset(dataarray.values)
             self.write_metadata()
-        
-        elif how == 'extend':
-            self.extend_dataset(dataarray.values, 
-                                dataarray.coords.indexes['time'][0].isoformat(),
-                                1e9 / dataarray.coords.indexes["time"][0].freq.nanos,
-                                fill=fill)
-            
+
+        elif how == "extend":
+            self.extend_dataset(
+                dataarray.values,
+                dataarray.coords.indexes["time"][0].isoformat(),
+                1e9 / dataarray.coords.indexes["time"][0].freq.nanos,
+                fill=fill,
+            )
+
         # TODO need to check on metadata.
-        
+
     def _get_diff_new_array_start(self, start_time):
         """
         Make sure the new array has the same start time if not return the 
@@ -2260,13 +2353,13 @@ class ChannelDataset:
         """
         if not isinstance(start_time, MTime):
             start_time = MTime(start_time)
-            
+
         t_diff = 0
         if start_time != self.start:
             t_diff = start_time - self.start
-            
+
         return t_diff
-    
+
     def _get_diff_new_array_end(self, end_time):
         """
         Make sure the new array has the same end time if not return the 
@@ -2284,14 +2377,14 @@ class ChannelDataset:
         """
         if not isinstance(end_time, MTime):
             end_time = MTime(end_time)
-            
+
         t_diff = 0
         if end_time != self.end:
             t_diff = end_time - self.end
-            
-        return t_diff       
 
-    @property    
+        return t_diff
+
+    @property
     def time_index(self):
         """
         
@@ -2301,12 +2394,9 @@ class ChannelDataset:
         """
         dt_freq = "{0:.0f}N".format(1.0e9 / (self.sample_rate))
         return pd.date_range(
-            start=self.start.iso_no_tz,
-            periods=self.n_samples,
-            freq=dt_freq
+            start=self.start.iso_no_tz, periods=self.n_samples, freq=dt_freq
         )
-    
-    
+
     @property
     def table_entry(self):
         """
@@ -2338,8 +2428,7 @@ class ChannelDataset:
             ),
         )
 
-    def time_slice(self, start_time, end_time=None, n_samples=None, 
-                   return_type="mtts"):
+    def time_slice(self, start_time, end_time=None, n_samples=None, return_type="mtts"):
         """
         Get a time slice from the channel and return the appropriate type
 
@@ -2489,7 +2578,7 @@ class ChannelDataset:
             msg = "return_type not understood, must be [ pandas | numpy | mtts ]"
             self.logger.error(msg)
             raise ValueError(msg)
-            
+
         return data
 
     def get_index_from_time(self, given_time):

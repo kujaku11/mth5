@@ -223,9 +223,7 @@ class GPS(object):
             gps_list[self.type_dict[g_type]["time"]] = None
 
         try:
-            gps_list[
-                self.type_dict[g_type]["latitude"]
-            ] = self._validate_latitude(
+            gps_list[self.type_dict[g_type]["latitude"]] = self._validate_latitude(
                 gps_list[self.type_dict[g_type]["latitude"]],
                 gps_list[self.type_dict[g_type]["latitude_hemisphere"]],
             )
@@ -234,9 +232,7 @@ class GPS(object):
             gps_list[self.type_dict[g_type]["latitude"]] = None
 
         try:
-            gps_list[
-                self.type_dict[g_type]["longitude"]
-            ] = self._validate_longitude(
+            gps_list[self.type_dict[g_type]["longitude"]] = self._validate_longitude(
                 gps_list[self.type_dict[g_type]["longitude"]],
                 gps_list[self.type_dict[g_type]["longitude_hemisphere"]],
             )
@@ -296,9 +292,7 @@ class GPS(object):
         expected_len = self.type_dict[gps_list_type]["length"]
         if len(gps_list) not in expected_len:
             raise GPSError(
-                "GPS string not correct length for {0}.  ".format(
-                    gps_list_type.upper()
-                )
+                "GPS string not correct length for {0}.  ".format(gps_list_type.upper())
                 + "Expected {0}, got {1} \n{2}".format(
                     expected_len, len(gps_list), ",".join(gps_list)
                 )
@@ -347,16 +341,12 @@ class GPS(object):
             )
         if hemisphere_str.lower() not in ["n", "s"]:
             raise GPSError(
-                "Latitude hemisphere {0} not understood".format(
-                    hemisphere_str.upper()
-                )
+                "Latitude hemisphere {0} not understood".format(hemisphere_str.upper())
             )
         try:
             float(latitude_str)
         except ValueError:
-            raise GPSError(
-                "Could not convert latitude string {0}".format(latitude_str)
-            )
+            raise GPSError("Could not convert latitude string {0}".format(latitude_str))
 
         return latitude_str
 
@@ -375,9 +365,7 @@ class GPS(object):
             )
         if hemisphere_str.lower() not in ["e", "w"]:
             raise GPSError(
-                "Longitude hemisphere {0} not understood".format(
-                    hemisphere_str.upper()
-                )
+                "Longitude hemisphere {0} not understood".format(hemisphere_str.upper())
             )
         try:
             float(longitude_str)
@@ -390,11 +378,11 @@ class GPS(object):
 
     def _validate_elevation(self, elevation_str):
         """validate elevation, check for converstion to float"""
-        elevation_str = elevation_str.lower().replace('m', '')
+        elevation_str = elevation_str.lower().replace("m", "")
         try:
             elevation_str = f"{float(elevation_str):0.2f}"
         except ValueError:
-            raise GPSError( f"Elevation could not be converted {elevation_str}")
+            raise GPSError(f"Elevation could not be converted {elevation_str}")
 
         return elevation_str
 
@@ -405,10 +393,7 @@ class GPS(object):
         """
         if self._latitude is not None and self._latitude_hemisphere is not None:
             index = len(self._latitude) - 7
-            lat = (
-                float(self._latitude[0:index])
-                + float(self._latitude[index:]) / 60
-            )
+            lat = float(self._latitude[0:index]) + float(self._latitude[index:]) / 60
             if "s" in self._latitude_hemisphere.lower():
                 lat *= -1
             return lat
@@ -420,15 +405,9 @@ class GPS(object):
         """
         Latitude in decimal degrees, WGS84
         """
-        if (
-            self._longitude is not None
-            and self._longitude_hemisphere is not None
-        ):
+        if self._longitude is not None and self._longitude_hemisphere is not None:
             index = len(self._longitude) - 7
-            lon = (
-                float(self._longitude[0:index])
-                + float(self._longitude[index:]) / 60
-            )
+            lon = float(self._longitude[0:index]) + float(self._longitude[index:]) / 60
             if "w" in self._longitude_hemisphere.lower():
                 lon *= -1
             return lon
@@ -529,9 +508,7 @@ class NIMSHeader(object):
     """
 
     def __init__(self, fn=None):
-        self.logger = logging.getLogger(
-            f"{__name__}.{self.__class__.__name__}"
-        )
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.fn = fn
         self._max_header_length = 1000
         self.header_dict = None
@@ -636,9 +613,7 @@ class NIMSHeader(object):
                 self.header_gps_stamp = dateutil.parser.parse(
                     " ".join(gps_list[0:2]), dayfirst=True
                 )
-                self.header_gps_latitude = self._get_latitude(
-                    gps_list[2], gps_list[3]
-                )
+                self.header_gps_latitude = self._get_latitude(gps_list[2], gps_list[3])
                 self.header_gps_longitude = self._get_longitude(
                     gps_list[4], gps_list[5]
                 )
@@ -919,32 +894,34 @@ class NIMS(NIMSHeader):
             )
         else:
             return None
-        
+
     @property
     def run_xarray(self):
         """ Get xarray for run """
-        meta_dict = {'run': {'channels_recorded_electric': 'ex, ey',
-                             'channels_recorded_magnetic': 'hx, hy, hz',
-                             'channels_recorded_auxiliary': 'temperature',
-                             'comments': self.comments,
-                             'data_logger.firmware.author': 'B. Narod',
-                             'data_logger.firmware.name': 'nims',
-                             'data_logger.firmware.version': '1.0',
-                             'data_logger.manufacturer': 'Narod',
-                             'data_logger.model': self.box_id,
-                             'data_logger.type': 'long period',
-                             'id': self.run_id,
-                             'data_type': 'MTLP',
-                             'sample_rate': self.sample_rate,
-                             'time_period.end': self.start_time.isoformat(),
-                             'time_period.start': self.end_time.isoformat()}}
+        meta_dict = {
+            "run": {
+                "channels_recorded_electric": "ex, ey",
+                "channels_recorded_magnetic": "hx, hy, hz",
+                "channels_recorded_auxiliary": "temperature",
+                "comments": self.comments,
+                "data_logger.firmware.author": "B. Narod",
+                "data_logger.firmware.name": "nims",
+                "data_logger.firmware.version": "1.0",
+                "data_logger.manufacturer": "Narod",
+                "data_logger.model": self.box_id,
+                "data_logger.type": "long period",
+                "id": self.run_id,
+                "data_type": "MTLP",
+                "sample_rate": self.sample_rate,
+                "time_period.end": self.start_time.isoformat(),
+                "time_period.start": self.end_time.isoformat(),
+            }
+        }
 
-        return timeseries.RunTS(array_list=[self.hx, 
-                                                  self.hy, 
-                                                  self.hz, 
-                                                  self.ex, 
-                                                  self.ey],
-                                      run_metadata=meta_dict)
+        return timeseries.RunTS(
+            array_list=[self.hx, self.hy, self.hz, self.ex, self.ey],
+            run_metadata=meta_dict,
+        )
 
     def _make_index_values(self):
         """
@@ -1121,9 +1098,7 @@ class NIMS(NIMSHeader):
         n_data = data_array.size
         n_sequence = len(self.block_sequence)
 
-        slices = [
-            np.s_[ii : n_data - n_sequence + 1 + ii] for ii in range(n_sequence)
-        ]
+        slices = [np.s_[ii : n_data - n_sequence + 1 + ii] for ii in range(n_sequence)]
 
         sequence_search = [
             data_array[slices[ii]] == self.block_sequence[ii]
@@ -1164,9 +1139,7 @@ class NIMS(NIMSHeader):
             dup_dict["ts_index_0"] = dup * self.sample_rate
             dup_dict["ts_index_1"] = dup * self.sample_rate + self.sample_rate
             dup_dict["ts_index_2"] = (dup + 1) * self.sample_rate
-            dup_dict["ts_index_3"] = (
-                dup + 1
-            ) * self.sample_rate + self.sample_rate
+            dup_dict["ts_index_3"] = (dup + 1) * self.sample_rate + self.sample_rate
             duplicate_list.append(dup_dict)
         return duplicate_list
 
@@ -1198,9 +1171,7 @@ class NIMS(NIMSHeader):
         :returns: index of duplicates in raw data
         """
         ### locate
-        duplicate_test_list = self._locate_duplicate_blocks(
-            self.info_array["sequence"]
-        )
+        duplicate_test_list = self._locate_duplicate_blocks(self.info_array["sequence"])
         if duplicate_test_list is None:
             return info_array, data_array, None
 
@@ -1219,10 +1190,7 @@ class NIMS(NIMSHeader):
         ### block
         remove_sequence_index = [d["sequence_index"] for d in duplicate_list]
         remove_data_index = np.array(
-            [
-                np.arange(d["ts_index_0"], d["ts_index_1"], 1)
-                for d in duplicate_list
-            ]
+            [np.arange(d["ts_index_0"], d["ts_index_1"], 1) for d in duplicate_list]
         ).flatten()
         ### remove the data
         return_info_array = np.delete(info_array, remove_sequence_index)
@@ -1296,9 +1264,7 @@ class NIMS(NIMSHeader):
         if (data.size % self.block_size) != 0:
             self.logger.warning(
                 f"odd number of bytes {data.size}, not even blocks"
-                + "cutting down the data by {0}".format(
-                    data.size % self.block_size
-                )
+                + "cutting down the data by {0}".format(data.size % self.block_size)
             )
             end_data = data.size - (data.size % self.block_size)
             data = data[0:end_data]
@@ -1326,17 +1292,14 @@ class NIMS(NIMSHeader):
         for key, index in self._block_dict.items():
             if "temp" in key:
                 value = (
-                    (data[:, index[0]] * 256 + data[:, index[1]])
-                    - self.t_offset
+                    (data[:, index[0]] * 256 + data[:, index[1]]) - self.t_offset
                 ) / self.t_conversion_factor
             else:
                 value = data[:, index]
             self.info_array[key][:] = value
 
         ### unwrap sequence
-        self.info_array["sequence"] = self.unwrap_sequence(
-            self.info_array["sequence"]
-        )
+        self.info_array["sequence"] = self.unwrap_sequence(self.info_array["sequence"])
 
         ### get data
         data_array = np.zeros(
@@ -1368,11 +1331,9 @@ class NIMS(NIMSHeader):
             data_array[comp] *= -1
 
         ### remove duplicates
-        (
-            self.info_array,
-            data_array,
-            self.duplicate_list,
-        ) = self.remove_duplicates(self.info_array, data_array)
+        (self.info_array, data_array, self.duplicate_list,) = self.remove_duplicates(
+            self.info_array, data_array
+        )
         ### get GPS stamps with index values
         self.stamps = self.match_status_with_gps_stamps(
             self.info_array["status"], self.gps_list
@@ -1432,9 +1393,7 @@ class NIMS(NIMSHeader):
                 gap_beginning.append(step_index)
                 print(
                     "{0}{1} is off from start time by {2} seconds".format(
-                        " " * 4,
-                        stamps[step_index][1][0].time_stamp.isoformat(),
-                        ii,
+                        " " * 4, stamps[step_index][1][0].time_stamp.isoformat(), ii,
                     )
                 )
 
@@ -1510,9 +1469,7 @@ class NIMS(NIMSHeader):
         )
 
         dt_index = self.make_dt_index(
-            start_time.isoformat(),
-            self.sample_rate,
-            n_samples=data_array.shape[0],
+            start_time.isoformat(), self.sample_rate, n_samples=data_array.shape[0],
         )
 
         return pd.DataFrame(data_array, index=dt_index)
@@ -1531,9 +1488,7 @@ class NIMS(NIMSHeader):
 
         return ts
 
-    def make_dt_index(
-        self, start_time, sample_rate, stop_time=None, n_samples=None
-    ):
+    def make_dt_index(self, start_time, sample_rate, stop_time=None, n_samples=None):
         """
         make time index array
 
@@ -1553,11 +1508,7 @@ class NIMS(NIMSHeader):
         dt_freq = "{0:.0f}N".format(1.0 / (sample_rate) * 1e9)
         if stop_time is not None:
             dt_index = pd.date_range(
-                start=start_time,
-                end=stop_time,
-                freq=dt_freq,
-                closed="left",
-                tz="UTC",
+                start=start_time, end=stop_time, freq=dt_freq, closed="left", tz="UTC",
             )
         elif n_samples is not None:
             dt_index = pd.date_range(
@@ -1617,13 +1568,7 @@ class Response(object):
                 "ex": -0.2850,
                 "ey": -0.2850,
             },
-            8: {
-                "hx": 0.2455,
-                "hy": 0.2365,
-                "hz": 0.2275,
-                "ex": 0.1525,
-                "ey": 0.1525,
-            },
+            8: {"hx": 0.2455, "hy": 0.2365, "hz": 0.2275, "ex": 0.1525, "ey": 0.1525,},
         }
         self.mag_low_pass = {
             "name": "3 pole butterworth",
@@ -1695,9 +1640,7 @@ class Response(object):
         dt_filter = {
             "type": "dt",
             "name": "time_offset",
-            "parameters": {
-                "offset": self.time_delays_dict[sample_rate][channel]
-            },
+            "parameters": {"offset": self.time_delays_dict[sample_rate][channel]},
         }
         return dt_filter
 

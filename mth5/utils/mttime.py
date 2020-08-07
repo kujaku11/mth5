@@ -15,6 +15,75 @@ from dateutil.tz.tz import tzutc
 
 from mth5.utils.exceptions import MTTimeError
 
+# =============================================================================
+#  Get leap seconds
+# =============================================================================
+leap_second_dict = {
+        0: {"min": datetime.date(1980, 1, 1), "max": datetime.date(1981, 7, 1)},
+        1: {"min": datetime.date(1981, 7, 1), "max": datetime.date(1982, 7, 1)},
+        2: {"min": datetime.date(1982, 7, 1), "max": datetime.date(1983, 7, 1)},
+        3: {"min": datetime.date(1983, 7, 1), "max": datetime.date(1985, 7, 1)},
+        4: {"min": datetime.date(1985, 7, 1), "max": datetime.date(1988, 1, 1)},
+        5: {"min": datetime.date(1988, 1, 1), "max": datetime.date(1990, 1, 1)},
+        6: {"min": datetime.date(1990, 1, 1), "max": datetime.date(1991, 1, 1)},
+        7: {"min": datetime.date(1991, 1, 1), "max": datetime.date(1992, 7, 1)},
+        8: {"min": datetime.date(1992, 7, 1), "max": datetime.date(1993, 7, 1)},
+        9: {"min": datetime.date(1993, 7, 1), "max": datetime.date(1994, 7, 1)},
+        10: {"min": datetime.date(1994, 7, 1), "max": datetime.date(1996, 1, 1)},
+        11: {"min": datetime.date(1996, 1, 1), "max": datetime.date(1997, 7, 1)},
+        12: {"min": datetime.date(1997, 7, 1), "max": datetime.date(1999, 1, 1)},
+        13: {"min": datetime.date(1999, 1, 1), "max": datetime.date(2006, 1, 1)},
+        14: {"min": datetime.date(2006, 1, 1), "max": datetime.date(2009, 1, 1)},
+        15: {"min": datetime.date(2009, 1, 1), "max": datetime.date(2012, 6, 30)},
+        16: {"min": datetime.date(2012, 7, 1), "max": datetime.date(2015, 7, 1)},
+        17: {"min": datetime.date(2015, 7, 1), "max": datetime.date(2017, 1, 1)},
+        18: {"min": datetime.date(2017, 1, 1), "max": datetime.date(2021, 7, 1)},
+    }
+
+def calculate_leap_seconds(year, month, day):
+    """
+    get the leap seconds for the given year to convert GPS time to UTC time
+    .. note:: GPS time started in 1980
+    .. note:: GPS time is leap seconds ahead of UTC time, therefore you
+              should subtract leap seconds from GPS time to get UTC time.
+    =========================== ===============================================
+    Date Range                  Leap Seconds
+    =========================== ===============================================
+    1981-07-01 - 1982-07-01     1
+    1982-07-01 - 1983-07-01     2
+    1983-07-01 - 1985-07-01     3
+    1985-07-01 - 1988-01-01     4
+    1988-01-01 - 1990-01-01     5
+    1990-01-01 - 1991-01-01     6
+    1991-01-01 - 1992-07-01     7
+    1992-07-01 - 1993-07-01     8
+    1993-07-01 - 1994-07-01     9
+    1994-07-01 - 1996-01-01     10
+    1996-01-01 - 1997-07-01     11
+    1997-07-01 - 1999-01-01     12
+    1999-01-01 - 2006-01-01     13
+    2006-01-01 - 2009-01-01     14
+    2009-01-01 - 2012-07-01     15
+    2012-07-01 - 2015-07-01     16
+    2015-07-01 - 2017-01-01        17
+    2017-01-01 - ????-??-??        18
+    =========================== ===============================================
+    """
+
+    # make the date a datetime object, easier to test
+    given_date = datetime.date(int(year), int(month), int(day))
+
+    # made an executive decision that the date can be equal to the min, but
+    # not the max, otherwise get an error.
+    for leap_key in sorted(leap_second_dict.keys()):
+        if (
+            given_date < leap_second_dict[leap_key]["max"]
+            and given_date >= leap_second_dict[leap_key]["min"]
+        ):
+            return int(leap_key)
+
+    return None
+
 # ==============================================================================
 # convenience date-time container
 # ==============================================================================
@@ -50,7 +119,7 @@ class MTime:
 
     """
 
-    def __init__(self, time=None):
+    def __init__(self, time=None, gps_time=False):
 
         self.logger = logging.getLogger(
             "{0}.{1}".format(__name__, self.__class__.__name__)
@@ -91,7 +160,13 @@ class MTime:
                 + "default time 1980-01-01 00:00:00"
             )
             self.from_str("1980-01-01 00:00:00")
-
+            
+        if gps_time:
+            leap_seconds = calculate_leap_seconds(self.year, self.month, self.day)
+            self.logger.debug(f"Converting GPS time to UTC with {leap_seconds} s")
+            self.dt_object -= datetime.timedelta(seconds=leap_seconds)
+            
+            
     def __str__(self):
         return self.iso_str
 
@@ -190,7 +265,7 @@ class MTime:
         if isinstance(other, (int, float)):
             other = datetime.timedelta(seconds=other)
             self.logger.debug("Assuming other time is in seconds")
-        
+
         if not isinstance(other, (datetime.timedelta)):
             msg = (
                 "Adding times does not make sense, must use "
@@ -354,7 +429,7 @@ class MTime:
 
         """
         self.dt_object = self.validate_tzinfo(datetime.datetime.utcnow())
-        
+
     def copy(self):
         """ make a copy of the time """
         return deepcopy(self)

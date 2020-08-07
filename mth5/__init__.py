@@ -5,8 +5,8 @@ import yaml
 from mth5.utils.mth5logger import CONF_FILE
 
 __author__ = """Jared Peacock"""
-__email__ = 'jpeacock@usgs.gov'
-__version__ = '0.1.0'
+__email__ = "jpeacock@usgs.gov"
+__version__ = "0.1.0"
 
 # configure log file
 config_file = CONF_FILE
