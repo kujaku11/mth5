@@ -721,7 +721,7 @@ class Zen3D:
         self._block_len = 2 ** 16
         # the number in the cac files is for volts, we want mV
         self._counts_to_mv_conversion = 9.5367431640625e-10 * 1e3
-        self.num_sec_to_skip = 3
+        self.num_sec_to_skip = 2
 
         self.units = "counts"
         self.sample_rate = None
@@ -821,6 +821,20 @@ class Zen3D:
         """
         if sampling_rate is not None:
             self.header.ad_rate = float(sampling_rate)
+            
+    @property
+    def start(self):
+        if self.gps_stamps is not None:
+            return self.get_UTC_date_time(self.header.gpsweek,
+                                          self.gps_stamps['time'][0])
+        return None
+    
+    @property
+    def end(self):
+        if self.gps_stamps is not None:
+            return self.get_UTC_date_time(self.header.gpsweek,
+                                          self.gps_stamps['time'][-1])
+        return None
 
     @property
     def zen_schedule(self):
@@ -1118,56 +1132,8 @@ class Zen3D:
         read_time = (et - st).total_seconds()
         self.logger.info(f"\tReading data took: {read_time:.3f} seconds")
         
-        #return self.to_mtts(data[np.nonzero(data)])
+        return self.to_mtts(data[np.nonzero(data)])
 
-    # =================================================
-    def to_mtts(self, ts_data):
-        """
-        fill time series object
-        """
-        # fill the time series object
-        if 'e' in self.component:
-            ts_type = 'electric'
-            meta_dict = {'electric': {'dipole_length': self.dipole_len}}
-        elif 'm' in self.component:
-            ts_type = 'magnetic'
-            meta_dict = {'magnetic': {}}
-            
-        # meta_dict
-        #     mtts_obj = MTTS()
-        # mtts_obj.ts = ts_data
-
-        # # convert data to mV
-        # self.convert_counts_to_mv()
-        # mtts_obj.ts = mtts_obj.ts.astype(np.float32)
-
-        # # fill time series object metadata
-        # mtts_obj.station = self.station
-        # mtts_obj.sampling_rate = float(self.sample_rate)
-        # mtts_obj.start_time_utc = self.zen_schedule.isoformat()
-        # mtts_obj.component = self.component
-        # mtts_obj.coordinate_system = "geomagnetic"
-        # try:
-        #     mtts_obj.dipole_length = float(self.dipole_len)
-        # except TypeError:
-        #     mtts_obj.dipole_length = -666
-        # try:
-        #     mtts_obj.azimuth = float(self.azimuth)
-        # except TypeError:
-        #     mtts_obj.azimuth = -666
-        # mtts_obj.units = "mV"
-        # mtts_obj.lat = self.lat
-        # mtts_obj.lon = self.lon
-        # mtts_obj.datum = "WGS84"
-        # mtts_obj.data_logger = self.header.data_logger
-        # mtts_obj.elev = self.elev
-        # mtts_obj.instrument_id = self.coil_num
-        # mtts_obj.calibration_fn = None
-        # mtts_obj.declination = 0.0
-        # mtts_obj.conversion = self._counts_to_mv_conversion
-        # mtts_obj.gain = self.header.ad_gain
-        # mtts_obj.channel_number = int(self.header.channel)
-        # mtts_obj.fn = os.path.basename(self.fn)
 
     # =================================================
     def get_gps_stamp_index(self, ts_data, old_version=False):
@@ -1367,6 +1333,35 @@ class Zen3D:
         # easier to manipulate later
         return MTime(utc_seconds, gps_time=True)
 
+    # =================================================
+    def to_mtts(self, ts_data):
+        """
+        fill time series object
+        """
+        # fill the time series object
+        if 'e' in self.component:
+            ts_type = 'electric'
+            meta_dict = {'electric': {'dipole_length': self.dipole_len}}
+            self.logger.debug('Making Electric MTTS')
+        elif 'h' in self.component:
+            ts_type = 'magnetic'
+            meta_dict = {'magnetic': {'sensor.id': self.coil_num,
+                                      'sensor.manufacturer': 'Geotell',
+                                      'sensor.model': 'ANT-4',
+                                      'sensor.type': 'induction coil',
+                                      }}
+            self.logger.debug('Making Magnetic MTTS')
+            
+        meta_dict[ts_type]['time_period.start'] = self.start.iso_str
+        meta_dict[ts_type]['time_period.end'] = self.end.iso_str
+        meta_dict[ts_type]['component'] = self.component
+        meta_dict[ts_type]['sample_rate'] = self.sample_rate
+        meta_dict[ts_type]['measurement_azimuth'] = self.azimuth
+        meta_dict[ts_type]['units'] = 'counts'
+        meta_dict[ts_type]['channel_number'] = self.metadata.ch_number
+
+        return MTTS(ts_type, data=self.time_series, channel_metadata=meta_dict)
+        # return MTTS(ts_type, data=None, channel_metadata=meta_dict)
 
 # ==============================================================================
 #  Error instances for Zen

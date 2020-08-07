@@ -163,7 +163,7 @@ class MTime:
             
         if gps_time:
             leap_seconds = calculate_leap_seconds(self.year, self.month, self.day)
-            self.logger.debug(f"Converting GPS time to UTC with {leap_seconds} s")
+            self.logger.debug(f"Converting GPS time to UTC with {leap_seconds} leap seconds")
             self.dt_object -= datetime.timedelta(seconds=leap_seconds)
             
             

@@ -146,6 +146,8 @@ class MTTS:
         :rtype: TYPE
 
         """
+        self.logger.debug('Updating xarray attributes')
+        
         self.metadata.time_period.start = self.start.iso_no_tz
         self.metadata.time_period.end = self.end.iso_no_tz
         self.metadata.sample_rate = self.sample_rate
@@ -182,7 +184,7 @@ class MTTS:
             sr = 1e9 / self._ts.coords.indexes["time"][0].freq.nanos
         else:
             self.logger.debug(
-                "Data has not been set yet, " + " sample rate is from metadata"
+                "Data has not been set yet, sample rate is from metadata"
             )
             sr = self.metadata.sample_rate
             if sr is None:
@@ -252,7 +254,7 @@ class MTTS:
         if self._check_for_index():
             return MTime(self._ts.coords.indexes["time"][-1].isoformat())
         else:
-            self.logger.info(
+            self.logger.debug(
                 "Data not set yet, pulling end time from " + "metadata.time_period.end"
             )
             return MTime(self.metadata.time_period.end)
