@@ -13,9 +13,7 @@ Created on Tue Jun 11 10:53:23 2013
 # ==============================================================================
 # from __future__ import unicode_literals
 
-import time
 import datetime
-import dateutil.parser
 import os
 import struct
 import logging
@@ -24,11 +22,6 @@ import numpy as np
 
 from mth5.utils.mttime import MTime
 from mth5.timeseries import MTTS
-
-# ==============================================================================
-datetime_fmt = "%Y-%m-%d,%H:%M:%S"
-datetime_sec = "%Y-%m-%d %H:%M:%S.%f"
-# ==============================================================================
 
 # ==============================================================================
 class Z3DHeader:
@@ -868,6 +861,24 @@ class Z3D:
             return self.metadata.ch_number
         else:
             return None
+        
+    @property
+    def information(self):
+        """ extra metadta that might be useful """
+        
+        meta_dict = {}
+        meta_dict['station.id'] = self.station
+        meta_dict['station.location.latitude'] = self.latitude
+        meta_dict['station.location.longitude'] = self.longitude
+        meta_dict['station.location.elevation'] = self.elevation
+        meta_dict['run.data_logger.firmware.version'] = self.header.version
+        meta_dict['run.data_logger.id'] = self.header.data_logger
+        meta_dict['run.data_logger.manufacturer'] = 'Zonge International'
+        meta_dict['run.data_logger.model'] = 'ZEN'
+        meta_dict['filters'] = {'counts_to_volts': self.header.ch_factor,
+                                'gain': self.header.channelgain}
+
+        return meta_dict        
 
     def _get_gps_stamp_type(self, old_version=False):
         """
@@ -910,12 +921,14 @@ class Z3D:
         Outputs:
         ----------
             * fills the Zen3ZD.header object's attributes
+        
         Example with just a file name
         ------------
             >>> import mtpy.usgs.zen as zen
             >>> fn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
             >>> Z3Dobj = zen.Zen3D()
             >>> Z3Dobj.read_header(fn)
+        
         Example with file object
         ------------
             >>> import mtpy.usgs.zen as zen
@@ -946,12 +959,14 @@ class Z3D:
         Outputs:
         ----------
             * fills the Zen3ZD.schedule object's attributes
+        
         Example with just a file name
         ------------
             >>> import mtpy.usgs.zen as zen
             >>> fn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
             >>> Z3Dobj = zen.Zen3D()
             >>> Z3Dobj.read_schedule(fn)
+        
         Example with file object
         ------------
             >>> import mtpy.usgs.zen as zen
@@ -981,12 +996,14 @@ class Z3D:
         Outputs:
         ----------
             * fills the Zen3ZD.metadata object's attributes
+        
         Example with just a file name
         ------------
             >>> import mtpy.usgs.zen as zen
             >>> fn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
             >>> Z3Dobj = zen.Zen3D()
             >>> Z3Dobj.read_metadata(fn)
+        
         Example with file object
         ------------
             >>> import mtpy.usgs.zen as zen
@@ -1132,7 +1149,7 @@ class Z3D:
         read_time = (et - st).total_seconds()
         self.logger.info(f"\tReading data took: {read_time:.3f} seconds")
         
-        return self.to_mtts(data[np.nonzero(data)])
+        return self.to_mtts(data[np.nonzero(data)]), self.information
 
 
     # =================================================
