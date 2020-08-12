@@ -26,14 +26,14 @@ from mth5.timeseries import MTTS
 # ==============================================================================
 class Z3DHeader:
     """
-    class for z3d header.  This will read in the header information of a
-    Z3D file and make each metadata entry an attirbute
-    Arguments
-    ------------
-        **fn** : string
-                 full path to Z3D file
-        **fid** : file object
-                  ie. open(Z3Dfile, 'rb')
+    Read in the header information of a Z3D file and make each metadata
+    entry an attirbute.
+    
+    :param fn: full path to Z3D file
+    :type fn: string or :class:`pathlib.Path`
+    :param fid:  file object ex. open(Z3Dfile, 'rb')
+    :type fid: file
+              
     ======================== ==================================================
     Attributes               Definition
     ======================== ==================================================
@@ -60,15 +60,9 @@ class Z3DHeader:
     tx_freq                  transmitter frequency
     version                  version of the firmware
     ======================== ==================================================
-    ======================== ==================================================
-    Methods                  Description
-    ======================== ==================================================
-    convert_values           convert the read in header metadata to
-                             appropriate units and data types.
-    read_header              read in the header data from the given file
-    ======================== ==================================================
-    Example
-    --------------
+
+    :Example:
+    
         >>> import mtpy.usgs.zen as zen
         >>> Z3Dfn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
         >>> header_obj = zen.Z3DHeader()
@@ -111,11 +105,25 @@ class Z3DHeader:
 
     @property
     def data_logger(self):
+        """ Data logger name as ZEN{box_number} """
         return "ZEN{0:03}".format(int(self.box_number))
 
     def read_header(self, fn=None, fid=None):
         """
-        read in the header string
+        Read the header information into appropriate attributes
+        
+        :param fn: full path to Z3D file
+        :type fn: string or :class:`pathlib.Path`
+        :param fid:  file object ex. open(Z3Dfile, 'rb')
+        :type fid: file
+        
+        :Example:
+    
+        >>> import mtpy.usgs.zen as zen
+        >>> Z3Dfn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
+        >>> header_obj = zen.Z3DHeader()
+        >>> header_obj.read_header()
+        
         """
         if fn is not None:
             self.fn = fn
