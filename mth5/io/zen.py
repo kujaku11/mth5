@@ -207,15 +207,14 @@ class Z3DHeader:
 # ==============================================================================
 class Z3DSchedule:
     """
-    class object for metadata of Z3d file.  This will read in the schedule
-    information of a Z3D file and make each metadata entry an attirbute.
-    The attributes are left in capitalization of the Z3D file.
-    Arguments
-    ------------
-        **fn** : string
-                 full path to Z3D file
-        **fid** : file object
-                  ie. open(Z3Dfile, 'rb')
+    Will read in the schedule information of a Z3D file and make each metadata 
+    entry an attirbute. The attributes are left in capitalization of the Z3D file.
+
+    :param fn: full path to Z3D file
+    :type fn: string or :class:`pathlib.Path`
+    :param fid:  file object ex. open(Z3Dfile, 'rb')
+    :type fid: file
+    
     ======================== ==================================================
     Attributes               Definition
     ======================== ==================================================
@@ -243,18 +242,14 @@ class Z3DSchedule:
     fn                       file name to read in
     meta_string              string of the schedule
     ======================== ==================================================
-    ======================== ==================================================
-    Methods                  Description
-    ======================== ==================================================
-    read_schedule   read in the schedule information from the given
-                             file
-    ======================== ==================================================
-    Example
-    --------------
+
+    :Example:
+
         >>> import mtpy.usgs.zen as zen
         >>> Z3Dfn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
         >>> header_obj = zen.Z3DSchedule()
         >>> header_obj.read_schedule()
+        
     """
 
     def __init__(self, fn=None, fid=None, **kwargs):
@@ -330,15 +325,15 @@ class Z3DSchedule:
 # ==============================================================================
 class Z3DMetadata:
     """
-    class object for metadata of Z3d file.  This will read in the metadata
-    information of a Z3D file and make each metadata entry an attirbute.
-    The attributes are left in capitalization of the Z3D file.
-    Arguments
-    ------------
-        **fn** : string
-                 full path to Z3D file
-        **fid** : file object
-                  ie. open(Z3Dfile, 'rb')
+    Will read in the metadata information of a Z3D file and make each metadata
+    entry an attirbute.The attributes are left in capitalization of the Z3D 
+    file.
+
+    :param fn: full path to Z3D file
+    :type fn: string or :class:`pathlib.Path`
+    :param fid:  file object ex. open(Z3Dfile, 'rb')
+    :type fid: file
+    
     ======================== ==================================================
     Attributes               Definition
     ======================== ==================================================
@@ -375,18 +370,14 @@ class Z3DMetadata:
     survey_type              type of survey
     unit_length              length units (m)
     ======================== ==================================================
-    ======================== ==================================================
-    Methods                  Description
-    ======================== ==================================================
-    read_metadata            read in the metadata information from the given
-                             file
-    ======================== ==================================================
-    Example
-    --------------
+
+    :Example:
+
         >>> import mtpy.usgs.zen as zen
         >>> Z3Dfn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
         >>> header_obj = zen.Z3DMetadata()
         >>> header_obj.read_metadata()
+        
     """
 
     def __init__(self, fn=None, fid=None, **kwargs):
@@ -617,6 +608,7 @@ class Z3D:
     zen_schedule             time when zen was set to         None
                              run
     ======================== ================================ =================
+   
     * gps_dtype is formated as np.dtype([('flag0', np.int32),
                                         ('flag1', np.int32),
                                         ('time', np.int32),
@@ -631,39 +623,10 @@ class Z3D:
                                         ('pps_count', np.int32),
                                         ('dac_tune', np.int32),
                                         ('block_len', np.int32)])
-    ============================ ==============================================
-    Methods                       Description
-    ============================ ==============================================
-    apply_addaptive_notch_filter apply a notch filter to the data, usually
-                                 to remove 60 Hz noise and harmonics
-    get_gps_time                 converts the gps counts to relative epoch
-                                 seconds according to gps week.
-    get_UTC_date_time            converts gps seconds into the actual date and
-                                 time in UTC.  Note this is different than GPS
-                                 time which is how the zen is scheduled, so
-                                 the time will be off by the current amount of
-                                 leap seconds.
-    plot_timeseries              make a generic plot of the time series
-    plot_spectra                 plot a the spectra in loglog scales.
-    plot_spectrogram             plot the spectragram of the data.
-    read_z3d                      read 3D file making sure all the time stamps
-                                 are correctly spaced.  Returned time series
-                                 starts at  the first stamp which has the
-                                 correct amount of data points between it and
-                                 the next time stamp.  Note there are usually
-                                 a few seconds at the end and maybe beginning
-                                 that aren't correct because the internal
-                                 computer is busy switchin sampling rate.
-    read_header                  read just the header data from the Z3D file
-    read_metadata                read just the metadata from the Z3D file
-    read_schedule                read just the schedule info from the Z3D file
-    validate_gps_time            make sure each time stamp is 1 second apart
-    validate_time_blocks         make sure that the size of each time block
-                                 between stamps is equal to the sampling rate
-    write_ascii_mt_file          write an mtpy ascii file of the data
-    ============================ ==============================================
-    Example
-    ----------------
+    
+
+    :Example:
+
         >>> import mtpy.usgs.zen as zen
         >>> zt = zen.Zen3D(r"/home/mt/mt00/mt00_20150522_080000_256_EX.Z3D")
         >>> zt.read_z3d()
@@ -703,8 +666,8 @@ class Z3D:
                 ("time", np.int32),
                 ("lat", np.float64),
                 ("lon", np.float64),
-                ("num_sat", np.int32),
                 ("gps_sens", np.int32),
+                ("num_sat", np.int32),
                 ("temperature", np.float32),
                 ("voltage", np.float32),
                 ("num_fpga", np.int32),
