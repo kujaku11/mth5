@@ -426,13 +426,13 @@ class RunTS:
         """
         meta_dict = {}
         for comp in self.dataset.data_vars:
-           for mkey, mvalue in self.dataset[comp].attrs:
+           for mkey, mvalue in self.dataset[comp].attrs.items():
                meta_dict[f"{comp}.{mkey}"] = mvalue
                
         return meta_dict
         
 
-    def _build_dataset(self, array_list, align_type="outer"):
+    def set_dataset(self, array_list, align_type="outer"):
         """
         
         :param array_list: list of xarrays
@@ -466,8 +466,11 @@ class RunTS:
         return self._dataset
     
     @dataset.setter
-    def dataset(self, array_list, align_type='outer'):
-        self.build_dataset(array_list, align_type='align_type')
+    def dataset(self, array_list):
+        msg = ("Data will be aligned using the min and max time. " 
+               "If that is not correct use set_dataset and change the alignment type.")
+        self.logger.info(msg)
+        self.set_dataset(array_list)
 
     @property
     def start(self):
