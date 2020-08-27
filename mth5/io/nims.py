@@ -15,6 +15,7 @@ Created on Thu Oct 31 10:03:20 2019
 # Imports
 # =============================================================================
 import os
+import re
 import struct
 import datetime
 import dateutil
@@ -129,6 +130,22 @@ class GPS(object):
             },
         }
         self.parse_gps_string(self.gps_string)
+        
+    def __str__(self):
+        """ string representation """
+        msg = [f'type = {self.gps_type}',
+               f'index = {self.index}',
+               f'time_stamp =  {self.time_stamp}',
+               f'latitude = {self.latitude}',
+               f'longitude = {self.longitude}',
+               f'elevation = {self.elevation}', 
+               f'declination = {self.declination}',
+               ]
+               
+        return '\n'.join(msg)
+
+    def __repr__(self):
+        return self.__str__()
 
     def validate_gps_string(self, gps_string):
         """
@@ -179,7 +196,7 @@ class GPS(object):
         gps_list, error_list = self.validate_gps_list(gps_list)
         if len(error_list) > 0:
             for error in error_list:
-                logging.error("GPSError:" + error)
+                logging.error("GPSError: " + error)
         if gps_list is None:
             return
 
@@ -302,7 +319,7 @@ class GPS(object):
         """ validate time string, should be 6 characters long and an int """
         if len(time_str) != 6:
             raise GPSError(
-                "Lenght of time string {0} not correct.  ".format(time_str)
+                "Length of time string {0} not correct.  ".format(time_str)
                 + "Expected 6 got {0}".format(len(time_str))
             )
         try:
@@ -688,6 +705,8 @@ class NIMS(NIMSHeader):
         self.ts = None
         self.gaps = None
         self.duplicate_list = None
+        
+        self._raw_string = None
 
         self.indices = self._make_index_values()
 
@@ -1014,10 +1033,13 @@ class NIMS(NIMSHeader):
         gps_stamp_list = []
         ### not we are skipping the first entry, it tends to be not
         ### complete anyway
-        for index, raw_stamp in zip(index_list, gps_raw_stamp_list[1:]):
+        for ii, index, raw_stamp in zip(range(len(index_list)), index_list, gps_raw_stamp_list[1:]):
             gps_obj = GPS(raw_stamp, index)
             if gps_obj.valid:
                 gps_stamp_list.append(gps_obj)
+            else:
+                self.logger.error(f'GPS Error: file index {index}, stamp number {ii}')
+                self.logger.error(f'GPS Raw Stamp: {raw_stamp}')
 
         return self._gps_match_gprmc_gpgga_strings(gps_stamp_list)
 
@@ -1129,19 +1151,11 @@ class NIMS(NIMSHeader):
         """
         if block_sequence is not None:
             self.block_sequence = block_sequence
-
-        n_data = data_array.size
-        n_sequence = len(self.block_sequence)
-
-        slices = [np.s_[ii : n_data - n_sequence + 1 + ii] for ii in range(n_sequence)]
-
-        sequence_search = [
-            data_array[slices[ii]] == self.block_sequence[ii]
-            for ii in range(n_sequence)
-        ][0]
-        find_index = np.where(sequence_search == True)[0]
-
-        return find_index
+        
+        # want to find the index there the test data is equal to the test sequence
+        t = np.vstack([np.roll(data_array, shift) for shift in 
+               -np.arange(len(self.block_sequence))]).T
+        return np.where(np.all(t == self.block_sequence, axis=1))[0]
 
     def unwrap_sequence(self, sequence):
         """
@@ -1283,17 +1297,18 @@ class NIMS(NIMSHeader):
         ### end of the header information.
         with open(self.fn, "rb") as fid:
             fid.seek(self.data_start_seek)
-            data_str = fid.read()
+            self._raw_string = fid.read()
 
+        
         ### read in full string as unsigned integers
-        data = np.frombuffer(data_str, dtype=np.uint8)
+        data = np.frombuffer(self._raw_string, dtype=np.uint8)
 
         ### need to make sure that the data starts with a full block
         find_first = self.find_sequence(data[0 : self.block_size * 5])[0]
         data = data[find_first:]
 
         ### get GPS stamps from the binary string first
-        self.gps_list = self.get_stamps(data_str[find_first:])
+        self.gps_list = self.get_stamps(self._raw_string[find_first:])
 
         ### check the size of the data, should have an equal amount of blocks
         if (data.size % self.block_size) != 0:
@@ -1430,13 +1445,16 @@ class NIMS(NIMSHeader):
         if gap_max > 0:
             print("    Check times:")
             for ii in range(1, gap_max + 1, 1):
-                step_index = np.where(diff_arr == ii)[0][0]
-                gap_beginning.append(step_index)
-                print(
-                    "{0}{1} is off from start time by {2} seconds".format(
-                        " " * 4, stamps[step_index][1][0].time_stamp.isoformat(), ii,
+                try:
+                    step_index = np.where(diff_arr == ii)[0][0]
+                    gap_beginning.append(step_index)
+                    print(
+                        "{0}{1} is off from start time by {2} seconds".format(
+                            " " * 4, stamps[step_index][1][0].time_stamp.isoformat(), ii,
+                        )
                     )
-                )
+                except IndexError:
+                    continue
 
         return gap_beginning
 

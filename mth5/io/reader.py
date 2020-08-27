@@ -18,7 +18,7 @@ from mth5.io import zen, nims
 # generic reader for any file type
 # =============================================================================
 readers = {'zen':{'file_types':['z3d'], 'reader':zen.read_z3d},
-           'nims':{'file_types':['bin'], 'reader':nims.read_nims}}
+           'nims':{'file_types':['bin', 'bnn'], 'reader':nims.read_nims}}
 
 def get_reader(extension):
     """
