@@ -396,7 +396,7 @@ class RunTS:
             self.metadata.from_dict(run_metadata)
 
         if array_list is not None:
-            self.build_dataset(array_list)
+            self.dataset = array_list
 
     def _validate_array_list(self, array_list):
         """ check to make sure all entries are a :class:`MTTS` object"""
@@ -412,20 +412,27 @@ class RunTS:
                 self.logger.error(msg)
                 raise TypeError(msg)
 
-        x_array_list = [x.ts for x in array_list]
-        meta_list = dict(
-            [
-                (
-                    x.metadata.component,
-                    x.metadata.to_dict()[list(x.metadata.to_dict().keys())[0]],
-                )
-                for x in array_list
-            ]
-        )
+        return [x.ts for x in array_list]
+    
+    @property
+    def summarize_metadata(self):
+        """
+        
+        Get a summary of all the metadata
+        
+        :return: DESCRIPTION
+        :rtype: TYPE
 
-        return x_array_list, meta_list
+        """
+        meta_dict = {}
+        for comp in self.dataset.data_vars:
+           for mkey, mvalue in self.dataset[comp].attrs:
+               meta_dict[f"{comp}.{mkey}"] = mvalue
+               
+        return meta_dict
+        
 
-    def build_dataset(self, array_list, align_type="outer"):
+    def _build_dataset(self, array_list, align_type="outer"):
         """
         
         :param array_list: list of xarrays
@@ -443,7 +450,7 @@ class RunTS:
         :type align_type: string
 
         """
-        x_array_list, meta_dict = self._validate_array_list(array_list)
+        x_array_list = self._validate_array_list(array_list)
 
         # first need to align the time series.
         x_array_list = xr.align(*x_array_list, join=align_type)
@@ -452,17 +459,15 @@ class RunTS:
         xdict = dict([(x.component, x) for x in x_array_list])
         self._dataset = xr.Dataset(xdict)
 
-        self._dataset.attrs.update(meta_dict)
+        self._dataset.attrs.update(self.metadata.to_dict()['run'])
 
     @property
     def dataset(self):
         return self._dataset
-
+    
     @dataset.setter
-    def dataset(self):
-        msg = "Cannot set dataset, use build_dataset instead."
-        self.logger.error(msg)
-        raise AttributeError(msg)
+    def dataset(self, array_list, align_type='outer'):
+        self.build_dataset(array_list, align_type='align_type')
 
     @property
     def start(self):

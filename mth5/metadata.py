@@ -1385,8 +1385,8 @@ class Filtered(Base):
         if not check:
             self.logger.info(
                 "Filter names and applied lists are not the "
-                + "same size Be sure to check the inputs."
-                + ". names = {0}, applied = {1}".format(self._name, self._applied)
+                + "same size. Be sure to check the inputs."
+                + " names = {0}, applied = {1}".format(self._name, self._applied)
             )
 
     @property
@@ -1414,7 +1414,7 @@ class Filtered(Base):
         bool_list = []
         for app_bool in applied_list:
             if app_bool is None:
-                continue
+                bool_list.append(False)
             if isinstance(app_bool, str):
                 if app_bool.lower() in ["false", "0"]:
                     bool_list.append(False)
@@ -1436,7 +1436,7 @@ class Filtered(Base):
         if not check:
             self.logger.info(
                 "Filter names and applied lists are not the "
-                + "same size Be sure to check the inputs."
+                + "same size. Be sure to check the inputs."
                 + ". names = {0}, applied = {1}".format(self._name, self._applied)
             )
 

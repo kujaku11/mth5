@@ -772,7 +772,7 @@ class NIMS(NIMSHeader):
         if self.ts is not None:
             meta_dict = {
                 "channel_number": 6,
-                "component": "Temperature",
+                "component": "temperature",
                 "measurement_azimuth": 0,
                 "measurement_tilt": 0,
                 "sample_rate": 1,
@@ -781,12 +781,17 @@ class NIMS(NIMSHeader):
                 "type": "auxiliary",
                 "units": "celsius",
             }
+            
 
-            return timeseries.MTTS(
+            temp = timeseries.MTTS(
                 "auxiliary",
                 data=self.info_array['box_temp'],
                 channel_metadata={"auxiliary": meta_dict},
             )
+            # interpolate temperature onto the same sample rate as the channels.
+            temp.ts = temp.ts.interp_like(self.hx.ts)
+            
+            return temp 
         return None
 
     @property
@@ -795,14 +800,17 @@ class NIMS(NIMSHeader):
         if self.ts is not None:
             meta_dict = {
                 "channel_number": 1,
-                "component": "Hx",
+                "component": "hx",
                 "measurement_azimuth": 0,
                 "measurement_tilt": 0,
                 "sample_rate": self.sample_rate,
                 "time_period.start": self.start_time.isoformat(),
                 "time_period.end": self.end_time.isoformat(),
                 "type": "magnetic",
-                "units": "nanotesla",
+                "units": "counts",
+                "sensor.id": self.mag_id,
+                "sensor.manufacturer": "Barry Narod",
+                "sensor.type": "fluxgate triaxial magnetometer",
             }
 
             return timeseries.MTTS(
@@ -818,14 +826,17 @@ class NIMS(NIMSHeader):
         if self.ts is not None:
             meta_dict = {
                 "channel_number": 2,
-                "component": "Hy",
+                "component": "hy",
                 "measurement_azimuth": 90,
                 "measurement_tilt": 0,
                 "sample_rate": self.sample_rate,
                 "time_period.start": self.start_time.isoformat(),
                 "time_period.end": self.end_time.isoformat(),
                 "type": "magnetic",
-                "units": "nanotesla",
+                "units": "counts",
+                "sensor.id": self.mag_id,
+                "sensor.manufacturer": "Barry Narod",
+                "sensor.type": "fluxgate triaxial magnetometer",
             }
 
             return timeseries.MTTS(
@@ -841,14 +852,17 @@ class NIMS(NIMSHeader):
         if self.ts is not None:
             meta_dict = {
                 "channel_number": 3,
-                "component": "Hz",
+                "component": "hz",
                 "measurement_azimuth": 0,
                 "measurement_tilt": 90,
                 "sample_rate": self.sample_rate,
                 "time_period.start": self.start_time.isoformat(),
                 "time_period.end": self.end_time.isoformat(),
                 "type": "magnetic",
-                "units": "nanotesla",
+                "units": "counts",
+                "sensor.id": self.mag_id,
+                "sensor.manufacturer": "Barry Narod",
+                "sensor.type": "fluxgate triaxial magnetometer",
             }
 
             return timeseries.MTTS(
@@ -864,7 +878,7 @@ class NIMS(NIMSHeader):
         if self.ts is not None:
             meta_dict = {
                 "channel_number": 4,
-                "component": "Ex",
+                "component": "ex",
                 "measurement_azimuth": self.ex_azimuth,
                 "measurement_tilt": 0,
                 "sample_rate": self.sample_rate,
@@ -872,7 +886,9 @@ class NIMS(NIMSHeader):
                 "time_period.start": self.start_time.isoformat(),
                 "time_period.end": self.end_time.isoformat(),
                 "type": "electric",
-                "units": "millivolts per kilometer",
+                "units": "counts",
+                "negative.id": self.s_electrode_id,
+                "positive.id": self.n_electrode_id,
             }
 
             return timeseries.MTTS(
@@ -888,7 +904,7 @@ class NIMS(NIMSHeader):
         if self.ts is not None:
             meta_dict = {
                 "channel_number": 5,
-                "component": "Ey",
+                "component": "ey",
                 "measurement_azimuth": self.ey_azimuth,
                 "measurement_tilt": 0,
                 "sample_rate": self.sample_rate,
@@ -896,7 +912,9 @@ class NIMS(NIMSHeader):
                 "time_period.start": self.start_time.isoformat(),
                 "time_period.end": self.end_time.isoformat(),
                 "type": "electric",
-                "units": "millivolts per kilometer",
+                "units": "counts",
+                "negative.id": self.w_electrode_id,
+                "positive.id": self.e_electrode_id,
             }
 
             return timeseries.MTTS(
@@ -934,7 +952,7 @@ class NIMS(NIMSHeader):
             }
     
             return timeseries.RunTS(
-                array_list=[self.hx, self.hy, self.hz, self.ex, self.ey],
+                array_list=[self.hx, self.hy, self.hz, self.ex, self.ey, self.box_temperature],
                 run_metadata=meta_dict,
             )
         
