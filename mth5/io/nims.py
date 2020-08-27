@@ -397,8 +397,7 @@ class GPS(object):
             if "s" in self._latitude_hemisphere.lower():
                 lat *= -1
             return lat
-        else:
-            return 0.0
+        return 0.0
 
     @property
     def longitude(self):
@@ -411,8 +410,7 @@ class GPS(object):
             if "w" in self._longitude_hemisphere.lower():
                 lon *= -1
             return lon
-        else:
-            return 0.0
+        return 0.0
 
     @property
     def elevation(self):
@@ -427,8 +425,7 @@ class GPS(object):
                     "GPSError: Could not get elevation GPS string"
                     + f"not complete {self.gps_string}"
                 )
-        else:
-            return 0.0
+        return 0.0
 
     @property
     def time_stamp(self):
@@ -472,8 +469,7 @@ class GPS(object):
         """
         if hasattr(self, "_fix"):
             return self._fix
-        else:
-            return None
+        return None
 
 
 class NIMSHeader(object):
@@ -664,8 +660,9 @@ class NIMS(NIMSHeader):
     """
 
     def __init__(self, fn=None):
-
         super().__init__(fn)
+        
+        # change thes if the sample rate is different
         self.block_size = 131
         self.block_sequence = [1, self.block_size]
         self.sample_rate = 8  ### samples/second
@@ -681,8 +678,8 @@ class NIMS(NIMSHeader):
             "status": 2,
             "gps": 3,
             "sequence": 4,
-            "elec_temp": (5, 6),
-            "box_temp": (7, 8),
+            "box_temp": (5, 6),
+            "head_temp": (7, 8),
             "logic": 81,
             "end": 130,
         }
@@ -710,8 +707,7 @@ class NIMS(NIMSHeader):
             for ii, stamp in enumerate(self.stamps):
                 latitude[ii] = stamp[1][0].latitude
             return np.median(latitude[np.nonzero(latitude)])
-        else:
-            return None
+        return None
 
     @property
     def longitude(self):
@@ -726,8 +722,7 @@ class NIMS(NIMSHeader):
             for ii, stamp in enumerate(self.stamps):
                 longitude[ii] = stamp[1][0].longitude
             return np.median(longitude[np.nonzero(longitude)])
-        else:
-            return None
+        return None
 
     @property
     def elevation(self):
@@ -748,8 +743,7 @@ class NIMS(NIMSHeader):
                     continue
                 elevation[ii] = elev
             return np.median(elevation[np.nonzero(elevation)])
-        else:
-            return None
+        return None
 
     @property
     def start_time(self):
@@ -759,8 +753,7 @@ class NIMS(NIMSHeader):
         """
         if self.stamps is not None:
             return self.ts.index[0]
-        else:
-            return None
+        return None
 
     @property
     def end_time(self):
@@ -770,8 +763,31 @@ class NIMS(NIMSHeader):
         """
         if self.stamps is not None:
             return self.ts.index[-1]
-        else:
-            return None
+        return None
+    
+    @property
+    def box_temperature(self):
+        """data logger temperature, sampled at 1 second"""
+    
+        if self.ts is not None:
+            meta_dict = {
+                "channel_number": 6,
+                "component": "Temperature",
+                "measurement_azimuth": 0,
+                "measurement_tilt": 0,
+                "sample_rate": 1,
+                "time_period.start": self.start_time.isoformat(),
+                "time_period.end": self.end_time.isoformat(),
+                "type": "auxiliary",
+                "units": "celsius",
+            }
+
+            return timeseries.MTTS(
+                "auxiliary",
+                data=self.info_array['box_temp'],
+                channel_metadata={"auxiliary": meta_dict},
+            )
+        return None
 
     @property
     def hx(self):
@@ -794,8 +810,7 @@ class NIMS(NIMSHeader):
                 data=self.ts.hx.to_numpy(),
                 channel_metadata={"magnetic": meta_dict},
             )
-        else:
-            return None
+        return None
 
     @property
     def hy(self):
@@ -818,8 +833,7 @@ class NIMS(NIMSHeader):
                 data=self.ts.hy.to_numpy(),
                 channel_metadata={"magnetic": meta_dict},
             )
-        else:
-            return None
+        return None
 
     @property
     def hz(self):
@@ -842,8 +856,7 @@ class NIMS(NIMSHeader):
                 data=self.ts.hz.to_numpy(),
                 channel_metadata={"magnetic": meta_dict},
             )
-        else:
-            return None
+        return None
 
     @property
     def ex(self):
@@ -867,8 +880,7 @@ class NIMS(NIMSHeader):
                 data=self.ts.ex.to_numpy(),
                 channel_metadata={"electric": meta_dict},
             )
-        else:
-            return None
+        return None
 
     @property
     def ey(self):
@@ -892,36 +904,41 @@ class NIMS(NIMSHeader):
                 data=self.ts.ey.to_numpy(),
                 channel_metadata={"electric": meta_dict},
             )
-        else:
-            return None
+
+        return None
 
     @property
     def run_xarray(self):
         """ Get xarray for run """
-        meta_dict = {
-            "run": {
-                "channels_recorded_electric": "ex, ey",
-                "channels_recorded_magnetic": "hx, hy, hz",
-                "channels_recorded_auxiliary": "temperature",
-                "comments": self.comments,
-                "data_logger.firmware.author": "B. Narod",
-                "data_logger.firmware.name": "nims",
-                "data_logger.firmware.version": "1.0",
-                "data_logger.manufacturer": "Narod",
-                "data_logger.model": self.box_id,
-                "data_logger.type": "long period",
-                "id": self.run_id,
-                "data_type": "MTLP",
-                "sample_rate": self.sample_rate,
-                "time_period.end": self.start_time.isoformat(),
-                "time_period.start": self.end_time.isoformat(),
+        
+        if self.ts is not None:
+        
+            meta_dict = {
+                "run": {
+                    "channels_recorded_electric": "ex, ey",
+                    "channels_recorded_magnetic": "hx, hy, hz",
+                    "channels_recorded_auxiliary": "temperature",
+                    "comments": self.comments,
+                    "data_logger.firmware.author": "B. Narod",
+                    "data_logger.firmware.name": "nims",
+                    "data_logger.firmware.version": "1.0",
+                    "data_logger.manufacturer": "Narod",
+                    "data_logger.model": self.box_id,
+                    "data_logger.type": "long period",
+                    "id": self.run_id,
+                    "data_type": "MTLP",
+                    "sample_rate": self.sample_rate,
+                    "time_period.end": self.start_time.isoformat(),
+                    "time_period.start": self.end_time.isoformat(),
+                }
             }
-        }
-
-        return timeseries.RunTS(
-            array_list=[self.hx, self.hy, self.hz, self.ex, self.ey],
-            run_metadata=meta_dict,
-        )
+    
+            return timeseries.RunTS(
+                array_list=[self.hx, self.hy, self.hz, self.ex, self.ey],
+                run_metadata=meta_dict,
+            )
+        
+        return None
 
     def _make_index_values(self):
         """
@@ -1185,7 +1202,7 @@ class NIMS(NIMSHeader):
             ):
                 duplicate_list.append(d)
 
-        print("    Deleting {0} duplicate blocks".format(len(duplicate_list)))
+        self.logger.debug(f"Deleting {len(duplicate_list)} duplicate blocks")
         ### get the index of the blocks to be removed, namely the 1st duplicate
         ### block
         remove_sequence_index = [d["sequence_index"] for d in duplicate_list]
@@ -1263,8 +1280,8 @@ class NIMS(NIMSHeader):
         ### check the size of the data, should have an equal amount of blocks
         if (data.size % self.block_size) != 0:
             self.logger.warning(
-                f"odd number of bytes {data.size}, not even blocks"
-                + "cutting down the data by {0}".format(data.size % self.block_size)
+                f"odd number of bytes {data.size}, not even blocks "
+                + "cutting down the data by {0} bits".format(data.size % self.block_size)
             )
             end_data = data.size - (data.size % self.block_size)
             data = data[0:end_data]
@@ -1282,8 +1299,8 @@ class NIMS(NIMSHeader):
                 ("status", np.int),
                 ("gps", np.int),
                 ("sequence", np.int),
-                ("elec_temp", np.float),
                 ("box_temp", np.float),
+                ("head_temp", np.float),
                 ("logic", np.int),
                 ("end", np.int),
             ],
@@ -1291,9 +1308,12 @@ class NIMS(NIMSHeader):
 
         for key, index in self._block_dict.items():
             if "temp" in key:
-                value = (
-                    (data[:, index[0]] * 256 + data[:, index[1]]) - self.t_offset
-                ) / self.t_conversion_factor
+                # compute temperature
+                t_value = data[:, index[0]] * 256 + data[:, index[1]]
+                
+                # something to do with the bits where you have to subtract
+                t_value[np.where(t_value > 32768)] -= 65536
+                value = (t_value - self.t_offset) / self.t_conversion_factor
             else:
                 value = data[:, index]
             self.info_array[key][:] = value
@@ -1341,8 +1361,11 @@ class NIMS(NIMSHeader):
         ### align data
         self.ts = self.align_data(data_array, self.stamps)
         et = datetime.datetime.now()
+        read_time = (et - st).total_seconds()
+        self.logger.info(f"Reading took {read_time:.2f} seconds")
+        
+        return self.run_xarray, None
 
-        print("--> Took {0:.2f} seconds".format((et - st).total_seconds()))
 
     def _get_first_gps_stamp(self, stamps):
         """
@@ -1701,3 +1724,19 @@ class Response(object):
     @property
     def ey_filter(self):
         return self._get_electric_filter("ey")
+    
+# =============================================================================
+# convenience read
+# =============================================================================
+def read_bin(fn):
+    """
+    
+    :param fn: DESCRIPTION
+    :type fn: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+    
+    nims_obj = NIMS(fn)
+    return nims_obj.read_nims()

@@ -99,6 +99,8 @@ class Z3DHeader:
         self.tx_freq = None
         self.version = None
         self.old_version = False
+        self.ch_factor = 9.536743164062e-10
+        self.channelgain = 1.0
 
         for key in kwargs:
             setattr(self, key, kwargs[key])
@@ -1022,7 +1024,7 @@ class Z3D:
         if Z3Dfn is not None:
             self.fn = Z3Dfn
 
-        # print(u'------- Reading {0} ---------'.format(self.fn))
+        self.logger.info(f"Reading {self.fn}")
         st = datetime.datetime.now()
 
         # get the file size to get an estimate of how many data points there are
@@ -1118,7 +1120,7 @@ class Z3D:
         # time it
         et = datetime.datetime.now()
         read_time = (et - st).total_seconds()
-        self.logger.info(f"\tReading data took: {read_time:.3f} seconds")
+        self.logger.info(f"Reading data took: {read_time:.3f} seconds")
         
         return self.to_mtts(data[np.nonzero(data)]), self.information
 
@@ -1330,6 +1332,14 @@ class Z3D:
         if 'e' in self.component:
             ts_type = 'electric'
             meta_dict = {'electric': {'dipole_length': self.dipole_len}}
+            meta_dict[ts_type]['ac.start'] = self.time_series[0:int(self.sample_rate)].std() *\
+                self.header.ch_factor
+            meta_dict[ts_type]['ac.end'] = self.time_series[-int(self.sample_rate):].std() *\
+                self.header.ch_factor
+            meta_dict[ts_type]['dc.start'] = self.time_series[0:int(self.sample_rate)].mean() *\
+                self.header.ch_factor
+            meta_dict[ts_type]['dc.end'] = self.time_series[-int(self.sample_rate):].mean() *\
+                self.header.ch_factor
             self.logger.debug('Making Electric MTTS')
         elif 'h' in self.component:
             ts_type = 'magnetic'
@@ -1349,7 +1359,6 @@ class Z3D:
         meta_dict[ts_type]['channel_number'] = self.metadata.ch_number
 
         return MTTS(ts_type, data=self.time_series, channel_metadata=meta_dict)
-        # return MTTS(ts_type, data=None, channel_metadata=meta_dict)
 
 # ==============================================================================
 #  Error instances for Zen
@@ -1376,5 +1385,14 @@ class ZenInputFileError(Exception):
     """
 
     pass
+
+def read_z3d(fn):
+    """
+    generic tool to read z3d file
+    """
+    
+    z3d_obj = Z3D(fn)
+    return z3d_obj.read_z3d()
+
 
 

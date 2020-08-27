@@ -34,7 +34,7 @@ class MTTS:
     
     .. note:: Assumes equally spaced samples from the start time.
     
-    The time series is stored in an :class:`xarray.Dataset` that is has 
+    The time series is stored in an :class:`xarray.Dataset` that has 
     coordinates of time and is a 1-D array labeled 'data'
     
     The time coordinate is made from the start time, sample rate and 
