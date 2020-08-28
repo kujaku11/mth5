@@ -146,8 +146,8 @@ class MTTS:
         :rtype: TYPE
 
         """
-        self.logger.debug('Updating xarray attributes')
-        
+        self.logger.debug("Updating xarray attributes")
+
         self.metadata.time_period.start = self.start.iso_no_tz
         self.metadata.time_period.end = self.end.iso_no_tz
         self.metadata.sample_rate = self.sample_rate
@@ -183,9 +183,7 @@ class MTTS:
         if self._check_for_index():
             sr = 1e9 / self._ts.coords.indexes["time"][0].freq.nanos
         else:
-            self.logger.debug(
-                "Data has not been set yet, sample rate is from metadata"
-            )
+            self.logger.debug("Data has not been set yet, sample rate is from metadata")
             sr = self.metadata.sample_rate
             if sr is None:
                 sr = 0.0
@@ -413,7 +411,7 @@ class RunTS:
                 raise TypeError(msg)
 
         return [x.ts for x in array_list]
-    
+
     @property
     def summarize_metadata(self):
         """
@@ -426,11 +424,10 @@ class RunTS:
         """
         meta_dict = {}
         for comp in self.dataset.data_vars:
-           for mkey, mvalue in self.dataset[comp].attrs.items():
-               meta_dict[f"{comp}.{mkey}"] = mvalue
-               
+            for mkey, mvalue in self.dataset[comp].attrs.items():
+                meta_dict[f"{comp}.{mkey}"] = mvalue
+
         return meta_dict
-        
 
     def set_dataset(self, array_list, align_type="outer"):
         """
@@ -459,16 +456,18 @@ class RunTS:
         xdict = dict([(x.component, x) for x in x_array_list])
         self._dataset = xr.Dataset(xdict)
 
-        self._dataset.attrs.update(self.metadata.to_dict()['run'])
+        self._dataset.attrs.update(self.metadata.to_dict()["run"])
 
     @property
     def dataset(self):
         return self._dataset
-    
+
     @dataset.setter
     def dataset(self, array_list):
-        msg = ("Data will be aligned using the min and max time. " 
-               "If that is not correct use set_dataset and change the alignment type.")
+        msg = (
+            "Data will be aligned using the min and max time. "
+            "If that is not correct use set_dataset and change the alignment type."
+        )
         self.logger.info(msg)
         self.set_dataset(array_list)
 

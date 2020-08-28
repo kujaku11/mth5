@@ -60,7 +60,7 @@ mt2xml = stationxml_translator.MTToStationXML()
 
 # add network
 mt_survey = metadata.Survey()
-mt_survey.from_xml(et.parse(xml_path.joinpath(fn_mt_survey_xml)).getroot()) 
+mt_survey.from_xml(et.parse(xml_path.joinpath(fn_mt_survey_xml)).getroot())
 mt2xml.add_network(mt_survey)
 
 # add station
@@ -83,4 +83,4 @@ mt_magnetic.from_xml(et.parse(xml_path.joinpath(fn_mt_magnetic_xml)).getroot())
 mt2xml.add_channel(mt_magnetic, mt_run, mt_station.archive_id)
 
 # write StationXML file
-mt2xml.to_stationxml(xml_path.joinpath('florida_test_stationXML_02.xml'))
+mt2xml.to_stationxml(xml_path.joinpath("florida_test_stationXML_02.xml"))

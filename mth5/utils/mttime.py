@@ -19,26 +19,27 @@ from mth5.utils.exceptions import MTTimeError
 #  Get leap seconds
 # =============================================================================
 leap_second_dict = {
-        0: {"min": datetime.date(1980, 1, 1), "max": datetime.date(1981, 7, 1)},
-        1: {"min": datetime.date(1981, 7, 1), "max": datetime.date(1982, 7, 1)},
-        2: {"min": datetime.date(1982, 7, 1), "max": datetime.date(1983, 7, 1)},
-        3: {"min": datetime.date(1983, 7, 1), "max": datetime.date(1985, 7, 1)},
-        4: {"min": datetime.date(1985, 7, 1), "max": datetime.date(1988, 1, 1)},
-        5: {"min": datetime.date(1988, 1, 1), "max": datetime.date(1990, 1, 1)},
-        6: {"min": datetime.date(1990, 1, 1), "max": datetime.date(1991, 1, 1)},
-        7: {"min": datetime.date(1991, 1, 1), "max": datetime.date(1992, 7, 1)},
-        8: {"min": datetime.date(1992, 7, 1), "max": datetime.date(1993, 7, 1)},
-        9: {"min": datetime.date(1993, 7, 1), "max": datetime.date(1994, 7, 1)},
-        10: {"min": datetime.date(1994, 7, 1), "max": datetime.date(1996, 1, 1)},
-        11: {"min": datetime.date(1996, 1, 1), "max": datetime.date(1997, 7, 1)},
-        12: {"min": datetime.date(1997, 7, 1), "max": datetime.date(1999, 1, 1)},
-        13: {"min": datetime.date(1999, 1, 1), "max": datetime.date(2006, 1, 1)},
-        14: {"min": datetime.date(2006, 1, 1), "max": datetime.date(2009, 1, 1)},
-        15: {"min": datetime.date(2009, 1, 1), "max": datetime.date(2012, 6, 30)},
-        16: {"min": datetime.date(2012, 7, 1), "max": datetime.date(2015, 7, 1)},
-        17: {"min": datetime.date(2015, 7, 1), "max": datetime.date(2017, 1, 1)},
-        18: {"min": datetime.date(2017, 1, 1), "max": datetime.date(2021, 7, 1)},
-    }
+    0: {"min": datetime.date(1980, 1, 1), "max": datetime.date(1981, 7, 1)},
+    1: {"min": datetime.date(1981, 7, 1), "max": datetime.date(1982, 7, 1)},
+    2: {"min": datetime.date(1982, 7, 1), "max": datetime.date(1983, 7, 1)},
+    3: {"min": datetime.date(1983, 7, 1), "max": datetime.date(1985, 7, 1)},
+    4: {"min": datetime.date(1985, 7, 1), "max": datetime.date(1988, 1, 1)},
+    5: {"min": datetime.date(1988, 1, 1), "max": datetime.date(1990, 1, 1)},
+    6: {"min": datetime.date(1990, 1, 1), "max": datetime.date(1991, 1, 1)},
+    7: {"min": datetime.date(1991, 1, 1), "max": datetime.date(1992, 7, 1)},
+    8: {"min": datetime.date(1992, 7, 1), "max": datetime.date(1993, 7, 1)},
+    9: {"min": datetime.date(1993, 7, 1), "max": datetime.date(1994, 7, 1)},
+    10: {"min": datetime.date(1994, 7, 1), "max": datetime.date(1996, 1, 1)},
+    11: {"min": datetime.date(1996, 1, 1), "max": datetime.date(1997, 7, 1)},
+    12: {"min": datetime.date(1997, 7, 1), "max": datetime.date(1999, 1, 1)},
+    13: {"min": datetime.date(1999, 1, 1), "max": datetime.date(2006, 1, 1)},
+    14: {"min": datetime.date(2006, 1, 1), "max": datetime.date(2009, 1, 1)},
+    15: {"min": datetime.date(2009, 1, 1), "max": datetime.date(2012, 6, 30)},
+    16: {"min": datetime.date(2012, 7, 1), "max": datetime.date(2015, 7, 1)},
+    17: {"min": datetime.date(2015, 7, 1), "max": datetime.date(2017, 1, 1)},
+    18: {"min": datetime.date(2017, 1, 1), "max": datetime.date(2021, 7, 1)},
+}
+
 
 def calculate_leap_seconds(year, month, day):
     """
@@ -83,6 +84,7 @@ def calculate_leap_seconds(year, month, day):
             return int(leap_key)
 
     return None
+
 
 # ==============================================================================
 # convenience date-time container
@@ -160,13 +162,14 @@ class MTime:
                 + "default time 1980-01-01 00:00:00"
             )
             self.from_str("1980-01-01 00:00:00")
-            
+
         if gps_time:
             leap_seconds = calculate_leap_seconds(self.year, self.month, self.day)
-            self.logger.debug(f"Converting GPS time to UTC with {leap_seconds} leap seconds")
+            self.logger.debug(
+                f"Converting GPS time to UTC with {leap_seconds} leap seconds"
+            )
             self.dt_object -= datetime.timedelta(seconds=leap_seconds)
-            
-            
+
     def __str__(self):
         return self.iso_str
 

@@ -130,19 +130,20 @@ class GPS(object):
             },
         }
         self.parse_gps_string(self.gps_string)
-        
+
     def __str__(self):
         """ string representation """
-        msg = [f'type = {self.gps_type}',
-               f'index = {self.index}',
-               f'time_stamp =  {self.time_stamp}',
-               f'latitude = {self.latitude}',
-               f'longitude = {self.longitude}',
-               f'elevation = {self.elevation}', 
-               f'declination = {self.declination}',
-               ]
-               
-        return '\n'.join(msg)
+        msg = [
+            f"type = {self.gps_type}",
+            f"index = {self.index}",
+            f"time_stamp =  {self.time_stamp}",
+            f"latitude = {self.latitude}",
+            f"longitude = {self.longitude}",
+            f"elevation = {self.elevation}",
+            f"declination = {self.declination}",
+        ]
+
+        return "\n".join(msg)
 
     def __repr__(self):
         return self.__str__()
@@ -678,7 +679,7 @@ class NIMS(NIMSHeader):
 
     def __init__(self, fn=None):
         super().__init__(fn)
-        
+
         # change thes if the sample rate is different
         self.block_size = 131
         self.block_sequence = [1, self.block_size]
@@ -705,7 +706,7 @@ class NIMS(NIMSHeader):
         self.ts = None
         self.gaps = None
         self.duplicate_list = None
-        
+
         self._raw_string = None
 
         self.indices = self._make_index_values()
@@ -783,11 +784,11 @@ class NIMS(NIMSHeader):
         if self.stamps is not None:
             return self.ts.index[-1]
         return None
-    
+
     @property
     def box_temperature(self):
         """data logger temperature, sampled at 1 second"""
-    
+
         if self.ts is not None:
             meta_dict = {
                 "channel_number": 6,
@@ -800,17 +801,16 @@ class NIMS(NIMSHeader):
                 "type": "auxiliary",
                 "units": "celsius",
             }
-            
 
             temp = timeseries.MTTS(
                 "auxiliary",
-                data=self.info_array['box_temp'],
+                data=self.info_array["box_temp"],
                 channel_metadata={"auxiliary": meta_dict},
             )
             # interpolate temperature onto the same sample rate as the channels.
             temp.ts = temp.ts.interp_like(self.hx.ts)
-            
-            return temp 
+
+            return temp
         return None
 
     @property
@@ -947,9 +947,9 @@ class NIMS(NIMSHeader):
     @property
     def run_xarray(self):
         """ Get xarray for run """
-        
+
         if self.ts is not None:
-        
+
             meta_dict = {
                 "run": {
                     "channels_recorded_electric": "ex, ey",
@@ -969,12 +969,19 @@ class NIMS(NIMSHeader):
                     "time_period.start": self.end_time.isoformat(),
                 }
             }
-    
+
             return timeseries.RunTS(
-                array_list=[self.hx, self.hy, self.hz, self.ex, self.ey, self.box_temperature],
+                array_list=[
+                    self.hx,
+                    self.hy,
+                    self.hz,
+                    self.ex,
+                    self.ey,
+                    self.box_temperature,
+                ],
                 run_metadata=meta_dict,
             )
-        
+
         return None
 
     def _make_index_values(self):
@@ -1033,13 +1040,15 @@ class NIMS(NIMSHeader):
         gps_stamp_list = []
         ### not we are skipping the first entry, it tends to be not
         ### complete anyway
-        for ii, index, raw_stamp in zip(range(len(index_list)), index_list, gps_raw_stamp_list[1:]):
+        for ii, index, raw_stamp in zip(
+            range(len(index_list)), index_list, gps_raw_stamp_list[1:]
+        ):
             gps_obj = GPS(raw_stamp, index)
             if gps_obj.valid:
                 gps_stamp_list.append(gps_obj)
             else:
-                self.logger.error(f'GPS Error: file index {index}, stamp number {ii}')
-                self.logger.error(f'GPS Raw Stamp: {raw_stamp}')
+                self.logger.error(f"GPS Error: file index {index}, stamp number {ii}")
+                self.logger.error(f"GPS Raw Stamp: {raw_stamp}")
 
         return self._gps_match_gprmc_gpgga_strings(gps_stamp_list)
 
@@ -1151,10 +1160,14 @@ class NIMS(NIMSHeader):
         """
         if block_sequence is not None:
             self.block_sequence = block_sequence
-        
+
         # want to find the index there the test data is equal to the test sequence
-        t = np.vstack([np.roll(data_array, shift) for shift in 
-               -np.arange(len(self.block_sequence))]).T
+        t = np.vstack(
+            [
+                np.roll(data_array, shift)
+                for shift in -np.arange(len(self.block_sequence))
+            ]
+        ).T
         return np.where(np.all(t == self.block_sequence, axis=1))[0]
 
     def unwrap_sequence(self, sequence):
@@ -1299,7 +1312,6 @@ class NIMS(NIMSHeader):
             fid.seek(self.data_start_seek)
             self._raw_string = fid.read()
 
-        
         ### read in full string as unsigned integers
         data = np.frombuffer(self._raw_string, dtype=np.uint8)
 
@@ -1314,7 +1326,9 @@ class NIMS(NIMSHeader):
         if (data.size % self.block_size) != 0:
             self.logger.warning(
                 f"odd number of bytes {data.size}, not even blocks "
-                + "cutting down the data by {0} bits".format(data.size % self.block_size)
+                + "cutting down the data by {0} bits".format(
+                    data.size % self.block_size
+                )
             )
             end_data = data.size - (data.size % self.block_size)
             data = data[0:end_data]
@@ -1343,7 +1357,7 @@ class NIMS(NIMSHeader):
             if "temp" in key:
                 # compute temperature
                 t_value = data[:, index[0]] * 256 + data[:, index[1]]
-                
+
                 # something to do with the bits where you have to subtract
                 t_value[np.where(t_value > 32768)] -= 65536
                 value = (t_value - self.t_offset) / self.t_conversion_factor
@@ -1396,9 +1410,8 @@ class NIMS(NIMSHeader):
         et = datetime.datetime.now()
         read_time = (et - st).total_seconds()
         self.logger.info(f"Reading took {read_time:.2f} seconds")
-        
-        return self.run_xarray, None
 
+        return self.run_xarray, None
 
     def _get_first_gps_stamp(self, stamps):
         """
@@ -1443,14 +1456,14 @@ class NIMS(NIMSHeader):
         gap_max = int(diff_arr.max())
         gap_beginning = []
         if gap_max > 0:
-            print("    Check times:")
+            self.logger.warning("NIMS Check times:")
             for ii in range(1, gap_max + 1, 1):
                 try:
                     step_index = np.where(diff_arr == ii)[0][0]
                     gap_beginning.append(step_index)
-                    print(
-                        "{0}{1} is off from start time by {2} seconds".format(
-                            " " * 4, stamps[step_index][1][0].time_stamp.isoformat(), ii,
+                    self.logger.warning(
+                        "{0} is off from start time by {1} seconds".format(
+                            stamps[step_index][1][0].time_stamp.isoformat(), ii,
                         )
                     )
                 except IndexError:
@@ -1760,7 +1773,8 @@ class Response(object):
     @property
     def ey_filter(self):
         return self._get_electric_filter("ey")
-    
+
+
 # =============================================================================
 # convenience read
 # =============================================================================
@@ -1773,6 +1787,6 @@ def read_bin(fn):
     :rtype: TYPE
 
     """
-    
+
     nims_obj = NIMS(fn)
     return nims_obj.read_nims()

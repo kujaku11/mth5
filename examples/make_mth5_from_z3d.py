@@ -16,9 +16,8 @@ from mth5.io import zen
 from mth5 import mth5
 
 # =============================================================================
-# 
+#
 # =============================================================================
 z3d_dir = Path(r"c:\Users\jpeacock\Documents\example_data")
 
-z3d_list = list(z3d_dir.glob('*.z3d'))
-
+z3d_list = list(z3d_dir.glob("*.z3d"))

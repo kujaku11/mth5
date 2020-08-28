@@ -1607,12 +1607,12 @@ class RunGroup(BaseGroup):
             [channel.to_mtts() for channel in self.group_list[1:]],
             run_metadata=self.metadata,
         )
-    
+
     def from_runts(self, run_ts_obj):
         """
         
         """
-        
+
         pass
 
 

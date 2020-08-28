@@ -17,8 +17,11 @@ from mth5.io import zen, nims
 # =============================================================================
 # generic reader for any file type
 # =============================================================================
-readers = {'zen':{'file_types':['z3d'], 'reader':zen.read_z3d},
-           'nims':{'file_types':['bin', 'bnn'], 'reader':nims.read_nims}}
+readers = {
+    "zen": {"file_types": ["z3d"], "reader": zen.read_z3d},
+    "nims": {"file_types": ["bin", "bnn"], "reader": nims.read_nims},
+}
+
 
 def get_reader(extension):
     """
@@ -31,13 +34,13 @@ def get_reader(extension):
     :rtype: TYPE
 
     """
-    
+
     for key, vdict in readers.items():
-        if extension.lower() in vdict['file_types']:
-            return key, vdict['reader']
-    
-    raise ValueError(f"Could not find a reader for file type {extension}")    
-    
+        if extension.lower() in vdict["file_types"]:
+            return key, vdict["reader"]
+
+    raise ValueError(f"Could not find a reader for file type {extension}")
+
 
 def read_file(fn):
     """
@@ -48,12 +51,10 @@ def read_file(fn):
     :rtype: :class:`mth5.timeseries.MTTS`
 
     """
-    
+
     if not isinstance(fn, Path):
         fn = Path(fn)
-        
-    file_type, file_reader = get_reader(fn.suffix.replace('.', ''))
-    
-    return file_reader(fn)       
-    
-        
+
+    file_type, file_reader = get_reader(fn.suffix.replace(".", ""))
+
+    return file_reader(fn)

@@ -71,7 +71,7 @@ class Z3DHeader:
 
     def __init__(self, fn=None, fid=None, **kwargs):
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-       
+
         self.fn = fn
         self.fid = fid
 
@@ -319,8 +319,8 @@ class Z3DSchedule:
                 m_value = m_list[1].strip()
                 setattr(self, m_key, m_value)
 
-        self.initial_start = MTime(time=f"{self.Date}T{self.Time}", 
-                                   gps_time=True)
+        self.initial_start = MTime(time=f"{self.Date}T{self.Time}", gps_time=True)
+
 
 # ==============================================================================
 #  Meta data class
@@ -682,7 +682,7 @@ class Z3D:
 
         self._week_len = 604800
         # '1980, 1, 6, 0, 0, 0, -1, -1, 0
-        self._gps_epoch = MTime('1980-01-06T00:00:00')
+        self._gps_epoch = MTime("1980-01-06T00:00:00")
         self._leap_seconds = 18
         self._block_len = 2 ** 16
         # the number in the cac files is for volts, we want mV
@@ -691,7 +691,6 @@ class Z3D:
 
         self.units = "counts"
         self.sample_rate = None
-
 
     @property
     def station(self):
@@ -787,19 +786,21 @@ class Z3D:
         """
         if sampling_rate is not None:
             self.header.ad_rate = float(sampling_rate)
-            
+
     @property
     def start(self):
         if self.gps_stamps is not None:
-            return self.get_UTC_date_time(self.header.gpsweek,
-                                          self.gps_stamps['time'][0])
+            return self.get_UTC_date_time(
+                self.header.gpsweek, self.gps_stamps["time"][0]
+            )
         return None
-    
+
     @property
     def end(self):
         if self.gps_stamps is not None:
-            return self.get_UTC_date_time(self.header.gpsweek,
-                                          self.gps_stamps['time'][-1])
+            return self.get_UTC_date_time(
+                self.header.gpsweek, self.gps_stamps["time"][-1]
+            )
         return None
 
     @property
@@ -834,24 +835,26 @@ class Z3D:
             return self.metadata.ch_number
         else:
             return None
-        
+
     @property
     def information(self):
         """ extra metadta that might be useful """
-        
-        meta_dict = {}
-        meta_dict['station.id'] = self.station
-        meta_dict['station.location.latitude'] = self.latitude
-        meta_dict['station.location.longitude'] = self.longitude
-        meta_dict['station.location.elevation'] = self.elevation
-        meta_dict['run.data_logger.firmware.version'] = self.header.version
-        meta_dict['run.data_logger.id'] = self.header.data_logger
-        meta_dict['run.data_logger.manufacturer'] = 'Zonge International'
-        meta_dict['run.data_logger.model'] = 'ZEN'
-        meta_dict['filters'] = {'counts_to_volts': self.header.ch_factor,
-                                'gain': self.header.channelgain}
 
-        return meta_dict        
+        meta_dict = {}
+        meta_dict["station.id"] = self.station
+        meta_dict["station.location.latitude"] = self.latitude
+        meta_dict["station.location.longitude"] = self.longitude
+        meta_dict["station.location.elevation"] = self.elevation
+        meta_dict["run.data_logger.firmware.version"] = self.header.version
+        meta_dict["run.data_logger.id"] = self.header.data_logger
+        meta_dict["run.data_logger.manufacturer"] = "Zonge International"
+        meta_dict["run.data_logger.model"] = "ZEN"
+        meta_dict["filters"] = {
+            "counts_to_volts": self.header.ch_factor,
+            "gain": self.header.channelgain,
+        }
+
+        return meta_dict
 
     def _get_gps_stamp_type(self, old_version=False):
         """
@@ -1048,7 +1051,10 @@ class Z3D:
             # initalize a data array filled with zeros, everything goes into
             # this array then we parse later
             data = np.zeros(
-                int((file_size - 512 * (1 + self.metadata.count)) / 4 + 8 * self.sample_rate),
+                int(
+                    (file_size - 512 * (1 + self.metadata.count)) / 4
+                    + 8 * self.sample_rate
+                ),
                 dtype=np.int32,
             )
             # go over a while loop until the data cound exceed the file size
@@ -1086,7 +1092,9 @@ class Z3D:
                 data[gps_find + 1]
             except IndexError:
                 pass
-                self.logger.warning(f"Failed gps stamp {ii+1} out of {len(gps_stamp_find)}")
+                self.logger.warning(
+                    f"Failed gps stamp {ii+1} out of {len(gps_stamp_find)}"
+                )
                 break
 
             if (
@@ -1106,9 +1114,9 @@ class Z3D:
                     self.gps_stamps[ii]["block_len"] = 0
                 data[int(gps_find) : int(gps_find + self._gps_bytes)] = 0
 
-        # fill the time series 
+        # fill the time series
         self.time_series = data[np.nonzero(data)]
-        
+
         # validate everything
         self.validate_time_blocks()
         self.convert_gps_time()
@@ -1121,9 +1129,8 @@ class Z3D:
         et = datetime.datetime.now()
         read_time = (et - st).total_seconds()
         self.logger.info(f"Reading data took: {read_time:.3f} seconds")
-        
-        return self.to_mtts(data[np.nonzero(data)]), self.information
 
+        return self.to_mtts(data[np.nonzero(data)]), self.information
 
     # =================================================
     def get_gps_stamp_index(self, ts_data, old_version=False):
@@ -1196,7 +1203,7 @@ class Z3D:
 
         bad_times = np.where(abs(t_diff) > 0.5)[0]
         if len(bad_times) > 0:
-            self.logger.warning('BAD GPS TIMES:')
+            self.logger.warning("BAD GPS TIMES:")
             for bb in bad_times:
                 self.logger.warning(f"bad GPS time at index {bb} > 0.5 s")
 
@@ -1318,7 +1325,7 @@ class Z3D:
         utc_seconds = (
             self._gps_epoch.epoch_seconds + (gps_week * self._week_len) + gps_time
         )
-        
+
         # compute date and time from seconds and return a datetime object
         # easier to manipulate later
         return MTime(utc_seconds, gps_time=True)
@@ -1329,36 +1336,47 @@ class Z3D:
         fill time series object
         """
         # fill the time series object
-        if 'e' in self.component:
-            ts_type = 'electric'
-            meta_dict = {'electric': {'dipole_length': self.dipole_len}}
-            meta_dict[ts_type]['ac.start'] = self.time_series[0:int(self.sample_rate)].std() *\
-                self.header.ch_factor
-            meta_dict[ts_type]['ac.end'] = self.time_series[-int(self.sample_rate):].std() *\
-                self.header.ch_factor
-            meta_dict[ts_type]['dc.start'] = self.time_series[0:int(self.sample_rate)].mean() *\
-                self.header.ch_factor
-            meta_dict[ts_type]['dc.end'] = self.time_series[-int(self.sample_rate):].mean() *\
-                self.header.ch_factor
-            self.logger.debug('Making Electric MTTS')
-        elif 'h' in self.component:
-            ts_type = 'magnetic'
-            meta_dict = {'magnetic': {'sensor.id': self.coil_num,
-                                      'sensor.manufacturer': 'Geotell',
-                                      'sensor.model': 'ANT-4',
-                                      'sensor.type': 'induction coil',
-                                      }}
-            self.logger.debug('Making Magnetic MTTS')
-            
-        meta_dict[ts_type]['time_period.start'] = self.start.iso_str
-        meta_dict[ts_type]['time_period.end'] = self.end.iso_str
-        meta_dict[ts_type]['component'] = self.component
-        meta_dict[ts_type]['sample_rate'] = self.sample_rate
-        meta_dict[ts_type]['measurement_azimuth'] = self.azimuth
-        meta_dict[ts_type]['units'] = 'counts'
-        meta_dict[ts_type]['channel_number'] = self.metadata.ch_number
+        if "e" in self.component:
+            ts_type = "electric"
+            meta_dict = {"electric": {"dipole_length": self.dipole_len}}
+            meta_dict[ts_type]["ac.start"] = (
+                self.time_series[0 : int(self.sample_rate)].std()
+                * self.header.ch_factor
+            )
+            meta_dict[ts_type]["ac.end"] = (
+                self.time_series[-int(self.sample_rate) :].std() * self.header.ch_factor
+            )
+            meta_dict[ts_type]["dc.start"] = (
+                self.time_series[0 : int(self.sample_rate)].mean()
+                * self.header.ch_factor
+            )
+            meta_dict[ts_type]["dc.end"] = (
+                self.time_series[-int(self.sample_rate) :].mean()
+                * self.header.ch_factor
+            )
+            self.logger.debug("Making Electric MTTS")
+        elif "h" in self.component:
+            ts_type = "magnetic"
+            meta_dict = {
+                "magnetic": {
+                    "sensor.id": self.coil_num,
+                    "sensor.manufacturer": "Geotell",
+                    "sensor.model": "ANT-4",
+                    "sensor.type": "induction coil",
+                }
+            }
+            self.logger.debug("Making Magnetic MTTS")
+
+        meta_dict[ts_type]["time_period.start"] = self.start.iso_str
+        meta_dict[ts_type]["time_period.end"] = self.end.iso_str
+        meta_dict[ts_type]["component"] = self.component
+        meta_dict[ts_type]["sample_rate"] = self.sample_rate
+        meta_dict[ts_type]["measurement_azimuth"] = self.azimuth
+        meta_dict[ts_type]["units"] = "counts"
+        meta_dict[ts_type]["channel_number"] = self.metadata.ch_number
 
         return MTTS(ts_type, data=self.time_series, channel_metadata=meta_dict)
+
 
 # ==============================================================================
 #  Error instances for Zen
@@ -1386,13 +1404,11 @@ class ZenInputFileError(Exception):
 
     pass
 
+
 def read_z3d(fn):
     """
     generic tool to read z3d file
     """
-    
+
     z3d_obj = Z3D(fn)
     return z3d_obj.read_z3d()
-
-
-

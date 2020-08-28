@@ -85,41 +85,61 @@ class TestRunTS(unittest.TestCase):
     def setUp(self):
         self.run = timeseries.RunTS()
         self.maxDiff = None
-                
+
         self.ex = timeseries.MTTS(
             "electric",
             data=np.random.rand(4096),
-            channel_metadata={"electric": {"component": "ex", 
-                                           "sample_rate": 8,
-                                           'time_period.start': "2015-01-08T19:49:18+00:00"}},
+            channel_metadata={
+                "electric": {
+                    "component": "ex",
+                    "sample_rate": 8,
+                    "time_period.start": "2015-01-08T19:49:18+00:00",
+                }
+            },
         )
         self.ey = timeseries.MTTS(
             "electric",
             data=np.random.rand(4096),
-            channel_metadata={"electric": {"component": "ey",
-                                           "sample_rate": 8,
-                                           'time_period.start': "2015-01-08T19:49:18+00:00"}},
+            channel_metadata={
+                "electric": {
+                    "component": "ey",
+                    "sample_rate": 8,
+                    "time_period.start": "2015-01-08T19:49:18+00:00",
+                }
+            },
         )
         self.hx = timeseries.MTTS(
             "magnetic",
             data=np.random.rand(4096),
-            channel_metadata={"magnetic": {"component": "hx", 
-                                           "sample_rate": 8,
-                                           'time_period.start': "2015-01-08T19:49:18+00:00"}},
+            channel_metadata={
+                "magnetic": {
+                    "component": "hx",
+                    "sample_rate": 8,
+                    "time_period.start": "2015-01-08T19:49:18+00:00",
+                }
+            },
         )
         self.hy = timeseries.MTTS(
             "magnetic",
             data=np.random.rand(4096),
-            channel_metadata={"magnetic": {"component": "hy",
-                                           "sample_rate": 8,
-                                           'time_period.start': "2015-01-08T19:49:18+00:00"}},
+            channel_metadata={
+                "magnetic": {
+                    "component": "hy",
+                    "sample_rate": 8,
+                    "time_period.start": "2015-01-08T19:49:18+00:00",
+                }
+            },
         )
         self.hz = timeseries.MTTS(
             "magnetic",
             data=np.random.rand(4096),
-            channel_metadata={"magnetic": {"component": "hz",
-                                           "sample_rate": 8,
-                                           'time_period.start': "2015-01-08T19:49:18+00:00"}},
+            channel_metadata={
+                "magnetic": {
+                    "component": "hz",
+                    "sample_rate": 8,
+                    "time_period.start": "2015-01-08T19:49:18+00:00",
+                }
+            },
         )
 
     def test_list_input(self):
@@ -127,14 +147,14 @@ class TestRunTS(unittest.TestCase):
         self.run.build_dataset([self.ex, self.ey, self.hx, self.hy, self.hz])
 
         self.assertListEqual(
-            ["ex", "ey", "hx", "hy", "hz"], 
-            list(self.run.dataset.data_vars.keys())
+            ["ex", "ey", "hx", "hy", "hz"], list(self.run.dataset.data_vars.keys())
         )
-        
+
         self.assertEqual(self.run.sample_rate, 8.0)
-        self.assertEqual(self.run.start, '2015-01-08T19:49:18')
-        self.assertEqual(self.run.end, '2015-01-08T19:57:49.875000')
-        
+        self.assertEqual(self.run.start, "2015-01-08T19:49:18")
+        self.assertEqual(self.run.end, "2015-01-08T19:57:49.875000")
+
+
 # =============================================================================
 # run tests
 # =============================================================================
