@@ -15,7 +15,6 @@ Created on Thu Oct 31 10:03:20 2019
 # Imports
 # =============================================================================
 import os
-import re
 import struct
 import datetime
 import dateutil
@@ -192,6 +191,10 @@ class GPS(object):
             gps_list = [value.decode() for value in gps_list]
         else:
             gps_list = gps_string.strip().split(",")
+            
+        if len(gps_list[1]) > 6:
+            self.logger.warning("GPS time and lat missing a comma adding one, check time")
+            gps_list = gps_list[0:1] + [gps_list[1][0:6], gps_list[1][6:]] + gps_list[2:]
 
         ### validate the gps list to make sure it is usable
         gps_list, error_list = self.validate_gps_list(gps_list)
@@ -1299,6 +1302,9 @@ class NIMS(NIMSHeader):
         :param str fn: full path to DATA.BIN file
         
         """
+        
+        self.logger.info("Note there is no attempt to stretch the data if there are "
+                         "timining gaps.  Be sure to check the timing.")
         if fn is not None:
             self.fn = fn
 
@@ -1441,33 +1447,44 @@ class NIMS(NIMSHeader):
         :returns: list of gap index values
         """
         stamp_01 = self._get_first_gps_stamp(stamps)[1][0]
-        diff_arr = np.zeros(len(stamps))
-        diff_arr[0] = -666
+        # current_gap = 0
+        current_stamp = stamp_01
+        gap_beginning = []
+        total_gap = 0
         for ii, stamp in enumerate(stamps[1:], 1):
             stamp = stamp[1][0]
-            if stamp._date == "010180":
-                diff_arr[ii] = -666
+            # time_diff = (stamp.time_stamp - stamp_01.time_stamp).total_seconds()
+            # index_diff = stamp.index - stamp_01.index
+            
+            # time_gap = index_diff - time_diff
+            # if time_gap == current_gap:
+            #     continue
+            # elif time_gap > current_gap:
+            #     current_gap = time_gap
+            #     gap_beginning.append(stamp.index)
+            #     self.logger.warning(
+            #         "GPS tamp at {0} is off from start time by {1} seconds".format(
+            #             stamp.time_stamp.isoformat(), 
+            #             time_gap,
+            #         )
+            #     )
+                
+            time_diff = (stamp.time_stamp - current_stamp.time_stamp).total_seconds()
+            index_diff = stamp.index - current_stamp.index
+            
+            time_gap = index_diff - time_diff
+            if time_gap == 0:
                 continue
-            time_diff = (stamp.time_stamp - stamp_01.time_stamp).total_seconds()
-            index_diff = stamp.index - stamp_01.index
-
-            diff_arr[ii] = index_diff - time_diff
-
-        gap_max = int(diff_arr.max())
-        gap_beginning = []
-        if gap_max > 0:
-            self.logger.warning("NIMS Check times:")
-            for ii in range(1, gap_max + 1, 1):
-                try:
-                    step_index = np.where(diff_arr == ii)[0][0]
-                    gap_beginning.append(step_index)
-                    self.logger.warning(
-                        "{0} is off from start time by {1} seconds".format(
-                            stamps[step_index][1][0].time_stamp.isoformat(), ii,
-                        )
+            elif time_gap > 0:
+                total_gap += time_diff
+                current_stamp = stamp
+                gap_beginning.append(stamp.index)
+                self.logger.warning(
+                    "GPS tamp at {0} is off from previous time by {1} seconds".format(
+                        stamp.time_stamp.isoformat(), 
+                        time_gap,
                     )
-                except IndexError:
-                    continue
+                )
 
         return gap_beginning
 

@@ -15,18 +15,15 @@ Created on Thu Aug 27 16:54:09 2020
 import os
 import time
 import datetime
-import sys
-import glob
+
 import logging
-from io import StringIO
-import collections
 
 import gzip
 import urllib as url
 import xml.etree.ElementTree as ET
 
 import numpy as np
-import scipy.signal as sps
+
 import pandas as pd
 
 from mth5 import timeseries
@@ -647,6 +644,7 @@ class USGSasc(AsciiMetadata):
         et = datetime.datetime.now()
         read_time = et - st
         self.logger.info("Reading took {0}".format(read_time.total_seconds()))
+        
 
     def _make_file_name(self, save_path=None, compression=True, compress_type="zip"):
         """
@@ -838,193 +836,19 @@ class USGSasc(AsciiMetadata):
         write_time = et - st
         print("Writing took: {0} seconds".format(write_time.total_seconds()))
 
-    def write_station_info_metadata(self, save_dir=None, mtft_bool=False):
-        """
-        write out station info that can later be put into a data base
 
-        the data we need is
-            - site name
-            - site id number
-            - lat
-            - lon
-            - national map elevation
-            - hx azimuth
-            - ex azimuth
-            - hy azimuth
-            - hz azimuth
-            - ex length
-            - ey length
-            - start date
-            - end date
-            - instrument type (lp, bb)
-            - number of channels
+def read_ascii(fn):
+    """
+    read USGS ASCII formatted file
+    
+    :param fn: DESCRIPTION
+    :type fn: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
 
-        """
-        if save_dir is not None:
-            save_fn = os.path.join(
-                save_dir,
-                "{0}_{1}T{2}_{3:.0f}.cfg".format(
-                    self.SiteID,
-                    self._start_time.strftime("%Y-%m-%d"),
-                    self._start_time.strftime("%H%M%S"),
-                    self.AcqSmpFreq,
-                ),
-            )
-        else:
-            save_fn = os.path.join(
-                self.station_dir,
-                "{0}_{1}T{2}_{3:.0f}.cfg".format(
-                    self.SiteID,
-                    self._start_time.strftime("%Y-%m-%d"),
-                    self._start_time.strftime("%H%M%S"),
-                    self.AcqSmpFreq,
-                ),
-            )
-        meta_dict = {}
-        key = "{0}_{1}T{2}_{3:.0f}".format(
-            self.SiteID,
-            self._start_time.strftime("%Y-%m-%d"),
-            self._start_time.strftime("%H%M%S"),
-            self.AcqSmpFreq,
-        )
-        meta_dict[key] = {}
-        meta_dict[key]["site"] = self.SiteID
-        meta_dict[key]["lat"] = self._latitude
-        meta_dict[key]["lon"] = self._longitude
-        meta_dict[key]["elev"] = self.SiteElevation
-        meta_dict[key]["mtft_file"] = mtft_bool
-        try:
-            meta_dict[key]["hx_azimuth"] = self.channel_dict["Hx"]["Azimuth"]
-            meta_dict[key]["hx_id"] = self.channel_dict["Hx"]["InstrumentID"].split(
-                "-"
-            )[1]
-            meta_dict[key]["hx_nsamples"] = self.channel_dict["Hx"]["n_samples"]
-            meta_dict[key]["hx_ndiff"] = self.channel_dict["Hx"]["n_diff"]
-            meta_dict[key]["hx_std"] = self.channel_dict["Hx"]["std"]
-            meta_dict[key]["hx_start"] = self.channel_dict["Hx"]["start"]
-            meta_dict[key]["zen_num"] = self.channel_dict["Hx"]["InstrumentID"].split(
-                "-"
-            )[0]
-            meta_dict[key]["hx_num"] = self.channel_dict["Hx"]["ChnNum"][-1]
-        except KeyError:
-            meta_dict[key]["hx_azimuth"] = None
-            meta_dict[key]["hx_id"] = None
-            meta_dict[key]["hx_nsamples"] = None
-            meta_dict[key]["hx_ndiff"] = None
-            meta_dict[key]["hx_std"] = None
-            meta_dict[key]["hx_start"] = None
-            meta_dict[key]["hx_num"] = None
-
-        try:
-            meta_dict[key]["hy_azimuth"] = self.channel_dict["Hy"]["Azimuth"]
-            meta_dict[key]["hy_id"] = self.channel_dict["Hy"]["InstrumentID"].split(
-                "-"
-            )[1]
-            meta_dict[key]["hy_nsamples"] = self.channel_dict["Hy"]["n_samples"]
-            meta_dict[key]["hy_ndiff"] = self.channel_dict["Hy"]["n_diff"]
-            meta_dict[key]["hy_std"] = self.channel_dict["Hy"]["std"]
-            meta_dict[key]["hy_start"] = self.channel_dict["Hy"]["start"]
-            meta_dict[key]["zen_num"] = self.channel_dict["Hy"]["InstrumentID"].split(
-                "-"
-            )[0]
-            meta_dict[key]["hy_num"] = self.channel_dict["Hy"]["ChnNum"][-1:]
-        except KeyError:
-            meta_dict[key]["hy_azimuth"] = None
-            meta_dict[key]["hy_id"] = None
-            meta_dict[key]["hy_nsamples"] = None
-            meta_dict[key]["hy_ndiff"] = None
-            meta_dict[key]["hy_std"] = None
-            meta_dict[key]["hy_start"] = None
-            meta_dict[key]["hy_num"] = None
-        try:
-            meta_dict[key]["hz_azimuth"] = self.channel_dict["Hz"]["Azimuth"]
-            meta_dict[key]["hz_id"] = self.channel_dict["Hz"]["InstrumentID"].split(
-                "-"
-            )[1]
-            meta_dict[key]["hz_nsamples"] = self.channel_dict["Hz"]["n_samples"]
-            meta_dict[key]["hz_ndiff"] = self.channel_dict["Hz"]["n_diff"]
-            meta_dict[key]["hz_std"] = self.channel_dict["Hz"]["std"]
-            meta_dict[key]["hz_start"] = self.channel_dict["Hz"]["start"]
-            meta_dict[key]["zen_num"] = self.channel_dict["Hz"]["InstrumentID"].split(
-                "-"
-            )[0]
-            meta_dict[key]["hz_num"] = self.channel_dict["Hz"]["ChnNum"][-1:]
-        except KeyError:
-            meta_dict[key]["hz_azimuth"] = None
-            meta_dict[key]["hz_id"] = None
-            meta_dict[key]["hz_nsamples"] = None
-            meta_dict[key]["hz_ndiff"] = None
-            meta_dict[key]["hz_std"] = None
-            meta_dict[key]["hz_start"] = None
-            meta_dict[key]["hz_num"] = None
-
-        try:
-            meta_dict[key]["ex_azimuth"] = self.channel_dict["Ex"]["Azimuth"]
-            meta_dict[key]["ex_id"] = self.channel_dict["Ex"]["InstrumentID"]
-            meta_dict[key]["ex_len"] = self.channel_dict["Ex"]["Dipole_Length"]
-            meta_dict[key]["ex_nsamples"] = self.channel_dict["Ex"]["n_samples"]
-            meta_dict[key]["ex_ndiff"] = self.channel_dict["Ex"]["n_diff"]
-            meta_dict[key]["ex_std"] = self.channel_dict["Ex"]["std"]
-            meta_dict[key]["ex_start"] = self.channel_dict["Ex"]["start"]
-            meta_dict[key]["zen_num"] = self.channel_dict["Ex"]["InstrumentID"]
-            meta_dict[key]["ex_num"] = self.channel_dict["Ex"]["ChnNum"][-1:]
-        except KeyError:
-            meta_dict[key]["ex_azimuth"] = None
-            meta_dict[key]["ex_id"] = None
-            meta_dict[key]["ex_len"] = None
-            meta_dict[key]["ex_nsamples"] = None
-            meta_dict[key]["ex_ndiff"] = None
-            meta_dict[key]["ex_std"] = None
-            meta_dict[key]["ex_start"] = None
-            meta_dict[key]["ex_num"] = None
-        try:
-            meta_dict[key]["ey_azimuth"] = self.channel_dict["Ey"]["Azimuth"]
-            meta_dict[key]["ey_id"] = self.channel_dict["Ey"]["InstrumentID"]
-            meta_dict[key]["ey_len"] = self.channel_dict["Ey"]["Dipole_Length"]
-            meta_dict[key]["ey_nsamples"] = self.channel_dict["Ey"]["n_samples"]
-            meta_dict[key]["ey_ndiff"] = self.channel_dict["Ey"]["n_diff"]
-            meta_dict[key]["ey_std"] = self.channel_dict["Ey"]["std"]
-            meta_dict[key]["ey_start"] = self.channel_dict["Ey"]["start"]
-            meta_dict[key]["zen_num"] = self.channel_dict["Ey"]["InstrumentID"]
-            meta_dict[key]["ey_num"] = self.channel_dict["Ey"]["ChnNum"][-1:]
-        except KeyError:
-            meta_dict[key]["ey_azimuth"] = None
-            meta_dict[key]["ey_id"] = None
-            meta_dict[key]["ey_len"] = None
-            meta_dict[key]["ey_nsamples"] = None
-            meta_dict[key]["ey_ndiff"] = None
-            meta_dict[key]["ey_std"] = None
-            meta_dict[key]["ey_start"] = None
-            meta_dict[key]["ey_num"] = None
-
-        meta_dict[key]["start_date"] = self.AcqStartTime
-        meta_dict[key]["stop_date"] = self.AcqStopTime
-        meta_dict[key]["sampling_rate"] = self.AcqSmpFreq
-        meta_dict[key]["n_samples"] = self.AcqNumSmp
-        meta_dict[key]["n_chan"] = self.Nchan
-
-        if meta_dict[key]["zen_num"] in [
-            24,
-            25,
-            26,
-            46,
-            "24",
-            "25",
-            "26",
-            "46",
-            "ZEN24",
-            "ZEN25",
-            "ZEN26",
-            "ZEN46",
-        ]:
-            meta_dict[key]["collected_by"] = "USGS"
-        else:
-            meta_dict[key]["collected_by"] = "OSU"
-
-        # in the old OSU z3d files there are notes in the metadata section
-        # pass those on
-        meta_dict[key]["notes"] = self.meta_notes
-
-        mtcfg.write_dict_to_configfile(meta_dict, save_fn)
-
-        return save_fn
+    """
+    
+    asc_obj = USGSasc(fn)
+    asc_obj.read_asc_file()
+    
+    return asc_obj.run_xarray

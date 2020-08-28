@@ -12,7 +12,7 @@ Created on Wed Aug 26 10:32:45 2020
 # =============================================================================
 
 from pathlib import Path
-from mth5.io import zen, nims
+from mth5.io import zen, nims, usgs_ascii
 
 # =============================================================================
 # generic reader for any file type
@@ -20,6 +20,7 @@ from mth5.io import zen, nims
 readers = {
     "zen": {"file_types": ["z3d"], "reader": zen.read_z3d},
     "nims": {"file_types": ["bin", "bnn"], "reader": nims.read_nims},
+    "usgs_asci": {'file_types': ['.asc', '.zip'], "reader": usgs_ascii.read_ascii}
 }
 
 
@@ -28,10 +29,10 @@ def get_reader(extension):
     
     get the proper reader for file extension
     
-    :param extension: DESCRIPTION
-    :type extension: TYPE
-    :return: DESCRIPTION
-    :rtype: TYPE
+    :param extension: file extension
+    :type extension: string
+    :return: the correct function to read the file
+    :rtype: function
 
     """
 
