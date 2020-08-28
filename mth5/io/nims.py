@@ -163,13 +163,13 @@ class GPS(object):
         gps_string = gps_string.replace(b"\x00", b"*")
 
         if gps_string.find(b"*") < 0:
-            logging.error("GPSError: No end to stamp {0}".format(gps_string))
+            logging.debug("GPSError: No end to stamp {0}".format(gps_string))
         else:
             try:
                 gps_string = gps_string[0 : gps_string.find(b"*")].decode()
                 return gps_string
             except UnicodeDecodeError:
-                logging.error(
+                logging.debug(
                     "GPSError: stamp not correct format, {0}".format(gps_string)
                 )
                 return None
@@ -193,14 +193,14 @@ class GPS(object):
             gps_list = gps_string.strip().split(",")
             
         if len(gps_list[1]) > 6:
-            self.logger.warning("GPS time and lat missing a comma adding one, check time")
+            self.logger.debug("GPS time and lat missing a comma adding one, check time")
             gps_list = gps_list[0:1] + [gps_list[1][0:6], gps_list[1][6:]] + gps_list[2:]
 
         ### validate the gps list to make sure it is usable
         gps_list, error_list = self.validate_gps_list(gps_list)
         if len(error_list) > 0:
             for error in error_list:
-                logging.error("GPSError: " + error)
+                logging.debug("GPSError: " + error)
         if gps_list is None:
             return
 
@@ -1040,22 +1040,26 @@ class NIMS(NIMSHeader):
         ### read in GPS strings into a list to be parsed later
         index_list, gps_raw_stamp_list = self._get_gps_string_list(nims_string)
 
-        gps_stamp_list = []
-        ### not we are skipping the first entry, it tends to be not
+        gprmc_list = []
+        gpgga_list = []
+        ### note we are skipping the first entry, it tends to be not
         ### complete anyway
         for ii, index, raw_stamp in zip(
             range(len(index_list)), index_list, gps_raw_stamp_list[1:]
         ):
             gps_obj = GPS(raw_stamp, index)
             if gps_obj.valid:
-                gps_stamp_list.append(gps_obj)
+                if gps_obj.gps_type == 'GPRMC':
+                    gprmc_list.append(gps_obj)
+                elif gps_obj.gps_type == 'GPGGA':
+                    gpgga_list.append(gps_obj)
             else:
-                self.logger.error(f"GPS Error: file index {index}, stamp number {ii}")
-                self.logger.error(f"GPS Raw Stamp: {raw_stamp}")
+                self.logger.debug(f"GPS Error: file index {index}, stamp number {ii}")
+                self.logger.debug(f"GPS Raw Stamp: {raw_stamp}")
 
-        return self._gps_match_gprmc_gpgga_strings(gps_stamp_list)
+        return self._gps_match_gprmc_gpgga_strings(gprmc_list, gpgga_list)
 
-    def _gps_match_gprmc_gpgga_strings(self, gps_obj_list):
+    def _gps_match_gprmc_gpgga_strings(self, gprmc_list, gpgga_list):
         """
         match GPRMC and GPGGA strings together into a list
         
@@ -1067,17 +1071,17 @@ class NIMS(NIMSHeader):
         """
         ### match up the GPRMC and GPGGA together
         gps_match_list = []
-        for ii in range(0, len(gps_obj_list) - 1, 2):
-            if gps_obj_list[ii] is None:
-                continue
-            time_stamp = gps_obj_list[ii].time_stamp
-            match_list = [gps_obj_list[ii]]
-            try:
-                if gps_obj_list[ii + 1].time_stamp.time() == time_stamp.time():
-                    match_list.append(gps_obj_list[ii + 1])
-            except AttributeError:
-                pass
-            gps_match_list.append(match_list)
+        for gprmc in gprmc_list:
+            find = False
+            for ii, gpgga in enumerate(gpgga_list):
+                if gprmc.time_stamp.time() == gpgga.time_stamp.time():
+                    gps_match_list.append([gprmc, gpgga])
+                    find = True
+                    del gpgga_list[ii]
+                    break
+            if not find:
+                gps_match_list.append([gprmc])
+            
         return gps_match_list
 
     def _get_gps_stamp_indices_from_status(self, status_array):
@@ -1143,7 +1147,8 @@ class NIMS(NIMSHeader):
                         del gps_list[ii]
                         break
             if not stamp_find:
-                self.logger.warning(f"No good GPS stamp at {index} seconds")
+                self.logger.info(f'{index_diff}, {stamps[0].index}, {index}, {stamps[0]}')
+                self.logger.debug(f"GPS Error: No good GPS stamp at {index} seconds")
 
         return gps_stamps
 
@@ -1453,6 +1458,9 @@ class NIMS(NIMSHeader):
         total_gap = 0
         for ii, stamp in enumerate(stamps[1:], 1):
             stamp = stamp[1][0]
+            # can only compare those with a date and time.
+            if stamp.gps_type == 'GPGGA':
+                continue
             # time_diff = (stamp.time_stamp - stamp_01.time_stamp).total_seconds()
             # index_diff = stamp.index - stamp_01.index
             
@@ -1468,7 +1476,8 @@ class NIMS(NIMSHeader):
             #             time_gap,
             #         )
             #     )
-                
+            
+            
             time_diff = (stamp.time_stamp - current_stamp.time_stamp).total_seconds()
             index_diff = stamp.index - current_stamp.index
             
@@ -1476,7 +1485,10 @@ class NIMS(NIMSHeader):
             if time_gap == 0:
                 continue
             elif time_gap > 0:
-                total_gap += time_diff
+                print('-'*50)
+                print(stamp.time_stamp.isoformat(), current_stamp.time_stamp.isoformat())
+                print(stamp.index, current_stamp.index)
+                total_gap += time_gap
                 current_stamp = stamp
                 gap_beginning.append(stamp.index)
                 self.logger.warning(
@@ -1486,6 +1498,7 @@ class NIMS(NIMSHeader):
                     )
                 )
 
+        self.logger.warning(f'Timing is off by {total_gap} seconds')
         return gap_beginning
 
     def check_timing(self, stamps):
