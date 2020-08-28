@@ -1134,20 +1134,22 @@ class NIMS(NIMSHeader):
                 elif index_diff == 3 or index_diff == 75:
                     index -= 1
                     stamps[0].index -= 1
+                elif index_diff == 4 or index_diff == 76:
+                    index -= 2
+                    stamps[0].index -= 2
                 if stamps[0].gps_type in ["GPRMC", "gprmc"]:
-                    if index_diff in [1, 2, 3]:
+                    if index_diff in [1, 2, 3, 4]:
                         gps_stamps.append((index, stamps))
                         stamp_find = True
                         del gps_list[ii]
                         break
                 elif stamps[0].gps_type in ["GPGGA", "gpgga"]:
-                    if index_diff in [73, 74, 75]:
+                    if index_diff in [73, 74, 75, 76]:
                         gps_stamps.append((index, stamps))
                         stamp_find = True
                         del gps_list[ii]
                         break
             if not stamp_find:
-                self.logger.info(f'{index_diff}, {stamps[0].index}, {index}, {stamps[0]}')
                 self.logger.debug(f"GPS Error: No good GPS stamp at {index} seconds")
 
         return gps_stamps
