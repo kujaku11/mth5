@@ -1399,6 +1399,9 @@ class Filtered(Base):
             if applied in [None, "none", "None", "NONE", "null", 0, "0"]:
                 self._applied = [False]
                 return
+        if applied == []:
+            self.applied = [False]
+            return
 
         if isinstance(applied, str):
             applied_list = [ss.strip().lower() for ss in applied.split(",")]

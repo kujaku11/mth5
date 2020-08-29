@@ -111,10 +111,16 @@ class MTTS:
             self.update_xarray_metadata()
 
         elif isinstance(ts_arr, pd.core.frame.DataFrame):
-            try:
-                dt = self._make_dt_index(
-                    self.start_time_utc, self.sample_rate, ts_arr["data"].size
+            if isinstance(ts_arr.index[0], pd._libs.tslibs.timestamps.Timestamp):
+                sr = 1./(ts_arr.index.freq.nanos / 1E9)
+                dt = self._make_dt_coordinates(
+                    ts_arr.index[0].isoformat(), sr, ts_arr["data"].size
                 )
+            else:
+                dt = self._make_dt_coordinates(
+                    self.start, self.sample_rate, ts_arr["data"].size
+                )
+            try:
                 self._ts = xr.DataArray(ts_arr["data"], coords=[("time", dt)])
 
             except AttributeError:

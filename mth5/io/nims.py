@@ -565,7 +565,6 @@ class NIMSHeader(object):
             raise NIMSError(msg)
 
         self.logger.info(f"Reading NIMS file {self.fn}")
-        self.logger.info("=" * 72)
 
         ### load in the entire file, its not too big
         with open(self.fn, "rb") as fid:
@@ -1309,9 +1308,7 @@ class NIMS(NIMSHeader):
         :param str fn: full path to DATA.BIN file
         
         """
-        
-        self.logger.info("Note there is no attempt to stretch the data if there are "
-                         "timining gaps.  Be sure to check the timing.")
+
         if fn is not None:
             self.fn = fn
 
@@ -1420,6 +1417,7 @@ class NIMS(NIMSHeader):
         )
         ### align data
         self.ts = self.align_data(data_array, self.stamps)
+       
         et = datetime.datetime.now()
         read_time = (et - st).total_seconds()
         self.logger.info(f"Reading took {read_time:.2f} seconds")
@@ -1463,23 +1461,7 @@ class NIMS(NIMSHeader):
             # can only compare those with a date and time.
             if stamp.gps_type == 'GPGGA':
                 continue
-            # time_diff = (stamp.time_stamp - stamp_01.time_stamp).total_seconds()
-            # index_diff = stamp.index - stamp_01.index
-            
-            # time_gap = index_diff - time_diff
-            # if time_gap == current_gap:
-            #     continue
-            # elif time_gap > current_gap:
-            #     current_gap = time_gap
-            #     gap_beginning.append(stamp.index)
-            #     self.logger.warning(
-            #         "GPS tamp at {0} is off from start time by {1} seconds".format(
-            #             stamp.time_stamp.isoformat(), 
-            #             time_gap,
-            #         )
-            #     )
-            
-            
+
             time_diff = (stamp.time_stamp - current_stamp.time_stamp).total_seconds()
             index_diff = stamp.index - current_stamp.index
             
@@ -1487,13 +1469,10 @@ class NIMS(NIMSHeader):
             if time_gap == 0:
                 continue
             elif time_gap > 0:
-                print('-'*50)
-                print(stamp.time_stamp.isoformat(), current_stamp.time_stamp.isoformat())
-                print(stamp.index, current_stamp.index)
                 total_gap += time_gap
                 current_stamp = stamp
                 gap_beginning.append(stamp.index)
-                self.logger.warning(
+                self.logger.debug(
                     "GPS tamp at {0} is off from previous time by {1} seconds".format(
                         stamp.time_stamp.isoformat(), 
                         time_gap,
@@ -1527,16 +1506,10 @@ class NIMS(NIMSHeader):
 
         difference = index_diff - time_diff.total_seconds()
         if difference != 0:
-
             gaps = self._locate_timing_gaps(stamps)
-            if len(gaps) > 0:
-                print("-" * 50)
-                print("Timing might be off by {0} seconds".format(difference))
-                print("-" * 50)
-
-            return False, gaps
-        else:
-            return True, gaps
+            return False, gaps, difference
+        
+        return True, gaps, difference
 
     def align_data(self, data_array, stamps):
         """
@@ -1559,13 +1532,21 @@ class NIMS(NIMSHeader):
                   gap may occur.
         """
         ### check timing first to make sure there is no drift
-        timing_valid, self.gaps = self.check_timing(stamps)
+        timing_valid, self.gaps, time_difference = self.check_timing(stamps)
+        
+        ### need to trim off the excess number of points that are present because of
+        ### data gaps.  This will be the time difference times the sample rate
+        if time_difference > 0:
+            remove_points = int(time_difference * self.sample_rate)
+            data_array = data_array[0:-remove_points]
+            self.logger.info(f"Trimmed {remove_points} points off the end of the time "
+                             "series because of timing gaps")
 
         ### first GPS stamp within the data is at a given index that is
         ### assumed to be the number of seconds from the start of the run.
         ### therefore make the start time the first GPS stamp time minus
         ### the index value for that stamp.
-        ### need to be sure that the first GPS stamp has a date, need GPRMC
+        ### need to be sure that the first GPS stamp has a date, need GPRMC 
         first_stamp = self._get_first_gps_stamp(stamps)
         first_index = first_stamp[0]
         start_time = first_stamp[1][0].time_stamp - datetime.timedelta(
