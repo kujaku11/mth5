@@ -215,7 +215,12 @@ class GPS(object):
 
     def validate_gps_list(self, gps_list):
         """
-        check to make sure the gps stamp is the correct format
+        check to make sure the gps stamp is the correct format, checks each element
+        for the proper format
+        
+        :param gps_list: a parsed gps string from a NIMS
+        :type gps_list: list
+        :raises: :class:`mth5.io.nims.GPSError` if anything is wrong.
         """
         error_list = []
         try:
@@ -555,6 +560,11 @@ class NIMSHeader(object):
     def read_header(self, fn=None):
         """
         read header information
+        
+        :param fn: full path to file to read
+        :type fn: string or :class:`pathlib.Path`
+        :raises: :class:`mth5.io.nims.NIMSError` if something is not right.
+        
         """
         if fn is not None:
             self.fn = fn
@@ -669,7 +679,9 @@ class NIMS(NIMSHeader):
     status information and data.
     
     I only have a limited amount of .BIN files to test so this will likely 
-    break if there are issues such as data gaps.  
+    break if there are issues such as data gaps.  This has been tested against the 
+    matlab program loadNIMS by Anna Kelbert and the match for all the .bin files
+    I have.  If something looks weird check it against that program.
     
     .. todo:: deal with timing issues, right now a warning is sent to the user
               need to figure out a way to find where the gap is and adjust
@@ -677,6 +689,7 @@ class NIMS(NIMSHeader):
               
     .. warning:: 
         Currently Only 8 Hz data is supported 
+        
     """
 
     def __init__(self, fn=None):
@@ -1064,9 +1077,11 @@ class NIMS(NIMSHeader):
         
         [[GPRMC, GPGGA], ...]
         
-        :param list gps_obj_list: list of GPS objects
+        :param list gprmc_list: list of GPS objects for the GPRMC stamps
+        :param list gpgga_list: list of GPS objects for the GPGGA stamps
         
         :returns: list of matched GPRMC and GPGGA stamps 
+        
         """
         ### match up the GPRMC and GPGGA together
         gps_match_list = []
@@ -1088,7 +1103,7 @@ class NIMS(NIMSHeader):
         get the index location of the stamps from the status array assuming 
         that 0 indicates GPS lock.
         
-        :param array status_array: an array of status values from data blocks
+        :param :class:`np.ndarray` status_array: an array of status values from data blocks
         
         :returns: array of index values where GPS lock was acquired ignoring
                   sequential locks.   
@@ -1108,7 +1123,9 @@ class NIMS(NIMSHeader):
     def match_status_with_gps_stamps(self, status_array, gps_list):
         """
         Match the index values from the status array with the index values of 
-        the GPS stamps.
+        the GPS stamps.  There appears to be a bit of wiggle room between when the
+        lock is recorded and the stamp was actually recorded.  This is typically 1 
+        second and sometimes 2.  
         
         :param array status_array: array of status values from each data block
         :param list gps_list: list of valid GPS stamps [[GPRMC, GPGGA], ...]
@@ -1183,6 +1200,10 @@ class NIMS(NIMSHeader):
         """
         unwrap the sequence to be sequential numbers instead of modulated by
         256.  sets the first number to 0
+        
+        :param list sequence: sequence of bytes numbers
+        :return: unwrapped number of counts
+        
         """
         count = 0
         unwrapped = np.zeros_like(sequence)
@@ -1198,6 +1219,9 @@ class NIMS(NIMSHeader):
     def _locate_duplicate_blocks(self, sequence):
         """
         locate the sequence number where the duplicates exist
+        
+        :param list sequence: sequence to match duplicate numbers.
+        :returns: list of duplicate index values.
         """
 
         duplicates = np.where(np.abs(np.diff(sequence)) == 0)[0]
@@ -1217,6 +1241,14 @@ class NIMS(NIMSHeader):
     def _check_duplicate_blocks(self, block_01, block_02, info_01, info_02):
         """
         make sure the blocks are truly duplicates
+        
+        :param np.array block_01: block of data to compare
+        :param np.array block_02: block of data to compare
+        :param np.array info_01: information array from info_array[sequence_index]
+        :param np.array info_02: information array from info_array[sequence_index]
+        
+        :returns: boolean if the blocks and information match
+        
         """
         if np.array_equal(block_01, block_02):
             if np.array_equal(info_01, info_02):
@@ -1240,6 +1272,7 @@ class NIMS(NIMSHeader):
         :returns: reduced information array
         :returns: reduced data array
         :returns: index of duplicates in raw data
+        
         """
         ### locate
         duplicate_test_list = self._locate_duplicate_blocks(self.info_array["sequence"])
@@ -1299,13 +1332,20 @@ class NIMS(NIMSHeader):
         7. Match the GPS locks from the status with valid GPS stamps.
                 
         8. Check to make sure that there is the correct number of seconds
-           between the first and last GPS stamp.  If there is not a warning
-           message will appear. 
+           between the first and last GPS stamp.  The extra seconds are cut
+           off from the end of the time series.  Not sure if this is the
+           best way to accommodate gaps in the data.
         
         .. note:: The data and information array returned have the duplicates
                   removed and the sequence reset to be monotonic.
         
         :param str fn: full path to DATA.BIN file
+        
+        :Example:
+            
+        >>> from mth5.io import nims
+        >>> n = nims.NIMS(r"/home/mt_data/nims/mt001.bin")
+        
         
         """
 
@@ -1415,14 +1455,12 @@ class NIMS(NIMSHeader):
         self.stamps = self.match_status_with_gps_stamps(
             self.info_array["status"], self.gps_list
         )
-        ### align data
+        ### align data checking for timing gaps
         self.ts = self.align_data(data_array, self.stamps)
        
         et = datetime.datetime.now()
         read_time = (et - st).total_seconds()
         self.logger.info(f"Reading took {read_time:.2f} seconds")
-
-        return self.run_xarray, None
 
     def _get_first_gps_stamp(self, stamps):
         """
@@ -1492,10 +1530,8 @@ class NIMS(NIMSHeader):
         :returns: [ True | False ] if data is valid or not.
         :returns: gap index locations
         
-        .. note:: There is currently no solution to fix the gap or to 
-                  locate where the gap occurs.  Still trying to figure out if
-                  there is an acctual data gap or there is something wrong
-                  with location with in the file of the stamps.
+        .. note:: currently it is assumed that if a data gap occurs the data can be 
+                  squeezed to remove them.  Probably a more elegant way of doing it.
         """
         gaps = None
         first_stamp = self._get_first_gps_stamp(stamps)[1][0]
@@ -1527,9 +1563,7 @@ class NIMS(NIMSHeader):
         :returns: pandas DataFrame with colums of components and indexed by 
                   time initialized by the start time.
         
-        .. note:: There is currently no solution to fix the gap or to 
-                  locate where the gap occurs.  Just a message of where the 
-                  gap may occur.
+        .. note:: Data gaps are squeezed cause not sure what a gap actually means.
         """
         ### check timing first to make sure there is no drift
         timing_valid, self.gaps, time_difference = self.check_timing(stamps)
@@ -1603,25 +1637,6 @@ class NIMS(NIMSHeader):
             raise ValueError("Need to input either stop_time or n_samples")
 
         return dt_index
-
-    # def plot_time_series(self, fig_num=1, order=["hx", "hy", "hz", "ex", "ey"]):
-    #     """
-    #     plot time series
-    #     """
-
-    #     fig = plt.figure(fig_num)
-    #     ax_list = []
-    #     n = len(order)
-    #     for ii, comp in enumerate(order, 1):
-    #         if ii == 1:
-    #             ax = fig.add_subplot(n, 1, ii)
-    #         else:
-    #             ax = fig.add_subplot(n, 1, ii, sharex=ax_list[0])
-    #         (l1,) = ax.plot(getattr(self, comp).ts.data)
-    #         ax_list.append(ax)
-    #         ax.set_ylabel(comp.upper())
-
-    #     return ax_list
 
 
 class Response(object):

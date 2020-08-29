@@ -11,6 +11,7 @@ Subpackages
 
    mth5.standards
    mth5.utils
+   mth5.io
 
 Submodules
 ----------
