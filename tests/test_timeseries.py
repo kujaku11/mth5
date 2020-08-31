@@ -18,11 +18,10 @@ Created on Tue Jun 30 16:38:27 2020
 import unittest
 
 import numpy as np
-import pandas as pd
-import xarray as xr
 
 from mth5 import timeseries
 from mth5 import metadata
+from mth5.utils.mttime import MTime
 
 # =============================================================================
 #
@@ -141,19 +140,25 @@ class TestRunTS(unittest.TestCase):
                 }
             },
         )
-
-    def test_list_input(self):
-
+    
         self.run.set_dataset([self.ex, self.ey, self.hx, self.hy, self.hz])
 
+    def test_initialize(self):
+
         self.assertListEqual(
-            ["ex", "ey", "hx", "hy", "hz"], list(self.run.dataset.data_vars.keys())
-        )
+            ["ex", "ey", "hx", "hy", "hz"], self.run.channels)
 
         self.assertEqual(self.run.sample_rate, 8.0)
-        self.assertEqual(self.run.start, "2015-01-08T19:49:18")
-        self.assertEqual(self.run.end, "2015-01-08T19:57:49.875000")
+        self.assertEqual(self.run.start, MTime("2015-01-08T19:49:18"))
+        self.assertEqual(self.run.end, MTime("2015-01-08T19:57:49.875000"))
 
+    def test_ex(self):
+        
+        self.assertIsInstance(self.run.ex, timeseries.MTTS)
+        self.assertEqual(self.ex.sample_rate, self.run.sample_rate)
+        self.assertEqual(self.run.start, self.ex.start)
+        self.assertEqual(self.run.end, self.ex.end)
+        
 
 # =============================================================================
 # run tests

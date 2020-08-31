@@ -1610,9 +1610,17 @@ class RunGroup(BaseGroup):
 
     def from_runts(self, run_ts_obj):
         """
+        create channel datasets from a :class:`mth5.timeseries.RunTS` object 
+        and update metadata.  
         
+        :parameter :class:`mth5.timeseries.RunTS` run_ts_obj: Run object with all
+        the appropriate channels and metadata.
+        
+        Will create a run group and appropriate channel datasets.
         """
 
+        
+    
         pass
 
 

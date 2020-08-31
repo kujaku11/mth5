@@ -460,7 +460,7 @@ class RunTS:
         x_array_list = xr.align(*x_array_list, join=align_type)
 
         # input as a dictionary
-        xdict = dict([(x.component, x) for x in x_array_list])
+        xdict = dict([(x.component.lower(), x) for x in x_array_list])
         self._dataset = xr.Dataset(xdict)
 
         self._dataset.attrs.update(self.metadata.to_dict()["run"])
@@ -480,19 +480,26 @@ class RunTS:
 
     @property
     def start(self):
-        return self.dataset.coords["time"].to_index()[0].isoformat()
+        return MTime(self.dataset.coords["time"].to_index()[0].isoformat())
 
     @property
     def end(self):
-        return self.dataset.coords["time"].to_index()[-1].isoformat()
+        return MTime(self.dataset.coords["time"].to_index()[-1].isoformat())
 
     @property
     def sample_rate(self):
         return 1e9 / self.dataset.coords["time"].to_index().freq.n
     
     @property
+    def ex(self):
+        """ EX """
+        if 'ex' in self.channels:
+            return MTTS('electric', self.dataset['ex'])
+        self.logger.info(f"Could not find EX in current run. {self.channels}")
+    
+    @property
     def channels(self):
-        return list(self.dataset.data_vars)
+        return [cc for cc in list(self.dataset.data_vars)]
     
     def plot(self):
         """
