@@ -6,9 +6,26 @@ NIMS
 
     * deals with reading in NIMS DATA.BIN files
     
-Created on Thu Oct 31 10:03:20 2019
-
-@author: jpeacock
+    This is a translation from Matlab codes written and edited by:
+        * Anna Kelbert
+        * Paul Bedrosian
+        * Esteban Bowles-Martinez
+        * Possibly others.
+        
+    I've tested it against a version, and it matches.  The data/GPS  gaps I
+    still don't understand so for now the time series is just 
+    made continuous and the number of missing seconds is clipped from the 
+    end of the time series.
+    
+    .. note:: this only works for 8Hz data for now
+    
+    * 
+    
+:copyright:
+    Jared Peacock (jpeacock@usgs.gov)
+    
+:license: 
+    MIT
 """
 
 # =============================================================================
@@ -135,6 +152,7 @@ class GPS(object):
         msg = [
             f"type = {self.gps_type}",
             f"index = {self.index}",
+            f"fix = {self.fix}",
             f"time_stamp =  {self.time_stamp}",
             f"latitude = {self.latitude}",
             f"longitude = {self.longitude}",
@@ -726,9 +744,6 @@ class NIMS(NIMSHeader):
 
         self.indices = self._make_index_values()
 
-        if self.fn is not None:
-            self.read_nims()
-
     @property
     def latitude(self):
         """
@@ -742,7 +757,7 @@ class NIMS(NIMSHeader):
             for ii, stamp in enumerate(self.stamps):
                 latitude[ii] = stamp[1][0].latitude
             return np.median(latitude[np.nonzero(latitude)])
-        return None
+        return self.header_gps_latitude
 
     @property
     def longitude(self):
@@ -757,7 +772,7 @@ class NIMS(NIMSHeader):
             for ii, stamp in enumerate(self.stamps):
                 longitude[ii] = stamp[1][0].longitude
             return np.median(longitude[np.nonzero(longitude)])
-        return None
+        return self.header_gps_longitude
 
     @property
     def elevation(self):
@@ -778,6 +793,25 @@ class NIMS(NIMSHeader):
                     continue
                 elevation[ii] = elev
             return np.median(elevation[np.nonzero(elevation)])
+        return self.header_gps_elevation
+    
+    @property
+    def declination(self):
+        """
+        median elevation value from all the GPS stamps in decimal degrees
+        WGS84
+        
+        Only get from the first stamp within the sets
+        """
+        if self.stamps is not None:
+            declination = np.zeros(len(self.stamps))
+            for ii, stamp in enumerate(self.stamps):
+                if stamp[1][0].gps_type == 'GPRMC':
+                    dec = stamp[1][0].declination
+                if dec is None:
+                    continue
+                declination[ii] = dec
+            return np.median(declination[np.nonzero(declination)])
         return None
 
     @property
@@ -824,6 +858,7 @@ class NIMS(NIMSHeader):
             )
             # interpolate temperature onto the same sample rate as the channels.
             temp.ts = temp.ts.interp_like(self.hx.ts)
+            temp.metadata.sample_rate = self.sample_rate
 
             return temp
         return None
@@ -998,7 +1033,17 @@ class NIMS(NIMSHeader):
             )
 
         return None
-
+    
+    @property
+    def extra_metadata(self):
+        """ Extra metadata from nims file """
+        
+        return {'station.geographic_name': f"{self.site_name}, {self.state_province}, {self.country}",
+                'station.location.declination': self.declination, 
+                'station.location.elevation': self.elevation,
+                'station.location.latitude': self.latitude,
+                'station.location.longitude': self.longitude,
+                }
     def _make_index_values(self):
         """
         Index values for the channels recorded
@@ -1806,7 +1851,7 @@ class Response(object):
 # =============================================================================
 # convenience read
 # =============================================================================
-def read_bin(fn):
+def read_nims(fn):
     """
     
     :param fn: DESCRIPTION
@@ -1817,4 +1862,6 @@ def read_bin(fn):
     """
 
     nims_obj = NIMS(fn)
-    return nims_obj.read_nims()
+    nims_obj.read_nims()
+    
+    return nims_obj.run_xarray, nims_obj.extra_metadata

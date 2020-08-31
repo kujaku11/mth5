@@ -19,6 +19,7 @@ import inspect
 import numpy as np
 import pandas as pd
 import xarray as xr
+from matplotlib import pyplot as plt
 
 from mth5 import metadata
 from mth5.utils.mttime import MTime
@@ -488,3 +489,27 @@ class RunTS:
     @property
     def sample_rate(self):
         return 1e9 / self.dataset.coords["time"].to_index().freq.n
+    
+    @property
+    def channels(self):
+        return list(self.dataset.data_vars)
+    
+    def plot(self):
+        """
+        
+        plot the time series probably slow for large data sets
+        
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        n_channels = len(self.channels)
+        
+        fig = plt.figure()
+        ax1 = fig.add_subplot(n_channels, 1, 1)
+        self.dataset[self.channels[0]].plot()
+        for ii, comp in enumerate(self.channels[1:], 2):
+            plt.subplot(n_channels, 1, ii, sharex=ax1)
+            self.dataset[comp].plot()
+            
