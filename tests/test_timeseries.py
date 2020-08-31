@@ -113,7 +113,7 @@ class TestRunTS(unittest.TestCase):
             data=np.random.rand(4096),
             channel_metadata={
                 "electric": {
-                    "component": "ey",
+                    "component": "Ey",
                     "sample_rate": 8,
                     "time_period.start": "2015-01-08T19:49:18+00:00",
                 }

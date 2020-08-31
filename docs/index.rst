@@ -14,9 +14,9 @@ Welcome to MTH5's documentation!
     authors
     history
    
-    source/basics
     source/stations
     source/runs
+	source/file_readers
 	
 .. toctree::
 	:maxdepth: 1
