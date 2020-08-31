@@ -144,7 +144,7 @@ class TestRunTS(unittest.TestCase):
 
     def test_list_input(self):
 
-        self.run.build_dataset([self.ex, self.ey, self.hx, self.hy, self.hz])
+        self.run.set_dataset([self.ex, self.ey, self.hx, self.hy, self.hz])
 
         self.assertListEqual(
             ["ex", "ey", "hx", "hy", "hz"], list(self.run.dataset.data_vars.keys())
