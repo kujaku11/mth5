@@ -22,6 +22,7 @@ import numpy as np
 from mth5 import timeseries
 from mth5 import metadata
 from mth5.utils.mttime import MTime
+from mth5.utils.exceptions import MTTSError
 
 # =============================================================================
 #
@@ -76,6 +77,17 @@ class TestMTTS(unittest.TestCase):
 
         self.assertEqual(self.ts.n_samples, 4096)
 
+    def test_set_component(self):
+        self.ts = timeseries.MTTS(
+            "electric", channel_metadata={"electric": {"component": "ex"}}
+        )
+        
+        def set_comp(comp):
+            self.ts.component = comp
+            
+        self.assertRaises(MTTSError, set_comp, 'hx')
+        self.assertRaises(MTTSError, set_comp, 'bx')
+        self.assertRaises(MTTSError, set_comp, 'temperature')
 
 # =============================================================================
 # test run
@@ -90,7 +102,7 @@ class TestRunTS(unittest.TestCase):
             data=np.random.rand(4096),
             channel_metadata={
                 "electric": {
-                    "component": "ex",
+                    "component": "Ex",
                     "sample_rate": 8,
                     "time_period.start": "2015-01-08T19:49:18+00:00",
                 }
@@ -158,7 +170,7 @@ class TestRunTS(unittest.TestCase):
         self.assertEqual(self.ex.sample_rate, self.run.sample_rate)
         self.assertEqual(self.run.start, self.ex.start)
         self.assertEqual(self.run.end, self.ex.end)
-        self.assertEquanl(self.ex.component, 'ex')
+        self.assertEqual(self.ex.component, 'ex')
         
     def test_get_channel_fail(self):
         

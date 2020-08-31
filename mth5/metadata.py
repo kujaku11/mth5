@@ -1648,7 +1648,7 @@ class Channel(Base):
         self.type = "auxiliary"
         self.units = None
         self.channel_number = None
-        self.component = None
+        self._component = None
         self.sample_rate = 0.0
         self.measurement_azimuth = 0.0
         self.measurement_tilt = 0.0
@@ -1662,6 +1662,14 @@ class Channel(Base):
 
         super().__init__(**kwargs)
         self._attr_dict = ATTR_DICT["channel"]
+        
+    @property
+    def component(self):
+        return self._component
+    
+    @component.setter
+    def component(self, value):
+        self._component = value.lower()
 
 
 # =============================================================================

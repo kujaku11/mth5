@@ -161,6 +161,38 @@ class MTTS:
 
         self._ts.attrs.update(self.metadata.to_dict()[self.metadata._class_name])
 
+    @property
+    def component(self):
+        """ component """
+        return self.metadata.component
+    
+    @component.setter
+    def component(self, comp):
+        """ set component in metadata and carry through """
+        if self.metadata.type == 'electric':
+            if comp[0] != 'e':
+                msg = ("The current timeseries is an electric channel. "
+                       "Cannot change channel type, create a new MTTS object.")
+                self.logger.error(msg)
+                raise MTTSError(msg)
+                
+        elif self.metadata.type == 'magnetic':
+            if comp[0] not in ['h', 'b']:
+                msg = ("The current timeseries is a magnetic channel. "
+                       "Cannot change channel type, create a new MTTS object.")
+                self.logger.error(msg)
+                raise MTTSError(msg)
+                
+        if self.metadata.type == 'auxiliary':
+            if comp[0] in ['e', 'h', 'b']:
+                msg = ("The current timeseries is an auxiliary channel. "
+                       "Cannot change channel type, create a new MTTS object.")
+                self.logger.error(msg)
+                raise MTTSError(msg)
+                
+        self.metadata.component = comp
+        self.update_xarray_metadata()
+        
     # --> number of samples just to make sure there is consistency
     @property
     def n_samples(self):
@@ -171,7 +203,7 @@ class MTTS:
     def n_samples(self, n_samples):
         """number of samples (int)"""
         self.logger.warning(
-            "Cannot set the number of samples, " + "Use `MTTS.resample`"
+            "Cannot set the number of samples. Use `MTTS.resample` or `get_slice`"
         )
 
     def _check_for_index(self):
@@ -555,9 +587,16 @@ class RunTS:
         n_channels = len(self.channels)
         
         fig = plt.figure()
+        fig.subplots_adjust(hspace=0)
         ax1 = fig.add_subplot(n_channels, 1, 1)
         self.dataset[self.channels[0]].plot()
+        ax_list = [ax1]
         for ii, comp in enumerate(self.channels[1:], 2):
-            plt.subplot(n_channels, 1, ii, sharex=ax1)
+            ax = plt.subplot(n_channels, 1, ii, sharex=ax1)
             self.dataset[comp].plot()
+            ax_list.append(ax)
             
+        for ax in ax_list:
+            ax.grid(which='major', color=(.65, .65, .65), ls='--', lw=.75)
+            ax.grid(which='minor', color=(.85, .85, .85), ls='--', lw=.5)
+            ax.set_axisbelow(True)
