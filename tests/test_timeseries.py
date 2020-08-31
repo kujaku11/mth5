@@ -158,6 +158,13 @@ class TestRunTS(unittest.TestCase):
         self.assertEqual(self.ex.sample_rate, self.run.sample_rate)
         self.assertEqual(self.run.start, self.ex.start)
         self.assertEqual(self.run.end, self.ex.end)
+        self.assertEquanl(self.ex.component, 'ex')
+        
+    def test_get_channel_fail(self):
+        
+        self.assertEqual(None, self.run.temperature)
+        
+        
         
 
 # =============================================================================

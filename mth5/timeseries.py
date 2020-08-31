@@ -496,6 +496,47 @@ class RunTS:
         if 'ex' in self.channels:
             return MTTS('electric', self.dataset['ex'])
         self.logger.info(f"Could not find EX in current run. {self.channels}")
+        return None
+        
+    @property
+    def ey(self):
+        """ EY """
+        if 'ey' in self.channels:
+            return MTTS('electric', self.dataset['ey'])
+        self.logger.info(f"Could not find EY in current run. {self.channels}")
+        return None
+    
+    @property
+    def hx(self):
+        """ HX """
+        if 'hx' in self.channels:
+            return MTTS('magnetic', self.dataset['hx'])
+        self.logger.info(f"Could not find HX in current run. {self.channels}")
+        return None
+    
+    @property
+    def hy(self):
+        """ HY """
+        if 'hy' in self.channels:
+            return MTTS('magnetic', self.dataset['hy'])
+        self.logger.info(f"Could not find HY in current run. {self.channels}")
+        return None
+    
+    @property
+    def hz(self):
+        """ HZ """
+        if 'hz' in self.channels:
+            return MTTS('magnetic', self.dataset['hz'])
+        self.logger.info(f"Could not find HX in current run. {self.channels}")
+        return None
+    
+    @property
+    def temperature(self):
+        """ temperature """
+        if 'temperature' in self.channels:
+            return MTTS('auxiliary', self.dataset['temperature'])
+        self.logger.info(f"Could not find temperature in current run. {self.channels}")
+        return None
     
     @property
     def channels(self):
