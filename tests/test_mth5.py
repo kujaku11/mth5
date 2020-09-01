@@ -171,6 +171,7 @@ class TestMTH5(unittest.TestCase):
         self.assertListEqual(['ex', 'ey', 'hx', 'hy', 'hz', 'summary'],
                              run.groups_list)
         
+        # check to make sure the metadata was transfered
         for cg in channel_groups:
             self.assertEqual(MTime("2020-01-01T12:00:00"), 
                              cg.start)
@@ -178,6 +179,8 @@ class TestMTH5(unittest.TestCase):
             self.assertEqual(4096, cg.n_samples)
             
             
+        # check the summary table
+        
         
 
     def tearDown(self):

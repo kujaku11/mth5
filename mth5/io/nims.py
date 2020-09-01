@@ -1016,8 +1016,8 @@ class NIMS(NIMSHeader):
                     "id": self.run_id,
                     "data_type": "MTLP",
                     "sample_rate": self.sample_rate,
-                    "time_period.end": self.start_time.isoformat(),
-                    "time_period.start": self.end_time.isoformat(),
+                    "time_period.end": self.end_time.isoformat(),
+                    "time_period.start": self.start_time.isoformat(),
                 }
             }
 

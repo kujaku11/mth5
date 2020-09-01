@@ -113,17 +113,17 @@ class MTTS:
         if setting ts with a pandas data frame, make sure the data is in a
         column name 'data'
         """
+
         if isinstance(ts_arr, np.ndarray):
+            self.logger.debug(f"loading numpy array with shape {ts_arr.shape}")
             dt = self._make_dt_coordinates(self.start, self.sample_rate, ts_arr.size)
             self._ts = xr.DataArray(ts_arr, coords=[("time", dt)])
             self.update_xarray_metadata()
 
         elif isinstance(ts_arr, pd.core.frame.DataFrame):
+            self.logger.debug(f"loading pandas dataframe with shape {ts_arr.shape}")
             if isinstance(ts_arr.index[0], pd._libs.tslibs.timestamps.Timestamp):
-                sr = 1./(ts_arr.index.freq.nanos / 1E9)
-                dt = self._make_dt_coordinates(
-                    ts_arr.index[0].isoformat(), sr, ts_arr["data"].size
-                )
+                dt = ts_arr.index
             else:
                 dt = self._make_dt_coordinates(
                     self.start, self.sample_rate, ts_arr["data"].size
@@ -138,8 +138,21 @@ class MTTS:
                 )
                 self.logger.error(msg)
                 raise MTTSError(msg)
+                
+        elif isinstance(ts_arr, pd.core.series.Series):
+            self.logger.debug(f"loading pandas series with shape {ts_arr.shape}")
+            if isinstance(ts_arr.index[0], pd._libs.tslibs.timestamps.Timestamp):
+                dt = ts_arr.index
+            else:
+                dt = self._make_dt_coordinates(
+                    self.start, self.sample_rate, ts_arr["data"].size
+                )
+            
+            self._ts = xr.DataArray(ts_arr.values, coords=[("time", dt)])
+
 
         elif isinstance(ts_arr, xr.DataArray):
+            self.logger.debug(f"loading xarra.DataArray with shape {ts_arr.shape}")
             # TODO: need to validate the input xarray
             self._ts = ts_arr
             meta_dict = dict([(k, v) for k, v in ts_arr.attrs.items()])
@@ -213,12 +226,16 @@ class MTTS:
             "Cannot set the number of samples. Use `MTTS.resample` or `get_slice`"
         )
 
-    def _check_for_index(self):
+    @property
+    def has_data(self):
         """
         check to see if there is an index in the time series
         """
         if len(self._ts) > 1:
-            return True
+            if isinstance(self.ts.indexes["time"][0], 
+                          pd._libs.tslibs.timestamps.Timestamp):
+                return True
+            return False
         else:
             return False
 
@@ -226,8 +243,20 @@ class MTTS:
     @property
     def sample_rate(self):
         """sample rate in samples/second"""
-        if self._check_for_index():
-            sr = 1e9 / self._ts.coords.indexes["time"][0].freq.nanos
+        if self.has_data:
+            # this is a hack cause I don't understand how the freq can be none, 
+            # but this is the case with xarray if you interpolate data
+            if self._ts.coords.indexes["time"][0].freq is None:
+                freq = pd.infer_freq(self._ts.coords.indexes["time"])
+                if 'L' in freq:
+                    sr = 1./(1E-3 * float(freq[0:-1]))
+                elif 'U' in freq:
+                    sr = 1./(1E-6 * float(freq[0:-1]))
+                elif 'N' in freq:
+                    sr = 1./(1E-9 * float(freq[0:-1]))
+                    
+            else:
+                sr = 1e9 / self._ts.coords.indexes["time"][0].freq.nanos
         else:
             self.logger.debug("Data has not been set yet, sample rate is from metadata")
             sr = self.metadata.sample_rate
@@ -253,7 +282,7 @@ class MTTS:
     @property
     def start(self):
         """MTime object"""
-        if self._check_for_index():
+        if self.has_data:
             return MTime(self._ts.coords.indexes["time"][0].isoformat())
         else:
             self.logger.debug(
@@ -279,7 +308,7 @@ class MTTS:
             start_time = MTime(start_time)
 
         self.metadata.time_period.start = start_time.iso_str
-        if self._check_for_index():
+        if self.has_data:
             if start_time == MTime(self.ts.coords.indexes["time"][0].isoformat()):
                 return
             else:
@@ -295,7 +324,7 @@ class MTTS:
     @property
     def end(self):
         """MTime object"""
-        if self._check_for_index():
+        if self.has_data:
             return MTime(self._ts.coords.indexes["time"][-1].isoformat())
         else:
             self.logger.debug(
