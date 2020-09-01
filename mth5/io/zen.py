@@ -3,11 +3,20 @@
 ====================
 Zen
 ====================
+
     * Tools for reading and writing files for Zen and processing software
     * Tools for copying data from SD cards
     * Tools for copying schedules to SD cards
+    
 Created on Tue Jun 11 10:53:23 2013
-@author: jpeacock-pr
+Updated August 2020 (JP)
+
+:copyright:
+    Jared Peacock (jpeacock@usgs.gov)
+
+:license:
+    MIT
+
 """
 
 # ==============================================================================
@@ -427,6 +436,9 @@ class Z3DMetadata:
     def read_metadata(self, fn=None, fid=None):
         """
         read meta data
+        
+        :param string fn: full path to file, optional if already initialized.
+        :param file fid: open file object, optional if already initialized.
         """
         if fn is not None:
             self.fn = fn
@@ -1011,19 +1023,32 @@ class Z3D:
     def read_z3d(self, Z3Dfn=None):
         """
         read in z3d file and populate attributes accordingly
-        read in the entire file as if everything but header and metadata are
-        np.int32, then extract the gps stamps and convert accordingly
-        Checks to make sure gps time stamps are 1 second apart and incrementing
-        as well as checking the number of data points between stamps is the
-        same as the sampling rate.
-        Converts gps_stamps['time'] to seconds relative to header.gps_week
-        We skip the first two gps stamps because there is something wrong with
-        the data there due to some type of buffering.
-        Therefore the first GPS time is when the time series starts, so you
-        will notice that gps_stamps[0]['block_len'] = 0, this is because there
-        is nothing previous to this time stamp and so the 'block_len' measures
-        backwards from the corresponding time index.
+        
+        1. Read in the entire file as chunks as np.int32.
+       
+        2. Extract the gps stamps and convert accordingly. Check to make sure
+           gps time stamps are 1 second apart and incrementing as well as 
+           checking the number of data points between stamps is the
+           same as the sampling rate.
+        
+        3. Converts gps_stamps['time'] to seconds relative to header.gps_week
+            Note we skip the first two gps stamps because there is something
+            wrong with the data there due to some type of buffering.
+            Therefore the first GPS time is when the time series starts, so you
+            will notice that gps_stamps[0]['block_len'] = 0, this is because there
+            is nothing previous to this time stamp and so the 'block_len' measures
+            backwards from the corresponding time index.
+            
+        4. Put the data chunks into Pandas data frame that is indexed by time
+        
+        :Example:
+            
+        >>> from mth5.io import zen
+        >>> z_obj = zen.Z3D(r"home/mt_data/zen/mt001.z3d")
+        >>> z_obj.read_z3d()
+        
         """
+        
         if Z3Dfn is not None:
             self.fn = Z3Dfn
 
@@ -1158,9 +1183,11 @@ class Z3D:
     # =================================================
     def trim_data(self):
         """
-        apparently need to skip the first 3 seconds of data because of
+        apparently need to skip the first 2 seconds of data because of
         something to do with the SD buffer
+        
         This method will be deprecated after field testing
+        
         """
         # the block length is the number of data points before the time stamp
         # therefore the first block length is 0.  The indexing in python
@@ -1194,6 +1221,7 @@ class Z3D:
     def validate_gps_time(self):
         """
         make sure each time stamp is 1 second apart
+        
         """
 
         t_diff = np.zeros_like(self.gps_stamps["time"])
@@ -1211,6 +1239,7 @@ class Z3D:
     def validate_time_blocks(self):
         """
         validate gps time stamps and make sure each block is the proper length
+        
         """
         # first check if the gps stamp blocks are of the correct length
         bad_blocks = np.where(self.gps_stamps["block_len"][1:] != self.header.ad_rate)[
@@ -1230,6 +1259,7 @@ class Z3D:
     def convert_gps_time(self):
         """
         convert gps time integer to relative seconds from gps_week
+        
         """
         # need to convert gps_time to type float from int
         dt = self._gps_dtype.descr
@@ -1251,6 +1281,7 @@ class Z3D:
     def convert_counts_to_mv(self, data):
         """
         convert the time series from counts to millivolts
+        
         """
 
         data *= self._counts_to_mv_conversion
@@ -1260,6 +1291,7 @@ class Z3D:
     def convert_mv_to_counts(self, data):
         """
         convert millivolts to counts assuming no other scaling has been applied
+        
         """
 
         data /= self._counts_to_mv_conversion
@@ -1269,19 +1301,14 @@ class Z3D:
     def get_gps_time(self, gps_int, gps_week=0):
         """
         from the gps integer get the time in seconds.
-        Arguments
-        -------------
-            **gps_int**: int
-                         integer from the gps time stamp line
-            **gps_week**: int
-                          relative gps week, if the number of seconds is
-                          larger than a week then a week is subtracted from
-                          the seconds and computed from gps_week += 1
-        Returns
-        ---------
-            **gps_time**: int
-                          number of seconds from the beginning of the relative
-                          gps week.
+
+        :param int gps_int: integer from the gps time stamp line
+        :param int gps_week: relative gps week, if the number of seconds is
+                            larger than a week then a week is subtracted from
+                            the seconds and computed from gps_week += 1
+        :returns: gps_time as number of seconds from the beginning of the relative
+                  gps week.
+                  
         """
 
         gps_seconds = gps_int / 1024.0
@@ -1302,18 +1329,13 @@ class Z3D:
     def get_UTC_date_time(self, gps_week, gps_time):
         """
         get the actual date and time of measurement as UTC.
-        .. note:: GPS time is curently ahead by 18 (after 2016) seconds from
-        UTC time.
-        Arguments
-        -------------
-            **gps_week**: int
-                          integer value of gps_week that the data was collected
-            **gps_time**: int
-                          number of seconds from beginning of gps_week
+        
 
-        Returns
-        ------------
-            **date_time**: :class:`mth5.utils.mttime.MTime`
+        :param int gps_week: integer value of gps_week that the data was collected
+        :param int gps_time: number of seconds from beginning of gps_week
+        
+        :return: :class:`mth5.utils.mttime.MTime`
+        
         """
         # need to check to see if the time in seconds is more than a gps week
         # if it is add 1 to the gps week and reduce the gps time by a week

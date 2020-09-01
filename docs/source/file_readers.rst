@@ -15,7 +15,7 @@ There is a generic reader that is loaded when MTH5 is imported called `read_file
 >>> run_obj, extra_metadata = mth5.read_file(r"/home/mt_data/mt001.bin")
 >>> run_obj, extra_metadata = mth5.read_file(r"/home/mt_data/mt001.bin", file_type='nims')  
 
-This will currently read in 3 types of files:
+This will currently read in the following file types:
 
 	=============== ========== ============= =============
 	File Structure  MTH5 Key   File Types    Returns
@@ -37,11 +37,11 @@ Reader Structure
 
 The reader should be setup with having a class that contains the metadata which is inherited to a class that holds the data.  This makes things a little easier to separate and read.  It helps if the metadata has similar names as the standards but don't have to be it just means you have to do some translation.  
 
-It helps if you have property values of the main information, if attributes are not appropriate, that is passed onto :class:`mth5.timeseries.MTTS` or :class:`mth5.timeseries.RunTS`.
+It helps if you have properties, if attributes are not appropriate, for importan information that is passed onto :class:`mth5.timeseries.MTTS` or :class:`mth5.timeseries.RunTS`.
 
 .. code-block:: python
 
-	from mth5 import timeseries
+	from mth5.timeseries import MTTs, RunTS
 
 	class MyFileMetadata:
 		""" Read in metadata into appropriate objects """
@@ -85,13 +85,15 @@ It helps if you have property values of the main information, if attributes are 
 			""" read in data """
 			# suggest reading into a data type like numpy, pandas, xarray
 			# xarray is the main object used for time series data in mth5
-			return RunTS([self.ex, self.ey, self.hx, self.hy, self.hx]), extra_metadata
+			return RunTS([self.ex, self.ey, self.hx, self.hy, self.hx]), self.extra_metadata
 			
 
 	def read_my_file(fn):
 		""" the helper function to read the file """
 		new_obj = MyFile(fn)
 		return new_obj.read_my_file()
+
+.. seealso:: :class:`mth5.io.zen` and :class:`mth5.io.nims` for working examples. 
 			
 Once you have come up a reader you can add it to the reader module.  You just need to add a file name and associated file types.
 

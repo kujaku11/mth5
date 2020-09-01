@@ -79,19 +79,19 @@ class MTH5:
     :param filename: name of the to be or existing file
     :type filename: string or :class:`pathlib.Path`
     :param compression: compression type.  Supported lossless compressions are
-                        * 'lzf' - Available with every installation of h5py 
-                                 (C source code also available). Low to 
-                                 moderate compression, very fast. No options.
-                        * 'gzip' - Available with every installation of HDF5,
-                                  so it’s best where portability is required. 
-                                  Good compression, moderate speed. 
-                                  compression_opts sets the compression level 
-                                  and may be an integer from 0 to 9, 
-                                  default is 3.
-                        * 'szip' - Patent-encumbered filter used in the NASA
-                                   community. Not available with all 
-                                   installations of HDF5 due to legal reasons.
-                                   Consult the HDF5 docs for filter options.
+        * 'lzf' - Available with every installation of h5py 
+                 (C source code also available). Low to 
+                 moderate compression, very fast. No options.
+        * 'gzip' - Available with every installation of HDF5,
+                  so it’s best where portability is required. 
+                  Good compression, moderate speed. 
+                  compression_opts sets the compression level 
+                  and may be an integer from 0 to 9, 
+                  default is 3.
+        * 'szip' - Patent-encumbered filter used in the NASA
+                   community. Not available with all 
+                   installations of HDF5 due to legal reasons.
+                   Consult the HDF5 docs for filter options.
     :param compression_opts: compression options, see above
     :type compression_opts: string or int depending on compression type
     :param shuffle: Block-oriented compressors like GZIP or LZF work better

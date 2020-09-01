@@ -1,6 +1,8 @@
 mth5.standards package
 ======================
 
+.. contents::  :local:
+
 Submodules
 ----------
 

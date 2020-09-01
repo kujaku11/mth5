@@ -1,6 +1,8 @@
 mth5.io package
 ==================
 
+.. contents::  :local:
+
 Submodules
 ----------
 

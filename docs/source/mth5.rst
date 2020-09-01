@@ -1,8 +1,6 @@
 mth5 package
 ============
 
-.. contents::  :local:
-
 Subpackages
 -----------
 
@@ -15,6 +13,8 @@ Subpackages
 
 Submodules
 ----------
+
+.. contents::  :local:
 
 mth5.calibration module
 -----------------------

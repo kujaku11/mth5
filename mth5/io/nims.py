@@ -19,7 +19,6 @@ NIMS
     
     .. note:: this only works for 8Hz data for now
     
-    * 
     
 :copyright:
     Jared Peacock (jpeacock@usgs.gov)
@@ -522,28 +521,30 @@ class NIMSHeader(object):
     
     A typical header looks like
     
-    >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    >>>user field>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-    SITE NAME: Budwieser Spring
-    STATE/PROVINCE: CA
-    COUNTRY: USA
-    >>> The following code in double quotes is REQUIRED to start the NIMS <<
-    >>> The next 3 lines contain values required for processing <<<<<<<<<<<<
-    >>> The lines after that are optional <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    "300b"  <-- 2CHAR EXPERIMENT CODE + 3 CHAR SITE CODE + RUN LETTER
-    1105-3; 1305-3  <-- SYSTEM BOX I.D.; MAG HEAD ID (if different)
-    106  0 <-- N-S Ex WIRE LENGTH (m); HEADING (deg E mag N)
-    109  90 <-- E-W Ey WIRE LENGTH (m); HEADING (deg E mag N)
-    1         <-- N ELECTRODE ID
-    3          <-- E ELECTRODE ID
-    2          <-- S ELECTRODE ID
-    4          <-- W ELECTRODE ID
-    Cu          <-- GROUND ELECTRODE INFO
-    GPS INFO: 01/10/19 16:16:42 1616.7000 3443.6088 115.7350 W 946.6
-    OPERATOR: KP
-    COMMENT: N/S CRS: .95/.96 DCV: 3.5 ACV:1
-    E/W CRS: .85/.86 DCV: 1.5 ACV: 1
-    Redeployed site for run b b/c possible animal disturbance
+    .. code-block::
+        
+        >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        >>>user field>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        SITE NAME: Budwieser Spring
+        STATE/PROVINCE: CA
+        COUNTRY: USA
+        >>> The following code in double quotes is REQUIRED to start the NIMS <<
+        >>> The next 3 lines contain values required for processing <<<<<<<<<<<<
+        >>> The lines after that are optional <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        "300b"  <-- 2CHAR EXPERIMENT CODE + 3 CHAR SITE CODE + RUN LETTER
+        1105-3; 1305-3  <-- SYSTEM BOX I.D.; MAG HEAD ID (if different)
+        106  0 <-- N-S Ex WIRE LENGTH (m); HEADING (deg E mag N)
+        109  90 <-- E-W Ey WIRE LENGTH (m); HEADING (deg E mag N)
+        1         <-- N ELECTRODE ID
+        3          <-- E ELECTRODE ID
+        2          <-- S ELECTRODE ID
+        4          <-- W ELECTRODE ID
+        Cu          <-- GROUND ELECTRODE INFO
+        GPS INFO: 01/10/19 16:16:42 1616.7000 3443.6088 115.7350 W 946.6
+        OPERATOR: KP
+        COMMENT: N/S CRS: .95/.96 DCV: 3.5 ACV:1
+        E/W CRS: .85/.86 DCV: 1.5 ACV: 1
+        Redeployed site for run b b/c possible animal disturbance
     
     """
 

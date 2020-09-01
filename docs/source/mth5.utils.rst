@@ -1,6 +1,8 @@
 mth5.utils package
 ==================
 
+.. contents::  :local:
+
 Submodules
 ----------
 

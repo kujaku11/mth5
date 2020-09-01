@@ -44,7 +44,9 @@ leap_second_dict = {
 def calculate_leap_seconds(year, month, day):
     """
     get the leap seconds for the given year to convert GPS time to UTC time
+    
     .. note:: GPS time started in 1980
+    
     .. note:: GPS time is leap seconds ahead of UTC time, therefore you
               should subtract leap seconds from GPS time to get UTC time.
               
