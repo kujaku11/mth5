@@ -1442,6 +1442,7 @@ class RunGroup(BaseGroup):
                     chunks=chunks,
                     **self.dataset_options,
                 )
+            # initialize an resizable data array
             else:
                 channel_group = self.hdf5_group.create_dataset(
                     channel_name,
@@ -1455,15 +1456,15 @@ class RunGroup(BaseGroup):
             self.logger.debug("Created group {0}".format(channel_group.name))
             if channel_type.lower() in ["magnetic"]:
                 channel_obj = MagneticDataset(
-                    channel_group, channel_metdata=channel_metadata
+                    channel_group, dataset_metadata=channel_metadata
                 )
             elif channel_type.lower() in ["electric"]:
                 channel_obj = ElectricDataset(
-                    channel_group, channel_metdata=channel_metadata
+                    channel_group, dataset_metadata=channel_metadata
                 )
             elif channel_type.lower() in ["auxiliary"]:
                 channel_obj = AuxiliaryDataset(
-                    channel_group, channel_metdata=channel_metadata
+                    channel_group, dataset_metadata=channel_metadata
                 )
             else:
                 msg = (
@@ -1633,19 +1634,25 @@ class RunGroup(BaseGroup):
         channels = []
         
         for comp in run_ts_obj.channels:
+            
             if comp[0] in ['e']:
                 channel_type = 'electric'
+                ch_metadata = metadata.Electric()
             elif comp[0] in ['h', 'b']:
                 channel_type = 'magnetic'
+                ch_metadata = metadata.Magnetic()
             else:
                 channel_type = 'auxiliary'
-                
-            ch_metadata = {channel_type: run_ts_obj.dataset[comp].attrs}
+                ch_metadata = metadata.Auxiliary()
+            
+            ch_metadata.from_dict({channel_type: run_ts_obj.dataset[comp].attrs})
+            
+            #self.logger.info(f"channel metadata {ch_metadata}")
                 
             channels.append(self.add_channel(comp,
                                              channel_type,
                                              run_ts_obj.dataset[comp].values, 
-                                             dataset_metadata=ch_metadata))
+                                             channel_metadata=ch_metadata))
         return channels
             
             
@@ -1750,7 +1757,7 @@ class ChannelDataset:
 
         # if metadata, make sure that its the same class type
         if dataset_metadata is not None:
-            if not isinstance(dataset_metadata, (self.metadata, metadata.Base)):
+            if not isinstance(dataset_metadata, type(self.metadata)):
                 msg = "metadata must be type metadata.{0} not {1}".format(
                     self._class_name, type(dataset_metadata)
                 )

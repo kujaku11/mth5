@@ -18,6 +18,7 @@ from mth5 import mth5
 from mth5.standards import schema
 from mth5.utils.exceptions import MTH5Error, MTH5TableError
 from mth5.timeseries import MTTS, RunTS
+from mth5.utils.mttime import MTime
 
 fn_path = Path(__file__).parent
 # =============================================================================
@@ -169,6 +170,14 @@ class TestMTH5(unittest.TestCase):
 
         self.assertListEqual(['ex', 'ey', 'hx', 'hy', 'hz', 'summary'],
                              run.groups_list)
+        
+        for cg in channel_groups:
+            self.assertEqual(MTime("2020-01-01T12:00:00"), 
+                             cg.start)
+            self.assertEqual(1, cg.sample_rate)
+            self.assertEqual(4096, cg.n_samples)
+            
+            
         
 
     def tearDown(self):
