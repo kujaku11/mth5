@@ -2,6 +2,11 @@
 """
 .. module:: timeseries
    :synopsis: Deal with MT time series
+   
+.. todo:: Check the conversion to netcdf.  There are some weird serializations of 
+lists and arrays that goes on, seems easiest to convert all lists to strings and then
+convert them back if read in.
+
 
 :copyright:
     Jared Peacock (jpeacock@usgs.gov)
