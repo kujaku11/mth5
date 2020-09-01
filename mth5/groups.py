@@ -1345,14 +1345,15 @@ class RunGroup(BaseGroup):
         Get a run table entry
 
         :return: a properly formatted run table entry
-        :rtype: :class:`numpy.ndarray` with dtype
-        dtype([('id', 'S20'),
-               ('start', 'S32'),
-               ('end', 'S32'),
-               ('components', 'S100'),
-               ('measurement_type', 'S12'),
-               ('sample_rate', np.float),
-               ('hdf5_reference', h5py.ref_dtype)])
+        :rtype: :class:`numpy.ndarray` with dtype:
+            
+        >>> dtype([('id', 'S20'),
+                 ('start', 'S32'),
+                 ('end', 'S32'),
+                 ('components', 'S100'),
+                 ('measurement_type', 'S12'),
+                 ('sample_rate', np.float),
+                 ('hdf5_reference', h5py.ref_dtype)])
 
         """
         return np.array(
@@ -2254,21 +2255,17 @@ class ChannelDataset:
         :param how: how the new array will be input to the existing dataset:
             
             - 'replace' -> replace the entire dataset nothing is left over.
-            
             - 'extend' -> add onto the existing dataset, any  overlapping
-            values will be rewritten, if there are gaps between data sets 
-            those will be handled depending on the value of fill.
+              values will be rewritten, if there are gaps between data sets 
+              those will be handled depending on the value of fill.
             
          :param fill: If there is a data gap how do you want to fill the gap:
             
             - None -> will raise an :class:`mth5.utils.exceptions.MTH5Error`
-            
             - 'mean'-> will fill with the mean of each data set within
-            the fill window
-                      
+              the fill window
             - 'median' -> will fill with the median of each data set 
-            within the fill window
-                        
+              within the fill window
             - value -> can be an integer or float to fill the gap
             - 'nan' -> will fill the gap with NaN
             
@@ -2276,9 +2273,11 @@ class ChannelDataset:
         :param max_gap_seconds: sets a maximum number of seconds the gap can
                                 be.  Anything over this number will raise 
                                 a :class:`mth5.utils.exceptions.MTH5Error`.
+                                
         :type max_gap_seconds: float or integer
         :param fill_window: number of points from the end of each data set
                             to estimate fill value from.
+                            
         :type fill_window: integer
 
         """
@@ -2313,7 +2312,6 @@ class ChannelDataset:
         :param how: how the new array will be input to the existing dataset:
             
             - 'replace' -> replace the entire dataset nothing is left over.
-            
             - 'extend' -> add onto the existing dataset, any  overlapping
             values will be rewritten, if there are gaps between data sets 
             those will be handled depending on the value of fill.
@@ -2321,23 +2319,22 @@ class ChannelDataset:
          :param fill: If there is a data gap how do you want to fill the gap:
             
             - None -> will raise an :class:`mth5.utils.exceptions.MTH5Error`
-            
             - 'mean'-> will fill with the mean of each data set within
-            the fill window
-                      
+               the fill window
             - 'median' -> will fill with the median of each data set 
-            within the fill window
-                        
+               within the fill window
             - value -> can be an integer or float to fill the gap
             - 'nan' -> will fill the gap with NaN
             
         :type fill: string, None, float, integer
         :param max_gap_seconds: sets a maximum number of seconds the gap can
-            be.  Anything over this number will raise a 
-            :class:`mth5.utils.exceptions.MTH5Error`.
+                                be.  Anything over this number will raise 
+                                a :class:`mth5.utils.exceptions.MTH5Error`.
+                                
         :type max_gap_seconds: float or integer
         :param fill_window: number of points from the end of each data set
                             to estimate fill value from.
+                            
         :type fill_window: integer
 
         """

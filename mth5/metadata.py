@@ -73,12 +73,14 @@ class Base:
     A Base class that is common to most of the Metadata objects
 
     Includes:
+        
         * to_json
         * from_json
         * to_dict
         * from_dict
         * to_series
         * from_series
+        
     """
 
     def __init__(self, **kwargs):
@@ -498,8 +500,8 @@ class Base:
         :type value: described in value_dict
         
         :param value_dict: dictionary describing the attribute, must have keys
-                           ['type', 'required', 'style', 'units', 'alias',
-                            'description', 'options', 'example']
+            ['type', 'required', 'style', 'units', 'alias', 'description',
+             'options', 'example']
         :type name: string
     
         * type --> the data type [ str | int | float | bool ]
@@ -508,8 +510,8 @@ class Base:
         * units --> units of the attribute, must be a string
         * alias --> other possible names for the attribute
         * options --> if only a few options are accepted, separated by | or 
-                      comma.b [ option_01 | option_02 | other ]. 
-                      'other' means other options available but not yet defined.
+          comma.b [ option_01 | option_02 | other ]. 'other' means other options 
+          available but not yet defined.
         * example --> an example of the attribute
         
         :Example:
