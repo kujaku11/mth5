@@ -221,6 +221,8 @@ class MTH5:
         data_level=1,
     ):
 
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        
         # make these private so the user cant accidentally change anything.
         self.__hdf5_obj = None
         self.__compression, self.__compression_opts = helpers.validate_compression(
@@ -229,14 +231,8 @@ class MTH5:
         self.__shuffle = True
         self.__fletcher32 = True
         self.__data_level = 1
-        self.__filename = filename
-
-        if self.__filename:
-            if not isinstance(self.__filename, Path):
-                self.__filename = Path(self.__filename)
-
-        self._class_name = self.__class__.__name__
-        self.logger = logging.getLogger("{0}.{1}".format(__name__, self._class_name))
+        self.__filename = None
+        self.filename = filename        
 
         self._default_root_name = "Survey"
         self._default_subgroup_names = ["Stations", "Reports", "Filters", "Standards"]
@@ -280,6 +276,25 @@ class MTH5:
         )
         self.logger.warning(msg)
         return self.__filename
+    
+    @filename.setter
+    def filename(self, value):
+        """ make sure file has the proper extension """
+        if value is None:
+            return None
+        
+        if not isinstance(value, Path):
+            value = Path(value)
+            
+        if value.suffix not in ['.h5']:
+            msg = (f"file extension {value.suffix} is not correct. " 
+                   "Changing to default .h5")
+            self.logger.info(msg)
+            self.__filename = value.with_suffix('.h5')
+            
+        else:
+            self.__filename = value
+            
 
     @property
     def survey_group(self):

@@ -588,10 +588,10 @@ class Base:
         class_name = list(meta_dict.keys())[0]
         if class_name.lower() != self._class_name.lower():
             msg = (
-                "name of input dictionary is not the same as class type"
-                + "input = {0}, class type = {1}".format(class_name, self._class_name)
+                "name of input dictionary is not the same as class type "
+                 "input = {0}, class type = {1}".format(class_name, self._class_name)
             )
-            self.logger.warning(msg)
+            self.logger.debug(msg)
 
         # be sure to flatten the dictionary first for easier transform
         meta_dict = helpers.flatten_dict(meta_dict[class_name])

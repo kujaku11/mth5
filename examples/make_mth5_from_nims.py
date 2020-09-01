@@ -20,7 +20,7 @@ from mth5.utils.helpers import structure_dict
 # =============================================================================
 #
 # =============================================================================
-nims_fn = r"c:\Users\jpeacock\Documents\example_data\data_rgr006a.bnn"
+nims_fn = Path(r"c:\Users\jpeacock\Documents\example_data\data_rgr006a.bnn")
 
 run_ts, extra = read_file(nims_fn)
 
@@ -36,7 +36,7 @@ nims_station = metadata.Station()
 nims_station.from_dict(structure_dict(extra))
 nims_station.archive_id = "rgr006"
 
-m = mth5.MTH5(r"c:\Users\jpeacock\Documents\from_nims.mth5")
+m = mth5.MTH5(Path(r"c:\Users\jpeacock\Documents\from_nims.h5"))
 m.open_mth5()
 
 # add survey metadata
