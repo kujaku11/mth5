@@ -294,11 +294,13 @@ class AsciiMetadata:
 
     def write_metadata(self, chn_list=["Ex", "Ey", "Hx", "Hy", "Hz"]):
         """
+        
         Write out metadata in the format of USGS ascii.
 
         :return: list of metadate lines.
 
         .. note:: meant to use '\n'.join(lines) to write out in a file.
+        
         """
 
         lines = []
@@ -373,6 +375,7 @@ class USGSasc(AsciiMetadata):
         >>> zm.SurveyID = 'MT'
         >>> zm.write_asc_file(str_fmt='%15.7e')
         >>> zm.write_station_info_metadata()
+        
     """
 
     def __init__(self, fn=None, **kwargs):

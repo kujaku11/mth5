@@ -1641,6 +1641,7 @@ class ChannelDataset:
     :raises MTH5Error: If the dataset is not of the correct type
 
     Utilities will be written to create some common objects like:
+        
         * xarray.DataArray
         * pandas.DataFrame
         * zarr
@@ -1648,8 +1649,6 @@ class ChannelDataset:
 
     The benefit of these other objects is that they can be indexed by time,
     and they have much more buit-in funcionality.
-
-    :Get a channel:
 
     >>> from mth5 import mth5
     >>> mth5_obj = mth5.MTH5()
@@ -1874,12 +1873,11 @@ class ChannelDataset:
                             existing sample rate
         :type sample_rate: float
         :param fill: If there is a data gap how do you want to fill the gap
-            * None: will raise an 
-            :class:`mth5.utils.exceptions.MTH5Error`
+            * None: will raise an  :class:`mth5.utils.exceptions.MTH5Error`
             * 'mean': will fill with the mean of each data set within
-                      the fill window
+            the fill window
             * 'median': will fill with the median of each data set 
-                        within the fill window
+            within the fill window
             * value: can be an integer or float to fill the gap
             * 'nan': will fill the gap with NaN
         :type fill: string, None, float, integer
@@ -1894,7 +1892,10 @@ class ChannelDataset:
         :raises: :class:`mth5.utils.excptions.MTH5Error` if sample rate is 
                  not the same, or fill value is not understood, 
                  
-        :Append Example:
+        Append Example
+        ---------------
+        
+        :rubric:
             
         >>> ex = mth5_obj.get_channel('MT001', 'MT001a', 'Ex')
         >>> ex.n_samples
@@ -2248,24 +2249,29 @@ class ChannelDataset:
         
         Will check for time alignement, and metadata.
         
-        :param mtts_obj: DESCRIPTION
-        :type mtts_obj: TYPE
-        :param how: how the new array will be input to the existing dataset
-            * 'replace' -> replace the entire dataset nothing is 
-                           left over.
-            * 'extend' -> add onto the existing dataset, any 
-                          overlapping values will be rewritten, if 
-                          there are gaps between data sets those will
-                          be handled depending on the value of fill.
-         :param fill: If there is a data gap how do you want to fill the gap
-            * None: will raise an 
-            :class:`mth5.utils.exceptions.MTH5Error`
-            * 'mean': will fill with the mean of each data set within
-                      the fill window
-            * 'median': will fill with the median of each data set 
-                        within the fill window
-            * value: can be an integer or float to fill the gap
-            * 'nan': will fill the gap with NaN
+        :param mtts_obj: time series object
+        :type mtts_obj: :class:`mth5.timeseries.MTTS`
+        :param how: how the new array will be input to the existing dataset:
+            
+            - 'replace' -> replace the entire dataset nothing is left over.
+            
+            - 'extend' -> add onto the existing dataset, any  overlapping
+            values will be rewritten, if there are gaps between data sets 
+            those will be handled depending on the value of fill.
+            
+         :param fill: If there is a data gap how do you want to fill the gap:
+            
+            - None -> will raise an :class:`mth5.utils.exceptions.MTH5Error`
+            
+            - 'mean'-> will fill with the mean of each data set within
+            the fill window
+                      
+            - 'median' -> will fill with the median of each data set 
+            within the fill window
+                        
+            - value -> can be an integer or float to fill the gap
+            - 'nan' -> will fill the gap with NaN
+            
         :type fill: string, None, float, integer
         :param max_gap_seconds: sets a maximum number of seconds the gap can
                                 be.  Anything over this number will raise 
@@ -2295,35 +2301,40 @@ class ChannelDataset:
             # TODO need to check on metadata.
 
     def from_xarray(
-        self, dataarray, how="replace", fill=None, max_gap_seconds=1, fill_window=10
+        self, data_array, how="replace", fill=None, max_gap_seconds=1, fill_window=10
     ):
         """
         fill data set from a :class:`xarray.DataArray` object.
         
         Will check for time alignement, and metadata.
         
-        :param mtts_obj: DESCRIPTION
-        :type mtts_obj: TYPE
-        :param how: how the new array will be input to the existing dataset
-            * 'replace' -> replace the entire dataset nothing is 
-                           left over.
-            * 'extend' -> add onto the existing dataset, any 
-                          overlapping values will be rewritten, if 
-                          there are gaps between data sets those will
-                          be handled depending on the value of fill.
-         :param fill: If there is a data gap how do you want to fill the gap
-            * None: will raise an 
-            :class:`mth5.utils.exceptions.MTH5Error`
-            * 'mean': will fill with the mean of each data set within
-                      the fill window
-            * 'median': will fill with the median of each data set 
-                        within the fill window
-            * value: can be an integer or float to fill the gap
-            * 'nan': will fill the gap with NaN
+        :param data_array_obj: Xarray data array
+        :type mtts_obj: :class:`xarray.DataArray`
+        :param how: how the new array will be input to the existing dataset:
+            
+            - 'replace' -> replace the entire dataset nothing is left over.
+            
+            - 'extend' -> add onto the existing dataset, any  overlapping
+            values will be rewritten, if there are gaps between data sets 
+            those will be handled depending on the value of fill.
+            
+         :param fill: If there is a data gap how do you want to fill the gap:
+            
+            - None -> will raise an :class:`mth5.utils.exceptions.MTH5Error`
+            
+            - 'mean'-> will fill with the mean of each data set within
+            the fill window
+                      
+            - 'median' -> will fill with the median of each data set 
+            within the fill window
+                        
+            - value -> can be an integer or float to fill the gap
+            - 'nan' -> will fill the gap with NaN
+            
         :type fill: string, None, float, integer
         :param max_gap_seconds: sets a maximum number of seconds the gap can
-                                be.  Anything over this number will raise 
-                                a :class:`mth5.utils.exceptions.MTH5Error`.
+            be.  Anything over this number will raise a 
+            :class:`mth5.utils.exceptions.MTH5Error`.
         :type max_gap_seconds: float or integer
         :param fill_window: number of points from the end of each data set
                             to estimate fill value from.
@@ -2331,21 +2342,21 @@ class ChannelDataset:
 
         """
 
-        if not isinstance(dataarray, xr.DataArray):
-            msg = f"Input must be a xarray.DataArray object not {type(dataarray)}"
+        if not isinstance(data_array, xr.DataArray):
+            msg = f"Input must be a xarray.DataArray object not {type(data_array)}"
             self.logger.error(msg)
             raise TypeError(msg)
 
         if how == "replace":
-            self.metadata.from_dict({self.metadata._class_name: dataarray.attrs})
-            self.replace_dataset(dataarray.values)
+            self.metadata.from_dict({self.metadata._class_name: data_array.attrs})
+            self.replace_dataset(data_array.values)
             self.write_metadata()
 
         elif how == "extend":
             self.extend_dataset(
-                dataarray.values,
-                dataarray.coords.indexes["time"][0].isoformat(),
-                1e9 / dataarray.coords.indexes["time"][0].freq.nanos,
+                data_array.values,
+                data_array.coords.indexes["time"][0].isoformat(),
+                1e9 / data_array.coords.indexes["time"][0].freq.nanos,
                 fill=fill,
             )
 
@@ -2466,29 +2477,31 @@ class ChannelDataset:
 
         :Example with number of samples:
 
-        >>> ex = mth5_obj.get_channel('FL001', 'FL001a', 'Ex')
-        >>> ex_slice = ex.time_slice("2015-01-08T19:49:15", n_samples=4096)
-        >>> ex_slice
-        <xarray.DataArray (time: 4096)>
-        array([0.93115046, 0.14233688, 0.87917119, ..., 0.26073634, 0.7137319 ,
-               0.88154395])
-        Coordinates:
-          * time     (time) datetime64[ns] 2015-01-08T19:49:15 ... 2015-01-08T19:57:46.875000
-        Attributes:
-            ac.end:                      None
-            ac.start:                    None
-            ...
+        .. code-block:: 
+            
+            >>> ex = mth5_obj.get_channel('FL001', 'FL001a', 'Ex')
+            >>> ex_slice = ex.time_slice("2015-01-08T19:49:15", n_samples=4096)
+            >>> ex_slice
+            <xarray.DataArray (time: 4096)>
+            array([0.93115046, 0.14233688, 0.87917119, ..., 0.26073634, 0.7137319 ,
+                   0.88154395])
+            Coordinates:
+              * time     (time) datetime64[ns] 2015-01-08T19:49:15 ... 2015-01-08T19:57:46.875000
+            Attributes:
+                ac.end:                      None
+                ac.start:                    None
+                ...
 
-        >>> type(ex_slice)
-        mth5.timeseries.MTTS
-
-        # plot the time series
-        >>> ex_slice.ts.plot()
-
-        :Example with start and end time:
-
-        >>> ex_slice = ex.time_slice("2015-01-08T19:49:15",
-        ...                          end_time="2015-01-09T19:49:15")
+            >>> type(ex_slice)
+            mth5.timeseries.MTTS
+    
+            # plot the time series
+            >>> ex_slice.ts.plot()
+    
+            :Example with start and end time:
+    
+            >>> ex_slice = ex.time_slice("2015-01-08T19:49:15",
+            ...                          end_time="2015-01-09T19:49:15")
 
         :Raises Example:
 

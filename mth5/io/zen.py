@@ -602,9 +602,9 @@ class Z3D:
     fn                       Z3D file name                    None
     gps_flag                 full gps flag                    _gps_f0+_gps_f1
     gps_stamps               np.ndarray of gps stamps         None
-    header                   Z3DHeader object                Z3DHeader
-    metadata                 Z3DMetadata                     Z3DMetadata
-    schedule                 Z3DSchedule            Z3DSchedule
+    header                   Z3DHeader object                 Z3DHeader
+    metadata                 Z3DMetadata                      Z3DMetadata
+    schedule                 Z3DSchedule                      Z3DSchedule
     time_series              np.ndarra(len_data)              None
     units                    units in which the data is in    counts
     zen_schedule             time when zen was set to         None
@@ -1313,7 +1313,7 @@ class Z3D:
 
         Returns
         ------------
-            **date_time**: :classs:`mth5.utils.mttime.MTime`
+            **date_time**: :class:`mth5.utils.mttime.MTime`
         """
         # need to check to see if the time in seconds is more than a gps week
         # if it is add 1 to the gps week and reduce the gps time by a week

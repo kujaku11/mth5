@@ -47,6 +47,7 @@ def calculate_leap_seconds(year, month, day):
     .. note:: GPS time started in 1980
     .. note:: GPS time is leap seconds ahead of UTC time, therefore you
               should subtract leap seconds from GPS time to get UTC time.
+              
     =========================== ===============================================
     Date Range                  Leap Seconds
     =========================== ===============================================
@@ -66,9 +67,10 @@ def calculate_leap_seconds(year, month, day):
     2006-01-01 - 2009-01-01     14
     2009-01-01 - 2012-07-01     15
     2012-07-01 - 2015-07-01     16
-    2015-07-01 - 2017-01-01        17
-    2017-01-01 - ????-??-??        18
+    2015-07-01 - 2017-01-01     17
+    2017-01-01 - ????-??-??     18
     =========================== ===============================================
+    
     """
 
     # make the date a datetime object, easier to test
