@@ -444,6 +444,17 @@ class RunTS:
 
         if array_list is not None:
             self.dataset = array_list
+            
+    def __str__(self):
+        s_list = [f'Run ID:      {self.metadata.id}',
+                  f'Start:       {self.start}',
+                  f'End:         {self.end}',
+                  f'Sample Rate: {self.sample_rate}',
+                  f'Components:  {self.channels}']
+        return '\n\t'.join(["RunTS Summary"] + s_list)
+    
+    def __repr__(self):
+        return self.__str__()
 
     def _validate_array_list(self, array_list):
         """ check to make sure all entries are a :class:`MTTS` object"""

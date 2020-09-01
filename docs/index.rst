@@ -13,10 +13,11 @@ Welcome to MTH5's documentation!
     contributing
     authors
     history
-   
+
     source/stations
     source/runs
     source/file_readers
+    source/conventions
 	
 .. toctree::
 	:maxdepth: 1

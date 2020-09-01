@@ -56,7 +56,7 @@ class TestMTH5(unittest.TestCase):
         for group_name in self.mth5_obj._default_subgroup_names:
             group_name = group_name.lower()
             group = getattr(self.mth5_obj, f"{group_name}_group")
-            self.assertIn("Summary", group.groups_list)
+            self.assertIn("summary", group.groups_list)
 
     def test_add_station(self):
         new_station = self.mth5_obj.add_station("MT001")
@@ -90,11 +90,11 @@ class TestMTH5(unittest.TestCase):
         new_station = self.mth5_obj.add_station("MT001")
         new_run = new_station.add_run("MT001a")
         new_channel = new_run.add_channel("Ex", "electric", None)
-        self.assertIn("Ex", new_run.groups_list)
+        self.assertIn("ex", new_run.groups_list)
         self.assertIsInstance(new_channel, mth5.groups.ElectricDataset)
 
         self.assertIn(
-            "Ex",
+            "ex",
             (new_run.summary_table.array["component"].astype(np.unicode_).tolist()),
         )
 
@@ -103,7 +103,7 @@ class TestMTH5(unittest.TestCase):
         new_run = new_station.add_run("MT001a")
         new_channel = new_run.add_channel("Ex", "electric", None)
         new_run.remove_channel("Ex")
-        self.assertNotIn("Ex", new_run.groups_list)
+        self.assertNotIn("ex", new_run.groups_list)
 
     def test_get_channel_fail(self):
         new_station = self.mth5_obj.add_station("MT001")
@@ -137,7 +137,7 @@ class TestMTH5(unittest.TestCase):
         
     def test_from_run_ts(self):
         ts_list = []
-        for comp in ['ex', 'ey', 'hx' 'hy', 'hz']:
+        for comp in ['ex', 'ey', 'hx', 'hy', 'hz']:
             if comp[0] in ['e']:
                 ch_type = 'electric'
             elif comp[1] in ['h', 'b']:
@@ -161,16 +161,14 @@ class TestMTH5(unittest.TestCase):
             )
             ts_list.append(channel_ts)
             
-        run_ts = RunTS(ts_list, {'MT001a'})
+        run_ts = RunTS(ts_list, {'id':'MT002a'})
 
         station = self.mth5_obj.add_station("MT002")
         run = station.add_run("MT002a")
-        ex = run.add_channel("Ex", "electric", None)
-        ex.from_mtts(channel_ts)
-        new_ts = ex.to_mtts()
+        channel_groups = run.from_runts(run_ts)
 
-        self.assertEqual(channel_ts.start, new_ts.start)
-        self.assertTrue(channel_ts.ts.time.to_dict() == new_ts.ts.time.to_dict())
+        self.assertListEqual(['ex', 'ey', 'hx', 'hy', 'hz', 'summary'],
+                             run.groups_list)
         
 
     def tearDown(self):

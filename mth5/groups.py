@@ -152,7 +152,7 @@ class BaseGroup:
             self.read_metadata()
         # set default columns of summary table.
         self._defaults_summary_attrs = {
-            "name": "Summary",
+            "name": "summary",
             "max_shape": (10000,),
             "dtype": np.dtype([("default", np.float)]),
         }
@@ -187,7 +187,7 @@ class BaseGroup:
 
     @property
     def summary_table(self):
-        return MTH5Table(self.hdf5_group["Summary"])
+        return MTH5Table(self.hdf5_group["summary"])
 
     @property
     def groups_list(self):
@@ -231,7 +231,7 @@ class BaseGroup:
         """
         Initialize summary table as a dataset based on default values to
 
-        ``/Group/Summary``
+        ``/Group/summary``
 
         The initial size is 0, but is extentable to
         `self._defaults_summary_attrs[max_shape]`
@@ -320,19 +320,19 @@ class SurveyGroup(BaseGroup):
         ====================
             |- Group: Filters
             -----------------
-                --> Dataset: Summary
+                --> Dataset: summary
             -----------------
             |- Group: Reports
             -----------------
-                --> Dataset: Summary
+                --> Dataset: summary
                 -----------------
             |- Group: Standards
             -------------------
-                --> Dataset: Summary
+                --> Dataset: summary
                 -----------------
             |- Group: Stations
             ------------------
-                --> Dataset: Summary
+                --> Dataset: summary
                 -----------------
 
     """
@@ -354,7 +354,7 @@ class ReportsGroup(BaseGroup):
 
         # summary of reports
         self._defaults_summary_attrs = {
-            "name": "Summary",
+            "name": "summary",
             "max_shape": (1000,),
             "dtype": np.dtype(
                 [
@@ -390,7 +390,7 @@ class StandardsGroup(BaseGroup):
     up documentation that might not be updated.
 
     The metadata standards are stored in the summary table
-    ``/Survey/Standards/Summary``
+    ``/Survey/Standards/summary``
 
     >>> standards = mth5_obj.standards_group
     >>> standards.summary_table
@@ -405,7 +405,7 @@ class StandardsGroup(BaseGroup):
         super().__init__(group, **kwargs)
 
         self._defaults_summary_attrs = {
-            "name": "Summary",
+            "name": "summary",
             "max_shape": (500,),
             "dtype": np.dtype(
                 [
@@ -539,7 +539,7 @@ class MasterStationGroup(BaseGroup):
     To check what stations exist
 
     >>> stations.group_list
-    ['Summary', 'MT001', 'MT002', 'MT003']
+    ['summary', 'MT001', 'MT002', 'MT003']
 
     To access the hdf5 group directly use `SurveyGroup.hdf5_group`.
 
@@ -575,11 +575,11 @@ class MasterStationGroup(BaseGroup):
         >>> stations
         /Survey/Stations:
         ====================
-            --> Dataset: Summary
+            --> Dataset: summary
             ......................
             |- Group: new_station
             ---------------------
-                --> Dataset: Summary
+                --> Dataset: summary
                 ......................
 
     Add a station with metadata:
@@ -612,7 +612,7 @@ class MasterStationGroup(BaseGroup):
     >>> stations
     /Survey/Stations:
     ====================
-        --> Dataset: Summary
+        --> Dataset: summary
         ......................
 
     .. note:: Deleting a station is not as simple as del(station).  In HDF5
@@ -626,11 +626,11 @@ class MasterStationGroup(BaseGroup):
     >>> existing_station
     /Survey/Stations/existing_station_name:
     =======================================
-        --> Dataset: Summary
+        --> Dataset: summary
         ......................
         |- Group: run_01
         ----------------
-            --> Dataset: Summary
+            --> Dataset: summary
             ......................
             --> Dataset: Ex
             ......................
@@ -675,7 +675,7 @@ class MasterStationGroup(BaseGroup):
 
         # summary of stations
         self._defaults_summary_attrs = {
-            "name": "Summary",
+            "name": "summary",
             "max_shape": (1000,),
             "dtype": np.dtype(
                 [
@@ -884,9 +884,9 @@ class StationGroup(BaseGroup):
     =========================
         |- Group: MT001e
         -----------------
-            --> Dataset: Summary
+            --> Dataset: summary
             ......................
-        --> Dataset: Summary
+        --> Dataset: summary
         ......................
 
     :Add a run with metadata:
@@ -919,7 +919,7 @@ class StationGroup(BaseGroup):
     >>> station
     /Survey/Stations/Test_01:
     =========================
-        --> Dataset: Summary
+        --> Dataset: summary
         ......................
 
     .. note:: Deleting a station is not as simple as del(station).  In HDF5
@@ -933,7 +933,7 @@ class StationGroup(BaseGroup):
     >>> existing_run
     /Survey/Stations/MT001/MT001a:
     =======================================
-        --> Dataset: Summary
+        --> Dataset: summary
         ......................
         --> Dataset: Ex
         ......................
@@ -946,7 +946,7 @@ class StationGroup(BaseGroup):
         --> Dataset: Hz
         ......................
 
-    :Summary Table:
+    :summary Table:
 
     A summary table is provided to make searching easier.  The table
     summarized all stations within a survey. To see what names are in the
@@ -977,7 +977,7 @@ class StationGroup(BaseGroup):
 
         # summary of runs
         self._defaults_summary_attrs = {
-            "name": "Summary",
+            "name": "summary",
             "max_shape": (1000,),
             "dtype": np.dtype(
                 [
@@ -1223,7 +1223,7 @@ class RunGroup(BaseGroup):
     >>> new_run
     /Survey/Stations/MT001/MT001a:
     =======================================
-        --> Dataset: Summary
+        --> Dataset: summary
         ......................
         --> Dataset: Ex
         ......................
@@ -1263,7 +1263,7 @@ class RunGroup(BaseGroup):
     >>> station
     /Survey/Stations/MT001/MT001a:
     =======================================
-        --> Dataset: Summary
+        --> Dataset: summary
         ......................
         --> Dataset: Ey
         ......................
@@ -1292,7 +1292,7 @@ class RunGroup(BaseGroup):
     	sample rate:      8
 
 
-    :Summary Table:
+    :summary Table:
 
     A summary table is provided to make searching easier.  The table
     summarized all stations within a survey. To see what names are in the
@@ -1324,7 +1324,7 @@ class RunGroup(BaseGroup):
 
         # summary of channels in run
         self._defaults_summary_attrs = {
-            "name": "Summary",
+            "name": "summary",
             "max_shape": (20,),
             "dtype": np.dtype(
                 [
@@ -1424,6 +1424,7 @@ class RunGroup(BaseGroup):
 
 
         """
+        channel_name = channel_name.lower()
         for key, value in kwargs.items():
             setattr(self, key, value)
 
@@ -1573,6 +1574,8 @@ class RunGroup(BaseGroup):
         .. todo:: Need to remove summary table entry as well.
 
         """
+        
+        channel_name = channel_name.lower()
 
         try:
             component = self.hdf5_group[channel_name].attrs["component"]
@@ -1639,7 +1642,9 @@ class RunGroup(BaseGroup):
                 
             ch_metadata = {channel_type: run_ts_obj.dataset[comp].attrs}
                 
-            channels.append(self.add_channel(comp, channel_type, run_ts_obj.ts.values, 
+            channels.append(self.add_channel(comp,
+                                             channel_type,
+                                             run_ts_obj.dataset[comp].values, 
                                              dataset_metadata=ch_metadata))
         return channels
             
