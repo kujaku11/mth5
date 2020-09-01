@@ -16,7 +16,7 @@ Welcome to MTH5's documentation!
    
     source/stations
     source/runs
-	source/file_readers
+    source/file_readers
 	
 .. toctree::
 	:maxdepth: 1

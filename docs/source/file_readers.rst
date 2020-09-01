@@ -28,7 +28,7 @@ This will currently read in 3 types of files:
 NIMS and USGS ASCII will return a :class:`mth5.timeseries.RunTS` object and Zonge Z3D returns a :class:`mth5.timeseries.MTTS` object.  The return type depends on the structure of the file.  NIMS records each channel in a single block of data, so all channels are in a single file.  Whereas, Z3D files are for a single channel.  It might make sense in to return the same data type, but for now this is the way it is.  Also returned are any extra metadata that might not belong to a channel or run.  Specifically, most files have information about location and some other metadata about the station that could be helpful in filling out metadata for the station. 
 
 Adding Plugins
------------------
+^^^^^^^^^^^^^^^^
 
 Everyone has their own file structure and therefore there will need to be various readers for the different data formats.  If you have a data format that isn't supported adding a reader would be a welcomed contribution.  To keep things somewhat uniform here are some guidelines to add a reader.
 
@@ -42,8 +42,8 @@ It helps if you have property values of the main information, if attributes are 
 .. code-block:: python
 
 	from mth5 import timeseries
-	
-    class MyFileMetadata:
+
+	class MyFileMetadata:
 		""" Read in metadata into appropriate objects """
 		def __init__(self, fn):
 			self.fn = fn
@@ -70,9 +70,9 @@ It helps if you have property values of the main information, if attributes are 
 			return timeseries.MTTS('electric', 
 								   data=self.data['ex'],
 								   metadata={'electric': {
-								    'time_period.start': self.start,
-									'time_period.end': self.end,
-									'sample_rate': self.sample_rate}})
+								   'time_period.start': self.start,
+								   'time_period.end': self.end,
+								   'sample_rate': self.sample_rate}})
 									
 		@property
 		def extra_metadata(self):
@@ -92,10 +92,12 @@ It helps if you have property values of the main information, if attributes are 
 		""" the helper function to read the file """
 		new_obj = MyFile(fn)
 		return new_obj.read_my_file()
-		
+			
 Once you have come up a reader you can add it to the reader module.  You just need to add a file name and associated file types.
 
 In the dictionary in mth5.reader 'readers' add a line like:
+
+.. code-block:: python
 
 	"my_file": {"file_types": ["dat", "data"], "reader": my_file.read_my_file},
 		
@@ -103,6 +105,3 @@ Then you can see if your reader works
 
 >>> import mth5
 >>> run, extra = mth5.read_file(r"/home/mt_data/test.dat", file_type='my_file')
-
-
- 	

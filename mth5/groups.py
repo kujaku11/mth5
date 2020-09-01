@@ -2495,10 +2495,10 @@ class ChannelDataset:
             # plot the time series
             >>> ex_slice.ts.plot()
     
-            :Example with start and end time:
-    
-            >>> ex_slice = ex.time_slice("2015-01-08T19:49:15",
-            ...                          end_time="2015-01-09T19:49:15")
+        :Example with start and end time:
+
+        >>> ex_slice = ex.time_slice("2015-01-08T19:49:15",
+        ...                          end_time="2015-01-09T19:49:15")
 
         :Raises Example:
 
