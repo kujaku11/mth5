@@ -860,6 +860,7 @@ class NIMS(NIMSHeader):
             # interpolate temperature onto the same sample rate as the channels.
             temp.ts = temp.ts.interp_like(self.hx.ts)
             temp.metadata.sample_rate = self.sample_rate
+            temp.metadata.time_period.end = self.end_time.isoformat() 
 
             return temp
         return None

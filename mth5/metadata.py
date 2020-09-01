@@ -555,7 +555,7 @@ class Base:
                 msg = "{0}: setting {1} to None.  ".format(
                     error, name
                 ) + "Try setting {0} to the desired value".format(name)
-                self.logger.info(msg)
+                self.logger.debug(msg)
                 meta_dict[name] = None
 
         if nested:

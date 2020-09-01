@@ -133,19 +133,19 @@ class MTH5:
         ----------------
             |- Group: Filters
             -----------------
-                --> Dataset: Summary
+                --> Dataset: summary
                 ......................
             |- Group: Reports
             -----------------
-                --> Dataset: Summary
+                --> Dataset: summary
                 ......................
             |- Group: Standards
             -------------------
-                --> Dataset: Summary
+                --> Dataset: summary
                 ......................
             |- Group: Stations
             ------------------
-                --> Dataset: Summary
+                --> Dataset: summary
                 ......................
 
     
@@ -173,28 +173,28 @@ class MTH5:
         ----------------
             |- Group: Filters
             -----------------
-                --> Dataset: Summary
+                --> Dataset: summary
                 ......................
             |- Group: Reports
             -----------------
-                --> Dataset: Summary
+                --> Dataset: summary
                 ......................
             |- Group: Standards
             -------------------
-                --> Dataset: Summary
+                --> Dataset: summary
                 ......................
             |- Group: Stations
             ------------------
                 |- Group: MT001
                 ---------------
-                    --> Dataset: Summary
+                    --> Dataset: summary
                     ......................
-                --> Dataset: Summary
+                --> Dataset: summary
                 ......................
     >>> station
     /Survey/Stations/MT001:
     ====================
-        --> Dataset: Summary
+        --> Dataset: summary
         ......................
 
     >>> data.schedule_01.ex[0:10] = np.nan
@@ -334,9 +334,9 @@ class MTH5:
     @property
     def station_list(self):
         """list of existing stations names"""
-        return self.stations_group.group_list
+        return self.stations_group.groups_list
 
-    def open_mth5(self, filename, mode="a"):
+    def open_mth5(self, filename=None, mode="a"):
         """
         open an mth5 file
 
@@ -351,7 +351,8 @@ class MTH5:
 
 
         """
-        self.__filename = filename
+        if filename is not None:
+            self.__filename = filename
         if not isinstance(self.__filename, Path):
             self.__filename = Path(filename)
 

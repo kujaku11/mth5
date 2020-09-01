@@ -136,7 +136,7 @@ class BaseGroup:
 
         # if metadata, make sure that its the same class type
         if group_metadata is not None:
-            if not isinstance(group_metadata, (self.metadata, metadata.Base)):
+            if not isinstance(group_metadata, (type(self.metadata), metadata.Base)):
                 msg = "metadata must be type metadata.{0} not {1}".format(
                     self._class_name, type(group_metadata)
                 )
@@ -1478,7 +1478,7 @@ class RunGroup(BaseGroup):
             channel_obj.write_metadata()
             self.summary_table.add_row(channel_obj.table_entry)
 
-        except OSError:
+        except (OSError, RuntimeError):
             msg = (
                 f"channel {channel_name} already exists, " + "returning existing group."
             )

@@ -2,7 +2,7 @@ version: 1
 disable_existing_loggers: False
 formatters:
     standard:
-        format: "%(asctime)s - %(name)s.%(funcName)s - %(levelname)s - %(message)s"
+        format: "%(asctime)s [line %(lineno)d] %(name)s.%(funcName)s - %(levelname)s: %(message)s"
         datefmt: "%Y-%m-%dT%H:%M:%S"
 
 handlers:
