@@ -134,6 +134,44 @@ class TestMTH5(unittest.TestCase):
 
         self.assertEqual(channel_ts.start, new_ts.start)
         self.assertTrue(channel_ts.ts.time.to_dict() == new_ts.ts.time.to_dict())
+        
+    def test_from_run_ts(self):
+        ts_list = []
+        for comp in ['ex', 'ey', 'hx' 'hy', 'hz']:
+            if comp[0] in ['e']:
+                ch_type = 'electric'
+            elif comp[1] in ['h', 'b']:
+                ch_type = 'magnetic'
+            else:
+                ch_type = 'auxiliary'
+                
+            meta_dict = {
+                ch_type: {
+                    "component": comp,
+                    "dipole_length": 49.0,
+                    "measurement_azimuth": 12.0,
+                    "type": ch_type,
+                    "units": "counts",
+                    "time_period.start": "2020-01-01T12:00:00",
+                    "sample_rate": 1,
+                }
+            }
+            channel_ts = MTTS(
+                ch_type, data=np.random.rand(4096), channel_metadata=meta_dict
+            )
+            ts_list.append(channel_ts)
+            
+        run_ts = RunTS(ts_list, {'MT001a'})
+
+        station = self.mth5_obj.add_station("MT002")
+        run = station.add_run("MT002a")
+        ex = run.add_channel("Ex", "electric", None)
+        ex.from_mtts(channel_ts)
+        new_ts = ex.to_mtts()
+
+        self.assertEqual(channel_ts.start, new_ts.start)
+        self.assertTrue(channel_ts.ts.time.to_dict() == new_ts.ts.time.to_dict())
+        
 
     def tearDown(self):
         self.mth5_obj.close_mth5()

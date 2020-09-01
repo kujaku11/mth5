@@ -1620,11 +1620,30 @@ class RunGroup(BaseGroup):
         Will create a run group and appropriate channel datasets.
         """
 
+        if not isinstance(run_ts_obj, RunTS):
+            msg = f"Input must be a mth5.timeseries.RunTS object not {type(run_ts_obj)}"
+            self.logger.error(msg)
+            raise MTH5Error(msg)
+            
+        self.metadata.from_dict(run_ts_obj.metadata.to_dict())
         
-    
-        pass
-
-
+        channels = []
+        
+        for comp in run_ts_obj.channels:
+            if comp[0] in ['e']:
+                channel_type = 'electric'
+            elif comp[0] in ['h', 'b']:
+                channel_type = 'magnetic'
+            else:
+                channel_type = 'auxiliary'
+                
+            ch_metadata = {channel_type: run_ts_obj.dataset[comp].attrs}
+                
+            channels.append(self.add_channel(comp, channel_type, run_ts_obj.ts.values, 
+                                             dataset_metadata=ch_metadata))
+        return channels
+            
+            
 class ChannelDataset:
     """
     Holds a channel dataset.  This is a simple container for the data to make

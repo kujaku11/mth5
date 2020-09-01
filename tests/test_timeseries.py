@@ -163,6 +163,23 @@ class TestRunTS(unittest.TestCase):
         self.assertEqual(self.run.sample_rate, 8.0)
         self.assertEqual(self.run.start, MTime("2015-01-08T19:49:18"))
         self.assertEqual(self.run.end, MTime("2015-01-08T19:57:49.875000"))
+        
+    def test_sr_fail(self):
+        self.hz = timeseries.MTTS(
+            "magnetic",
+            data=np.random.rand(4096),
+            channel_metadata={
+                "magnetic": {
+                    "component": "hz",
+                    "sample_rate": 1,
+                    "time_period.start": "2015-01-08T19:49:18+00:00",
+                }
+            },
+        )
+        
+        self.assertRaises(MTTSError, 
+                          self.run.set_dataset, 
+                          [self.ex, self.ey, self.hx, self.hy, self.hz])
 
     def test_ex(self):
         
@@ -177,7 +194,19 @@ class TestRunTS(unittest.TestCase):
         self.assertEqual(None, self.run.temperature)
         
         
+    def test_wrong_metadata(self):
+        self.run.metadata.sample_rate = 10
+        self.run.validate_metadata()
+
+        self.assertEqual(self.ex.sample_rate, self.run.metadata.sample_rate)
         
+        self.run.metadata.start = '2020-01-01T00:00:00'
+        self.run.validate_metadata()
+        self.assertEqual(self.run.start, self.run.metadata.time_period.start)
+        
+        self.run.metadata.end = '2020-01-01T00:00:00'
+        self.run.validate_metadata()
+        self.assertEqual(self.run.end, self.run.metadata.time_period.end)
 
 # =============================================================================
 # run tests

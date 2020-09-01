@@ -73,6 +73,8 @@ class MTTS:
                     "Loading from metadata class {0}".format(type(self.metadata))
                 )
             elif isinstance(channel_metadata, dict):
+                if not channel_type in list(channel_metadata.keys()):
+                    channel_metadata = {channel_type: channel_metadata}
                 self.metadata.from_dict(channel_metadata)
                 self.logger.debug("Loading from metadata dict")
 
@@ -435,6 +437,9 @@ class RunTS:
         self._dataset = xr.Dataset()
 
         if run_metadata is not None:
+            # make sure the input dictionary has the correct form 
+            if 'run' not in list(run_metadata.keys()):
+                run_metadata = {'run': run_metadata}
             self.metadata.from_dict(run_metadata)
 
         if array_list is not None:
@@ -453,8 +458,24 @@ class RunTS:
                 msg = f"array entry {index} must be MTTS object not {type(item)}"
                 self.logger.error(msg)
                 raise TypeError(msg)
+                
+        # probably should test for sampling rate.
+        sr_test = dict([(item.component, (item.sample_rate)) 
+                        for item in array_list])
+        
+        if len(set([v for k, v in sr_test.items()])) != 1:
+            msg = f"sample rates are not all the same {sr_test}"
+            self.logger.error(msg)
+            raise MTTSError(msg)
 
         return [x.ts for x in array_list]
+    
+    @property
+    def has_data(self):
+        """ check to see if there is data """
+        if len(self.channels) > 0:
+            return True
+        return False
 
     @property
     def summarize_metadata(self):
@@ -472,6 +493,46 @@ class RunTS:
                 meta_dict[f"{comp}.{mkey}"] = mvalue
 
         return meta_dict
+    
+    def validate_metadata(self):
+        """
+        Check to make sure that the metadata matches what is in the data set.
+        
+        updates metadata from the data.
+        
+        Check the start and end times, channels recorded
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        
+        # check sampling rate
+        if self.has_data:
+            if self.sample_rate != self.metadata.sample_rate:
+                msg = (f"sample rate of dataset {self.sample_rate} does not "
+                       f"match metadata sample rate {self.metadata.sample_rate} "
+                       f"updating metatdata value to {self.sample_rate}")
+                self.logger.warning(msg)
+                self.metadata.sample_rate = self.sample_rate
+                
+        # check start time
+        if self.has_data:
+            if self.start != self.metadata.time_period.start:
+                msg = (f"start time of dataset {self.start} does not "
+                       f"match metadata start {self.metadata.time_period.start} "
+                       f"updating metatdata value to {self.start}")
+                self.logger.warning(msg)
+                self.metadata.time_period.start = self.start.iso_str
+                
+                # check start time
+        if self.has_data:
+            if self.end != self.metadata.time_period.end:
+                msg = (f"end time of dataset {self.end} does not "
+                       f"match metadata end {self.metadata.time_period.end} "
+                       f"updating metatdata value to {self.end}")
+                self.logger.warning(msg)
+                self.metadata.time_period.end = self.end.iso_str
+                
 
     def set_dataset(self, array_list, align_type="outer"):
         """
@@ -499,7 +560,7 @@ class RunTS:
         # input as a dictionary
         xdict = dict([(x.component.lower(), x) for x in x_array_list])
         self._dataset = xr.Dataset(xdict)
-
+        self.validate_metadata()
         self._dataset.attrs.update(self.metadata.to_dict()["run"])
 
     @property
@@ -517,15 +578,21 @@ class RunTS:
 
     @property
     def start(self):
-        return MTime(self.dataset.coords["time"].to_index()[0].isoformat())
+        if self.has_data:
+            return MTime(self.dataset.coords["time"].to_index()[0].isoformat())
+        return self.metadata.time_period.start
 
     @property
     def end(self):
-        return MTime(self.dataset.coords["time"].to_index()[-1].isoformat())
+        if self.has_data:
+            return MTime(self.dataset.coords["time"].to_index()[-1].isoformat())
+        return self.metadata.time_period.end
 
     @property
     def sample_rate(self):
-        return 1e9 / self.dataset.coords["time"].to_index().freq.n
+        if self.has_data:
+            return 1e9 / self.dataset.coords["time"].to_index().freq.n
+        return self.metadata.sample_rate
     
     @property
     def ex(self):
