@@ -1749,6 +1749,7 @@ class ChannelDataset:
             },
         )
         # set summary attributes
+        self.metadata.hdf5_type = self._class_name
         self.logger.debug(
             "Metadata class for {0} is {1}".format(
                 self._class_name, type(self.metadata)
@@ -1765,7 +1766,9 @@ class ChannelDataset:
                 raise MTH5Error(msg)
 
             # load from dict because of the extra attributes for MTH5
+            
             self.metadata.from_dict(dataset_metadata.to_dict())
+            
 
             # write out metadata to make sure that its in the file.
             self.write_metadata()
