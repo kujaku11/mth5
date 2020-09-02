@@ -144,6 +144,7 @@ class BaseGroup:
                 raise MTH5Error(msg)
 
             # load from dict because of the extra attributes for MTH5
+            self.logger.info(f"Updating metadata from input metadata class {type(group_metadata)}")
             self.metadata.from_dict(group_metadata.to_dict())
 
             # write out metadata to make sure that its in the file.
@@ -975,7 +976,6 @@ class StationGroup(BaseGroup):
     """
 
     def __init__(self, group, station_metadata=None, **kwargs):
-
         super().__init__(group, group_metadata=station_metadata, **kwargs)
 
         # summary of runs
@@ -1086,7 +1086,7 @@ class StationGroup(BaseGroup):
             run_group = self.hdf5_group.create_group(run_name)
             self.logger.debug("Created group {0}".format(run_group.name))
             run_obj = RunGroup(
-                run_group, run_metdata=run_metadata, **self.dataset_options
+                run_group, run_metadata=run_metadata, **self.dataset_options
             )
             run_obj.initialize_group()
             if run_obj.metadata.id is None:

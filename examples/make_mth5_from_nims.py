@@ -36,6 +36,9 @@ nims_station = metadata.Station()
 nims_station.from_dict(structure_dict(extra))
 nims_station.archive_id = "rgr006"
 nims_station.channels_recorded = run_ts.metadata.channels_recorded_all
+nims_station.time_period.start = run_ts.start.iso_str
+nims_station.time_period.end = run_ts.end.iso_str
+
 m = mth5.MTH5(Path(r"c:\Users\jpeacock\Documents\from_nims.h5"))
 m.open_mth5()
 
@@ -43,10 +46,10 @@ m.open_mth5()
 m.survey_group.metadata.from_dict(survey.to_dict())
 
 # initialize a station
-station_group = m.add_station(nims_station.archive_id, nims_station)
+station_group = m.add_station(nims_station.archive_id, station_metadata=nims_station)
 
 # make a run group
-run_group = station_group.add_run(run_ts.metadata.id, run_ts.metadata)
+run_group = station_group.add_run(run_ts.metadata.id, run_metadata=run_ts.metadata)
 
 # add data to the run group
 channels = run_group.from_runts(run_ts)
