@@ -849,7 +849,7 @@ class Z3D:
             return None
 
     @property
-    def information(self):
+    def extra_metadata(self):
         """ extra metadta that might be useful """
 
         meta_dict = {}
@@ -1433,4 +1433,4 @@ def read_z3d(fn):
     """
 
     z3d_obj = Z3D(fn)
-    return z3d_obj.read_z3d()
+    return z3d_obj.read_z3d(), z3d_obj.extra_metadata
