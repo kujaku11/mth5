@@ -130,6 +130,7 @@ class MTTS:
                 )
             try:
                 self._ts = xr.DataArray(ts_arr["data"], coords=[("time", dt)])
+                self.update_xarray_metadata()
 
             except AttributeError:
                 msg = (
@@ -149,6 +150,7 @@ class MTTS:
                 )
             
             self._ts = xr.DataArray(ts_arr.values, coords=[("time", dt)])
+            self.update_xarray_metadata()
 
 
         elif isinstance(ts_arr, xr.DataArray):
@@ -157,6 +159,7 @@ class MTTS:
             self._ts = ts_arr
             meta_dict = dict([(k, v) for k, v in ts_arr.attrs.items()])
             self.metadata.from_dict({self.metadata.type: meta_dict})
+            self.update_xarray_metadata()
 
         else:
             msg = (
@@ -554,9 +557,8 @@ class RunTS:
                        f"updating metatdata value to {self.sample_rate}")
                 self.logger.warning(msg)
                 self.metadata.sample_rate = self.sample_rate
-                
-        # check start time
-        if self.has_data:
+            
+            # check start time
             if self.start != self.metadata.time_period.start:
                 msg = (f"start time of dataset {self.start} does not "
                        f"match metadata start {self.metadata.time_period.start} "
@@ -564,8 +566,7 @@ class RunTS:
                 self.logger.warning(msg)
                 self.metadata.time_period.start = self.start.iso_str
                 
-                # check start time
-        if self.has_data:
+            # check end time
             if self.end != self.metadata.time_period.end:
                 msg = (f"end time of dataset {self.end} does not "
                        f"match metadata end {self.metadata.time_period.end} "
@@ -573,6 +574,18 @@ class RunTS:
                 self.logger.warning(msg)
                 self.metadata.time_period.end = self.end.iso_str
                 
+            # update channels recorded
+            self.metadata.channels_recorded_auxiliary = []
+            self.metadata.channels_recorded_electric = []
+            self.metadata.channels_recorded_magnetic = []
+            for ch in self.channels:
+                if ch[0] in ['e']:
+                    self.metadata.channels_recorded_electric.append(ch)
+                elif ch[0] in ['h', 'b']:
+                    self.metadata.channels_recorded_magnetic.append(ch)
+                else:
+                    self.metadata.channels_recorded_auxiliary.append(ch)
+                    
 
     def set_dataset(self, array_list, align_type="outer"):
         """

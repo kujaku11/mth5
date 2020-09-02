@@ -731,6 +731,9 @@ class MasterStationGroup(BaseGroup):
                 station_group, station_metadata=station_metadata, **self.dataset_options
             )
             station_obj.initialize_group()
+            
+            # be sure to add a table entry
+            self.summary_table.add_row(station_obj.table_entry)
 
         except ValueError:
             msg = (

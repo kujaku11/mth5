@@ -35,7 +35,7 @@ survey.name = "test"
 nims_station = metadata.Station()
 nims_station.from_dict(structure_dict(extra))
 nims_station.archive_id = "rgr006"
-
+nims_station.channels_recorded = run_ts.metadata.channels_recorded_all
 m = mth5.MTH5(Path(r"c:\Users\jpeacock\Documents\from_nims.h5"))
 m.open_mth5()
 

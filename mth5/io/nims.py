@@ -996,8 +996,7 @@ class NIMS(NIMSHeader):
 
         return None
 
-    @property
-    def run_xarray(self):
+    def to_runts(self):
         """ Get xarray for run """
 
         if self.ts is not None:
@@ -1866,4 +1865,4 @@ def read_nims(fn):
     nims_obj = NIMS(fn)
     nims_obj.read_nims()
     
-    return nims_obj.run_xarray, nims_obj.extra_metadata
+    return nims_obj.to_runts(), nims_obj.extra_metadata
