@@ -589,7 +589,7 @@ class Base:
         if class_name.lower() != self._class_name.lower():
             msg = (
                 "name of input dictionary is not the same as class type "
-                 "input = {0}, class type = {1}".format(class_name, self._class_name)
+                "input = {0}, class type = {1}".format(class_name, self._class_name)
             )
             self.logger.debug(msg)
 
@@ -1665,11 +1665,11 @@ class Channel(Base):
 
         super().__init__(**kwargs)
         self._attr_dict = ATTR_DICT["channel"]
-        
+
     @property
     def component(self):
         return self._component
-    
+
     @component.setter
     def component(self, value):
         self._component = value.lower()

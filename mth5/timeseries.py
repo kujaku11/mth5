@@ -139,7 +139,7 @@ class MTTS:
                 )
                 self.logger.error(msg)
                 raise MTTSError(msg)
-                
+
         elif isinstance(ts_arr, pd.core.series.Series):
             self.logger.debug(f"loading pandas series with shape {ts_arr.shape}")
             if isinstance(ts_arr.index[0], pd._libs.tslibs.timestamps.Timestamp):
@@ -148,10 +148,9 @@ class MTTS:
                 dt = self._make_dt_coordinates(
                     self.start, self.sample_rate, ts_arr["data"].size
                 )
-            
+
             self._ts = xr.DataArray(ts_arr.values, coords=[("time", dt)])
             self.update_xarray_metadata()
-
 
         elif isinstance(ts_arr, xr.DataArray):
             self.logger.debug(f"loading xarra.DataArray with shape {ts_arr.shape}")
@@ -188,34 +187,40 @@ class MTTS:
     def component(self):
         """ component """
         return self.metadata.component
-    
+
     @component.setter
     def component(self, comp):
         """ set component in metadata and carry through """
-        if self.metadata.type == 'electric':
-            if comp[0] != 'e':
-                msg = ("The current timeseries is an electric channel. "
-                       "Cannot change channel type, create a new MTTS object.")
+        if self.metadata.type == "electric":
+            if comp[0] != "e":
+                msg = (
+                    "The current timeseries is an electric channel. "
+                    "Cannot change channel type, create a new MTTS object."
+                )
                 self.logger.error(msg)
                 raise MTTSError(msg)
-                
-        elif self.metadata.type == 'magnetic':
-            if comp[0] not in ['h', 'b']:
-                msg = ("The current timeseries is a magnetic channel. "
-                       "Cannot change channel type, create a new MTTS object.")
+
+        elif self.metadata.type == "magnetic":
+            if comp[0] not in ["h", "b"]:
+                msg = (
+                    "The current timeseries is a magnetic channel. "
+                    "Cannot change channel type, create a new MTTS object."
+                )
                 self.logger.error(msg)
                 raise MTTSError(msg)
-                
-        if self.metadata.type == 'auxiliary':
-            if comp[0] in ['e', 'h', 'b']:
-                msg = ("The current timeseries is an auxiliary channel. "
-                       "Cannot change channel type, create a new MTTS object.")
+
+        if self.metadata.type == "auxiliary":
+            if comp[0] in ["e", "h", "b"]:
+                msg = (
+                    "The current timeseries is an auxiliary channel. "
+                    "Cannot change channel type, create a new MTTS object."
+                )
                 self.logger.error(msg)
                 raise MTTSError(msg)
-                
+
         self.metadata.component = comp
         self.update_xarray_metadata()
-        
+
     # --> number of samples just to make sure there is consistency
     @property
     def n_samples(self):
@@ -235,8 +240,9 @@ class MTTS:
         check to see if there is an index in the time series
         """
         if len(self._ts) > 1:
-            if isinstance(self.ts.indexes["time"][0], 
-                          pd._libs.tslibs.timestamps.Timestamp):
+            if isinstance(
+                self.ts.indexes["time"][0], pd._libs.tslibs.timestamps.Timestamp
+            ):
                 return True
             return False
         else:
@@ -247,17 +253,17 @@ class MTTS:
     def sample_rate(self):
         """sample rate in samples/second"""
         if self.has_data:
-            # this is a hack cause I don't understand how the freq can be none, 
+            # this is a hack cause I don't understand how the freq can be none,
             # but this is the case with xarray if you interpolate data
             if self._ts.coords.indexes["time"][0].freq is None:
                 freq = pd.infer_freq(self._ts.coords.indexes["time"])
-                if 'L' in freq:
-                    sr = 1./(1E-3 * float(freq[0:-1]))
-                elif 'U' in freq:
-                    sr = 1./(1E-6 * float(freq[0:-1]))
-                elif 'N' in freq:
-                    sr = 1./(1E-9 * float(freq[0:-1]))
-                    
+                if "L" in freq:
+                    sr = 1.0 / (1e-3 * float(freq[0:-1]))
+                elif "U" in freq:
+                    sr = 1.0 / (1e-6 * float(freq[0:-1]))
+                elif "N" in freq:
+                    sr = 1.0 / (1e-9 * float(freq[0:-1]))
+
             else:
                 sr = 1e9 / self._ts.coords.indexes["time"][0].freq.nanos
         else:
@@ -469,22 +475,24 @@ class RunTS:
         self._dataset = xr.Dataset()
 
         if run_metadata is not None:
-            # make sure the input dictionary has the correct form 
-            if 'run' not in list(run_metadata.keys()):
-                run_metadata = {'run': run_metadata}
+            # make sure the input dictionary has the correct form
+            if "run" not in list(run_metadata.keys()):
+                run_metadata = {"run": run_metadata}
             self.metadata.from_dict(run_metadata)
 
         if array_list is not None:
             self.dataset = array_list
-            
+
     def __str__(self):
-        s_list = [f'Run ID:      {self.metadata.id}',
-                  f'Start:       {self.start}',
-                  f'End:         {self.end}',
-                  f'Sample Rate: {self.sample_rate}',
-                  f'Components:  {self.channels}']
-        return '\n\t'.join(["RunTS Summary"] + s_list)
-    
+        s_list = [
+            f"Run ID:      {self.metadata.id}",
+            f"Start:       {self.start}",
+            f"End:         {self.end}",
+            f"Sample Rate: {self.sample_rate}",
+            f"Components:  {self.channels}",
+        ]
+        return "\n\t".join(["RunTS Summary"] + s_list)
+
     def __repr__(self):
         return self.__str__()
 
@@ -501,18 +509,17 @@ class RunTS:
                 msg = f"array entry {index} must be MTTS object not {type(item)}"
                 self.logger.error(msg)
                 raise TypeError(msg)
-                
+
         # probably should test for sampling rate.
-        sr_test = dict([(item.component, (item.sample_rate)) 
-                        for item in array_list])
-        
+        sr_test = dict([(item.component, (item.sample_rate)) for item in array_list])
+
         if len(set([v for k, v in sr_test.items()])) != 1:
             msg = f"sample rates are not all the same {sr_test}"
             self.logger.error(msg)
             raise MTTSError(msg)
 
         return [x.ts for x in array_list]
-    
+
     @property
     def has_data(self):
         """ check to see if there is data """
@@ -536,7 +543,7 @@ class RunTS:
                 meta_dict[f"{comp}.{mkey}"] = mvalue
 
         return meta_dict
-    
+
     def validate_metadata(self):
         """
         Check to make sure that the metadata matches what is in the data set.
@@ -548,44 +555,49 @@ class RunTS:
         :rtype: TYPE
 
         """
-        
+
         # check sampling rate
         if self.has_data:
             if self.sample_rate != self.metadata.sample_rate:
-                msg = (f"sample rate of dataset {self.sample_rate} does not "
-                       f"match metadata sample rate {self.metadata.sample_rate} "
-                       f"updating metatdata value to {self.sample_rate}")
+                msg = (
+                    f"sample rate of dataset {self.sample_rate} does not "
+                    f"match metadata sample rate {self.metadata.sample_rate} "
+                    f"updating metatdata value to {self.sample_rate}"
+                )
                 self.logger.warning(msg)
                 self.metadata.sample_rate = self.sample_rate
-            
+
             # check start time
             if self.start != self.metadata.time_period.start:
-                msg = (f"start time of dataset {self.start} does not "
-                       f"match metadata start {self.metadata.time_period.start} "
-                       f"updating metatdata value to {self.start}")
+                msg = (
+                    f"start time of dataset {self.start} does not "
+                    f"match metadata start {self.metadata.time_period.start} "
+                    f"updating metatdata value to {self.start}"
+                )
                 self.logger.warning(msg)
                 self.metadata.time_period.start = self.start.iso_str
-                
+
             # check end time
             if self.end != self.metadata.time_period.end:
-                msg = (f"end time of dataset {self.end} does not "
-                       f"match metadata end {self.metadata.time_period.end} "
-                       f"updating metatdata value to {self.end}")
+                msg = (
+                    f"end time of dataset {self.end} does not "
+                    f"match metadata end {self.metadata.time_period.end} "
+                    f"updating metatdata value to {self.end}"
+                )
                 self.logger.warning(msg)
                 self.metadata.time_period.end = self.end.iso_str
-                
+
             # update channels recorded
             self.metadata.channels_recorded_auxiliary = []
             self.metadata.channels_recorded_electric = []
             self.metadata.channels_recorded_magnetic = []
             for ch in self.channels:
-                if ch[0] in ['e']:
+                if ch[0] in ["e"]:
                     self.metadata.channels_recorded_electric.append(ch)
-                elif ch[0] in ['h', 'b']:
+                elif ch[0] in ["h", "b"]:
                     self.metadata.channels_recorded_magnetic.append(ch)
                 else:
                     self.metadata.channels_recorded_auxiliary.append(ch)
-                    
 
     def set_dataset(self, array_list, align_type="outer"):
         """
@@ -646,59 +658,59 @@ class RunTS:
         if self.has_data:
             return 1e9 / self.dataset.coords["time"].to_index().freq.n
         return self.metadata.sample_rate
-    
+
     @property
     def ex(self):
         """ EX """
-        if 'ex' in self.channels:
-            return MTTS('electric', self.dataset['ex'])
+        if "ex" in self.channels:
+            return MTTS("electric", self.dataset["ex"])
         self.logger.info(f"Could not find EX in current run. {self.channels}")
         return None
-        
+
     @property
     def ey(self):
         """ EY """
-        if 'ey' in self.channels:
-            return MTTS('electric', self.dataset['ey'])
+        if "ey" in self.channels:
+            return MTTS("electric", self.dataset["ey"])
         self.logger.info(f"Could not find EY in current run. {self.channels}")
         return None
-    
+
     @property
     def hx(self):
         """ HX """
-        if 'hx' in self.channels:
-            return MTTS('magnetic', self.dataset['hx'])
+        if "hx" in self.channels:
+            return MTTS("magnetic", self.dataset["hx"])
         self.logger.info(f"Could not find HX in current run. {self.channels}")
         return None
-    
+
     @property
     def hy(self):
         """ HY """
-        if 'hy' in self.channels:
-            return MTTS('magnetic', self.dataset['hy'])
+        if "hy" in self.channels:
+            return MTTS("magnetic", self.dataset["hy"])
         self.logger.info(f"Could not find HY in current run. {self.channels}")
         return None
-    
+
     @property
     def hz(self):
         """ HZ """
-        if 'hz' in self.channels:
-            return MTTS('magnetic', self.dataset['hz'])
+        if "hz" in self.channels:
+            return MTTS("magnetic", self.dataset["hz"])
         self.logger.info(f"Could not find HX in current run. {self.channels}")
         return None
-    
+
     @property
     def temperature(self):
         """ temperature """
-        if 'temperature' in self.channels:
-            return MTTS('auxiliary', self.dataset['temperature'])
+        if "temperature" in self.channels:
+            return MTTS("auxiliary", self.dataset["temperature"])
         self.logger.info(f"Could not find temperature in current run. {self.channels}")
         return None
-    
+
     @property
     def channels(self):
         return [cc for cc in list(self.dataset.data_vars)]
-    
+
     def plot(self):
         """
         
@@ -710,7 +722,7 @@ class RunTS:
         """
 
         n_channels = len(self.channels)
-        
+
         fig = plt.figure()
         fig.subplots_adjust(hspace=0)
         ax1 = fig.add_subplot(n_channels, 1, 1)
@@ -720,8 +732,8 @@ class RunTS:
             ax = plt.subplot(n_channels, 1, ii, sharex=ax1)
             self.dataset[comp].plot()
             ax_list.append(ax)
-            
+
         for ax in ax_list:
-            ax.grid(which='major', color=(.65, .65, .65), ls='--', lw=.75)
-            ax.grid(which='minor', color=(.85, .85, .85), ls='--', lw=.5)
+            ax.grid(which="major", color=(0.65, 0.65, 0.65), ls="--", lw=0.75)
+            ax.grid(which="minor", color=(0.85, 0.85, 0.85), ls="--", lw=0.5)
             ax.set_axisbelow(True)

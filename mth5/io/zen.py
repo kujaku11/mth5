@@ -865,7 +865,7 @@ class Z3D:
         meta_dict["run.time_period.start"] = self.start.iso_str
         meta_dict["run.time_period.end"] = self.end.iso_str
         meta_dict["run.sample_rate"] = self.sample_rate
-        meta_dict["run.data_type"] = 'MTBB'
+        meta_dict["run.data_type"] = "MTBB"
         meta_dict["filters"] = {
             "counts_to_volts": self.header.ch_factor,
             "gain": self.header.channelgain,
@@ -1053,7 +1053,7 @@ class Z3D:
         >>> z_obj.read_z3d()
         
         """
-        
+
         if Z3Dfn is not None:
             self.fn = Z3Dfn
 

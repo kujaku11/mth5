@@ -135,17 +135,17 @@ class TestMTH5(unittest.TestCase):
 
         self.assertEqual(channel_ts.start, new_ts.start)
         self.assertTrue(channel_ts.ts.time.to_dict() == new_ts.ts.time.to_dict())
-        
+
     def test_from_run_ts(self):
         ts_list = []
-        for comp in ['ex', 'ey', 'hx', 'hy', 'hz']:
-            if comp[0] in ['e']:
-                ch_type = 'electric'
-            elif comp[1] in ['h', 'b']:
-                ch_type = 'magnetic'
+        for comp in ["ex", "ey", "hx", "hy", "hz"]:
+            if comp[0] in ["e"]:
+                ch_type = "electric"
+            elif comp[1] in ["h", "b"]:
+                ch_type = "magnetic"
             else:
-                ch_type = 'auxiliary'
-                
+                ch_type = "auxiliary"
+
             meta_dict = {
                 ch_type: {
                     "component": comp,
@@ -161,27 +161,22 @@ class TestMTH5(unittest.TestCase):
                 ch_type, data=np.random.rand(4096), channel_metadata=meta_dict
             )
             ts_list.append(channel_ts)
-            
-        run_ts = RunTS(ts_list, {'id':'MT002a'})
+
+        run_ts = RunTS(ts_list, {"id": "MT002a"})
 
         station = self.mth5_obj.add_station("MT002")
         run = station.add_run("MT002a")
         channel_groups = run.from_runts(run_ts)
 
-        self.assertListEqual(['ex', 'ey', 'hx', 'hy', 'hz', 'summary'],
-                             run.groups_list)
-        
+        self.assertListEqual(["ex", "ey", "hx", "hy", "hz", "summary"], run.groups_list)
+
         # check to make sure the metadata was transfered
         for cg in channel_groups:
-            self.assertEqual(MTime("2020-01-01T12:00:00"), 
-                             cg.start)
+            self.assertEqual(MTime("2020-01-01T12:00:00"), cg.start)
             self.assertEqual(1, cg.sample_rate)
             self.assertEqual(4096, cg.n_samples)
-            
-            
+
         # check the summary table
-        
-        
 
     def tearDown(self):
         self.mth5_obj.close_mth5()

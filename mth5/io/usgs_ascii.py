@@ -648,7 +648,6 @@ class USGSasc(AsciiMetadata):
         et = datetime.datetime.now()
         read_time = et - st
         self.logger.info("Reading took {0}".format(read_time.total_seconds()))
-        
 
     def _make_file_name(self, save_path=None, compression=True, compress_type="zip"):
         """
@@ -851,8 +850,8 @@ def read_ascii(fn):
     :rtype: TYPE
 
     """
-    
+
     asc_obj = USGSasc(fn)
     asc_obj.read_asc_file()
-    
+
     return asc_obj.run_xarray

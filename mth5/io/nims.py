@@ -208,10 +208,12 @@ class GPS(object):
             gps_list = [value.decode() for value in gps_list]
         else:
             gps_list = gps_string.strip().split(",")
-            
+
         if len(gps_list[1]) > 6:
             self.logger.debug("GPS time and lat missing a comma adding one, check time")
-            gps_list = gps_list[0:1] + [gps_list[1][0:6], gps_list[1][6:]] + gps_list[2:]
+            gps_list = (
+                gps_list[0:1] + [gps_list[1][0:6], gps_list[1][6:]] + gps_list[2:]
+            )
 
         ### validate the gps list to make sure it is usable
         gps_list, error_list = self.validate_gps_list(gps_list)
@@ -795,7 +797,7 @@ class NIMS(NIMSHeader):
                 elevation[ii] = elev
             return np.median(elevation[np.nonzero(elevation)])
         return self.header_gps_elevation
-    
+
     @property
     def declination(self):
         """
@@ -807,7 +809,7 @@ class NIMS(NIMSHeader):
         if self.stamps is not None:
             declination = np.zeros(len(self.stamps))
             for ii, stamp in enumerate(self.stamps):
-                if stamp[1][0].gps_type == 'GPRMC':
+                if stamp[1][0].gps_type == "GPRMC":
                     dec = stamp[1][0].declination
                 if dec is None:
                     continue
@@ -860,7 +862,7 @@ class NIMS(NIMSHeader):
             # interpolate temperature onto the same sample rate as the channels.
             temp.ts = temp.ts.interp_like(self.hx.ts)
             temp.metadata.sample_rate = self.sample_rate
-            temp.metadata.time_period.end = self.end_time.isoformat() 
+            temp.metadata.time_period.end = self.end_time.isoformat()
 
             return temp
         return None
@@ -1034,17 +1036,19 @@ class NIMS(NIMSHeader):
             )
 
         return None
-    
+
     @property
     def extra_metadata(self):
         """ Extra metadata from nims file """
-        
-        return {'station.geographic_name': f"{self.site_name}, {self.state_province}, {self.country}",
-                'station.location.declination.value': self.declination, 
-                'station.location.elevation': self.elevation,
-                'station.location.latitude': self.latitude,
-                'station.location.longitude': self.longitude,
-                }
+
+        return {
+            "station.geographic_name": f"{self.site_name}, {self.state_province}, {self.country}",
+            "station.location.declination.value": self.declination,
+            "station.location.elevation": self.elevation,
+            "station.location.latitude": self.latitude,
+            "station.location.longitude": self.longitude,
+        }
+
     def _make_index_values(self):
         """
         Index values for the channels recorded
@@ -1107,9 +1111,9 @@ class NIMS(NIMSHeader):
         ):
             gps_obj = GPS(raw_stamp, index)
             if gps_obj.valid:
-                if gps_obj.gps_type == 'GPRMC':
+                if gps_obj.gps_type == "GPRMC":
                     gprmc_list.append(gps_obj)
-                elif gps_obj.gps_type == 'GPGGA':
+                elif gps_obj.gps_type == "GPGGA":
                     gpgga_list.append(gps_obj)
             else:
                 self.logger.debug(f"GPS Error: file index {index}, stamp number {ii}")
@@ -1141,7 +1145,7 @@ class NIMS(NIMSHeader):
                     break
             if not find:
                 gps_match_list.append([gprmc])
-            
+
         return gps_match_list
 
     def _get_gps_stamp_indices_from_status(self, status_array):
@@ -1503,7 +1507,7 @@ class NIMS(NIMSHeader):
         )
         ### align data checking for timing gaps
         self.ts = self.align_data(data_array, self.stamps)
-       
+
         et = datetime.datetime.now()
         read_time = (et - st).total_seconds()
         self.logger.info(f"Reading took {read_time:.2f} seconds")
@@ -1543,12 +1547,12 @@ class NIMS(NIMSHeader):
         for ii, stamp in enumerate(stamps[1:], 1):
             stamp = stamp[1][0]
             # can only compare those with a date and time.
-            if stamp.gps_type == 'GPGGA':
+            if stamp.gps_type == "GPGGA":
                 continue
 
             time_diff = (stamp.time_stamp - current_stamp.time_stamp).total_seconds()
             index_diff = stamp.index - current_stamp.index
-            
+
             time_gap = index_diff - time_diff
             if time_gap == 0:
                 continue
@@ -1558,12 +1562,11 @@ class NIMS(NIMSHeader):
                 gap_beginning.append(stamp.index)
                 self.logger.debug(
                     "GPS tamp at {0} is off from previous time by {1} seconds".format(
-                        stamp.time_stamp.isoformat(), 
-                        time_gap,
+                        stamp.time_stamp.isoformat(), time_gap,
                     )
                 )
 
-        self.logger.warning(f'Timing is off by {total_gap} seconds')
+        self.logger.warning(f"Timing is off by {total_gap} seconds")
         return gap_beginning
 
     def check_timing(self, stamps):
@@ -1590,7 +1593,7 @@ class NIMS(NIMSHeader):
         if difference != 0:
             gaps = self._locate_timing_gaps(stamps)
             return False, gaps, difference
-        
+
         return True, gaps, difference
 
     def align_data(self, data_array, stamps):
@@ -1613,20 +1616,22 @@ class NIMS(NIMSHeader):
         """
         ### check timing first to make sure there is no drift
         timing_valid, self.gaps, time_difference = self.check_timing(stamps)
-        
+
         ### need to trim off the excess number of points that are present because of
         ### data gaps.  This will be the time difference times the sample rate
         if time_difference > 0:
             remove_points = int(time_difference * self.sample_rate)
             data_array = data_array[0:-remove_points]
-            self.logger.info(f"Trimmed {remove_points} points off the end of the time "
-                             "series because of timing gaps")
+            self.logger.info(
+                f"Trimmed {remove_points} points off the end of the time "
+                "series because of timing gaps"
+            )
 
         ### first GPS stamp within the data is at a given index that is
         ### assumed to be the number of seconds from the start of the run.
         ### therefore make the start time the first GPS stamp time minus
         ### the index value for that stamp.
-        ### need to be sure that the first GPS stamp has a date, need GPRMC 
+        ### need to be sure that the first GPS stamp has a date, need GPRMC
         first_stamp = self._get_first_gps_stamp(stamps)
         first_index = first_stamp[0]
         start_time = first_stamp[1][0].time_stamp - datetime.timedelta(
@@ -1864,5 +1869,5 @@ def read_nims(fn):
 
     nims_obj = NIMS(fn)
     nims_obj.read_nims()
-    
+
     return nims_obj.to_runts(), nims_obj.extra_metadata

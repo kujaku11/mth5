@@ -61,7 +61,7 @@ logger = logging.getLogger(__name__)
 readers = {
     "zen": {"file_types": ["z3d"], "reader": zen.read_z3d},
     "nims": {"file_types": ["bin", "bnn"], "reader": nims.read_nims},
-    "usgs_ascii": {'file_types': ['.asc', '.zip'], "reader": usgs_ascii.read_ascii}
+    "usgs_ascii": {"file_types": [".asc", ".zip"], "reader": usgs_ascii.read_ascii},
 }
 
 
@@ -99,7 +99,7 @@ def read_file(fn, file_type=None):
 
     if not isinstance(fn, Path):
         fn = Path(fn)
-        
+
     if not fn.exists():
         msg = f"Could not find file {fn}. Check path."
         logger.error(msg)
@@ -107,10 +107,12 @@ def read_file(fn, file_type=None):
 
     if file_type is not None:
         try:
-            file_reader = readers[file_type]['reader']
+            file_reader = readers[file_type]["reader"]
         except KeyError:
-            msg = (f"Reader for the file type {file_type} does not currently exist. "
-                   f"Current readers {list(readers.keys())}")
+            msg = (
+                f"Reader for the file type {file_type} does not currently exist. "
+                f"Current readers {list(readers.keys())}"
+            )
             logger.error(msg)
             raise KeyError(msg)
     else:

@@ -28,7 +28,7 @@ run_ts, extra = read_file(nims_fn)
 # write some simple metadata for the survey
 survey = metadata.Survey()
 survey.acquired_by.author = "MT Master"
-survey.archive_id = 'TST01'
+survey.archive_id = "TST01"
 survey.archive_network = "MT"
 survey.name = "test"
 
@@ -54,12 +54,3 @@ run_group = station_group.add_run(run_ts.metadata.id, run_metadata=run_ts.metada
 
 # add data to the run group
 channels = run_group.from_runts(run_ts)
-
-
-
-
-
-
-
-
-

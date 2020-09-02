@@ -79,14 +79,14 @@ class BaseGroup:
         self.compression_opts = 3
         self.shuffle = True
         self.fletcher32 = True
-        
+
         self.logger = logging.getLogger(f"{__name__}.{self._class_name}")
 
         # make sure the reference to the group is weak so there are no lingering
         # references to a closed HDF5 file.
         if group is not None and isinstance(group, (h5py.Group, h5py.Dataset)):
             self.hdf5_group = weakref.ref(group)()
-            
+
         # set default columns of summary table.
         self._defaults_summary_attrs = {
             "name": "summary",
@@ -136,7 +136,7 @@ class BaseGroup:
                 "example": "<HDF5 Group Reference>",
             },
         )
-        
+
         # add mth5 and hdf5 attributes
         self.metadata.mth5_type = self._class_name
         self.metadata.hdf5_reference = self.hdf5_group.ref
@@ -151,10 +151,9 @@ class BaseGroup:
                 raise MTH5Error(msg)
 
             # load from dict because of the extra attributes for MTH5
-            self.logger.info(f"Updating metadata from input metadata class {type(group_metadata)}")
             self.metadata.from_dict(group_metadata.to_dict())
-            
-            # add mth5 and hdf5 attributes because they are overwritten from 
+
+            # add mth5 and hdf5 attributes because they are overwritten from
             # group metadata
             self.metadata.mth5_type = self._class_name
             self.metadata.hdf5_reference = self.hdf5_group.ref
@@ -732,7 +731,7 @@ class MasterStationGroup(BaseGroup):
                 station_group, station_metadata=station_metadata, **self.dataset_options
             )
             station_obj.initialize_group()
-            
+
             # be sure to add a table entry
             self.summary_table.add_row(station_obj.table_entry)
 
@@ -1064,7 +1063,7 @@ class StationGroup(BaseGroup):
             next_letter = chr(ord(run_list[-1]) + 1)
 
         return "{0}{1}".format(self.name, next_letter)
-    
+
     def locate_run(self, sample_rate, start):
         """
         Locate a run based on sample rate and start time from the summary table
@@ -1077,29 +1076,26 @@ class StationGroup(BaseGroup):
         :rtype: string or None
 
         """
-        
+
         if not isinstance(start, MTime):
             start = MTime(start)
-        
+
         if self.summary_table.nrows < 1:
             self.logger.debug("No rows in summary table")
             return None
-        
+
         sr_find = list(self.summary_table.locate("sample_rate", sample_rate))
         if sr_find == []:
             self.logger.debug(f"no summary entries with sample rate {sample_rate}")
             return None
-        
+
         for ff in sr_find:
             row = self.summary_table.array[ff]
-            if MTime(row['start'].decode()) == start:
-                return row['id']
-            
+            if MTime(row["start"].decode()) == start:
+                return row["id"]
+
         self.logger.debug(f"no summary entries with start time {start}")
         return None
-        
-        
-        
 
     def add_run(self, run_name, run_metadata=None):
         """
@@ -1197,6 +1193,32 @@ class StationGroup(BaseGroup):
             )
             self.logger.exception(msg)
             raise MTH5Error(msg)
+
+    def validate_station_metadata(self):
+        """
+        Check metadata from the runs and make sure it matches the station metadata
+        
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        self.logger.debug("Updating station metadata from summary table")
+        self.metadata.time_period.start = min(
+            self.summary_table.array["start"]
+        ).decode()
+        self.metadata.time_period.end = max(self.summary_table.array["end"]).decode()
+        self.metadata.channels_recorded = ",".join(
+            list(
+                set(
+                    ",".join(
+                        list(self.summary_table.array["components"].astype(np.unicode_))
+                    ).split(",")
+                )
+            )
+        )
+
+        self.write_metadata()
 
 
 class RunGroup(BaseGroup):
@@ -1614,7 +1636,7 @@ class RunGroup(BaseGroup):
         .. todo:: Need to remove summary table entry as well.
 
         """
-        
+
         channel_name = channel_name.lower()
 
         try:
@@ -1667,33 +1689,37 @@ class RunGroup(BaseGroup):
             msg = f"Input must be a mth5.timeseries.RunTS object not {type(run_ts_obj)}"
             self.logger.error(msg)
             raise MTH5Error(msg)
-            
+
         self.metadata.from_dict(run_ts_obj.metadata.to_dict())
-        
+
         channels = []
-        
+
         for comp in run_ts_obj.channels:
-            
-            if comp[0] in ['e']:
-                channel_type = 'electric'
+
+            if comp[0] in ["e"]:
+                channel_type = "electric"
                 ch_metadata = metadata.Electric()
-            elif comp[0] in ['h', 'b']:
-                channel_type = 'magnetic'
+            elif comp[0] in ["h", "b"]:
+                channel_type = "magnetic"
                 ch_metadata = metadata.Magnetic()
             else:
-                channel_type = 'auxiliary'
+                channel_type = "auxiliary"
                 ch_metadata = metadata.Auxiliary()
-            
+
             ch_metadata.from_dict({channel_type: run_ts_obj.dataset[comp].attrs})
-            
-            #self.logger.info(f"channel metadata {ch_metadata}")
-                
-            channels.append(self.add_channel(comp,
-                                             channel_type,
-                                             run_ts_obj.dataset[comp].values, 
-                                             channel_metadata=ch_metadata))
+
+            # self.logger.info(f"channel metadata {ch_metadata}")
+
+            channels.append(
+                self.add_channel(
+                    comp,
+                    channel_type,
+                    run_ts_obj.dataset[comp].values,
+                    channel_metadata=ch_metadata,
+                )
+            )
         return channels
-    
+
     def from_mtts(self, mtts_obj):
         """
         create a channel data set from a :class:`mth5.timeseries.MTTS` object and 
@@ -1705,42 +1731,44 @@ class RunGroup(BaseGroup):
         :rtype: :class:`mth5.groups.ChannelDataset
 
         """
-        
+
         if not isinstance(mtts_obj, MTTS):
             msg = f"Input must be a mth5.timeseries.MTTS object not {type(mtts_obj)}"
             self.logger.error(msg)
             raise MTH5Error(msg)
-            
-        ch_obj = self.add_channel(mtts_obj.component,
-                                  mtts_obj.metadata.type,
-                                  mtts_obj.ts.values,
-                                  channel_metadata=mtts_obj.metadata)
-        
+
+        ch_obj = self.add_channel(
+            mtts_obj.component,
+            mtts_obj.metadata.type,
+            mtts_obj.ts.values,
+            channel_metadata=mtts_obj.metadata,
+        )
+
         # need to update the channels recorded
-        if mtts_obj.metadata.type == 'electric':
+        if mtts_obj.metadata.type == "electric":
             if self.metadata.channels_recorded_electric is None:
                 self.metadata.channels_recorded_electric = [mtts_obj.component]
             elif mtts_obj.component not in self.metadata.channels_recorded_electric:
                 self.metadata.channels_recorded_electric.append(mtts_obj.component)
-        
-        elif mtts_obj.metadata.type == 'magnetic':
+
+        elif mtts_obj.metadata.type == "magnetic":
             if self.metadata.channels_recorded_magnetic is None:
                 self.metadata.channels_recorded_magnetic = [mtts_obj.component]
             elif mtts_obj.component not in self.metadata.channels_recorded_magnetic:
                 self.metadata.channels_recorded_magnetic.append(mtts_obj.component)
-        
-        elif mtts_obj.metadata.type == 'auxiliary':
+
+        elif mtts_obj.metadata.type == "auxiliary":
             if self.metadata.channels_recorded_auxiliary is None:
                 self.metadata.channels_recorded_auxiliary = [mtts_obj.component]
             elif mtts_obj.component not in self.metadata.channels_recorded_auxiliary:
                 self.metadata.channels_recorded_auxiliary.append(mtts_obj.component)
-        
-        
-        # if you use from_mtts this can be very slow.  Need to update from mtts 
+
+        # if you use from_mtts this can be very slow.  Need to update from mtts
         # if the data is new.
-        
+
         return ch_obj
-            
+
+
 class ChannelDataset:
     """
     Holds a channel dataset.  This is a simple container for the data to make
@@ -1851,9 +1879,8 @@ class ChannelDataset:
                 raise MTH5Error(msg)
 
             # load from dict because of the extra attributes for MTH5
-            
+
             self.metadata.from_dict(dataset_metadata.to_dict())
-            
 
             # write out metadata to make sure that its in the file.
             self.write_metadata()
