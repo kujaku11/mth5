@@ -1135,6 +1135,7 @@ class Provenance(Base):
     def __init__(self, **kwargs):
 
         self._creation_dt = MTime()
+        self._creation_dt.now()
         self.creating_application = "MTH5"
         self.creator = Person()
         self.submitter = Person()

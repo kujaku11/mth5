@@ -79,11 +79,20 @@ class BaseGroup:
         self.compression_opts = 3
         self.shuffle = True
         self.fletcher32 = True
+        
+        self.logger = logging.getLogger(f"{__name__}.{self._class_name}")
 
+        # make sure the reference to the group is weak so there are no lingering
+        # references to a closed HDF5 file.
         if group is not None and isinstance(group, (h5py.Group, h5py.Dataset)):
             self.hdf5_group = weakref.ref(group)()
-
-        self.logger = logging.getLogger("{0}.{1}".format(__name__, self._class_name))
+            
+        # set default columns of summary table.
+        self._defaults_summary_attrs = {
+            "name": "summary",
+            "max_shape": (10000,),
+            "dtype": np.dtype([("default", np.float)]),
+        }
 
         # set metadata to the appropriate class.  Standards is not a
         # metadata.Base object so should be skipped. If the class name is not
@@ -127,12 +136,10 @@ class BaseGroup:
                 "example": "<HDF5 Group Reference>",
             },
         )
-        # set summary attributes
-        self.logger.debug(
-            "Metadata class for {0} is {1}".format(
-                self._class_name, type(self.metadata)
-            )
-        )
+        
+        # add mth5 and hdf5 attributes
+        self.metadata.mth5_type = self._class_name
+        self.metadata.hdf5_reference = self.hdf5_group.ref
 
         # if metadata, make sure that its the same class type
         if group_metadata is not None:
@@ -146,17 +153,16 @@ class BaseGroup:
             # load from dict because of the extra attributes for MTH5
             self.logger.info(f"Updating metadata from input metadata class {type(group_metadata)}")
             self.metadata.from_dict(group_metadata.to_dict())
+            
+            # add mth5 and hdf5 attributes because they are overwritten from 
+            # group metadata
+            self.metadata.mth5_type = self._class_name
+            self.metadata.hdf5_reference = self.hdf5_group.ref
 
             # write out metadata to make sure that its in the file.
             self.write_metadata()
         else:
             self.read_metadata()
-        # set default columns of summary table.
-        self._defaults_summary_attrs = {
-            "name": "summary",
-            "max_shape": (10000,),
-            "dtype": np.dtype([("default", np.float)]),
-        }
 
         # if any other keywords
         for key, value in kwargs.items():
@@ -221,12 +227,6 @@ class BaseGroup:
             value = to_numpy_type(value)
             self.logger.debug("wrote metadata {0} = {1}".format(key, value))
             self.hdf5_group.attrs.create(key, value)
-
-    def read_data(self):
-        raise MTH5Error("read_data is not implemented yet")
-
-    def write_data(self):
-        raise MTH5Error("write_data is not implemented yet")
 
     def initialize_summary_table(self):
         """

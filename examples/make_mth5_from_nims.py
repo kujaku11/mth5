@@ -21,6 +21,7 @@ from mth5.utils.helpers import structure_dict
 #
 # =============================================================================
 nims_fn = Path(r"c:\Users\jpeacock\Documents\example_data\data_rgr006a.bnn")
+h5_fn = Path(r"c:\Users\jpeacock\Documents\from_nims.h5")
 
 run_ts, extra = read_file(nims_fn)
 
@@ -39,7 +40,7 @@ nims_station.channels_recorded = run_ts.metadata.channels_recorded_all
 nims_station.time_period.start = run_ts.start.iso_str
 nims_station.time_period.end = run_ts.end.iso_str
 
-m = mth5.MTH5(Path(r"c:\Users\jpeacock\Documents\from_nims.h5"))
+m = mth5.MTH5(h5_fn)
 m.open_mth5()
 
 # add survey metadata

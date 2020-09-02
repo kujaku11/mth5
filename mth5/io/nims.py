@@ -1040,7 +1040,7 @@ class NIMS(NIMSHeader):
         """ Extra metadata from nims file """
         
         return {'station.geographic_name': f"{self.site_name}, {self.state_province}, {self.country}",
-                'station.location.declination': self.declination, 
+                'station.location.declination.value': self.declination, 
                 'station.location.elevation': self.elevation,
                 'station.location.latitude': self.latitude,
                 'station.location.longitude': self.longitude,
