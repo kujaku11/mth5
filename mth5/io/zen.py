@@ -854,6 +854,7 @@ class Z3D:
 
         meta_dict = {}
         meta_dict["station.id"] = self.station
+        meta_dict["station.archive_id"] = self.station
         meta_dict["station.location.latitude"] = self.latitude
         meta_dict["station.location.longitude"] = self.longitude
         meta_dict["station.location.elevation"] = self.elevation
@@ -861,6 +862,10 @@ class Z3D:
         meta_dict["run.data_logger.id"] = self.header.data_logger
         meta_dict["run.data_logger.manufacturer"] = "Zonge International"
         meta_dict["run.data_logger.model"] = "ZEN"
+        meta_dict["run.time_period.start"] = self.start.iso_str
+        meta_dict["run.time_period.end"] = self.end.iso_str
+        meta_dict["run.sample_rate"] = self.sample_rate
+        meta_dict["run.data_type"] = 'MTBB'
         meta_dict["filters"] = {
             "counts_to_volts": self.header.ch_factor,
             "gain": self.header.channelgain,
@@ -1155,8 +1160,6 @@ class Z3D:
         read_time = (et - st).total_seconds()
         self.logger.info(f"Reading data took: {read_time:.3f} seconds")
 
-        return self.to_mtts(data[np.nonzero(data)]), self.information
-
     # =================================================
     def get_gps_stamp_index(self, ts_data, old_version=False):
         """
@@ -1353,7 +1356,7 @@ class Z3D:
         return MTime(utc_seconds, gps_time=True)
 
     # =================================================
-    def to_mtts(self, ts_data):
+    def to_mtts(self):
         """
         fill time series object
         """
@@ -1433,4 +1436,5 @@ def read_z3d(fn):
     """
 
     z3d_obj = Z3D(fn)
-    return z3d_obj.read_z3d(), z3d_obj.extra_metadata
+    z3d_obj.read_z3d()
+    return z3d_obj.to_mtts(), z3d_obj.extra_metadata

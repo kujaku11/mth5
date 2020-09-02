@@ -1552,7 +1552,7 @@ class Station(Base):
         self.geographic_name = None
         self.datum = None
         self.num_channels = None
-        self.channels_recorded = None
+        self.channels_recorded = []
         self.channel_layout = None
         self.data_type = None
         self.orientation = Orientation()

@@ -1064,6 +1064,42 @@ class StationGroup(BaseGroup):
             next_letter = chr(ord(run_list[-1]) + 1)
 
         return "{0}{1}".format(self.name, next_letter)
+    
+    def locate_run(self, sample_rate, start):
+        """
+        Locate a run based on sample rate and start time from the summary table
+        
+        :param sample_rate: sample rate in samples/seconds
+        :type sample_rate: float
+        :param start: start time
+        :type start: string or :class:`mth5.utils.mttime.MTime`
+        :return: appropriate run name, None if not found
+        :rtype: string or None
+
+        """
+        
+        if not isinstance(start, MTime):
+            start = MTime(start)
+        
+        if self.summary_table.nrows < 1:
+            self.logger.debug("No rows in summary table")
+            return None
+        
+        sr_find = list(self.summary_table.locate("sample_rate", sample_rate))
+        if sr_find == []:
+            self.logger.debug(f"no summary entries with sample rate {sample_rate}")
+            return None
+        
+        for ff in sr_find:
+            row = self.summary_table.array[ff]
+            if MTime(row['start'].decode()) == start:
+                return row['id']
+            
+        self.logger.debug(f"no summary entries with start time {start}")
+        return None
+        
+        
+        
 
     def add_run(self, run_name, run_metadata=None):
         """
@@ -1657,7 +1693,53 @@ class RunGroup(BaseGroup):
                                              run_ts_obj.dataset[comp].values, 
                                              channel_metadata=ch_metadata))
         return channels
+    
+    def from_mtts(self, mtts_obj):
+        """
+        create a channel data set from a :class:`mth5.timeseries.MTTS` object and 
+        update metadata.
+        
+        :param mtts_obj: a single time series object
+        :type mtts_obj: :class:`mth5.timeseries.MTTS`
+        :return: new channel dataset
+        :rtype: :class:`mth5.groups.ChannelDataset
+
+        """
+        
+        if not isinstance(mtts_obj, MTTS):
+            msg = f"Input must be a mth5.timeseries.MTTS object not {type(mtts_obj)}"
+            self.logger.error(msg)
+            raise MTH5Error(msg)
             
+        ch_obj = self.add_channel(mtts_obj.component,
+                                  mtts_obj.metadata.type,
+                                  mtts_obj.ts.values,
+                                  channel_metadata=mtts_obj.metadata)
+        
+        # need to update the channels recorded
+        if mtts_obj.metadata.type == 'electric':
+            if self.metadata.channels_recorded_electric is None:
+                self.metadata.channels_recorded_electric = [mtts_obj.component]
+            elif mtts_obj.component not in self.metadata.channels_recorded_electric:
+                self.metadata.channels_recorded_electric.append(mtts_obj.component)
+        
+        elif mtts_obj.metadata.type == 'magnetic':
+            if self.metadata.channels_recorded_magnetic is None:
+                self.metadata.channels_recorded_magnetic = [mtts_obj.component]
+            elif mtts_obj.component not in self.metadata.channels_recorded_magnetic:
+                self.metadata.channels_recorded_magnetic.append(mtts_obj.component)
+        
+        elif mtts_obj.metadata.type == 'auxiliary':
+            if self.metadata.channels_recorded_auxiliary is None:
+                self.metadata.channels_recorded_auxiliary = [mtts_obj.component]
+            elif mtts_obj.component not in self.metadata.channels_recorded_auxiliary:
+                self.metadata.channels_recorded_auxiliary.append(mtts_obj.component)
+        
+        
+        # if you use from_mtts this can be very slow.  Need to update from mtts 
+        # if the data is new.
+        
+        return ch_obj
             
 class ChannelDataset:
     """
@@ -1878,7 +1960,7 @@ class ChannelDataset:
             )
             self.logger.debug(msg)
             self.hdf5_dataset.resize(new_data_array.shape)
-        self.hdf5_dataset[...] = new_data_array.shape
+        self.hdf5_dataset[...] = new_data_array
         self.logger.debug(f"replacing {self.hdf5_dataset.name}")
 
     def extend_dataset(
@@ -2694,9 +2776,7 @@ class MTH5Table:
     """
 
     def __init__(self, hdf5_dataset):
-        self.logger = logging.getLogger(
-            "{0}.{1}".format(__name__, self.__class__.__name__)
-        )
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
         self.hdf5_reference = None
         if isinstance(hdf5_dataset, h5py.Dataset):
