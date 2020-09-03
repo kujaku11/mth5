@@ -340,8 +340,28 @@ class SurveyGroup(BaseGroup):
     def __init__(self, group, **kwargs):
 
         super().__init__(group, **kwargs)
-
-
+        
+    @property
+    def stations_group(self):
+        return MasterStationGroup(self.hdf5_group['Stations'])
+    
+    def update_survey_metadata(self):
+        """
+        update start end dates and location corners from stations_group.summary_table
+        
+        """
+        
+        self.logger.debug("Updating survey metadata from stations summary table")
+        self.metadata.time_period.start_date = min(self.stations_group.summary_table.array['start'].astype(np.unicode_)).split('T')[0]
+        self.metadata.time_period.end_date = max(self.stations_group.summary_table.array['end'].astype(np.unicode_)).split('T')[0]
+        self.metadata.northwest_corner.latitude = self.stations_group.summary_table.array['location.latitude'].max()
+        self.metadata.northwest_corner.longitude = self.stations_group.summary_table.array['location.longitude'].min()
+        self.metadata.southeast_corner.latitude = self.stations_group.summary_table.array['location.latitude'].min()
+        self.metadata.southeast_corner.longitude = self.stations_group.summary_table.array['location.longitude'].max()
+        
+        self.write_metadata()
+        
+        
 class ReportsGroup(BaseGroup):
     """
     Not sure how to handle this yet

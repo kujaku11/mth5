@@ -38,6 +38,7 @@ m.open_mth5()
 
 # add survey metadata
 m.survey_group.metadata.from_dict(survey.to_dict())
+m.survey_group.write_metadata()
 
 for nims_fn in nims_dir.iterdir():
 

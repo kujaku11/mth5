@@ -638,7 +638,7 @@ class RunTS:
             "Data will be aligned using the min and max time. "
             "If that is not correct use set_dataset and change the alignment type."
         )
-        self.logger.info(msg)
+        self.logger.debug(msg)
         self.set_dataset(array_list)
 
     @property
