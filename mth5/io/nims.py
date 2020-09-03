@@ -209,11 +209,12 @@ class GPS(object):
         else:
             gps_list = gps_string.strip().split(",")
 
-        if len(gps_list[1]) > 6:
-            self.logger.debug("GPS time and lat missing a comma adding one, check time")
-            gps_list = (
-                gps_list[0:1] + [gps_list[1][0:6], gps_list[1][6:]] + gps_list[2:]
-            )
+        if len(gps_list) > 1:
+            if len(gps_list[1]) > 6:
+                self.logger.debug("GPS time and lat missing a comma adding one, check time")
+                gps_list = (
+                    gps_list[0:1] + [gps_list[1][0:6], gps_list[1][6:]] + gps_list[2:]
+                )
 
         ### validate the gps list to make sure it is usable
         gps_list, error_list = self.validate_gps_list(gps_list)
@@ -1117,7 +1118,8 @@ class NIMS(NIMSHeader):
                     gpgga_list.append(gps_obj)
             else:
                 self.logger.debug(f"GPS Error: file index {index}, stamp number {ii}")
-                self.logger.debug(f"GPS Raw Stamp: {raw_stamp}")
+                max_len = min([len(raw_stamp), 15])
+                self.logger.debug(f"GPS Raw Stamp: {raw_stamp[0:max_len]}")
 
         return self._gps_match_gprmc_gpgga_strings(gprmc_list, gpgga_list)
 

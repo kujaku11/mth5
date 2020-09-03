@@ -1763,11 +1763,34 @@ class RunGroup(BaseGroup):
             elif mtts_obj.component not in self.metadata.channels_recorded_auxiliary:
                 self.metadata.channels_recorded_auxiliary.append(mtts_obj.component)
 
-        # if you use from_mtts this can be very slow.  Need to update from mtts
-        # if the data is new.
-
         return ch_obj
 
+    def validate_run_metadata(self):
+        """
+        Update metadata and table entries to ensure consistency
+        
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        
+        self.logger.debug("Updating run metadata from summary table.")
+        channels_recorded = list(self.summary_table.array['component'].astype(np.unicode_))
+        self.metadata.channels_recorded_electric = [cc for cc in channels_recorded 
+                                                    if cc[0] in ['e']]
+        self.metadata.channels_recorded_magnetic = [cc for cc in channels_recorded 
+                                                    if cc[0] in ['h', 'b']]
+        self.metadata.channels_recorded_auxiliary = [cc for cc in channels_recorded 
+                                                    if cc[0] not in ['e', 'h', 'b']]
+        
+        self.metadata.time_period.start = min(
+            self.summary_table.array["start"]
+        ).decode()
+        
+        self.metadata.time_period.end = max(
+            self.summary_table.array["end"]
+        ).decode()
+        
 
 class ChannelDataset:
     """
