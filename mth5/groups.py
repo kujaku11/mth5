@@ -1688,9 +1688,12 @@ class RunGroup(BaseGroup):
         :rtype: TYPE
 
         """
-
-        return RunTS(
-            [channel.to_mtts() for channel in self.group_list[1:]],
+        ch_list = []
+        for channel in self.groups_list[1:]:
+            ch_obj = self.get_channel(channel)
+            ts_obj = ch_obj.to_mtts()
+            ch_list.append(ts_obj)
+        return RunTS(ch_list,
             run_metadata=self.metadata,
         )
 

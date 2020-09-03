@@ -37,8 +37,9 @@ m = mth5.MTH5(h5_fn)
 m.open_mth5()
 
 # add survey metadata
-m.survey_group.metadata.from_dict(survey.to_dict())
-m.survey_group.write_metadata()
+survey_group = m.survey_group
+survey_group.metadata.from_dict(survey.to_dict())
+survey_group.write_metadata()
 
 for nims_fn in nims_dir.iterdir():
 
@@ -71,5 +72,7 @@ for nims_fn in nims_dir.iterdir():
     
     # update station metadata to ensure consistency
     station_group.validate_station_metadata()
+    
+survey_group.update_survey_metadata()
 
 
