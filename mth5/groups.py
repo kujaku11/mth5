@@ -1614,15 +1614,20 @@ class RunGroup(BaseGroup):
         try:
             ch_dataset = self.hdf5_group[channel_name]
             if ch_dataset.attrs["mth5_type"].lower() in ["electric"]:
-                channel = ElectricDataset(ch_dataset)
+                ch_metadata = meta_classes['Electric']()
+                ch_metadata.from_dict({'Electric': ch_dataset.attrs})
+                channel = ElectricDataset(ch_dataset, dataset_metadata=ch_metadata)
             elif ch_dataset.attrs["mth5_type"].lower() in ["magnetic"]:
-                channel = MagneticDataset(ch_dataset)
+                ch_metadata = meta_classes['Magnetic']()
+                ch_metadata.from_dict({'Magnetic': ch_dataset.attrs})
+                channel = MagneticDataset(ch_dataset, dataset_metadata=ch_metadata)
             elif ch_dataset.attrs["mth5_type"].lower() in ["auxiliary"]:
-                channel = AuxiliaryDataset(ch_dataset)
+                ch_metadata = meta_classes['Auxiliary']()
+                ch_metadata.from_dict({'Auxiliary': ch_dataset.attrs})
+                channel = AuxiliaryDataset(ch_dataset, dataset_metadata=ch_metadata)
             else:
                 channel = ChannelDataset(ch_dataset)
-
-            channel.read_metadata()
+                
             return channel
 
         except KeyError:
@@ -1689,13 +1694,13 @@ class RunGroup(BaseGroup):
 
         """
         ch_list = []
-        for channel in self.groups_list[1:]:
+        for channel in self.groups_list:
+            if channel in ['summary']:
+                continue
             ch_obj = self.get_channel(channel)
             ts_obj = ch_obj.to_mtts()
             ch_list.append(ts_obj)
-        return RunTS(ch_list,
-            run_metadata=self.metadata,
-        )
+        return RunTS(ch_list, run_metadata=self.metadata)
 
     def from_runts(self, run_ts_obj):
         """
@@ -1722,6 +1727,7 @@ class RunGroup(BaseGroup):
             if comp[0] in ["e"]:
                 channel_type = "electric"
                 ch_metadata = metadata.Electric()
+                
             elif comp[0] in ["h", "b"]:
                 channel_type = "magnetic"
                 ch_metadata = metadata.Magnetic()
@@ -1729,9 +1735,9 @@ class RunGroup(BaseGroup):
                 channel_type = "auxiliary"
                 ch_metadata = metadata.Auxiliary()
 
+            
             ch_metadata.from_dict({channel_type: run_ts_obj.dataset[comp].attrs})
-
-            # self.logger.info(f"channel metadata {ch_metadata}")
+            ch_metadata.hdf5_type = channel_type
 
             channels.append(
                 self.add_channel(
@@ -1879,7 +1885,7 @@ class ChannelDataset:
         # 1) the metadata class name
         self.metadata.add_base_attribute(
             "mth5_type",
-            self._class_name.split("Group")[0],
+            self._class_name,
             {
                 "type": str,
                 "required": True,
@@ -1907,13 +1913,14 @@ class ChannelDataset:
                 "example": "<HDF5 Group Reference>",
             },
         )
+        
         # set summary attributes
-        self.metadata.hdf5_type = self._class_name
         self.logger.debug(
             "Metadata class for {0} is {1}".format(
                 self._class_name, type(self.metadata)
             )
         )
+
 
         # if metadata, make sure that its the same class type
         if dataset_metadata is not None:
@@ -1925,11 +1932,13 @@ class ChannelDataset:
                 raise MTH5Error(msg)
 
             # load from dict because of the extra attributes for MTH5
-
             self.metadata.from_dict(dataset_metadata.to_dict())
-
-            # write out metadata to make sure that its in the file.
-            self.write_metadata()
+            self.metadata.hdf5_reference = self.hdf5_dataset.ref
+            self.metadata.mth5_type = self._class_name
+            
+            
+        # write out metadata to make sure that its in the file.
+        self.write_metadata()
 
         # if any other keywords
         for key, value in kwargs.items():

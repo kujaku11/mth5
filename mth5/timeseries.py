@@ -475,10 +475,19 @@ class RunTS:
         self._dataset = xr.Dataset()
 
         if run_metadata is not None:
-            # make sure the input dictionary has the correct form
-            if "run" not in list(run_metadata.keys()):
-                run_metadata = {"run": run_metadata}
-            self.metadata.from_dict(run_metadata)
+            if isinstance(run_metadata, dict):
+                # make sure the input dictionary has the correct form
+                if "run" not in list(run_metadata.keys()):
+                    run_metadata = {"run": run_metadata}
+                self.metadata.from_dict(run_metadata)
+           
+            elif isinstance(run_metadata, metadata.Run):
+                self.metadata.from_dict(run_metadata.to_dict())
+            else:
+                msg = ("Input metadata must be a dictionary or Run object, "
+                       f"not {type(run_metadata)}")
+                self.logger.error(msg)
+                raise MTTSError(msg)
 
         if array_list is not None:
             self.dataset = array_list

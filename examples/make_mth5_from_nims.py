@@ -16,15 +16,17 @@ from mth5 import read_file
 from mth5 import mth5
 from mth5 import metadata
 from mth5.utils.helpers import structure_dict
+from mth5.utils.mttime import MTime
 
 # =============================================================================
 #
 # =============================================================================
 # nims_fn = Path(r"c:\Users\jpeacock\Documents\example_data\data_rgr006a.bnn")
 nims_dir = Path(r"c:\Users\jpeacock\Documents\example_data\mnp")
-
 h5_fn = Path(r"c:\Users\jpeacock\Documents\from_nims.h5")
 
+processing_start = MTime()
+processing_start.now()
 
 # write some simple metadata for the survey
 survey = metadata.Survey()
@@ -41,7 +43,7 @@ survey_group = m.survey_group
 survey_group.metadata.from_dict(survey.to_dict())
 survey_group.write_metadata()
 
-for nims_fn in nims_dir.iterdir():
+for nims_fn in list(nims_dir.iterdir())[0:1]:
 
     run_ts, extra = read_file(nims_fn)
     # make station metadata using extra metadata from nims file
@@ -75,4 +77,7 @@ for nims_fn in nims_dir.iterdir():
     
 survey_group.update_survey_metadata()
 
+processing_end = MTime()
+processing_end.now()
 
+print(f"Making MTH5 file took {processing_end - processing_start} seconds")

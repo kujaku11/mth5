@@ -1412,6 +1412,11 @@ class Filtered(Base):
             applied_list = applied
         elif isinstance(applied, bool):
             applied_list = [applied]
+        # the returned type from a hdf5 dataset is a numpy array.
+        elif isinstance(applied, np.ndarray):
+            applied_list = list(applied)
+            if applied_list == []:
+                applied_list = [False]
         else:
             msg = "applied must be a string or list of strings not {0}"
             self.logger.error(msg.format(applied))
@@ -1672,7 +1677,8 @@ class Channel(Base):
 
     @component.setter
     def component(self, value):
-        self._component = value.lower()
+        if value is not None:
+            self._component = value.lower()
 
 
 # =============================================================================
