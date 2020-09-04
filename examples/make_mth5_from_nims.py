@@ -43,7 +43,7 @@ survey_group = m.survey_group
 survey_group.metadata.from_dict(survey.to_dict())
 survey_group.write_metadata()
 
-for nims_fn in list(nims_dir.iterdir())[0:1]:
+for nims_fn in nims_dir.iterdir():
 
     run_ts, extra = read_file(nims_fn)
     # make station metadata using extra metadata from nims file

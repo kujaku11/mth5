@@ -1616,15 +1616,21 @@ class RunGroup(BaseGroup):
             if ch_dataset.attrs["mth5_type"].lower() in ["electric"]:
                 ch_metadata = meta_classes['Electric']()
                 ch_metadata.from_dict({'Electric': ch_dataset.attrs})
-                channel = ElectricDataset(ch_dataset, dataset_metadata=ch_metadata)
+                channel = ElectricDataset(ch_dataset, 
+                                          dataset_metadata=ch_metadata,
+                                          write_metadata=False)
             elif ch_dataset.attrs["mth5_type"].lower() in ["magnetic"]:
                 ch_metadata = meta_classes['Magnetic']()
                 ch_metadata.from_dict({'Magnetic': ch_dataset.attrs})
-                channel = MagneticDataset(ch_dataset, dataset_metadata=ch_metadata)
+                channel = MagneticDataset(ch_dataset, 
+                                          dataset_metadata=ch_metadata,
+                                          write_metadata=False)
             elif ch_dataset.attrs["mth5_type"].lower() in ["auxiliary"]:
                 ch_metadata = meta_classes['Auxiliary']()
                 ch_metadata.from_dict({'Auxiliary': ch_dataset.attrs})
-                channel = AuxiliaryDataset(ch_dataset, dataset_metadata=ch_metadata)
+                channel = AuxiliaryDataset(ch_dataset, 
+                                          dataset_metadata=ch_metadata,
+                                          write_metadata=False)
             else:
                 channel = ChannelDataset(ch_dataset)
                 
@@ -1865,13 +1871,13 @@ class ChannelDataset:
 
     """
 
-    def __init__(self, dataset, dataset_metadata=None, **kwargs):
+    def __init__(self, dataset, dataset_metadata=None, write_metadata=True, **kwargs):
 
         if dataset is not None and isinstance(dataset, (h5py.Dataset)):
             self.hdf5_dataset = weakref.ref(dataset)()
 
         self.logger = logging.getLogger("{0}.{1}".format(__name__, self._class_name))
-
+        
         # set metadata to the appropriate class.  Standards is not a
         # metadata.Base object so should be skipped. If the class name is not
         # defined yet set to Base class.
@@ -1881,6 +1887,39 @@ class ChannelDataset:
         except KeyError:
             self.metadata = metadata.Base()
 
+        if not hasattr(self.metadata, 'mth5_type'):
+            self._add_base_attributes()
+        
+        # set summary attributes
+        self.logger.debug(
+            "Metadata class for {0} is {1}".format(
+                self._class_name, type(self.metadata)
+            )
+        )
+
+        # if metadata, make sure that its the same class type
+        if dataset_metadata is not None:
+            if not isinstance(dataset_metadata, type(self.metadata)):
+                msg = "metadata must be type metadata.{0} not {1}".format(
+                    self._class_name, type(dataset_metadata)
+                )
+                self.logger.error(msg)
+                raise MTH5Error(msg)
+
+            # load from dict because of the extra attributes for MTH5
+            self.metadata.from_dict(dataset_metadata.to_dict())
+            self.metadata.hdf5_reference = self.hdf5_dataset.ref
+            self.metadata.mth5_type = self._class_name
+            
+        if write_metadata:
+            # write out metadata to make sure that its in the file.
+            self.write_metadata()
+
+        # if any other keywords
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+            
+    def _add_base_attributes(self):
         # add 2 attributes that will help with querying
         # 1) the metadata class name
         self.metadata.add_base_attribute(
@@ -1912,37 +1951,7 @@ class ChannelDataset:
                 "alias": [],
                 "example": "<HDF5 Group Reference>",
             },
-        )
-        
-        # set summary attributes
-        self.logger.debug(
-            "Metadata class for {0} is {1}".format(
-                self._class_name, type(self.metadata)
-            )
-        )
-
-
-        # if metadata, make sure that its the same class type
-        if dataset_metadata is not None:
-            if not isinstance(dataset_metadata, type(self.metadata)):
-                msg = "metadata must be type metadata.{0} not {1}".format(
-                    self._class_name, type(dataset_metadata)
-                )
-                self.logger.error(msg)
-                raise MTH5Error(msg)
-
-            # load from dict because of the extra attributes for MTH5
-            self.metadata.from_dict(dataset_metadata.to_dict())
-            self.metadata.hdf5_reference = self.hdf5_dataset.ref
-            self.metadata.mth5_type = self._class_name
-            
-            
-        # write out metadata to make sure that its in the file.
-        self.write_metadata()
-
-        # if any other keywords
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+        )        
 
     def __str__(self):
         try:
