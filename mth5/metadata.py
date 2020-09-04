@@ -292,6 +292,7 @@ class Base:
                 elif v_type is str:
                     self.logger.debug(info.format(type(value), v_type))
                     return "{0:.0f}".format(value)
+                return int(value)
 
             # if a number convert to appropriate type
             elif isinstance(value, (float, np.float_)):
@@ -301,6 +302,7 @@ class Base:
                 elif v_type is str:
                     self.logger.debug(info.format(type(value), v_type))
                     return "{0}".format(value)
+                return float(value)
 
             # if a list convert to appropriate entries to given type
             elif isinstance(value, Iterable):
