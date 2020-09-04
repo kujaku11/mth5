@@ -30,6 +30,8 @@ from mth5 import metadata
 from mth5.utils.mttime import MTime
 from mth5.utils.exceptions import MTTSError
 
+from obspy.core.trace import Trace
+
 # make a dictionary of available metadata classes
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
 # ==============================================================================
@@ -47,13 +49,17 @@ class MTTS:
     number of samples.  Currently, End time is a derived property and 
     cannot be set. 
     
-    
-    MT time series object is based on xarray and :class:`mth5.metadata`
+    MT time series object is based on xarray and :class:`mth5.metadata` therefore
+    any type of interpolation, resampling, groupby, etc can be done using xarray
+    methods.
 
     """
 
-    def __init__(self, channel_type, data=None, channel_metadata=None, **kwargs):
+    def __init__(self, channel_type, data=None, channel_metadata=None, 
+                 station_metadata=None, **kwargs):
+        
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self.station_metadata = metadata.Station()
 
         # get correct metadata class
         try:
@@ -87,6 +93,26 @@ class MTTS:
 
         self._ts = xr.DataArray([1], coords=[("time", [1])])
         self.update_xarray_metadata()
+        
+        # add station metadata, this will be important when propogating a single 
+        # channel such that it can stand alone.
+        if station_metadata is not None:
+            if isinstance(station_metadata, metadata.Station):
+                self.station_metadata.from_dict(station_metadata.to_dict())
+
+            elif isinstance(station_metadata, dict):
+                if not 'Station' in list(station_metadata.keys()):
+                    channel_metadata = {'Station': channel_metadata}
+                self.station_metadata.from_dict(station_metadata)
+                self.logger.debug("Loading from metadata dict")
+
+            else:
+                msg = "input metadata must be type {0} or dict, not {1}".format(
+                    type(self.station_metadata), type(station_metadata)
+                )
+                self.logger.error(msg)
+                raise MTTSError(msg)
+            
 
         if data is not None:
             self.ts = data
@@ -100,9 +126,7 @@ class MTTS:
     def __repr__(self):
         return self.ts.__repr__()
 
-    ###-------------------------------------------------------------
-    ## make sure some attributes have the correct data type
-    # make sure that the time series is a pandas data frame
+    ### Properties ------------------------------------------------------------
     @property
     def ts(self):
         return self._ts
@@ -456,6 +480,19 @@ class MTTS:
             new_ts.attrs.update(self.metadata.to_dict()[self.metadata._class_name])
             # return new_ts
             return MTTS(self.metadata.type, data=new_ts, metadata=self.metadata)
+        
+    def to_obspy_trace(self):
+        """
+        Convert the time series to an :class:`obspy.core.trace.Trace` object.  This
+        will be helpful for converting between data pulled from IRIS and data going
+        into IRIS.
+        
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        
+        pass
 
 
 # =============================================================================
