@@ -847,11 +847,11 @@ class Z3D:
             return self.metadata.ch_number
         else:
             return None
-        
+
     @property
     def channel_metadata(self):
         """ Channel metadata """
-        
+
         # fill the time series object
         if "e" in self.component:
             ts_type = "electric"
@@ -891,9 +891,9 @@ class Z3D:
         meta_dict[ts_type]["measurement_azimuth"] = self.azimuth
         meta_dict[ts_type]["units"] = "counts"
         meta_dict[ts_type]["channel_number"] = self.metadata.ch_number
-        
+
         return meta_dict
-    
+
     @property
     def station_metadata(self):
         """ station metadta """
@@ -904,9 +904,9 @@ class Z3D:
         meta_dict["location.latitude"] = self.latitude
         meta_dict["location.longitude"] = self.longitude
         meta_dict["location.elevation"] = self.elevation
-        
-        return {'Station': meta_dict}
-    
+
+        return {"Station": meta_dict}
+
     @property
     def run_metadata(self):
         """ Run metadata """
@@ -919,20 +919,20 @@ class Z3D:
         meta_dict["time_period.end"] = self.end.iso_str
         meta_dict["sample_rate"] = self.sample_rate
         meta_dict["data_type"] = "MTBB"
-        
-        return {'Run': meta_dict}
-    
+
+        return {"Run": meta_dict}
+
     @property
     def filter_metadata(self):
         """ Filter metadata """
-        
+
         meta_dict = {}
         meta_dict["filters"] = {
             "counts_to_volts": self.header.ch_factor,
             "gain": self.header.channelgain,
         }
 
-        return {'Filter': meta_dict}
+        return {"Filter": meta_dict}
 
     def _get_gps_stamp_type(self, old_version=False):
         """
@@ -1422,11 +1422,14 @@ class Z3D:
         fill time series object
         """
         ts_type = list(self.channel_metadata.keys())[0]
-        
-        return ChannelTS(ts_type, data=self.time_series, 
-                    channel_metadata=self.channel_metadata,
-                    station_metadata=self.station_metadata,
-                    run_metadata=self.run_metadata)
+
+        return ChannelTS(
+            ts_type,
+            data=self.time_series,
+            channel_metadata=self.channel_metadata,
+            station_metadata=self.station_metadata,
+            run_metadata=self.run_metadata,
+        )
 
 
 # ==============================================================================

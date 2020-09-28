@@ -30,10 +30,16 @@ from mth5 import metadata
 from mth5.utils.mttime import MTime
 from mth5.utils.exceptions import MTTSError
 
-# make a dictionary of available metadata classes
-meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
-# ==============================================================================
+from obspy.core import Trace
 
+# =============================================================================
+# make a dictionary of available metadata classes
+# =============================================================================
+meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
+
+
+# ==============================================================================
+# Channel Time Series Object
 # ==============================================================================
 class ChannelTS:
     """
@@ -53,9 +59,16 @@ class ChannelTS:
 
     """
 
-    def __init__(self, channel_type, data=None, channel_metadata=None, 
-                 station_metadata=None, run_metadata=None, **kwargs):
-        
+    def __init__(
+        self,
+        channel_type,
+        data=None,
+        channel_metadata=None,
+        station_metadata=None,
+        run_metadata=None,
+        **kwargs,
+    ):
+
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.station_metadata = metadata.Station()
         self.run_metadata = metadata.Run()
@@ -90,16 +103,16 @@ class ChannelTS:
                 )
                 self.logger.error(msg)
                 raise MTTSError(msg)
-        
-        # add station metadata, this will be important when propogating a single 
+
+        # add station metadata, this will be important when propogating a single
         # channel such that it can stand alone.
         if station_metadata is not None:
             if isinstance(station_metadata, metadata.Station):
                 self.station_metadata.from_dict(station_metadata.to_dict())
 
             elif isinstance(station_metadata, dict):
-                if not 'Station' in list(station_metadata.keys()):
-                    station_metadata = {'Station': station_metadata}
+                if not "Station" in list(station_metadata.keys()):
+                    station_metadata = {"Station": station_metadata}
                 self.station_metadata.from_dict(station_metadata)
                 self.logger.debug("Loading from metadata dict")
 
@@ -109,16 +122,16 @@ class ChannelTS:
                 )
                 self.logger.error(msg)
                 raise MTTSError(msg)
-                
-        # add run metadata, this will be important when propogating a single 
+
+        # add run metadata, this will be important when propogating a single
         # channel such that it can stand alone.
         if run_metadata is not None:
             if isinstance(run_metadata, metadata.Station):
                 self.run_metadata.from_dict(run_metadata.to_dict())
 
             elif isinstance(run_metadata, dict):
-                if not 'Run' in list(run_metadata.keys()):
-                    run_metadata = {'Run': run_metadata}
+                if not "Run" in list(run_metadata.keys()):
+                    run_metadata = {"Run": run_metadata}
                 self.run_metadata.from_dict(run_metadata)
                 self.logger.debug("Loading from metadata dict")
 
@@ -128,11 +141,11 @@ class ChannelTS:
                 )
                 self.logger.error(msg)
                 raise MTTSError(msg)
-                
+
         # input data
         if data is not None:
             self.ts = data
-            
+
         self.update_xarray_metadata()
 
         for key in list(kwargs.keys()):
@@ -498,7 +511,7 @@ class ChannelTS:
             new_ts.attrs.update(self.metadata.to_dict()[self.metadata._class_name])
             # return new_ts
             return ChannelTS(self.metadata.type, data=new_ts, metadata=self.metadata)
-        
+
     def to_obspy_trace(self):
         """
         Convert the time series to an :class:`obspy.core.trace.Trace` object.  This
@@ -509,7 +522,7 @@ class ChannelTS:
         :rtype: TYPE
 
         """
-        
+
         pass
 
 
@@ -524,9 +537,8 @@ class RunTS:
     
     """
 
-    def __init__(self, array_list=None, run_metadata=None,
-                 station_metadata=None):
-        
+    def __init__(self, array_list=None, run_metadata=None, station_metadata=None):
+
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.metadata = metadata.Run()
         self.station_metadata = metadata.Station()
@@ -538,23 +550,25 @@ class RunTS:
                 if "run" not in list(run_metadata.keys()):
                     run_metadata = {"run": run_metadata}
                 self.metadata.from_dict(run_metadata)
-           
+
             elif isinstance(run_metadata, metadata.Run):
                 self.metadata.from_dict(run_metadata.to_dict())
             else:
-                msg = ("Input metadata must be a dictionary or Run object, "
-                       f"not {type(run_metadata)}")
+                msg = (
+                    "Input metadata must be a dictionary or Run object, "
+                    f"not {type(run_metadata)}"
+                )
                 self.logger.error(msg)
                 raise MTTSError(msg)
-                
+
         # add station metadata, this will be important when propogating a run
         if station_metadata is not None:
             if isinstance(station_metadata, metadata.Station):
                 self.station_metadata.from_dict(station_metadata.to_dict())
 
             elif isinstance(station_metadata, dict):
-                if not 'Station' in list(station_metadata.keys()):
-                    station_metadata = {'Station': station_metadata}
+                if not "Station" in list(station_metadata.keys()):
+                    station_metadata = {"Station": station_metadata}
                 self.station_metadata.from_dict(station_metadata)
                 self.logger.debug("Loading from metadata dict")
 

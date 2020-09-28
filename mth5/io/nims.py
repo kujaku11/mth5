@@ -211,7 +211,9 @@ class GPS(object):
 
         if len(gps_list) > 1:
             if len(gps_list[1]) > 6:
-                self.logger.debug("GPS time and lat missing a comma adding one, check time")
+                self.logger.debug(
+                    "GPS time and lat missing a comma adding one, check time"
+                )
                 gps_list = (
                     gps_list[0:1] + [gps_list[1][0:6], gps_list[1][6:]] + gps_list[2:]
                 )
@@ -1002,7 +1004,7 @@ class NIMS(NIMSHeader):
     @property
     def run_metadata(self):
         """ Run metadata """
-        
+
         if self.ts is not None:
             meta_dict = {
                 "run": {
@@ -1023,25 +1025,27 @@ class NIMS(NIMSHeader):
                     "time_period.start": self.start_time.isoformat(),
                 }
             }
-            
+
             return meta_dict
-        
+
         return None
-    
+
     @property
     def station_metadata(self):
         """ Station metadata from nims file """
         if self.ts is not None:
 
-            return {'Station': {
-                "geographic_name": f"{self.site_name}, {self.state_province}, {self.country}",
-                "location.declination.value": self.declination,
-                "location.elevation": self.elevation,
-                "location.latitude": self.latitude,
-                "location.longitude": self.longitude}
+            return {
+                "Station": {
+                    "geographic_name": f"{self.site_name}, {self.state_province}, {self.country}",
+                    "location.declination.value": self.declination,
+                    "location.elevation": self.elevation,
+                    "location.latitude": self.latitude,
+                    "location.longitude": self.longitude,
+                }
             }
         return None
-    
+
     def to_runts(self):
         """ Get xarray for run """
 
@@ -1056,7 +1060,7 @@ class NIMS(NIMSHeader):
                     self.box_temperature,
                 ],
                 run_metadata=self.run_metadata,
-                station_metadata=self.station_metadata
+                station_metadata=self.station_metadata,
             )
 
         return None
