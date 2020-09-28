@@ -30,8 +30,6 @@ from mth5 import metadata
 from mth5.utils.mttime import MTime
 from mth5.utils.exceptions import MTTSError
 
-from obspy.core.trace import Trace
-
 # make a dictionary of available metadata classes
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
 # ==============================================================================
@@ -56,10 +54,12 @@ class MTTS:
     """
 
     def __init__(self, channel_type, data=None, channel_metadata=None, 
-                 station_metadata=None, **kwargs):
+                 station_metadata=None, run_metadata=None, **kwargs):
         
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.station_metadata = metadata.Station()
+        self.run_metadata = metadata.Run()
+        self._ts = xr.DataArray([1], coords=[("time", [1])])
 
         # get correct metadata class
         try:
@@ -90,9 +90,6 @@ class MTTS:
                 )
                 self.logger.error(msg)
                 raise MTTSError(msg)
-
-        self._ts = xr.DataArray([1], coords=[("time", [1])])
-        self.update_xarray_metadata()
         
         # add station metadata, this will be important when propogating a single 
         # channel such that it can stand alone.
@@ -102,7 +99,7 @@ class MTTS:
 
             elif isinstance(station_metadata, dict):
                 if not 'Station' in list(station_metadata.keys()):
-                    channel_metadata = {'Station': channel_metadata}
+                    station_metadata = {'Station': station_metadata}
                 self.station_metadata.from_dict(station_metadata)
                 self.logger.debug("Loading from metadata dict")
 
@@ -112,10 +109,31 @@ class MTTS:
                 )
                 self.logger.error(msg)
                 raise MTTSError(msg)
-            
+                
+        # add run metadata, this will be important when propogating a single 
+        # channel such that it can stand alone.
+        if run_metadata is not None:
+            if isinstance(run_metadata, metadata.Station):
+                self.run_metadata.from_dict(run_metadata.to_dict())
 
+            elif isinstance(run_metadata, dict):
+                if not 'Run' in list(run_metadata.keys()):
+                    run_metadata = {'Run': run_metadata}
+                self.run_metadata.from_dict(run_metadata)
+                self.logger.debug("Loading from metadata dict")
+
+            else:
+                msg = "input metadata must be type {0} or dict, not {1}".format(
+                    type(self.run_metadata), type(run_metadata)
+                )
+                self.logger.error(msg)
+                raise MTTSError(msg)
+                
+        # input data
         if data is not None:
             self.ts = data
+            
+        self.update_xarray_metadata()
 
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
@@ -506,9 +524,12 @@ class RunTS:
     
     """
 
-    def __init__(self, array_list=None, run_metadata=None):
+    def __init__(self, array_list=None, run_metadata=None,
+                 station_metadata=None):
+        
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.metadata = metadata.Run()
+        self.station_metadata = metadata.Station()
         self._dataset = xr.Dataset()
 
         if run_metadata is not None:
@@ -523,6 +544,24 @@ class RunTS:
             else:
                 msg = ("Input metadata must be a dictionary or Run object, "
                        f"not {type(run_metadata)}")
+                self.logger.error(msg)
+                raise MTTSError(msg)
+                
+        # add station metadata, this will be important when propogating a run
+        if station_metadata is not None:
+            if isinstance(station_metadata, metadata.Station):
+                self.station_metadata.from_dict(station_metadata.to_dict())
+
+            elif isinstance(station_metadata, dict):
+                if not 'Station' in list(station_metadata.keys()):
+                    station_metadata = {'Station': station_metadata}
+                self.station_metadata.from_dict(station_metadata)
+                self.logger.debug("Loading from metadata dict")
+
+            else:
+                msg = "input metadata must be type {0} or dict, not {1}".format(
+                    type(self.station_metadata), type(station_metadata)
+                )
                 self.logger.error(msg)
                 raise MTTSError(msg)
 

@@ -1034,20 +1034,21 @@ class NIMS(NIMSHeader):
                     self.box_temperature,
                 ],
                 run_metadata=meta_dict,
+                station_metadata=self.station_metadata
             )
 
         return None
 
     @property
-    def extra_metadata(self):
-        """ Extra metadata from nims file """
+    def station_metadata(self):
+        """ Station metadata from nims file """
 
-        return {
-            "station.geographic_name": f"{self.site_name}, {self.state_province}, {self.country}",
-            "station.location.declination.value": self.declination,
-            "station.location.elevation": self.elevation,
-            "station.location.latitude": self.latitude,
-            "station.location.longitude": self.longitude,
+        return {'Station': {
+            "geographic_name": f"{self.site_name}, {self.state_province}, {self.country}",
+            "location.declination.value": self.declination,
+            "location.elevation": self.elevation,
+            "location.latitude": self.latitude,
+            "location.longitude": self.longitude}
         }
 
     def _make_index_values(self):
@@ -1872,4 +1873,4 @@ def read_nims(fn):
     nims_obj = NIMS(fn)
     nims_obj.read_nims()
 
-    return nims_obj.to_runts(), nims_obj.extra_metadata
+    return nims_obj.to_runts()
