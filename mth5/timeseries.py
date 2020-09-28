@@ -35,7 +35,7 @@ meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
 # ==============================================================================
 
 # ==============================================================================
-class MTTS:
+class ChannelTS:
     """
     
     .. note:: Assumes equally spaced samples from the start time.
@@ -237,7 +237,7 @@ class MTTS:
             if comp[0] != "e":
                 msg = (
                     "The current timeseries is an electric channel. "
-                    "Cannot change channel type, create a new MTTS object."
+                    "Cannot change channel type, create a new ChannelTS object."
                 )
                 self.logger.error(msg)
                 raise MTTSError(msg)
@@ -246,7 +246,7 @@ class MTTS:
             if comp[0] not in ["h", "b"]:
                 msg = (
                     "The current timeseries is a magnetic channel. "
-                    "Cannot change channel type, create a new MTTS object."
+                    "Cannot change channel type, create a new ChannelTS object."
                 )
                 self.logger.error(msg)
                 raise MTTSError(msg)
@@ -255,7 +255,7 @@ class MTTS:
             if comp[0] in ["e", "h", "b"]:
                 msg = (
                     "The current timeseries is an auxiliary channel. "
-                    "Cannot change channel type, create a new MTTS object."
+                    "Cannot change channel type, create a new ChannelTS object."
                 )
                 self.logger.error(msg)
                 raise MTTSError(msg)
@@ -273,7 +273,7 @@ class MTTS:
     def n_samples(self, n_samples):
         """number of samples (int)"""
         self.logger.warning(
-            "Cannot set the number of samples. Use `MTTS.resample` or `get_slice`"
+            "Cannot set the number of samples. Use `ChannelTS.resample` or `get_slice`"
         )
 
     @property
@@ -324,7 +324,7 @@ class MTTS:
         """
         self.metadata.sample_rate = sample_rate
         self.logger.warning(
-            "Setting MTTS.metadata.sample_rate. "
+            "Setting ChannelTS.metadata.sample_rate. "
             + "If you want to change the time series sample"
             + " rate use method `resample`."
         )
@@ -497,7 +497,7 @@ class MTTS:
         else:
             new_ts.attrs.update(self.metadata.to_dict()[self.metadata._class_name])
             # return new_ts
-            return MTTS(self.metadata.type, data=new_ts, metadata=self.metadata)
+            return ChannelTS(self.metadata.type, data=new_ts, metadata=self.metadata)
         
     def to_obspy_trace(self):
         """
@@ -582,7 +582,7 @@ class RunTS:
         return self.__str__()
 
     def _validate_array_list(self, array_list):
-        """ check to make sure all entries are a :class:`MTTS` object"""
+        """ check to make sure all entries are a :class:`ChannelTS` object"""
 
         if not isinstance(array_list, (tuple, list)):
             msg = f"array_list must be a list or tuple, not {type(array_list)}"
@@ -590,8 +590,8 @@ class RunTS:
             raise TypeError(msg)
 
         for index, item in enumerate(array_list):
-            if not isinstance(item, MTTS):
-                msg = f"array entry {index} must be MTTS object not {type(item)}"
+            if not isinstance(item, ChannelTS):
+                msg = f"array entry {index} must be ChannelTS object not {type(item)}"
                 self.logger.error(msg)
                 raise TypeError(msg)
 
@@ -688,7 +688,7 @@ class RunTS:
         """
         
         :param array_list: list of xarrays
-        :type array_list: list of :class:`mth5.timeseries.MTTS` objects
+        :type array_list: list of :class:`mth5.timeseries.ChannelTS` objects
         :param align_type: how the different times will be aligned
             * ’outer’: use the union of object indexes
             * ’inner’: use the intersection of object indexes
@@ -748,7 +748,7 @@ class RunTS:
     def ex(self):
         """ EX """
         if "ex" in self.channels:
-            return MTTS("electric", self.dataset["ex"])
+            return ChannelTS("electric", self.dataset["ex"])
         self.logger.info(f"Could not find EX in current run. {self.channels}")
         return None
 
@@ -756,7 +756,7 @@ class RunTS:
     def ey(self):
         """ EY """
         if "ey" in self.channels:
-            return MTTS("electric", self.dataset["ey"])
+            return ChannelTS("electric", self.dataset["ey"])
         self.logger.info(f"Could not find EY in current run. {self.channels}")
         return None
 
@@ -764,7 +764,7 @@ class RunTS:
     def hx(self):
         """ HX """
         if "hx" in self.channels:
-            return MTTS("magnetic", self.dataset["hx"])
+            return ChannelTS("magnetic", self.dataset["hx"])
         self.logger.info(f"Could not find HX in current run. {self.channels}")
         return None
 
@@ -772,7 +772,7 @@ class RunTS:
     def hy(self):
         """ HY """
         if "hy" in self.channels:
-            return MTTS("magnetic", self.dataset["hy"])
+            return ChannelTS("magnetic", self.dataset["hy"])
         self.logger.info(f"Could not find HY in current run. {self.channels}")
         return None
 
@@ -780,7 +780,7 @@ class RunTS:
     def hz(self):
         """ HZ """
         if "hz" in self.channels:
-            return MTTS("magnetic", self.dataset["hz"])
+            return ChannelTS("magnetic", self.dataset["hz"])
         self.logger.info(f"Could not find HX in current run. {self.channels}")
         return None
 
@@ -788,7 +788,7 @@ class RunTS:
     def temperature(self):
         """ temperature """
         if "temperature" in self.channels:
-            return MTTS("auxiliary", self.dataset["temperature"])
+            return ChannelTS("auxiliary", self.dataset["temperature"])
         self.logger.info(f"Could not find temperature in current run. {self.channels}")
         return None
 

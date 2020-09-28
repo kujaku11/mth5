@@ -999,11 +999,11 @@ class NIMS(NIMSHeader):
 
         return None
 
-    def to_runts(self):
-        """ Get xarray for run """
-
+    @property
+    def run_metadata(self):
+        """ Run metadata """
+        
         if self.ts is not None:
-
             meta_dict = {
                 "run": {
                     "channels_recorded_electric": "ex, ey",
@@ -1023,7 +1023,29 @@ class NIMS(NIMSHeader):
                     "time_period.start": self.start_time.isoformat(),
                 }
             }
+            
+            return meta_dict
+        
+        return None
+    
+    @property
+    def station_metadata(self):
+        """ Station metadata from nims file """
+        if self.ts is not None:
 
+            return {'Station': {
+                "geographic_name": f"{self.site_name}, {self.state_province}, {self.country}",
+                "location.declination.value": self.declination,
+                "location.elevation": self.elevation,
+                "location.latitude": self.latitude,
+                "location.longitude": self.longitude}
+            }
+        return None
+    
+    def to_runts(self):
+        """ Get xarray for run """
+
+        if self.ts is not None:
             return timeseries.RunTS(
                 array_list=[
                     self.hx,
@@ -1033,23 +1055,11 @@ class NIMS(NIMSHeader):
                     self.ey,
                     self.box_temperature,
                 ],
-                run_metadata=meta_dict,
+                run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata
             )
 
         return None
-
-    @property
-    def station_metadata(self):
-        """ Station metadata from nims file """
-
-        return {'Station': {
-            "geographic_name": f"{self.site_name}, {self.state_province}, {self.country}",
-            "location.declination.value": self.declination,
-            "location.elevation": self.elevation,
-            "location.latitude": self.latitude,
-            "location.longitude": self.longitude}
-        }
 
     def _make_index_values(self):
         """

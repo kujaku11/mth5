@@ -30,7 +30,7 @@ import logging
 import numpy as np
 
 from mth5.utils.mttime import MTime
-from mth5.timeseries import MTTS
+from mth5.timeseries import ChannelTS
 
 # ==============================================================================
 class Z3DHeader:
@@ -1417,13 +1417,13 @@ class Z3D:
         return MTime(utc_seconds, gps_time=True)
 
     # =================================================
-    def to_mtts(self):
+    def to_channelts(self):
         """
         fill time series object
         """
         ts_type = list(self.channel_metadata.keys())[0]
         
-        return MTTS(ts_type, data=self.time_series, 
+        return ChannelTS(ts_type, data=self.time_series, 
                     channel_metadata=self.channel_metadata,
                     station_metadata=self.station_metadata,
                     run_metadata=self.run_metadata)
@@ -1463,4 +1463,4 @@ def read_z3d(fn):
 
     z3d_obj = Z3D(fn)
     z3d_obj.read_z3d()
-    return z3d_obj.to_mtts()
+    return z3d_obj.to_channelts()

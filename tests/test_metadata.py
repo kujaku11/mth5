@@ -416,7 +416,7 @@ class TestChannel(unittest.TestCase):
         self.meta_dict = {
             "channel": {
                 "comments": "great",
-                "component": "Temperature",
+                "component": "temperature",
                 "channel_number": 1,
                 "data_quality.rating.author": "mt",
                 "data_quality.rating.method": "ml",
@@ -478,7 +478,7 @@ class TestElectric(unittest.TestCase):
                 "ac.end": 10.2,
                 "ac.start": 12.1,
                 "comments": None,
-                "component": "EX",
+                "component": "ex",
                 "contact_resistance.end": 1.2,
                 "contact_resistance.start": 1.1,
                 "channel_number": 2,
