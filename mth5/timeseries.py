@@ -523,7 +523,13 @@ class ChannelTS:
 
         """
 
-        pass
+        obspy_trace = Trace(self.ts.data)
+        obspy_trace.stats.channel = self.component
+        obspy_trace.stats.starttime = self.start.iso_str
+        obspy_trace.stats.sampling_rate = self.sample_rate
+        obspy_trace.stats.station = self.station_metadata.archive_id
+        
+        return obspy_trace
 
 
 # =============================================================================
