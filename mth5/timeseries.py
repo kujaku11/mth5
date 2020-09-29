@@ -30,7 +30,7 @@ from mth5 import metadata
 from mth5.utils.mttime import MTime
 from mth5.utils.exceptions import MTTSError
 
-from obspy.core import Trace
+from obspy.core import Trace, Stream
 
 # =============================================================================
 # make a dictionary of available metadata classes
@@ -815,6 +815,25 @@ class RunTS:
     @property
     def channels(self):
         return [cc for cc in list(self.dataset.data_vars)]
+    
+    def to_obspy_stream(self):
+        """
+        convert time series to an :class:`obspy.core.Stream` which is like a 
+        list of :class:`obspy.core.Trace` objects.
+        
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        
+        trace_list = []
+        for channel in self.channels:
+            ts_obj = getattr(self, channel)
+            trace_list.append(ts_obj.to_obspy_trace())
+            
+        return Stream(traces=trace_list)
+    
+            
 
     def plot(self):
         """
