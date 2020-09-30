@@ -989,7 +989,7 @@ class Fdsn(Base):
         self.identifier = None
         self.network = None
         self.channel_code = None
-        self.new_epoch = False
+        self.new_epoch = None
 
         super().__init__(**kwargs)
         self._attr_dict = ATTR_DICT["fdsn"]
@@ -1430,7 +1430,13 @@ class Filtered(Base):
             return
 
         if isinstance(applied, str):
-            applied_list = [ss.strip().lower() for ss in applied.split(",")]
+            if applied.find("[") >= 0:
+                applied = applied.replace("[", "").replace("]", "")
+
+            if applied.count(",") > 0:
+                applied_list = [ss.strip().lower() for ss in applied.split(",")]
+            else:
+                applied_list = [ss.lower() for ss in applied.split()]
         elif isinstance(applied, list):
             applied_list = applied
         elif isinstance(applied, bool):
