@@ -552,14 +552,17 @@ class Base:
         meta_dict = {}
         for name in list(self._attr_dict.keys()):
             try:
-                meta_dict[name] = self.get_attr_from_name(name)
+                value = self.get_attr_from_name(name)
             except AttributeError as error:
                 msg = "{0}: setting {1} to None.  ".format(
                     error, name
                 ) + "Try setting {0} to the desired value".format(name)
                 self.logger.debug(msg)
-                meta_dict[name] = None
-
+                value = None
+                
+            if value is not None or self._attr_dict[name]['required']:
+                meta_dict[name] = value
+                
         if nested:
             meta_dict = helpers.structure_dict(meta_dict)
 
@@ -973,6 +976,21 @@ class Instrument(Base):
 
         self._attr_dict = ATTR_DICT["instrument"]
 
+# =============================================================================
+# FDSN 
+# =============================================================================
+class FDSN(Base):
+    """
+    FDSN specific information
+    """
+
+    def __init__(self, **kwargs):
+        self.identifier = None
+        self.network = None
+        self.channel_code = None
+        
+        super().__init__(**kwargs)
+        self._attr_dict = ATTR_DICT["fdsn"]
 
 # ==============================================================================
 # Data Quality
@@ -1524,8 +1542,7 @@ class Survey(Base):
     def __init__(self):
 
         self.acquired_by = Person()
-        self.archive_id = None
-        self.archive_network = None
+        self.fdsn = FDSN()
         self.citation_dataset = Citation()
         self.citation_journal = Citation()
         self.country = None
@@ -1555,7 +1572,7 @@ class Station(Base):
 
     def __init__(self, **kwargs):
         self.id = None
-        self.archive_id = None
+        self.fdsn = FDSN()
         self.geographic_name = None
         self.datum = None
         self.num_channels = None
@@ -1669,6 +1686,7 @@ class Channel(Base):
         self.translated_azimuth = None
         self.translated_tilt = None
         self.sensor = Instrument()
+        self.fdsn = FDSN()
 
         super().__init__(**kwargs)
         self._attr_dict = ATTR_DICT["channel"]

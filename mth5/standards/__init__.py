@@ -12,6 +12,7 @@ CSV_LIST = [
     "copyright.csv",
     "data_quality.csv",
     "datalogger.csv",
+    "fdsn.csv",
     "rating.csv",
     "declination.csv",
     "diagnostic.csv",
