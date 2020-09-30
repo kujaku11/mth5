@@ -902,6 +902,7 @@ class Standards:
     @property
     def run_dict(self):
         run_dict = from_csv(get_level_fn("run"))
+        run_dict.add_dict(self.fdsn_dict, "fdsn")
         run_dict.add_dict(self.datalogger_dict.copy(), "data_logger")
         run_dict.add_dict(self.time_period_dict.copy(), "time_period")
         run_dict.add_dict(

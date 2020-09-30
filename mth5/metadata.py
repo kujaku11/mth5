@@ -980,7 +980,7 @@ class Instrument(Base):
 # =============================================================================
 # FDSN
 # =============================================================================
-class FDSN(Base):
+class Fdsn(Base):
     """
     FDSN specific information
     """
@@ -989,6 +989,7 @@ class FDSN(Base):
         self.identifier = None
         self.network = None
         self.channel_code = None
+        self.new_epoch = False
 
         super().__init__(**kwargs)
         self._attr_dict = ATTR_DICT["fdsn"]
@@ -1544,7 +1545,7 @@ class Survey(Base):
     def __init__(self):
 
         self.acquired_by = Person()
-        self.fdsn = FDSN()
+        self.fdsn = Fdsn()
         self.citation_dataset = Citation()
         self.citation_journal = Citation()
         self.country = None
@@ -1574,7 +1575,7 @@ class Station(Base):
 
     def __init__(self, **kwargs):
         self.id = None
-        self.fdsn = FDSN()
+        self.fdsn = Fdsn()
         self.geographic_name = None
         self.datum = None
         self.num_channels = None
@@ -1616,6 +1617,7 @@ class Run(Base):
         self.time_period = TimePeriod()
         self.data_logger = DataLogger()
         self.metadata_by = Person()
+        self.fdsn = Fdsn()
         super().__init__()
 
         self._attr_dict = ATTR_DICT["run"]
@@ -1688,7 +1690,7 @@ class Channel(Base):
         self.translated_azimuth = None
         self.translated_tilt = None
         self.sensor = Instrument()
-        self.fdsn = FDSN()
+        self.fdsn = Fdsn()
 
         super().__init__(**kwargs)
         self._attr_dict = ATTR_DICT["channel"]
