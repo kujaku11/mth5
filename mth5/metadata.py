@@ -1003,7 +1003,7 @@ class Rating(Base):
     def __init__(self, **kwargs):
         self.author = None
         self.method = None
-        self.value = None
+        self.value = 0.0
 
         super().__init__(**kwargs)
         self._attr_dict = ATTR_DICT["rating"]

@@ -11,6 +11,10 @@ Created on Wed Sep 30 11:47:01 2020
 
 """
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 period_code_dict = {
     "F": {"min": 1000, "max": 5000},
     "G": {"min": 1000, "max": 5000},
@@ -46,6 +50,8 @@ measurement_code_dict = {
     "tide": "T",
     "wind": "W",
 }
+
+measurement_code_dict_reverse = dict([(v, k) for k, v in measurement_code_dict.items()])
 
 orientation_code_dict = {
     "N": {"min": 0, "max": 5},
@@ -168,3 +174,44 @@ def make_channel_code(channel_obj):
     channel_code = "{0}{1}{2}".format(period_code, sensor_code, orientation_code)
 
     return channel_code
+
+def read_channel_code(channel_code):
+    """
+    read FDSN channel code
+    
+    :param channel_code: DESCRIPTION
+    :type channel_code: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+    
+    if len(channel_code) != 3:
+        msg = "Input FDSN channel code is not proper format, should be 3 letters"
+        logger.error(msg)
+        raise ValueError(msg)
+    
+    try:
+        period_range = period_code_dict[channel_code[0]]
+    except KeyError:
+        msg = (f"Could not find period range for {channel_code[0]}. ", 
+               "Setting to 1")
+        period_range = {'min': 1, 'max': 1}
+        
+    try:
+        component = measurement_code_dict_reverse[channel_code[1]]
+    except KeyError:
+        msg = f"Could not find component for {channel_code[1]}"
+        logger.error(msg)
+        raise ValueError(msg)
+        
+    try:
+        orientation = orientation_code_dict[channel_code[2]]
+    except KeyError:
+        msg = (f"Could not find orientation for {channel_code[2]}. ",
+               "Setting to 0.")
+        logger.error(msg)
+        raise ValueError(msg)
+        
+    return {'period': period_range, 'component': component, 'orientation': orientation}
+    
