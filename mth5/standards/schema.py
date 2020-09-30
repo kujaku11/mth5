@@ -758,7 +758,7 @@ class Standards:
     @property
     def instrument_dict(self):
         return from_csv(get_level_fn("instrument"))
-    
+
     @property
     def fdsn_dict(self):
         return from_csv(get_level_fn("fdsn"))

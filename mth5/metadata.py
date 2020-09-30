@@ -559,10 +559,10 @@ class Base:
                 ) + "Try setting {0} to the desired value".format(name)
                 self.logger.debug(msg)
                 value = None
-                
-            if value is not None or self._attr_dict[name]['required']:
+
+            if value is not None or self._attr_dict[name]["required"]:
                 meta_dict[name] = value
-                
+
         if nested:
             meta_dict = helpers.structure_dict(meta_dict)
 
@@ -976,8 +976,9 @@ class Instrument(Base):
 
         self._attr_dict = ATTR_DICT["instrument"]
 
+
 # =============================================================================
-# FDSN 
+# FDSN
 # =============================================================================
 class FDSN(Base):
     """
@@ -988,9 +989,10 @@ class FDSN(Base):
         self.identifier = None
         self.network = None
         self.channel_code = None
-        
+
         super().__init__(**kwargs)
         self._attr_dict = ATTR_DICT["fdsn"]
+
 
 # ==============================================================================
 # Data Quality

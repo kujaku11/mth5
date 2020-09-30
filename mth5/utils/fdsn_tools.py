@@ -175,6 +175,7 @@ def make_channel_code(channel_obj):
 
     return channel_code
 
+
 def read_channel_code(channel_code):
     """
     read FDSN channel code
@@ -185,33 +186,30 @@ def read_channel_code(channel_code):
     :rtype: TYPE
 
     """
-    
+
     if len(channel_code) != 3:
         msg = "Input FDSN channel code is not proper format, should be 3 letters"
         logger.error(msg)
         raise ValueError(msg)
-    
+
     try:
         period_range = period_code_dict[channel_code[0]]
     except KeyError:
-        msg = (f"Could not find period range for {channel_code[0]}. ", 
-               "Setting to 1")
-        period_range = {'min': 1, 'max': 1}
-        
+        msg = (f"Could not find period range for {channel_code[0]}. ", "Setting to 1")
+        period_range = {"min": 1, "max": 1}
+
     try:
         component = measurement_code_dict_reverse[channel_code[1]]
     except KeyError:
         msg = f"Could not find component for {channel_code[1]}"
         logger.error(msg)
         raise ValueError(msg)
-        
+
     try:
         orientation = orientation_code_dict[channel_code[2]]
     except KeyError:
-        msg = (f"Could not find orientation for {channel_code[2]}. ",
-               "Setting to 0.")
+        msg = (f"Could not find orientation for {channel_code[2]}. ", "Setting to 0.")
         logger.error(msg)
         raise ValueError(msg)
-        
-    return {'period': period_range, 'component': component, 'orientation': orientation}
-    
+
+    return {"period": period_range, "component": component, "orientation": orientation}

@@ -528,9 +528,9 @@ class ChannelTS:
         obspy_trace.stats.starttime = self.start.iso_str
         obspy_trace.stats.sampling_rate = self.sample_rate
         obspy_trace.stats.station = self.station_metadata.archive_id
-        
+
         return obspy_trace
-    
+
     def from_obspy_trace(self, obspy_trace):
         """
         Fill data from an :class:`obspy.core.Trace`
@@ -538,19 +538,19 @@ class ChannelTS:
         :param obspy.core.trace obspy_trace: Obspy trace object
         
         """
-        
+
         if not isinstance(obspy_trace, Trace):
             msg = f"Input must be obspy.core.Trace, not {type(obspy_trace)}"
             self.logger.error(msg)
             raise MTTSError(msg)
-            
+
         self.component = obspy_trace.stats.channel
         self.start = obspy_trace.stats.starttime.isoformat()
         self.sample_rate = obspy_trace.stats.sampling_rate
         self.station_metadata.archive_id = obspy_trace.stats.station
-        self.metadata.units = 'counts'
+        self.metadata.units = "counts"
         self.ts = obspy_trace.data
-        
+
 
 # =============================================================================
 # run container
@@ -789,7 +789,9 @@ class RunTS:
         """ EX """
         if "ex" in self.channels:
             return ChannelTS("electric", self.dataset["ex"])
-        self.logger.info(f"Could not find EX in current run. Existing channels are {self.channels}")
+        self.logger.info(
+            f"Could not find EX in current run. Existing channels are {self.channels}"
+        )
         return None
 
     @property
@@ -797,7 +799,9 @@ class RunTS:
         """ EY """
         if "ey" in self.channels:
             return ChannelTS("electric", self.dataset["ey"])
-        self.logger.info(f"Could not find EY in current run. Existing channels are {self.channels}")
+        self.logger.info(
+            f"Could not find EY in current run. Existing channels are {self.channels}"
+        )
         return None
 
     @property
@@ -805,7 +809,9 @@ class RunTS:
         """ HX """
         if "hx" in self.channels:
             return ChannelTS("magnetic", self.dataset["hx"])
-        self.logger.info(f"Could not find HX in current run. Existing channels are {self.channels}")
+        self.logger.info(
+            f"Could not find HX in current run. Existing channels are {self.channels}"
+        )
         return None
 
     @property
@@ -813,7 +819,9 @@ class RunTS:
         """ HY """
         if "hy" in self.channels:
             return ChannelTS("magnetic", self.dataset["hy"])
-        self.logger.info(f"Could not find HY in current run. Existing channels are {self.channels}")
+        self.logger.info(
+            f"Could not find HY in current run. Existing channels are {self.channels}"
+        )
         return None
 
     @property
@@ -821,7 +829,9 @@ class RunTS:
         """ HZ """
         if "hz" in self.channels:
             return ChannelTS("magnetic", self.dataset["hz"])
-        self.logger.info(f"Could not find HX in current run. Existing channels are {self.channels}")
+        self.logger.info(
+            f"Could not find HX in current run. Existing channels are {self.channels}"
+        )
         return None
 
     @property
@@ -829,13 +839,15 @@ class RunTS:
         """ temperature """
         if "temperature" in self.channels:
             return ChannelTS("auxiliary", self.dataset["temperature"])
-        self.logger.info(f"Could not find temperature in current run. Existing channels are {self.channels}")
+        self.logger.info(
+            f"Could not find temperature in current run. Existing channels are {self.channels}"
+        )
         return None
 
     @property
     def channels(self):
         return [cc for cc in list(self.dataset.data_vars)]
-    
+
     def to_obspy_stream(self):
         """
         convert time series to an :class:`obspy.core.Stream` which is like a 
@@ -845,14 +857,14 @@ class RunTS:
         :rtype: TYPE
 
         """
-        
+
         trace_list = []
         for channel in self.channels:
             ts_obj = getattr(self, channel)
             trace_list.append(ts_obj.to_obspy_trace())
-            
+
         return Stream(traces=trace_list)
-    
+
     def from_obspy_stream(self, obspy_stream):
         """
         Get a run from an :class:`obspy.core.stream` which is a list of
@@ -864,26 +876,31 @@ class RunTS:
         :rtype: TYPE
 
         """
-        
+
         if not isinstance(obspy_stream, Stream):
             msg = f"Input must be obspy.core.Stream not {type(obspy_stream)}"
             self.logger.error(msg)
             raise MTTSError(msg)
-            
+
         array_list = []
         for obs_trace in obspy_stream:
-            if 'q' in obs_trace.stats.channel.lower() or 'e' in obs_trace.stats.channel.lower():
-                channel_ts = ChannelTS('electric')
-            elif 'f' in obs_trace.stats.channel.lower() or 'h' in obs_trace.stats.channel.lower():
-                channel_ts = ChannelTS('magnetic')
+            if (
+                "q" in obs_trace.stats.channel.lower()
+                or "e" in obs_trace.stats.channel.lower()
+            ):
+                channel_ts = ChannelTS("electric")
+            elif (
+                "f" in obs_trace.stats.channel.lower()
+                or "h" in obs_trace.stats.channel.lower()
+            ):
+                channel_ts = ChannelTS("magnetic")
             else:
-                channel_ts = ChannelTS('auxiliary')
-                
+                channel_ts = ChannelTS("auxiliary")
+
             channel_ts.from_obspy_trace(obs_trace)
             array_list.append(channel_ts)
-            
+
         self.set_dataset(array_list)
-            
 
     def plot(self):
         """

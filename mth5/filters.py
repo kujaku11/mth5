@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 
-Created on Wed Sep 30 10:20:12 2020
+Filter object
+
+Created on Wed Sep 30 12:55:58 2020
 
 :author: Jared Peacock
 
@@ -11,16 +13,21 @@ Created on Wed Sep 30 10:20:12 2020
 # =============================================================================
 # Imports
 # =============================================================================
-from mth5.timeseries import RunTS
-from obspy import read as obspy_read
+
+import pandas as pd
+
+from mth5 import metadata
 
 # =============================================================================
-# read seismic file
+#
 # =============================================================================
-def read_miniseed(fn):
+class Filter:
+    """
+    
+    Object to hold a filter.
+    
+    """
 
-    obs_stream = obspy_read(fn)
-    run_obj = RunTS()
-    run_obj.from_obspy_stream(obs_stream)
-
-    return run_obj
+    def __init__(self, **kwargs):
+        self.metadata = metadata.Filter()
+        self.filter = None
