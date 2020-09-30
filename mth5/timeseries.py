@@ -789,7 +789,7 @@ class RunTS:
         """ EX """
         if "ex" in self.channels:
             return ChannelTS("electric", self.dataset["ex"])
-        self.logger.info(f"Could not find EX in current run. {self.channels}")
+        self.logger.info(f"Could not find EX in current run. Existing channels are {self.channels}")
         return None
 
     @property
@@ -797,7 +797,7 @@ class RunTS:
         """ EY """
         if "ey" in self.channels:
             return ChannelTS("electric", self.dataset["ey"])
-        self.logger.info(f"Could not find EY in current run. {self.channels}")
+        self.logger.info(f"Could not find EY in current run. Existing channels are {self.channels}")
         return None
 
     @property
@@ -805,7 +805,7 @@ class RunTS:
         """ HX """
         if "hx" in self.channels:
             return ChannelTS("magnetic", self.dataset["hx"])
-        self.logger.info(f"Could not find HX in current run. {self.channels}")
+        self.logger.info(f"Could not find HX in current run. Existing channels are {self.channels}")
         return None
 
     @property
@@ -813,7 +813,7 @@ class RunTS:
         """ HY """
         if "hy" in self.channels:
             return ChannelTS("magnetic", self.dataset["hy"])
-        self.logger.info(f"Could not find HY in current run. {self.channels}")
+        self.logger.info(f"Could not find HY in current run. Existing channels are {self.channels}")
         return None
 
     @property
@@ -821,7 +821,7 @@ class RunTS:
         """ HZ """
         if "hz" in self.channels:
             return ChannelTS("magnetic", self.dataset["hz"])
-        self.logger.info(f"Could not find HX in current run. {self.channels}")
+        self.logger.info(f"Could not find HX in current run. Existing channels are {self.channels}")
         return None
 
     @property
@@ -829,7 +829,7 @@ class RunTS:
         """ temperature """
         if "temperature" in self.channels:
             return ChannelTS("auxiliary", self.dataset["temperature"])
-        self.logger.info(f"Could not find temperature in current run. {self.channels}")
+        self.logger.info(f"Could not find temperature in current run. Existing channels are {self.channels}")
         return None
 
     @property
