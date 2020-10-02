@@ -156,6 +156,9 @@ class ChannelTS:
 
     def __repr__(self):
         return self.ts.__repr__()
+    
+    def __eq__(self):
+        raise ValueError("cannot test eq yet")
 
     ### Properties ------------------------------------------------------------
     @property
