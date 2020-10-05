@@ -16,6 +16,7 @@ from pathlib import Path
 from copy import deepcopy
 
 from mth5.utils.fdsn_tools import make_channel_code, get_location_code
+from mth5 import metadata
 
 from obspy.core import inventory
 from obspy.core.util import AttribDict
@@ -24,6 +25,32 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 # Translate between metadata and inventory: mapping dictionaries
 # =============================================================================
+def flip_dict(original_dict):
+    """
+    Flip keys and values of the dictionary
+    
+    :param original_dict: DESCRIPTION
+    :type original_dict: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+    flipped_dict = {}
+    
+    for k, v in original_dict.items():
+        if v in [None, 'special']:
+            continue
+        if k in [None]:
+            continue
+        if isinstance(v, (list, tuple)):
+            # bit of a hack, needs to be more unique.
+            for value in v:
+                flipped_dict[value] = k
+        else:
+            flipped_dict[str(v)] = k
+            
+    return flipped_dict
+
 release_dict = {
     "CC-0": "open",
     "CC-BY": "partial",
@@ -46,6 +73,7 @@ base_translator = {
     "source_id": None,
 }
 
+### MT Survey to StationXML Network
 network_translator = deepcopy(base_translator)
 network_translator.update(
     {
@@ -61,6 +89,13 @@ network_translator.update(
     }
 )
 
+### StationXML to MT Survey
+mt_survey_translator = flip_dict(network_translator)
+mt_survey_translator['project_lead'] = 'operator'
+mt_survey_translator['name'] = 'alternate_code'
+mt_survey_translator['fdsn.network'] = 'code'
+
+### MT Station to StationXML Station
 station_translator = deepcopy(base_translator)
 station_translator.update(
     {
@@ -88,6 +123,10 @@ station_translator.update(
     }
 )
 
+mt_station_translator = flip_dict(station_translator)
+
+
+### MT Channel to StationXML Channel
 channel_translator = deepcopy(base_translator)
 channel_translator.update(
     {
@@ -811,3 +850,118 @@ class MTToStationXML:
         self.logger.info("Wrote StationXML to {0}".format(station_xml_fn))
 
         return station_xml_fn
+    
+# =============================================================================
+# Translate from stationxml to mth5
+# =============================================================================
+def inventory_network_to_mt_survey(network_obj):
+    """
+    Convert an inventory.Network oject to an :class:`mth5.metadata.Survey` 
+    object
+    
+    :param network_obj: DESCRIPTION
+    :type network_obj: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+    
+    mt_survey = metadata.Survey()
+    doi_count = 0
+    
+    for mth5_key, sxml_key in mt_survey_translator.items():
+        if mth5_key == 'project_lead':
+            # only allow one person
+            try:
+                inv_person = network_obj.operators[0].contacts[0]
+                mt_survey.set_attr_from_name('project_lead.author',
+                                             inv_person.names[0])
+                mt_survey.set_attr_from_name('project_lead.email',
+                                             inv_person.emails[0])
+                mt_survey.set_attr_from_name('project_lead.organization',
+                                             inv_person.agencies[0])
+            except IndexError:
+                pass
+            
+            # is this redudant?
+            mt_survey.set_attr_from_name('project_lead.organization',
+                                         network_obj.operators[0].agencies[0])
+        elif '.doi' in mth5_key:
+            try:
+                mt_survey.set_attr_from_name(mth5_key, 
+                                             network_obj.identifiers[doi_count])
+                doi_count += 1
+            except IndexError:
+                pass
+                
+        else:
+            value = getattr(network_obj, sxml_key)
+            if value is None:
+                continue
+            if isinstance(value, (list, tuple)):
+                for k, v in zip(mth5_key, value):
+                    mt_survey.set_attr_from_name(k, v)
+            else:
+                if sxml_key == 'restricted_status':
+                    value = flip_dict(release_dict)[value]
+                if sxml_key in ['start_date', 'end_date']:
+                    value = value.isoformat()
+        
+                
+            mt_survey.set_attr_from_name(mth5_key, value)
+        
+    return mt_survey
+        
+def inventory_station_to_mt_station(inv_station_obj):
+    """
+    
+    :param inv_station_obj: DESCRIPTION
+    :type inv_station_obj: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+    
+    mt_station = metadata.Station()
+    
+    for mth5_key, sxml_key in mt_station_translator.items():
+        #print(f"MTH5 = {mth5_key}\nStationXML = {sxml_key}")
+        value = getattr(inv_station_obj, sxml_key)
+        if 'date' in sxml_key:
+            value = value.isoformat()
+        
+        mt_station.set_attr_from_name(mth5_key, value)
+    
+    return mt_station
+
+def read_comment(inv_comment):
+    """
+    
+    :param inv_comment: DESCRIPTION
+    :type inv_comment: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+    
+    a_dict = {}
+    key = inv_comment.subject.strip().replace(' ', '_').lower()
+    
+    if ':' in inv_comment.value:
+        a_dict[key] = {}
+        a_list = inv_comment.value.split(',')
+        for aa in a_list:
+            k, v = [vv.strip() for vv in aa.split(':', 1)]
+            a_dict[key][k] = v
+            
+    return a_dict
+    
+
+class StationXMLToMTH5:
+    """
+    Translate a station XML to MT metadata standards
+    
+    """
+    pass
+    
+    
