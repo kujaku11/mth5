@@ -3,6 +3,8 @@
    :align: center
 
 
+Introduction
+-------------
 The goal of **MTH5** is to develop a standard format and tools for archiving 
 magnetotelluric (MT) time series data.
 
