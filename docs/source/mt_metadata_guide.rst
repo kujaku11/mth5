@@ -299,7 +299,7 @@ Survey Attributes
        |                                              |                                |                |
        | Style: Free Form                             |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **archive_id**                               | Alphanumeric name provided by  | YKN20          |
+       | **fdsn.identifier**                          | Alphanumeric name provided by  | YKN20          |
        |                                              | the archive. For IRIS this     |                |
        | Required: True                               | will be the FDSN providing a   |                |
        |                                              | code.                          |                |
@@ -309,7 +309,7 @@ Survey Attributes
        |                                              |                                |                |
        | Style: Alpha Numeric                         |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **archive_network**                          | Network code given by          | EM             |
+       | **fdsn.network**                             | Network code given by          | EM             |
        |                                              | PASSCAL/IRIS/FDSN.  This will  |                |
        | Required: True                               | be a two character String that |                |
        |                                              | describes who and where the    |                |
@@ -524,8 +524,10 @@ Example Survey XML Element
            <author>MT Graduate Students</author>
            <comments>Multiple over 5 years</comments>
        </acquired_by>
-       <archive_id>SAM1990</archive_id>
-       <archive_network>EM</archive_network>
+       <fdsn>
+	       <identifier>SAM1990</identifier>
+           <network>EM</network>
+	   </fdsn> 
        <citation_dataset>
            <doi>https://doi.###</doi>
        </citation_dataset>
@@ -607,9 +609,9 @@ Station Attributes
        |                                              |                                |                |
        | Style: Free Form                             |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **archive_id**                               | Station name that is archived  | MT201          |
+       | **fdsn.identifier**                          | Station name that is archived  | MT201          |
        |                                              | {a-z;A-Z;0-9.  For IRIS this   |                |
-       | Required: True                               | is a 5 character String.       |                |
+       | Required: False                              | is a 5 character String.       |                |
        |                                              |                                |                |
        | Units: None                                  |                                |                |
        |                                              |                                |                |
@@ -887,7 +889,7 @@ Example Station JSON
            "acquired_by": {
                "author": "mt",
                "comments": null},
-           "archive_id": "MT012",
+           "fdsn.identifier": "MT012",
            "channel_layout": "L",
            "channels_recorded": "Ex, Ey, Bx, By",
            "comments": null,
@@ -1467,6 +1469,16 @@ Electric Channel Attributes
        |                                              |                                |                |
        | Style: Number                                |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
+	   | **fdsn.channel_code**                        | FDSN channel 3 character code  | LQN            |
+       |                                              | {sampling}{measurement}        |                |
+       | Required: True                               | {direction}                    |                |
+       |                                              |                                |                |
+       | Units: meters                                |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
        | **filter.applied**                           | Boolean if filter has been     |  True          |
        |                                              | applied or not. If more than   |                |
        | Required: True                               | one filter input as list.      |                |
@@ -1749,6 +1761,7 @@ Example Electric Channel JSON
        "dc.end": 1.0,
        "dc.start": 2.0,
        "dipole_length": 100.0,
+	   "fdsn.channel_code": "LQN",
        "filter.applied": [false],
        "filter.comments": null,
        "filter.name": [ "counts2mv", "lowpass"],
@@ -1864,6 +1877,16 @@ Magnetic Channel Attributes
        | Type: String                                 |                                |                |
        |                                              |                                |                |
        | Style: Free Form                             |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+	   | **fdsn.channel_code**                        | FDSN channel 3 character code  | LQN            |
+       |                                              | {sampling}{measurement}        |                |
+       | Required: True                               | {direction}                    |                |
+       |                                              |                                |                |
+       | Units: meters                                |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
        | **filter.applied**                           | Boolean if filter has been     |  True          |
        |                                              | applied or not. If more than   |                |
@@ -2112,6 +2135,8 @@ Example Magnetic Channel JSON
                    "author": "M. Tee",
                    "method": "Machine Learning",
                    "value": 3}},
+		   "fdsn": {
+                "channel_code": "LQN", 		   
            "filter": {
                "name": ["counts2nT", "lowpass_mag"],
                "applied": [true, false],
@@ -2351,6 +2376,16 @@ Auxiliary Channel Attributes
        |                                              |                                |                |
        | Style: Free Form                             |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
+	   | **fdsn.channel_code**                        | FDSN channel 3 character code  | LQN            |
+       |                                              | {sampling}{measurement}        |                |
+       | Required: True                               | {direction}                    |                |
+       |                                              |                                |                |
+       | Units: meters                                |                                |                |
+       |                                              |                                |                |
+       | Type: Float                                  |                                |                |
+       |                                              |                                |                |
+       | Style: Number                                |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
        | **filter.applied**                           | Boolean if filter has been     |  True          |
        |                                              | applied or not. If more than   |                |
        | Required: True                               | one filter input as list.      |                |
@@ -2521,6 +2556,9 @@ Example Auxiliary XML
                <value type="Integer">4</value>
            </rating>
        </data_quality>
+	   <fdsn>
+	       <channel_code>LQN</channel_code>
+	   <fdsn>
        <filter>
            <name>
                <i>lowpass</i>
