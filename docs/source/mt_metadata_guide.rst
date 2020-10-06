@@ -323,7 +323,7 @@ Survey Attributes
        |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
 
-:navy:`archive_id`
+:navy:`fdsn.identifier`
 ~~~~~~~~~~~~~~~~~~
 
 .. container::
@@ -333,7 +333,7 @@ Survey Attributes
        :widths: 45 30 15
 
        +----------------------------------------------+--------------------------------+----------------+
-       | **archive_id**                               | **Description**                | **Example**    |
+       | **fdsn.identifier**                          | **Description**                | **Example**    |
        +==============================================+================================+================+
        | **Required**: :red:`True`                    | Alphanumeric name provided by  | YKN20          |
        |                                              | the archive. For IRIS this     |                |
@@ -346,7 +346,7 @@ Survey Attributes
        |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
 
-:navy:`archive_network`
+:navy:`fdsn.network`
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 .. container::
@@ -356,7 +356,7 @@ Survey Attributes
        :widths: 45 30 15
 
        +----------------------------------------------+--------------------------------+----------------+
-       | **archive_network**                          | **Description**                | **Example**    |
+       | **fdsn.network**                             | **Description**                | **Example**    |
        +==============================================+================================+================+
        | **Required**: :red:`True`                    | Network code given by          | EM             |
        |                                              | PASSCAL/IRIS/FDSN.  This will  |                |
@@ -590,16 +590,16 @@ Survey Attributes
        +==============================================+================================+================+
        | **Required**: :red:`True`                    | Alphanumeric name for the      | GEOMAG         |
        |                                              | project.  This is different    |                |
-       | **Units**: None                              | than the archive_id in that it |                |
-       |                                              | describes a project as having  |                |
-       | **Type**: String                             | a common project lead and      |                |
+       | **Units**: None                              | than the fdsn.identifier in    |                |
+       |                                              | that it describes a project    |                |
+       | **Type**: String                             | with a common project lead and |                |
        |                                              | source of funding.  There may  |                |
        | **Style**: Free Form                         | be multiple surveys within a   |                |
        |                                              | project. For example if the    |                |
        |                                              | project is to estimate         |                |
        |                                              | geomagnetic hazards that       |                |
        |                                              | project = GEOMAG but the       |                |
-       |                                              | archive_id = YKN20.            |                |
+       |                                              | fdsn.identifier = YKN20.       |                |
        +----------------------------------------------+--------------------------------+----------------+
 
 :navy:`project_lead.author`
@@ -923,28 +923,6 @@ Station Attributes
        |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
 
-:navy:`archive_id`
-~~~~~~~~~~~~~~~~~~
-
-.. container::
-
-   .. table::
-       :class: tight-table
-       :widths: 45 30 15
-
-       +----------------------------------------------+--------------------------------+----------------+
-       | **archive_id**                               | **Description**                | **Example**    |
-       +==============================================+================================+================+
-       | **Required**: :red:`True`                    | Station name that is archived  | MT201          |
-       |                                              | {a-z;A-Z;0-9.  For IRIS this   |                |
-       | **Units**: None                              | is a 5 character String.       |                |
-       |                                              |                                |                |
-       | **Type**: String                             |                                |                |
-       |                                              |                                |                |
-       | **Style**: Alpha Numeric                     |                                |                |
-       |                                              |                                |                |
-       |                                              |                                |                |
-       +----------------------------------------------+--------------------------------+----------------+
 
 :navy:`channel_layout`
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -1037,6 +1015,29 @@ Station Attributes
        |                                              |                                |                |
        |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
+	   
+:navy:`fdsn.identifier`
+~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 45 30 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **fdsn.identifier**                          | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Station name that is archived  | MT201          |
+       |                                              | {a-z;A-Z;0-9.  For IRIS this   |                |
+       | **Units**: None                              | is a 5 character String.       |                |
+       |                                              |                                |                |
+       | **Type**: String                             |                                |                |
+       |                                              |                                |                |
+       | **Style**: Alpha Numeric                     |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
 
 :navy:`geographic_name`
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -1075,8 +1076,8 @@ Station Attributes
        +==============================================+================================+================+
        | **Required**: :red:`True`                    | Station name.  This can be a   | bear hallabaloo|
        |                                              | longer name than the           |                |
-       | **Units**: None                              | archive_id name and be a more  |                |
-       |                                              | explanatory name.              |                |
+       | **Units**: None                              | fdsn.identifier name and be a  |                |
+       |                                              | more explanatory name.         |                |
        | **Type**: String                             |                                |                |
        |                                              |                                |                |
        | **Style**: Free Form                         |                                |                |
@@ -1554,11 +1555,11 @@ Example Station JSON
            "acquired_by": {
                "author": "mt",
                "comments": null},
-           "fdsn.identifier": "MT012",
            "channel_layout": "L",
            "channels_recorded": "Ex, Ey, Bx, By",
            "comments": null,
            "data_type": "MT",
+           "fdsn.identifier": "MT012",
            "geographic_name": "Whitehorse, Yukon",
            "id": "Curious Bears Hallabaloo",
            "location": {
@@ -1741,28 +1742,6 @@ Run Attributes
        |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
 
-:navy:`comments`
-~~~~~~~~~~~~~~~~
-
-.. container::
-
-   .. table::
-       :class: tight-table
-       :widths: 45 30 15
-
-       +----------------------------------------------+--------------------------------+----------------+
-       | **comments**                                 | **Description**                | **Example**    |
-       +==============================================+================================+================+
-       | **Required**: :blue:`False`                  | Any comments on the run that   | cows chewed    |
-       |                                              | would be important for a user. | cables at 9am  |
-       | **Units**: None                              |                                | local time.    |
-       |                                              |                                |                |
-       | **Type**: String                             |                                |                |
-       |                                              |                                |                |
-       | **Style**: Free Form                         |                                |                |
-       |                                              |                                |                |
-       |                                              |                                |                |
-       +----------------------------------------------+--------------------------------+----------------+
 
 :navy:`data_logger.firmware.author`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2155,6 +2134,29 @@ Run Attributes
        |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
 
+:navy:`fdsn.new_epoch`
+~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 45 30 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_type**                                | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Boolean if a new epoch should  | False          |
+       |                                              | be made.  An epoch is a run    |                |
+       | **Units**: None                              | and if parameters of the run   |                |
+       |                                              | changes  set to True           |                |
+       | **Type**: String                             |                                |                |
+       |                                              |                                |                |
+       | **Style**: Controlled Vocabulary             |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+	   
+
+
 :navy:`id`
 ~~~~~~~~~~
 
@@ -2370,6 +2372,7 @@ Example Run JSON
            "data_logger.timing_system.uncertainty": 0.0000001,
            "data_logger.type": "Broadband 32-bit 5 channels",
            "data_type": "BBMT",
+		   "fdsn.new_epoch": "False",
            "id": "YKN201b",
            "metadata_by.author": "Graduate Student",
            "metadata_by.comments": "Lazy",
@@ -2708,6 +2711,29 @@ Electric Channel Attributes
        | **Type**: Float                              |                                |                |
        |                                              |                                |                |
        | **Style**: Number                            |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+	   
+:navy:`fdsn.channel_code`
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 45 30 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **fdsn.channel_code**                        | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | FDSN channel code, this is a   | LQN            |
+       |                                              | 3 character code in the form   |                |
+       | **Units**: None                              | {band}{type}{direction}        |                |
+       |                                              | <https://ds.iris.edu/ds/nodes/ |                |
+       | **Type**: String                             | dmc/data/formats/              |                |
+       |                                              | seed-channel-naming/>          |                |
+       | **Style**: Alpha-Numeric                     |                                |                |
        |                                              |                                |                |
        |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
@@ -3528,6 +3554,30 @@ Magnetic Channel Attributes
        |                                              |                                |                |
        |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
+	   
+:navy:`fdsn.channel_code`
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 45 30 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **fdsn.channel_code**                        | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | FDSN channel code, this is a   | LQN            |
+       |                                              | 3 character code in the form   |                |
+       | **Units**: None                              | {band}{type}{direction}        |                |
+       |                                              | https://ds.iris.edu/ds/nodes/  |                |
+       | **Type**: String                             | dmc/data/formats/              |                |
+       |                                              | seed-channel-naming/           |                |
+       | **Style**: Alpha-Numeric                     |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+	   
 
 :navy:`filter.applied`
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -4449,6 +4499,30 @@ Auxiliary Channel Attributes
        |                                              |                                |                |
        |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
+	   
+:navy:`fdsn.channel_code`
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 45 30 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **fdsn.channel_code**                        | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | FDSN channel code, this is a   | LQN            |
+       |                                              | 3 character code in the form   |                |
+       | **Units**: None                              | {band}{type}{direction}        |                |
+       |                                              | https://ds.iris.edu/ds/nodes/  |                |
+       | **Type**: String                             | dmc/data/formats/              |                |
+       |                                              | seed-channel-naming/           |                |
+       | **Style**: Alpha-Numeric                     |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+	   
 
 :navy:`filter.applied`
 ~~~~~~~~~~~~~~~~~~~~~~
