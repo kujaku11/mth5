@@ -854,6 +854,29 @@ class MTToStationXML:
 # =============================================================================
 # Translate from stationxml to mth5
 # =============================================================================
+def read_comment(inv_comment):
+    """
+    
+    :param inv_comment: DESCRIPTION
+    :type inv_comment: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+    
+    a_dict = {}
+    key = inv_comment.subject.strip().replace(' ', '_').lower()
+    
+    if ':' in inv_comment.value:
+        a_dict[key] = {}
+        a_list = inv_comment.value.split(',')
+        for aa in a_list:
+            k, v = [vv.strip() for vv in aa.split(':', 1)]
+            a_dict[key][k] = v
+            
+    return a_dict
+
+
 def inventory_network_to_mt_survey(network_obj):
     """
     Convert an inventory.Network oject to an :class:`mth5.metadata.Survey` 
@@ -929,32 +952,15 @@ def inventory_station_to_mt_station(inv_station_obj):
         value = getattr(inv_station_obj, sxml_key)
         if 'date' in sxml_key:
             value = value.isoformat()
-        
+            
+        if isinstance(value, inventory.Comment):
+            v_dict = read_comment(value)
+            
         mt_station.set_attr_from_name(mth5_key, value)
     
     return mt_station
 
-def read_comment(inv_comment):
-    """
-    
-    :param inv_comment: DESCRIPTION
-    :type inv_comment: TYPE
-    :return: DESCRIPTION
-    :rtype: TYPE
 
-    """
-    
-    a_dict = {}
-    key = inv_comment.subject.strip().replace(' ', '_').lower()
-    
-    if ':' in inv_comment.value:
-        a_dict[key] = {}
-        a_list = inv_comment.value.split(',')
-        for aa in a_list:
-            k, v = [vv.strip() for vv in aa.split(':', 1)]
-            a_dict[key][k] = v
-            
-    return a_dict
     
 
 class StationXMLToMTH5:

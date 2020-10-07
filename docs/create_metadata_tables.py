@@ -207,9 +207,9 @@ for line in lines[170:]:
             .split(",")
         )
 
-c1 = 45
+c1 = 30
+c2 = 45
 c3 = 15
-c2 = 30
 
 # for key, value in entries.items():
 #     lines = write_lines(value, c1, c2, c3)
