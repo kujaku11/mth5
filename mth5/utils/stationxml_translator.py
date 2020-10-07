@@ -956,6 +956,7 @@ def inventory_station_to_mt_station(inv_station_obj):
         if isinstance(value, inventory.Comment):
             v_dict = read_comment(value)
             
+            
         mt_station.set_attr_from_name(mth5_key, value)
     
     return mt_station
