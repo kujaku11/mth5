@@ -323,29 +323,6 @@ Survey Attributes
        |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
 
-:navy:`fdsn.identifier`
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. container::
-
-   .. table::
-       :class: tight-table
-       :widths: 30 45 15
-
-       +----------------------------------------------+--------------------------------+----------------+
-       | **fdsn.identifier**                          | **Description**                | **Example**    |
-       +==============================================+================================+================+
-       | **Required**: :red:`True`                    | Alphanumeric name provided by  | YKN20          |
-       |                                              | the archive. For IRIS this     |                |
-       | **Units**: None                              | will be the FDSN providing a   |                |
-       |                                              | code.                          |                |
-       | **Type**: String                             |                                |                |
-       |                                              |                                |                |
-       | **Style**: Alpha Numeric                     |                                |                |
-       |                                              |                                |                |
-       |                                              |                                |                |
-       +----------------------------------------------+--------------------------------+----------------+
-
 :navy:`fdsn.network`
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -358,7 +335,7 @@ Survey Attributes
        +----------------------------------------------+--------------------------------+----------------+
        | **fdsn.network**                             | **Description**                | **Example**    |
        +==============================================+================================+================+
-       | **Required**: :red:`True`                    | Network code given by          | EM             |
+       | **Required**: :blue:`False`                  | Network code given by          | EM             |
        |                                              | PASSCAL/IRIS/FDSN.  This will  |                |
        | **Units**: None                              | be a two character String that |                |
        |                                              | describes who and where the    |                |
