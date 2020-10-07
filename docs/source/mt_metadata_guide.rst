@@ -202,7 +202,7 @@ Note that any list should be comma separated.
 
    .. table:: 
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
       +----------------------+----------------------+----------------------+
       | **Style**            | **Description**      | **Example**          |
@@ -284,7 +284,7 @@ Survey Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **acquired_by.author**                       | **Description**                | **Example**    |
@@ -307,7 +307,7 @@ Survey Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **acquired_by.comments**                     | **Description**                | **Example**    |
@@ -324,13 +324,13 @@ Survey Attributes
        +----------------------------------------------+--------------------------------+----------------+
 
 :navy:`fdsn.identifier`
-~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. container::
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **fdsn.identifier**                          | **Description**                | **Example**    |
@@ -353,7 +353,7 @@ Survey Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **fdsn.network**                             | **Description**                | **Example**    |
@@ -376,21 +376,21 @@ Survey Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
-       +----------------------------------------------+--------------------------------+----------------+
-       | **citation_dataset.doi**                     | **Description**                | **Example**    |
-       +==============================================+================================+================+
-       | **Required**: :red:`True`                    | The full URL of the doi Number | \url{http://doi|
-       |                                              | provided by the archive that   | .10.adfabe     |
-       | **Units**: None                              | describes the raw data         |                |
-       |                                              |                                |                |
-       | **Type**: String                             |                                |                |
-       |                                              |                                |                |
-       | **Style**: URL                               |                                |                |
-       |                                              |                                |                |
-       |                                              |                                |                |
-       +----------------------------------------------+--------------------------------+----------------+
+       +----------------------------------------------+--------------------------------+----------------------+
+       | **citation_dataset.doi**                     | **Description**                | **Example**          |
+       +==============================================+================================+======================+
+       | **Required**: :red:`True`                    | The full URL of the doi Number | http://doi.10.adfabe |
+       |                                              | provided by the archive that   |                      |
+       | **Units**: None                              | describes the raw data         |                      |
+       |                                              |                                |                      |
+       | **Type**: String                             |                                |                      |
+       |                                              |                                |                      |
+       | **Style**: URL                               |                                |                      |
+       |                                              |                                |                      |
+       |                                              |                                |                      |
+       +----------------------------------------------+--------------------------------+----------------------+
 
 :navy:`citation_journal.doi`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -399,21 +399,20 @@ Survey Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
-       +----------------------------------------------+--------------------------------+----------------+
-       | **citation_journal.doi**                     | **Description**                | **Example**    |
-       +==============================================+================================+================+
-       | **Required**: :blue:`False`                  | The full URL of the doi Number |  http://doi.10 |
-       |                                              | for a journal article(s) that  | .xbsfs2        |
-       | **Units**: None                              | uses these data.  If multiple  |                |
-       |                                              | journal articles use these     |                |
-       | **Type**: String                             | data provide as a comma        |                |
-       |                                              | separated String of urls.      |                |
-       | **Style**: URL                               |                                |                |
-       |                                              |                                |                |
-       |                                              |                                |                |
-       +----------------------------------------------+--------------------------------+----------------+
+       +----------------------------------------------+--------------------------------+-----------------------+
+       | **citation_journal.doi**                     | **Description**                | **Example**           |
+       +==============================================+================================+=======================+
+       | **Required**: :blue:`False`                  | The full URL of the doi Number |  http://doi.10.xbsfs2 |
+       |                                              | for a journal article(s) that  |                       |
+       | **Units**: None                              | uses these data.  If multiple  |                       |
+       |                                              | journal articles use these     |                       |
+       | **Type**: String                             | data provide as a comma        |                       |
+       |                                              | separated String of urls.      |                       |
+       | **Style**: URL                               |                                |                       |
+       |                                              |                                |                       |
+       +----------------------------------------------+--------------------------------+-----------------------+
 
 :navy:`comments`
 ~~~~~~~~~~~~~~~~
@@ -422,7 +421,7 @@ Survey Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **comments**                                 | **Description**                | **Example**    |
@@ -445,7 +444,7 @@ Survey Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **country**                                  | **Description**                | **Example**    |
@@ -468,7 +467,7 @@ Survey Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **datum**                                    | **Description**                | **Example**    |
@@ -491,7 +490,7 @@ Survey Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **geographic_name**                          | **Description**                | **Example**    |
@@ -514,7 +513,7 @@ Survey Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **name**                                     | **Description**                | **Example**    |
@@ -537,7 +536,7 @@ Survey Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **northwest_corner.latitude**                | **Description**                | **Example**    |
@@ -560,7 +559,7 @@ Survey Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **northwest_corner.longitude**               | **Description**                | **Example**    |
@@ -583,7 +582,7 @@ Survey Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **project**                                  | **Description**                | **Example**    |
@@ -609,7 +608,7 @@ Survey Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **project_lead.author**                      | **Description**                | **Example**    |
@@ -632,7 +631,7 @@ Survey Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **project_lead.email**                       | **Description**                | **Example**    |
@@ -655,7 +654,7 @@ Survey Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **project_lead.organization**                | **Description**                | **Example**    |
@@ -678,21 +677,21 @@ Survey Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
-       +----------------------------------------------+--------------------------------+----------------+
-       | **release_license**                          | **Description**                | **Example**    |
-       +==============================================+================================+================+
-       | **Required**: :red:`True`                    | How the data can be used. The  | CC 0           |
-       |                                              | options are based on Creative  |                |
-       | **Units**: None                              | Commons licenses.  Options: [  |                |
-       |                                              | CC 0  ;  CC BY  ;  CC BY-SA ;  |                |
-       | **Type**: String                             | CC BY-ND  ;  CC BY-NC-SA  ;    |                |
-       |                                              | CC BY-NC-ND]. For details      |                |
-       | **Style**: Controlled Vocabulary             | visit \url{https://creativecom |                |
-       |                                              | mons.org/licenses/             |                |
-       |                                              |                                |                |
-       +----------------------------------------------+--------------------------------+----------------+
+       +----------------------------------------------+---------------------------------------+----------------+
+       | **release_license**                          | **Description**                       | **Example**    |
+       +==============================================+=======================================+================+
+       | **Required**: :red:`True`                    | How the data can be used. The         | CC-0           |
+       |                                              | options are based on Creative         |                |
+       | **Units**: None                              | Commons licenses.  Options -->        |                |
+       |                                              | [CC-0; CC-BY; CC-BY-SA; CC-BY-ND;     |                |
+       | **Type**: String                             | CC-BY-NC-SA; CC-BY-NC-ND]             |                |
+       |                                              | For details visit,                    |                |
+       | **Style**: Controlled Vocabulary             |                                       |                |
+       |                                              | https://creativecommons.org/licenses/ |                |
+       |                                              |                                       |                |
+       +----------------------------------------------+---------------------------------------+----------------+
 
 :navy:`southeast_corner.latitude`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -701,7 +700,7 @@ Survey Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **southeast_corner.latitude**                | **Description**                | **Example**    |
@@ -724,7 +723,7 @@ Survey Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **southeast_corner.longitude**               | **Description**                | **Example**    |
@@ -747,7 +746,7 @@ Survey Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **summary**                                  | **Description**                | **Example**    |
@@ -770,7 +769,7 @@ Survey Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **time_period.end_date**                     | **Description**                | **Example**    |
@@ -793,7 +792,7 @@ Survey Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **time_period.start_date**                   | **Description**                | **Example**    |
@@ -823,9 +822,9 @@ Example Survey XML Element
            <comments>Multiple over 5 years</comments>
        </acquired_by>
        <fdsn>
-	       <identifier>SAM1990</identifier>
+           <identifier>SAM1990</identifier>
            <network>EM</network>
-	   </fdsn> 
+       </fdsn> 
        <citation_dataset>
            <doi>https://doi.###</doi>
        </citation_dataset>
@@ -884,7 +883,7 @@ Station Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **acquired_by.author**                       | **Description**                | **Example**    |
@@ -907,7 +906,7 @@ Station Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **acquired_by.comments**                     | **Description**                | **Example**    |
@@ -931,19 +930,18 @@ Station Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **channel_layout**                           | **Description**                | **Example**    |
        +==============================================+================================+================+
-       | **Required**: :blue:`False`                  | How the dipoles and magnetic   | +              |
+       | **Required**: :blue:`False`                  | How the dipoles and magnetic   | "+"            |
        |                                              | channels of the station were   |                |
-       | **Units**: None                              | laid out.  Options: [ L  ;  +  |                |
-       |                                              |  ]                             |                |
+       | **Units**: None                              | laid out.  Options: ["L"; "+"] |                |
+       |                                              |                                |                |
        | **Type**: String                             |                                |                |
        |                                              |                                |                |
        | **Style**: Controlled Vocabulary             |                                |                |
-       |                                              |                                |                |
        |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
 
@@ -954,7 +952,7 @@ Station Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **channels_recorded**                        | **Description**                | **Example**    |
@@ -963,10 +961,10 @@ Station Attributes
        |                                              | the station. Should be a       |                |
        | **Units**: None                              | summary of all channels        |                |
        |                                              | recorded dropped channels will |                |
-       | **Type**: String                             | be recorded in Run.  \qquad    |                |
-       |                                              | Options: [ Ex  ;  Ey  ;  Hx    |                |
-       | **Style**: Controlled Vocabulary             |  ;  Hy  ;  Hz  ;  T  ;         |                |
-       |                                              | Battery  ]                     |                |
+       | **Type**: String                             | be recorded in Run.            |                |
+       |                                              | Options:                       |                |
+       | **Style**: Controlled Vocabulary             | [ Ex;  Ey; Hx; Hy; Hz; T       |                |
+       |                                              | Battery; other  ]              |                |
        |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
 
@@ -977,7 +975,7 @@ Station Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **comments**                                 | **Description**                | **Example**    |
@@ -1000,7 +998,7 @@ Station Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_type**                                | **Description**                | **Example**    |
@@ -1008,22 +1006,22 @@ Station Attributes
        | **Required**: :red:`True`                    | All types of data recorded by  | BBMT           |
        |                                              | the station. If multiple types |                |
        | **Units**: None                              | input as a comma separated     |                |
-       |                                              | list. \qquad Options: [ RMT    |                |
-       | **Type**: String                             |  ;  AMT  ;  BBMT  ;  LPMT  ;   |                |
-       |                                              | ULPMT  ]                       |                |
+       |                                              | list. Options -->              |                |
+       | **Type**: String                             | [RMT; AMT; BBMT; LPMT]         |                |
+       |                                              |                                |                |
        | **Style**: Controlled Vocabulary             |                                |                |
        |                                              |                                |                |
        |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
 	   
 :navy:`fdsn.identifier`
-~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. container::
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **fdsn.identifier**                          | **Description**                | **Example**    |
@@ -1046,7 +1044,7 @@ Station Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **geographic_name**                          | **Description**                | **Example**    |
@@ -1069,7 +1067,7 @@ Station Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **id**                                       | **Description**                | **Example**    |
@@ -1092,7 +1090,7 @@ Station Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **location.declination.comments**            | **Description**                | **Example**    |
@@ -1115,19 +1113,18 @@ Station Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **location.declination.model**               | **Description**                | **Example**    |
        +==============================================+================================+================+
        | **Required**: :red:`True`                    | Name of the geomagnetic        | WMM-2016       |
        |                                              | reference model as             |                |
-       | **Units**: None                              | \{model_name\\{-\\{YYYY\.      |                |
-       |                                              | Model options: \qquad [ EMAG2  |                |
-       | **Type**: String                             |  ;  EMM  ;  HDGM  ;  IGRF  ;   |                |
-       |                                              | WMM ]                          |                |
-       | **Style**: Controlled Vocabulary             |                                |                |
+       | **Units**: None                              | model_name-YYYY.               |                |
+       |                                              | Model options ->               |                |
+       | **Type**: String                             | [EMAG2; EMM; HDGM; IGRF; WMM]  |                |
        |                                              |                                |                |
+       | **Style**: Controlled Vocabulary             |                                |                |
        |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
 
@@ -1138,7 +1135,7 @@ Station Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **location.declination.value**               | **Description**                | **Example**    |
@@ -1161,7 +1158,7 @@ Station Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **location.elevation**                       | **Description**                | **Example**    |
@@ -1184,7 +1181,7 @@ Station Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **location.latitude**                        | **Description**                | **Example**    |
@@ -1207,7 +1204,7 @@ Station Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **location.longitude**                       | **Description**                | **Example**    |
@@ -1230,15 +1227,15 @@ Station Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **orientation.method**                       | **Description**                | **Example**    |
        +==============================================+================================+================+
        | **Required**: :red:`True`                    | Method for orienting station   | compass        |
-       |                                              | channels.  Options: [ compass  |                |
-       | **Units**: None                              |  ;  GPS  ;  theodolite  ;      |                |
-       |                                              | electric_compass  ]            |                |
+       |                                              | channels.  Options:            |                |
+       | **Units**: None                              | [compass; GPS; theodolite;     |                |
+       |                                              | electric_compass ]             |                |
        | **Type**: String                             |                                |                |
        |                                              |                                |                |
        | **Style**: Controlled Vocabulary             |                                |                |
@@ -1253,7 +1250,7 @@ Station Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **orientation.reference_frame**              | **Description**                | **Example**    |
@@ -1276,7 +1273,7 @@ Station Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **orientation.transformed_reference_frame**  | **Description**                | **Example**    |
@@ -1299,7 +1296,7 @@ Station Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **provenance.comments**                      | **Description**                | **Example**    |
@@ -1322,7 +1319,7 @@ Station Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **provenance.creation_time**                 | **Description**                | **Example**    |
@@ -1345,7 +1342,7 @@ Station Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **provenance.log**                           | **Description**                | **Example**    |
@@ -1368,7 +1365,7 @@ Station Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **provenance.software.author**               | **Description**                | **Example**    |
@@ -1391,7 +1388,7 @@ Station Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **provenance.software.name**                 | **Description**                | **Example**    |
@@ -1414,7 +1411,7 @@ Station Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **provenance.software.version**              | **Description**                | **Example**    |
@@ -1437,7 +1434,7 @@ Station Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **provenance.submitter.author**              | **Description**                | **Example**    |
@@ -1460,7 +1457,7 @@ Station Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **provenance.submitter.email**               | **Description**                | **Example**    |
@@ -1483,7 +1480,7 @@ Station Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **provenance.submitter.organization**        | **Description**                | **Example**    |
@@ -1506,7 +1503,7 @@ Station Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **time_period.end**                          | **Description**                | **Example**    |
@@ -1529,7 +1526,7 @@ Station Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **time_period.start**                        | **Description**                | **Example**    |
@@ -1611,7 +1608,7 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **acquired_by.author**                       | **Description**                | **Example**    |
@@ -1634,7 +1631,7 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **acquired_by.comments**                     | **Description**                | **Example**    |
@@ -1657,7 +1654,7 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **channels_recorded_auxiliary**              | **Description**                | **Example**    |
@@ -1680,7 +1677,7 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **channels_recorded_electric**               | **Description**                | **Example**    |
@@ -1703,7 +1700,7 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **channels_recorded_magnetic**               | **Description**                | **Example**    |
@@ -1726,7 +1723,7 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **comments**                                 | **Description**                | **Example**    |
@@ -1750,7 +1747,7 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_logger.firmware.author**              | **Description**                | **Example**    |
@@ -1773,7 +1770,7 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_logger.firmware.name**                | **Description**                | **Example**    |
@@ -1796,7 +1793,7 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_logger.firmware.version**             | **Description**                | **Example**    |
@@ -1819,7 +1816,7 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_logger.id**                           | **Description**                | **Example**    |
@@ -1842,7 +1839,7 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_logger.manufacturer**                 | **Description**                | **Example**    |
@@ -1865,7 +1862,7 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_logger.model**                        | **Description**                | **Example**    |
@@ -1888,7 +1885,7 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_logger.power_source.comments**        | **Description**                | **Example**    |
@@ -1911,7 +1908,7 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_logger.power_source.id**              | **Description**                | **Example**    |
@@ -1934,7 +1931,7 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_logger.power_source.type**            | **Description**                | **Example**    |
@@ -1957,7 +1954,7 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_logger.power_source.voltage.end**     | **Description**                | **Example**    |
@@ -1980,7 +1977,7 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_logger.power_source.voltage.start**   | **Description**                | **Example**    |
@@ -2003,7 +2000,7 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_logger.timing_system.comments**       | **Description**                | **Example**    |
@@ -2026,7 +2023,7 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_logger.timing_system.drift**          | **Description**                | **Example**    |
@@ -2049,7 +2046,7 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_logger.timing_system.type**           | **Description**                | **Example**    |
@@ -2072,7 +2069,7 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_logger.timing_system.uncertainty**    | **Description**                | **Example**    |
@@ -2095,7 +2092,7 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_logger.type**                         | **Description**                | **Example**    |
@@ -2118,15 +2115,15 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_type**                                | **Description**                | **Example**    |
        +==============================================+================================+================+
        | **Required**: :red:`True`                    | Type of data recorded for this | BBMT           |
-       |                                              | run.  Options: [ RMT  ;  AMT   |                |
-       | **Units**: None                              |  ;  BBMT  ;  LPMT  ;  ULPMT    |                |
-       |                                              |  ]                             |                |
+       |                                              | run.  Options ->               |                |
+       | **Units**: None                              | [RMT; AMT; BBMT; LPMT]         |                |
+       |                                              |                                |                |
        | **Type**: String                             |                                |                |
        |                                              |                                |                |
        | **Style**: Controlled Vocabulary             |                                |                |
@@ -2135,13 +2132,13 @@ Run Attributes
        +----------------------------------------------+--------------------------------+----------------+
 
 :navy:`fdsn.new_epoch`
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
 .. container::
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_type**                                | **Description**                | **Example**    |
@@ -2164,7 +2161,7 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **id**                                       | **Description**                | **Example**    |
@@ -2187,7 +2184,7 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **metadata_by.author**                       | **Description**                | **Example**    |
@@ -2210,7 +2207,7 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **metadata_by.comments**                     | **Description**                | **Example**    |
@@ -2233,7 +2230,7 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **provenance.comments**                      | **Description**                | **Example**    |
@@ -2256,7 +2253,7 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **provenance.log**                           | **Description**                | **Example**    |
@@ -2279,7 +2276,7 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **sampling_rate**                            | **Description**                | **Example**    |
@@ -2302,7 +2299,7 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **time_period.end**                          | **Description**                | **Example**    |
@@ -2325,7 +2322,7 @@ Run Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **time_period.start**                        | **Description**                | **Example**    |
@@ -2372,7 +2369,7 @@ Example Run JSON
            "data_logger.timing_system.uncertainty": 0.0000001,
            "data_logger.type": "Broadband 32-bit 5 channels",
            "data_type": "BBMT",
-		   "fdsn.new_epoch": "False",
+           "fdsn.new_epoch": "False",
            "id": "YKN201b",
            "metadata_by.author": "Graduate Student",
            "metadata_by.comments": "Lazy",
@@ -2400,7 +2397,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **ac.end**                                   | **Description**                | **Example**    |
@@ -2423,7 +2420,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **ac.start**                                 | **Description**                | **Example**    |
@@ -2446,7 +2443,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **channel_number**                           | **Description**                | **Example**    |
@@ -2469,7 +2466,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **comments**                                 | **Description**                | **Example**    |
@@ -2492,14 +2489,14 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **component**                                | **Description**                | **Example**    |
        +==============================================+================================+================+
        | **Required**: :red:`True`                    | Name of the component          | Ex             |
-       |                                              | measured.  Options: \quad [ Ex |                |
-       | **Units**: None                              |  ;  Ey  ]                      |                |
+       |                                              | measured.  Options: [ Ex; Ey ] |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
        | **Type**: String                             |                                |                |
        |                                              |                                |                |
@@ -2515,7 +2512,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **contact_resistance.end**                   | **Description**                | **Example**    |
@@ -2538,7 +2535,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **contact_resistance.start**                 | **Description**                | **Example**    |
@@ -2561,7 +2558,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_quality.rating.author**               | **Description**                | **Example**    |
@@ -2584,7 +2581,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_quality.rating.method**               | **Description**                | **Example**    |
@@ -2607,7 +2604,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_quality.rating.value**                | **Description**                | **Example**    |
@@ -2630,7 +2627,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_quality.warning**                     | **Description**                | **Example**    |
@@ -2653,7 +2650,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **dc.end**                                   | **Description**                | **Example**    |
@@ -2676,7 +2673,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **dc.start**                                 | **Description**                | **Example**    |
@@ -2699,7 +2696,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **dipole_length**                            | **Description**                | **Example**    |
@@ -2722,21 +2719,23 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **fdsn.channel_code**                        | **Description**                | **Example**    |
        +==============================================+================================+================+
        | **Required**: :blue:`False`                  | FDSN channel code, this is a   | LQN            |
        |                                              | 3 character code in the form   |                |
-       | **Units**: None                              | {band}{type}{direction}        |                |
-       |                                              | <https://ds.iris.edu/ds/nodes/ |                |
-       | **Type**: String                             | dmc/data/formats/              |                |
-       |                                              | seed-channel-naming/>          |                |
+       | **Units**: None                              | [band][type][direction]        |                |
+       |                                              |                                |                |
+       | **Type**: String                             |                                |                |
+       |                                              |                                |                |
        | **Style**: Alpha-Numeric                     |                                |                |
        |                                              |                                |                |
        |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
+	   
+.. seealso:: https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/ for more information on channel codes.
 
 :navy:`filter.applied`
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -2745,15 +2744,15 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **filter.applied**                           | **Description**                | **Example**    |
        +==============================================+================================+================+
-       | **Required**: :red:`True`                    | Boolean if filter has been     |  True          |
+       | **Required**: :red:`True`                    | Boolean if filter has been     |  [True, False] |
        |                                              | applied or not. If more than   |                |
-       | **Units**: None                              | one filter                     |                |
-       |                                              |                                |                |
+       | **Units**: None                              | one filter input as a list     |                |
+       |                                              | that matches filter.names      |                |
        | **Type**: Boolean                            |                                |                |
        |                                              |                                |                |
        | **Style**: List                              |                                |                |
@@ -2768,7 +2767,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **filter.comments**                          | **Description**                | **Example**    |
@@ -2791,16 +2790,16 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **filter.name**                              | **Description**                | **Example**    |
        +==============================================+================================+================+
-       | **Required**: :red:`True`                    | Name of filter applied or to   | lowpass_electr |
-       |                                              | be applied. If more than one   | ic             |
-       | **Units**: None                              | filter                         |                |
-       |                                              |                                |                |
-       | **Type**: String                             |                                |                |
+       | **Required**: :red:`True`                    | Name of filter applied or to   | [gain,         |
+       |                                              | be applied. If more than one   |  highpass_e]   |
+       | **Units**: None                              | filter input as a list in the  |                |
+       |                                              | order in which the should be   |                |
+       | **Type**: String                             | applied.                       |                |
        |                                              |                                |                |
        | **Style**: List                              |                                |                |
        |                                              |                                |                |
@@ -2814,7 +2813,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **measurement_azimuth**                      | **Description**                | **Example**    |
@@ -2837,7 +2836,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **measurement_tilt**                         | **Description**                | **Example**    |
@@ -2860,7 +2859,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **negative.elevation**                       | **Description**                | **Example**    |
@@ -2883,7 +2882,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **negative.id**                              | **Description**                | **Example**    |
@@ -2906,7 +2905,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **negative.latitude**                        | **Description**                | **Example**    |
@@ -2929,7 +2928,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **negative.longitude**                       | **Description**                | **Example**    |
@@ -2952,7 +2951,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **negative.manufacturer**                    | **Description**                | **Example**    |
@@ -2975,7 +2974,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **negative.model**                           | **Description**                | **Example**    |
@@ -2998,7 +2997,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **negative.type**                            | **Description**                | **Example**    |
@@ -3021,7 +3020,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **positive.elevation**                       | **Description**                | **Example**    |
@@ -3044,7 +3043,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **positive.id**                              | **Description**                | **Example**    |
@@ -3067,7 +3066,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **positive.latitude**                        | **Description**                | **Example**    |
@@ -3090,7 +3089,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **positive.longitude**                       | **Description**                | **Example**    |
@@ -3113,7 +3112,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **positive.manufacturer**                    | **Description**                | **Example**    |
@@ -3136,7 +3135,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **positive.model**                           | **Description**                | **Example**    |
@@ -3159,7 +3158,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **positive.type**                            | **Description**                | **Example**    |
@@ -3182,7 +3181,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **sample_rate**                              | **Description**                | **Example**    |
@@ -3205,7 +3204,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **time_period.end**                          | **Description**                | **Example**    |
@@ -3228,7 +3227,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **time_period.start**                        | **Description**                | **Example**    |
@@ -3251,7 +3250,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **transformed_azimuth**                      | **Description**                | **Example**    |
@@ -3274,7 +3273,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **transformed_tilt**                         | **Description**                | **Example**    |
@@ -3297,7 +3296,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **type**                                     | **Description**                | **Example**    |
@@ -3320,7 +3319,7 @@ Electric Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **units**                                    | **Description**                | **Example**    |
@@ -3401,7 +3400,7 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **channel_number**                           | **Description**                | **Example**    |
@@ -3424,7 +3423,7 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **comments**                                 | **Description**                | **Example**    |
@@ -3447,14 +3446,14 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **component**                                | **Description**                | **Example**    |
        +==============================================+================================+================+
        | **Required**: :red:`True`                    | Name of the component          | Hx             |
-       |                                              | measured.  Options: \quad [ Hx |                |
-       | **Units**: None                              |  ;  Hy  ;  Hz  ]               |                |
+       |                                              | measured.  Options ->          |                |
+       | **Units**: None                              | [Hx; Hy; Hz]                   |                |
        |                                              |                                |                |
        | **Type**: String                             |                                |                |
        |                                              |                                |                |
@@ -3470,7 +3469,7 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_quality.rating.author**               | **Description**                | **Example**    |
@@ -3493,7 +3492,7 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_quality.rating.method**               | **Description**                | **Example**    |
@@ -3516,7 +3515,7 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_quality.rating.value**                | **Description**                | **Example**    |
@@ -3539,7 +3538,7 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_quality.warning**                     | **Description**                | **Example**    |
@@ -3562,21 +3561,23 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **fdsn.channel_code**                        | **Description**                | **Example**    |
        +==============================================+================================+================+
        | **Required**: :blue:`False`                  | FDSN channel code, this is a   | LQN            |
        |                                              | 3 character code in the form   |                |
-       | **Units**: None                              | {band}{type}{direction}        |                |
-       |                                              | https://ds.iris.edu/ds/nodes/  |                |
-       | **Type**: String                             | dmc/data/formats/              |                |
-       |                                              | seed-channel-naming/           |                |
+       | **Units**: None                              | [band][type][direction]        |                |
+       |                                              |                                |                |
+       | **Type**: String                             |                                |                |
+       |                                              |                                |                |
        | **Style**: Alpha-Numeric                     |                                |                |
        |                                              |                                |                |
        |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
+	   
+.. seealso:: https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/ for more information on channel codes.
 	   
 
 :navy:`filter.applied`
@@ -3586,15 +3587,15 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **filter.applied**                           | **Description**                | **Example**    |
        +==============================================+================================+================+
-       | **Required**: :red:`True`                    | Boolean if filter has been     |  True          |
+       | **Required**: :red:`True`                    | Boolean if filter has been     |  [True, False] |
        |                                              | applied or not. If more than   |                |
-       | **Units**: None                              | one filter                     |                |
-       |                                              |                                |                |
+       | **Units**: None                              | one filter input as a list     |                |
+       |                                              | that matches filter.names      |                |
        | **Type**: Boolean                            |                                |                |
        |                                              |                                |                |
        | **Style**: List                              |                                |                |
@@ -3609,7 +3610,7 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **filter.comments**                          | **Description**                | **Example**    |
@@ -3632,22 +3633,22 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **filter.name**                              | **Description**                | **Example**    |
        +==============================================+================================+================+
-       | **Required**: :red:`True`                    | Name of filter applied or to   | lowpass_electr | 
-       |                                              | be applied. If more than one   | ic             |
-       | **Units**: None                              | filter                         |                |
-       |                                              |                                |                |
-       | **Type**: String                             |                                |                |
+       | **Required**: :red:`True`                    | Name of filter applied or to   | [gain,         |
+       |                                              | be applied. If more than one   | lowpass_h]     |
+       | **Units**: None                              | filter input as a list in the  |                |
+       |                                              | order in which the should be   |                |
+       | **Type**: String                             | applied.                       |                |
        |                                              |                                |                |
        | **Style**: List                              |                                |                |
        |                                              |                                |                |
        |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-
+	   
 :navy:`h_field_max.end`
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -3655,7 +3656,7 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **h_field_max.end**                          | **Description**                | **Example**    |
@@ -3678,7 +3679,7 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **h_field_max.start**                        | **Description**                | **Example**    |
@@ -3701,7 +3702,7 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **h_field_min.end**                          | **Description**                | **Example**    |
@@ -3724,7 +3725,7 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **h_field_min.start**                        | **Description**                | **Example**    |
@@ -3747,7 +3748,7 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **location.elevation**                       | **Description**                | **Example**    |
@@ -3770,7 +3771,7 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **location.latitude**                        | **Description**                | **Example**    |
@@ -3793,7 +3794,7 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **location.longitude**                       | **Description**                | **Example**    |
@@ -3816,7 +3817,7 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **measurement_azimuth**                      | **Description**                | **Example**    |
@@ -3839,7 +3840,7 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **measurement_tilt**                         | **Description**                | **Example**    |
@@ -3862,7 +3863,7 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **sample_rate**                              | **Description**                | **Example**    |
@@ -3885,7 +3886,7 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **sensor.id**                                | **Description**                | **Example**    |
@@ -3908,7 +3909,7 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **sensor.manufacturer**                      | **Description**                | **Example**    |
@@ -3931,7 +3932,7 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **sensor.model**                             | **Description**                | **Example**    |
@@ -3954,7 +3955,7 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **sensor.type**                              | **Description**                | **Example**    |
@@ -3977,7 +3978,7 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **time_period.end**                          | **Description**                | **Example**    |
@@ -4000,7 +4001,7 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **time_period.start**                        | **Description**                | **Example**    |
@@ -4023,7 +4024,7 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **transformed_azimuth**                      | **Description**                | **Example**    |
@@ -4046,7 +4047,7 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **transformed_tilt**                         | **Description**                | **Example**    |
@@ -4069,7 +4070,7 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **type**                                     | **Description**                | **Example**    |
@@ -4092,7 +4093,7 @@ Magnetic Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **units**                                    | **Description**                | **Example**    |
@@ -4206,7 +4207,7 @@ Filter Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **type**                                     | **Description**                | **Example**    |
@@ -4229,7 +4230,7 @@ Filter Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **name**                                     | **Description**                | **Example**    |
@@ -4252,7 +4253,7 @@ Filter Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **units_in**                                 | **Description**                | **Example**    |
@@ -4275,7 +4276,7 @@ Filter Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **units_out**                                | **Description**                | **Example**    |
@@ -4298,7 +4299,7 @@ Filter Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **calibration_date**                         | **Description**                | **Example**    |
@@ -4346,7 +4347,7 @@ Auxiliary Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **channel_number**                           | **Description**                | **Example**    |
@@ -4369,7 +4370,7 @@ Auxiliary Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **comments**                                 | **Description**                | **Example**    |
@@ -4392,7 +4393,7 @@ Auxiliary Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **component**                                | **Description**                | **Example**    |
@@ -4415,7 +4416,7 @@ Auxiliary Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_quality.rating.author**               | **Description**                | **Example**    |
@@ -4438,7 +4439,7 @@ Auxiliary Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_quality.rating.method**               | **Description**                | **Example**    |
@@ -4461,7 +4462,7 @@ Auxiliary Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_quality.rating.value**                | **Description**                | **Example**    |
@@ -4484,7 +4485,7 @@ Auxiliary Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **data_quality.warning**                     | **Description**                | **Example**    |
@@ -4507,21 +4508,23 @@ Auxiliary Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **fdsn.channel_code**                        | **Description**                | **Example**    |
        +==============================================+================================+================+
        | **Required**: :blue:`False`                  | FDSN channel code, this is a   | LQN            |
        |                                              | 3 character code in the form   |                |
-       | **Units**: None                              | {band}{type}{direction}        |                |
-       |                                              | https://ds.iris.edu/ds/nodes/  |                |
-       | **Type**: String                             | dmc/data/formats/              |                |
-       |                                              | seed-channel-naming/           |                |
+       | **Units**: None                              | [band][type][direction]        |                |
+       |                                              |                                |                |
+       | **Type**: String                             |                                |                |
+       |                                              |                                |                |
        | **Style**: Alpha-Numeric                     |                                |                |
        |                                              |                                |                |
        |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
+	   
+.. seealso:: https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/ for more information on channel codes.
 	   
 
 :navy:`filter.applied`
@@ -4531,15 +4534,15 @@ Auxiliary Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **filter.applied**                           | **Description**                | **Example**    |
        +==============================================+================================+================+
-       | **Required**: :red:`True`                    | Boolean if filter has been     |  True          |
+       | **Required**: :red:`True`                    | Boolean if filter has been     |  [True, False] |
        |                                              | applied or not. If more than   |                |
-       | **Units**: None                              | one filter                     |                |
-       |                                              |                                |                |
+       | **Units**: None                              | one filter input as a list     |                |
+       |                                              | that matches filter.names      |                |
        | **Type**: Boolean                            |                                |                |
        |                                              |                                |                |
        | **Style**: List                              |                                |                |
@@ -4554,7 +4557,7 @@ Auxiliary Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **filter.comments**                          | **Description**                | **Example**    |
@@ -4577,16 +4580,16 @@ Auxiliary Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **filter.name**                              | **Description**                | **Example**    |
        +==============================================+================================+================+
-       | **Required**: :red:`True`                    | Name of filter applied or to   | lowpass_auxili |
-       |                                              | be applied. If more than one   | ary            |
-       | **Units**: None                              | filter                         |                |
-       |                                              |                                |                |
-       | **Type**: String                             |                                |                |
+       | **Required**: :red:`True`                    | Name of filter applied or to   | [gain, lp_aux] |
+       |                                              | be applied. If more than one   |                |
+       | **Units**: None                              | filter input as a list in the  |                |
+       |                                              | order in which the should be   |                |
+       | **Type**: String                             | applied.                       |                |
        |                                              |                                |                |
        | **Style**: List                              |                                |                |
        |                                              |                                |                |
@@ -4600,7 +4603,7 @@ Auxiliary Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **location.elevation**                       | **Description**                | **Example**    |
@@ -4623,7 +4626,7 @@ Auxiliary Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **location.latitude**                        | **Description**                | **Example**    |
@@ -4646,7 +4649,7 @@ Auxiliary Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **location.longitude**                       | **Description**                | **Example**    |
@@ -4669,7 +4672,7 @@ Auxiliary Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **measurement_azimuth**                      | **Description**                | **Example**    |
@@ -4692,7 +4695,7 @@ Auxiliary Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **measurement_tilt**                         | **Description**                | **Example**    |
@@ -4715,7 +4718,7 @@ Auxiliary Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **sample_rate**                              | **Description**                | **Example**    |
@@ -4738,7 +4741,7 @@ Auxiliary Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **time_period.end**                          | **Description**                | **Example**    |
@@ -4761,7 +4764,7 @@ Auxiliary Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **time_period.start**                        | **Description**                | **Example**    |
@@ -4784,7 +4787,7 @@ Auxiliary Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **transformed_azimuth**                      | **Description**                | **Example**    |
@@ -4807,7 +4810,7 @@ Auxiliary Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **transformed_tilt**                         | **Description**                | **Example**    |
@@ -4830,7 +4833,7 @@ Auxiliary Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **type**                                     | **Description**                | **Example**    |
@@ -4853,7 +4856,7 @@ Auxiliary Channel Attributes
 
    .. table::
        :class: tight-table
-       :widths: 45 30 15
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
        | **units**                                    | **Description**                | **Example**    |
@@ -4888,9 +4891,9 @@ Example Auxiliary XML
                <value type="Integer">4</value>
            </rating>
        </data_quality>
-	   <fdsn>
-	       <channel_code>LQN</channel_code>
-	   <fdsn>
+       <fdsn>
+           <channel_code>LQN</channel_code>
+       <fdsn>
        <filter>
            <name>
                <i>lowpass</i>
