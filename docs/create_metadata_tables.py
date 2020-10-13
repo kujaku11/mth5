@@ -100,6 +100,7 @@ def write_lines(lines_list, c1, c2, c3):
 
     return lines
 
+
 def write_block(entry, c1, c2, c3):
     """
      write table lines
@@ -115,7 +116,7 @@ def write_block(entry, c1, c2, c3):
     :rtype: TYPE
 
     """
-    
+
     line = "       | {0:<{1}}| {2:<{3}} | {4:<{5}}|"
     hline = "       +{0}+{1}+{2}+".format(
         "-" * (c1 + 1), "-" * (c2 + 2), "-" * (c3 + 1)
@@ -127,14 +128,14 @@ def write_block(entry, c1, c2, c3):
 
     lines = [
         section,
-        '~' * len(section),
-        '',
-        '.. container::',
-        '',
-        '   .. table::',
-        '       :class: tight-table',
-        f'       :widths: {c1} {c2} {c3}',
-        '',
+        "~" * len(section),
+        "",
+        ".. container::",
+        "",
+        "   .. table::",
+        "       :class: tight-table",
+        f"       :widths: {c1} {c2} {c3}",
+        "",
         hline,
         line.format(f"**{entry[0]}**", c1, "**Description**", c2, "**Example**", c3),
         mline,
@@ -143,7 +144,9 @@ def write_block(entry, c1, c2, c3):
     d_lines = wrap_description(entry[5], c2)
     e_lines = wrap_description(entry[-1], c3)
     # line 1 is with the entry
-    lines.append(line.format(f"**Required**: {entry[1]}", c1, d_lines[0], c2, e_lines[0], c3))
+    lines.append(
+        line.format(f"**Required**: {entry[1]}", c1, d_lines[0], c2, e_lines[0], c3)
+    )
     # line 2 skip an entry in the
     lines.append(line.format("", c1, d_lines[1], c2, e_lines[1], c3))
     # line 3 required
@@ -170,9 +173,7 @@ def write_block(entry, c1, c2, c3):
     lines.append(line.format("", c1, d_lines[7], c2, e_lines[7], c3))
 
     # line 9 type
-    lines.append(
-        line.format("", c1, d_lines[8], c2, e_lines[8], c3)
-    )
+    lines.append(line.format("", c1, d_lines[8], c2, e_lines[8], c3))
 
     # line 10 blank
     if len(d_lines) > 9:
@@ -181,11 +182,9 @@ def write_block(entry, c1, c2, c3):
             lines.append(line.format("", c1, d_line, c2, "", c3))
 
     lines.append(hline)
-    lines.append('')
+    lines.append("")
 
     return lines
-
-    
 
 
 lines = fn.read_text().split("\n")
@@ -221,8 +220,8 @@ c3 = 15
 for key, sections in entries.items():
     section_lines = []
     for entry in sections:
-        section_lines += (write_block(entry, c1, c2, c3))
-        
+        section_lines += write_block(entry, c1, c2, c3)
+
     with open(
         r"c:\Users\peaco\Documents\{0}_metadata_table.rst".format(key), "w"
     ) as fid:

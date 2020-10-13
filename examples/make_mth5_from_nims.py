@@ -54,27 +54,30 @@ for nims_fn in nims_dir.iterdir():
     nims_station.channels_recorded = run_ts.metadata.channels_recorded_all
     nims_station.time_period.start = run_ts.start.iso_str
     nims_station.time_period.end = run_ts.end.iso_str
-    
+
     # initialize a station
-    station_group = m.add_station(nims_station.archive_id, station_metadata=nims_station)
-    
+    station_group = m.add_station(
+        nims_station.archive_id, station_metadata=nims_station
+    )
+
     # make a run group
     run_group = station_group.add_run(run_ts.metadata.id, run_metadata=run_ts.metadata)
-    
+
     # add data to the run group
     channels = run_group.from_runts(run_ts)
-    
+
     # validate run metadata
     run_group.validate_run_metadata()
-    
+
     # need to update the station summary table entry
     station_group.summary_table.add_row(
-            run_group.table_entry, station_group.summary_table.locate("id", run_group.metadata.id)
-        )
-    
+        run_group.table_entry,
+        station_group.summary_table.locate("id", run_group.metadata.id),
+    )
+
     # update station metadata to ensure consistency
     station_group.validate_station_metadata()
-    
+
 survey_group.update_survey_metadata()
 
 processing_end = MTime()

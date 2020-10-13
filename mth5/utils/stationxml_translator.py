@@ -36,9 +36,9 @@ def flip_dict(original_dict):
 
     """
     flipped_dict = {}
-    
+
     for k, v in original_dict.items():
-        if v in [None, 'special']:
+        if v in [None, "special"]:
             continue
         if k in [None]:
             continue
@@ -48,8 +48,9 @@ def flip_dict(original_dict):
                 flipped_dict[value] = k
         else:
             flipped_dict[str(v)] = k
-            
+
     return flipped_dict
+
 
 release_dict = {
     "CC-0": "open",
@@ -91,9 +92,9 @@ network_translator.update(
 
 ### StationXML to MT Survey
 mt_survey_translator = flip_dict(network_translator)
-mt_survey_translator['project_lead'] = 'operator'
-mt_survey_translator['name'] = 'alternate_code'
-mt_survey_translator['fdsn.network'] = 'code'
+mt_survey_translator["project_lead"] = "operator"
+mt_survey_translator["name"] = "alternate_code"
+mt_survey_translator["fdsn.network"] = "code"
 
 ### MT Station to StationXML Station
 station_translator = deepcopy(base_translator)
@@ -850,7 +851,8 @@ class MTToStationXML:
         self.logger.info("Wrote StationXML to {0}".format(station_xml_fn))
 
         return station_xml_fn
-    
+
+
 # =============================================================================
 # Translate from stationxml to mth5
 # =============================================================================
@@ -863,17 +865,17 @@ def read_comment(inv_comment):
     :rtype: TYPE
 
     """
-    
+
     a_dict = {}
-    key = inv_comment.subject.strip().replace(' ', '_').lower()
-    
-    if ':' in inv_comment.value:
+    key = inv_comment.subject.strip().replace(" ", "_").lower()
+
+    if ":" in inv_comment.value:
         a_dict[key] = {}
-        a_list = inv_comment.value.split(',')
+        a_list = inv_comment.value.split(",")
         for aa in a_list:
-            k, v = [vv.strip() for vv in aa.split(':', 1)]
+            k, v = [vv.strip() for vv in aa.split(":", 1)]
             a_dict[key][k] = v
-            
+
     return a_dict
 
 
@@ -888,35 +890,36 @@ def inventory_network_to_mt_survey(network_obj):
     :rtype: TYPE
 
     """
-    
+
     mt_survey = metadata.Survey()
     doi_count = 0
-    
+
     for mth5_key, sxml_key in mt_survey_translator.items():
-        if mth5_key == 'project_lead':
+        if mth5_key == "project_lead":
             # only allow one person
             try:
                 inv_person = network_obj.operators[0].contacts[0]
-                mt_survey.set_attr_from_name('project_lead.author',
-                                             inv_person.names[0])
-                mt_survey.set_attr_from_name('project_lead.email',
-                                             inv_person.emails[0])
-                mt_survey.set_attr_from_name('project_lead.organization',
-                                             inv_person.agencies[0])
+                mt_survey.set_attr_from_name("project_lead.author", inv_person.names[0])
+                mt_survey.set_attr_from_name("project_lead.email", inv_person.emails[0])
+                mt_survey.set_attr_from_name(
+                    "project_lead.organization", inv_person.agencies[0]
+                )
             except IndexError:
                 pass
-            
+
             # is this redudant?
-            mt_survey.set_attr_from_name('project_lead.organization',
-                                         network_obj.operators[0].agencies[0])
-        elif '.doi' in mth5_key:
+            mt_survey.set_attr_from_name(
+                "project_lead.organization", network_obj.operators[0].agencies[0]
+            )
+        elif ".doi" in mth5_key:
             try:
-                mt_survey.set_attr_from_name(mth5_key, 
-                                             network_obj.identifiers[doi_count])
+                mt_survey.set_attr_from_name(
+                    mth5_key, network_obj.identifiers[doi_count]
+                )
                 doi_count += 1
             except IndexError:
                 pass
-                
+
         else:
             value = getattr(network_obj, sxml_key)
             if value is None:
@@ -925,16 +928,16 @@ def inventory_network_to_mt_survey(network_obj):
                 for k, v in zip(mth5_key, value):
                     mt_survey.set_attr_from_name(k, v)
             else:
-                if sxml_key == 'restricted_status':
+                if sxml_key == "restricted_status":
                     value = flip_dict(release_dict)[value]
-                if sxml_key in ['start_date', 'end_date']:
+                if sxml_key in ["start_date", "end_date"]:
                     value = value.isoformat()
-        
-                
+
             mt_survey.set_attr_from_name(mth5_key, value)
-        
+
     return mt_survey
-        
+
+
 def inventory_station_to_mt_station(inv_station_obj):
     """
     
@@ -944,31 +947,27 @@ def inventory_station_to_mt_station(inv_station_obj):
     :rtype: TYPE
 
     """
-    
+
     mt_station = metadata.Station()
-    
+
     for mth5_key, sxml_key in mt_station_translator.items():
-        #print(f"MTH5 = {mth5_key}\nStationXML = {sxml_key}")
+        # print(f"MTH5 = {mth5_key}\nStationXML = {sxml_key}")
         value = getattr(inv_station_obj, sxml_key)
-        if 'date' in sxml_key:
+        if "date" in sxml_key:
             value = value.isoformat()
-            
+
         if isinstance(value, inventory.Comment):
             v_dict = read_comment(value)
-            
-            
+
         mt_station.set_attr_from_name(mth5_key, value)
-    
+
     return mt_station
 
-
-    
 
 class StationXMLToMTH5:
     """
     Translate a station XML to MT metadata standards
     
     """
+
     pass
-    
-    
