@@ -29,8 +29,8 @@ h5_fn = Path(r"c:\Users\jpeacock\Documents\from_z3d.h5")
 # write some simple metadata for the survey
 survey = metadata.Survey()
 survey.acquired_by.author = "MT Master"
-survey.archive_id = "TST01"
-survey.archive_network = "MT"
+survey.fdsn.id = "TST01"
+survey.fdsn.network = "MT"
 survey.name = "test"
 
 # open mth5 file
@@ -43,22 +43,17 @@ m.survey_group.metadata.from_dict(survey.to_dict())
 # add station metadata from z3d files
 ch_list = []
 for fn in list(z3d_dir.glob("*.z3d")):
-    mtts_obj, extra = read_file(fn)
-    extra = structure_dict(extra)
-    station_metadata = metadata.Station()
-    station_metadata.from_dict({"station": extra["station"]})
-    run_metadata = metadata.Run()
-    run_metadata.from_dict({"run": extra["run"]})
+    mtts_obj = read_file(fn)
 
     station_group = m.add_station(
-        station_metadata.id, station_metadata=station_metadata
+        mtts_obj.station_metadata.id, station_metadata=mtts_obj.station_metadata
     )
 
     run_id = station_group.locate_run(mtts_obj.sample_rate, mtts_obj.start)
     if run_id is None:
         run_id = station_group.make_run_name()
 
-    run_group = station_group.add_run(run_id, run_metadata)
+    run_group = station_group.add_run(run_id, mtts_obj.run_metadata)
 
     ch_list.append(run_group.from_mtts(mtts_obj))
 
