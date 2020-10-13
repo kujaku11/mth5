@@ -17,7 +17,7 @@ import numpy as np
 from mth5 import mth5
 from mth5.standards import schema
 from mth5.utils.exceptions import MTH5Error, MTH5TableError
-from mth5.timeseries import MTTS, RunTS
+from mth5.timeseries import ChannelTS, RunTS
 from mth5.utils.mttime import MTime
 
 fn_path = Path(__file__).parent
@@ -123,7 +123,7 @@ class TestMTH5(unittest.TestCase):
                 "sample_rate": 1,
             }
         }
-        channel_ts = MTTS(
+        channel_ts = ChannelTS(
             "electric", data=np.random.rand(4096), channel_metadata=meta_dict
         )
 
@@ -157,7 +157,7 @@ class TestMTH5(unittest.TestCase):
                     "sample_rate": 1,
                 }
             }
-            channel_ts = MTTS(
+            channel_ts = ChannelTS(
                 ch_type, data=np.random.rand(4096), channel_metadata=meta_dict
             )
             ts_list.append(channel_ts)

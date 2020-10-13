@@ -30,14 +30,18 @@ from mth5 import metadata
 from mth5.utils.mttime import MTime
 from mth5.utils.exceptions import MTTSError
 
-from obspy.core.trace import Trace
+from obspy.core import Trace, Stream
 
+# =============================================================================
 # make a dictionary of available metadata classes
+# =============================================================================
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
-# ==============================================================================
+
 
 # ==============================================================================
-class MTTS:
+# Channel Time Series Object
+# ==============================================================================
+class ChannelTS:
     """
     
     .. note:: Assumes equally spaced samples from the start time.
@@ -55,11 +59,20 @@ class MTTS:
 
     """
 
-    def __init__(self, channel_type, data=None, channel_metadata=None, 
-                 station_metadata=None, **kwargs):
-        
+    def __init__(
+        self,
+        channel_type,
+        data=None,
+        channel_metadata=None,
+        station_metadata=None,
+        run_metadata=None,
+        **kwargs,
+    ):
+
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.station_metadata = metadata.Station()
+        self.run_metadata = metadata.Run()
+        self._ts = xr.DataArray([1], coords=[("time", [1])])
 
         # get correct metadata class
         try:
@@ -91,18 +104,15 @@ class MTTS:
                 self.logger.error(msg)
                 raise MTTSError(msg)
 
-        self._ts = xr.DataArray([1], coords=[("time", [1])])
-        self.update_xarray_metadata()
-        
-        # add station metadata, this will be important when propogating a single 
+        # add station metadata, this will be important when propogating a single
         # channel such that it can stand alone.
         if station_metadata is not None:
             if isinstance(station_metadata, metadata.Station):
                 self.station_metadata.from_dict(station_metadata.to_dict())
 
             elif isinstance(station_metadata, dict):
-                if not 'Station' in list(station_metadata.keys()):
-                    channel_metadata = {'Station': channel_metadata}
+                if not "Station" in list(station_metadata.keys()):
+                    station_metadata = {"Station": station_metadata}
                 self.station_metadata.from_dict(station_metadata)
                 self.logger.debug("Loading from metadata dict")
 
@@ -112,10 +122,31 @@ class MTTS:
                 )
                 self.logger.error(msg)
                 raise MTTSError(msg)
-            
 
+        # add run metadata, this will be important when propogating a single
+        # channel such that it can stand alone.
+        if run_metadata is not None:
+            if isinstance(run_metadata, metadata.Station):
+                self.run_metadata.from_dict(run_metadata.to_dict())
+
+            elif isinstance(run_metadata, dict):
+                if not "Run" in list(run_metadata.keys()):
+                    run_metadata = {"Run": run_metadata}
+                self.run_metadata.from_dict(run_metadata)
+                self.logger.debug("Loading from metadata dict")
+
+            else:
+                msg = "input metadata must be type {0} or dict, not {1}".format(
+                    type(self.run_metadata), type(run_metadata)
+                )
+                self.logger.error(msg)
+                raise MTTSError(msg)
+
+        # input data
         if data is not None:
             self.ts = data
+
+        self.update_xarray_metadata()
 
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
@@ -125,6 +156,9 @@ class MTTS:
 
     def __repr__(self):
         return self.ts.__repr__()
+    
+    def __eq__(self):
+        raise ValueError("cannot test eq yet")
 
     ### Properties ------------------------------------------------------------
     @property
@@ -219,7 +253,7 @@ class MTTS:
             if comp[0] != "e":
                 msg = (
                     "The current timeseries is an electric channel. "
-                    "Cannot change channel type, create a new MTTS object."
+                    "Cannot change channel type, create a new ChannelTS object."
                 )
                 self.logger.error(msg)
                 raise MTTSError(msg)
@@ -228,7 +262,7 @@ class MTTS:
             if comp[0] not in ["h", "b"]:
                 msg = (
                     "The current timeseries is a magnetic channel. "
-                    "Cannot change channel type, create a new MTTS object."
+                    "Cannot change channel type, create a new ChannelTS object."
                 )
                 self.logger.error(msg)
                 raise MTTSError(msg)
@@ -237,7 +271,7 @@ class MTTS:
             if comp[0] in ["e", "h", "b"]:
                 msg = (
                     "The current timeseries is an auxiliary channel. "
-                    "Cannot change channel type, create a new MTTS object."
+                    "Cannot change channel type, create a new ChannelTS object."
                 )
                 self.logger.error(msg)
                 raise MTTSError(msg)
@@ -255,7 +289,7 @@ class MTTS:
     def n_samples(self, n_samples):
         """number of samples (int)"""
         self.logger.warning(
-            "Cannot set the number of samples. Use `MTTS.resample` or `get_slice`"
+            "Cannot set the number of samples. Use `ChannelTS.resample` or `get_slice`"
         )
 
     @property
@@ -306,7 +340,7 @@ class MTTS:
         """
         self.metadata.sample_rate = sample_rate
         self.logger.warning(
-            "Setting MTTS.metadata.sample_rate. "
+            "Setting ChannelTS.metadata.sample_rate. "
             + "If you want to change the time series sample"
             + " rate use method `resample`."
         )
@@ -479,8 +513,8 @@ class MTTS:
         else:
             new_ts.attrs.update(self.metadata.to_dict()[self.metadata._class_name])
             # return new_ts
-            return MTTS(self.metadata.type, data=new_ts, metadata=self.metadata)
-        
+            return ChannelTS(self.metadata.type, data=new_ts, metadata=self.metadata)
+
     def to_obspy_trace(self):
         """
         Convert the time series to an :class:`obspy.core.trace.Trace` object.  This
@@ -491,8 +525,34 @@ class MTTS:
         :rtype: TYPE
 
         """
+
+        obspy_trace = Trace(self.ts.data)
+        obspy_trace.stats.channel = self.component
+        obspy_trace.stats.starttime = self.start.iso_str
+        obspy_trace.stats.sampling_rate = self.sample_rate
+        obspy_trace.stats.station = self.station_metadata.archive_id
+
+        return obspy_trace
+
+    def from_obspy_trace(self, obspy_trace):
+        """
+        Fill data from an :class:`obspy.core.Trace`
         
-        pass
+        :param obspy.core.trace obspy_trace: Obspy trace object
+        
+        """
+
+        if not isinstance(obspy_trace, Trace):
+            msg = f"Input must be obspy.core.Trace, not {type(obspy_trace)}"
+            self.logger.error(msg)
+            raise MTTSError(msg)
+
+        self.component = obspy_trace.stats.channel
+        self.start = obspy_trace.stats.starttime.isoformat()
+        self.sample_rate = obspy_trace.stats.sampling_rate
+        self.station_metadata.archive_id = obspy_trace.stats.station
+        self.metadata.units = "counts"
+        self.ts = obspy_trace.data
 
 
 # =============================================================================
@@ -506,9 +566,11 @@ class RunTS:
     
     """
 
-    def __init__(self, array_list=None, run_metadata=None):
+    def __init__(self, array_list=None, run_metadata=None, station_metadata=None):
+
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.metadata = metadata.Run()
+        self.station_metadata = metadata.Station()
         self._dataset = xr.Dataset()
 
         if run_metadata is not None:
@@ -517,12 +579,32 @@ class RunTS:
                 if "run" not in list(run_metadata.keys()):
                     run_metadata = {"run": run_metadata}
                 self.metadata.from_dict(run_metadata)
-           
+
             elif isinstance(run_metadata, metadata.Run):
                 self.metadata.from_dict(run_metadata.to_dict())
             else:
-                msg = ("Input metadata must be a dictionary or Run object, "
-                       f"not {type(run_metadata)}")
+                msg = (
+                    "Input metadata must be a dictionary or Run object, "
+                    f"not {type(run_metadata)}"
+                )
+                self.logger.error(msg)
+                raise MTTSError(msg)
+
+        # add station metadata, this will be important when propogating a run
+        if station_metadata is not None:
+            if isinstance(station_metadata, metadata.Station):
+                self.station_metadata.from_dict(station_metadata.to_dict())
+
+            elif isinstance(station_metadata, dict):
+                if not "Station" in list(station_metadata.keys()):
+                    station_metadata = {"Station": station_metadata}
+                self.station_metadata.from_dict(station_metadata)
+                self.logger.debug("Loading from metadata dict")
+
+            else:
+                msg = "input metadata must be type {0} or dict, not {1}".format(
+                    type(self.station_metadata), type(station_metadata)
+                )
                 self.logger.error(msg)
                 raise MTTSError(msg)
 
@@ -543,7 +625,7 @@ class RunTS:
         return self.__str__()
 
     def _validate_array_list(self, array_list):
-        """ check to make sure all entries are a :class:`MTTS` object"""
+        """ check to make sure all entries are a :class:`ChannelTS` object"""
 
         if not isinstance(array_list, (tuple, list)):
             msg = f"array_list must be a list or tuple, not {type(array_list)}"
@@ -551,8 +633,8 @@ class RunTS:
             raise TypeError(msg)
 
         for index, item in enumerate(array_list):
-            if not isinstance(item, MTTS):
-                msg = f"array entry {index} must be MTTS object not {type(item)}"
+            if not isinstance(item, ChannelTS):
+                msg = f"array entry {index} must be ChannelTS object not {type(item)}"
                 self.logger.error(msg)
                 raise TypeError(msg)
 
@@ -649,7 +731,7 @@ class RunTS:
         """
         
         :param array_list: list of xarrays
-        :type array_list: list of :class:`mth5.timeseries.MTTS` objects
+        :type array_list: list of :class:`mth5.timeseries.ChannelTS` objects
         :param align_type: how the different times will be aligned
             * ’outer’: use the union of object indexes
             * ’inner’: use the intersection of object indexes
@@ -709,53 +791,119 @@ class RunTS:
     def ex(self):
         """ EX """
         if "ex" in self.channels:
-            return MTTS("electric", self.dataset["ex"])
-        self.logger.info(f"Could not find EX in current run. {self.channels}")
+            return ChannelTS("electric", self.dataset["ex"])
+        self.logger.info(
+            f"Could not find EX in current run. Existing channels are {self.channels}"
+        )
         return None
 
     @property
     def ey(self):
         """ EY """
         if "ey" in self.channels:
-            return MTTS("electric", self.dataset["ey"])
-        self.logger.info(f"Could not find EY in current run. {self.channels}")
+            return ChannelTS("electric", self.dataset["ey"])
+        self.logger.info(
+            f"Could not find EY in current run. Existing channels are {self.channels}"
+        )
         return None
 
     @property
     def hx(self):
         """ HX """
         if "hx" in self.channels:
-            return MTTS("magnetic", self.dataset["hx"])
-        self.logger.info(f"Could not find HX in current run. {self.channels}")
+            return ChannelTS("magnetic", self.dataset["hx"])
+        self.logger.info(
+            f"Could not find HX in current run. Existing channels are {self.channels}"
+        )
         return None
 
     @property
     def hy(self):
         """ HY """
         if "hy" in self.channels:
-            return MTTS("magnetic", self.dataset["hy"])
-        self.logger.info(f"Could not find HY in current run. {self.channels}")
+            return ChannelTS("magnetic", self.dataset["hy"])
+        self.logger.info(
+            f"Could not find HY in current run. Existing channels are {self.channels}"
+        )
         return None
 
     @property
     def hz(self):
         """ HZ """
         if "hz" in self.channels:
-            return MTTS("magnetic", self.dataset["hz"])
-        self.logger.info(f"Could not find HX in current run. {self.channels}")
+            return ChannelTS("magnetic", self.dataset["hz"])
+        self.logger.info(
+            f"Could not find HX in current run. Existing channels are {self.channels}"
+        )
         return None
 
     @property
     def temperature(self):
         """ temperature """
         if "temperature" in self.channels:
-            return MTTS("auxiliary", self.dataset["temperature"])
-        self.logger.info(f"Could not find temperature in current run. {self.channels}")
+            return ChannelTS("auxiliary", self.dataset["temperature"])
+        self.logger.info(
+            f"Could not find temperature in current run. Existing channels are {self.channels}"
+        )
         return None
 
     @property
     def channels(self):
         return [cc for cc in list(self.dataset.data_vars)]
+
+    def to_obspy_stream(self):
+        """
+        convert time series to an :class:`obspy.core.Stream` which is like a 
+        list of :class:`obspy.core.Trace` objects.
+        
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        trace_list = []
+        for channel in self.channels:
+            ts_obj = getattr(self, channel)
+            trace_list.append(ts_obj.to_obspy_trace())
+
+        return Stream(traces=trace_list)
+
+    def from_obspy_stream(self, obspy_stream):
+        """
+        Get a run from an :class:`obspy.core.stream` which is a list of
+        :class:`obspy.core.Trace` objects.
+        
+        :param obspy_stream: DESCRIPTION
+        :type obspy_stream: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if not isinstance(obspy_stream, Stream):
+            msg = f"Input must be obspy.core.Stream not {type(obspy_stream)}"
+            self.logger.error(msg)
+            raise MTTSError(msg)
+
+        array_list = []
+        for obs_trace in obspy_stream:
+            if (
+                "q" in obs_trace.stats.channel.lower()
+                or "e" in obs_trace.stats.channel.lower()
+            ):
+                channel_ts = ChannelTS("electric")
+            elif (
+                "f" in obs_trace.stats.channel.lower()
+                or "h" in obs_trace.stats.channel.lower()
+            ):
+                channel_ts = ChannelTS("magnetic")
+            else:
+                channel_ts = ChannelTS("auxiliary")
+
+            channel_ts.from_obspy_trace(obs_trace)
+            array_list.append(channel_ts)
+
+        self.set_dataset(array_list)
 
     def plot(self):
         """

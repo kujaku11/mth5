@@ -211,7 +211,9 @@ class GPS(object):
 
         if len(gps_list) > 1:
             if len(gps_list[1]) > 6:
-                self.logger.debug("GPS time and lat missing a comma adding one, check time")
+                self.logger.debug(
+                    "GPS time and lat missing a comma adding one, check time"
+                )
                 gps_list = (
                     gps_list[0:1] + [gps_list[1][0:6], gps_list[1][6:]] + gps_list[2:]
                 )
@@ -999,11 +1001,11 @@ class NIMS(NIMSHeader):
 
         return None
 
-    def to_runts(self):
-        """ Get xarray for run """
+    @property
+    def run_metadata(self):
+        """ Run metadata """
 
         if self.ts is not None:
-
             meta_dict = {
                 "run": {
                     "channels_recorded_electric": "ex, ey",
@@ -1024,6 +1026,30 @@ class NIMS(NIMSHeader):
                 }
             }
 
+            return meta_dict
+
+        return None
+
+    @property
+    def station_metadata(self):
+        """ Station metadata from nims file """
+        if self.ts is not None:
+
+            return {
+                "Station": {
+                    "geographic_name": f"{self.site_name}, {self.state_province}, {self.country}",
+                    "location.declination.value": self.declination,
+                    "location.elevation": self.elevation,
+                    "location.latitude": self.latitude,
+                    "location.longitude": self.longitude,
+                }
+            }
+        return None
+
+    def to_runts(self):
+        """ Get xarray for run """
+
+        if self.ts is not None:
             return timeseries.RunTS(
                 array_list=[
                     self.hx,
@@ -1033,22 +1059,11 @@ class NIMS(NIMSHeader):
                     self.ey,
                     self.box_temperature,
                 ],
-                run_metadata=meta_dict,
+                run_metadata=self.run_metadata,
+                station_metadata=self.station_metadata,
             )
 
         return None
-
-    @property
-    def extra_metadata(self):
-        """ Extra metadata from nims file """
-
-        return {
-            "station.geographic_name": f"{self.site_name}, {self.state_province}, {self.country}",
-            "station.location.declination.value": self.declination,
-            "station.location.elevation": self.elevation,
-            "station.location.latitude": self.latitude,
-            "station.location.longitude": self.longitude,
-        }
 
     def _make_index_values(self):
         """
@@ -1872,4 +1887,4 @@ def read_nims(fn):
     nims_obj = NIMS(fn)
     nims_obj.read_nims()
 
-    return nims_obj.to_runts(), nims_obj.extra_metadata
+    return nims_obj.to_runts()

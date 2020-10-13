@@ -1,5 +1,4 @@
 attribute,type,required,style,units,description,options,alias,example
-archive_id,str,TRUE,alpha numeric,none,station name that is archived {a-z;A-Z;0-9},none,none,MT201
 channel_layout,str,FALSE,controlled vocabulary,none,how the station was laid out,[ L | X | other ],none,x
 channels_recorded,str,TRUE,name list,none,list of components recorded by the station. Should be a summary of all channels recorded dropped channels will be recorded in Run metadata.,[ Ex | Ey | Hx | Hy | Hz | T | Battery | other ],none,"[ Ex, Ey, Hx, Hy, Hz, T]"
 comments,str,FALSE,free form,none,any comments on the station,none,none,5 runs

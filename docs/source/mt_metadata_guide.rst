@@ -1,3 +1,7 @@
+.. role:: red
+.. role:: blue
+.. role:: navy
+
 ====================================================
 A Standard for Exchangeable Magnetotelluric Metadata
 ====================================================
@@ -69,21 +73,21 @@ data.
 Metadata Keyword Format
 -----------------------
 
-| The metadata key names should be self-explanatory and are structured
-  as follows:
-| ``{category}.{name}``, or can be nested
-  ``{category1}.{categroy2}.{name}`` where:
+The metadata key names should be self-explanatory and are structured
+as follows:
 
--  ``category`` refers to a metadata category or level that has common
-   parameters, such as ``location``, which will have a latitude,
-   longitude, and elevation :math:`\longrightarrow`
-   ``location.latitude``, ``location.longitude``, and
-   ``location.elevation``. These can be nested, for example,
-   ``station.location.latitude``
+    * ``{category}.{name}``, or can be nested
+    * ``{category1}.{categroy2}.{name}`` where:
+        -  ``category`` refers to a metadata category or level that has common
+           parameters, such as ``location``, which will have a latitude,
+           longitude, and elevation :math:`\longrightarrow`
+           ``location.latitude``, ``location.longitude``, and
+           ``location.elevation``. These can be nested, for example,
+           ``station.location.latitude``
 
--  ``name`` is a descriptive name, where words should be separated by an
-   underscore. Note that only whole words should be used and
-   abbreviations should be avoided, e.g. ``data_quality``.
+        -  ``name`` is a descriptive name, where words should be separated by an
+           underscore. Note that only whole words should be used and
+           abbreviations should be avoided, e.g. ``data_quality``.
 
 A ‘.’ represents the separator between different categories. The
 metadata can be stored in many different forms. Common forms are XML or
@@ -145,12 +149,12 @@ respect to the horizontal plane. In this reference frame, a tilt angle
 of 90 points downward, 0 is parallel with the surface, and -90 points
 upwards.
 
-| Archived data should remain in measurement coordinates. Any
-  transformation of coordinates for derived products can store the
-  transformation angles at the channel level in
-| ``channel.transformed_azimuth`` and ``channel.transformed_tilt``, the
-  transformed reference frame can then be recorded in
-  ``station.orientation.transformed_reference_frame``.
+Archived data should remain in measurement coordinates. Any
+transformation of coordinates for derived products can store the
+transformation angles at the channel level in
+``channel.transformed_azimuth`` and ``channel.transformed_tilt``, the
+transformed reference frame can then be recorded in
+``station.orientation.transformed_reference_frame``.
 
 .. figure:: images/reference_frame.svg
 
@@ -196,7 +200,9 @@ Note that any list should be comma separated.
 .. container::
    :name: tab:values
 
-   .. table:: Acceptable String Formats
+   .. table:: 
+       :class: tight-table
+       :widths: 30 45 15
 
       +----------------------+----------------------+----------------------+
       | **Style**            | **Description**      | **Example**          |
@@ -269,249 +275,517 @@ survey.
 Survey Attributes
 ------------------
 
-.. container::
-   :name: tab:survey
 
-   .. table:: Attributes for Survey
+
+:navy:`acquired_by.author`
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
        :class: tight-table
-       :widths: 30 50 20
-	   
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **Metadata Key**                             | **Description**                | **Example**    |
+       | **acquired_by.author**                       | **Description**                | **Example**    |
        +==============================================+================================+================+
-       | **acquired_by.author**                       | Name of the person or persons  | person name    |
+       | **Required**: :red:`True`                    | Name of the person or persons  | person name    |
        |                                              | who acquired the data.  This   |                |
-       | Required: True                               | can be different from the      |                |
+       | **Units**: None                              | can be different from the      |                |
        |                                              | project lead if a contractor   |                |
-       | Units: None                                  | or different group collected   |                |
+       | **Type**: String                             | or different group collected   |                |
        |                                              | the data.                      |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **acquired_by.comments**                     | Any comments about aspects of  | Lightning      |
+
+:navy:`acquired_by.comments`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **acquired_by.comments**                     | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Any comments about aspects of  | Lightning      |
        |                                              | how the data were collected or | strike caused a|
-       | Required: False                              | any inconsistencies in the     | time skip at 8 |
+       | **Units**: None                              | any inconsistencies in the     | time skip at 8 |
        |                                              | data.                          | am UTC.        |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **archive_id**                               | Alphanumeric name provided by  | YKN20          |
-       |                                              | the archive. For IRIS this     |                |
-       | Required: True                               | will be the FDSN providing a   |                |
-       |                                              | code.                          |                |
-       | Units: None                                  |                                |                |
-       |                                              |                                |                |
-       | Type: String                                 |                                |                |
-       |                                              |                                |                |
-       | Style: Alpha Numeric                         |                                |                |
+
+:navy:`fdsn.network`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **archive_network**                          | Network code given by          | EM             |
+       | **fdsn.network**                             | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Network code given by          | EM             |
        |                                              | PASSCAL/IRIS/FDSN.  This will  |                |
-       | Required: True                               | be a two character String that |                |
+       | **Units**: None                              | be a two character String that |                |
        |                                              | describes who and where the    |                |
-       | Units: None                                  | network operates.              |                |
+       | **Type**: String                             | network operates.              |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Alpha Numeric                     |                                |                |
        |                                              |                                |                |
-       | Style: Alpha Numeric                         |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **citation_dataset.doi**                     | The full URL of the doi Number | http://doi.1.a |
-       |                                              | provided by the archive that   |                |
-       | Required: True                               | describes the raw data         |                |
-       |                                              |                                |                |
-       | Units: None                                  |                                |                |
-       |                                              |                                |                |
-       | Type: String                                 |                                |                |
-       |                                              |                                |                |
-       | Style: URL                                   |                                |                |
+
+:navy:`citation_dataset.doi`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------------+
+       | **citation_dataset.doi**                     | **Description**                | **Example**          |
+       +==============================================+================================+======================+
+       | **Required**: :red:`True`                    | The full URL of the doi Number | http://doi.10.adfabe |
+       |                                              | provided by the archive that   |                      |
+       | **Units**: None                              | describes the raw data         |                      |
+       |                                              |                                |                      |
+       | **Type**: String                             |                                |                      |
+       |                                              |                                |                      |
+       | **Style**: URL                               |                                |                      |
+       |                                              |                                |                      |
+       |                                              |                                |                      |
+       +----------------------------------------------+--------------------------------+----------------------+
+
+:navy:`citation_journal.doi`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+-----------------------+
+       | **citation_journal.doi**                     | **Description**                | **Example**           |
+       +==============================================+================================+=======================+
+       | **Required**: :blue:`False`                  | The full URL of the doi Number |  http://doi.10.xbsfs2 |
+       |                                              | for a journal article(s) that  |                       |
+       | **Units**: None                              | uses these data.  If multiple  |                       |
+       |                                              | journal articles use these     |                       |
+       | **Type**: String                             | data provide as a comma        |                       |
+       |                                              | separated String of urls.      |                       |
+       | **Style**: URL                               |                                |                       |
+       |                                              |                                |                       |
+       +----------------------------------------------+--------------------------------+-----------------------+
+
+:navy:`comments`
+~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **citation_journal.doi**                     | The full URL of the doi Number | http://doi.1.b |
-       |                                              | for a journal article(s) that  |                |
-       | Required: False                              | uses these data.  If multiple  |                |
-       |                                              | journal articles use these     |                |
-       | Units: None                                  | data provide as a comma        |                |
-       |                                              | separated String of urls.      |                |
-       | Type: String                                 |                                |                |
-       |                                              |                                |                |
-       | Style: URL                                   |                                |                |
-       +----------------------------------------------+--------------------------------+----------------+
-       | **comments**                                 | Any comments about the survey  | Solar activity |
+       | **comments**                                 | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Any comments about the survey  | Solar activity |
        |                                              | that are important for any     | low.           |
-       | Required: False                              | user to know.                  |                |
+       | **Units**: None                              | user to know.                  |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **country**                                  | Country or countries that the  | Canada         |
+
+:navy:`country`
+~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **country**                                  | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Country or countries that the  |  Canada        |
        |                                              | survey is located in. If       |                |
-       | Required: True                               | multiple input as comma        |                |
+       | **Units**: None                              | multiple input as comma        |                |
        |                                              | separated names.               |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **datum**                                    | The reference datum for all    | WGS84          |
+
+:navy:`datum`
+~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **datum**                                    | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | The reference datum for all    | WGS84          |
        |                                              | geographic coordinates         |                |
-       | Required: True                               | throughout the survey. It is   |                |
+       | **Units**: None                              | throughout the survey. It is   |                |
        |                                              | up to the user to be sure that |                |
-       | Units: None                                  | all coordinates are projected  |                |
+       | **Type**: String                             | all coordinates are projected  |                |
        |                                              | into this datum.  Should be a  |                |
-       | Type: String                                 | well-known datum: [ WGS84 |    |                |
-       |                                              | NAD83 | OSGB36 | GDA94 |       |                |
-       | Style: Controlled Vocabulary                 | ETRS89 | PZ-90.11 | ... ]      |                |
+       | **Style**: Controlled Vocabulary             | well-known datum: [ WGS84  ;   |                |
+       |                                              | NAD83  ;  OSGB36  ;  GDA94  ;  |                |
+       |                                              | ETRS89  ;  PZ-90.11  ]         |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **geographic_name**                          | Geographic names that          | Southwestern   |
+
+:navy:`geographic_name`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **geographic_name**                          | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Geographic names that          | Southwestern,  |
        |                                              | encompass the survey.  These   | USA            |
-       | Required: True                               | should be broad geographic     |                |
+       | **Units**: None                              | should be broad geographic     |                |
        |                                              | names.  Further information    |                |
-       | Units: None                                  | can be found at https://www.   |                |
-       |                                              | usgs.gov/core-science-         |                |
-       | Type: String                                 | systems/ngp/board-on-          |                |
-       |                                              | geographic-names}              |                |
-       | Style: Free Form                             |                                |                |
+       | **Type**: String                             | can be found at https://w      |                |
+       |                                              | ww.usgs.gov/core-science-      |                |
+       | **Style**: Free Form                         | systems/ngp/board-on-          |                |
+       |                                              | geographic-names               |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **name**                                     | Descriptive name of the survey | MT Characteriza|
+
+:navy:`name`
+~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **name**                                     | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Descriptive name of the survey | MT Characteriza|
        |                                              |                                | tion of Yukon  |
-       | Required: True                               |                                | Terrane        |
+       | **Units**: None                              |                                | Terrane        |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **northwest_corner.latitude**                | Latitude of the northwest      | 23.134         |
+
+:navy:`northwest_corner.latitude`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **northwest_corner.latitude**                | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Latitude of the northwest      | 23.134         |
        |                                              | corner of the survey in the    |                |
-       | Required: True                               | datum specified.               |                |
+       | **Units**: decimal degrees                   | datum specified.               |                |
        |                                              |                                |                |
-       | Units: decimal degrees                       |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **northwest_corner.longitude**               | Longitude of the northwest     | 14.23          |
+
+:navy:`northwest_corner.longitude`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **northwest_corner.longitude**               | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Longitude of the northwest     | 14.23          |
        |                                              | corner of the survey in the    |                |
-       | Required: True                               | datum specified.               |                |
+       | **Units**: decimal degrees                   | datum specified.               |                |
        |                                              |                                |                |
-       | Units: decimal degrees                       |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **project**                                  | Alphanumeric name for the      | GEOMAG         |
+
+:navy:`project`
+~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **project**                                  | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Alphanumeric name for the      | GEOMAG         |
        |                                              | project.  This is different    |                |
-       | Required: True                               | than the archive_id in that it |                |
-       |                                              | describes a project as having  |                |
-       | Units: None                                  | a common project lead and      |                |
+       | **Units**: None                              | than the fdsn.identifier in    |                |
+       |                                              | that it describes a project    |                |
+       | **Type**: String                             | with a common project lead and |                |
        |                                              | source of funding.  There may  |                |
-       | Type: String                                 | be multiple surveys within a   |                |
+       | **Style**: Free Form                         | be multiple surveys within a   |                |
        |                                              | project. For example if the    |                |
-       | Style: Free Form                             | project is to estimate         |                |
+       |                                              | project is to estimate         |                |
        |                                              | geomagnetic hazards that       |                |
        |                                              | project = GEOMAG but the       |                |
-       |                                              | archive_id = YKN20.            |                |
+       |                                              | fdsn.identifier = YKN20.       |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **project_lead.author**                      | Name of the project lead.      | Magneto        |
+
+:navy:`project_lead.author`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **project_lead.author**                      | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Name of the project lead.      | Magneto        |
        |                                              | This should be a person who is |                |
-       | Required: True                               | responsible for the data.      |                |
+       | **Units**: None                              | responsible for the data.      |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **project_lead.email**                       | Email of the project lead.     | mt.guru@em.org |
+
+:navy:`project_lead.email`
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **project_lead.email**                       | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Email of the project lead.     | mt.guru@em.org |
        |                                              | This is in case there are any  |                |
-       | Required: True                               | questions about data.          |                |
+       | **Units**: None                              | questions about data.          |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Email                             |                                |                |
        |                                              |                                |                |
-       | Style: Email                                 |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **project_lead.organization**                | Organization name of the       | MT Gurus       |
+
+:navy:`project_lead.organization`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **project_lead.organization**                | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Organization name of the       | MT Gurus       |
        |                                              | project lead.                  |                |
-       | Required: True                               |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **release_license**                          | How the data can be used. The  | CC 0           |
-       |                                              | options are based on Creative  |                |
-       | Required: True                               | Commons licenses.  Options: [  |                |
-       |                                              | CC 0 | CC BY | CC BY-SA|       |                |
-       | Units: None                                  | CC BY-ND | CC BY-NC-SA |       |                |
-       |                                              | CC BY-NC-ND]. For details      |                |
-       | Type: String                                 | visit https://creativecommons. |                |
-       |                                              | org/licenses/                  |                |
-       | Style: Controlled Vocabulary                 |                                |                |
+
+:navy:`release_license`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+---------------------------------------+----------------+
+       | **release_license**                          | **Description**                       | **Example**    |
+       +==============================================+=======================================+================+
+       | **Required**: :red:`True`                    | How the data can be used. The         | CC-0           |
+       |                                              | options are based on Creative         |                |
+       | **Units**: None                              | Commons licenses.  Options -->        |                |
+       |                                              | [CC-0; CC-BY; CC-BY-SA; CC-BY-ND;     |                |
+       | **Type**: String                             | CC-BY-NC-SA; CC-BY-NC-ND]             |                |
+       |                                              | For details visit,                    |                |
+       | **Style**: Controlled Vocabulary             |                                       |                |
+       |                                              | https://creativecommons.org/licenses/ |                |
+       |                                              |                                       |                |
+       +----------------------------------------------+---------------------------------------+----------------+
+
+:navy:`southeast_corner.latitude`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **southeast_corner.latitude**                | Latitude of the southeast      | 23.134         |
+       | **southeast_corner.latitude**                | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Latitude of the southeast      | 23.134         |
        |                                              | corner of the survey in the    |                |
-       | Required: True                               | datum specified.               |                |
+       | **Units**: decimal degrees                   | datum specified.               |                |
        |                                              |                                |                |
-       | Units: decimal degrees                       |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **southeast_corner.longitude**               | Longitude of the southeast     | 14.23          |
+
+:navy:`southeast_corner.longitude`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **southeast_corner.longitude**               | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Longitude of the southeast     | 14.23          |
        |                                              | corner of the survey in the    |                |
-       | Required: True                               | datum specified.               |                |
+       | **Units**: decimal degrees                   | datum specified.               |                |
        |                                              |                                |                |
-       | Units: decimal degrees                       |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **summary**                                  | Summary paragraph of the       | Long project of|
+
+:navy:`summary`
+~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **summary**                                  | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Summary paragraph of the       | Long project of|
        |                                              | survey including the purpose;  | characterizing |
-       | Required: True                               | difficulties; data quality;    | mineral        |
+       | **Units**: None                              | difficulties; data quality;    | mineral        |
        |                                              | summary of outcomes if the     | resources in   |
-       | Units: None                                  | data have been processed and   | Yukon          |
+       | **Type**: String                             | data have been processed and   | Yukon          |
        |                                              | modeled.                       |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **time_period.end_date**                     | End date of the survey in UTC. | 2020-02-01     |
-       |                                              |                                |                |
-       | Required: True                               |                                |                |
-       |                                              |                                |                |
-       | Units: None                                  |                                |                |
-       |                                              |                                |                |
-       | Type: String                                 |                                |                |
-       |                                              |                                |                |
-       | Style: Date                                  |                                |                |
+
+:navy:`time_period.end_date`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **time_period.start_date**                   | Start date of the survey in    | 1995-06-21     |
+       | **time_period.end_date**                     | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | End date of the survey in UTC. | 2020-02-01     |
+       |                                              |                                |                |
+       | **Units**: None                              |                                |                |
+       |                                              |                                |                |
+       | **Type**: String                             |                                |                |
+       |                                              |                                |                |
+       | **Style**: Date                              |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+
+:navy:`time_period.start_date`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **time_period.start_date**                   | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Start date of the survey in    | 1995-06-21     |
        |                                              | UTC.                           |                |
-       | Required: True                               |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Date                              |                                |                |
        |                                              |                                |                |
-       | Style: Date                                  |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
+
+	
 	
 Example Survey XML Element
 --------------------------
@@ -524,8 +798,10 @@ Example Survey XML Element
            <author>MT Graduate Students</author>
            <comments>Multiple over 5 years</comments>
        </acquired_by>
-       <archive_id>SAM1990</archive_id>
-       <archive_network>EM</archive_network>
+       <fdsn>
+           <identifier>SAM1990</identifier>
+           <network>EM</network>
+       </fdsn> 
        <citation_dataset>
            <doi>https://doi.###</doi>
        </citation_dataset>
@@ -577,306 +853,672 @@ metadata but does not require a new station entry.
 Station Attributes
 -------------------
 
+:navy:`acquired_by.author`
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 .. container::
-   :name: tab:station
 
    .. table::
        :class: tight-table
-       :widths: 30 50 20
-   
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **Metadata Key**                             | **Description**                | **Example**    |
+       | **acquired_by.author**                       | **Description**                | **Example**    |
        +==============================================+================================+================+
-       | **acquired_by.author**                       | Name of person or group that   | person name    |
+       | **Required**: :red:`True`                    | Name of person or group that   | person name    |
        |                                              | collected the station data and |                |
-       | Required: True                               | will be the point of contact   |                |
+       | **Units**: None                              | will be the point of contact   |                |
        |                                              | if any questions arise about   |                |
-       | Units: None                                  | the data.                      |                |
+       | **Type**: String                             | the data.                      |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **acquired_by.comments**                     | Any comments about who         | Expert diggers |
+
+:navy:`acquired_by.comments`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **acquired_by.comments**                     | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Any comments about who         | Expert diggers.|
        |                                              | acquired the data.             |                |
-       | Required: False                              |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **archive_id**                               | Station name that is archived  | MT201          |
-       |                                              | {a-z;A-Z;0-9.  For IRIS this   |                |
-       | Required: True                               | is a 5 character String.       |                |
-       |                                              |                                |                |
-       | Units: None                                  |                                |                |
-       |                                              |                                |                |
-       | Type: String                                 |                                |                |
-       |                                              |                                |                |
-       | Style: Alpha Numeric                         |                                |                |
+
+
+:navy:`channel_layout`
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **channel_layout**                           | How the dipoles and magnetic   | "+"            |
+       | **channel_layout**                           | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | How the dipoles and magnetic   | "+"            |
        |                                              | channels of the station were   |                |
-       | Required: False                              | laid out.  Options: [ L | +    |                |
-       |                                              | | ... ]                        |                |
-       | Units: None                                  |                                |                |
+       | **Units**: None                              | laid out.  Options: ["L"; "+"] |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Style: Controlled Vocabulary                 |                                |                |
+       | **Style**: Controlled Vocabulary             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **channels_recorded**                        | List of components recorded by |  T             |
+
+:navy:`channels_recorded`
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **channels_recorded**                        | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | List of components recorded by |  T             |
        |                                              | the station. Should be a       |                |
-       | Required: True                               | summary of all channels        |                |
+       | **Units**: None                              | summary of all channels        |                |
        |                                              | recorded dropped channels will |                |
-       | Units: None                                  | be recorded in Run.  \qquad    |                |
-       |                                              | Options: [ Ex | Ey | Bx        |                |
-       | Type: String                                 | | By | Bz | T |                |                |
-       |                                              | Battery | ... ]                |                |
-       | Style: Controlled Vocabulary                 |                                |                |
+       | **Type**: String                             | be recorded in Run.            |                |
+       |                                              | Options:                       |                |
+       | **Style**: Controlled Vocabulary             | [ Ex;  Ey; Hx; Hy; Hz; T       |                |
+       |                                              | Battery; other  ]              |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **comments**                                 | Any comments on the station    | Pipeline near  |
+
+:navy:`comments`
+~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **comments**                                 | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Any comments on the station    | Pipeline near  |
        |                                              | that would be important for a  | by.            |
-       | Required: False                              | user.                          |                |
+       | **Units**: None                              | user.                          |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **data_type**                                | All types of data recorded by  | BBMT           |
+
+:navy:`data_type`
+~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_type**                                | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | All types of data recorded by  | BBMT           |
        |                                              | the station. If multiple types |                |
-       | Required: True                               | input as a comma separated     |                |
-       |                                              | list. Options: [ AMT | BBMT |  |                |
-       | Units: None                                  | LPMT]                          |                |
+       | **Units**: None                              | input as a comma separated     |                |
+       |                                              | list. Options -->              |                |
+       | **Type**: String                             | [RMT; AMT; BBMT; LPMT]         |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Controlled Vocabulary             |                                |                |
        |                                              |                                |                |
-       | Style: Controlled Vocabulary                 |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **geographic_name**                          | Closest geographic name to the | Whitehorse, YK |
+	   
+:navy:`fdsn.identifier`
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **fdsn.identifier**                          | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Station name that is archived  | MT201          |
+       |                                              | {a-z;A-Z;0-9.  For IRIS this   |                |
+       | **Units**: None                              | is a 5 character String.       |                |
+       |                                              |                                |                |
+       | **Type**: String                             |                                |                |
+       |                                              |                                |                |
+       | **Style**: Alpha Numeric                     |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+
+:navy:`geographic_name`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **geographic_name**                          | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Closest geographic name to the |  YK"           |
        |                                              | station                        |                |
-       | Required: True                               |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **id**                                       | Station name.  This can be a   | bear hallabaloo|
+
+:navy:`id`
+~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **id**                                       | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Station name.  This can be a   | bear hallabaloo|
        |                                              | longer name than the           |                |
-       | Required: True                               | archive_id name and be a more  |                |
-       |                                              | explanatory name.              |                |
-       | Units: None                                  |                                |                |
+       | **Units**: None                              | fdsn.identifier name and be a  |                |
+       |                                              | more explanatory name.         |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **location.declination.comments**            | Any comments on declination    | Different than |
+
+:navy:`location.declination.comments`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **location.declination.comments**            | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Any comments on declination    | Different than |
        |                                              | that are important to an end   | recorded       |
-       | Required: False                              | user.                          | declination    |
+       | **Units**: None                              | user.                          | declination    |
        |                                              |                                | from data      |
-       | Units: None                                  |                                | logger.        |
+       | **Type**: String                             |                                | logger.        |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **location.declination.model**               | Name of the geomagnetic        | WMM-2016       |
+
+:navy:`location.declination.model`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **location.declination.model**               | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Name of the geomagnetic        | WMM-2016       |
        |                                              | reference model as             |                |
-       | Required: True                               | \{model_name\\{-\\{YYYY\.      |                |
-       |                                              | Model options: \qquad [ EMAG2  |                |
-       | Units: None                                  | | EMM | HDGM | IGRF | WMM ]    |                |
+       | **Units**: None                              | model_name-YYYY.               |                |
+       |                                              | Model options ->               |                |
+       | **Type**: String                             | [EMAG2; EMM; HDGM; IGRF; WMM]  |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Controlled Vocabulary             |                                |                |
        |                                              |                                |                |
-       | Style: Controlled Vocabulary                 |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **location.declination.value**               | Declination angle relative to  | 12.3           |
+
+:navy:`location.declination.value`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **location.declination.value**               | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Declination angle relative to  | 12.3           |
        |                                              | geographic north positive      |                |
-       | Required: True                               | clockwise estimated from       |                |
+       | **Units**: decimal degrees                   | clockwise estimated from       |                |
        |                                              | location and geomagnetic       |                |
-       | Units: decimal degrees                       | model.                         |                |
+       | **Type**: Float                              | model.                         |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **location.elevation**                       | Elevation of station location  | 123.4          |
+
+:navy:`location.elevation`
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **location.elevation**                       | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Elevation of station location  | 123.4          |
        |                                              | in datum specified at survey   |                |
-       | Required: True                               | level.                         |                |
+       | **Units**: meters                            | level.                         |                |
        |                                              |                                |                |
-       | Units: meters                                |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **location.latitude**                        | Latitude of station location   | 23.134         |
+
+:navy:`location.latitude`
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **location.latitude**                        | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Latitude of station location   | 23.134         |
        |                                              | in datum specified at survey   |                |
-       | Required: True                               | level.                         |                |
+       | **Units**: decimal degrees                   | level.                         |                |
        |                                              |                                |                |
-       | Units: decimal degrees                       |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **location.longitude**                       | Longitude of station location  | 14.23          |
+
+:navy:`location.longitude`
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **location.longitude**                       | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Longitude of station location  | 14.23          |
        |                                              | in datum specified at survey   |                |
-       | Required: True                               | level.                         |                |
+       | **Units**: decimal degrees                   | level.                         |                |
        |                                              |                                |                |
-       | Units: decimal degrees                       |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **orientation.method**                       | Method for orienting station   | compass        |
-       |                                              | channels.  Options: [ compass  |                |
-       | Required: True                               | | GPS | theodolite |           |                |
-       |                                              | electric_compass | ... ]       |                |
-       | Units: None                                  |                                |                |
-       |                                              |                                |                |
-       | Type: String                                 |                                |                |
-       |                                              |                                |                |
-       | Style: Controlled Vocabulary                 |                                |                |
+
+:navy:`orientation.method`
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **orientation.reference_frame**              | Reference frame for station    | geomagnetic    |
+       | **orientation.method**                       | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Method for orienting station   | compass        |
+       |                                              | channels.  Options:            |                |
+       | **Units**: None                              | [compass; GPS; theodolite;     |                |
+       |                                              | electric_compass ]             |                |
+       | **Type**: String                             |                                |                |
+       |                                              |                                |                |
+       | **Style**: Controlled Vocabulary             |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+
+:navy:`orientation.reference_frame`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **orientation.reference_frame**              | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Reference frame for station    | geomagnetic    |
        |                                              | layout.  There are only 2      |                |
-       | Required: True                               | options geographic and         |                |
+       | **Units**: None                              | options geographic and         |                |
        |                                              | geomagnetic.  Both assume a    |                |
-       | Units: None                                  | right-handed coordinate system |                |
+       | **Type**: String                             | right-handed coordinate system |                |
        |                                              | with North=0                   |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Controlled Vocabulary             |                                |                |
        |                                              |                                |                |
-       | Style: Controlled Vocabulary                 |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **orientation.transformed_reference_frame**  | Reference frame rotation angel | 10             |
+
+:navy:`orientation.transformed_reference_frame`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **orientation.transformed_reference_frame**  | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Reference frame rotation angel | 10             |
        |                                              | relative to                    |                |
-       | Required: False                              | orientation.reference_frame    |                |
+       | **Units**: None                              | orientation.reference_frame    |                |
        |                                              | assuming positive clockwise.   |                |
-       | Units: None                                  | Should only be used if data    |                |
+       | **Type**: Float                              | Should only be used if data    |                |
        |                                              | are rotated.                   |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **provenance.comments**                      | Any comments on provenance of  | From a         |
+
+:navy:`provenance.comments`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **provenance.comments**                      | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Any comments on provenance of  | From a         |
        |                                              | the data.                      | graduated      |
-       | Required: False                              |                                | graduate       |
+       | **Units**: None                              |                                | graduate       |
        |                                              |                                | student.       |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **provenance.creation_time**                 | Date and time the file was     | 2020-02-08 T12:|
+
+:navy:`provenance.creation_time`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **provenance.creation_time**                 | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Date and time the file was     | 2020-02-08 T12:|
        |                                              | created.                       | 23:40.324600   |
-       | Required: True                               |                                | +00:00         |
+       | **Units**: None                              |                                | +00:00         |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Date Time                         |                                |                |
        |                                              |                                |                |
-       | Style: Date Time                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **provenance.log**                           | A history of any changes made  | 2020-02-10     |
+
+:navy:`provenance.log`
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **provenance.log**                           | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | A history of any changes made  | 2020-02-10     |
        |                                              | to the data.                   | T14:24:45+00:00|
-       | Required: False                              |                                | updated station|
+       | **Units**: None                              |                                | updated station|
        |                                              |                                | metadata.      |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **provenance.software.author**               | Author of the software used to | programmer 01  |
+
+:navy:`provenance.software.author`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **provenance.software.author**               | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Author of the software used to | programmer 01  |
        |                                              | create the data files.         |                |
-       | Required: True                               |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **provenance.software.name**                 | Name of the software used to   | mtrules        |
+
+:navy:`provenance.software.name`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **provenance.software.name**                 | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Name of the software used to   | mtrules        |
        |                                              | create data files              |                |
-       | Required: True                               |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **provenance.software.version**              | Version of the software used   | 12.01a         |
+
+:navy:`provenance.software.version`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **provenance.software.version**              | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Version of the software used   | 12.01a         |
        |                                              | to create data files           |                |
-       | Required: True                               |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **provenance.submitter.author**              | Name of the person submitting  | person name    |
+
+:navy:`provenance.submitter.author`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **provenance.submitter.author**              | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Name of the person submitting  | person name    |
        |                                              | the data to the archive.       |                |
-       | Required: True                               |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **provenance.submitter.email**               | Email of the person submitting | mt.guru@em.org |
+
+:navy:`provenance.submitter.email`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **provenance.submitter.email**               | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Email of the person submitting | mt.guru@em.org |
        |                                              | the data to the archive.       |                |
-       | Required: True                               |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Email                             |                                |                |
        |                                              |                                |                |
-       | Style: Email                                 |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **provenance.submitter.organization**        | Name of the organization that  | MT Gurus       |
+
+:navy:`provenance.submitter.organization`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **provenance.submitter.organization**        | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Name of the organization that  | MT Gurus       |
        |                                              | is submitting data to the      |                |
-       | Required: True                               | archive.                       |                |
+       | **Units**: None                              | archive.                       |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **time_period.end**                          | End date and time of           | 2020-02-04 T16:|
+
+:navy:`time_period.end`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **time_period.end**                          | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | End date and time of           | 2020-02-04 T16:|
        |                                              | collection in UTC.             | 23:45.453670   |
-       | Required: True                               |                                | +00:00         |
+       | **Units**: None                              |                                | +00:00         |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Date Time                         |                                |                |
        |                                              |                                |                |
-       | Style: Date Time                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **time_period.start**                        | Start date and time of         | 2020-02-01 T09:|
+
+:navy:`time_period.start`
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **time_period.start**                        | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Start date and time of         | 2020-02-01 T09:|
        |                                              | collection in UTC.             | 23:45.453670   |
-       | Required: True                               |                                | +00:00         |
+       | **Units**: None                              |                                | +00:00         |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Date Time                         |                                |                |
        |                                              |                                |                |
-       | Style: Date Time                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
+
 
 Example Station JSON
 --------------------
@@ -887,11 +1529,11 @@ Example Station JSON
            "acquired_by": {
                "author": "mt",
                "comments": null},
-           "archive_id": "MT012",
            "channel_layout": "L",
            "channels_recorded": "Ex, Ey, Bx, By",
            "comments": null,
            "data_type": "MT",
+           "fdsn.identifier": "MT012",
            "geographic_name": "Whitehorse, Yukon",
            "id": "Curious Bears Hallabaloo",
            "location": {
@@ -936,336 +1578,743 @@ time and maximum time for all channels recorded.
 Run Attributes
 ---------------
 
+:navy:`acquired_by.author`
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 .. container::
-   :name: tab:run
 
    .. table::
        :class: tight-table
-       :widths: 30 50 20
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
-       | **Metadata Key**                             | **Description**                | **Example**    |
+       | **acquired_by.author**                       | **Description**                | **Example**    |
        +==============================================+================================+================+
-       | **acquired_by.author**                       | Name of the person or persons  | M.T. Nubee     |
+       | **Required**: :red:`True`                    | Name of the person or persons  | M.T. Nubee     |
        |                                              | who acquired the run data.     |                |
-       | Required: True                               | This can be different from the |                |
+       | **Units**: None                              | This can be different from the |                |
        |                                              | station.acquired_by and        |                |
-       | Units: None                                  | survey.acquired_by.            |                |
+       | **Type**: String                             | survey.acquired_by.            |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **acquired_by.comments**                     | Any comments about who         | Group of       |
+
+:navy:`acquired_by.comments`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **acquired_by.comments**                     | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Any comments about who         | Group of       |
        |                                              | acquired the data.             | undergraduates.|
-       | Required: False                              |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **channels_recorded_auxiliary**              | List of auxiliary channels     |  battery       |
+
+:navy:`channels_recorded_auxiliary`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **channels_recorded_auxiliary**              | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | List of auxiliary channels     |  battery       |
        |                                              | recorded.                      |                |
-       | Required: True                               |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: name list                         |                                |                |
        |                                              |                                |                |
-       | Style: name list                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **channels_recorded_electric**               | List of electric channels      |  Ey            |
+
+:navy:`channels_recorded_electric`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **channels_recorded_electric**               | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | List of electric channels      |  Ey            |
        |                                              | recorded.                      |                |
-       | Required: True                               |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: name list                         |                                |                |
        |                                              |                                |                |
-       | Style: name list                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **channels_recorded_magnetic**               | List of magnetic channels      |  Bz            |
+
+:navy:`channels_recorded_magnetic`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **channels_recorded_magnetic**               | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | List of magnetic channels      |  Hz            |
        |                                              | recorded.                      |                |
-       | Required: True                               |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: name list                         |                                |                |
        |                                              |                                |                |
-       | Style: name list                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **comments**                                 | Any comments on the run that   | Badger attacked|
+
+:navy:`comments`
+~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **comments**                                 | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Any comments on the run that   | Badger attacked|
        |                                              | would be important for a user. | Ex.            |
-       | Required: False                              |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **comments**                                 | Any comments on the run that   | cows chewed    |
-       |                                              | would be important for a user. | cables at 9am  |
-       | Required: False                              |                                | local time.    |
-       |                                              |                                |                |
-       | Units: None                                  |                                |                |
-       |                                              |                                |                |
-       | Type: String                                 |                                |                |
-       |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+
+
+:navy:`data_logger.firmware.author`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **data_logger.firmware.author**              | Author of the firmware that    | instrument     |
+       | **data_logger.firmware.author**              | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Author of the firmware that    | instrument     |
        |                                              | runs the data logger.          | engineer       |
-       | Required: True                               |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **data_logger.firmware.name**                | Name of the firmware the data  | mtrules        |
+
+:navy:`data_logger.firmware.name`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_logger.firmware.name**                | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Name of the firmware the data  | mtrules        |
        |                                              | logger runs.                   |                |
-       | Required: False                              |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **data_logger.firmware.version**             | Version of the firmware that   | 12.01a         |
+
+:navy:`data_logger.firmware.version`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_logger.firmware.version**             | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Version of the firmware that   | 12.01a         |
        |                                              | runs the data logger.          |                |
-       | Required: False                              |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **data_logger.id**                           | Instrument ID Number can be    | mt01           |
+
+:navy:`data_logger.id`
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_logger.id**                           | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Instrument ID Number can be    | mt01           |
        |                                              | serial Number or a designated  |                |
-       | Required: False                              | ID.                            |                |
+       | **Units**: None                              | ID.                            |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **data_logger.manufacturer**                 | Name of person or company that | MT Gurus       |
+
+:navy:`data_logger.manufacturer`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_logger.manufacturer**                 | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Name of person or company that | MT Gurus       |
        |                                              | manufactured the data logger.  |                |
-       | Required: True                               |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **data_logger.model**                        | Model version of the data      | falcon5        |
+
+:navy:`data_logger.model`
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_logger.model**                        | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Model version of the data      | falcon5        |
        |                                              | logger.                        |                |
-       | Required: True                               |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **data_logger.power_source.comments**        | Any comment about the power    | Used a solar   |
+
+:navy:`data_logger.power_source.comments`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_logger.power_source.comments**        | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Any comment about the power    | Used a solar   |
        |                                              | source.                        | panel and it   |
-       | Required: False                              |                                | was cloudy.    |
+       | **Units**: None                              |                                | was cloudy.    |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Name                              |                                |                |
        |                                              |                                |                |
-       | Style: Name                                  |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **data_logger.power_source.id**              | Battery ID or name             | battery01      |
-       |                                              |                                |                |
-       | Required: False                              |                                |                |
-       |                                              |                                |                |
-       | Units: None                                  |                                |                |
-       |                                              |                                |                |
-       | Type: String                                 |                                |                |
-       |                                              |                                |                |
-       | Style: name                                  |                                |                |
+
+:navy:`data_logger.power_source.id`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **data_logger.power_source.type**            | Battery type                   | pb-acid gel    |
+       | **data_logger.power_source.id**              | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Battery ID or name             | battery01      |
+       |                                              |                                |                |
+       | **Units**: None                              |                                |                |
+       |                                              |                                |                |
+       | **Type**: String                             |                                |                |
+       |                                              |                                |                |
+       | **Style**: name                              |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+
+:navy:`data_logger.power_source.type`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_logger.power_source.type**            | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Battery type                   | pb-acid gel    |
        |                                              |                                | cell           |
-       | Required: False                              |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: name                              |                                |                |
        |                                              |                                |                |
-       | Style: name                                  |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **data_logger.power_source.voltage.end**     | End voltage                    | 12.1           |
-       |                                              |                                |                |
-       | Required: False                              |                                |                |
-       |                                              |                                |                |
-       | Units: volts                                 |                                |                |
-       |                                              |                                |                |
-       | Type: Float                                  |                                |                |
-       |                                              |                                |                |
-       | Style: Number                                |                                |                |
+
+:navy:`data_logger.power_source.voltage.end`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **data_logger.power_source.voltage.start**   | Starting voltage               | 14.3           |
+       | **data_logger.power_source.voltage.end**     | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | End voltage                    | 12.1           |
        |                                              |                                |                |
-       | Required: False                              |                                |                |
+       | **Units**: volts                             |                                |                |
        |                                              |                                |                |
-       | Units: volts                                 |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **data_logger.timing_system.comments**       | Any comment on timing system   | GPS locked with|
+
+:navy:`data_logger.power_source.voltage.start`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_logger.power_source.voltage.start**   | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Starting voltage               | 14.3           |
+       |                                              |                                |                |
+       | **Units**: volts                             |                                |                |
+       |                                              |                                |                |
+       | **Type**: Float                              |                                |                |
+       |                                              |                                |                |
+       | **Style**: Number                            |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+
+:navy:`data_logger.timing_system.comments`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_logger.timing_system.comments**       | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Any comment on timing system   | GPS locked with|
        |                                              | that might be useful for the   | internal quartz|
-       | Required: False                              | user.                          | clock          |
+       | **Units**: None                              | user.                          | clock          |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **data_logger.timing_system.drift**          | Estimated drift of the timing  | 0.001          |
+
+:navy:`data_logger.timing_system.drift`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_logger.timing_system.drift**          | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Estimated drift of the timing  | 0.001          |
        |                                              | system.                        |                |
-       | Required: False                              |                                |                |
+       | **Units**: seconds                           |                                |                |
        |                                              |                                |                |
-       | Units: seconds                               |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **data_logger.timing_system.type**           | Type of timing system used in  | GPS            |
+
+:navy:`data_logger.timing_system.type`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_logger.timing_system.type**           | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Type of timing system used in  | GPS            |
        |                                              | the data logger.               |                |
-       | Required: False                              |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **data_logger.timing_system.uncertainty**    | Estimated uncertainty of the   | 0.0002         |
+
+:navy:`data_logger.timing_system.uncertainty`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_logger.timing_system.uncertainty**    | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Estimated uncertainty of the   | 0.0002         |
        |                                              | timing system.                 |                |
-       | Required: False                              |                                |                |
+       | **Units**: seconds                           |                                |                |
        |                                              |                                |                |
-       | Units: seconds                               |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **data_logger.type**                         | Type of data logger            | broadband      |
+
+:navy:`data_logger.type`
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_logger.type**                         | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Type of data logger            | broadband      |
        |                                              |                                | 32-bit         |
-       | Required: True                               |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **data_type**                                | Type of data recorded for this | BBMT           |
-       |                                              | run.  Options: [ AMT | BBMT |  |                |
-       | Required: True                               | LPMT ]                         |                |
-       |                                              |                                |                |
-       | Units: None                                  |                                |                |
-       |                                              |                                |                |
-       | Type: String                                 |                                |                |
-       |                                              |                                |                |
-       | Style: Controlled Vocabulary                 |                                |                |
+
+:navy:`data_type`
+~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **id**                                       | Name of the run.  Should be    | MT302b         |
+       | **data_type**                                | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Type of data recorded for this | BBMT           |
+       |                                              | run.  Options ->               |                |
+       | **Units**: None                              | [RMT; AMT; BBMT; LPMT]         |                |
+       |                                              |                                |                |
+       | **Type**: String                             |                                |                |
+       |                                              |                                |                |
+       | **Style**: Controlled Vocabulary             |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+
+:navy:`fdsn.new_epoch`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_type**                                | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Boolean if a new epoch should  | False          |
+       |                                              | be made.  An epoch is a run    |                |
+       | **Units**: None                              | and if parameters of the run   |                |
+       |                                              | changes  set to True           |                |
+       | **Type**: String                             |                                |                |
+       |                                              |                                |                |
+       | **Style**: Controlled Vocabulary             |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+	   
+
+
+:navy:`id`
+~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **id**                                       | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Name of the run.  Should be    | MT302b         |
        |                                              | station name followed by an    |                |
-       | Required: True                               | alphabet letter for the run.   |                |
+       | **Units**: None                              | alphabet letter for the run.   |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Alpha Numeric                     |                                |                |
        |                                              |                                |                |
-       | Style: Alpha Numeric                         |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **metadata_by.author**                       | Person who input the metadata. | Metadata Zen   |
-       |                                              |                                |                |
-       | Required: True                               |                                |                |
-       |                                              |                                |                |
-       | Units: None                                  |                                |                |
-       |                                              |                                |                |
-       | Type: String                                 |                                |                |
-       |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+
+:navy:`metadata_by.author`
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **metadata_by.comments**                     | Any comments about the         | Undergraduate  |
+       | **metadata_by.author**                       | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Person who input the metadata. | Metadata Zen   |
+       |                                              |                                |                |
+       | **Units**: None                              |                                |                |
+       |                                              |                                |                |
+       | **Type**: String                             |                                |                |
+       |                                              |                                |                |
+       | **Style**: Free Form                         |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+
+:navy:`metadata_by.comments`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **metadata_by.comments**                     | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Any comments about the         | Undergraduate  |
        |                                              | metadata that would be useful  | did the input. |
-       | Required: False                              | for the user.                  |                |
+       | **Units**: None                              | for the user.                  |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **provenance.comments**                      | Any comments on provenance of  | all good       |
+
+:navy:`provenance.comments`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **provenance.comments**                      | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Any comments on provenance of  | all good       |
        |                                              | the data that would be useful  |                |
-       | Required: False                              | to users.                      |                |
+       | **Units**: None                              | to users.                      |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **provenance.log**                           | A history of changes made to   | 2020-02-10     |
+
+:navy:`provenance.log`
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **provenance.log**                           | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | A history of changes made to   | 2020-02-10     |
        |                                              | the data.                      | T14:24:45      |
-       | Required: False                              |                                | +00:00 updated |
+       | **Units**: None                              |                                | +00:00 updated |
        |                                              |                                | metadata       |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **sampling_rate**                            | Sampling rate for the recorded | 100            |
+
+:navy:`sampling_rate`
+~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **sampling_rate**                            | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Sampling rate for the recorded | 100            |
        |                                              | run.                           |                |
-       | Required: True                               |                                |                |
+       | **Units**: samples per second                |                                |                |
        |                                              |                                |                |
-       | Units: samples per second                    |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **time_period.end**                          | End date and time of           | 2020-02-04 T16:|
+
+:navy:`time_period.end`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **time_period.end**                          | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | End date and time of           | 2020-02-04 T16:|
        |                                              | collection in UTC.             | 23:45.453670   |
-       | Required: True                               |                                | +00:00         |
+       | **Units**: None                              |                                | +00:00         |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Date Time                         |                                |                |
        |                                              |                                |                |
-       | Style: Date Time                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **time_period.start**                        | Start date and time of         | 2020-02-01 T09:|
+
+:navy:`time_period.start`
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **time_period.start**                        | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Start date and time of         | 2020-02-01 T09:|
        |                                              | collection in UTC.             | 23:45.453670   |
-       | Required: True                               |                                | +00:00         |
+       | **Units**: None                              |                                | +00:00         |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Date Time                         |                                |                |
        |                                              |                                |                |
-       | Style: Date Time                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
+
 
 Example Run JSON
 ----------------
@@ -1297,6 +2346,7 @@ Example Run JSON
            "data_logger.timing_system.uncertainty": 0.0000001,
            "data_logger.type": "Broadband 32-bit 5 channels",
            "data_type": "BBMT",
+           "fdsn.new_epoch": "False",
            "id": "YKN201b",
            "metadata_by.author": "Graduate Student",
            "metadata_by.comments": "Lazy",
@@ -1317,415 +2367,949 @@ for a single station for a single run.
 Electric Channel Attributes
 ----------------------------
 
+:navy:`ac.end`
+~~~~~~~~~~~~~~
+
 .. container::
-   :name: tab:electric
 
    .. table::
        :class: tight-table
-       :widths: 30 50 20
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
-       | **Metadata Key**                             | **Description**                | **Example**    |
+       | **ac.end**                                   | **Description**                | **Example**    |
        +==============================================+================================+================+
-       | **ac.end**                                   | Ending AC value; if more than  |  49.5          |
+       | **Required**: :blue:`False`                  | Ending AC value; if more than  |  49.5          |
        |                                              | one measurement input as a     |                |
-       | Required: False                              | list of Number [1 2 ...]       |                |
+       | **Units**: volts                             | list of Number [1 2 ...]       |                |
        |                                              |                                |                |
-       | Units: volts                                 |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **ac.start**                                 | Starting AC value; if more     |  55.8          |
+
+:navy:`ac.start`
+~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **ac.start**                                 | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Starting AC value; if more     |  55.8          |
        |                                              | than one measurement input as  |                |
-       | Required: False                              | a list of Number [1 2 ...]     |                |
+       | **Units**: volts                             | a list of Number [1 2 ...]     |                |
        |                                              |                                |                |
-       | Units: volts                                 |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **channel_number**                           | Channel number on the data     | 1              |
+
+:navy:`channel_number`
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **channel_number**                           | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Channel number on the data     | 1              |
        |                                              | logger of the recorded         |                |
-       | Required: True                               | channel.                       |                |
+       | **Units**: None                              | channel.                       |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: Integer                            |                                |                |
        |                                              |                                |                |
-       | Type: Integer                                |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **comments**                                 | Any comments about the channel | Lightning storm|
+
+:navy:`comments`
+~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **comments**                                 | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Any comments about the channel | Lightning storm|
        |                                              | that would be useful to a      | at 6pm local   |
-       | Required: False                              | user.                          | time           |
+       | **Units**: None                              | user.                          | time           |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **component**                                | Name of the component          | Ex             |
-       |                                              | measured.  Options:  [ Ex |    |                |
-       | Required: True                               | Ey | ... ]                     |                |
-       |                                              |                                |                |
-       | Units: None                                  |                                |                |
-       |                                              |                                |                |
-       | Type: String                                 |                                |                |
-       |                                              |                                |                |
-       | Style: Controlled Vocabulary                 |                                |                |
+
+:navy:`component`
+~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **contact_resistance.end**                   | Starting contact resistance;   |  1.8           |
+       | **component**                                | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Name of the component          | Ex             |
+       |                                              | measured.  Options: [ Ex; Ey ] |                |
+       | **Units**: None                              |                                |                |
+       |                                              |                                |                |
+       | **Type**: String                             |                                |                |
+       |                                              |                                |                |
+       | **Style**: Controlled Vocabulary             |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+
+:navy:`contact_resistance.end`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **contact_resistance.end**                   | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Starting contact resistance;   |  1.8           |
        |                                              | if more than one measurement   |                |
-       | Required: False                              | input as a list [1, 2]         |                |
+       | **Units**: ohms                              | input as a list [1             |                |
        |                                              |                                |                |
-       | Units: ohms                                  |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number list                       |                                |                |
        |                                              |                                |                |
-       | Style: Number list                           |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **contact_resistance.start**                 | Starting contact resistance;   |  1.4           |
+
+:navy:`contact_resistance.start`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **contact_resistance.start**                 | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Starting contact resistance;   |  1.4           |
        |                                              | if more than one measurement   |                |
-       | Required: False                              | input as a list [1, 2]         |                |
+       | **Units**: ohms                              | input as a list [1             |                |
        |                                              |                                |                |
-       | Units: ohms                                  |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number list                       |                                |                |
        |                                              |                                |                |
-       | Style: Number list                           |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **data_quality.rating.author**               | Name of person or organization | graduate       |
+
+:navy:`data_quality.rating.author`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_quality.rating.author**               | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Name of person or organization | graduate       |
        |                                              | who rated the data.            | student ace    |
-       | Required: False                              |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **data_quality.rating.method**               | The method used to rate the    | standard       |
+
+:navy:`data_quality.rating.method`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_quality.rating.method**               | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | The method used to rate the    | standard       |
        |                                              | data.  Should be a descriptive | deviation      |
-       | Required: False                              | name and not just the name of  |                |
+       | **Units**: None                              | name and not just the name of  |                |
        |                                              | a software package.  If a      |                |
-       | Units: None                                  | rating is provided .           |                |
+       | **Type**: String                             | rating is provided             |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **data_quality.rating.value**                | Rating from 1-5 where 1 is bad | 4              |
-       |                                              | 5 is excellent.  0 means no    |                |
-       | Required: True                               | rating was conducted.          |                |
-       |                                              |                                |                |
-       | Units: None                                  |                                |                |
-       |                                              |                                |                |
-       | Type: Integer                                |                                |                |
-       |                                              |                                |                |
-       | Style: Number                                |                                |                |
+
+:navy:`data_quality.rating.value`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **data_quality.warning**                     | Any warnings about the data    | periodic       |
+       | **data_quality.rating.value**                | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Rating from 1-5 where 1 is bad | 4              |
+       |                                              |                                |                |
+       | **Units**: None                              |                                |                |
+       |                                              |                                |                |
+       | **Type**: Integer                            |                                |                |
+       |                                              |                                |                |
+       | **Style**: Number                            |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+
+:navy:`data_quality.warning`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_quality.warning**                     | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Any warnings about the data    | periodic       |
        |                                              | that should be noted for       | pipeline noise |
-       | Required: False                              | users.                         |                |
+       | **Units**: None                              | users.                         |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **dc.end**                                   | Ending DC value; if more than  | 1.5            |
+
+:navy:`dc.end`
+~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **dc.end**                                   | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Ending DC value; if more than  | 1.5            |
        |                                              | one measurement input as a     |                |
-       | Required: False                              | list [1, 2]                    |                |
+       | **Units**: volts                             | list [1                        |                |
        |                                              |                                |                |
-       | Units: volts                                 |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **dc.start**                                 | Starting DC value; if more     | 1.1            |
+
+:navy:`dc.start`
+~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **dc.start**                                 | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Starting DC value; if more     | 1.1            |
        |                                              | than one measurement input as  |                |
-       | Required: False                              | a list [1, 2]                  |                |
+       | **Units**: volts                             | a list [1                      |                |
        |                                              |                                |                |
-       | Units: volts                                 |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **dipole_length**                            | Length of the dipole in meters | 55.25          |
-       |                                              |                                |                |
-       | Required: True                               |                                |                |
-       |                                              |                                |                |
-       | Units: meters                                |                                |                |
-       |                                              |                                |                |
-       | Type: Float                                  |                                |                |
-       |                                              |                                |                |
-       | Style: Number                                |                                |                |
+
+:navy:`dipole_length`
+~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **filter.applied**                           | Boolean if filter has been     |  True          |
+       | **dipole_length**                            | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Length of the dipole           | 55.25          |
+       |                                              |                                |                |
+       | **Units**: meters                            |                                |                |
+       |                                              |                                |                |
+       | **Type**: Float                              |                                |                |
+       |                                              |                                |                |
+       | **Style**: Number                            |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+	   
+:navy:`fdsn.channel_code`
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **fdsn.channel_code**                        | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | FDSN channel code, this is a   | LQN            |
+       |                                              | 3 character code in the form   |                |
+       | **Units**: None                              | [band][type][direction]        |                |
+       |                                              |                                |                |
+       | **Type**: String                             |                                |                |
+       |                                              |                                |                |
+       | **Style**: Alpha-Numeric                     |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+	   
+.. seealso:: https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/ for more information on channel codes.
+
+:navy:`filter.applied`
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **filter.applied**                           | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Boolean if filter has been     |  [True, False] |
        |                                              | applied or not. If more than   |                |
-       | Required: True                               | one filter input as list.      |                |
+       | **Units**: None                              | one filter input as a list     |                |
+       |                                              | that matches filter.names      |                |
+       | **Type**: Boolean                            |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Style**: List                              |                                |                |
        |                                              |                                |                |
-       | Type: Boolean                                |                                |                |
        |                                              |                                |                |
-       | Style: List                                  |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **filter.comments**                          | Any comments on filters that   | low pass is not|
+
+:navy:`filter.comments`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **filter.comments**                          | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Any comments on filters that   | low pass is not|
        |                                              | is important for users.        | calibrated     |
-       | Required: False                              |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **filter.name**                              | Name of filter applied or to   | lowpass_electr |
-       |                                              | be applied. If more than one   | ic             |
-       | Required: True                               | filter input as list           |                |
-       |                                              |                                |                |
-       | Units: None                                  |                                |                |
-       |                                              |                                |                |
-       | Type: String                                 |                                |                |
-       |                                              |                                |                |
-       | Style: List                                  |                                |                |
+
+:navy:`filter.name`
+~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **measurement_azimuth**                      | Azimuth angle of the channel   | 0              |
+       | **filter.name**                              | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Name of filter applied or to   | [gain,         |
+       |                                              | be applied. If more than one   |  highpass_e]   |
+       | **Units**: None                              | filter input as a list in the  |                |
+       |                                              | order in which the should be   |                |
+       | **Type**: String                             | applied.                       |                |
+       |                                              |                                |                |
+       | **Style**: List                              |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+
+:navy:`measurement_azimuth`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **measurement_azimuth**                      | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Azimuth angle of the channel   | 0              |
        |                                              | in the specified survey.orient |                |
-       | Required: True                               | ation.reference_frame.         |                |
+       | **Units**: decimal degrees                   | ation.reference_frame.         |                |
        |                                              |                                |                |
-       | Units: decimal degrees                       |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **measurement_tilt**                         | Tilt angle of channel in surve | 0              |
+
+:navy:`measurement_tilt`
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **measurement_tilt**                         | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Tilt angle of channel in surve | 0              |
        |                                              | y.orientation.reference_frame. |                |
-       | Required: True                               |                                |                |
+       | **Units**: decimal degrees                   |                                |                |
        |                                              |                                |                |
-       | Units: decimal degrees                       |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **negative.elevation**                       | Elevation of negative          | 123.4          |
+
+:navy:`negative.elevation`
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **negative.elevation**                       | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Elevation of negative          | 123.4          |
        |                                              | electrode in datum specified   |                |
-       | Required: True                               | at survey level.               |                |
+       | **Units**: meters                            | at survey level.               |                |
        |                                              |                                |                |
-       | Units: meters                                |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **negative.id**                              | Negative electrode ID Number   | electrode01    |
-       |                                              |                                |                |
-       | Required: False                              |                                |                |
-       |                                              |                                |                |
-       | Units: None                                  |                                |                |
-       |                                              |                                |                |
-       | Type: String                                 |                                |                |
-       |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+
+:navy:`negative.id`
+~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **negative.latitude**                        | Latitude of negative electrode | 23.134         |
+       | **negative.id**                              | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Negative electrode ID Number   | electrode01    |
+       |                                              |                                |                |
+       | **Units**: None                              |                                |                |
+       |                                              |                                |                |
+       | **Type**: String                             |                                |                |
+       |                                              |                                |                |
+       | **Style**: Free Form                         |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+
+:navy:`negative.latitude`
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **negative.latitude**                        | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Latitude of negative electrode | 23.134         |
        |                                              | in datum specified at survey   |                |
-       | Required: False                              | level.                         |                |
+       | **Units**: decimal degrees                   | level.                         |                |
        |                                              |                                |                |
-       | Units: decimal degrees                       |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **negative.longitude**                       | Longitude of negative          | 14.23          |
+
+:navy:`negative.longitude`
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **negative.longitude**                       | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Longitude of negative          | 14.23          |
        |                                              | electrode in datum specified   |                |
-       | Required: False                              | at survey level.               |                |
+       | **Units**: decimal degrees                   | at survey level.               |                |
        |                                              |                                |                |
-       | Units: decimal degrees                       |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **negative.manufacturer**                    | Person or organization that    | Electro-Dudes  |
+
+:navy:`negative.manufacturer`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **negative.manufacturer**                    | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Person or organization that    | Electro-Dudes  |
        |                                              | manufactured the electrode.    |                |
-       | Required: False                              |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **negative.model**                           | Model version of the           | falcon5        |
+
+:navy:`negative.model`
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **negative.model**                           | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Model version of the           | falcon5        |
        |                                              | electrode.                     |                |
-       | Required: False                              |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **negative.type**                            | Type of electrode              | Ag-AgCl        |
-       |                                              |                                |                |
-       | Required: True                               |                                |                |
-       |                                              |                                |                |
-       | Units: None                                  |                                |                |
-       |                                              |                                |                |
-       | Type: String                                 |                                |                |
-       |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+
+:navy:`negative.type`
+~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **positive.elevation**                       | Elevation of the positive      | 123.4          |
+       | **negative.type**                            | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Type of electrode              | Ag-AgCl        |
+       |                                              |                                |                |
+       | **Units**: None                              |                                |                |
+       |                                              |                                |                |
+       | **Type**: String                             |                                |                |
+       |                                              |                                |                |
+       | **Style**: Free Form                         |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+
+:navy:`positive.elevation`
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **positive.elevation**                       | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Elevation of the positive      | 123.4          |
        |                                              | electrode in datum specified   |                |
-       | Required: False                              | at survey level.               |                |
+       | **Units**: meters                            | at survey level.               |                |
        |                                              |                                |                |
-       | Units: meters                                |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **positive.id**                              | Positive electrode ID Number   | electrode02    |
-       |                                              |                                |                |
-       | Required: False                              |                                |                |
-       |                                              |                                |                |
-       | Units: None                                  |                                |                |
-       |                                              |                                |                |
-       | Type: String                                 |                                |                |
-       |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+
+:navy:`positive.id`
+~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **positive.latitude**                        | Latitude of positive electrode | 23.134         |
+       | **positive.id**                              | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Positive electrode ID Number   | electrode02    |
+       |                                              |                                |                |
+       | **Units**: None                              |                                |                |
+       |                                              |                                |                |
+       | **Type**: String                             |                                |                |
+       |                                              |                                |                |
+       | **Style**: Free Form                         |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+
+:navy:`positive.latitude`
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **positive.latitude**                        | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Latitude of positive electrode | 23.134         |
        |                                              | in datum specified at survey   |                |
-       | Required: False                              | level.                         |                |
+       | **Units**: decimal degrees                   | level.                         |                |
        |                                              |                                |                |
-       | Units: decimal degrees                       |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **positive.longitude**                       | Longitude of positive          | 14.23          |
+
+:navy:`positive.longitude`
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **positive.longitude**                       | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Longitude of positive          | 14.23          |
        |                                              | electrode in datum specified   |                |
-       | Required: False                              | at survey level.               |                |
+       | **Units**: decimal degrees                   | at survey level.               |                |
        |                                              |                                |                |
-       | Units: decimal degrees                       |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **positive.manufacturer**                    | Name of group or person that   | Electro-Dudes  |
+
+:navy:`positive.manufacturer`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **positive.manufacturer**                    | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Name of group or person that   | Electro-Dudes  |
        |                                              | manufactured the electrode.    |                |
-       | Required: False                              |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **positive.model**                           | Model version of the           | falcon5        |
+
+:navy:`positive.model`
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **positive.model**                           | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Model version of the           | falcon5        |
        |                                              | electrode.                     |                |
-       | Required: False                              |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **positive.type**                            | Type of electrode              | Pb-PbCl        |
-       |                                              |                                |                |
-       | Required: True                               |                                |                |
-       |                                              |                                |                |
-       | Units: None                                  |                                |                |
-       |                                              |                                |                |
-       | Type: String                                 |                                |                |
-       |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+
+:navy:`positive.type`
+~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **sample_rate**                              | Sample rate of the channel.    | 8              |
+       | **positive.type**                            | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Type of electrode              | Pb-PbCl        |
        |                                              |                                |                |
-       | Required: True                               |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: samples per second                    |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **time_period.end**                          | End date and time of           | 2020-02-04 T16:|
+
+:navy:`sample_rate`
+~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **sample_rate**                              | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Sample rate of the channel.    | 8              |
+       |                                              |                                |                |
+       | **Units**: samples per second                |                                |                |
+       |                                              |                                |                |
+       | **Type**: Float                              |                                |                |
+       |                                              |                                |                |
+       | **Style**: Number                            |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+
+:navy:`time_period.end`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **time_period.end**                          | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | End date and time of           | 2020-02-04 T16:|
        |                                              | collection in UTC              | 23:45.453670   |
-       | Required: True                               |                                | +00:00         |
+       | **Units**: None                              |                                | +00:00         |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Date Time                         |                                |                |
        |                                              |                                |                |
-       | Style: Date Time                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **time_period.start**                        | Start date and time of         | 2020-02-01T    |
+
+:navy:`time_period.start`
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **time_period.start**                        | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Start date and time of         | 2020-02-01T    |
        |                                              | collection in UTC.             | 09:23:45.453670|
-       | Required: True                               |                                | +00:00         |
+       | **Units**: None                              |                                | +00:00         |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Date Time                         |                                |                |
        |                                              |                                |                |
-       | Style: Date Time                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **transformed_azimuth**                      | Azimuth angle of channel that  | 0              |
+
+:navy:`transformed_azimuth`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **transformed_azimuth**                      | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Azimuth angle of channel that  | 0              |
        |                                              | has been transformed into a    |                |
-       | Required: False                              | specified coordinate system.   |                |
+       | **Units**: decimal degrees                   | specified coordinate system.   |                |
        |                                              | Note this value is only for    |                |
-       | Units: decimal degrees                       | derivative products from the   |                |
+       | **Type**: Float                              | derivative products from the   |                |
        |                                              | archived data.                 |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **transformed_tilt**                         | Tilt angle of channel that has | 0              |
+
+:navy:`transformed_tilt`
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **transformed_tilt**                         | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Tilt angle of channel that has | 0              |
        |                                              | been transformed into a        |                |
-       | Required: False                              | specified coordinate system.   |                |
+       | **Units**: decimal degrees                   | specified coordinate system.   |                |
        |                                              | Note this value is only for    |                |
-       | Units: decimal degrees                       | derivative products from the   |                |
+       | **Type**: Float                              | derivative products from the   |                |
        |                                              | archived data.                 |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **type**                                     | Data type for the channel.     | electric       |
-       |                                              |                                |                |
-       | Required: True                               |                                |                |
-       |                                              |                                |                |
-       | Units: None                                  |                                |                |
-       |                                              |                                |                |
-       | Type: String                                 |                                |                |
-       |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+
+:navy:`type`
+~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **units**                                    | Units of the data              | counts         |
+       | **type**                                     | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Data type for the channel.     | electric       |
        |                                              |                                |                |
-       | Required: True                               |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Controlled Vocabulary                 |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+
+:navy:`units`
+~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **units**                                    | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Units of the data              | counts         |
+       |                                              |                                |                |
+       | **Units**: None                              |                                |                |
+       |                                              |                                |                |
+       | **Type**: String                             |                                |                |
+       |                                              |                                |                |
+       | **Style**: Controlled Vocabulary             |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
 
 Example Electric Channel JSON
@@ -1749,6 +3333,7 @@ Example Electric Channel JSON
        "dc.end": 1.0,
        "dc.start": 2.0,
        "dipole_length": 100.0,
+	   "fdsn.channel_code": "LQN",
        "filter.applied": [false],
        "filter.comments": null,
        "filter.name": [ "counts2mv", "lowpass"],
@@ -1785,315 +3370,720 @@ at a single station for a single run.
 Magnetic Channel Attributes
 ----------------------------
 
+:navy:`channel_number`
+~~~~~~~~~~~~~~~~~~~~~~
+
 .. container::
-   :name: tab:magnetic
 
    .. table::
        :class: tight-table
-       :widths: 30 50 20
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
-       | **Metadata Key**                             | **Description**                | **Example**    |
+       | **channel_number**                           | **Description**                | **Example**    |
        +==============================================+================================+================+
-       | **channel_number**                           | Channel Number on the data     | 1              |
+       | **Required**: :red:`True`                    | Channel Number on the data     | 1              |
        |                                              | logger.                        |                |
-       | Required: True                               |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: Integer                            |                                |                |
        |                                              |                                |                |
-       | Type: Integer                                |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **comments**                                 | Any comments about the channel | Pc1 at 6pm     |
+
+:navy:`comments`
+~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **comments**                                 | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Any comments about the channel | Pc1 at 6pm     |
        |                                              | that would be useful to a      | local time.    |
-       | Required: False                              | user.                          |                |
+       | **Units**: None                              | user.                          |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **component**                                | Name of the component          | Bx             |
-       |                                              | measured.  Options:  [ Bx      |                |
-       | Required: True                               | | By | Bz | ... ]              |                |
-       |                                              |                                |                |
-       | Units: None                                  |                                |                |
-       |                                              |                                |                |
-       | Type: String                                 |                                |                |
-       |                                              |                                |                |
-       | Style: Controlled Vocabulary                 |                                |                |
+
+:navy:`component`
+~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **data_quality.rating.author**               | Name of person or organization | graduate       |
+       | **component**                                | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Name of the component          | Hx             |
+       |                                              | measured.  Options ->          |                |
+       | **Units**: None                              | [Hx; Hy; Hz]                   |                |
+       |                                              |                                |                |
+       | **Type**: String                             |                                |                |
+       |                                              |                                |                |
+       | **Style**: Controlled Vocabulary             |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+
+:navy:`data_quality.rating.author`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_quality.rating.author**               | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Name of person or organization | graduate       |
        |                                              | who rated the data.            | student ace    |
-       | Required: False                              |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **data_quality.rating.method**               | The method used to rate the    | standard       |
+
+:navy:`data_quality.rating.method`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_quality.rating.method**               | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | The method used to rate the    | standard       |
        |                                              | data.  Should be a descriptive | deviation      |
-       | Required: False                              | name and not just the name of  |                |
+       | **Units**: None                              | name and not just the name of  |                |
        |                                              | a software package.  If a      |                |
-       | Units: None                                  | rating is provided.            |                |
+       | **Type**: String                             | rating is provided             |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **data_quality.rating.value**                | Rating from 1-5 where 1 is bad | 4              |
-       |                                              | 5 is excellent. 0 means no     |                |
-       | Required: True                               | rating was quantified.         |                |
-       |                                              |                                |                |
-       | Units: None                                  |                                |                |
-       |                                              |                                |                |
-       | Type: Integer                                |                                |                |
-       |                                              |                                |                |
-       | Style: Number                                |                                |                |
+
+:navy:`data_quality.rating.value`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **data_quality.warning**                     | Any warnings about the data    | periodic       |
+       | **data_quality.rating.value**                | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Rating from 1-5 where 1 is bad | 4              |
+       |                                              |                                |                |
+       | **Units**: None                              |                                |                |
+       |                                              |                                |                |
+       | **Type**: Integer                            |                                |                |
+       |                                              |                                |                |
+       | **Style**: Number                            |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+
+:navy:`data_quality.warning`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_quality.warning**                     | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Any warnings about the data    | periodic       |
        |                                              | that should be noted for       | pipeline noise |
-       | Required: False                              | users.                         |                |
+       | **Units**: None                              | users.                         |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **filter.applied**                           | Boolean if filter has been     |  True          |
+	   
+:navy:`fdsn.channel_code`
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **fdsn.channel_code**                        | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | FDSN channel code, this is a   | LQN            |
+       |                                              | 3 character code in the form   |                |
+       | **Units**: None                              | [band][type][direction]        |                |
+       |                                              |                                |                |
+       | **Type**: String                             |                                |                |
+       |                                              |                                |                |
+       | **Style**: Alpha-Numeric                     |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+	   
+.. seealso:: https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/ for more information on channel codes.
+	   
+
+:navy:`filter.applied`
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **filter.applied**                           | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Boolean if filter has been     |  [True, False] |
        |                                              | applied or not. If more than   |                |
-       | Required: True                               | one filter input as list       |                |
+       | **Units**: None                              | one filter input as a list     |                |
+       |                                              | that matches filter.names      |                |
+       | **Type**: Boolean                            |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Style**: List                              |                                |                |
        |                                              |                                |                |
-       | Type: Boolean                                |                                |                |
        |                                              |                                |                |
-       | Style: List                                  |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **filter.comments**                          | Any comments on filters that   | low pass is not|
+
+:navy:`filter.comments`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **filter.comments**                          | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Any comments on filters that   | low pass is not|
        |                                              | is important for users.        | calibrated     |
-       | Required: False                              |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **filter.name**                              | Name of filter applied or to   | lowpass_electr |
-       |                                              | be applied. If more than one   | ic             |
-       | Required: True                               | filter import as list          |                |
-       |                                              |                                |                |
-       | Units: None                                  |                                |                |
-       |                                              |                                |                |
-       | Type: String                                 |                                |                |
-       |                                              |                                |                |
-       | Style: List                                  |                                |                |
+
+:navy:`filter.name`
+~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **h_field_max.end**                          | Maximum magnetic field         | 34526.1        |
+       | **filter.name**                              | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Name of filter applied or to   | [gain,         |
+       |                                              | be applied. If more than one   | lowpass_h]     |
+       | **Units**: None                              | filter input as a list in the  |                |
+       |                                              | order in which the should be   |                |
+       | **Type**: String                             | applied.                       |                |
+       |                                              |                                |                |
+       | **Style**: List                              |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+	   
+:navy:`h_field_max.end`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **h_field_max.end**                          | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Maximum magnetic field         | 34526.1        |
        |                                              | strength at end of             |                |
-       | Required: False                              | measurement.                   |                |
+       | **Units**: nanotesla                         | measurement.                   |                |
        |                                              |                                |                |
-       | Units: nanotesla                             |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **h_field_max.start**                        | Maximum magnetic field         | 34565.2        |
+
+:navy:`h_field_max.start`
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **h_field_max.start**                        | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Maximum magnetic field         | 34565.2        |
        |                                              | strength at beginning of       |                |
-       | Required: False                              | measurement.                   |                |
+       | **Units**: nanotesla                         | measurement.                   |                |
        |                                              |                                |                |
-       | Units: nanotesla                             |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **h_field_min.end**                          | Minimum magnetic field         | 50453.2        |
+
+:navy:`h_field_min.end`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **h_field_min.end**                          | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Minimum magnetic field         | 50453.2        |
        |                                              | strength at end of             |                |
-       | Required: False                              | measurement.                   |                |
+       | **Units**: nanotesla                         | measurement.                   |                |
        |                                              |                                |                |
-       | Units: nanotesla                             |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **h_field_min.start**                        | Minimum magnetic field         | 40345.1        |
+
+:navy:`h_field_min.start`
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **h_field_min.start**                        | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Minimum magnetic field         | 40345.1        |
        |                                              | strength at beginning of       |                |
-       | Required: False                              | measurement.                   |                |
+       | **Units**: nt                                | measurement.                   |                |
        |                                              |                                |                |
-       | Units: nt                                    |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **location.elevation**                       | elevation of magnetometer in   | 123.4          |
+
+:navy:`location.elevation`
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **location.elevation**                       | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | elevation of magnetometer in   | 123.4          |
        |                                              | datum specified at survey      |                |
-       | Required: False                              | level.                         |                |
+       | **Units**: meters                            | level.                         |                |
        |                                              |                                |                |
-       | Units: meters                                |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **location.latitude**                        | Latitude of magnetometer in    | 23.134         |
+
+:navy:`location.latitude`
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **location.latitude**                        | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Latitude of magnetometer in    | 23.134         |
        |                                              | datum specified at survey      |                |
-       | Required: False                              | level.                         |                |
+       | **Units**: decimal degrees                   | level.                         |                |
        |                                              |                                |                |
-       | Units: decimal degrees                       |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **location.longitude**                       | Longitude of magnetometer in   | 14.23          |
+
+:navy:`location.longitude`
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **location.longitude**                       | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Longitude of magnetometer in   | 14.23          |
        |                                              | datum specified at survey      |                |
-       | Required: False                              | level.                         |                |
+       | **Units**: decimal degrees                   | level.                         |                |
        |                                              |                                |                |
-       | Units: decimal degrees                       |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **measurement_azimuth**                      | Azimuth of channel in the      | 0              |
+
+:navy:`measurement_azimuth`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **measurement_azimuth**                      | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Azimuth of channel in the      | 0              |
        |                                              | specified survey.orientation.r |                |
-       | Required: True                               | eference_frame.                |                |
+       | **Units**: decimal degrees                   | eference_frame.                |                |
        |                                              |                                |                |
-       | Units: decimal degrees                       |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **measurement_tilt**                         | Tilt of channel in survey.orie | 0              |
+
+:navy:`measurement_tilt`
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **measurement_tilt**                         | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Tilt of channel in survey.orie | 0              |
        |                                              | ntation.reference_frame.       |                |
-       | Required: True                               |                                |                |
+       | **Units**: decimal degrees                   |                                |                |
        |                                              |                                |                |
-       | Units: decimal degrees                       |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **sample_rate**                              | Sample rate of the channel.    | 8              |
-       |                                              |                                |                |
-       | Required: True                               |                                |                |
-       |                                              |                                |                |
-       | Units: samples per second                    |                                |                |
-       |                                              |                                |                |
-       | Type: Float                                  |                                |                |
-       |                                              |                                |                |
-       | Style: Number                                |                                |                |
+
+:navy:`sample_rate`
+~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **sensor.id**                                | Sensor ID Number or serial     | mag01          |
+       | **sample_rate**                              | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Sample rate of the channel.    | 8              |
+       |                                              |                                |                |
+       | **Units**: samples per second                |                                |                |
+       |                                              |                                |                |
+       | **Type**: Float                              |                                |                |
+       |                                              |                                |                |
+       | **Style**: Number                            |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+
+:navy:`sensor.id`
+~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **sensor.id**                                | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Sensor ID Number or serial     | mag01          |
        |                                              | Number.                        |                |
-       | Required: False                              |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **sensor.manufacturer**                      | Person or organization that    | Magnets        |
+
+:navy:`sensor.manufacturer`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **sensor.manufacturer**                      | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Person or organization that    | Magnets        |
        |                                              | manufactured the magnetic      |                |
-       | Required: False                              | sensor.                        |                |
+       | **Units**: None                              | sensor.                        |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **sensor.model**                             | Model version of the magnetic  | falcon5        |
+
+:navy:`sensor.model`
+~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **sensor.model**                             | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Model version of the magnetic  | falcon5        |
        |                                              | sensor.                        |                |
-       | Required: False                              |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **sensor.type**                              | Type of magnetic sensor        | induction coil |
-       |                                              |                                |                |
-       | Required: True                               |                                |                |
-       |                                              |                                |                |
-       | Units: None                                  |                                |                |
-       |                                              |                                |                |
-       | Type: String                                 |                                |                |
-       |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+
+:navy:`sensor.type`
+~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **time_period.end**                          | End date and time of           | 2020-02-04 T16:|
+       | **sensor.type**                              | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Type of magnetic sensor        | induction coil |
+       |                                              |                                |                |
+       | **Units**: None                              |                                |                |
+       |                                              |                                |                |
+       | **Type**: String                             |                                |                |
+       |                                              |                                |                |
+       | **Style**: Free Form                         |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+
+:navy:`time_period.end`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **time_period.end**                          | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | End date and time of           | 2020-02-04 T16:|
        |                                              | collection in UTC.             | 23:45.453670   |
-       | Required: True                               |                                | +00:00         |
+       | **Units**: None                              |                                | +00:00         |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Date Time                         |                                |                |
        |                                              |                                |                |
-       | Style: Date Time                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **time_period.start**                        | Start date and time of         | 2020-02-01 T09:|
+
+:navy:`time_period.start`
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **time_period.start**                        | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Start date and time of         | 2020-02-01 T09:|
        |                                              | collection in UTC.             | 23:45.453670   |
-       | Required: True                               |                                | +00:00         |
+       | **Units**: None                              |                                | +00:00         |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Date Time                         |                                |                |
        |                                              |                                |                |
-       | Style: Date Time                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **transformed_azimuth**                      | Azimuth angle of channel that  | 0              |
+
+:navy:`transformed_azimuth`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **transformed_azimuth**                      | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Azimuth angle of channel that  | 0              |
        |                                              | has been transformed into a    |                |
-       | Required: False                              | specified coordinate system.   |                |
+       | **Units**: decimal degrees                   | specified coordinate system.   |                |
        |                                              | Note this value is only for    |                |
-       | Units: decimal degrees                       | derivative products from the   |                |
+       | **Type**: Float                              | derivative products from the   |                |
        |                                              | archived data.                 |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **transformed_tilt**                         | Tilt angle of channel that has | 0              |
+
+:navy:`transformed_tilt`
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **transformed_tilt**                         | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Tilt angle of channel that has | 0              |
        |                                              | been transformed into a        |                |
-       | Required: False                              | specified coordinate system.   |                |
+       | **Units**: decimal degrees                   | specified coordinate system.   |                |
        |                                              | Note this value is only for    |                |
-       | Units: decimal degrees                       | derivative products from the   |                |
+       | **Type**: Float                              | derivative products from the   |                |
        |                                              | archived data.                 |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **type**                                     | Data type for the channel      | magnetic       |
-       |                                              |                                |                |
-       | Required: True                               |                                |                |
-       |                                              |                                |                |
-       | Units: None                                  |                                |                |
-       |                                              |                                |                |
-       | Type: String                                 |                                |                |
-       |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+
+:navy:`type`
+~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **units**                                    | Units of the data.  if         | counts         |
+       | **type**                                     | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Data type for the channel      | magnetic       |
+       |                                              |                                |                |
+       | **Units**: None                              |                                |                |
+       |                                              |                                |                |
+       | **Type**: String                             |                                |                |
+       |                                              |                                |                |
+       | **Style**: Free Form                         |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+
+:navy:`units`
+~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **units**                                    | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Units of the data.  if         | counts         |
        |                                              | archiving should always be     |                |
-       | Required: True                               | counts.  Options: [ counts |   |                |
+       | **Units**: None                              | counts.  Options: [ counts  ;  |                |
        |                                              | nanotesla ]                    |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Controlled Vocabulary             |                                |                |
        |                                              |                                |                |
-       | Style: Controlled Vocabulary                 |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
 
 Example Magnetic Channel JSON
@@ -2112,6 +4102,8 @@ Example Magnetic Channel JSON
                    "author": "M. Tee",
                    "method": "Machine Learning",
                    "value": 3}},
+		   "fdsn": {
+                "channel_code": "LQN", 		   
            "filter": {
                "name": ["counts2nT", "lowpass_mag"],
                "applied": [true, false],
@@ -2185,65 +4177,119 @@ For example ``name: "[counts2mv, notch_60hz, e_gain]"`` and
 Filter Attributes
 ------------------ 
 
+:navy:`type`
+~~~~~~~~~~~~
+
 .. container::
-   :name: tab:filter
 
    .. table::
        :class: tight-table
-       :widths: 30 50 20
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
-       | **Metadata Key**                             | **Description**                | **Example**    |
+       | **type**                                     | **Description**                | **Example**    |
        +==============================================+================================+================+
-       | **type**                                     | Filter type. Options: [look up | lookup         |
-       |                                              | | poles zeros | converter      |                |
-       | Required: True                               | | FIR | ...]                   |                |
+       | **Required**: :red:`True`                    | Filter type. Options: [look up | lookup         |
+       |                                              |  ;  poles zeros  ;  converter  |                |
+       | **Units**: None                              |  ;  FIR  ;  ...]               |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Controlled Vocabulary             |                                |                |
        |                                              |                                |                |
-       | Style: Controlled Vocabulary                 |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **name**                                     | Unique name for the filter     | counts2mv      |
+
+:navy:`name`
+~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **name**                                     | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Unique name for the filter     | counts2mv      |
        |                                              | such that it is easy to query. |                |
-       | Required: True                               | See above for some examples.   |                |
+       | **Units**: None                              | See above for some examples.   |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Alpha Numeric                     |                                |                |
        |                                              |                                |                |
-       | Style: Alpha Numeric                         |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **units_in**                                 | The input units for the        | counts         |
+
+:navy:`units_in`
+~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **units_in**                                 | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | The input units for the        | counts         |
        |                                              | filter. Should be SI units or  |                |
-       | Required: True                               | counts.                        |                |
+       | **Units**: None                              | counts.                        |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Controlled Vocabulary             |                                |                |
        |                                              |                                |                |
-       | Style: Controlled Vocabulary                 |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **units_out**                                | The output units for the       | millivolts     |
+
+:navy:`units_out`
+~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **units_out**                                | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | The output units for the       | millivolts     |
        |                                              | filter. Should be SI units or  |                |
-       | Required: True                               | counts.                        |                |
+       | **Units**: None                              | counts.                        |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Controlled Vocabulary             |                                |                |
        |                                              |                                |                |
-       | Style: Controlled Vocabulary                 |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **calibration_date**                         | If the filter is a calibration | 2010-01-01     |
+
+:navy:`calibration_date`
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **calibration_date**                         | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | If the filter is a calibration | 2010-01-01     |
        |                                              |                                | T00:00:00      |
-       | Required: True                               |                                | +00:00         |
+       | **Units**: None                              |                                | +00:00         |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Date Time                         |                                |                |
        |                                              |                                |                |
-       | Style: Date Time                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
 
 
@@ -2271,235 +4317,536 @@ Auxiliary channels include state of health channels, temperature, etc.
 Auxiliary Channel Attributes
 ----------------------------- 
 
+:navy:`channel_number`
+~~~~~~~~~~~~~~~~~~~~~~
+
 .. container::
-   :name: tab:auxiliary
 
    .. table::
        :class: tight-table
-       :widths: 30 50 20
+       :widths: 30 45 15
 
        +----------------------------------------------+--------------------------------+----------------+
-       | **Metadata Key**                             | **Description**                | **Example**    |
+       | **channel_number**                           | **Description**                | **Example**    |
        +==============================================+================================+================+
-       | **channel_number**                           | Channel Number on the data     | 1              |
+       | **Required**: :red:`True`                    | Channel Number on the data     | 1              |
        |                                              | logger.                        |                |
-       | Required: True                               |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: Integer                            |                                |                |
        |                                              |                                |                |
-       | Type: Integer                                |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **comments**                                 | Any comments about the channel | Pc1 at 6pm     |
+
+:navy:`comments`
+~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **comments**                                 | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Any comments about the channel | Pc1 at 6pm     |
        |                                              | that would be useful to a      | local time.    |
-       | Required: False                              | user.                          |                |
+       | **Units**: None                              | user.                          |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **component**                                | Name of the component          | temperature    |
+
+:navy:`component`
+~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **component**                                | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Name of the component          | temperature    |
        |                                              | measured.  Options: [          |                |
-       | Required: True                               | temperature | battery |        |                |
+       | **Units**: None                              | temperature  ;  battery  ;     |                |
        |                                              | ... ]                          |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Controlled Vocabulary             |                                |                |
        |                                              |                                |                |
-       | Style: Controlled Vocabulary                 |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **data_quality.rating.author**               | Name of person or organization | graduate       |
+
+:navy:`data_quality.rating.author`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_quality.rating.author**               | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Name of person or organization | graduate       |
        |                                              | who rated the data.            | student ace    |
-       | Required: False                              |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **data_quality.rating.method**               | The method used to rate the    | standard       |
+
+:navy:`data_quality.rating.method`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_quality.rating.method**               | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | The method used to rate the    | standard       |
        |                                              | data.  Should be a descriptive | deviation      |
-       | Required: False                              | name and not just the name of  |                |
+       | **Units**: None                              | name and not just the name of  |                |
        |                                              | a software package.  If a      |                |
-       | Units: None                                  | rating is provided             |                |
+       | **Type**: String                             | rating is provided             |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **data_quality.rating.value**                | Rating from 1-5 where 1 is bad | 4              |
-       |                                              | 5 is excellent. 0 means no     |                |
-       | Required: True                               | rating was quantified.         |                |
-       |                                              |                                |                |
-       | Units: None                                  |                                |                |
-       |                                              |                                |                |
-       | Type: Integer                                |                                |                |
-       |                                              |                                |                |
-       | Style: Number                                |                                |                |
+
+:navy:`data_quality.rating.value`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **data_quality.warning**                     | Any warnings about the data    | periodic       |
+       | **data_quality.rating.value**                | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Rating from 1-5 where 1 is bad | 4              |
+       |                                              |                                |                |
+       | **Units**: None                              |                                |                |
+       |                                              |                                |                |
+       | **Type**: Integer                            |                                |                |
+       |                                              |                                |                |
+       | **Style**: Number                            |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+
+:navy:`data_quality.warning`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **data_quality.warning**                     | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Any warnings about the data    | periodic       |
        |                                              | that should be noted for       | pipeline noise |
-       | Required: False                              | users.                         |                |
+       | **Units**: None                              | users.                         |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **filter.applied**                           | Boolean if filter has been     |  True          |
+	   
+:navy:`fdsn.channel_code`
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **fdsn.channel_code**                        | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | FDSN channel code, this is a   | LQN            |
+       |                                              | 3 character code in the form   |                |
+       | **Units**: None                              | [band][type][direction]        |                |
+       |                                              |                                |                |
+       | **Type**: String                             |                                |                |
+       |                                              |                                |                |
+       | **Style**: Alpha-Numeric                     |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+	   
+.. seealso:: https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/ for more information on channel codes.
+	   
+
+:navy:`filter.applied`
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **filter.applied**                           | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Boolean if filter has been     |  [True, False] |
        |                                              | applied or not. If more than   |                |
-       | Required: True                               | one filter input as list.      |                |
+       | **Units**: None                              | one filter input as a list     |                |
+       |                                              | that matches filter.names      |                |
+       | **Type**: Boolean                            |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Style**: List                              |                                |                |
        |                                              |                                |                |
-       | Type: Boolean                                |                                |                |
        |                                              |                                |                |
-       | Style: List                                  |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **filter.comments**                          | Any comments on filters that   | low pass is not|
+
+:navy:`filter.comments`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **filter.comments**                          | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Any comments on filters that   | low pass is not|
        |                                              | is important for users.        | calibrated     |
-       | Required: False                              |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Free Form                         |                                |                |
        |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **filter.name**                              | Name of filter applied or to   | lowpass_auxili |
-       |                                              | be applied. If more than one   | ary            |
-       | Required: True                               | filter input as list.          |                |
-       |                                              |                                |                |
-       | Units: None                                  |                                |                |
-       |                                              |                                |                |
-       | Type: String                                 |                                |                |
-       |                                              |                                |                |
-       | Style: List                                  |                                |                |
+
+:navy:`filter.name`
+~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **location.elevation**                       | Elevation of channel location  | 123.4          |
+       | **filter.name**                              | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Name of filter applied or to   | [gain, lp_aux] |
+       |                                              | be applied. If more than one   |                |
+       | **Units**: None                              | filter input as a list in the  |                |
+       |                                              | order in which the should be   |                |
+       | **Type**: String                             | applied.                       |                |
+       |                                              |                                |                |
+       | **Style**: List                              |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+
+:navy:`location.elevation`
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **location.elevation**                       | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Elevation of channel location  | 123.4          |
        |                                              | in datum specified at survey   |                |
-       | Required: False                              | level.                         |                |
+       | **Units**: meters                            | level.                         |                |
        |                                              |                                |                |
-       | Units: meters                                |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **location.latitude**                        | Latitude of channel location   | 23.134         |
+
+:navy:`location.latitude`
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **location.latitude**                        | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Latitude of channel location   | 23.134         |
        |                                              | in datum specified at survey   |                |
-       | Required: False                              | level.                         |                |
+       | **Units**: decimal degrees                   | level.                         |                |
        |                                              |                                |                |
-       | Units: decimal degrees                       |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **location.longitude**                       | Longitude of channel location  | 14.23          |
+
+:navy:`location.longitude`
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **location.longitude**                       | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Longitude of channel location  | 14.23          |
        |                                              | in datum specified at survey   |                |
-       | Required: False                              | level.                         |                |
+       | **Units**: decimal degrees                   | level.                         |                |
        |                                              |                                |                |
-       | Units: decimal degrees                       |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **measurement_azimuth**                      | Azimuth of channel in the      | 0              |
+
+:navy:`measurement_azimuth`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **measurement_azimuth**                      | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Azimuth of channel in the      | 0              |
        |                                              | specified survey.orientation.r |                |
-       | Required: True                               | eference_frame.                |                |
+       | **Units**: decimal degrees                   | eference_frame.                |                |
        |                                              |                                |                |
-       | Units: decimal degrees                       |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **measurement_tilt**                         | Tilt of channel in survey.orie | 0              |
+
+:navy:`measurement_tilt`
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **measurement_tilt**                         | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Tilt of channel in survey.orie | 0              |
        |                                              | ntation.reference_frame.       |                |
-       | Required: True                               |                                |                |
+       | **Units**: decimal degrees                   |                                |                |
        |                                              |                                |                |
-       | Units: decimal degrees                       |                                |                |
+       | **Type**: Float                              |                                |                |
        |                                              |                                |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **sample_rate**                              | Sample rate of the channel.    | 8              |
-       |                                              |                                |                |
-       | Required: True                               |                                |                |
-       |                                              |                                |                |
-       | Units: samples per second                    |                                |                |
-       |                                              |                                |                |
-       | Type: Float                                  |                                |                |
-       |                                              |                                |                |
-       | Style: Number                                |                                |                |
+
+:navy:`sample_rate`
+~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **time_period.end**                          | End date and time of           | 2020-02-04 T16:|
+       | **sample_rate**                              | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Sample rate of the channel.    | 8              |
+       |                                              |                                |                |
+       | **Units**: samples per second                |                                |                |
+       |                                              |                                |                |
+       | **Type**: Float                              |                                |                |
+       |                                              |                                |                |
+       | **Style**: Number                            |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+
+:navy:`time_period.end`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **time_period.end**                          | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | End date and time of           | 2020-02-04 T16:|
        |                                              | collection in UTC.             | 23:45.453670   |
-       | Required: True                               |                                | +00:00         |
+       | **Units**: None                              |                                | +00:00         |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: time                              |                                |                |
        |                                              |                                |                |
-       | Style: time                                  |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **time_period.start**                        | Start date and time of         | 2020-02-01 T09:|
+
+:navy:`time_period.start`
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **time_period.start**                        | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Start date and time of         | 2020-02-01 T09:|
        |                                              | collection in UTC.             | 23:45.453670   |
-       | Required: True                               |                                | +00:00         |
+       | **Units**: None                              |                                | +00:00         |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: time                              |                                |                |
        |                                              |                                |                |
-       | Style: time                                  |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **transformed_azimuth**                      | Azimuth angle of channel that  | 0              |
+
+:navy:`transformed_azimuth`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **transformed_azimuth**                      | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Azimuth angle of channel that  | 0              |
        |                                              | has been transformed into a    |                |
-       | Required: False                              | specified coordinate system.   |                |
+       | **Units**: decimal degrees                   | specified coordinate system.   |                |
        |                                              | Note this value is only for    |                |
-       | Units: decimal degrees                       | derivative products from the   |                |
+       | **Type**: Float                              | derivative products from the   |                |
        |                                              | archived data.                 |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **transformed_tilt**                         | Tilt angle of channel that has | 0              |
+
+:navy:`transformed_tilt`
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **transformed_tilt**                         | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :blue:`False`                  | Tilt angle of channel that has | 0              |
        |                                              | been transformed into a        |                |
-       | Required: False                              | specified coordinate system.   |                |
+       | **Units**: decimal degrees                   | specified coordinate system.   |                |
        |                                              | Note this value is only for    |                |
-       | Units: decimal degrees                       | derivative products from the   |                |
+       | **Type**: Float                              | derivative products from the   |                |
        |                                              | archived data.                 |                |
-       | Type: Float                                  |                                |                |
+       | **Style**: Number                            |                                |                |
        |                                              |                                |                |
-       | Style: Number                                |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
-       | **type**                                     | Data type for the channel.     | temperature    |
-       |                                              |                                |                |
-       | Required: True                               |                                |                |
-       |                                              |                                |                |
-       | Units: None                                  |                                |                |
-       |                                              |                                |                |
-       | Type: String                                 |                                |                |
-       |                                              |                                |                |
-       | Style: Free Form                             |                                |                |
+
+:navy:`type`
+~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
        +----------------------------------------------+--------------------------------+----------------+
-       | **units**                                    | Units of the data.  Options:   | celsius        |
+       | **type**                                     | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Data type for the channel.     | temperature    |
+       |                                              |                                |                |
+       | **Units**: None                              |                                |                |
+       |                                              |                                |                |
+       | **Type**: String                             |                                |                |
+       |                                              |                                |                |
+       | **Style**: Free Form                         |                                |                |
+       |                                              |                                |                |
+       |                                              |                                |                |
+       +----------------------------------------------+--------------------------------+----------------+
+
+:navy:`units`
+~~~~~~~~~~~~~
+
+.. container::
+
+   .. table::
+       :class: tight-table
+       :widths: 30 45 15
+
+       +----------------------------------------------+--------------------------------+----------------+
+       | **units**                                    | **Description**                | **Example**    |
+       +==============================================+================================+================+
+       | **Required**: :red:`True`                    | Units of the data.  Options:   | celsius        |
        |                                              | SI units or counts.            |                |
-       | Required: True                               |                                |                |
+       | **Units**: None                              |                                |                |
        |                                              |                                |                |
-       | Units: None                                  |                                |                |
+       | **Type**: String                             |                                |                |
        |                                              |                                |                |
-       | Type: String                                 |                                |                |
+       | **Style**: Controlled Vocabulary             |                                |                |
        |                                              |                                |                |
-       | Style: Controlled Vocabulary                 |                                |                |
+       |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+
 
 Example Auxiliary XML
@@ -2521,6 +4868,9 @@ Example Auxiliary XML
                <value type="Integer">4</value>
            </rating>
        </data_quality>
+       <fdsn>
+           <channel_code>LQN</channel_code>
+       <fdsn>
        <filter>
            <name>
                <i>lowpass</i>

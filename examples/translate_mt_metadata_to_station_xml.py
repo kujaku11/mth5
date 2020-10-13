@@ -43,7 +43,7 @@ from mth5.utils import stationxml_translator
 # Inputs: xml file names for each level
 # =============================================================================
 # directory where xml files reside
-xml_path = Path(r"c:\Users\jpeacock\Documents\mt_format_examples\mth5")
+xml_path = Path(r"c:\Users\peaco\Documents\MT\mth5")
 
 # filenames for each level
 fn_mt_survey_xml = r"survey.xml"

@@ -25,12 +25,11 @@ If you are writing your own reader you need the following structure:
             
             def read_newfile(self):
                 ex, ey, hx, hy, hz = read_in_channels_as_MTTS
-                extra_metadata = {'station.location.elevation': self.elevation}
-                return RunTS([ex, ey, hx, hy, hz]), extra_metadata
+                return RunTS([ex, ey, hx, hy, hz])
             
         def read_newfile(fn):
             new_file_obj = NewFile(fn)
-            run_obj, extra_metadata = new_file_obj.read_newfile()
+            run_obj = new_file_obj.read_newfile()
             
             return run_obj, extra_metadata
         
@@ -52,7 +51,7 @@ Created on Wed Aug 26 10:32:45 2020
 from pathlib import Path
 import logging
 
-from mth5.io import zen, nims, usgs_ascii
+from mth5.io import zen, nims, usgs_ascii, miniseed
 
 logger = logging.getLogger(__name__)
 # =============================================================================
@@ -62,6 +61,10 @@ readers = {
     "zen": {"file_types": ["z3d"], "reader": zen.read_z3d},
     "nims": {"file_types": ["bin", "bnn"], "reader": nims.read_nims},
     "usgs_ascii": {"file_types": [".asc", ".zip"], "reader": usgs_ascii.read_ascii},
+    "miniseed": {
+        "file_types": ["miniseed", "ms", "mseed"],
+        "reader": miniseed.read_miniseed,
+    },
 }
 
 
@@ -117,5 +120,9 @@ def read_file(fn, file_type=None):
             raise KeyError(msg)
     else:
         file_type, file_reader = get_reader(fn.suffix.replace(".", ""))
+
+    # osbpy has not updated to Path yet.
+    if file_type in ["miniseed"]:
+        fn = fn.as_posix()
 
     return file_reader(fn)

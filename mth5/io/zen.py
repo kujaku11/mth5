@@ -30,7 +30,7 @@ import logging
 import numpy as np
 
 from mth5.utils.mttime import MTime
-from mth5.timeseries import MTTS
+from mth5.timeseries import ChannelTS
 
 # ==============================================================================
 class Z3DHeader:
@@ -849,29 +849,90 @@ class Z3D:
             return None
 
     @property
-    def extra_metadata(self):
-        """ extra metadta that might be useful """
+    def channel_metadata(self):
+        """ Channel metadata """
+
+        # fill the time series object
+        if "e" in self.component:
+            ts_type = "electric"
+            meta_dict = {"electric": {"dipole_length": self.dipole_len}}
+            meta_dict[ts_type]["ac.start"] = (
+                self.time_series[0 : int(self.sample_rate)].std()
+                * self.header.ch_factor
+            )
+            meta_dict[ts_type]["ac.end"] = (
+                self.time_series[-int(self.sample_rate) :].std() * self.header.ch_factor
+            )
+            meta_dict[ts_type]["dc.start"] = (
+                self.time_series[0 : int(self.sample_rate)].mean()
+                * self.header.ch_factor
+            )
+            meta_dict[ts_type]["dc.end"] = (
+                self.time_series[-int(self.sample_rate) :].mean()
+                * self.header.ch_factor
+            )
+            self.logger.debug("Making Electric Channel")
+        elif "h" in self.component:
+            ts_type = "magnetic"
+            meta_dict = {
+                "magnetic": {
+                    "sensor.id": self.coil_num,
+                    "sensor.manufacturer": "Geotell",
+                    "sensor.model": "ANT-4",
+                    "sensor.type": "induction coil",
+                }
+            }
+            self.logger.debug("Making Magnetic Channel")
+
+        meta_dict[ts_type]["time_period.start"] = self.start.iso_str
+        meta_dict[ts_type]["time_period.end"] = self.end.iso_str
+        meta_dict[ts_type]["component"] = self.component
+        meta_dict[ts_type]["sample_rate"] = self.sample_rate
+        meta_dict[ts_type]["measurement_azimuth"] = self.azimuth
+        meta_dict[ts_type]["units"] = "counts"
+        meta_dict[ts_type]["channel_number"] = self.metadata.ch_number
+
+        return meta_dict
+
+    @property
+    def station_metadata(self):
+        """ station metadta """
 
         meta_dict = {}
-        meta_dict["station.id"] = self.station
-        meta_dict["station.archive_id"] = self.station
-        meta_dict["station.location.latitude"] = self.latitude
-        meta_dict["station.location.longitude"] = self.longitude
-        meta_dict["station.location.elevation"] = self.elevation
-        meta_dict["run.data_logger.firmware.version"] = self.header.version
-        meta_dict["run.data_logger.id"] = self.header.data_logger
-        meta_dict["run.data_logger.manufacturer"] = "Zonge International"
-        meta_dict["run.data_logger.model"] = "ZEN"
-        meta_dict["run.time_period.start"] = self.start.iso_str
-        meta_dict["run.time_period.end"] = self.end.iso_str
-        meta_dict["run.sample_rate"] = self.sample_rate
-        meta_dict["run.data_type"] = "MTBB"
+        meta_dict["id"] = self.station
+        meta_dict["archive_id"] = self.station
+        meta_dict["location.latitude"] = self.latitude
+        meta_dict["location.longitude"] = self.longitude
+        meta_dict["location.elevation"] = self.elevation
+
+        return {"Station": meta_dict}
+
+    @property
+    def run_metadata(self):
+        """ Run metadata """
+        meta_dict = {}
+        meta_dict["data_logger.firmware.version"] = self.header.version
+        meta_dict["data_logger.id"] = self.header.data_logger
+        meta_dict["data_logger.manufacturer"] = "Zonge International"
+        meta_dict["data_logger.model"] = "ZEN"
+        meta_dict["time_period.start"] = self.start.iso_str
+        meta_dict["time_period.end"] = self.end.iso_str
+        meta_dict["sample_rate"] = self.sample_rate
+        meta_dict["data_type"] = "MTBB"
+
+        return {"Run": meta_dict}
+
+    @property
+    def filter_metadata(self):
+        """ Filter metadata """
+
+        meta_dict = {}
         meta_dict["filters"] = {
             "counts_to_volts": self.header.ch_factor,
             "gain": self.header.channelgain,
         }
 
-        return meta_dict
+        return {"Filter": meta_dict}
 
     def _get_gps_stamp_type(self, old_version=False):
         """
@@ -1356,51 +1417,19 @@ class Z3D:
         return MTime(utc_seconds, gps_time=True)
 
     # =================================================
-    def to_mtts(self):
+    def to_channelts(self):
         """
         fill time series object
         """
-        # fill the time series object
-        if "e" in self.component:
-            ts_type = "electric"
-            meta_dict = {"electric": {"dipole_length": self.dipole_len}}
-            meta_dict[ts_type]["ac.start"] = (
-                self.time_series[0 : int(self.sample_rate)].std()
-                * self.header.ch_factor
-            )
-            meta_dict[ts_type]["ac.end"] = (
-                self.time_series[-int(self.sample_rate) :].std() * self.header.ch_factor
-            )
-            meta_dict[ts_type]["dc.start"] = (
-                self.time_series[0 : int(self.sample_rate)].mean()
-                * self.header.ch_factor
-            )
-            meta_dict[ts_type]["dc.end"] = (
-                self.time_series[-int(self.sample_rate) :].mean()
-                * self.header.ch_factor
-            )
-            self.logger.debug("Making Electric MTTS")
-        elif "h" in self.component:
-            ts_type = "magnetic"
-            meta_dict = {
-                "magnetic": {
-                    "sensor.id": self.coil_num,
-                    "sensor.manufacturer": "Geotell",
-                    "sensor.model": "ANT-4",
-                    "sensor.type": "induction coil",
-                }
-            }
-            self.logger.debug("Making Magnetic MTTS")
+        ts_type = list(self.channel_metadata.keys())[0]
 
-        meta_dict[ts_type]["time_period.start"] = self.start.iso_str
-        meta_dict[ts_type]["time_period.end"] = self.end.iso_str
-        meta_dict[ts_type]["component"] = self.component
-        meta_dict[ts_type]["sample_rate"] = self.sample_rate
-        meta_dict[ts_type]["measurement_azimuth"] = self.azimuth
-        meta_dict[ts_type]["units"] = "counts"
-        meta_dict[ts_type]["channel_number"] = self.metadata.ch_number
-
-        return MTTS(ts_type, data=self.time_series, channel_metadata=meta_dict)
+        return ChannelTS(
+            ts_type,
+            data=self.time_series,
+            channel_metadata=self.channel_metadata,
+            station_metadata=self.station_metadata,
+            run_metadata=self.run_metadata,
+        )
 
 
 # ==============================================================================
@@ -1437,4 +1466,4 @@ def read_z3d(fn):
 
     z3d_obj = Z3D(fn)
     z3d_obj.read_z3d()
-    return z3d_obj.to_mtts(), z3d_obj.extra_metadata
+    return z3d_obj.to_channelts()

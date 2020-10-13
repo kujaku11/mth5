@@ -760,6 +760,10 @@ class Standards:
         return from_csv(get_level_fn("instrument"))
 
     @property
+    def fdsn_dict(self):
+        return from_csv(get_level_fn("fdsn"))
+
+    @property
     def rating_dict(self):
         return from_csv(get_level_fn("rating"))
 
@@ -848,6 +852,7 @@ class Standards:
     @property
     def survey_dict(self):
         survey_dict = from_csv(get_level_fn("survey"))
+        survey_dict.add_dict(self.fdsn_dict, "fdsn")
         survey_dict.add_dict(
             self.person_dict.copy(), "acquired_by", keys=["author", "comments"]
         )
@@ -874,6 +879,7 @@ class Standards:
     @property
     def station_dict(self):
         station_dict = from_csv(get_level_fn("station"))
+        station_dict.add_dict(self.fdsn_dict, "fdsn")
         station_dict.add_dict(self.location_dict.copy(), "location")
         station_dict.add_dict(
             self.person_dict.copy(), "acquired_by", keys=["author", "comments"]
@@ -896,6 +902,7 @@ class Standards:
     @property
     def run_dict(self):
         run_dict = from_csv(get_level_fn("run"))
+        run_dict.add_dict(self.fdsn_dict, "fdsn")
         run_dict.add_dict(self.datalogger_dict.copy(), "data_logger")
         run_dict.add_dict(self.time_period_dict.copy(), "time_period")
         run_dict.add_dict(
@@ -916,6 +923,7 @@ class Standards:
         channel_dict.add_dict(self.filtered_dict.copy(), "filter")
         channel_dict.add_dict(self.time_period_dict.copy(), "time_period")
         channel_dict.add_dict(self.instrument_dict.copy(), "sensor")
+        channel_dict.add_dict(self.fdsn_dict, "fdsn")
         for key, v_dict in self.location_dict.items():
             if "declination" not in key:
                 channel_dict.update({"{0}.{1}".format("location", key): v_dict})

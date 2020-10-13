@@ -29,7 +29,7 @@ from mth5.utils.helpers import to_numpy_type, inherit_doc_string
 from mth5.helpers import get_tree
 from mth5.utils.exceptions import MTH5TableError, MTH5Error
 from mth5.utils.mttime import MTime
-from mth5.timeseries import MTTS, RunTS
+from mth5.timeseries import ChannelTS, RunTS
 
 # make a dictionary of available metadata classes
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
@@ -340,28 +340,40 @@ class SurveyGroup(BaseGroup):
     def __init__(self, group, **kwargs):
 
         super().__init__(group, **kwargs)
-        
+
     @property
     def stations_group(self):
-        return MasterStationGroup(self.hdf5_group['Stations'])
-    
+        return MasterStationGroup(self.hdf5_group["Stations"])
+
     def update_survey_metadata(self):
         """
         update start end dates and location corners from stations_group.summary_table
         
         """
-        
+
         self.logger.debug("Updating survey metadata from stations summary table")
-        self.metadata.time_period.start_date = min(self.stations_group.summary_table.array['start'].astype(np.unicode_)).split('T')[0]
-        self.metadata.time_period.end_date = max(self.stations_group.summary_table.array['end'].astype(np.unicode_)).split('T')[0]
-        self.metadata.northwest_corner.latitude = self.stations_group.summary_table.array['location.latitude'].max()
-        self.metadata.northwest_corner.longitude = self.stations_group.summary_table.array['location.longitude'].min()
-        self.metadata.southeast_corner.latitude = self.stations_group.summary_table.array['location.latitude'].min()
-        self.metadata.southeast_corner.longitude = self.stations_group.summary_table.array['location.longitude'].max()
-        
+        self.metadata.time_period.start_date = min(
+            self.stations_group.summary_table.array["start"].astype(np.unicode_)
+        ).split("T")[0]
+        self.metadata.time_period.end_date = max(
+            self.stations_group.summary_table.array["end"].astype(np.unicode_)
+        ).split("T")[0]
+        self.metadata.northwest_corner.latitude = self.stations_group.summary_table.array[
+            "location.latitude"
+        ].max()
+        self.metadata.northwest_corner.longitude = self.stations_group.summary_table.array[
+            "location.longitude"
+        ].min()
+        self.metadata.southeast_corner.latitude = self.stations_group.summary_table.array[
+            "location.latitude"
+        ].min()
+        self.metadata.southeast_corner.longitude = self.stations_group.summary_table.array[
+            "location.longitude"
+        ].max()
+
         self.write_metadata()
-        
-        
+
+
 class ReportsGroup(BaseGroup):
     """
     Not sure how to handle this yet
@@ -1614,26 +1626,26 @@ class RunGroup(BaseGroup):
         try:
             ch_dataset = self.hdf5_group[channel_name]
             if ch_dataset.attrs["mth5_type"].lower() in ["electric"]:
-                ch_metadata = meta_classes['Electric']()
-                ch_metadata.from_dict({'Electric': ch_dataset.attrs})
-                channel = ElectricDataset(ch_dataset, 
-                                          dataset_metadata=ch_metadata,
-                                          write_metadata=False)
+                ch_metadata = meta_classes["Electric"]()
+                ch_metadata.from_dict({"Electric": ch_dataset.attrs})
+                channel = ElectricDataset(
+                    ch_dataset, dataset_metadata=ch_metadata, write_metadata=False
+                )
             elif ch_dataset.attrs["mth5_type"].lower() in ["magnetic"]:
-                ch_metadata = meta_classes['Magnetic']()
-                ch_metadata.from_dict({'Magnetic': ch_dataset.attrs})
-                channel = MagneticDataset(ch_dataset, 
-                                          dataset_metadata=ch_metadata,
-                                          write_metadata=False)
+                ch_metadata = meta_classes["Magnetic"]()
+                ch_metadata.from_dict({"Magnetic": ch_dataset.attrs})
+                channel = MagneticDataset(
+                    ch_dataset, dataset_metadata=ch_metadata, write_metadata=False
+                )
             elif ch_dataset.attrs["mth5_type"].lower() in ["auxiliary"]:
-                ch_metadata = meta_classes['Auxiliary']()
-                ch_metadata.from_dict({'Auxiliary': ch_dataset.attrs})
-                channel = AuxiliaryDataset(ch_dataset, 
-                                          dataset_metadata=ch_metadata,
-                                          write_metadata=False)
+                ch_metadata = meta_classes["Auxiliary"]()
+                ch_metadata.from_dict({"Auxiliary": ch_dataset.attrs})
+                channel = AuxiliaryDataset(
+                    ch_dataset, dataset_metadata=ch_metadata, write_metadata=False
+                )
             else:
                 channel = ChannelDataset(ch_dataset)
-                
+
             return channel
 
         except KeyError:
@@ -1701,7 +1713,7 @@ class RunGroup(BaseGroup):
         """
         ch_list = []
         for channel in self.groups_list:
-            if channel in ['summary']:
+            if channel in ["summary"]:
                 continue
             ch_obj = self.get_channel(channel)
             ts_obj = ch_obj.to_mtts()
@@ -1733,7 +1745,7 @@ class RunGroup(BaseGroup):
             if comp[0] in ["e"]:
                 channel_type = "electric"
                 ch_metadata = metadata.Electric()
-                
+
             elif comp[0] in ["h", "b"]:
                 channel_type = "magnetic"
                 ch_metadata = metadata.Magnetic()
@@ -1741,7 +1753,6 @@ class RunGroup(BaseGroup):
                 channel_type = "auxiliary"
                 ch_metadata = metadata.Auxiliary()
 
-            
             ch_metadata.from_dict({channel_type: run_ts_obj.dataset[comp].attrs})
             ch_metadata.hdf5_type = channel_type
 
@@ -1757,18 +1768,20 @@ class RunGroup(BaseGroup):
 
     def from_mtts(self, mtts_obj):
         """
-        create a channel data set from a :class:`mth5.timeseries.MTTS` object and 
+        create a channel data set from a :class:`mth5.timeseries.ChannelTS` object and 
         update metadata.
         
         :param mtts_obj: a single time series object
-        :type mtts_obj: :class:`mth5.timeseries.MTTS`
+        :type mtts_obj: :class:`mth5.timeseries.ChannelTS`
         :return: new channel dataset
         :rtype: :class:`mth5.groups.ChannelDataset
 
         """
 
-        if not isinstance(mtts_obj, MTTS):
-            msg = f"Input must be a mth5.timeseries.MTTS object not {type(mtts_obj)}"
+        if not isinstance(mtts_obj, ChannelTS):
+            msg = (
+                f"Input must be a mth5.timeseries.ChannelTS object not {type(mtts_obj)}"
+            )
             self.logger.error(msg)
             raise MTH5Error(msg)
 
@@ -1808,24 +1821,27 @@ class RunGroup(BaseGroup):
         :rtype: TYPE
 
         """
-        
+
         self.logger.debug("Updating run metadata from summary table.")
-        channels_recorded = list(self.summary_table.array['component'].astype(np.unicode_))
-        self.metadata.channels_recorded_electric = [cc for cc in channels_recorded 
-                                                    if cc[0] in ['e']]
-        self.metadata.channels_recorded_magnetic = [cc for cc in channels_recorded 
-                                                    if cc[0] in ['h', 'b']]
-        self.metadata.channels_recorded_auxiliary = [cc for cc in channels_recorded 
-                                                    if cc[0] not in ['e', 'h', 'b']]
-        
+        channels_recorded = list(
+            self.summary_table.array["component"].astype(np.unicode_)
+        )
+        self.metadata.channels_recorded_electric = [
+            cc for cc in channels_recorded if cc[0] in ["e"]
+        ]
+        self.metadata.channels_recorded_magnetic = [
+            cc for cc in channels_recorded if cc[0] in ["h", "b"]
+        ]
+        self.metadata.channels_recorded_auxiliary = [
+            cc for cc in channels_recorded if cc[0] not in ["e", "h", "b"]
+        ]
+
         self.metadata.time_period.start = min(
             self.summary_table.array["start"]
         ).decode()
-        
-        self.metadata.time_period.end = max(
-            self.summary_table.array["end"]
-        ).decode()
-        
+
+        self.metadata.time_period.end = max(self.summary_table.array["end"]).decode()
+
 
 class ChannelDataset:
     """
@@ -1877,7 +1893,7 @@ class ChannelDataset:
             self.hdf5_dataset = weakref.ref(dataset)()
 
         self.logger = logging.getLogger("{0}.{1}".format(__name__, self._class_name))
-        
+
         # set metadata to the appropriate class.  Standards is not a
         # metadata.Base object so should be skipped. If the class name is not
         # defined yet set to Base class.
@@ -1887,9 +1903,9 @@ class ChannelDataset:
         except KeyError:
             self.metadata = metadata.Base()
 
-        if not hasattr(self.metadata, 'mth5_type'):
+        if not hasattr(self.metadata, "mth5_type"):
             self._add_base_attributes()
-        
+
         # set summary attributes
         self.logger.debug(
             "Metadata class for {0} is {1}".format(
@@ -1910,7 +1926,7 @@ class ChannelDataset:
             self.metadata.from_dict(dataset_metadata.to_dict())
             self.metadata.hdf5_reference = self.hdf5_dataset.ref
             self.metadata.mth5_type = self._class_name
-            
+
         if write_metadata:
             # write out metadata to make sure that its in the file.
             self.write_metadata()
@@ -1918,7 +1934,7 @@ class ChannelDataset:
         # if any other keywords
         for key, value in kwargs.items():
             setattr(self, key, value)
-            
+
     def _add_base_attributes(self):
         # add 2 attributes that will help with querying
         # 1) the metadata class name
@@ -1951,7 +1967,7 @@ class ChannelDataset:
                 "alias": [],
                 "example": "<HDF5 Group Reference>",
             },
-        )        
+        )
 
     def __str__(self):
         try:
@@ -2113,7 +2129,7 @@ class ChannelDataset:
         4096
         >>> ex.end
         2015-01-08T19:32:09.500000+00:00
-        >>> t = timeseries.MTTS('electric',
+        >>> t = timeseries.ChannelTS('electric',
         ...                     data=2*np.cos(4 * np.pi * .05 * \
         ...                                   np.linspace(0,4096l num=4096) *
         ...                                   .01),
@@ -2391,13 +2407,13 @@ class ChannelDataset:
     def to_mtts(self):
         """
         :return: a Timeseries with the appropriate time index and metadata
-        :rtype: :class:`mth5.timeseries.MTTS`
+        :rtype: :class:`mth5.timeseries.ChannelTS`
     
         loads from memory (nearly half the size of xarray alone, not sure why)
     
         """
 
-        return MTTS(
+        return ChannelTS(
             self.metadata.type,
             data=self.hdf5_dataset[()],
             channel_metadata=self.metadata,
@@ -2456,12 +2472,12 @@ class ChannelDataset:
         self, mtts_obj, how="replace", fill=None, max_gap_seconds=1, fill_window=10
     ):
         """
-        fill data set from a :class:`mth5.timeseries.MTTS` object.
+        fill data set from a :class:`mth5.timeseries.ChannelTS` object.
         
         Will check for time alignement, and metadata.
         
         :param mtts_obj: time series object
-        :type mtts_obj: :class:`mth5.timeseries.MTTS`
+        :type mtts_obj: :class:`mth5.timeseries.ChannelTS`
         :param how: how the new array will be input to the existing dataset:
             
             - 'replace' -> replace the entire dataset nothing is left over.
@@ -2492,8 +2508,8 @@ class ChannelDataset:
 
         """
 
-        if not isinstance(mtts_obj, MTTS):
-            msg = f"Input must be a MTTS object not {type(mtts_obj)}"
+        if not isinstance(mtts_obj, ChannelTS):
+            msg = f"Input must be a ChannelTS object not {type(mtts_obj)}"
             self.logger.error(msg)
             raise TypeError(msg)
 
@@ -2668,7 +2684,7 @@ class ChannelDataset:
             * numpy array with metadata
             * pandas.Dataframe with metadata
             * xarray.DataFrame with metadata
-            * :class:`mth5.timeseries.MTTS` 'default'
+            * :class:`mth5.timeseries.ChannelTS` 'default'
             * dask.DataFrame with metadata 'not yet'
 
         :param start_time: start time of the slice
@@ -2679,7 +2695,7 @@ class ChannelDataset:
         :type n_samples: integer, optional
         :return: the correct container for the time series.
         :rtype: [ :class:`xarray.DataArray` | :class:`pandas.DataFrame` |
-                 :class:`mth5.timeseries.MTTS` | :class:`numpy.ndarray` ]
+                 :class:`mth5.timeseries.ChannelTS` | :class:`numpy.ndarray` ]
         :raises: ValueError if both end_time and n_samples are None or given.
 
         :Example with number of samples:
@@ -2700,7 +2716,7 @@ class ChannelDataset:
                 ...
 
             >>> type(ex_slice)
-            mth5.timeseries.MTTS
+            mth5.timeseries.ChannelTS
     
             # plot the time series
             >>> ex_slice.ts.plot()
@@ -2804,7 +2820,7 @@ class ChannelDataset:
             data = self.hdf5_dataset[regional_ref]
 
         elif return_type == "mtts":
-            data = MTTS(
+            data = ChannelTS(
                 self.metadata.type,
                 data=self.hdf5_dataset[regional_ref],
                 channel_metadata={self.metadata.type: meta_dict},

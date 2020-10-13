@@ -29,32 +29,32 @@ from mth5.utils.exceptions import MTTSError
 # =============================================================================
 class TestMTTS(unittest.TestCase):
     def setUp(self):
-        self.ts = timeseries.MTTS("auxiliary")
+        self.ts = timeseries.ChannelTS("auxiliary")
         self.maxDiff = None
 
     def test_input_type_electric(self):
-        self.ts = timeseries.MTTS("electric")
+        self.ts = timeseries.ChannelTS("electric")
 
         electric_meta = metadata.Electric()
         self.assertDictEqual(self.ts.metadata.to_dict(), electric_meta.to_dict())
 
     def test_input_type_magnetic(self):
-        self.ts = timeseries.MTTS("magnetic")
+        self.ts = timeseries.ChannelTS("magnetic")
 
         magnetic_meta = metadata.Magnetic()
         self.assertDictEqual(self.ts.metadata.to_dict(), magnetic_meta.to_dict())
 
     def test_input_type_auxiliary(self):
-        self.ts = timeseries.MTTS("auxiliary")
+        self.ts = timeseries.ChannelTS("auxiliary")
 
         auxiliary_meta = metadata.Auxiliary()
         self.assertDictEqual(self.ts.metadata.to_dict(), auxiliary_meta.to_dict())
 
     def test_input_type_fail(self):
-        self.assertRaises(ValueError, timeseries.MTTS, "temperature")
+        self.assertRaises(ValueError, timeseries.ChannelTS, "temperature")
 
     def test_intialize_with_metadata(self):
-        self.ts = timeseries.MTTS(
+        self.ts = timeseries.ChannelTS(
             "electric", channel_metadata={"electric": {"component": "ex"}}
         )
         self.assertEqual(self.ts.metadata.component, "ex")
@@ -78,7 +78,7 @@ class TestMTTS(unittest.TestCase):
         self.assertEqual(self.ts.n_samples, 4096)
 
     def test_set_component(self):
-        self.ts = timeseries.MTTS(
+        self.ts = timeseries.ChannelTS(
             "electric", channel_metadata={"electric": {"component": "ex"}}
         )
 
@@ -98,7 +98,7 @@ class TestRunTS(unittest.TestCase):
         self.run = timeseries.RunTS()
         self.maxDiff = None
 
-        self.ex = timeseries.MTTS(
+        self.ex = timeseries.ChannelTS(
             "electric",
             data=np.random.rand(4096),
             channel_metadata={
@@ -109,7 +109,7 @@ class TestRunTS(unittest.TestCase):
                 }
             },
         )
-        self.ey = timeseries.MTTS(
+        self.ey = timeseries.ChannelTS(
             "electric",
             data=np.random.rand(4096),
             channel_metadata={
@@ -120,7 +120,7 @@ class TestRunTS(unittest.TestCase):
                 }
             },
         )
-        self.hx = timeseries.MTTS(
+        self.hx = timeseries.ChannelTS(
             "magnetic",
             data=np.random.rand(4096),
             channel_metadata={
@@ -131,7 +131,7 @@ class TestRunTS(unittest.TestCase):
                 }
             },
         )
-        self.hy = timeseries.MTTS(
+        self.hy = timeseries.ChannelTS(
             "magnetic",
             data=np.random.rand(4096),
             channel_metadata={
@@ -142,7 +142,7 @@ class TestRunTS(unittest.TestCase):
                 }
             },
         )
-        self.hz = timeseries.MTTS(
+        self.hz = timeseries.ChannelTS(
             "magnetic",
             data=np.random.rand(4096),
             channel_metadata={
@@ -165,7 +165,7 @@ class TestRunTS(unittest.TestCase):
         self.assertEqual(self.run.end, MTime("2015-01-08T19:57:49.875000"))
 
     def test_sr_fail(self):
-        self.hz = timeseries.MTTS(
+        self.hz = timeseries.ChannelTS(
             "magnetic",
             data=np.random.rand(4096),
             channel_metadata={
@@ -185,7 +185,7 @@ class TestRunTS(unittest.TestCase):
 
     def test_ex(self):
 
-        self.assertIsInstance(self.run.ex, timeseries.MTTS)
+        self.assertIsInstance(self.run.ex, timeseries.ChannelTS)
         self.assertEqual(self.ex.sample_rate, self.run.sample_rate)
         self.assertEqual(self.run.start, self.ex.start)
         self.assertEqual(self.run.end, self.ex.end)

@@ -22,6 +22,8 @@ you through the process.
 .. _pip: https://pip.pypa.io
 .. _Python installation guide: http://docs.python-guide.org/en/latest/starting/installation/
 
+.. note:: This will not currently work, only a source download is available.
+
 
 From sources
 ------------
