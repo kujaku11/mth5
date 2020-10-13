@@ -341,15 +341,18 @@ class ChannelTS:
         """ change channel type means changing the metadata type """
         
         if value.lower() != self.metadata._class_name.lower():
-            m_dict = self.metadata.to_dict()
+            m_dict = self.metadata.to_dict()[self.metadata._class_name]
             try:
-                self.metadata = meta_classes[value.capitalize()]
+                self.metadata = meta_classes[value.capitalize()]()
+                msg = (f"Changing metadata to {value.capitalize()}"
+                       + "will translate any similar attributes.")
+                self.logger.info(msg)
             except KeyError:
                 msg = (f'Channel type {value} not understood, must be '
                        + '[ Electrict | Magnetic | Auxiliary ]')
                 self.logger.error(msg)
             
-            for key in self.metadata[self.metadata._class_name].keys():
+            for key in self.metadata.to_dict()[self.metadata._class_name].keys():
                 try:
                     self.metadata.set_attr_from_name(key, m_dict[key])
                 except KeyError:
