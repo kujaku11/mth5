@@ -38,9 +38,8 @@ from obspy.core import Trace, Stream
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
 
 
-
 def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
-        """
+    """
         get the date time index from the data
 
         :param string start_time: start time in time format
@@ -51,39 +50,41 @@ def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
         :return: date-time index
         
         """
-        
-        if sample_rate in [0, None]:
-            msg = (
-                f"Need to input a valid sample rate. Not {sample_rate}, "
-                + "returning a time index assuming a sample rate of 1"
-            )
-            logger.warning(msg)
-            sample_rate = 1
 
-        if start_time is None:
-            msg = (
-                f"Need to input a start time. Not {start_time}, "
-                + "returning a time index with start time of "
-                + "1980-01-01T00:00:00"
-            )
-            logger.warning(msg)
-            start_time = "1980-01-01T00:00:00"
-
-        if n_samples < 1:
-            msg = f"Need to input a valid n_samples. Not {n_samples}"
-            logger.error(msg)
-            raise ValueError(msg)
-
-        if not isinstance(start_time, MTime):
-            start_time = MTime(start_time)
-
-        dt_freq = "{0:.0f}N".format(1.0e9 / (sample_rate))
-
-        dt_index = pd.date_range(
-            start=start_time.iso_str.split("+", 1)[0], periods=n_samples, freq=dt_freq
+    if sample_rate in [0, None]:
+        msg = (
+            f"Need to input a valid sample rate. Not {sample_rate}, "
+            + "returning a time index assuming a sample rate of 1"
         )
+        logger.warning(msg)
+        sample_rate = 1
 
-        return dt_index
+    if start_time is None:
+        msg = (
+            f"Need to input a start time. Not {start_time}, "
+            + "returning a time index with start time of "
+            + "1980-01-01T00:00:00"
+        )
+        logger.warning(msg)
+        start_time = "1980-01-01T00:00:00"
+
+    if n_samples < 1:
+        msg = f"Need to input a valid n_samples. Not {n_samples}"
+        logger.error(msg)
+        raise ValueError(msg)
+
+    if not isinstance(start_time, MTime):
+        start_time = MTime(start_time)
+
+    dt_freq = "{0:.0f}N".format(1.0e9 / (sample_rate))
+
+    dt_index = pd.date_range(
+        start=start_time.iso_str.split("+", 1)[0], periods=n_samples, freq=dt_freq
+    )
+
+    return dt_index
+
+
 # ==============================================================================
 # Channel Time Series Object
 # ==============================================================================
@@ -152,7 +153,7 @@ class ChannelTS:
 
     def __init__(
         self,
-        channel_type='auxiliary',
+        channel_type="auxiliary",
         data=None,
         channel_metadata=None,
         station_metadata=None,
@@ -243,17 +244,18 @@ class ChannelTS:
             setattr(self, key, kwargs[key])
 
     def __str__(self):
-        lines = ['ChannelTS Object:', '-'*25, 
-        f'\tStation:      {self.station_metadata.id}',
-        f'\tRun:          {self.run_metadata.id}',
-        f'\tChannel Type: {self.channel_type}',
-        f'\tComponent:    {self.component}',
-        f'\tSample Rate:  {self.sample_rate}',
-        f'\tStart:        {self.start}',
-        f'\tEnd:          {self.end}',
-        f'\tN Samples:    {self.n_samples}']
-        
-        return '\n'.join(lines)
+        lines = [
+            f"Station:      {self.station_metadata.id}",
+            f"Run:          {self.run_metadata.id}",
+            f"Channel Type: {self.channel_type}",
+            f"Component:    {self.component}",
+            f"Sample Rate:  {self.sample_rate}",
+            f"Start:        {self.start}",
+            f"End:          {self.end}",
+            f"N Samples:    {self.n_samples}",
+        ]
+
+        return "\t\n".join(["Channel Summary:"] + lines)
 
     def __repr__(self):
         return self.__str__()
@@ -275,7 +277,9 @@ class ChannelTS:
 
         if isinstance(ts_arr, np.ndarray):
             self.logger.debug(f"loading numpy array with shape {ts_arr.shape}")
-            dt = make_dt_coordinates(self.start, self.sample_rate, ts_arr.size, self.logger)
+            dt = make_dt_coordinates(
+                self.start, self.sample_rate, ts_arr.size, self.logger
+            )
             self._ts = xr.DataArray(ts_arr, coords=[("time", dt)])
             self.update_xarray_metadata()
 
@@ -326,11 +330,31 @@ class ChannelTS:
                 + "or xarray.DataArray."
             )
             raise MTTSError(msg)
-    
+
     @property
     def channel_type(self):
         """ Channel Type """
         return self.metadata._class_name
+    
+    @channel_type.setter
+    def channel_type(self, value):
+        """ change channel type means changing the metadata type """
+        
+        if value.lower() != self.metadata._class_name.lower():
+            m_dict = self.metadata.to_dict()
+            try:
+                self.metadata = meta_classes[value.capitalize()]
+            except KeyError:
+                msg = (f'Channel type {value} not understood, must be '
+                       + '[ Electrict | Magnetic | Auxiliary ]')
+                self.logger.error(msg)
+            
+            for key in self.metadata[self.metadata._class_name].keys():
+                try:
+                    self.metadata.set_attr_from_name(key, m_dict[key])
+                except KeyError:
+                    pass
+        return 
 
     def update_xarray_metadata(self):
         """
@@ -444,12 +468,14 @@ class ChannelTS:
 
         type float
         """
-        self.metadata.sample_rate = sample_rate
-        self.logger.warning(
+        if self.metadata.sample_rate not in [0.0, None]:
+            self.logger.warning(
             "Setting ChannelTS.metadata.sample_rate. "
-            + "If you want to change the time series sample"
+            + "If you want to change existing time series sample"
             + " rate use method `resample`."
         )
+        self.metadata.sample_rate = sample_rate
+        
 
     ## set time and set index
     @property
@@ -475,6 +501,9 @@ class ChannelTS:
 
         Resets how the ts data frame is indexed, setting the starting time to
         the new start time.
+        
+        :param start_time: start time of time series, can be string or epoch seconds
+        
         """
 
         if not isinstance(start_time, MTime):
@@ -492,7 +521,7 @@ class ChannelTS:
 
         # make a time series that the data can be indexed by
         else:
-            self.logger.warning("No data, just updating metadata start")
+            self.logger.debug("No data, just updating metadata start")
 
     @property
     def end(self):
@@ -609,14 +638,14 @@ class ChannelTS:
             msg = f"Input must be obspy.core.Trace, not {type(obspy_trace)}"
             self.logger.error(msg)
             raise MTTSError(msg)
-        
-        if obspy_trace.stats.channel[0].lower() in ['e', 'q']:
+
+        if obspy_trace.stats.channel[0].lower() in ["e", "q"]:
             self.metadata = metadata.Electric()
-        elif obspy_trace.stats.channel[0].lower() in ['h', 'b', 'f']:
+        elif obspy_trace.stats.channel[0].lower() in ["h", "b", "f"]:
             self.metadata = metadata.Magnetic()
         else:
             self.metadata = metadata.Auxiliary()
-            
+
         self.metadata.component = obspy_trace.stats.channel
         self.start = obspy_trace.stats.starttime.isoformat()
         self.sample_rate = obspy_trace.stats.sampling_rate
@@ -685,14 +714,14 @@ class RunTS:
 
     def __str__(self):
         s_list = [
-            f"Station:     {self.station_metadata.fdsn.id",
+            f"Station:     {self.station_metadata.fdsn.id}",
             f"Run:         {self.metadata.id}",
             f"Start:       {self.start}",
             f"End:         {self.end}",
             f"Sample Rate: {self.sample_rate}",
             f"Components:  {self.channels}",
         ]
-        return "\n\t".join(["RunTS Summary"] + s_list)
+        return "\n\t".join(["RunTS Summary:"] + s_list)
 
     def __repr__(self):
         return self.__str__()
@@ -960,7 +989,7 @@ class RunTS:
 
         array_list = []
         for obs_trace in obspy_stream:
-            channel_ts = ChannelTS('auxiliary')
+            channel_ts = ChannelTS("auxiliary")
             channel_ts.from_obspy_trace(obs_trace)
             array_list.append(channel_ts)
 
