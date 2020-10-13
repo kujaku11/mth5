@@ -11,6 +11,7 @@ Created on Wed Sep 30 10:20:12 2020
 # =============================================================================
 # Imports
 # =============================================================================
+from pathlib import Path
 from mth5.timeseries import RunTS
 from obspy import read as obspy_read
 
@@ -18,7 +19,19 @@ from obspy import read as obspy_read
 # read seismic file
 # =============================================================================
 def read_miniseed(fn):
+    """
+    Read a miniseed file into a :class:`mth5.timeseries.RunTS` object
+    
+    :param fn: full path to the miniseed file
+    :type fn: string
+    :return: 
+    :rtype: TYPE
 
+    """
+
+    # obspy does not use Path objects for file names
+    if isinstance(fn, Path):
+        fn = fn.as_posix()
     obs_stream = obspy_read(fn)
     run_obj = RunTS()
     run_obj.from_obspy_stream(obs_stream)

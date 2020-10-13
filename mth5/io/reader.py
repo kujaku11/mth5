@@ -121,8 +121,4 @@ def read_file(fn, file_type=None):
     else:
         file_type, file_reader = get_reader(fn.suffix.replace(".", ""))
 
-    # osbpy has not updated to Path yet.
-    if file_type in ["miniseed"]:
-        fn = fn.as_posix()
-
     return file_reader(fn)

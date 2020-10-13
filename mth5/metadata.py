@@ -986,7 +986,7 @@ class Fdsn(Base):
     """
 
     def __init__(self, **kwargs):
-        self.identifier = None
+        self.id = None
         self.network = None
         self.channel_code = None
         self.new_epoch = None
