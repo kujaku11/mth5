@@ -335,29 +335,33 @@ class ChannelTS:
     def channel_type(self):
         """ Channel Type """
         return self.metadata._class_name
-    
+
     @channel_type.setter
     def channel_type(self, value):
         """ change channel type means changing the metadata type """
-        
+
         if value.lower() != self.metadata._class_name.lower():
             m_dict = self.metadata.to_dict()[self.metadata._class_name]
             try:
                 self.metadata = meta_classes[value.capitalize()]()
-                msg = (f"Changing metadata to {value.capitalize()}"
-                       + "will translate any similar attributes.")
+                msg = (
+                    f"Changing metadata to {value.capitalize()}"
+                    + "will translate any similar attributes."
+                )
                 self.logger.info(msg)
             except KeyError:
-                msg = (f'Channel type {value} not understood, must be '
-                       + '[ Electrict | Magnetic | Auxiliary ]')
+                msg = (
+                    f"Channel type {value} not understood, must be "
+                    + "[ Electrict | Magnetic | Auxiliary ]"
+                )
                 self.logger.error(msg)
-            
+
             for key in self.metadata.to_dict()[self.metadata._class_name].keys():
                 try:
                     self.metadata.set_attr_from_name(key, m_dict[key])
                 except KeyError:
                     pass
-        return 
+        return
 
     def update_xarray_metadata(self):
         """
@@ -473,12 +477,11 @@ class ChannelTS:
         """
         if self.metadata.sample_rate not in [0.0, None]:
             self.logger.warning(
-            "Setting ChannelTS.metadata.sample_rate. "
-            + "If you want to change existing time series sample"
-            + " rate use method `resample`."
-        )
+                "Setting ChannelTS.metadata.sample_rate. "
+                + "If you want to change existing time series sample"
+                + " rate use method `resample`."
+            )
         self.metadata.sample_rate = sample_rate
-        
 
     ## set time and set index
     @property
@@ -968,7 +971,13 @@ class RunTS:
 
         trace_list = []
         for channel in self.channels:
-            ts_obj = getattr(self, channel)
+            if channel[0] in ['e']:
+                ch_type = 'electric'
+            elif channel[0] in ['h', 'b']:
+                ch_type = 'magnetic'
+            else:
+                ch_type = 'auxiliary'
+            ts_obj = ChannelTS(ch_type, self.dataset[channel])
             trace_list.append(ts_obj.to_obspy_trace())
 
         return Stream(traces=trace_list)
@@ -991,10 +1000,23 @@ class RunTS:
             raise MTTSError(msg)
 
         array_list = []
+        station_list = []
         for obs_trace in obspy_stream:
-            channel_ts = ChannelTS("auxiliary")
+            channel_ts = ChannelTS()
             channel_ts.from_obspy_trace(obs_trace)
+            station_list.append(channel_ts.station_metadata.fdsn.id)
+
             array_list.append(channel_ts)
+            
+        ### need to merge metadata into something useful, station name is the only
+        ### name that is preserved
+        try:
+            station = list(set([ss for ss in station_list if ss is not None]))[0]
+        except IndexError:
+            msg = "Could not find station name"
+            self.logger.warn(msg)
+            
+        self.station_metadata.fdsn.id = station
 
         self.set_dataset(array_list)
 
