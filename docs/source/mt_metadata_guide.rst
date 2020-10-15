@@ -1533,9 +1533,8 @@ Example Station JSON
            "channels_recorded": "Ex, Ey, Bx, By",
            "comments": null,
            "data_type": "MT",
-           "fdsn.identifier": "MT012",
            "geographic_name": "Whitehorse, Yukon",
-           "id": "Curious Bears Hallabaloo",
+           "id": "MT012",
            "location": {
                "latitude": 10.0,
                "longitude": -112.98,
