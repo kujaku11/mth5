@@ -260,8 +260,23 @@ class ChannelTS:
     def __repr__(self):
         return self.__str__()
 
-    def __eq__(self):
-        raise ValueError("cannot test eq yet")
+    def __eq__(self, other):
+        
+        if not isinstance(other, ChannelTS):
+            raise ValueError(f"Cannot compare ChannelTS with {type(other)}")
+            
+        if not other.metadata == self.metadata:
+            return False
+        
+        if self.ts.equals(other.ts) is False:
+            msg = "timeseries are not equal"
+            self.logger.info(msg)
+            return False
+        
+        return True
+    
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     ### Properties ------------------------------------------------------------
     @property
@@ -365,9 +380,15 @@ class ChannelTS:
 
     def update_xarray_metadata(self):
         """
+        Update xarray attrs dictionary with metadata.  Here we are assuming that 
+        self.metadata is the parent and attrs in xarray are children because all 
+        metadata will be validated by :class:`mth5.metadata` class objects.  
         
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Eventually there should be a way that this is automatic, but I'm not that 
+        clever yet.
+        
+        This should be mainly used internally but gives the user a way to update 
+        metadata.  
 
         """
         self.logger.debug("Updating xarray attributes")
@@ -482,6 +503,7 @@ class ChannelTS:
                 + " rate use method `resample`."
             )
         self.metadata.sample_rate = sample_rate
+        self.update_xarray_metadata()
 
     ## set time and set index
     @property
@@ -528,6 +550,8 @@ class ChannelTS:
         # make a time series that the data can be indexed by
         else:
             self.logger.debug("No data, just updating metadata start")
+            
+        self.update_xarray_metadata()
 
     @property
     def end(self):
@@ -1013,6 +1037,7 @@ class RunTS:
         try:
             station = list(set([ss for ss in station_list if ss is not None]))[0]
         except IndexError:
+            station = None
             msg = "Could not find station name"
             self.logger.warn(msg)
             

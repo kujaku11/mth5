@@ -90,7 +90,7 @@ class Base:
 
         self._class_name = validate_attribute(self.__class__.__name__)
 
-        self.logger = logging.getLogger("{0}.{1}".format(__name__, self._class_name))
+        self.logger = logging.getLogger(f"{__name__}.{self._class_name}")
 
         for name, value in kwargs.items():
             self.set_attr_from_name(name, value)
@@ -107,9 +107,9 @@ class Base:
 
     def __eq__(self, other):
         if isinstance(other, (Base, dict, str, pd.Series)):
-            home_dict = self.to_dict()
+            home_dict = self.to_dict()[self._class_name]
             if isinstance(other, Base):
-                other_dict = other.to_dict()
+                other_dict = other.to_dict()[self._class_name]
             elif isinstance(other, dict):
                 other_dict = other
             elif isinstance(other, str):
@@ -120,24 +120,24 @@ class Base:
                 other_dict = OrderedDict(
                     sorted(other.to_dict().items(), key=itemgetter(0))
                 )
-            if other_dict == self.to_dict():
+            if other_dict == home_dict:
                 return True
             else:
-                for key, value in home_dict.items():
+                for key, value in home_dict.items():                            
                     try:
                         other_value = other_dict[key]
                         if value != other_value:
-                            msg = (
-                                "Key is the same but values are different"
-                                + "\n\thome[{0}] = {1} != ".format(key, value)
-                                + "other[{0}] = {1}".format(key, other_value)
-                            )
+                            msg = (f"{key}: {value} != {other_value}")
                             self.logger.info(msg)
                     except KeyError:
                         msg = "Cannot find {0} in other".format(key)
                         self.logger.info(msg)
 
                 return False
+        raise ValueError(f"Cannot compare {self._class_name} with {type(other)}")
+        
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def __len__(self):
         return len(self.get_attribute_list())
@@ -1380,11 +1380,13 @@ class Filtered(Base):
     """
 
     def __init__(self, **kwargs):
-        self._name = [None]
-        self._applied = [None]
+        self._name = []
+        self._applied = []
         super().__init__()
 
         self._attr_dict = ATTR_DICT["filtered"]
+        self.name = None
+        self.applied = None
 
     @property
     def name(self):
@@ -1393,6 +1395,7 @@ class Filtered(Base):
     @name.setter
     def name(self, names):
         if names is None:
+            self._name = ['none']
             return
 
         if isinstance(names, str):
