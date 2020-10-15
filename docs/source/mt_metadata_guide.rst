@@ -1026,10 +1026,10 @@ Station Attributes
        +----------------------------------------------+--------------------------------+----------------+
        | **geographic_name**                          | **Description**                | **Example**    |
        +==============================================+================================+================+
-       | **Required**: :red:`True`                    | Closest geographic name to the |  YK"           |
+       | **Required**: :red:`True`                    | Closest geographic name to the | Kelly, YK      |
+       |                                              | station, or a location         | or             |
+       | **Units**: None                              | description unique to the      | Three Elms     |
        |                                              | station                        |                |
-       | **Units**: None                              |                                |                |
-       |                                              |                                |                |
        | **Type**: String                             |                                |                |
        |                                              |                                |                |
        | **Style**: Free Form                         |                                |                |
