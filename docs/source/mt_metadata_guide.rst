@@ -1049,13 +1049,13 @@ Station Attributes
        +----------------------------------------------+--------------------------------+----------------+
        | **id**                                       | **Description**                | **Example**    |
        +==============================================+================================+================+
-       | **Required**: :red:`True`                    | Station name.  This can be a   | bear hallabaloo|
-       |                                              | longer name than the           |                |
-       | **Units**: None                              | fdsn.identifier name and be a  |                |
-       |                                              | more explanatory name.         |                |
-       | **Type**: String                             |                                |                |
-       |                                              |                                |                |
-       | **Style**: Free Form                         |                                |                |
+       | **Required**: :red:`True`                    | Station ID name.  This should  | MT001          |
+       |                                              | be an alpha numeric name that  |                |
+       | **Units**: None                              | is typically 5-6 characters    |                |
+       |                                              | long.  Commonly the project    |                |
+       | **Type**: String                             | name in 2 or 3 letters and     |                |
+       |                                              | the station number.            |                |
+       | **Style**: Alpha Numeric                     |                                |                |
        |                                              |                                |                |
        |                                              |                                |                |
        +----------------------------------------------+--------------------------------+----------------+

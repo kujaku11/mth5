@@ -618,7 +618,7 @@ class MasterStationGroup(BaseGroup):
 
         >>> from mth5.metadata import Station
         >>> station_metadata = Station()
-        >>> station_metadata.archive_id = 'MT004'
+        >>> station_metadata.id = 'MT004'
         >>> station_metadata.time_period.start = '2020-01-01T12:30:00'
         >>> station_metadata.location.latitude = 40.000
         >>> station_metadata.location.longitude = -120.000
@@ -629,7 +629,7 @@ class MasterStationGroup(BaseGroup):
             "station": {
                 "acquired_by.author": null,
                 "acquired_by.comments": null,
-                "archive_id": "MT004",
+                "id": "MT004",
                 ...
                 }
         }
@@ -711,7 +711,7 @@ class MasterStationGroup(BaseGroup):
             "max_shape": (1000,),
             "dtype": np.dtype(
                 [
-                    ("archive_id", "S5"),
+                    ("id", "S5"),
                     ("start", "S32"),
                     ("end", "S32"),
                     ("components", "S100"),
@@ -733,7 +733,7 @@ class MasterStationGroup(BaseGroup):
         is added.
 
         :param station_name: Name of the station, should be the same as
-                             metadata.archive_id
+                             metadata.id
         :type station_name: string
         :param station_metadata: Station metadata container, defaults to None
         :type station_metadata: :class:`mth5.metadata.Station`, optional
@@ -1028,11 +1028,11 @@ class StationGroup(BaseGroup):
 
     @property
     def name(self):
-        return self.metadata.archive_id
+        return self.metadata.id
 
     @name.setter
     def name(self, name):
-        self.metadata.archive_id = name
+        self.metadata.id = name
 
     @property
     def table_entry(self):
@@ -1041,7 +1041,7 @@ class StationGroup(BaseGroup):
         return np.array(
             [
                 (
-                    self.metadata.archive_id,
+                    self.metadata.id,
                     self.metadata.time_period.start,
                     self.metadata.time_period.end,
                     ",".join(self.metadata.channels_recorded),
@@ -1054,7 +1054,7 @@ class StationGroup(BaseGroup):
             ],
             dtype=np.dtype(
                 [
-                    ("archive_id", "S5"),
+                    ("id", "S5"),
                     ("start", "S32"),
                     ("end", "S32"),
                     ("components", "S100"),
@@ -1070,18 +1070,18 @@ class StationGroup(BaseGroup):
     def make_run_name(self):
         """
         Make a run name that will be the next alphabet letter extracted from
-        the run list.  Expects that all runs are labled as archive_id{a-z}.
+        the run list.  Expects that all runs are labled as id{a-z}.
 
-        :return: metadata.archive_id + next letter
+        :return: metadata.id + next letter
         :rtype: string
 
-        >>> station.metadata.archive_id = 'MT001'
+        >>> station.metadata.id = 'MT001'
         >>> station.make_run_name()
         'MT001a'
 
         """
         if self.name is None:
-            msg = "archive_id is not set, cannot make a run name"
+            msg = "id is not set, cannot make a run name"
             self.logger.error(msg)
             raise MTH5Error(msg)
 
@@ -1133,7 +1133,7 @@ class StationGroup(BaseGroup):
         """
         Add a run to a station.
 
-        :param run_name: run name, should be archive_id{a-z}
+        :param run_name: run name, should be id{a-z}
         :type run_name: string
         :param metadata: metadata container, defaults to None
         :type metadata: :class:`mth5.metadata.Station`, optional
