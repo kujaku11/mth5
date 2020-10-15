@@ -1567,6 +1567,7 @@ class Survey(Base):
         self.release_license = "CC-0"
         self.southeast_corner = Location()
         self.summary = None
+        self.survey_id = None
         self.time_period = TimePeriod()
 
         super().__init__()

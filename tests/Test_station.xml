@@ -3,7 +3,7 @@
   <Source>MT Metadata</Source>
   <Module>ObsPy 1.2.2</Module>
   <ModuleURI>https://www.obspy.org</ModuleURI>
-  <Created>2020-09-28T18:53:09.445467Z</Created>
+  <Created>2020-10-15T21:20:55.860684Z</Created>
   <Network code="EM" startDate="2080-01-01T00:00:00+00:00" endDate="1980-01-01T00:00:00+00:00" restrictedStatus="open" alternateCode="EM-EARTH">
     <Identifier type="doi"> http://doi.####</Identifier>
     <Identifier type="doi"> None</Identifier>

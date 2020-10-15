@@ -1,4 +1,5 @@
 attribute,type,required,style,units,description,options,alias,example
+survey_id,str,TRUE,alpha numeric,none,Alphanumeric survey ID that will be specific to the archive,none,none,EMT20 
 comments,str,FALSE,free form,none,any comments about the survey,none,none,long survey
 country,str,TRUE,free form,none,country(s) countries survey located in. If multiple input as comma separated names,none,none,"[USA, Canada]"
 datum,str,TRUE,controlled vocabulary,none,datum of latitude and longitude coordinates. Should be a well-known datum [ WGS84 ] and will be the reference datum for all location,[ WGS84 | NAD27 | NAD83 | ETRS89 | GDA94 | PZ-90.11 | other ],none,WGS84
