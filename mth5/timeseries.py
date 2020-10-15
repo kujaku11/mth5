@@ -277,6 +277,18 @@ class ChannelTS:
     
     def __ne__(self, other):
         return not self.__eq__(other)
+    
+    def __lt__(self, other):
+        if not isinstance(other, ChannelTS):
+            raise ValueError(f"Cannot compare ChannelTS with {type(other)}")
+            
+        self.logger.info("Only testing start time")
+        if other.start < self.start and other.sample_rate == self.sample_rate:
+            return True
+        return False
+    
+    def __gt__(self, other):
+        return not self.__lt__(other)
 
     ### Properties ------------------------------------------------------------
     @property
@@ -408,7 +420,7 @@ class ChannelTS:
     def component(self, comp):
         """ set component in metadata and carry through """
         if self.metadata.type == "electric":
-            if comp[0] != "e":
+            if comp[0].lower() != "e":
                 msg = (
                     "The current timeseries is an electric channel. "
                     "Cannot change channel type, create a new ChannelTS object."
@@ -417,7 +429,7 @@ class ChannelTS:
                 raise MTTSError(msg)
 
         elif self.metadata.type == "magnetic":
-            if comp[0] not in ["h", "b"]:
+            if comp[0].lower() not in ["h", "b"]:
                 msg = (
                     "The current timeseries is a magnetic channel. "
                     "Cannot change channel type, create a new ChannelTS object."
@@ -426,7 +438,7 @@ class ChannelTS:
                 raise MTTSError(msg)
 
         if self.metadata.type == "auxiliary":
-            if comp[0] in ["e", "h", "b"]:
+            if comp[0].lower() in ["e", "h", "b"]:
                 msg = (
                     "The current timeseries is an auxiliary channel. "
                     "Cannot change channel type, create a new ChannelTS object."
@@ -542,8 +554,8 @@ class ChannelTS:
             if start_time == MTime(self.ts.coords.indexes["time"][0].isoformat()):
                 return
             else:
-                new_dt = self._make_dt_coordinates(
-                    start_time, self.sample_rate, self.n_samples
+                new_dt = make_dt_coordinates(
+                    start_time, self.sample_rate, self.n_samples, self.logger
                 )
                 self.ts.coords["time"] = new_dt
 
@@ -779,6 +791,17 @@ class RunTS:
             raise MTTSError(msg)
 
         return [x.ts for x in array_list]
+    
+    def __getattr__(self, name):
+        if name in self.channels:
+            if name[0].lower() in ['e']:
+                return ChannelTS('electric', self.dataset[name])
+            elif name[0].lower() in ['h', 'b']:
+                return ChannelTS('magnetic', self.dataset[name])
+            else:
+                return ChannelTS('auxiliary', self.dataset[name])
+        else:
+            return getattr(self, name)
 
     @property
     def has_data(self):
@@ -887,7 +910,46 @@ class RunTS:
         self._dataset = xr.Dataset(xdict)
         self.validate_metadata()
         self._dataset.attrs.update(self.metadata.to_dict()["run"])
+        
+    def add_channel(self, channel):
+        """
+        Add a channel to the dataset, can be an :class:`xarray.DataArray` or
+        :class:`mth5.timeseries.ChannelTS` object.
+        
+        Need to be sure that the coordinates and dimensions are the same as the
+        existing dataset, namely coordinates are time, and dimensions are the same,
+        if the dimesions are larger than the existing dataset then the added channel
+        will be clipped to the dimensions of the existing dataset.  
+        
+        If the start time is not the same nan's will be placed at locations where the
+        timing does not match the current start time.  This is a feature of xarray.
+        
+        
+        :param channel: a channel xarray or ChannelTS to add to the run
+        :type channel: :class:`xarray.DataArray` or :class:`mth5.timeseries.ChannelTS`
+        
 
+        """
+        
+        if isinstance(channel, xr.DataArray):
+            c = ChannelTS()
+            c.ts = channel
+        elif isinstance(channel, ChannelTS):
+            c = channel
+        else:
+            raise ValueError("Input Channel must be type xarray.DataArray or ChannelTS")
+            
+        ### need to validate the channel to make sure sample rate is the same
+        if c.sample_rate != self.sample_rate:
+            msg = (f"Channel sample rate is not correct, current {self.sample_rate} "
+                   + f"input {c.sample_rate}")
+            self.logger.error(msg)
+            raise MTTSError(msg)
+            
+        ### should probably check for other metadata like station and run?
+            
+        self._dataset[c.component] = c.ts
+        
     @property
     def dataset(self):
         return self._dataset
@@ -918,66 +980,6 @@ class RunTS:
         if self.has_data:
             return 1e9 / self.dataset.coords["time"].to_index().freq.n
         return self.metadata.sample_rate
-
-    @property
-    def ex(self):
-        """ EX """
-        if "ex" in self.channels:
-            return ChannelTS("electric", self.dataset["ex"])
-        self.logger.info(
-            f"Could not find EX in current run. Existing channels are {self.channels}"
-        )
-        return None
-
-    @property
-    def ey(self):
-        """ EY """
-        if "ey" in self.channels:
-            return ChannelTS("electric", self.dataset["ey"])
-        self.logger.info(
-            f"Could not find EY in current run. Existing channels are {self.channels}"
-        )
-        return None
-
-    @property
-    def hx(self):
-        """ HX """
-        if "hx" in self.channels:
-            return ChannelTS("magnetic", self.dataset["hx"])
-        self.logger.info(
-            f"Could not find HX in current run. Existing channels are {self.channels}"
-        )
-        return None
-
-    @property
-    def hy(self):
-        """ HY """
-        if "hy" in self.channels:
-            return ChannelTS("magnetic", self.dataset["hy"])
-        self.logger.info(
-            f"Could not find HY in current run. Existing channels are {self.channels}"
-        )
-        return None
-
-    @property
-    def hz(self):
-        """ HZ """
-        if "hz" in self.channels:
-            return ChannelTS("magnetic", self.dataset["hz"])
-        self.logger.info(
-            f"Could not find HX in current run. Existing channels are {self.channels}"
-        )
-        return None
-
-    @property
-    def temperature(self):
-        """ temperature """
-        if "temperature" in self.channels:
-            return ChannelTS("auxiliary", self.dataset["temperature"])
-        self.logger.info(
-            f"Could not find temperature in current run. Existing channels are {self.channels}"
-        )
-        return None
 
     @property
     def channels(self):
