@@ -761,8 +761,7 @@ class MasterStationGroup(BaseGroup):
             self.logger.debug("Created group {0}".format(station_group.name))
 
             if station_metadata is None:
-                station_metadata = metadata.Station()
-                station_metadata.id = station_name
+                station_metadata = metadata.Station(id=station_name)
 
             else:
                 if station_metadata.id != station_name:

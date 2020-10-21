@@ -54,6 +54,8 @@ import json
 import pandas as pd
 import numpy as np
 import logging
+from pathlib import Path
+import textwrap
 
 from collections import OrderedDict
 from collections.abc import Iterable
@@ -65,6 +67,85 @@ from mth5.utils.exceptions import MTSchemaError
 from mth5.utils import helpers
 
 ATTR_DICT = Standards().ATTR_DICT
+# =============================================================================
+# write doc strings
+# =============================================================================
+def wrap_description(description, column_width):
+    """
+    split a description into separate lines
+    """
+    d_lines = textwrap.wrap(description, column_width)
+    if len(d_lines) < 9:
+        d_lines += [""] * (9 - len(d_lines))
+
+    return d_lines
+
+
+def write_lines(attr_dict, c1=35, c2=35, c3=15):
+    """
+     write table lines
+    :param lines_list: DESCRIPTION
+
+    """
+    line = "       | {0:<{1}}| {2:<{3}} | {4:<{5}}|"
+    hline = "       +{0}+{1}+{2}+".format(
+        "-" * (c1 + 1), "-" * (c2 + 2), "-" * (c3 + 1)
+    )
+    mline = "       +{0}+{1}+{2}+".format(
+        "=" * (c1 + 1), "=" * (c2 + 2), "=" * (c3 + 1)
+    )
+
+    lines = [
+        hline,
+        line.format("**Metadata Key**", c1, "**Description**", c2, "**Example**", c3),
+        mline,
+    ]
+
+    for key, entry in attr_dict.items():
+        d_lines = wrap_description(entry['description'], c2)
+        e_lines = wrap_description(entry['example'], c3)
+        # line 1 is with the entry
+        lines.append(line.format(f"**{key}**", c1, d_lines[0], c2, e_lines[0], c3))
+        # line 2 skip an entry in the
+        lines.append(line.format("", c1, d_lines[1], c2, e_lines[1], c3))
+        # line 3 required
+        lines.append(
+            line.format(f"Required: {entry['required']}", c1, d_lines[2], c2, e_lines[2], c3)
+        )
+        # line 4 blank
+        lines.append(line.format("", c1, d_lines[3], c2, e_lines[3], c3))
+
+        # line 5 units
+        lines.append(
+            line.format(f"Units: {entry['units']}", c1, d_lines[4], c2, e_lines[4], c3)
+        )
+
+        # line 6 blank
+        lines.append(line.format("", c1, d_lines[5], c2, e_lines[5], c3))
+
+        # line 7 type
+        lines.append(
+            line.format(f"Type: {entry['type']}", c1, d_lines[6], c2, e_lines[6], c3)
+        )
+
+        # line 8 blank
+        lines.append(line.format("", c1, d_lines[7], c2, e_lines[7], c3))
+
+        # line 9 type
+        lines.append(
+            line.format(f"Style: {entry['style']}", c1, d_lines[8], c2, e_lines[8], c3)
+        )
+
+        # line 10 blank
+        if len(d_lines) > 9:
+            lines.append(line.format("", c1, d_lines[9], c2, "", c3))
+            for d_line in d_lines[10:]:
+                lines.append(line.format("", c1, d_line, c2, "", c3))
+
+        lines.append(hline)
+
+    return '\n'.join(lines)
+
 # =============================================================================
 #  Base class that everything else will inherit
 # =============================================================================
@@ -698,16 +779,7 @@ class Base:
 # Location class, be sure to put locations in decimal degrees, and note datum
 # ============================================================================
 class Declination(Base):
-    """
-    Declination container
-    
-    =================== ========================================= ============
-    Default Attributes  Description                               type
-    =================== ========================================= ============
-    value               value of declination in degrees           float
-    units                 
-    =================== ========================================= ============
-    """
+    __doc__ = write_lines(ATTR_DICT['declination'])
 
     def __init__(self, **kwargs):
 
@@ -721,15 +793,7 @@ class Declination(Base):
 
 
 class Location(Base):
-    """
-    location details including:
-        * latitude
-        * longitude
-        * elevation
-        * datum
-        * coordinate_system
-        * declination
-    """
+    __doc__ = write_lines(ATTR_DICT['location'])
 
     def __init__(self, **kwargs):
 
@@ -947,23 +1011,7 @@ class Location(Base):
 # Instrument
 # ==============================================================================
 class Instrument(Base):
-    """
-    Information on an instrument that was used.
-
-    Holds the following information:
-
-    ================= =========== =============================================
-    Attributes         Type        Explanation
-    ================= =========== =============================================
-    id                string      serial number or id number of data logger
-    manufacturer      string      company whom makes the instrument
-    type              string      Broadband, long period, something else
-    ================= =========== =============================================
-
-    More attributes can be added by inputing a name word dictionary
-
-    >>> Instrument(**{'ports':'5', 'gps':'time_stamped'})
-    """
+    __doc__ = write_lines(ATTR_DICT['instrument'])
 
     def __init__(self, **kwargs):
 
@@ -978,9 +1026,7 @@ class Instrument(Base):
 # FDSN
 # =============================================================================
 class Fdsn(Base):
-    """
-    FDSN specific information
-    """
+    __doc__ = write_lines(ATTR_DICT['fdsn'])
 
     def __init__(self, **kwargs):
         self.id = None
@@ -995,9 +1041,7 @@ class Fdsn(Base):
 # Data Quality
 # ==============================================================================
 class Rating(Base):
-    """
-    rating data quality or something else
-    """
+    __doc__ = write_lines(ATTR_DICT['rating'])
 
     def __init__(self, **kwargs):
         self.author = None
@@ -1008,26 +1052,7 @@ class Rating(Base):
 
 
 class DataQuality(Base):
-    """
-    Information on data quality.
-
-    Holds the following information:
-
-    ================= =========== =============================================
-    Attributes         Type        Explanation
-    ================= =========== =============================================
-    comments          string      comments on data quality
-    good_from_period  float       minimum period data are good
-    good_to_period    float       maximum period data are good
-    rating            int         [1-5]; 1 = poor, 5 = excellent
-    warrning_comments string      any comments on warnings in the data
-    warnings_flag     int         [0-#of warnings]
-    ================= =========== =============================================
-
-    More attributes can be added by inputing a name word dictionary
-
-    >>> DataQuality(**{'time_series_comments':'Periodic Noise'})
-    """
+    __doc__ = write_lines(ATTR_DICT['data_quality'])
 
     def __init__(self, **kwargs):
 
@@ -1041,25 +1066,7 @@ class DataQuality(Base):
 # Citation
 # ==============================================================================
 class Citation(Base):
-    """
-    Information for a citation.
-
-    Holds the following information:
-
-    ================= =========== =============================================
-    Attributes         Type        Explanation
-    ================= =========== =============================================
-    author            string      Author names
-    title             string      Title of article, or publication
-    journal           string      Name of journal
-    doi               string      DOI number (doi:10.110/sf454)
-    year              int         year published
-    ================= =========== =============================================
-
-    More attributes can be added by inputing a name word dictionary
-
-    >>> Citation(**{'volume':56, 'pages':'234--214'})
-    """
+    __doc__ = write_lines(ATTR_DICT['citation'])
 
     def __init__(self, **kwargs):
         self.author = None
@@ -1076,24 +1083,7 @@ class Citation(Base):
 # Copyright
 # ==============================================================================
 class Copyright(Base):
-    """
-    Information of copyright, mainly about how someone else can use these
-    data. Be sure to read over the conditions_of_use.
-
-    Holds the following information:
-
-    ================= =========== =============================================
-    Attributes         Type        Explanation
-    ================= =========== =============================================
-    citation          Citation    citation of published work using these data
-    conditions_of_use string      conditions of use of these data
-    release_status    string      release status [ open | public | proprietary]
-    ================= =========== =============================================
-
-    More attributes can be added by inputing a name word dictionary
-
-    >>> Copyright(**{'owner':'University of MT', 'contact':'Cagniard'})
-    """
+    __doc__ = write_lines(ATTR_DICT['copyright'])
 
     def __init__(self, **kwargs):
         self.citation = Citation()
@@ -1125,25 +1115,7 @@ class Copyright(Base):
 # Provenance
 # ==============================================================================
 class Provenance(Base):
-    """
-    Information of the file history, how it was made
-
-    Holds the following information:
-
-    ====================== =========== ========================================
-    Attributes             Type        Explanation
-    ====================== =========== ========================================
-    creation_time          string      creation time of file YYYY-MM-DD,hh:mm:ss
-    creating_application   string      name of program creating the file
-    creator                Person      person whom created the file
-    submitter              Person      person whom is submitting file for
-                                       archiving
-    ====================== =========== ========================================
-
-    More attributes can be added by inputing a name word dictionary
-
-    >>> Provenance(**{'archive':'IRIS', 'reprocessed_by':'grad_student'})
-    """
+    __doc__ = write_lines(ATTR_DICT['provenance'])
 
     def __init__(self, **kwargs):
 
@@ -1171,24 +1143,7 @@ class Provenance(Base):
 # Person
 # ==============================================================================
 class Person(Base):
-    """
-    Information for a person
-
-    Holds the following information:
-
-    ================= =========== =============================================
-    Attributes         Type        Explanation
-    ================= =========== =============================================
-    email             string      email of person
-    name              string      name of person
-    organization      string      name of person's organization
-    organization_url  string      organizations web address
-    ================= =========== =============================================
-
-    More attributes can be added by inputing a name word dictionary
-
-    >>> Person(**{'phone':'650-888-6666'})
-    """
+    __doc__ = write_lines(ATTR_DICT['person'])
 
     def __init__(self, **kwargs):
 
@@ -1204,9 +1159,7 @@ class Person(Base):
 # diagnostic
 # =============================================================================
 class Diagnostic(Base):
-    """
-    diagnostic measurements like voltage, contact resistance, etc.
-    """
+    __doc__ = write_lines(ATTR_DICT['diagnostic'])
 
     def __init__(self, **kwargs):
         self.units = None
@@ -1219,9 +1172,7 @@ class Diagnostic(Base):
 # Battery
 # =============================================================================
 class Battery(Base):
-    """
-    Batter information
-    """
+    __doc__ = write_lines(ATTR_DICT['battery'])
 
     def __init__(self, **kwargs):
 
@@ -1236,9 +1187,7 @@ class Battery(Base):
 # Electrode
 # =============================================================================
 class Electrode(Base):
-    """
-    electrode container
-    """
+    __doc__ = write_lines(ATTR_DICT['electrode'])
 
     def __init__(self, **kwargs):
 
@@ -1252,9 +1201,7 @@ class Electrode(Base):
 # Timing System
 # =============================================================================
 class TimingSystem(Base):
-    """
-    Timing System
-    """
+    __doc__ = write_lines(ATTR_DICT['timing_system'])
 
     def __init__(self, **kwargs):
 
@@ -1268,9 +1215,7 @@ class TimingSystem(Base):
 
 
 class TimePeriod(Base):
-    """
-    Time period function
-    """
+    __doc__ = write_lines(ATTR_DICT['time_period'])
 
     def __init__(self, **kwargs):
 
@@ -1312,9 +1257,7 @@ class TimePeriod(Base):
 
 
 class Orientation(Base):
-    """
-    how channels are oriented
-    """
+    __doc__ = write_lines(ATTR_DICT['orientation'])
 
     def __init__(self, **kwargs):
         self.reference_frame = "geographic"
@@ -1327,9 +1270,7 @@ class Orientation(Base):
 # Software
 # ==============================================================================
 class Software(Base):
-    """
-    software
-    """
+    __doc__ = write_lines(ATTR_DICT['software'])
 
     def __init__(self, **kwargs):
         self.name = None
@@ -1352,14 +1293,7 @@ class Software(Base):
 # filter
 # =============================================================================
 class Filtered(Base):
-    """
-    container for filters
-    
-    .. note:: name_s and applied should be input as a list or comma 
-              separated string.  applied can be a single true, false for all 
-              or needs to be the same length as name
-              
-    """
+    __doc__ = write_lines(ATTR_DICT['filtered'])
 
     def __init__(self, **kwargs):
         self._name = []
@@ -1495,11 +1429,7 @@ class Filtered(Base):
 
 
 class Filter(Base):
-    """
-    Container for metadata that describes a filter
-
-              
-    """
+    __doc__ = write_lines(ATTR_DICT['filter'])
 
     def __init__(self, **kwargs):
         self.name = None
@@ -1524,8 +1454,7 @@ class Filter(Base):
 # Data logger
 # =============================================================================
 class DataLogger(Base):
-    """
-    """
+    __doc__ = write_lines(ATTR_DICT['datalogger'])
 
     def __init__(self, **kwargs):
         self.id = None
@@ -1542,11 +1471,7 @@ class DataLogger(Base):
 # Site details
 # ==============================================================================
 class Survey(Base):
-    """
-    Information on the survey, including location, id, etc.
-
-
-    """
+    __doc__ = write_lines(ATTR_DICT['survey'])
 
     def __init__(self, **kwargs):
 
@@ -1576,9 +1501,7 @@ class Survey(Base):
 # Station Class
 # =============================================================================
 class Station(Base):
-    """
-    station object
-    """
+    __doc__ = write_lines(ATTR_DICT['station'])
 
     def __init__(self, **kwargs):
         self.id = None
@@ -1606,12 +1529,7 @@ class Station(Base):
 # Run
 # =============================================================================
 class Run(Base):
-    """
-    container to hold run metadata
-    
-    .. note:: num_channels_i is derived from channels_recorded_s assuming that
-              the channels are comma separated. e.g. 'EX, EY, HX'
-    """
+    __doc__ = write_lines(ATTR_DICT['run'])
 
     def __init__(self, **kwargs):
         self.id = None
@@ -1665,9 +1583,7 @@ class Run(Base):
 # Base Channel
 # =============================================================================
 class Channel(Base):
-    """
-    Base channel container
-    """
+    __doc__ = write_lines(ATTR_DICT['channel'])
 
     def __init__(self, **kwargs):
         self.type = "auxiliary"
@@ -1703,9 +1619,7 @@ class Channel(Base):
 # auxiliary channel
 # =============================================================================
 class Auxiliary(Channel):
-    """
-    auxiliary channel, anything that is not electric or magnetic
-    """
+    __doc__ = write_lines(ATTR_DICT['channel'])
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -1715,9 +1629,7 @@ class Auxiliary(Channel):
 # Electric Channel
 # =============================================================================
 class Electric(Channel):
-    """
-    electric channel
-    """
+    __doc__ = write_lines(ATTR_DICT['electric'])
 
     def __init__(self, **kwargs):
         self.dipole_length = 0.0
@@ -1732,15 +1644,12 @@ class Electric(Channel):
         Channel.__init__(self, **kwargs)
         
         self._attr_dict = ATTR_DICT['electric']
-
-
+        
 # =============================================================================
 # Magnetic Channel
 # =============================================================================
 class Magnetic(Channel):
-    """
-    magnetic channel
-    """
+    __doc__ = write_lines(ATTR_DICT['magnetic'])
 
     def __init__(self, **kwargs):
         self.sensor = Instrument()
