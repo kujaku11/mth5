@@ -1633,9 +1633,9 @@ class Electric(Channel):
         self.ac = Diagnostic()
         self.dc = Diagnostic()
         self.units_s = None
-        self.type = "electric"
-
+        
         Channel.__init__(self, **kwargs)
+        self.type = "electric"
 
         self._attr_dict = ATTR_DICT["electric"]
 
@@ -1650,8 +1650,8 @@ class Magnetic(Channel):
         self.sensor = Instrument()
         self.h_field_min = Diagnostic()
         self.h_field_max = Diagnostic()
-        self.type = "magnetic"
 
         Channel.__init__(self, **kwargs)
+        self.type = "magnetic"
 
         self._attr_dict = ATTR_DICT["magnetic"]

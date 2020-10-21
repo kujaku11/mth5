@@ -676,7 +676,8 @@ class MTH5:
                 channel_name,
                 channel_type,
                 data,
-                channel_metadata=channel_metadata ** self.dataset_options,
+                channel_metadata=channel_metadata,
+                **self.dataset_options,
             )
         )
 

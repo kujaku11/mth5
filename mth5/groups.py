@@ -705,20 +705,43 @@ class MasterStationGroup(BaseGroup):
 
         super().__init__(group, **kwargs)
 
+        # # summary of stations
+        # self._defaults_summary_attrs = {
+        #     "name": "summary",
+        #     "max_shape": (1000,),
+        #     "dtype": np.dtype(
+        #         [
+        #             ("id", "S5"),
+        #             ("start", "S32"),
+        #             ("end", "S32"),
+        #             ("components", "S100"),
+        #             ("measurement_type", "S12"),
+        #             ("location.latitude", np.float),
+        #             ("location.longitude", np.float),
+        #             ("location.elevation", np.float),
+        #             ("hdf5_reference", h5py.ref_dtype),
+        #         ]
+        #     ),
+        # }
         # summary of stations
         self._defaults_summary_attrs = {
             "name": "summary",
-            "max_shape": (1000,),
+            "max_shape": (10000,),
             "dtype": np.dtype(
                 [
-                    ("id", "S5"),
+                    ("station", "S10"),
+                    ("run", "S11"),
+                    ("latitude", np.float),
+                    ("longitude", np.float),
+                    ("elevation", np.float),
+                    ("component", "S20"),
                     ("start", "S32"),
                     ("end", "S32"),
-                    ("components", "S100"),
+                    ("n_samples", np.int),
                     ("measurement_type", "S12"),
-                    ("location.latitude", np.float),
-                    ("location.longitude", np.float),
-                    ("location.elevation", np.float),
+                    ("azimuth", np.float),
+                    ("tilt", np.float),
+                    ("units", "S25"),
                     ("hdf5_reference", h5py.ref_dtype),
                 ]
             ),
@@ -777,7 +800,7 @@ class MasterStationGroup(BaseGroup):
             station_obj.initialize_group()
 
             # be sure to add a table entry
-            self.summary_table.add_row(station_obj.table_entry)
+            #self.summary_table.add_row(station_obj.table_entry)
 
         except ValueError:
             msg = (
@@ -1166,12 +1189,19 @@ class StationGroup(BaseGroup):
         try:
             run_group = self.hdf5_group.create_group(run_name)
             self.logger.debug("Created group {0}".format(run_group.name))
+            if run_metadata is None:
+                run_metadata = metadata.Run(id=run_name)
+            elif run_metadata.id != run_name:
+                msg = (f"Run name {run_name} must be the same as "
+                       + f"run_metadata.id {run_metadata.id}")
+                self.logger.error(msg)
+                raise MTH5Error(msg)
+
             run_obj = RunGroup(
                 run_group, run_metadata=run_metadata, **self.dataset_options
             )
             run_obj.initialize_group()
-            if run_obj.metadata.id is None:
-                run_obj.metadata.id = run_name
+            
             self.summary_table.add_row(run_obj.table_entry)
 
         except ValueError:
@@ -1597,6 +1627,7 @@ class RunGroup(BaseGroup):
                 channel_obj.metadata.component = channel_name
             channel_obj.write_metadata()
             self.summary_table.add_row(channel_obj.table_entry)
+            self.master_station_group.summary_table.add_row(channel_obj.channel_entry)
 
         except (OSError, RuntimeError):
             msg = (
@@ -2718,6 +2749,52 @@ class ChannelDataset:
                 ]
             ),
         )
+    
+    @property
+    def channel_entry(self):
+        """
+        channel entry that will go into a full channel summary of the entire survey
+        
+        """
+        return np.array(
+            [
+                (
+                    self.station_group.metadata.id,
+                    self.run_group.metadata.id,
+                    self.station_group.metadata.location.latitude,
+                    self.station_group.metadata.location.longitude,
+                    self.station_group.metadata.location.elevation,
+                    self.metadata.component,
+                    self.metadata.time_period.start,
+                    self.metadata.time_period.end,
+                    self.hdf5_dataset.size,
+                    self.metadata.type,
+                    self.metadata.measurement_azimuth,
+                    self.metadata.measurement_tilt,
+                    self.metadata.units,
+                    self.hdf5_dataset.ref,
+                )
+            ],
+            dtype=np.dtype(
+                [
+                    ("station", "S10"),
+                    ("run", "S11"),
+                    ("latitude", np.float),
+                    ("longitude", np.float),
+                    ("elevation", np.float),
+                    ("component", "S20"),
+                    ("start", "S32"),
+                    ("end", "S32"),
+                    ("n_samples", np.int),
+                    ("measurement_type", "S12"),
+                    ("azimuth", np.float),
+                    ("tilt", np.float),
+                    ("units", "S25"),
+                    ("hdf5_reference", h5py.ref_dtype),
+                ]
+            ),
+        )
+        
 
     def time_slice(self, start_time, end_time=None, n_samples=None, return_type="mtts"):
         """
