@@ -952,7 +952,7 @@ class Standards:
 
     @property
     def ATTR_DICT(self):
-        keys = [fn.stem for fn in CSV_FN_PATHS] + ['electrode']
+        keys = [fn.stem for fn in CSV_FN_PATHS] + ["electrode"]
         return dict(
             [(key, deepcopy(getattr(self, "{0}_dict".format(key)))) for key in keys]
         )

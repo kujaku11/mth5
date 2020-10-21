@@ -102,15 +102,17 @@ def write_lines(attr_dict, c1=35, c2=35, c3=15):
     ]
 
     for key, entry in attr_dict.items():
-        d_lines = wrap_description(entry['description'], c2)
-        e_lines = wrap_description(entry['example'], c3)
+        d_lines = wrap_description(entry["description"], c2)
+        e_lines = wrap_description(entry["example"], c3)
         # line 1 is with the entry
         lines.append(line.format(f"**{key}**", c1, d_lines[0], c2, e_lines[0], c3))
         # line 2 skip an entry in the
         lines.append(line.format("", c1, d_lines[1], c2, e_lines[1], c3))
         # line 3 required
         lines.append(
-            line.format(f"Required: {entry['required']}", c1, d_lines[2], c2, e_lines[2], c3)
+            line.format(
+                f"Required: {entry['required']}", c1, d_lines[2], c2, e_lines[2], c3
+            )
         )
         # line 4 blank
         lines.append(line.format("", c1, d_lines[3], c2, e_lines[3], c3))
@@ -144,7 +146,8 @@ def write_lines(attr_dict, c1=35, c2=35, c3=15):
 
         lines.append(hline)
 
-    return '\n'.join(lines)
+    return "\n".join(lines)
+
 
 # =============================================================================
 #  Base class that everything else will inherit
@@ -165,13 +168,13 @@ class Base:
     """
 
     def __init__(self, attr_dict={}, **kwargs):
-        
+
         self._attr_dict = attr_dict
-        
+
         self._class_name = validate_attribute(self.__class__.__name__)
 
         self.logger = logging.getLogger(f"{__name__}.{self._class_name}")
-        
+
         for name, value in kwargs.items():
             self.set_attr_from_name(name, value)
 
@@ -779,7 +782,7 @@ class Base:
 # Location class, be sure to put locations in decimal degrees, and note datum
 # ============================================================================
 class Declination(Base):
-    __doc__ = write_lines(ATTR_DICT['declination'])
+    __doc__ = write_lines(ATTR_DICT["declination"])
 
     def __init__(self, **kwargs):
 
@@ -787,13 +790,11 @@ class Declination(Base):
         self.epoch = None
         self.model = None
         self.comments = None
-        super(Declination, self).__init__(attr_dict=ATTR_DICT["declination"], 
-                                          **kwargs)
-
+        super(Declination, self).__init__(attr_dict=ATTR_DICT["declination"], **kwargs)
 
 
 class Location(Base):
-    __doc__ = write_lines(ATTR_DICT['location'])
+    __doc__ = write_lines(ATTR_DICT["location"])
 
     def __init__(self, **kwargs):
 
@@ -1011,7 +1012,7 @@ class Location(Base):
 # Instrument
 # ==============================================================================
 class Instrument(Base):
-    __doc__ = write_lines(ATTR_DICT['instrument'])
+    __doc__ = write_lines(ATTR_DICT["instrument"])
 
     def __init__(self, **kwargs):
 
@@ -1026,7 +1027,7 @@ class Instrument(Base):
 # FDSN
 # =============================================================================
 class Fdsn(Base):
-    __doc__ = write_lines(ATTR_DICT['fdsn'])
+    __doc__ = write_lines(ATTR_DICT["fdsn"])
 
     def __init__(self, **kwargs):
         self.id = None
@@ -1041,7 +1042,7 @@ class Fdsn(Base):
 # Data Quality
 # ==============================================================================
 class Rating(Base):
-    __doc__ = write_lines(ATTR_DICT['rating'])
+    __doc__ = write_lines(ATTR_DICT["rating"])
 
     def __init__(self, **kwargs):
         self.author = None
@@ -1052,7 +1053,7 @@ class Rating(Base):
 
 
 class DataQuality(Base):
-    __doc__ = write_lines(ATTR_DICT['data_quality'])
+    __doc__ = write_lines(ATTR_DICT["data_quality"])
 
     def __init__(self, **kwargs):
 
@@ -1066,7 +1067,7 @@ class DataQuality(Base):
 # Citation
 # ==============================================================================
 class Citation(Base):
-    __doc__ = write_lines(ATTR_DICT['citation'])
+    __doc__ = write_lines(ATTR_DICT["citation"])
 
     def __init__(self, **kwargs):
         self.author = None
@@ -1078,12 +1079,11 @@ class Citation(Base):
         super().__init__(attr_dict=ATTR_DICT["citation"], **kwargs)
 
 
-
 # ==============================================================================
 # Copyright
 # ==============================================================================
 class Copyright(Base):
-    __doc__ = write_lines(ATTR_DICT['copyright'])
+    __doc__ = write_lines(ATTR_DICT["copyright"])
 
     def __init__(self, **kwargs):
         self.citation = Citation()
@@ -1109,13 +1109,13 @@ class Copyright(Base):
         self.release_license = None
         self.comments = None
         super().__init__(attr_dict=ATTR_DICT["copyright"], **kwargs)
-        
+
 
 # ==============================================================================
 # Provenance
 # ==============================================================================
 class Provenance(Base):
-    __doc__ = write_lines(ATTR_DICT['provenance'])
+    __doc__ = write_lines(ATTR_DICT["provenance"])
 
     def __init__(self, **kwargs):
 
@@ -1128,7 +1128,6 @@ class Provenance(Base):
         self.log = None
         self.comments = None
         super().__init__(attr_dict=ATTR_DICT["provenance"], **kwargs)
-
 
     @property
     def creation_time(self):
@@ -1143,7 +1142,7 @@ class Provenance(Base):
 # Person
 # ==============================================================================
 class Person(Base):
-    __doc__ = write_lines(ATTR_DICT['person'])
+    __doc__ = write_lines(ATTR_DICT["person"])
 
     def __init__(self, **kwargs):
 
@@ -1159,7 +1158,7 @@ class Person(Base):
 # diagnostic
 # =============================================================================
 class Diagnostic(Base):
-    __doc__ = write_lines(ATTR_DICT['diagnostic'])
+    __doc__ = write_lines(ATTR_DICT["diagnostic"])
 
     def __init__(self, **kwargs):
         self.units = None
@@ -1172,7 +1171,7 @@ class Diagnostic(Base):
 # Battery
 # =============================================================================
 class Battery(Base):
-    __doc__ = write_lines(ATTR_DICT['battery'])
+    __doc__ = write_lines(ATTR_DICT["battery"])
 
     def __init__(self, **kwargs):
 
@@ -1187,7 +1186,7 @@ class Battery(Base):
 # Electrode
 # =============================================================================
 class Electrode(Base):
-    __doc__ = write_lines(ATTR_DICT['electrode'])
+    __doc__ = write_lines(ATTR_DICT["electrode"])
 
     def __init__(self, **kwargs):
 
@@ -1197,11 +1196,12 @@ class Electrode(Base):
         self.model = None
         super().__init__(attr_dict=ATTR_DICT["electrode"], **kwargs)
 
+
 # =============================================================================
 # Timing System
 # =============================================================================
 class TimingSystem(Base):
-    __doc__ = write_lines(ATTR_DICT['timing_system'])
+    __doc__ = write_lines(ATTR_DICT["timing_system"])
 
     def __init__(self, **kwargs):
 
@@ -1215,7 +1215,7 @@ class TimingSystem(Base):
 
 
 class TimePeriod(Base):
-    __doc__ = write_lines(ATTR_DICT['time_period'])
+    __doc__ = write_lines(ATTR_DICT["time_period"])
 
     def __init__(self, **kwargs):
 
@@ -1257,7 +1257,7 @@ class TimePeriod(Base):
 
 
 class Orientation(Base):
-    __doc__ = write_lines(ATTR_DICT['orientation'])
+    __doc__ = write_lines(ATTR_DICT["orientation"])
 
     def __init__(self, **kwargs):
         self.reference_frame = "geographic"
@@ -1270,7 +1270,7 @@ class Orientation(Base):
 # Software
 # ==============================================================================
 class Software(Base):
-    __doc__ = write_lines(ATTR_DICT['software'])
+    __doc__ = write_lines(ATTR_DICT["software"])
 
     def __init__(self, **kwargs):
         self.name = None
@@ -1278,7 +1278,6 @@ class Software(Base):
         self._author = Person()
 
         super().__init__(attr_dict=ATTR_DICT["software"], **kwargs)
-
 
     @property
     def author(self):
@@ -1293,7 +1292,7 @@ class Software(Base):
 # filter
 # =============================================================================
 class Filtered(Base):
-    __doc__ = write_lines(ATTR_DICT['filtered'])
+    __doc__ = write_lines(ATTR_DICT["filtered"])
 
     def __init__(self, **kwargs):
         self._name = []
@@ -1303,7 +1302,6 @@ class Filtered(Base):
         self.comments = None
         super().__init__(attr_dict=ATTR_DICT["filtered"], **kwargs)
 
-        
     @property
     def name(self):
         return self._name
@@ -1328,7 +1326,8 @@ class Filtered(Base):
 
         check = self._check_consistency()
         if not check:
-            self.logger.debug("Filter names and applied lists are not the "
+            self.logger.debug(
+                "Filter names and applied lists are not the "
                 + "same size. Be sure to check the inputs."
                 + " names = {0}, applied = {1}".format(self._name, self._applied)
             )
@@ -1429,7 +1428,7 @@ class Filtered(Base):
 
 
 class Filter(Base):
-    __doc__ = write_lines(ATTR_DICT['filter'])
+    __doc__ = write_lines(ATTR_DICT["filter"])
 
     def __init__(self, **kwargs):
         self.name = None
@@ -1454,7 +1453,7 @@ class Filter(Base):
 # Data logger
 # =============================================================================
 class DataLogger(Base):
-    __doc__ = write_lines(ATTR_DICT['datalogger'])
+    __doc__ = write_lines(ATTR_DICT["datalogger"])
 
     def __init__(self, **kwargs):
         self.id = None
@@ -1471,7 +1470,7 @@ class DataLogger(Base):
 # Site details
 # ==============================================================================
 class Survey(Base):
-    __doc__ = write_lines(ATTR_DICT['survey'])
+    __doc__ = write_lines(ATTR_DICT["survey"])
 
     def __init__(self, **kwargs):
 
@@ -1496,12 +1495,11 @@ class Survey(Base):
         super().__init__(attr_dict=ATTR_DICT["survey"], **kwargs)
 
 
-
 # =============================================================================
 # Station Class
 # =============================================================================
 class Station(Base):
-    __doc__ = write_lines(ATTR_DICT['station'])
+    __doc__ = write_lines(ATTR_DICT["station"])
 
     def __init__(self, **kwargs):
         self.id = None
@@ -1518,18 +1516,16 @@ class Station(Base):
         self.provenance = Provenance()
         self.location = Location()
         self.time_period = TimePeriod()
-        #self._attr_dict = ATTR_DICT["station"]
+        # self._attr_dict = ATTR_DICT["station"]
 
         super().__init__(attr_dict=ATTR_DICT["station"], **kwargs)
-
-        
 
 
 # =============================================================================
 # Run
 # =============================================================================
 class Run(Base):
-    __doc__ = write_lines(ATTR_DICT['run'])
+    __doc__ = write_lines(ATTR_DICT["run"])
 
     def __init__(self, **kwargs):
         self.id = None
@@ -1547,7 +1543,6 @@ class Run(Base):
         self.metadata_by = Person()
         self.fdsn = Fdsn()
         super().__init__(attr_dict=ATTR_DICT["run"], **kwargs)
-
 
     @property
     def n_channels(self):
@@ -1578,12 +1573,11 @@ class Run(Base):
         return all_channels
 
 
-
 # =============================================================================
 # Base Channel
 # =============================================================================
 class Channel(Base):
-    __doc__ = write_lines(ATTR_DICT['channel'])
+    __doc__ = write_lines(ATTR_DICT["channel"])
 
     def __init__(self, **kwargs):
         self.type = "auxiliary"
@@ -1619,7 +1613,7 @@ class Channel(Base):
 # auxiliary channel
 # =============================================================================
 class Auxiliary(Channel):
-    __doc__ = write_lines(ATTR_DICT['channel'])
+    __doc__ = write_lines(ATTR_DICT["channel"])
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -1629,7 +1623,7 @@ class Auxiliary(Channel):
 # Electric Channel
 # =============================================================================
 class Electric(Channel):
-    __doc__ = write_lines(ATTR_DICT['electric'])
+    __doc__ = write_lines(ATTR_DICT["electric"])
 
     def __init__(self, **kwargs):
         self.dipole_length = 0.0
@@ -1642,14 +1636,15 @@ class Electric(Channel):
         self.type = "electric"
 
         Channel.__init__(self, **kwargs)
-        
-        self._attr_dict = ATTR_DICT['electric']
-        
+
+        self._attr_dict = ATTR_DICT["electric"]
+
+
 # =============================================================================
 # Magnetic Channel
 # =============================================================================
 class Magnetic(Channel):
-    __doc__ = write_lines(ATTR_DICT['magnetic'])
+    __doc__ = write_lines(ATTR_DICT["magnetic"])
 
     def __init__(self, **kwargs):
         self.sensor = Instrument()
@@ -1658,6 +1653,5 @@ class Magnetic(Channel):
         self.type = "magnetic"
 
         Channel.__init__(self, **kwargs)
-        
-        self._attr_dict = ATTR_DICT['magnetic']
 
+        self._attr_dict = ATTR_DICT["magnetic"]

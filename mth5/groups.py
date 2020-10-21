@@ -765,8 +765,10 @@ class MasterStationGroup(BaseGroup):
 
             else:
                 if station_metadata.id != station_name:
-                    msg = (f"Station group name {station_name} must be same as "
-                           + f"station id {station_metadata.id}")
+                    msg = (
+                        f"Station group name {station_name} must be same as "
+                        + f"station id {station_metadata.id}"
+                    )
                     self.logger.error(msg)
                     raise MTH5Error(msg)
             station_obj = StationGroup(
