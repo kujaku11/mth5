@@ -83,15 +83,14 @@ class Base:
         
     """
 
-    def __init__(self, **kwargs):
-
-        self.comments = None
-        self._attr_dict = {}
-
+    def __init__(self, attr_dict={}, **kwargs):
+        
+        self._attr_dict = attr_dict
+        
         self._class_name = validate_attribute(self.__class__.__name__)
 
         self.logger = logging.getLogger(f"{__name__}.{self._class_name}")
-
+        
         for name, value in kwargs.items():
             self.set_attr_from_name(name, value)
 
@@ -123,11 +122,11 @@ class Base:
             if other_dict == home_dict:
                 return True
             else:
-                for key, value in home_dict.items():                            
+                for key, value in home_dict.items():
                     try:
                         other_value = other_dict[key]
                         if value != other_value:
-                            msg = (f"{key}: {value} != {other_value}")
+                            msg = f"{key}: {value} != {other_value}"
                             self.logger.info(msg)
                     except KeyError:
                         msg = "Cannot find {0} in other".format(key)
@@ -135,7 +134,7 @@ class Base:
 
                 return False
         raise ValueError(f"Cannot compare {self._class_name} with {type(other)}")
-        
+
     def __ne__(self, other):
         return not self.__eq__(other)
 
@@ -715,9 +714,10 @@ class Declination(Base):
         self.value = None
         self.epoch = None
         self.model = None
-        super(Declination, self).__init__(**kwargs)
+        self.comments = None
+        super(Declination, self).__init__(attr_dict=ATTR_DICT["declination"], 
+                                          **kwargs)
 
-        self._attr_dict = ATTR_DICT["declination"]
 
 
 class Location(Base):
@@ -733,6 +733,7 @@ class Location(Base):
 
     def __init__(self, **kwargs):
 
+        self.comments = None
         self.datum = "WGS84"
         self.declination = Declination()
 
@@ -740,9 +741,7 @@ class Location(Base):
         self._latitude = 0.0
         self._longitude = 0.0
 
-        super(Location, self).__init__(**kwargs)
-
-        self._attr_dict = ATTR_DICT["location"]
+        super(Location, self).__init__(attr_dict=ATTR_DICT["location"], **kwargs)
 
     @property
     def latitude(self):
@@ -972,9 +971,7 @@ class Instrument(Base):
         self.manufacturer = None
         self.type = None
         self.model = None
-        super().__init__(**kwargs)
-
-        self._attr_dict = ATTR_DICT["instrument"]
+        super().__init__(attr_dict=ATTR_DICT["instrument"], **kwargs)
 
 
 # =============================================================================
@@ -991,8 +988,7 @@ class Fdsn(Base):
         self.channel_code = None
         self.new_epoch = None
 
-        super().__init__(**kwargs)
-        self._attr_dict = ATTR_DICT["fdsn"]
+        super().__init__(attr_dict=ATTR_DICT["fdsn"], **kwargs)
 
 
 # ==============================================================================
@@ -1008,8 +1004,7 @@ class Rating(Base):
         self.method = None
         self.value = 0.0
 
-        super().__init__(**kwargs)
-        self._attr_dict = ATTR_DICT["rating"]
+        super().__init__(attr_dict=ATTR_DICT["rating"], **kwargs)
 
 
 class DataQuality(Base):
@@ -1039,9 +1034,7 @@ class DataQuality(Base):
         self.rating = Rating()
         self.warnings = None
 
-        super().__init__(**kwargs)
-
-        self._attr_dict = ATTR_DICT["data_quality"]
+        super().__init__(attr_dict=ATTR_DICT["data_quality"], **kwargs)
 
 
 # ==============================================================================
@@ -1075,9 +1068,8 @@ class Citation(Base):
         self.volume = None
         self.doi = None
         self.year = None
-        super().__init__(**kwargs)
+        super().__init__(attr_dict=ATTR_DICT["citation"], **kwargs)
 
-        self._attr_dict = ATTR_DICT["citation"]
 
 
 # ==============================================================================
@@ -1124,12 +1116,10 @@ class Copyright(Base):
                 "included for informational purposes only.",
             ]
         )
-        self.release_status = None
-        self.additional_info = None
-        super().__init__(**kwargs)
-
-        self._attr_dict = ATTR_DICT["copyright"]
-
+        self.release_license = None
+        self.comments = None
+        super().__init__(attr_dict=ATTR_DICT["copyright"], **kwargs)
+        
 
 # ==============================================================================
 # Provenance
@@ -1164,9 +1154,9 @@ class Provenance(Base):
         self.submitter = Person()
         self.software = Software()
         self.log = None
-        super().__init__(**kwargs)
+        self.comments = None
+        super().__init__(attr_dict=ATTR_DICT["provenance"], **kwargs)
 
-        self._attr_dict = ATTR_DICT["provenance"]
 
     @property
     def creation_time(self):
@@ -1205,10 +1195,9 @@ class Person(Base):
         self.email = None
         self.author = None
         self.organization = None
+        self.comments = None
         # self.url = None
-        super().__init__(**kwargs)
-
-        self._attr_dict = ATTR_DICT["person"]
+        super().__init__(attr_dict=ATTR_DICT["person"], **kwargs)
 
 
 # =============================================================================
@@ -1223,9 +1212,7 @@ class Diagnostic(Base):
         self.units = None
         self.start = None
         self.end = None
-        super().__init__(**kwargs)
-
-        self._attr_dict = ATTR_DICT["diagnostic"]
+        super().__init__(attr_dict=ATTR_DICT["diagnostic"], **kwargs)
 
 
 # =============================================================================
@@ -1241,25 +1228,25 @@ class Battery(Base):
         self.type = None
         self.id = None
         self.voltage = Diagnostic()
-        super().__init__(**kwargs)
-
-        self._attr_dict = ATTR_DICT["battery"]
+        self.comments = None
+        super().__init__(attr_dict=ATTR_DICT["battery"], **kwargs)
 
 
 # =============================================================================
 # Electrode
 # =============================================================================
-class Electrode(Location, Instrument):
+class Electrode(Base):
     """
     electrode container
     """
 
     def __init__(self, **kwargs):
 
-        super().__init__(**kwargs)
-
-        self._attr_dict = ATTR_DICT["instrument"]
-
+        self.id = None
+        self.manufacturer = None
+        self.type = None
+        self.model = None
+        super().__init__(attr_dict=ATTR_DICT["electrode"], **kwargs)
 
 # =============================================================================
 # Timing System
@@ -1277,9 +1264,7 @@ class TimingSystem(Base):
         self.uncertainty = None
         self.uncertainty_units = None
         self.comments = None
-        super().__init__(**kwargs)
-
-        self._attr_dict = ATTR_DICT["timing_system"]
+        super().__init__(attr_dict=ATTR_DICT["timing_system"], **kwargs)
 
 
 class TimePeriod(Base):
@@ -1291,8 +1276,7 @@ class TimePeriod(Base):
 
         self._start_dt = MTime()
         self._end_dt = MTime()
-        super().__init__(**kwargs)
-        self._attr_dict = ATTR_DICT["time_period"]
+        super().__init__(attr_dict=ATTR_DICT["time_period"], **kwargs)
 
     @property
     def start(self):
@@ -1336,8 +1320,7 @@ class Orientation(Base):
         self.reference_frame = "geographic"
         self.method = None
 
-        super(Orientation, self).__init__(**kwargs)
-        self._attr_dict = ATTR_DICT["orientation"]
+        super().__init__(attr_dict=ATTR_DICT["orientation"], **kwargs)
 
 
 # ==============================================================================
@@ -1353,9 +1336,8 @@ class Software(Base):
         self.version = None
         self._author = Person()
 
-        super(Software, self).__init__(**kwargs)
+        super().__init__(attr_dict=ATTR_DICT["software"], **kwargs)
 
-        self._attr_dict = ATTR_DICT["software"]
 
     @property
     def author(self):
@@ -1382,12 +1364,12 @@ class Filtered(Base):
     def __init__(self, **kwargs):
         self._name = []
         self._applied = []
-        super().__init__()
-
-        self._attr_dict = ATTR_DICT["filtered"]
         self.name = None
         self.applied = None
+        self.comments = None
+        super().__init__(attr_dict=ATTR_DICT["filtered"], **kwargs)
 
+        
     @property
     def name(self):
         return self._name
@@ -1395,7 +1377,7 @@ class Filtered(Base):
     @name.setter
     def name(self, names):
         if names is None:
-            self._name = ['none']
+            self._name = ["none"]
             return
 
         if isinstance(names, str):
@@ -1412,8 +1394,7 @@ class Filtered(Base):
 
         check = self._check_consistency()
         if not check:
-            self.logger.info(
-                "Filter names and applied lists are not the "
+            self.logger.debug("Filter names and applied lists are not the "
                 + "same size. Be sure to check the inputs."
                 + " names = {0}, applied = {1}".format(self._name, self._applied)
             )
@@ -1477,10 +1458,10 @@ class Filtered(Base):
         # check for consistency
         check = self._check_consistency()
         if not check:
-            self.logger.info(
+            self.logger.debug(
                 "Filter names and applied lists are not the "
                 + "same size. Be sure to check the inputs."
-                + ". names = {0}, applied = {1}".format(self._name, self._applied)
+                + ". name = {0}, applied = {1}".format(self._name, self._applied)
             )
 
     def _check_consistency(self):
@@ -1528,9 +1509,7 @@ class Filter(Base):
         self._calibration_dt = MTime()
         self.operation = None
 
-        super().__init__()
-
-        self._attr_dict = ATTR_DICT["filter"]
+        super().__init__(attr_dict=ATTR_DICT["filter"], **kwargs)
 
     @property
     def calibration_date(self):
@@ -1539,6 +1518,24 @@ class Filter(Base):
     @calibration_date.setter
     def calibration_date(self, value):
         self._calibration_dt.from_str(value)
+
+
+# =============================================================================
+# Data logger
+# =============================================================================
+class DataLogger(Base):
+    """
+    """
+
+    def __init__(self, **kwargs):
+        self.id = None
+        self.manufacturer = None
+        self.type = None
+        self.model = None
+        self.timing_system = TimingSystem()
+        self.firmware = Software()
+        self.power_source = Battery()
+        super().__init__(attr_dict=ATTR_DICT["datalogger"], **kwargs)
 
 
 # ==============================================================================
@@ -1551,12 +1548,13 @@ class Survey(Base):
 
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
 
         self.acquired_by = Person()
         self.fdsn = Fdsn()
         self.citation_dataset = Citation()
         self.citation_journal = Citation()
+        self.comments = None
         self.country = None
         self.datum = None
         self.geographic_name = None
@@ -1570,9 +1568,8 @@ class Survey(Base):
         self.survey_id = None
         self.time_period = TimePeriod()
 
-        super().__init__()
+        super().__init__(attr_dict=ATTR_DICT["survey"], **kwargs)
 
-        self._attr_dict = ATTR_DICT["survey"]
 
 
 # =============================================================================
@@ -1591,16 +1588,18 @@ class Station(Base):
         self.num_channels = None
         self.channels_recorded = []
         self.channel_layout = None
+        self.comments = None
         self.data_type = None
         self.orientation = Orientation()
         self.acquired_by = Person()
         self.provenance = Provenance()
         self.location = Location()
         self.time_period = TimePeriod()
+        #self._attr_dict = ATTR_DICT["station"]
 
-        super().__init__(**kwargs)
+        super().__init__(attr_dict=ATTR_DICT["station"], **kwargs)
 
-        self._attr_dict = ATTR_DICT["station"]
+        
 
 
 # =============================================================================
@@ -1620,6 +1619,7 @@ class Run(Base):
         self.channels_recorded_auxiliary = None
         self.channels_recorded_electric = None
         self.channels_recorded_magnetic = None
+        self.comments = None
         self._n_chan = None
         self.data_type = None
         self.acquired_by = Person()
@@ -1628,9 +1628,8 @@ class Run(Base):
         self.data_logger = DataLogger()
         self.metadata_by = Person()
         self.fdsn = Fdsn()
-        super().__init__()
+        super().__init__(attr_dict=ATTR_DICT["run"], **kwargs)
 
-        self._attr_dict = ATTR_DICT["run"]
 
     @property
     def n_channels(self):
@@ -1661,21 +1660,6 @@ class Run(Base):
         return all_channels
 
 
-# =============================================================================
-# Data logger
-# =============================================================================
-class DataLogger(Instrument):
-    """
-    """
-
-    def __init__(self, **kwargs):
-        self.timing_system = TimingSystem()
-        self.firmware = Software()
-        self.power_source = Battery()
-        super().__init__(**kwargs)
-
-        self._attr_dict = ATTR_DICT["datalogger"]
-
 
 # =============================================================================
 # Base Channel
@@ -1689,6 +1673,7 @@ class Channel(Base):
         self.type = "auxiliary"
         self.units = None
         self.channel_number = None
+        self.comments = None
         self._component = None
         self.sample_rate = 0.0
         self.measurement_azimuth = 0.0
@@ -1702,8 +1687,7 @@ class Channel(Base):
         self.sensor = Instrument()
         self.fdsn = Fdsn()
 
-        super().__init__(**kwargs)
-        self._attr_dict = ATTR_DICT["channel"]
+        super().__init__(attr_dict=ATTR_DICT["channel"], **kwargs)
 
     @property
     def component(self):
@@ -1743,11 +1727,11 @@ class Electric(Channel):
         self.ac = Diagnostic()
         self.dc = Diagnostic()
         self.units_s = None
-
-        super().__init__(**kwargs)
-
         self.type = "electric"
-        self._attr_dict = ATTR_DICT["electric"]
+
+        Channel.__init__(self, **kwargs)
+        
+        self._attr_dict = ATTR_DICT['electric']
 
 
 # =============================================================================
@@ -1762,8 +1746,9 @@ class Magnetic(Channel):
         self.sensor = Instrument()
         self.h_field_min = Diagnostic()
         self.h_field_max = Diagnostic()
-
-        super().__init__(**kwargs)
-
         self.type = "magnetic"
-        self._attr_dict = ATTR_DICT["magnetic"]
+
+        Channel.__init__(self, **kwargs)
+        
+        self._attr_dict = ATTR_DICT['magnetic']
+

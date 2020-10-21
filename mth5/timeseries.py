@@ -261,32 +261,32 @@ class ChannelTS:
         return self.__str__()
 
     def __eq__(self, other):
-        
+
         if not isinstance(other, ChannelTS):
             raise ValueError(f"Cannot compare ChannelTS with {type(other)}")
-            
+
         if not other.metadata == self.metadata:
             return False
-        
+
         if self.ts.equals(other.ts) is False:
             msg = "timeseries are not equal"
             self.logger.info(msg)
             return False
-        
+
         return True
-    
+
     def __ne__(self, other):
         return not self.__eq__(other)
-    
+
     def __lt__(self, other):
         if not isinstance(other, ChannelTS):
             raise ValueError(f"Cannot compare ChannelTS with {type(other)}")
-            
+
         self.logger.info("Only testing start time")
         if other.start < self.start and other.sample_rate == self.sample_rate:
             return True
         return False
-    
+
     def __gt__(self, other):
         return not self.__lt__(other)
 
@@ -562,7 +562,7 @@ class ChannelTS:
         # make a time series that the data can be indexed by
         else:
             self.logger.debug("No data, just updating metadata start")
-            
+
         self.update_xarray_metadata()
 
     @property
@@ -791,15 +791,15 @@ class RunTS:
             raise MTTSError(msg)
 
         return [x.ts for x in array_list]
-    
+
     def __getattr__(self, name):
         if name in self.channels:
-            if name[0].lower() in ['e']:
-                return ChannelTS('electric', self.dataset[name])
-            elif name[0].lower() in ['h', 'b']:
-                return ChannelTS('magnetic', self.dataset[name])
+            if name[0].lower() in ["e"]:
+                return ChannelTS("electric", self.dataset[name])
+            elif name[0].lower() in ["h", "b"]:
+                return ChannelTS("magnetic", self.dataset[name])
             else:
-                return ChannelTS('auxiliary', self.dataset[name])
+                return ChannelTS("auxiliary", self.dataset[name])
         else:
             return getattr(self, name)
 
@@ -910,7 +910,7 @@ class RunTS:
         self._dataset = xr.Dataset(xdict)
         self.validate_metadata()
         self._dataset.attrs.update(self.metadata.to_dict()["run"])
-        
+
     def add_channel(self, channel):
         """
         Add a channel to the dataset, can be an :class:`xarray.DataArray` or
@@ -930,7 +930,7 @@ class RunTS:
         
 
         """
-        
+
         if isinstance(channel, xr.DataArray):
             c = ChannelTS()
             c.ts = channel
@@ -938,18 +938,20 @@ class RunTS:
             c = channel
         else:
             raise ValueError("Input Channel must be type xarray.DataArray or ChannelTS")
-            
+
         ### need to validate the channel to make sure sample rate is the same
         if c.sample_rate != self.sample_rate:
-            msg = (f"Channel sample rate is not correct, current {self.sample_rate} "
-                   + f"input {c.sample_rate}")
+            msg = (
+                f"Channel sample rate is not correct, current {self.sample_rate} "
+                + f"input {c.sample_rate}"
+            )
             self.logger.error(msg)
             raise MTTSError(msg)
-            
+
         ### should probably check for other metadata like station and run?
-            
+
         self._dataset[c.component] = c.ts
-        
+
     @property
     def dataset(self):
         return self._dataset
@@ -990,19 +992,19 @@ class RunTS:
         convert time series to an :class:`obspy.core.Stream` which is like a 
         list of :class:`obspy.core.Trace` objects.
         
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :return: An Obspy Stream object from the time series data
+        :rtype: :class:`obspy.core.Stream`
 
         """
 
         trace_list = []
         for channel in self.channels:
-            if channel[0] in ['e']:
-                ch_type = 'electric'
-            elif channel[0] in ['h', 'b']:
-                ch_type = 'magnetic'
+            if channel[0] in ["e"]:
+                ch_type = "electric"
+            elif channel[0] in ["h", "b"]:
+                ch_type = "magnetic"
             else:
-                ch_type = 'auxiliary'
+                ch_type = "auxiliary"
             ts_obj = ChannelTS(ch_type, self.dataset[channel])
             trace_list.append(ts_obj.to_obspy_trace())
 
@@ -1013,10 +1015,9 @@ class RunTS:
         Get a run from an :class:`obspy.core.stream` which is a list of
         :class:`obspy.core.Trace` objects.
         
-        :param obspy_stream: DESCRIPTION
-        :type obspy_stream: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :param obspy_stream: Obspy Stream object
+        :type obspy_stream: :class:`obspy.core.Stream`
+        
 
         """
 
@@ -1033,7 +1034,7 @@ class RunTS:
             station_list.append(channel_ts.station_metadata.fdsn.id)
 
             array_list.append(channel_ts)
-            
+
         ### need to merge metadata into something useful, station name is the only
         ### name that is preserved
         try:
@@ -1042,7 +1043,7 @@ class RunTS:
             station = None
             msg = "Could not find station name"
             self.logger.warn(msg)
-            
+
         self.station_metadata.fdsn.id = station
 
         self.set_dataset(array_list)

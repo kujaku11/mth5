@@ -759,6 +759,17 @@ class MasterStationGroup(BaseGroup):
         try:
             station_group = self.hdf5_group.create_group(station_name)
             self.logger.debug("Created group {0}".format(station_group.name))
+
+            if station_metadata is None:
+                station_metadata = metadata.Station()
+                station_metadata.id = station_name
+
+            else:
+                if station_metadata.id != station_name:
+                    msg = (f"Station group name {station_name} must be same as "
+                           + f"station id {station_metadata.id}")
+                    self.logger.error(msg)
+                    raise MTH5Error(msg)
             station_obj = StationGroup(
                 station_group, station_metadata=station_metadata, **self.dataset_options
             )
@@ -1025,6 +1036,11 @@ class StationGroup(BaseGroup):
                 ]
             ),
         }
+
+    @property
+    def master_station_group(self):
+        """ shortcut to master station group """
+        return MasterStationGroup(self.hdf5_group.parent)
 
     @property
     def name(self):
@@ -1431,6 +1447,16 @@ class RunGroup(BaseGroup):
                 ]
             ),
         }
+
+    @property
+    def station_group(self):
+        """ shortcut to station group """
+        return StationGroup(self.hdf5_group.parent)
+
+    @property
+    def master_station_group(self):
+        """ shortcut to master station group """
+        return MasterStationGroup(self.hdf5_group.parent.parent)
 
     @property
     def table_entry(self):
@@ -1991,6 +2017,21 @@ class ChannelDataset:
     @property
     def _class_name(self):
         return self.__class__.__name__.split("Dataset")[0]
+
+    @property
+    def run_group(self):
+        """ shortcut to run group """
+        return RunGroup(self.hdf5_dataset.parent)
+
+    @property
+    def station_group(self):
+        """ shortcut to station group """
+        return StationGroup(self.hdf5_dataset.parent.parent)
+
+    @property
+    def master_station_group(self):
+        """ shortcut to master station group """
+        return MasterStationGroup(self.hdf5_dataset.parent.parent.parent)
 
     @property
     def start(self):
