@@ -15,7 +15,6 @@ from pathlib import Path
 from mth5 import read_file
 from mth5 import mth5
 from mth5 import metadata
-from mth5.utils.helpers import structure_dict
 from mth5.utils.mttime import MTime
 
 start = MTime()
@@ -52,6 +51,7 @@ for fn in list(z3d_dir.glob("*.z3d")):
     run_id = station_group.locate_run(mtts_obj.sample_rate, mtts_obj.start)
     if run_id is None:
         run_id = station_group.make_run_name()
+        mtts_obj.run_metadata.id = run_id
 
     run_group = station_group.add_run(run_id, mtts_obj.run_metadata)
 

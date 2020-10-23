@@ -81,7 +81,7 @@ def wrap_description(description, column_width):
     return d_lines
 
 
-def write_lines(attr_dict, c1=35, c2=35, c3=15):
+def write_lines(attr_dict, c1=45, c2=45, c3=15):
     """
      write table lines
     :param lines_list: DESCRIPTION

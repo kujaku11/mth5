@@ -119,8 +119,6 @@ class ChannelTS:
     
     Example
     ---------
-    
-    .. rubric::
         
         >>> from mth5.timeseries import ChannelTS
         >>> ts_obj = ChannelTS('auxiliary')
@@ -145,7 +143,7 @@ class ChannelTS:
     Plot time series with xarray
     ------------------------------
     
-    >>> p = ts_obj.ts.plot()
+        >>> p = ts_obj.ts.plot()
         
         
 
