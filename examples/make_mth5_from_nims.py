@@ -15,7 +15,6 @@ from pathlib import Path
 from mth5 import read_file
 from mth5 import mth5
 from mth5 import metadata
-from mth5.utils.helpers import structure_dict
 from mth5.utils.mttime import MTime
 
 # =============================================================================
@@ -45,19 +44,11 @@ survey_group.write_metadata()
 
 for nims_fn in nims_dir.iterdir():
 
-    run_ts, extra = read_file(nims_fn)
-    # make station metadata using extra metadata from nims file
-    nims_station = metadata.Station()
-    nims_station.from_dict(structure_dict(extra))
-    nims_station.archive_id = f"mp{nims_fn.stem[3:-1]}"
-    nims_station.id = nims_fn.stem[:-1]
-    nims_station.channels_recorded = run_ts.metadata.channels_recorded_all
-    nims_station.time_period.start = run_ts.start.iso_str
-    nims_station.time_period.end = run_ts.end.iso_str
+    run_ts = read_file(nims_fn)
 
     # initialize a station
     station_group = m.add_station(
-        nims_station.archive_id, station_metadata=nims_station
+        run_ts.station_metadata.fdsn.id, station_metadata=run_ts.station_metadata
     )
 
     # make a run group
@@ -83,4 +74,7 @@ survey_group.update_survey_metadata()
 processing_end = MTime()
 processing_end.now()
 
-print(f"Making MTH5 file took {processing_end - processing_start} seconds")
+print(
+    f"Making MTH5 file took {(processing_end - processing_start) // 60:02.0f}:"
+    f"{(processing_end - processing_start) % 60:02.0f} minutes"
+)

@@ -857,7 +857,7 @@ class NIMS(NIMSHeader):
                 "units": "celsius",
             }
 
-            temp = timeseries.MTTS(
+            temp = timeseries.ChannelTS(
                 "auxiliary",
                 data=self.info_array["box_temp"],
                 channel_metadata={"auxiliary": meta_dict},
@@ -889,7 +889,7 @@ class NIMS(NIMSHeader):
                 "sensor.type": "fluxgate triaxial magnetometer",
             }
 
-            return timeseries.MTTS(
+            return timeseries.ChannelTS(
                 "magnetic",
                 data=self.ts.hx.to_numpy(),
                 channel_metadata={"magnetic": meta_dict},
@@ -915,7 +915,7 @@ class NIMS(NIMSHeader):
                 "sensor.type": "fluxgate triaxial magnetometer",
             }
 
-            return timeseries.MTTS(
+            return timeseries.ChannelTS(
                 "magnetic",
                 data=self.ts.hy.to_numpy(),
                 channel_metadata={"magnetic": meta_dict},
@@ -941,7 +941,7 @@ class NIMS(NIMSHeader):
                 "sensor.type": "fluxgate triaxial magnetometer",
             }
 
-            return timeseries.MTTS(
+            return timeseries.ChannelTS(
                 "magnetic",
                 data=self.ts.hz.to_numpy(),
                 channel_metadata={"magnetic": meta_dict},
@@ -967,7 +967,7 @@ class NIMS(NIMSHeader):
                 "positive.id": self.n_electrode_id,
             }
 
-            return timeseries.MTTS(
+            return timeseries.ChannelTS(
                 "electric",
                 data=self.ts.ex.to_numpy(),
                 channel_metadata={"electric": meta_dict},
@@ -993,7 +993,7 @@ class NIMS(NIMSHeader):
                 "positive.id": self.e_electrode_id,
             }
 
-            return timeseries.MTTS(
+            return timeseries.ChannelTS(
                 "electric",
                 data=self.ts.ey.to_numpy(),
                 channel_metadata={"electric": meta_dict},
@@ -1017,6 +1017,7 @@ class NIMS(NIMSHeader):
                     "data_logger.firmware.version": "1.0",
                     "data_logger.manufacturer": "Narod",
                     "data_logger.model": self.box_id,
+                    "data_logger.id": self.box_id,
                     "data_logger.type": "long period",
                     "id": self.run_id,
                     "data_type": "MTLP",
@@ -1042,6 +1043,8 @@ class NIMS(NIMSHeader):
                     "location.elevation": self.elevation,
                     "location.latitude": self.latitude,
                     "location.longitude": self.longitude,
+                    "id": self.run_id[0:-1],
+                    "orientation.reference_frame": "geomagnetic",
                 }
             }
         return None

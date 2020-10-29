@@ -129,8 +129,6 @@ class ChannelTS:
         >>> ts_obj.run_metadata.id = 'MT001a'
         >>> ts_obj.component = 'temperature'
         >>> print(ts_obj)
-        ChannelTS Object:
-        -------------------------
 	        Station      = MT001
 	        Run          = MT001a
 	        Channel Type = auxiliary

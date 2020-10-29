@@ -1633,7 +1633,7 @@ class Electric(Channel):
         self.ac = Diagnostic()
         self.dc = Diagnostic()
         self.units_s = None
-        
+
         Channel.__init__(self, **kwargs)
         self.type = "electric"
 

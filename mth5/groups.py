@@ -359,16 +359,16 @@ class SurveyGroup(BaseGroup):
             self.stations_group.summary_table.array["end"].astype(np.unicode_)
         ).split("T")[0]
         self.metadata.northwest_corner.latitude = self.stations_group.summary_table.array[
-            "location.latitude"
+            "latitude"
         ].max()
         self.metadata.northwest_corner.longitude = self.stations_group.summary_table.array[
-            "location.longitude"
+            "longitude"
         ].min()
         self.metadata.southeast_corner.latitude = self.stations_group.summary_table.array[
-            "location.latitude"
+            "latitude"
         ].min()
         self.metadata.southeast_corner.longitude = self.stations_group.summary_table.array[
-            "location.longitude"
+            "longitude"
         ].max()
 
         self.write_metadata()
@@ -800,7 +800,7 @@ class MasterStationGroup(BaseGroup):
             station_obj.initialize_group()
 
             # be sure to add a table entry
-            #self.summary_table.add_row(station_obj.table_entry)
+            # self.summary_table.add_row(station_obj.table_entry)
 
         except ValueError:
             msg = (
@@ -1192,8 +1192,10 @@ class StationGroup(BaseGroup):
             if run_metadata is None:
                 run_metadata = metadata.Run(id=run_name)
             elif run_metadata.id != run_name:
-                msg = (f"Run name {run_name} must be the same as "
-                       + f"run_metadata.id {run_metadata.id}")
+                msg = (
+                    f"Run name {run_name} must be the same as "
+                    + f"run_metadata.id {run_metadata.id}"
+                )
                 self.logger.error(msg)
                 raise MTH5Error(msg)
 
@@ -1201,7 +1203,7 @@ class StationGroup(BaseGroup):
                 run_group, run_metadata=run_metadata, **self.dataset_options
             )
             run_obj.initialize_group()
-            
+
             self.summary_table.add_row(run_obj.table_entry)
 
         except ValueError:
@@ -1774,7 +1776,7 @@ class RunGroup(BaseGroup):
             if channel in ["summary"]:
                 continue
             ch_obj = self.get_channel(channel)
-            ts_obj = ch_obj.to_mtts()
+            ts_obj = ch_obj.to_channel_ts()
             ch_list.append(ts_obj)
         return RunTS(ch_list, run_metadata=self.metadata)
 
@@ -1824,50 +1826,61 @@ class RunGroup(BaseGroup):
             )
         return channels
 
-    def from_mtts(self, mtts_obj):
+    def from_channel_ts(self, channel_ts_obj):
         """
         create a channel data set from a :class:`mth5.timeseries.ChannelTS` object and 
         update metadata.
         
-        :param mtts_obj: a single time series object
-        :type mtts_obj: :class:`mth5.timeseries.ChannelTS`
+        :param channel_ts_obj: a single time series object
+        :type channel_ts_obj: :class:`mth5.timeseries.ChannelTS`
         :return: new channel dataset
         :rtype: :class:`mth5.groups.ChannelDataset
 
         """
 
-        if not isinstance(mtts_obj, ChannelTS):
-            msg = (
-                f"Input must be a mth5.timeseries.ChannelTS object not {type(mtts_obj)}"
-            )
+        if not isinstance(channel_ts_obj, ChannelTS):
+            msg = f"Input must be a mth5.timeseries.ChannelTS object not {type(channel_ts_obj)}"
             self.logger.error(msg)
             raise MTH5Error(msg)
 
         ch_obj = self.add_channel(
-            mtts_obj.component,
-            mtts_obj.metadata.type,
-            mtts_obj.ts.values,
-            channel_metadata=mtts_obj.metadata,
+            channel_ts_obj.component,
+            channel_ts_obj.metadata.type,
+            channel_ts_obj.ts.values,
+            channel_metadata=channel_ts_obj.metadata,
         )
 
         # need to update the channels recorded
-        if mtts_obj.metadata.type == "electric":
+        if channel_ts_obj.metadata.type == "electric":
             if self.metadata.channels_recorded_electric is None:
-                self.metadata.channels_recorded_electric = [mtts_obj.component]
-            elif mtts_obj.component not in self.metadata.channels_recorded_electric:
-                self.metadata.channels_recorded_electric.append(mtts_obj.component)
+                self.metadata.channels_recorded_electric = [channel_ts_obj.component]
+            elif (
+                channel_ts_obj.component not in self.metadata.channels_recorded_electric
+            ):
+                self.metadata.channels_recorded_electric.append(
+                    channel_ts_obj.component
+                )
 
-        elif mtts_obj.metadata.type == "magnetic":
+        elif channel_ts_obj.metadata.type == "magnetic":
             if self.metadata.channels_recorded_magnetic is None:
-                self.metadata.channels_recorded_magnetic = [mtts_obj.component]
-            elif mtts_obj.component not in self.metadata.channels_recorded_magnetic:
-                self.metadata.channels_recorded_magnetic.append(mtts_obj.component)
+                self.metadata.channels_recorded_magnetic = [channel_ts_obj.component]
+            elif (
+                channel_ts_obj.component not in self.metadata.channels_recorded_magnetic
+            ):
+                self.metadata.channels_recorded_magnetic.append(
+                    channel_ts_obj.component
+                )
 
-        elif mtts_obj.metadata.type == "auxiliary":
+        elif channel_ts_obj.metadata.type == "auxiliary":
             if self.metadata.channels_recorded_auxiliary is None:
-                self.metadata.channels_recorded_auxiliary = [mtts_obj.component]
-            elif mtts_obj.component not in self.metadata.channels_recorded_auxiliary:
-                self.metadata.channels_recorded_auxiliary.append(mtts_obj.component)
+                self.metadata.channels_recorded_auxiliary = [channel_ts_obj.component]
+            elif (
+                channel_ts_obj.component
+                not in self.metadata.channels_recorded_auxiliary
+            ):
+                self.metadata.channels_recorded_auxiliary.append(
+                    channel_ts_obj.component
+                )
 
         return ch_obj
 
@@ -2477,7 +2490,7 @@ class ChannelDataset:
                         self.get_index_from_time(start_time) :
                     ] = new_data_array
 
-    def to_mtts(self):
+    def to_channel_ts(self):
         """
         :return: a Timeseries with the appropriate time index and metadata
         :rtype: :class:`mth5.timeseries.ChannelTS`
@@ -2490,6 +2503,8 @@ class ChannelDataset:
             self.metadata.type,
             data=self.hdf5_dataset[()],
             channel_metadata=self.metadata,
+            run_metadata=self.run_group.metadata,
+            station_metadata=self.station_group.metadata,
         )
 
     def to_xarray(self):
@@ -2541,16 +2556,21 @@ class ChannelDataset:
             names="time,channel_data",
         )
 
-    def from_mtts(
-        self, mtts_obj, how="replace", fill=None, max_gap_seconds=1, fill_window=10
+    def from_channel_ts(
+        self,
+        channel_ts_obj,
+        how="replace",
+        fill=None,
+        max_gap_seconds=1,
+        fill_window=10,
     ):
         """
         fill data set from a :class:`mth5.timeseries.ChannelTS` object.
         
         Will check for time alignement, and metadata.
         
-        :param mtts_obj: time series object
-        :type mtts_obj: :class:`mth5.timeseries.ChannelTS`
+        :param channel_ts_obj: time series object
+        :type channel_ts_obj: :class:`mth5.timeseries.ChannelTS`
         :param how: how the new array will be input to the existing dataset:
             
             - 'replace' -> replace the entire dataset nothing is left over.
@@ -2581,19 +2601,22 @@ class ChannelDataset:
 
         """
 
-        if not isinstance(mtts_obj, ChannelTS):
-            msg = f"Input must be a ChannelTS object not {type(mtts_obj)}"
+        if not isinstance(channel_ts_obj, ChannelTS):
+            msg = f"Input must be a ChannelTS object not {type(channel_ts_obj)}"
             self.logger.error(msg)
             raise TypeError(msg)
 
         if how == "replace":
-            self.metadata = mtts_obj.metadata
-            self.replace_dataset(mtts_obj.ts.values)
+            self.metadata = channel_ts_obj.metadata
+            self.replace_dataset(channel_ts_obj.ts.values)
             self.write_metadata()
 
         elif how == "extend":
             self.extend_dataset(
-                mtts_obj.ts.values, mtts_obj.start, mtts_obj.sample_rate, fill=fill
+                channel_ts_obj.ts.values,
+                channel_ts_obj.start,
+                channel_ts_obj.sample_rate,
+                fill=fill,
             )
 
             # TODO need to check on metadata.
@@ -2607,7 +2630,7 @@ class ChannelDataset:
         Will check for time alignement, and metadata.
         
         :param data_array_obj: Xarray data array
-        :type mtts_obj: :class:`xarray.DataArray`
+        :type channel_ts_obj: :class:`xarray.DataArray`
         :param how: how the new array will be input to the existing dataset:
             
             - 'replace' -> replace the entire dataset nothing is left over.
@@ -2749,7 +2772,7 @@ class ChannelDataset:
                 ]
             ),
         )
-    
+
     @property
     def channel_entry(self):
         """
@@ -2794,9 +2817,10 @@ class ChannelDataset:
                 ]
             ),
         )
-        
 
-    def time_slice(self, start_time, end_time=None, n_samples=None, return_type="mtts"):
+    def time_slice(
+        self, start_time, end_time=None, n_samples=None, return_type="channel_ts"
+    ):
         """
         Get a time slice from the channel and return the appropriate type
 
@@ -2938,14 +2962,14 @@ class ChannelDataset:
         elif return_type == "numpy":
             data = self.hdf5_dataset[regional_ref]
 
-        elif return_type == "mtts":
+        elif return_type == "channel_ts":
             data = ChannelTS(
                 self.metadata.type,
                 data=self.hdf5_dataset[regional_ref],
                 channel_metadata={self.metadata.type: meta_dict},
             )
         else:
-            msg = "return_type not understood, must be [ pandas | numpy | mtts ]"
+            msg = "return_type not understood, must be [ pandas | numpy | channel_ts ]"
             self.logger.error(msg)
             raise ValueError(msg)
 
@@ -3250,3 +3274,21 @@ class MTH5Table:
             msg = "Could not find index {0} in shape {1}".format(index, self.shape())
             self.logger.exception(msg)
             raise IndexError(f"{error}\n{msg}")
+
+    def to_dataframe(self):
+        """
+        Convert the table into a :class:`pandas.DataFrame` object.  
+        
+        :return: convert table into a :class:`pandas.DataFrame` with the 
+                 appropriate data types.
+        :rtype: :class:`pandas.DataFrame`
+
+        """
+
+        df = pd.DataFrame(self.array[()])
+        for key in ["station", "run", "component", "measurement_type", "units"]:
+            setattr(df, key, getattr(df, key).str.decode("utf-8"))
+        df.start = pd.to_datetime(df.start.str.decode("utf-8"))
+        df.end = pd.to_datetime(df.end.str.decode("utf-8"))
+
+        return df

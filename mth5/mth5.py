@@ -30,10 +30,17 @@ from platform import platform
 import h5py
 
 from mth5.utils.exceptions import MTH5Error
-from mth5 import __version__
+from mth5 import __version__ as mth5_version
 from mth5.utils.mttime import get_now_utc
 from mth5 import groups as groups
 from mth5 import helpers
+
+# =============================================================================
+# Acceptable parameters
+# =============================================================================
+acceptable_file_types = ["mth5", "MTH5"]
+acceptable_file_versions = ["0.1.0"]
+acceptable_data_levels = [0, 1, 2, 3]
 
 # =============================================================================
 # MT HDF5 file
@@ -51,15 +58,14 @@ class MTH5:
     
     MTH5 is built with h5py and therefore numpy.  The structure follows the
     different levels of MT data collection:
-    - Survey
-        - Reports
-        - Standards
-        - Filters
-        - Station
-            - Run
-                - Channel
+    Survey
+       |_Reports
+       |_Standards
+       |_Filters
+       |_Station
+           |_Run
+               |_Channel
             
-    
     All timeseries data are stored as individual channels with the appropriate
     metadata defined for the given channel, i.e. electric, magnetic, auxiliary.
     
@@ -239,10 +245,11 @@ class MTH5:
 
         self._file_attrs = {
             "file.type": "MTH5",
+            "file.version": acceptable_file_versions[-1],
             "file.access.platform": platform(),
             "file.access.time": get_now_utc(),
-            "MTH5.version": __version__,
-            "MTH5.software": "mth5",
+            "mth5.software.version": mth5_version,
+            "mth5.software.name": "mth5",
             "data_level": self.__data_level,
         }
 
@@ -296,6 +303,80 @@ class MTH5:
 
         else:
             self.__filename = value
+
+    @property
+    def file_type(self):
+        """ File Type should be MTH5 """
+
+        if self.h5_is_write():
+            return self.__hdf5_obj.attrs["file.type"]
+        return None
+
+    @file_type.setter
+    def file_type(self, value):
+        """ set file type while validating input """
+        if not isinstance(value, str):
+            msg = f"Input file type must be a string not {type(value)}"
+            self.logger.error(msg)
+            raise ValueError(msg)
+
+        if self.h5_is_write():
+            if value in acceptable_file_types:
+                self.__hdf5_obj.attrs["file.type"] = value
+            msg = f"Input file.type is not valid, must be {acceptable_file_types}"
+            self.logger.error(msg)
+            raise ValueError(msg)
+
+    @property
+    def file_version(self):
+        """ mth5 file version """
+        if self.h5_is_write():
+            return self.__hdf5_obj.attrs["file.version"]
+        return None
+
+    @file_version.setter
+    def file_version(self, value):
+        """ set file version while validating input """
+        if not isinstance(value, str):
+            msg = f"Input file type must be a string not {type(value)}"
+            self.logger.error(msg)
+            raise ValueError(msg)
+
+        if self.h5_is_write():
+            if value in acceptable_file_versions:
+                self.__hdf5_obj.attrs["file.version"] = value
+            msg = f"Input file.version is not valid, must be {acceptable_file_versions}"
+            self.logger.error(msg)
+            raise ValueError(msg)
+
+    @property
+    def software_name(self):
+        """ software name that wrote the file """
+        if self.h5_is_write():
+            return self.__hdf5_obj.attrs["mth5.software.name"]
+        return None
+
+    @property
+    def data_level(self):
+        """ data level """
+        if self.h5_is_write():
+            return self.__hdf5_obj.attrs["data_level"]
+        return None
+
+    @data_level.setter
+    def data_level(self, value):
+        """ set data level while validating input """
+        if not isinstance(value, int):
+            msg = f"Input file type must be an integer not {type(value)}"
+            self.logger.error(msg)
+            raise ValueError(msg)
+
+        if self.h5_is_write():
+            if value in acceptable_file_versions:
+                self.__hdf5_obj.attrs["data_level"] = value
+            msg = f"Input data_level is not valid, must be {acceptable_data_levels}"
+            self.logger.error(msg)
+            raise ValueError(msg)
 
     @property
     def survey_group(self):
@@ -375,18 +456,22 @@ class MTH5:
         if self.__filename.exists():
             if mode in ["w"]:
                 self.logger.warning(
-                    "{0} will be overwritten in 'w' mode".format(self.__filename.name)
+                    f"{self.__filename.name} will be overwritten in 'w' mode"
                 )
                 try:
                     self._initialize_file()
                 except OSError as error:
                     msg = (
-                        "{0}. Need to close any references to {1} first. "
+                        f"{error}. Need to close any references to {self._filename} first. "
                         + "Then reopen the file in the preferred mode"
                     )
-                    self.logger.exception(msg.format(error, self.__filename))
+                    self.logger.exception(msg)
             elif mode in ["a", "r", "r+", "w-", "x"]:
                 self.__hdf5_obj = h5py.File(self.__filename, mode=mode)
+                if not self.validate_file():
+                    msg = "Input file is not a valid MTH5 file"
+                    self.logger.error(msg)
+                    raise MTH5Error(msg)
 
             else:
                 msg = "mode {0} is not understood".format(mode)
@@ -399,6 +484,8 @@ class MTH5:
                 msg = "Cannot open new file in mode {0} ".format(mode)
                 self.logger.error(msg)
                 raise MTH5Error(msg)
+
+        # TODO need to add a validation step to check for version and legit file
 
     def _initialize_file(self):
         """
@@ -419,17 +506,45 @@ class MTH5:
         survey_obj.write_metadata()
 
         for group_name in self._default_subgroup_names:
-            self.__hdf5_obj.create_group(
-                "{0}/{1}".format(self._default_root_name, group_name)
-            )
-            m5_grp = getattr(self, "{0}_group".format(group_name.lower()))
+            self.__hdf5_obj.create_group(f"{self._default_root_name}/{group_name}")
+            m5_grp = getattr(self, f"{group_name.lower()}_group")
             m5_grp.initialize_group()
 
-        self.logger.info(
-            "Initialized MTH5 file {0} in mode {1}".format(self.filename, "w")
-        )
+        self.logger.info("Initialized MTH5 file {self.filename} in mode 'w'")
 
         return survey_obj
+
+    def validate_file(self):
+        """
+        Validate an open mth5 file
+        
+        will test the attribute values and group names
+        
+        :return: Boolean [ True = valid, False = not valid]
+        :rtype: Boolean
+
+        """
+
+        if self.h5_is_write():
+            if self.file_type not in acceptable_file_types:
+                msg = f"Unaccetable file type {self.file_type}"
+                self.logger.error(msg)
+                return False
+            if self.file_version not in acceptable_file_versions:
+                msg = f"Unaccetable file version {self.file_version}"
+                self.logger.error(msg)
+                return False
+            if self.data_level not in acceptable_data_levels:
+                msg = f"Unaccetable data_level {self.data_level}"
+                self.logger.error(msg)
+                return False
+            for gr in self.survey_group.groups_list:
+                if gr not in self._default_subgroup_names:
+                    msg = f"Unaccetable group {gr}"
+                    self.logger.error(msg)
+                    return False
+            return True
+        return False
 
     def close_mth5(self):
         """
