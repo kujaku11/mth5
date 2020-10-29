@@ -1984,7 +1984,15 @@ class ChannelDataset:
             )
         )
 
-        # if metadata, make sure that its the same class type
+        # if the input data set already has filled attributes, namely if the
+        # channel data already exists then read them in with our writing back
+        if "mth5_type" in list(self.hdf5_dataset.attrs.keys()):
+            self.metadata.from_dict(
+                {self.hdf5_dataset.attrs["mth5_type"]: self.hdf5_dataset.attrs}
+            )
+
+        # if metadata is input, make sure that its the same class type amd write
+        # to the hdf5 dataset
         if dataset_metadata is not None:
             if not isinstance(dataset_metadata, type(self.metadata)):
                 msg = "metadata must be type metadata.{0} not {1}".format(
@@ -1998,8 +2006,11 @@ class ChannelDataset:
             self.metadata.hdf5_reference = self.hdf5_dataset.ref
             self.metadata.mth5_type = self._class_name
 
-        if write_metadata:
             # write out metadata to make sure that its in the file.
+            self.write_metadata()
+
+        # if the attrs don't have the proper metadata keys yet write them
+        if not "mth5_type" in list(self.hdf5_dataset.attrs.keys()):
             self.write_metadata()
 
         # if any other keywords

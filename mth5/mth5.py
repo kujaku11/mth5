@@ -582,7 +582,24 @@ class MTH5:
 
         """
         # in the future should allow this to return the proper container.
-        return self.__hdf5_obj[h5_reference]
+        referenced = self.__hdf5_obj[h5_reference]
+        mth5_type = referenced.attrs["mth5_type"]
+        if mth5_type.lower() in ["station"]:
+            return groups.StationGroup(referenced)
+        elif mth5_type.lower() in ["run"]:
+            return groups.RunGroup(referenced)
+        elif mth5_type.lower() in ["electric"]:
+            return groups.ElectricDataset(referenced)
+        elif mth5_type.lower() in ["magnetic"]:
+            return groups.MagneticDataset(referenced)
+        elif mth5_type.lower() in ["auxiliary"]:
+            return groups.AuxiliaryDataset(referenced)
+        else:
+            self.logger.info(
+                f"Could not identify the MTH5 type {mth5_type}, "
+                + "returning h5 group."
+            )
+            return referenced
 
     def add_station(self, name, station_metadata=None):
         """
