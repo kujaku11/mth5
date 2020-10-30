@@ -621,7 +621,7 @@ class Base:
             "set {0} to {1} as type {2}".format(name, value, value_dict["type"])
         )
 
-    def to_dict(self, nested=False, single=False):
+    def to_dict(self, nested=False, single=False, required=True):
         """
         make a dictionary from attributes, makes dictionary from _attr_list.
         
@@ -630,6 +630,9 @@ class Base:
         
         :param single: return just metadata dictionary -> meta_dict[class_name]
         :type single: [ True | False ], default is False
+        
+        :param required: return just the required elements and any elements with
+                         non-None values
         
         """
         meta_dict = {}
@@ -643,7 +646,10 @@ class Base:
                 self.logger.debug(msg)
                 value = None
 
-            if value is not None or self._attr_dict[name]["required"]:
+            if required:
+                if value is not None or self._attr_dict[name]["required"]:
+                    meta_dict[name] = value
+            else:
                 meta_dict[name] = value
 
         if nested:
@@ -686,7 +692,7 @@ class Base:
         for name, value in meta_dict.items():
             self.set_attr_from_name(name, value)
 
-    def to_json(self, nested=False, indent=" " * 4):
+    def to_json(self, nested=False, indent=" " * 4, required=True):
         """
         Write a json string from a given object, taking into account other
         class objects contained within the given object.
@@ -697,7 +703,9 @@ class Base:
         """
 
         return json.dumps(
-            self.to_dict(nested=nested), cls=helpers.NumpyEncoder, indent=indent
+            self.to_dict(nested=nested, required=required),
+            cls=helpers.NumpyEncoder,
+            indent=indent,
         )
 
     def from_json(self, json_str):
@@ -735,7 +743,7 @@ class Base:
         for key, value in pd_series.iteritems():
             self.set_attr_from_name(key, value)
 
-    def to_series(self):
+    def to_series(self, required=True):
         """
         Convert attribute list to a pandas.Series
         
@@ -746,9 +754,9 @@ class Base:
 
         """
 
-        return pd.Series(self.to_dict()[self._class_name.lower()])
+        return pd.Series(self.to_dict(single=True, required=required))
 
-    def to_xml(self, string=False):
+    def to_xml(self, string=False, required=True):
         """
         make an xml element for the attribute that will add types and 
         units.  
@@ -759,7 +767,9 @@ class Base:
         :return: XML element or string
 
         """
-        element = helpers.dict_to_xml(self.to_dict(nested=True), self._attr_dict)
+        element = helpers.dict_to_xml(
+            self.to_dict(nested=True, required=required), self._attr_dict
+        )
         if not string:
             return element
         else:

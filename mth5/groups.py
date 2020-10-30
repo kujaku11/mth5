@@ -221,8 +221,8 @@ class BaseGroup:
         Write HDF5 metadata from metadata object.
 
         """
-        meta_dict = self.metadata.to_dict()[self.metadata._class_name.lower()]
-        for key, value in meta_dict.items():
+
+        for key, value in self.metadata.to_dict(single=True):
             value = to_numpy_type(value)
             self.logger.debug("wrote metadata {0} = {1}".format(key, value))
             self.hdf5_group.attrs.create(key, value)
@@ -552,20 +552,29 @@ class FiltersGroup(BaseGroup):
 
         super().__init__(group, **kwargs)
         self._dtype_dict = {
-            "zpk": np.dtype(
-                [
-                    ("poles_real", np.float),
-                    ("poles_imag", np.float),
-                    ("zeros_real", np.float),
-                    ("zeros_imag", np.float),
-                ]
-            ),
-            "table": np.dtype(
-                [("frequency", np.float), ("real", np.float), ("imag", np.float)]
-            ),
-            "gain": np.dtype([("frequency", np.float), ("value", np.float)]),
-            "conversion": np.dtype([("factor", np.float)]),
-            "delay": np.dtype([("delay", np.float)]),
+            "zpk": {
+                "dtype": np.dtype(
+                    [
+                        ("poles_real", np.float),
+                        ("poles_imag", np.float),
+                        ("zeros_real", np.float),
+                        ("zeros_imag", np.float),
+                    ]
+                ),
+                "max_size": (100,),
+            },
+            "table": {
+                "dtype": np.dtype(
+                    [("frequency", np.float), ("real", np.float), ("imag", np.float)]
+                ),
+                "max_size": (500,),
+            },
+            "gain": {
+                "dtype": np.dtype([("frequency", np.float), ("value", np.float)]),
+                "max_size": (100,),
+            },
+            "conversion": {"dtype": np.dtype([("factor", np.float)]), "max_size": (1,)},
+            "delay": {"dtype": np.dtype([("delay", np.float)]), "max_size": (10,)},
         }
 
     def add_filter(self, filter_name, filter_type, values=None, filter_metadata=None):
@@ -607,13 +616,21 @@ class FiltersGroup(BaseGroup):
             filter_metadata.name = filter_name
             filter_metadata.type = filter_type
 
-        filter_table = self.hdf5_group.create_dataset(
-            filter_name,
-            (1,),
-            maxshape=(500,),
-            dtype=self._dtype_dict[filter_type],
-            **self.dataset_options,
-        )
+        if values is None:
+            filter_table = self.hdf5_group.create_dataset(
+                filter_name,
+                (0,),
+                maxshape=self._dtype_dict[filter_type]["max_size"],
+                dtype=self._dtype_dict[filter_type]["dtype"],
+                **self.dataset_options,
+            )
+        else:
+            filter_table = self.hdf5_group.create_dataset(
+                filter_name,
+                data=values,
+                dtype=self._dtype_dict[filter_type]["dtype"],
+                **self.dataset_options,
+            )
 
         filter_dataset = FilterDataset(filter_table, dataset_metadata=filter_metadata)
         filter_dataset.write_metadata()
@@ -3294,6 +3311,26 @@ class FilterDataset:
         """ rename units out """
         self.metadata.units_out = value
         self.write_metadata()
+
+    @property
+    def poles(self):
+        """ convenience to poles if there are any """
+        if "poles_real" in self.hdf5_dataset.dtype.names:
+            pole_index = np.where(self.hdf5_dataset["poles_imag"] != 0)
+            return (
+                self.hdf5_dataset["poles_real"][pole_index]
+                + 1j * self.hdf5_dataset["poles_imag"][pole_index]
+            )
+
+    @property
+    def zeros(self):
+        """ convenience to zeros if there are any """
+        if "zeros_real" in self.hdf5_dataset.dtype.names:
+            zero_index = np.where(self.hdf5_dataset["zeros_imag"] != 0)
+            return (
+                self.hdf5_dataset["zeros_real"][zero_index]
+                + 1j * self.hdf5_dataset["zeros_imag"][zero_index]
+            )
 
     def read_metadata(self):
         """
