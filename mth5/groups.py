@@ -3114,21 +3114,19 @@ class AuxiliaryDataset(ChannelDataset):
         super().__init__(group, **kwargs)
 
 
-@inherit_doc_string
 class FilterDataset:
     """
-    Holds a channel dataset.  This is a simple container for the data to make
+    Holds a filter dataset.  This is a simple container for the filter to make
     sure that the user has the flexibility to turn the channel into an object
     they want to deal with.
 
     For now all the numpy type slicing can be used on `hdf5_dataset`
 
-    :param dataset: dataset object for the channel
+    :param dataset: dataset object for the filter
     :type dataset: :class:`h5py.Dataset`
     :param dataset_metadata: metadata container, defaults to None
-    :type dataset_metadata: [ :class:`mth5.metadata.Electric` |
-                              :class:`mth5.metadata.Magnetic` |
-                              :class:`mth5.metadata.Auxiliary` ], optional
+    :type dataset_metadata:  :class:`mth5.metadata.Filter`, optional
+    
     :raises MTH5Error: If the dataset is not of the correct type
 
     Utilities will be written to create some common objects like:
@@ -3144,18 +3142,7 @@ class FilterDataset:
     >>> from mth5 import mth5
     >>> mth5_obj = mth5.MTH5()
     >>> mth5_obj.open_mth5(r"/test.mth5", mode='a')
-    >>> run = mth5_obj.stations_group.get_station('MT001').get_run('MT001a')
-    >>> channel = run.get_channel('Ex')
-    >>> channel
-    Channel Electric:
-    -------------------
-  		component:        Ey
-      	data type:        electric
-      	data format:      float32
-      	data shape:       (4096,)
-      	start:            1980-01-01T00:00:00+00:00
-      	end:              1980-01-01T00:00:01+00:00
-      	sample rate:      4096
+    >>> f = mth5_obj.filter_group.add_filter("table")
 
     """
 
@@ -3166,9 +3153,6 @@ class FilterDataset:
 
         self.logger = logging.getLogger(f"{__name__}.{self._class_name}")
 
-        # set metadata to the appropriate class.  Standards is not a
-        # metadata.Base object so should be skipped. If the class name is not
-        # defined yet set to Base class.
         self.metadata = metadata.Filter()
 
         if not hasattr(self.metadata, "mth5_type"):
@@ -3345,10 +3329,10 @@ class FilterDataset:
         Write HDF5 metadata from metadata object.
 
         """
-        meta_dict = self.metadata.to_dict()[self.metadata._class_name.lower()]
-        for key, value in meta_dict.items():
+
+        for key, value in self.metadata.to_dict(single=True):
             value = to_numpy_type(value)
-            self.logger.debug("wrote metadata {0} = {1}".format(key, value))
+            self.logger.debug(f"wrote metadata {key} = {value}".format(key, value))
             self.hdf5_dataset.attrs.create(key, value)
 
 

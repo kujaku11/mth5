@@ -17,6 +17,7 @@ Created on Wed Sep 30 12:55:58 2020
 import pandas as pd
 import numpy as np
 from scipy import signal
+import logging
 
 from mth5 import metadata
 
@@ -32,13 +33,14 @@ class PolesZeros:
 
     def __init__(
         self,
-        poles=None,
-        zeros=None,
+        poles=[],
+        zeros=[],
         normalization_factor=1.0,
         normalization_frequency=1.0,
         sample_rate=1.0,
     ):
 
+        self._zpk = signal.ZerosPolesGain(zeros, poles, normalization_factor)
         self._poles = None
         self._zeros = None
         self._normalization_factor = None
@@ -167,6 +169,116 @@ class PolesZeros:
         return f, amp
 
 
+class LookupTable:
+    """
+    cantainer for a lookup table
+    """
+
+    def __init__(self, frequency, filter_values):
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self.lookup_table = None
+
+        if frequency is not None and filter_values is not None:
+            if not isinstance(frequency, np.ndarray):
+                frequency = np.array(frequency)
+            if not isinstance(filter_values, np.ndarray):
+                filter_values = np.array(filter_values)
+            if frequency.shape != filter_values.shape:
+                msg = (
+                    f"filter_values has shape {filter_values.shape} "
+                    + f"must have same shape as frequency {frequency.shape}"
+                )
+                self.logger.error(msg)
+                raise ValueError(msg)
+            self.lookup_table = np.rec.array(
+                [(ff, vv) for ff, vv in zip(frequency, filter_values)],
+                dtype=[("frequency", np.float), ("values", np.complex)],
+            )
+
+    def __str__(self):
+        return "\n".join(
+            ["frequency   real      imaginary  amplitude   phase"]
+            + ["-" * 55]
+            + [
+                f"{ff:<12.5g}{vv.real:<10.6g}{vv.imag:<10.6g} {aa:<10.6g}{pp:10.6g}"
+                for ff, vv, aa, pp in zip(
+                    self.frequency, self.filter_values, self.amplitude, self.phase
+                )
+            ]
+        )
+
+    def __repr__(self):
+        return self.__str__()
+
+    @property
+    def frequency(self):
+        try:
+            return self.lookup_table.frequency
+        except AttributeError:
+            return None
+
+    @frequency.setter
+    def frequency(self, values):
+        if self.lookup_table is None:
+            self.lookup_table = np.rec.array(
+                [(ff, None) for ff in values],
+                dtype=[("frequency", np.float), ("values", np.complex)],
+            )
+        if len(values) != len(self.frequency):
+            msg = f"new values have length {len(values)}, must be {len(self.frequency)}"
+            self.logger.error(msg)
+            raise ValueError(msg)
+
+        self.lookup_table.frequency = values
+
+    @property
+    def filter_values(self):
+        try:
+            return self.lookup_table.values
+        except AttributeError:
+            return None
+
+    @filter_values.setter
+    def filter_values(self, values):
+        if self.lookup_table is None:
+            self.lookup_table = np.rec.array(
+                [(None, ff) for ff in values],
+                dtype=[("frequency", np.float), ("values", np.complex)],
+            )
+        if len(values) != len(self.filter_values):
+            msg = f"new values have length {len(values)}, must be {len(self.frequency)}"
+            self.logger.error(msg)
+            raise ValueError(msg)
+
+        self.lookup_table.values = values
+
+    @property
+    def amplitude(self):
+        try:
+            return np.sqrt(self.filter_values.real ** 2 + self.filter_values.imag ** 2)
+        except AttributeError:
+            return None
+
+    @property
+    def phase(self):
+        try:
+            return np.rad2deg(
+                np.arctan2(self.filter_values.real, self.filter_values.imag)
+            )
+        except AttributeError:
+            return None
+
+    def to_poles_zeros(self):
+        """
+        Convert lookup table to poles and zeros
+        
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        pass
+
+
 class Filter:
     """
     
@@ -174,11 +286,35 @@ class Filter:
     
     """
 
-    def __init__(self, **kwargs):
+    def __init__(
+        self,
+        zeros=None,
+        poles=None,
+        gain=None,
+        frequency=None,
+        filter_values=None,
+        time_delay=None,
+        conversion_factor=None,
+    ):
+
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.metadata = metadata.Filter()
-        self.filter = None
-        self._poles_zeros = None
-        self._lookup_table = None
+        self._zpk = signal.ZerosPolesGain(zeros, poles, gain)
+
+        if frequency is not None or filter_values is not None:
+            if filter_values is None:
+                msg = "Input frequency, must input vvalues as well"
+                self.logger.error(msg)
+                raise ValueError(msg)
+            if frequency is None:
+                msg = "Input filter_values, must input vvalues as well"
+                self.logger.error(msg)
+                raise ValueError(msg)
+
+        self._lookup_table = np.array(np.frequency,)
+        self.gain = gain
+        self.time_delay = time_delay
+        self.conversion_factor = conversion_factor
 
     @property
     def poles_zeros(self):
