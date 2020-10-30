@@ -171,41 +171,91 @@ class PolesZeros:
 
 class LookupTable:
     """
-    cantainer for a lookup table
+    cantainer for a lookup table of frequency response filter.
+    
+    Commonly measured as frequency, real, imaginary but can be amplitude and phase
+    
+        
+    :param frequency: frequencies at which the filter response is measured at
+    :type frequency: list, tuple, np.ndarray
+    
+    :param real: real parts of the filter response, needs to be same size as 
+    frequency.  If amplitude_phase is True real is the amplitude
+    :type real: list, tuple, np.ndarray
+    
+    :param imaginary: imaginary parts of the filter response, needs to be same size as 
+    frequency.  If amplitude_phase is True imaginary is the phase
+    :type imaginary: list, tuple, np.ndarray
+    
+    :param amplitude_phase: True if the inputs are amplitude and phase, defaults to
+    False
+    :type amplitude_phase: Boolean, optional
+    
+    :raises ValueError:  
+
+    >>> from mth5.filters import LookupTable
+    
+    Initialize an empty filter
+    
+    >>> response = LookupTable(None, None, None)
+    
+    Fill it with values
+    
+    >>> response.frequency = np.logspace(-3, 3, 50)
+    >>> response.filter_values = np.random.rand(50) + 1j * np.random.rand(50)
+    
+    Input amplitude and phase
+    
+    >>> freq = np.logspace(-3, 3, 50)
+    >>> amp = np.random.rand(50)
+    >>> phase = 180 * np.random.rand(50)
+    >>> response = LookupTable(freq, amp, phase, amplitude_phase=True)
+    
+    
     """
 
-    def __init__(self, frequency, filter_values):
+    def __init__(self, frequency, real, imaginary, amplitude_phase=False):
+
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.lookup_table = None
 
-        if frequency is not None and filter_values is not None:
+        if frequency is not None and real is not None and imaginary is not None:
             if not isinstance(frequency, np.ndarray):
                 frequency = np.array(frequency)
-            if not isinstance(filter_values, np.ndarray):
-                filter_values = np.array(filter_values)
-            if frequency.shape != filter_values.shape:
+            if not isinstance(real, np.ndarray):
+                real = np.array(real)
+            if not isinstance(imaginary, np.ndarray):
+                imaginary = np.array(imaginary)
+            if frequency.shape != real.shape or real.shape != imaginary.shape:
                 msg = (
-                    f"filter_values has shape {filter_values.shape} "
+                    f"filter_values has shape {real.shape} "
                     + f"must have same shape as frequency {frequency.shape}"
                 )
                 self.logger.error(msg)
                 raise ValueError(msg)
-            self.lookup_table = np.rec.array(
-                [(ff, vv) for ff, vv in zip(frequency, filter_values)],
-                dtype=[("frequency", np.float), ("values", np.complex)],
-            )
+                
+            if amplitude_phase:
+                self.frequency = frequency
+                self.from_amplitude_phase(real, imaginary)
+            else:
+                self.lookup_table = np.rec.array(
+                    [(ff, rr + 1j * ii) for ff, rr, ii in zip(frequency, real, imaginary)],
+                    dtype=[("frequency", np.float), ("values", np.complex)],
+                )
 
     def __str__(self):
-        return "\n".join(
-            ["frequency   real      imaginary  amplitude   phase"]
-            + ["-" * 55]
-            + [
-                f"{ff:<12.5g}{vv.real:<10.6g}{vv.imag:<10.6g} {aa:<10.6g}{pp:10.6g}"
-                for ff, vv, aa, pp in zip(
-                    self.frequency, self.filter_values, self.amplitude, self.phase
-                )
-            ]
-        )
+        if self.lookup_table is not None:
+            return "\n".join(
+                ["frequency   real      imaginary  amplitude   phase"]
+                + ["-" * 55]
+                + [
+                    f"{ff:<12.5g}{vv.real:<10.6g}{vv.imag:<10.6g} {aa:<10.6g}{pp:10.6g}"
+                    for ff, vv, aa, pp in zip(
+                        self.frequency, self.filter_values, self.amplitude, self.phase
+                    )
+                ]
+            )
+        return "No filter data"
 
     def __repr__(self):
         return self.__str__()
@@ -263,10 +313,43 @@ class LookupTable:
     def phase(self):
         try:
             return np.rad2deg(
-                np.arctan2(self.filter_values.real, self.filter_values.imag)
+                np.arctan2(self.filter_values.imag, self.filter_values.real)
             )
         except AttributeError:
             return None
+        
+    def from_amplitude_phase(self, amplitude, phase):
+        """ 
+        compute real and imaginary from amplitude and phase for an existing
+        or new frequency range.
+        
+        :param amplitude: amplitude values
+        :type amplitude: list, tuple, np.ndarray
+        
+        :param phase: phase angle in degrees
+        :type phase: list, tuple, np.ndarray
+        
+        converts to real and imaginary
+        
+        """
+        
+        if not isinstance(amplitude, np.ndarray):
+            amplitude = np.array(amplitude)
+            
+        if not isinstance(phase, np.ndarray):
+            phase = np.array(phase)
+            
+        if not amplitude.shape == phase.shape:
+            msg = (f"Input amplitude and phase must be same shape "
+                   + "{amplitude.shape} != {phase.shape}")
+            self.logger.error(msg)
+            raise ValueError(msg)
+        
+        
+        real = amplitude * np.cos(np.deg2rad(phase))
+        imag = amplitude * np.sin(np.deg2rad(phase))
+        
+        self.filter_values = real + 1j * imag
 
     def to_poles_zeros(self):
         """
@@ -288,11 +371,15 @@ class Filter:
 
     def __init__(
         self,
+        filter_metadata=None,
         zeros=None,
         poles=None,
         gain=None,
         frequency=None,
-        filter_values=None,
+        real=None,
+        imaginary=None,
+        amplitude=None,
+        phase=None,
         time_delay=None,
         conversion_factor=None,
     ):
@@ -300,6 +387,10 @@ class Filter:
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.metadata = metadata.Filter()
         self._zpk = signal.ZerosPolesGain(zeros, poles, gain)
+        if amplitude is not None and phase is not None:
+            self.lookup_table = LookupTable(frequency, amplitude, phase, amplitude_phase=True)
+        else:
+            self.lookup_table = LookupTable(frequency, real, imaginary)
 
         if frequency is not None or filter_values is not None:
             if filter_values is None:
