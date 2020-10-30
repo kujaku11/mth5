@@ -1437,6 +1437,12 @@ class Filter(Base):
         self.units_out = None
         self._calibration_dt = MTime()
         self.operation = None
+        self.normalization_frequency = None
+        self.normalization_factor = None
+        self.cutoff = None
+        self.n_poles = None
+        self.n_zeros = None
+        self.comments = None
 
         super().__init__(attr_dict=ATTR_DICT["filter"], **kwargs)
 

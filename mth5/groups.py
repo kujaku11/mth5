@@ -601,8 +601,8 @@ class FiltersGroup(BaseGroup):
             filter_metadata.type = filter_type
         
         filter_table = self.hdf5_group.create_dataset(filter_name, 
-                                                      (0,), 
-                                                      maxshape=None,
+                                                      (1,), 
+                                                      maxshape=(500, ),
                                                       dtype=self._dtype_dict[filter_type],
                                                       **self.dataset_options,)
         
@@ -3225,16 +3225,13 @@ class FilterDataset:
 
     def __str__(self):
         try:
-            lines = [f"Filter {self.name}:"]
+            lines = ["Filter:"]
             lines.append("-" * (len(lines[0]) + 2))
             info_str = "\t{0:<18}{1}"
-            lines.append(info_str.format("component:", self.metadata.component))
-            lines.append(info_str.format("data type:", self.metadata.type))
-            lines.append(info_str.format("data format:", self.hdf5_dataset.dtype))
-            lines.append(info_str.format("data shape:", self.hdf5_dataset.shape))
-            lines.append(info_str.format("start:", self.metadata.time_period.start))
-            lines.append(info_str.format("end:", self.metadata.time_period.end))
-            lines.append(info_str.format("sample rate:", self.metadata.sample_rate))
+            lines.append(info_str.format("name", self.name))
+            lines.append(info_str.format("type:", self.filter_type))
+            lines.append(info_str.format("units in:", self.units_in))
+            lines.append(info_str.format("units out:", self.units_out))
             return "\n".join(lines)
         except ValueError:
             return "MTH5 file is closed and cannot be accessed."
