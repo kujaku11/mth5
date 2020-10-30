@@ -551,18 +551,23 @@ class FiltersGroup(BaseGroup):
     def __init__(self, group, **kwargs):
 
         super().__init__(group, **kwargs)
-        self._dtype_dict = {'zpk': np.dtype([('poles_real', np.float),
-                                            ("poles_imag", np.float),
-                                            ("zeros_real", np.float),
-                                            ("zeros_imag", np.float)]),
-                            'table': np.dtype([('frequency', np.float),
-                                               ("real", np.float),
-                                               ("imag", np.float)]),
-                            'gain': np.dtype([('frequency', np.float),
-                                              ('value', np.float)]),
-                            'conversion': np.dtype([('factor', np.float)]),
-                            'delay': np.dtype([('delay', np.float)])}
-        
+        self._dtype_dict = {
+            "zpk": np.dtype(
+                [
+                    ("poles_real", np.float),
+                    ("poles_imag", np.float),
+                    ("zeros_real", np.float),
+                    ("zeros_imag", np.float),
+                ]
+            ),
+            "table": np.dtype(
+                [("frequency", np.float), ("real", np.float), ("imag", np.float)]
+            ),
+            "gain": np.dtype([("frequency", np.float), ("value", np.float)]),
+            "conversion": np.dtype([("factor", np.float)]),
+            "delay": np.dtype([("delay", np.float)]),
+        }
+
     def add_filter(self, filter_name, filter_type, values=None, filter_metadata=None):
         """
         Add a filter dataset based on type
@@ -583,37 +588,40 @@ class FiltersGroup(BaseGroup):
         :rtype: TYPE
 
         """
-        
+
         if filter_type not in list(self._dtype_dict.keys()):
             msg = f"filter type {filter_type} not understood."
             self.logger.error(msg)
             raise ValueError(msg)
-            
+
         if filter_metadata is not None:
-            if not isinstance(filter_metadata, meta_classes['filter']):
-                msg = ("Input metadata must be of type mth5.metadata.Filter, "
-                       + f"not {type(filter_metadata)}")
+            if not isinstance(filter_metadata, meta_classes["filter"]):
+                msg = (
+                    "Input metadata must be of type mth5.metadata.Filter, "
+                    + f"not {type(filter_metadata)}"
+                )
                 self.logger.error(msg)
                 raise ValueError(msg)
         else:
             filter_metadata = metadata.Filter()
             filter_metadata.name = filter_name
             filter_metadata.type = filter_type
-        
-        filter_table = self.hdf5_group.create_dataset(filter_name, 
-                                                      (1,), 
-                                                      maxshape=(500, ),
-                                                      dtype=self._dtype_dict[filter_type],
-                                                      **self.dataset_options,)
-        
+
+        filter_table = self.hdf5_group.create_dataset(
+            filter_name,
+            (1,),
+            maxshape=(500,),
+            dtype=self._dtype_dict[filter_type],
+            **self.dataset_options,
+        )
+
         filter_dataset = FilterDataset(filter_table, dataset_metadata=filter_metadata)
         filter_dataset.write_metadata()
-            
+
         self.logger.debug(f"Created filter {filter_name}")
-        
+
         return filter_dataset
-            
-   
+
 
 class MasterStationGroup(BaseGroup):
     """
@@ -3087,8 +3095,9 @@ class MagneticDataset(ChannelDataset):
 class AuxiliaryDataset(ChannelDataset):
     def __init__(self, group, **kwargs):
         super().__init__(group, **kwargs)
-        
-@inherit_doc_string       
+
+
+@inherit_doc_string
 class FilterDataset:
     """
     Holds a channel dataset.  This is a simple container for the data to make
@@ -3134,8 +3143,7 @@ class FilterDataset:
     """
 
     def __init__(self, dataset, dataset_metadata=None, **kwargs):
-        
-        
+
         if dataset is not None and isinstance(dataset, (h5py.Dataset)):
             self.hdf5_dataset = weakref.ref(dataset)()
 
@@ -3242,51 +3250,51 @@ class FilterDataset:
     @property
     def _class_name(self):
         return self.__class__.__name__.split("Dataset")[0]
-    
+
     @property
     def name(self):
         """ filter name """
         return self.metadata.name
-    
+
     @name.setter
     def name(self, value):
         """ rename filter """
         self.metadata.name = value
         self.write_metadata()
-        
+
     @property
     def filter_type(self):
         """ filter type """
         return self.metadata.type
-    
+
     @filter_type.setter
     def filter_type(self, value):
         """ rename filter type """
         self.metadata.type = value
         self.write_metadata()
-        
+
     @property
     def units_in(self):
         """ units in  """
         return self.metadata.units_in
-    
+
     @units_in.setter
     def units_in(self, value):
         """ rename units in """
         self.metadata.units_in = value
         self.write_metadata()
-        
+
     @property
     def units_out(self):
         """ units out  """
         return self.metadata.units_out
-    
+
     @units_out.setter
     def units_out(self, value):
         """ rename units out """
         self.metadata.units_out = value
         self.write_metadata()
-    
+
     def read_metadata(self):
         """
         read metadata from the HDF5 group into metadata object
