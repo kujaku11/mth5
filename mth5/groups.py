@@ -551,7 +551,69 @@ class FiltersGroup(BaseGroup):
     def __init__(self, group, **kwargs):
 
         super().__init__(group, **kwargs)
+        self._dtype_dict = {'zpk': np.dtype([('poles_real', np.float),
+                                            ("poles_imag", np.float),
+                                            ("zeros_real", np.float),
+                                            ("zeros_imag", np.float)]),
+                            'table': np.dtype([('frequency', np.float),
+                                               ("real", np.float),
+                                               ("imag", np.float)]),
+                            'gain': np.dtype([('frequency', np.float),
+                                              ('value', np.float)]),
+                            'conversion': np.dtype([('factor', np.float)]),
+                            'delay': np.dtype([('delay', np.float)])}
+        
+    def add_filter(self, filter_name, filter_type, values=None, filter_metadata=None):
+        """
+        Add a filter dataset based on type
+        
+        current types are:
+            * zpk --> zeros, poles, gain
+            * table --> frequency look up table
+        
+        :param filter_name: DESCRIPTION
+        :type filter_name: TYPE
+        :param filter_type: DESCRIPTION
+        :type filter_type: TYPE
+        :param values: DESCRIPTION, defaults to None
+        :type values: TYPE, optional
+        :param metadata: DESCRIPTION, defaults to None
+        :type metadata: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
 
+        """
+        
+        if filter_type not in list(self._dtype_dict.keys()):
+            msg = f"filter type {filter_type} not understood."
+            self.logger.error(msg)
+            raise ValueError(msg)
+            
+        if filter_metadata is not None:
+            if not isinstance(filter_metadata, meta_classes['filter']):
+                msg = ("Input metadata must be of type mth5.metadata.Filter, "
+                       + f"not {type(filter_metadata)}")
+                self.logger.error(msg)
+                raise ValueError(msg)
+        else:
+            filter_metadata = metadata.Filter()
+            filter_metadata.name = filter_name
+            filter_metadata.type = filter_type
+        
+        filter_table = self.hdf5_group.create_dataset(filter_name, 
+                                                      (0,), 
+                                                      maxshape=None,
+                                                      dtype=self._dtype_dict[filter_type],
+                                                      **self.dataset_options,)
+        
+        filter_dataset = FilterDataset(filter_table, dataset_metadata=filter_metadata)
+        filter_dataset.write_metadata()
+            
+        self.logger.debug(f"Created filter {filter_name}")
+        
+        return filter_dataset
+            
+   
 
 class MasterStationGroup(BaseGroup):
     """
@@ -1958,7 +2020,7 @@ class ChannelDataset:
 
     """
 
-    def __init__(self, dataset, dataset_metadata=None, write_metadata=True, **kwargs):
+    def __init__(self, dataset, dataset_metadata=None, **kwargs):
 
         if dataset is not None and isinstance(dataset, (h5py.Dataset)):
             self.hdf5_dataset = weakref.ref(dataset)()
@@ -3025,6 +3087,227 @@ class MagneticDataset(ChannelDataset):
 class AuxiliaryDataset(ChannelDataset):
     def __init__(self, group, **kwargs):
         super().__init__(group, **kwargs)
+        
+@inherit_doc_string       
+class FilterDataset:
+    """
+    Holds a channel dataset.  This is a simple container for the data to make
+    sure that the user has the flexibility to turn the channel into an object
+    they want to deal with.
+
+    For now all the numpy type slicing can be used on `hdf5_dataset`
+
+    :param dataset: dataset object for the channel
+    :type dataset: :class:`h5py.Dataset`
+    :param dataset_metadata: metadata container, defaults to None
+    :type dataset_metadata: [ :class:`mth5.metadata.Electric` |
+                              :class:`mth5.metadata.Magnetic` |
+                              :class:`mth5.metadata.Auxiliary` ], optional
+    :raises MTH5Error: If the dataset is not of the correct type
+
+    Utilities will be written to create some common objects like:
+        
+        * xarray.DataArray
+        * pandas.DataFrame
+        * zarr
+        * dask.Array
+
+    The benefit of these other objects is that they can be indexed by time,
+    and they have much more buit-in funcionality.
+
+    >>> from mth5 import mth5
+    >>> mth5_obj = mth5.MTH5()
+    >>> mth5_obj.open_mth5(r"/test.mth5", mode='a')
+    >>> run = mth5_obj.stations_group.get_station('MT001').get_run('MT001a')
+    >>> channel = run.get_channel('Ex')
+    >>> channel
+    Channel Electric:
+    -------------------
+  		component:        Ey
+      	data type:        electric
+      	data format:      float32
+      	data shape:       (4096,)
+      	start:            1980-01-01T00:00:00+00:00
+      	end:              1980-01-01T00:00:01+00:00
+      	sample rate:      4096
+
+    """
+
+    def __init__(self, dataset, dataset_metadata=None, **kwargs):
+        
+        
+        if dataset is not None and isinstance(dataset, (h5py.Dataset)):
+            self.hdf5_dataset = weakref.ref(dataset)()
+
+        self.logger = logging.getLogger(f"{__name__}.{self._class_name}")
+
+        # set metadata to the appropriate class.  Standards is not a
+        # metadata.Base object so should be skipped. If the class name is not
+        # defined yet set to Base class.
+        self.metadata = metadata.Filter()
+
+        if not hasattr(self.metadata, "mth5_type"):
+            self._add_base_attributes()
+
+        # set summary attributes
+        self.logger.debug(
+            "Metadata class for {0} is {1}".format(
+                self._class_name, type(self.metadata)
+            )
+        )
+
+        # if the input data set already has filled attributes, namely if the
+        # channel data already exists then read them in with our writing back
+        if "mth5_type" in list(self.hdf5_dataset.attrs.keys()):
+            self.metadata.from_dict(
+                {self.hdf5_dataset.attrs["mth5_type"]: self.hdf5_dataset.attrs}
+            )
+
+        # if metadata is input, make sure that its the same class type amd write
+        # to the hdf5 dataset
+        if dataset_metadata is not None:
+            if not isinstance(dataset_metadata, type(self.metadata)):
+                msg = "metadata must be type metadata.{0} not {1}".format(
+                    self._class_name, type(dataset_metadata)
+                )
+                self.logger.error(msg)
+                raise MTH5Error(msg)
+
+            # load from dict because of the extra attributes for MTH5
+            self.metadata.from_dict(dataset_metadata.to_dict())
+            self.metadata.hdf5_reference = self.hdf5_dataset.ref
+            self.metadata.mth5_type = self._class_name
+
+            # write out metadata to make sure that its in the file.
+            self.write_metadata()
+
+        # if the attrs don't have the proper metadata keys yet write them
+        if not "mth5_type" in list(self.hdf5_dataset.attrs.keys()):
+            self.write_metadata()
+
+        # if any other keywords
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+    def _add_base_attributes(self):
+        # add 2 attributes that will help with querying
+        # 1) the metadata class name
+        self.metadata.add_base_attribute(
+            "mth5_type",
+            self._class_name,
+            {
+                "type": str,
+                "required": True,
+                "style": "free form",
+                "description": "type of group",
+                "units": None,
+                "options": [],
+                "alias": [],
+                "example": "group_name",
+            },
+        )
+
+        # 2) the HDF5 reference that can be used instead of paths
+        self.metadata.add_base_attribute(
+            "hdf5_reference",
+            self.hdf5_dataset.ref,
+            {
+                "type": "h5py_reference",
+                "required": True,
+                "style": "free form",
+                "description": "hdf5 internal reference",
+                "units": None,
+                "options": [],
+                "alias": [],
+                "example": "<HDF5 Group Reference>",
+            },
+        )
+
+    def __str__(self):
+        try:
+            lines = [f"Filter {self.name}:"]
+            lines.append("-" * (len(lines[0]) + 2))
+            info_str = "\t{0:<18}{1}"
+            lines.append(info_str.format("component:", self.metadata.component))
+            lines.append(info_str.format("data type:", self.metadata.type))
+            lines.append(info_str.format("data format:", self.hdf5_dataset.dtype))
+            lines.append(info_str.format("data shape:", self.hdf5_dataset.shape))
+            lines.append(info_str.format("start:", self.metadata.time_period.start))
+            lines.append(info_str.format("end:", self.metadata.time_period.end))
+            lines.append(info_str.format("sample rate:", self.metadata.sample_rate))
+            return "\n".join(lines)
+        except ValueError:
+            return "MTH5 file is closed and cannot be accessed."
+
+    def __repr__(self):
+        return self.__str__()
+
+    @property
+    def _class_name(self):
+        return self.__class__.__name__.split("Dataset")[0]
+    
+    @property
+    def name(self):
+        """ filter name """
+        return self.metadata.name
+    
+    @name.setter
+    def name(self, value):
+        """ rename filter """
+        self.metadata.name = value
+        self.write_metadata()
+        
+    @property
+    def filter_type(self):
+        """ filter type """
+        return self.metadata.type
+    
+    @filter_type.setter
+    def filter_type(self, value):
+        """ rename filter type """
+        self.metadata.type = value
+        self.write_metadata()
+        
+    @property
+    def units_in(self):
+        """ units in  """
+        return self.metadata.units_in
+    
+    @units_in.setter
+    def units_in(self, value):
+        """ rename units in """
+        self.metadata.units_in = value
+        self.write_metadata()
+        
+    @property
+    def units_out(self):
+        """ units out  """
+        return self.metadata.units_out
+    
+    @units_out.setter
+    def units_out(self, value):
+        """ rename units out """
+        self.metadata.units_out = value
+        self.write_metadata()
+    
+    def read_metadata(self):
+        """
+        read metadata from the HDF5 group into metadata object
+
+        """
+
+        self.metadata.from_dict({self._class_name: self.hdf5_group.attrs})
+
+    def write_metadata(self):
+        """
+        Write HDF5 metadata from metadata object.
+
+        """
+        meta_dict = self.metadata.to_dict()[self.metadata._class_name.lower()]
+        for key, value in meta_dict.items():
+            value = to_numpy_type(value)
+            self.logger.debug("wrote metadata {0} = {1}".format(key, value))
+            self.hdf5_dataset.attrs.create(key, value)
 
 
 class MTH5Table:

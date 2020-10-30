@@ -4,3 +4,7 @@ type,str,TRUE,free form,none,type of filter,none,none,frequency_response
 units_in,str,TRUE,alpha numeric,none,name of the input units to the filter. Should be all lowercase and separated with an underscore,none,none,count
 units_out,str,TRUE,alpha numeric,none,name of the output units.  Should be alpha numeric.,none,none,millivolt
 calibration_date,str,FALSE,date,none,latest date of filter calibration,none,none,2/1/2020
+normalization_factor,float,FALSE,number,none,normalization factor for a poles and zeros filter,none,none,2.34
+normalization_frequency,float,FALSE,number,none,normalization frequency for a poles and zeros filter,none,none,1
+cutoff,float,FALSE,number,none,cutoff frequency for filter,none,none,1
+operation,float,FALSE,controlled vocabulary,none,how the filter should be applied,[ mulitply | divide | add | subtract ],none,multiply
