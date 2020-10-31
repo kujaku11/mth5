@@ -1453,6 +1453,7 @@ class Filter(Base):
         self.n_poles = None
         self.n_zeros = None
         self.comments = None
+        self.conversion_factor = None
 
         super().__init__(attr_dict=ATTR_DICT["filter"], **kwargs)
 

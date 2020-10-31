@@ -233,23 +233,39 @@ class LookupTable:
                 )
                 self.logger.error(msg)
                 raise ValueError(msg)
-                
+
             if amplitude_phase:
                 self.frequency = frequency
                 self.from_amplitude_phase(real, imaginary)
             else:
                 self.lookup_table = np.rec.array(
-                    [(ff, rr + 1j * ii) for ff, rr, ii in zip(frequency, real, imaginary)],
+                    [
+                        (ff, rr + 1j * ii)
+                        for ff, rr, ii in zip(frequency, real, imaginary)
+                    ],
                     dtype=[("frequency", np.float), ("values", np.complex)],
                 )
 
     def __str__(self):
         if self.lookup_table is not None:
             return "\n".join(
-                ["frequency   real      imaginary  amplitude   phase"]
-                + ["-" * 55]
+                [
+                    "".join(
+                        [
+                            f"{vv:<14}"
+                            for vv in [
+                                "frequency",
+                                "real",
+                                "imaginary",
+                                "amplitude",
+                                "phase",
+                            ]
+                        ]
+                    )
+                ]
+                + ["-" * 70]
                 + [
-                    f"{ff:<12.5g}{vv.real:<10.6g}{vv.imag:<10.6g} {aa:<10.6g}{pp:10.6g}"
+                    f"{ff:<14.5e}{vv.real:<14.5e}{vv.imag:<14.5e}{aa:<14.5e}{pp:<14.5e}"
                     for ff, vv, aa, pp in zip(
                         self.frequency, self.filter_values, self.amplitude, self.phase
                     )
@@ -317,7 +333,7 @@ class LookupTable:
             )
         except AttributeError:
             return None
-        
+
     def from_amplitude_phase(self, amplitude, phase):
         """ 
         compute real and imaginary from amplitude and phase for an existing
@@ -332,23 +348,24 @@ class LookupTable:
         converts to real and imaginary
         
         """
-        
+
         if not isinstance(amplitude, np.ndarray):
             amplitude = np.array(amplitude)
-            
+
         if not isinstance(phase, np.ndarray):
             phase = np.array(phase)
-            
+
         if not amplitude.shape == phase.shape:
-            msg = (f"Input amplitude and phase must be same shape "
-                   + "{amplitude.shape} != {phase.shape}")
+            msg = (
+                f"Input amplitude and phase must be same shape "
+                + "{amplitude.shape} != {phase.shape}"
+            )
             self.logger.error(msg)
             raise ValueError(msg)
-        
-        
+
         real = amplitude * np.cos(np.deg2rad(phase))
         imag = amplitude * np.sin(np.deg2rad(phase))
-        
+
         self.filter_values = real + 1j * imag
 
     def to_poles_zeros(self):
@@ -365,7 +382,30 @@ class LookupTable:
 class Filter:
     """
     
-    Object to hold a filter.
+    All encompassing filter container.  Will hold filters:
+        * Poles and Zeros (zpk)
+        * Look up table (lookup_table)
+        * Conversion (conversion_factor)
+        * Time delay (time_delay)
+        * Gain (gain) 
+        
+    .. note:: Gain is for an instrument gain only, the poles and zeros gain is 
+    containted within the zpk attribute.
+        
+    This is just a container for easier access to the filter properties, the actual
+    application of the filter should be done by the timeseries object.
+    
+    There will be an estimation of poles and zeros to a lookup table and back.
+    
+    The conversion from zeros and poles to a look up table is trivial
+    
+    >>> from mth5 import filters
+    >>> f = filters.Filter(zeros=[1, 5], poles=[2, 3], gain=5)
+    >>> f.zpk.freqresp(np.logspace(-3, 3, 50))
+    
+    However, the conversion from a look up table to poles and zeros is not trivial
+    and requires fitting the frequency response to a transfer function.  And this
+    still needs to be implemented.
     
     """
 
@@ -374,7 +414,7 @@ class Filter:
         filter_metadata=None,
         zeros=None,
         poles=None,
-        gain=None,
+        zpk_gain=None,
         frequency=None,
         real=None,
         imaginary=None,
@@ -382,76 +422,112 @@ class Filter:
         phase=None,
         time_delay=None,
         conversion_factor=None,
+        instrument_gain=None,
     ):
 
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.metadata = metadata.Filter()
-        self._zpk = signal.ZerosPolesGain(zeros, poles, gain)
+        if zeros is None:
+            zeros = []
+        if poles is None:
+            poles = []
+        if zpk_gain is None:
+            zpk_gain = []
+        self.zpk = signal.ZerosPolesGain(zeros, poles, zpk_gain)
+
+        if filter_metadata is not None:
+            if not isinstance(filter_metadata, metadata.Filter):
+                msg = (
+                    f"Input metadata must be type metadata.Filter not "
+                    + "{type(filter_metadata)}"
+                )
+                self.logger.error(msg)
+                raise ValueError(msg)
+            self.metadata.from_dict(filter_metadata.to_dict(required=False))
+
+        # initiate lookup table
         if amplitude is not None and phase is not None:
-            self.lookup_table = LookupTable(frequency, amplitude, phase, amplitude_phase=True)
+            self.lookup_table = LookupTable(
+                frequency, amplitude, phase, amplitude_phase=True
+            )
         else:
             self.lookup_table = LookupTable(frequency, real, imaginary)
 
-        if frequency is not None or filter_values is not None:
-            if filter_values is None:
-                msg = "Input frequency, must input vvalues as well"
-                self.logger.error(msg)
-                raise ValueError(msg)
-            if frequency is None:
-                msg = "Input filter_values, must input vvalues as well"
-                self.logger.error(msg)
-                raise ValueError(msg)
-
-        self._lookup_table = np.array(np.frequency,)
-        self.gain = gain
+        self.instrument_gain = instrument_gain
         self.time_delay = time_delay
         self.conversion_factor = conversion_factor
 
-    @property
-    def poles_zeros(self):
-        """ Poles and zeros, if None return convesion from lookup table """
+    def __str__(self):
+        info = self.metadata.__str__()
+        if self.conversion_factor is not None:
+            info += "\n".join(
+                ["", "Conversion Factor:", f"\t{self.conversion_factor:<12.5e}"]
+            )
+        if self.instrument_gain is not None:
+            info += "\n".join(
+                ["", "Instrument Gain:", f"\t{self.instrument_gain:<12.5e}"]
+            )
+        if self.time_delay is not None:
+            info += "\n".join(["", "Time Delay:", f"\t{self.time_delay:<12.5e}"])
 
-        if self._poles_zeros is not None:
-            return self._poles_zeros
+        if len(self.zpk.poles) > 0 or len(self.zpk.zeros) > 0:
+            pz = [""]
+            pz += ["Poles:"] + [f"\t{vv:<12.5e}" for vv in self.zpk.poles]
+            pz += ["Zeros:"] + [f"\t{vv:<12.5e}" for vv in self.zpk.zeros]
+            pz += ["Gain:"] + [f"\t{self.zpk.gain:<12.5e}"]
+            info += "\n".join(pz)
 
-        if self.lookup_table is not None:
-            return self.to_poles_zeros()
+        if self.lookup_table.frequency is not None:
+            info += self.lookup_table.__str__()
 
-        return None
+        return info
 
-    @property
-    def lookup_table(self):
-        """ look up table, if None return conversion from poles_zeros """
+    def __repr__(self):
+        return self.__str__()
 
-        if self._lookup_table is not None:
-            return self._lookup_table
-
-        if self._poles_zeros is not None:
-            return self.to_lookup_table()
-
-        return None
-
-    @poles_zeros.setter
-    def poles_zeros(self, pz_array):
+    def zpk_to_lookup_table(self, frequency):
         """
+        convert Poles and Zeros to a look up table of the given frequencies
         
-        set the poles and zeros into a pandas 
-        
-        :param pz_array: DESCRIPTION
-        :type pz_array: TYPE
+        :param frequency: frequencies to estimate the response
+        :type frequency: list, tuple, np.ndarray
         :return: DESCRIPTION
         :rtype: TYPE
 
         """
 
-        pass
+        if not isinstance(frequency, np.ndarray):
+            frequency = np.array(frequency)
 
-    @lookup_table.setter
-    def lookup_table(self, lookup_array):
+        try:
+            f, values = self.zpk.freqresp(w=frequency)
+            self.lookup_table = LookupTable(f, values.real, values.imag)
+        except ValueError:
+            msg = "No zero, poles, gain information to estimate frequency response"
+            self.logger.warning(msg)
+
+    def lookup_table_to_zpk(self, n_poles=None, n_zeros=None):
         """
+        Estimate poles, zeros, and gain from a lookup table
         
-        :param lookup_array: DESCRIPTION
-        :type lookup_array: TYPE
+        If an estimate of the number of poles or zeros can help constrain the 
+        inversion that is a good thing.
+        
+        :param n_poles: DESCRIPTION, defaults to None
+        :type n_poles: TYPE, optional
+        :param n_zeros: DESCRIPTION, defaults to None
+        :type n_zeros: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+    def from_xml(self, xml_string):
+        """
+        Read Anna's XML filter files, it needs to be split into strings first.
+        
+        :param xml_fn: DESCRIPTION
+        :type xml_fn: TYPE
         :return: DESCRIPTION
         :rtype: TYPE
 

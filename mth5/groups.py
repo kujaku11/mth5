@@ -3316,6 +3316,25 @@ class FilterDataset:
                 + 1j * self.hdf5_dataset["zeros_imag"][zero_index]
             )
 
+    @property
+    def zpk_gain(self):
+        return self.metadata.normalization_factor
+
+    @property
+    def frequency(self):
+        if "frequency" in self.hdf5_dataset.dtype.names:
+            return self.hdf5_dataset["frequency"]
+
+    @property
+    def real(self):
+        if "real" in self.hdf5_dataset.dtype.names:
+            return self.hdf5_dataset["real"]
+
+    @property
+    def imaginary(self):
+        if "imag" in self.hdf5_dataset.dtype.names:
+            return self.hdf5_dataset["imag"]
+
     def read_metadata(self):
         """
         read metadata from the HDF5 group into metadata object
@@ -3334,6 +3353,15 @@ class FilterDataset:
             value = to_numpy_type(value)
             self.logger.debug(f"wrote metadata {key} = {value}".format(key, value))
             self.hdf5_dataset.attrs.create(key, value)
+
+    def to_filter_object(self):
+        """
+        convert to a :class:`mth5.filters.Filter` object
+        
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
 
 
 class MTH5Table:

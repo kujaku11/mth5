@@ -10,3 +10,4 @@ cutoff,float,FALSE,number,none,cutoff frequency for filter,none,none,1
 operation,float,FALSE,controlled vocabulary,none,how the filter should be applied,[ mulitply | divide | add | subtract ],none,multiply
 n_poles,int,FALSE,number,none,how many poles are in the filter,none,none,4
 n_zeros,int,FALSE,number,none,how many zeros are in the filter,none,none,2
+conversion_factor,float,FALSE,number,none,unit conversion factor,none,none,100
