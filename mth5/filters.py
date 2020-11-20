@@ -13,8 +13,6 @@ Created on Wed Sep 30 12:55:58 2020
 # =============================================================================
 # Imports
 # =============================================================================
-
-import pandas as pd
 import numpy as np
 from scipy import signal
 import logging
@@ -357,8 +355,8 @@ class LookupTable:
 
         if not amplitude.shape == phase.shape:
             msg = (
-                f"Input amplitude and phase must be same shape "
-                + "{amplitude.shape} != {phase.shape}"
+                "Input amplitude and phase must be same shape "
+                + f"{amplitude.shape} != {phase.shape}"
             )
             self.logger.error(msg)
             raise ValueError(msg)
@@ -438,8 +436,8 @@ class Filter:
         if filter_metadata is not None:
             if not isinstance(filter_metadata, metadata.Filter):
                 msg = (
-                    f"Input metadata must be type metadata.Filter not "
-                    + "{type(filter_metadata)}"
+                    "Input metadata must be type metadata.Filter not "
+                    + f"{type(filter_metadata)}"
                 )
                 self.logger.error(msg)
                 raise ValueError(msg)

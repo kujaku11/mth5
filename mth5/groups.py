@@ -222,7 +222,7 @@ class BaseGroup:
 
         """
 
-        for key, value in self.metadata.to_dict(single=True):
+        for key, value in self.metadata.to_dict(single=True).items():
             value = to_numpy_type(value)
             self.logger.debug("wrote metadata {0} = {1}".format(key, value))
             self.hdf5_group.attrs.create(key, value)

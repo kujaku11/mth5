@@ -510,7 +510,7 @@ class MTH5:
             m5_grp = getattr(self, f"{group_name.lower()}_group")
             m5_grp.initialize_group()
 
-        self.logger.info("Initialized MTH5 file {self.filename} in mode 'w'")
+        self.logger.info(f"Initialized MTH5 file {self.filename} in mode 'w'")
 
         return survey_obj
 
