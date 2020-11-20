@@ -130,8 +130,8 @@ class TestMTH5(unittest.TestCase):
         station = self.mth5_obj.add_station("MT002")
         run = station.add_run("MT002a")
         ex = run.add_channel("Ex", "electric", None)
-        ex.from_mtts(channel_ts)
-        new_ts = ex.to_mtts()
+        ex.from_channel_ts(channel_ts)
+        new_ts = ex.to_channel_ts()
 
         self.assertEqual(channel_ts.start, new_ts.start)
         self.assertTrue(channel_ts.ts.time.to_dict() == new_ts.ts.time.to_dict())
