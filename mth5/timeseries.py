@@ -251,7 +251,7 @@ class ChannelTS:
             f"N Samples:    {self.n_samples}",
         ]
 
-        return "\t\n".join(["Channel Summary:"] + lines)
+        return "\n\t".join(["Channel Summary:"] + lines)
 
     def __repr__(self):
         return self.__str__()
@@ -752,7 +752,7 @@ class RunTS:
 
     def __str__(self):
         s_list = [
-            f"Station:     {self.station_metadata.fdsn.id}",
+            f"Station:     {self.station_metadata.id}",
             f"Run:         {self.metadata.id}",
             f"Start:       {self.start}",
             f"End:         {self.end}",
