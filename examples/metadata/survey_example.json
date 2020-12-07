@@ -1,0 +1,46 @@
+{
+    "survey": {
+        "acquired_by": {
+            "author": null,
+            "comments": null
+        },
+        "citation_dataset": {
+            "doi": null
+        },
+        "citation_journal": {
+            "doi": null
+        },
+        "comments": null,
+        "country": null,
+        "datum": null,
+        "fdsn": {
+            "id": null,
+            "network": null,
+            "channel_code": null,
+            "new_epoch": null
+        },
+        "geographic_name": null,
+        "name": null,
+        "northwest_corner": {
+            "latitude": 0.0,
+            "longitude": 0.0
+        },
+        "project": null,
+        "project_lead": {
+            "author": null,
+            "organization": null,
+            "email": null
+        },
+        "release_license": "CC-0",
+        "southeast_corner": {
+            "latitude": 0.0,
+            "longitude": 0.0
+        },
+        "summary": null,
+        "survey_id": null,
+        "time_period": {
+            "end_date": "1980-01-01",
+            "start_date": "1980-01-01"
+        }
+    }
+}

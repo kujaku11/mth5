@@ -1,0 +1,59 @@
+{
+    "run": {
+        "acquired_by": {
+            "author": null,
+            "comments": null
+        },
+        "channels_recorded_auxiliary": null,
+        "channels_recorded_electric": null,
+        "channels_recorded_magnetic": null,
+        "comments": null,
+        "data_logger": {
+            "id": null,
+            "manufacturer": null,
+            "type": null,
+            "model": null,
+            "timing_system": {
+                "comments": null,
+                "drift": null,
+                "type": null,
+                "uncertainty": null
+            },
+            "firmware": {
+                "author": null,
+                "version": null,
+                "name": null
+            },
+            "power_source": {
+                "type": null,
+                "id": null,
+                "voltage": {
+                    "start": null,
+                    "end": null
+                },
+                "comments": null
+            }
+        },
+        "data_type": null,
+        "fdsn": {
+            "id": null,
+            "network": null,
+            "channel_code": null,
+            "new_epoch": null
+        },
+        "id": null,
+        "metadata_by": {
+            "author": null,
+            "comments": null
+        },
+        "provenance": {
+            "comments": null,
+            "log": null
+        },
+        "sample_rate": null,
+        "time_period": {
+            "end": "1980-01-01T00:00:00+00:00",
+            "start": "1980-01-01T00:00:00+00:00"
+        }
+    }
+}

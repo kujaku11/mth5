@@ -1,0 +1,66 @@
+{
+    "electric": {
+        "ac": {
+            "start": null,
+            "end": null
+        },
+        "channel_number": null,
+        "comments": null,
+        "component": null,
+        "contact_resistance": {
+            "start": null,
+            "end": null
+        },
+        "data_quality": {
+            "warnings": null,
+            "rating": {
+                "author": null,
+                "method": null,
+                "value": 0
+            }
+        },
+        "dc": {
+            "start": null,
+            "end": null
+        },
+        "dipole_length": 0.0,
+        "filter": {
+            "name": [
+                "none"
+            ],
+            "applied": [
+                false
+            ],
+            "comments": null
+        },
+        "measurement_azimuth": 0.0,
+        "measurement_tilt": 0.0,
+        "negative": {
+            "id": null,
+            "manufacturer": null,
+            "type": null,
+            "model": null,
+            "latitude": null,
+            "longitude": null,
+            "elevation": null
+        },
+        "positive": {
+            "id": null,
+            "manufacturer": null,
+            "type": null,
+            "model": null,
+            "latitude": null,
+            "longitude": null,
+            "elevation": null
+        },
+        "sample_rate": 0.0,
+        "time_period": {
+            "end": "1980-01-01T00:00:00+00:00",
+            "start": "1980-01-01T00:00:00+00:00"
+        },
+        "translated_azimuth": null,
+        "translated_tilt": null,
+        "type": "electric",
+        "units": null
+    }
+}

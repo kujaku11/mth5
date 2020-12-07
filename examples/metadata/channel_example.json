@@ -1,0 +1,52 @@
+{
+    "channel": {
+        "channel_number": null,
+        "comments": null,
+        "component": null,
+        "data_quality": {
+            "warnings": null,
+            "rating": {
+                "author": null,
+                "method": null,
+                "value": 0
+            }
+        },
+        "fdsn": {
+            "id": null,
+            "network": null,
+            "channel_code": null,
+            "new_epoch": null
+        },
+        "filter": {
+            "name": [
+                "none"
+            ],
+            "applied": [
+                false
+            ],
+            "comments": null
+        },
+        "location": {
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "elevation": 0.0
+        },
+        "measurement_azimuth": 0.0,
+        "measurement_tilt": 0.0,
+        "sample_rate": 0.0,
+        "sensor": {
+            "id": null,
+            "manufacturer": null,
+            "type": null,
+            "model": null
+        },
+        "time_period": {
+            "end": "1980-01-01T00:00:00+00:00",
+            "start": "1980-01-01T00:00:00+00:00"
+        },
+        "translated_azimuth": null,
+        "translated_tilt": null,
+        "type": "auxiliary",
+        "units": null
+    }
+}
