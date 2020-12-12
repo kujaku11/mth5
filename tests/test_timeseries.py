@@ -193,7 +193,7 @@ class TestRunTS(unittest.TestCase):
 
     def test_get_channel_fail(self):
 
-        self.assertEqual(None, self.run.temperature)
+        self.assertRaises(NameError, getattr, *(self.run, "temperature"))
 
     def test_wrong_metadata(self):
         self.run.metadata.sample_rate = 10

@@ -789,15 +789,14 @@ class RunTS:
         return [x.ts for x in array_list]
 
     def __getattr__(self, name):
-        if name in self.channels:
-            if name[0].lower() in ["e"]:
-                return ChannelTS("electric", self.dataset[name])
-            elif name[0].lower() in ["h", "b"]:
-                return ChannelTS("magnetic", self.dataset[name])
-            else:
-                return ChannelTS("auxiliary", self.dataset[name])
+        # change to look for keys directly and use type to set channel type
+        if name in self.dataset.keys():
+            return ChannelTS(self.dataset[name].attrs["type"],
+                             self.dataset[name])
         else:
-            return getattr(self, name)
+            msg = f"{name} is not in dataset keys: {list(self.dataset.keys())}"
+            self.logger.error(msg)
+            raise NameError(msg)
 
     @property
     def has_data(self):
