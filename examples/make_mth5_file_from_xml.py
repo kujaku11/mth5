@@ -18,7 +18,7 @@ from mth5 import mth5
 # =============================================================================
 # inputs
 # =============================================================================
-dir_path = Path(r"c:\Users\jpeacock\Documents\mt_format_examples\mth5")
+dir_path = Path(r"c:\Users\jpeacock\Documents\GitHub\mth5_test_data\florida_xml_metadata_files")
 
 
 def read_xml(xml_fn):
@@ -134,11 +134,11 @@ survey_obj = mth5_obj.survey_group
 survey_obj.metadata.from_xml(survey_element)
 survey_obj.write_metadata()
 
-for station in ["FL001", "FL002"]:
+for station in ["FL001"]:
     # add station
     new_station = add_station(station, dir_path)
 
     # add entry to summary table
-    mth5_obj.stations_group.summary_table.add_row(new_station.table_entry)
+    #mth5_obj.stations_group.summary_table.add_row(new_station.channel_entry)
 
 mth5_obj.close_mth5()

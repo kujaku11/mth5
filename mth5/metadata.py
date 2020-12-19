@@ -293,7 +293,6 @@ class Base:
         validate type from standards
         
         """
-
         # return if the value is None, this may need to change in the future
         # if an empty list or something else should be returned
         if not isinstance(value, (list, tuple, np.ndarray)):
@@ -303,7 +302,7 @@ class Base:
         # a more robust test.
         if v_type == "h5py_reference":
             return value
-
+        
         # return value if the value type is not defined.
         if v_type is None:
             msg = (
@@ -405,6 +404,9 @@ class Base:
                             value_list.append(False)
                     value = value_list
                 return value
+            
+            elif isinstance(value, (np.bool_)):
+                return bool(value)
 
             else:
                 self.logger.exception(msg.format(value, v_type, type(value)))
@@ -1352,7 +1354,7 @@ class Filtered(Base):
 
     @applied.setter
     def applied(self, applied):
-        if not isinstance(applied, (list, tuple)):
+        if not isinstance(applied, (list, tuple, np.ndarray)):
             if applied in [None, "none", "None", "NONE", "null", 0, "0"]:
                 self._applied = [False]
                 return
@@ -1397,6 +1399,8 @@ class Filtered(Base):
                     raise MTSchemaError(msg.format(app_bool))
             elif isinstance(app_bool, bool):
                 bool_list.append(app_bool)
+            elif isinstance(app_bool, np.bool_):
+                bool_list.append(bool(app_bool))
             else:
                 msg = "Filter.applied must be [True | False], not {0}"
                 self.logger.error(msg.format(app_bool))
