@@ -9,16 +9,20 @@ Created on Mon Jun 22 12:20:59 2020
 # =============================================================================
 # imports
 # =============================================================================
+import numpy as np
+import os
 from pathlib import Path
 from xml.etree import cElementTree as et
-import numpy as np
 
 from mth5 import mth5
+from mth5.utils.pathing import DATA_DIR
 
 # =============================================================================
 # inputs
 # =============================================================================
-dir_path = Path(r"c:\Users\jpeacock\Documents\GitHub\mth5_test_data\florida_xml_metadata_files")
+dir_path = Path(r"c:\Users\jpeacock\Documents\mt_format_examples\mth5")
+dir_path = Path(DATA_DIR)
+
 
 
 def read_xml(xml_fn):
@@ -107,15 +111,15 @@ def add_station(station, directory):
 
         # loop over channels
         for channel, channel_fn in run_dict["channels"].items():
-            _, _, c_type, comp, _ = channel_fn.split(".")
-            channel = run.add_channel(comp, c_type, np.random.rand(4096))
+            _, _, channel_type, component, _ = channel_fn.split(".")
+            channel = run.add_channel(component, channel_type, np.random.rand(4096))
             channel.metadata.from_xml(read_xml(directory.joinpath(channel_fn)))
             channel.metadata.time_period.start = run.metadata.time_period.start
             channel.metadata.time_period.end = run.metadata.time_period.end
             channel.write_metadata()
 
             # update table entry
-            table_index = run.summary_table.locate("component", comp)
+            table_index = run.summary_table.locate("component", component)
             run.summary_table.add_row(channel.table_entry, table_index)
 
     return new_station
@@ -125,20 +129,23 @@ def add_station(station, directory):
 # script
 # =============================================================================
 # initialize mth5 object
+xml_root = dir_path.joinpath('florida_xml_metadata_files')
 mth5_obj = mth5.MTH5()
-mth5_obj.open_mth5(dir_path.joinpath("example_02.mth5"), mode="a")
+full_filename = dir_path.joinpath("example_02.mth5")
+mth5_obj.open_mth5(full_filename, mode="a")
 
 ### add survey information
-survey_element = read_xml(dir_path.joinpath("survey.xml"))
+survey_element = read_xml(xml_root.joinpath('survey.xml'))
+
 survey_obj = mth5_obj.survey_group
 survey_obj.metadata.from_xml(survey_element)
 survey_obj.write_metadata()
 
-for station in ["FL001"]:
+for station in ["FL001", "FL002"]:
     # add station
-    new_station = add_station(station, dir_path)
+    new_station = add_station(station, xml_root)
 
     # add entry to summary table
-    #mth5_obj.stations_group.summary_table.add_row(new_station.channel_entry)
+    mth5_obj.stations_group.summary_table.add_row(new_station.table_entry)
 
 mth5_obj.close_mth5()

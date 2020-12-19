@@ -865,7 +865,9 @@ class MasterStationGroup(BaseGroup):
                   input.
 
         """
-
+        if station_name is None:
+            print("Hey! Name your station!")
+            raise Exception
         try:
             station_group = self.hdf5_group.create_group(station_name)
             self.logger.debug("Created group {0}".format(station_group.name))
