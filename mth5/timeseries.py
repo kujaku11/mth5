@@ -794,11 +794,11 @@ class RunTS:
             return ChannelTS(self.dataset[name].attrs["type"],
                              self.dataset[name])
         else:
+            # this is a hack for now until figure out who is calling shape, size
             if name not in self.__dict__.keys() or name not in ["shape", "size", "__len__"]:
                 msg = f"RunTS has no attribute {name}"
-                # this is a hack for now until figure out who is calling shape, size
-                self.logger.warning(msg)
-                #raise NameError(msg)
+                self.logger.error(msg)
+                raise NameError(msg)
 
     @property
     def has_data(self):
