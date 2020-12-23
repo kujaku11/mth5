@@ -99,17 +99,22 @@ def recursive_hdf5_tree(group, lines=[]):
 
 def close_open_files():
     for obj in gc.get_objects():
-        if isinstance(obj, h5py.File):
-            msg = "Found HDF5 File object "
-            try:
-                msg = "{0}, ".format(obj.filename)
-                obj.flush()
-                obj.close()
-                msg += "Closed File"
-                logger.info(msg)
-            except:
-                msg += "File already closed."
-                logger.info(msg)
+        try:
+            if isinstance(obj, h5py.File):
+                msg = "Found HDF5 File object "
+                print(msg)
+                try:
+                    msg = "{0}, ".format(obj.filename)
+                    obj.flush()
+                    obj.close()
+                    msg += "Closed File"
+                    logger.info(msg)
+                except:
+                    msg += "File already closed."
+                    logger.info(msg)
+        except:
+            print("Object {} does not have __class__")
+
 
 
 def get_tree(parent):

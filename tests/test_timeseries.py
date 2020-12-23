@@ -192,6 +192,11 @@ class TestRunTS(unittest.TestCase):
         self.assertEqual(self.ex.component, "ex")
 
     def test_get_channel_fail(self):
+        """
+        self.run.temperature should return None, because 'temperature' is not in self.channels
+        :return:
+        """
+        
 
         self.assertRaises(NameError, getattr, *(self.run, "temperature"))
 
