@@ -53,7 +53,7 @@ m.survey_group.metadata.from_dict(survey.to_dict())
 # add station metadata from z3d files
 ch_list = []
 for fn in zip_ref.filelist:
-    mtts_obj = read_file(fn.filename)
+    mtts_obj = read_file(zen_dir.joinpath(fn.filename))
 
     station_group = m.add_station(
         mtts_obj.station_metadata.id, station_metadata=mtts_obj.station_metadata

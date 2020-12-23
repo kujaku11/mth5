@@ -3,6 +3,9 @@
 Created on Wed Dec  9 06:55:21 2020
 
 @author: kkappler
+
+.. note:: DATA_DIR is the mth5 test data repository, either the repo or a symink to it.
+It needs to be on the same level as the git cloned folder of mth5.
 """
 
 # =============================================================================

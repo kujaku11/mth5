@@ -43,6 +43,7 @@ from mth5.utils import stationxml_translator
 # Inputs: xml file names for each level
 # =============================================================================
 # directory where xml files reside
+print("WARNING THIS TEST IS NOT YET READY TO BE PART OF THE REGULAR TESTING SUITE")
 xml_path = Path(r"c:\Users\peaco\Documents\MT\mth5")
 
 # filenames for each level
