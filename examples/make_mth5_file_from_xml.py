@@ -76,7 +76,7 @@ def collect_xml_fn(station, directory):
     return station_dict
 
 
-def add_station(station, directory):
+def add_station(station, directory, h5_obj):
     """
     
     :param station: DESCRIPTION
@@ -89,7 +89,7 @@ def add_station(station, directory):
     station_dict = collect_xml_fn(station, directory)
 
     # add station
-    new_station = mth5_obj.stations_group.add_station(station)
+    new_station = h5_obj.stations_group.add_station(station)
     new_station.metadata.from_xml(read_xml(directory.joinpath(station_dict["station"])))
     new_station.write_metadata()
 
@@ -106,15 +106,15 @@ def add_station(station, directory):
         # loop over channels
         for channel, channel_fn in run_dict["channels"].items():
             _, _, channel_type, component, _ = channel_fn.split(".")
-            channel = run.add_channel(component, channel_type, np.random.rand(4096))
             channel.metadata.from_xml(read_xml(directory.joinpath(channel_fn)))
             channel.metadata.time_period.start = run.metadata.time_period.start
             channel.metadata.time_period.end = run.metadata.time_period.end
-            channel.write_metadata()
+            channel = run.add_channel(component, channel_type, np.random.rand(4096))          
 
             # update table entry
             table_index = run.summary_table.locate("component", component)
             run.summary_table.add_row(channel.table_entry, table_index)
+            
 
     return new_station
 
@@ -125,7 +125,7 @@ def add_station(station, directory):
 # set xml directory
 xml_root = DATA_DIR.joinpath('florida_xml_metadata_files')
 
-mth5_filename = DATA_DIR.joinpath("example_02.mth5")
+mth5_filename = DATA_DIR.joinpath("from_xml.mth5")
 if mth5_filename.exists():
     mth5_filename.unlink()
     print(f"--> Rmoved existing file {mth5_filename}")
@@ -143,6 +143,6 @@ survey_obj.write_metadata()
 
 for station in ["FL001", "FL002"]:
     # add station
-    new_station = add_station(station, xml_root)
+    new_station = add_station(station, xml_root, mth5_obj)
 
 mth5_obj.close_mth5()
