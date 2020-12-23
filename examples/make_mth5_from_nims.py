@@ -10,19 +10,26 @@ Created on Wed Aug 26 09:56:40 2020
 # =============================================================================
 # Imports
 # =============================================================================
-from pathlib import Path
-
+import zipfile
 from mth5 import read_file
 from mth5 import mth5
 from mth5 import metadata
 from mth5.utils.mttime import MTime
+from mth5.utils.pathing import DATA_DIR
 
 # =============================================================================
 #
 # =============================================================================
-# nims_fn = Path(r"c:\Users\jpeacock\Documents\example_data\data_rgr006a.bnn")
-nims_dir = Path(r"c:\Users\jpeacock\Documents\example_data\mnp")
-h5_fn = Path(r"c:\Users\jpeacock\Documents\from_nims.h5")
+nims_dir = DATA_DIR.joinpath("nims")
+h5_fn = DATA_DIR.joinpath("from_nims.mth5")
+
+if h5_fn.exists():
+    h5_fn.unlink()
+    print(f"--> Removed existing file {h5_fn}")
+
+# need to unzip the data
+with zipfile.ZipFile(nims_dir.joinpath("nims.zip"), "r") as zip_ref:
+    zip_ref.extractall()
 
 processing_start = MTime()
 processing_start.now()
@@ -34,21 +41,21 @@ survey.archive_id = "TST01"
 survey.archive_network = "MT"
 survey.name = "test"
 
-m = mth5.MTH5(h5_fn)
-m.open_mth5()
+m = mth5.MTH5()
+m.open_mth5(h5_fn, "w")
 
 # add survey metadata
 survey_group = m.survey_group
 survey_group.metadata.from_dict(survey.to_dict())
 survey_group.write_metadata()
 
-for nims_fn in nims_dir.iterdir():
+for nims_fn in zip_ref.filelist:
 
-    run_ts = read_file(nims_fn)
+    run_ts = read_file(nims_fn.filename)
 
     # initialize a station
     station_group = m.add_station(
-        run_ts.station_metadata.fdsn.id, station_metadata=run_ts.station_metadata
+        run_ts.station_metadata.id, station_metadata=run_ts.station_metadata
     )
 
     # make a run group

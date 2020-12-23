@@ -794,9 +794,12 @@ class RunTS:
             return ChannelTS(self.dataset[name].attrs["type"],
                              self.dataset[name])
         else:
-            msg = f"{name} is not in dataset keys: {list(self.dataset.keys())}"
-            self.logger.error(msg)
-            raise NameError(msg)
+            print(name)
+            pass
+            # if name not in self.__dict__.keys():
+            #     msg = f"{name} is not in dataset keys: {list(self.dataset.keys())}"
+            #     self.logger.error(msg)
+            #     raise NameError(msg)
 
     @property
     def has_data(self):

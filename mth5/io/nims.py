@@ -861,6 +861,8 @@ class NIMS(NIMSHeader):
                 "auxiliary",
                 data=self.info_array["box_temp"],
                 channel_metadata={"auxiliary": meta_dict},
+                run_metadata=self.run_metadata,
+                station_metadata=self.station_metadata,
             )
             # interpolate temperature onto the same sample rate as the channels.
             temp.ts = temp.ts.interp_like(self.hx.ts)
@@ -893,6 +895,8 @@ class NIMS(NIMSHeader):
                 "magnetic",
                 data=self.ts.hx.to_numpy(),
                 channel_metadata={"magnetic": meta_dict},
+                run_metadata=self.run_metadata,
+                station_metadata=self.station_metadata,
             )
         return None
 
@@ -919,6 +923,8 @@ class NIMS(NIMSHeader):
                 "magnetic",
                 data=self.ts.hy.to_numpy(),
                 channel_metadata={"magnetic": meta_dict},
+                run_metadata=self.run_metadata,
+                station_metadata=self.station_metadata,
             )
         return None
 
@@ -945,6 +951,8 @@ class NIMS(NIMSHeader):
                 "magnetic",
                 data=self.ts.hz.to_numpy(),
                 channel_metadata={"magnetic": meta_dict},
+                run_metadata=self.run_metadata,
+                station_metadata=self.station_metadata,
             )
         return None
 
@@ -971,6 +979,8 @@ class NIMS(NIMSHeader):
                 "electric",
                 data=self.ts.ex.to_numpy(),
                 channel_metadata={"electric": meta_dict},
+                run_metadata=self.run_metadata,
+                station_metadata=self.station_metadata,
             )
         return None
 
@@ -997,6 +1007,8 @@ class NIMS(NIMSHeader):
                 "electric",
                 data=self.ts.ey.to_numpy(),
                 channel_metadata={"electric": meta_dict},
+                run_metadata=self.run_metadata,
+                station_metadata=self.station_metadata,
             )
 
         return None
@@ -1007,7 +1019,7 @@ class NIMS(NIMSHeader):
 
         if self.ts is not None:
             meta_dict = {
-                "run": {
+                "Run": {
                     "channels_recorded_electric": "ex, ey",
                     "channels_recorded_magnetic": "hx, hy, hz",
                     "channels_recorded_auxiliary": "temperature",
