@@ -25,7 +25,7 @@ start.now()
 # =============================================================================
 # set to true if you want to interact with the mth5 object in the console 
 interact = True
-nims_dir = DATA_DIR.joinpath("zen")
+zen_dir = DATA_DIR.joinpath("zen")
 h5_fn = DATA_DIR.joinpath("from_zen.mth5")
 
 if h5_fn.exists():
@@ -33,8 +33,8 @@ if h5_fn.exists():
     print(f"INFO: Removed existing file {h5_fn}")
 
 # need to unzip the data
-with zipfile.ZipFile(nims_dir.joinpath("zen.zip"), "r") as zip_ref:
-    zip_ref.extractall()
+with zipfile.ZipFile(zen_dir.joinpath("zen.zip"), "r") as zip_ref:
+    zip_ref.extractall(zen_dir)
 
 # write some simple metadata for the survey
 survey = metadata.Survey()

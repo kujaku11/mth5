@@ -31,7 +31,7 @@ if h5_fn.exists():
 
 # need to unzip the data
 with zipfile.ZipFile(nims_dir.joinpath("nims.zip"), "r") as zip_ref:
-    zip_ref.extractall()
+    zip_ref.extractall(nims_dir)
 
 processing_start = MTime()
 processing_start.now()
