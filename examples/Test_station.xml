@@ -1,27 +1,16 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1" schemaVersion="1.1">
+<FDSNStationXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:schemaLocation="http://www.fdsn.org/xml/station/fdsn-station-1.1.xsd" xmlns:mt="http://emiw.org/xmlns/mt/1.0" xmlns="http://www.fdsn.org/xml/station/1" schemaVersion="1.1">
   <Source>MT Metadata</Source>
-  <Module>ObsPy 1.2.1</Module>
+  <Module>ObsPy 1.2.2</Module>
   <ModuleURI>https://www.obspy.org</ModuleURI>
-  <Created>2020-06-11T00:11:59.045252Z</Created>
-  <Network code="EM" startDate="2020-01-01T00:00:00+00:00" endDate="1980-01-01T00:00:00+00:00" restrictedStatus="open">
-    <Comment id="0">
-      <Value>None</Value>
-    </Comment>
-    <ns0:MT xmlns:ns0="MT">
-      <ns0:acquired_by>
-        <ns0:author>MT</ns0:author>
-        <ns0:comments>tired</ns0:comments>
-      </ns0:acquired_by>
-      <ns0:archive_id>MT01</ns0:archive_id>
-      <ns0:citation_dataset>
-        <ns0:doi>http://doi.####</ns0:doi>
-      </ns0:citation_dataset>
-      <ns0:datum>WGS84</ns0:datum>
-      <ns0:geographic_name>earth</ns0:geographic_name>
-      <ns0:name>entire survey of the earth</ns0:name>
-      <ns0:project>EM-EARTH</ns0:project>
-    </ns0:MT>
+  <Created>2020-12-23T20:37:42.403385Z</Created>
+  <Network code="EM" startDate="2020-01-01T00:00:00+00:00" endDate="1980-01-01T00:00:00+00:00" restrictedStatus="open" alternateCode="EM-EARTH">
+    <Identifier type="doi"> http://doi.####</Identifier>
+    <Identifier type="doi"> None</Identifier>
+    <mt:acquired_by>
+      <mt:author>MT</mt:author>
+      <mt:comments>tired</mt:comments>
+    </mt:acquired_by>
     <Operator>
       <Agency>mt rules</Agency>
       <Contact>
@@ -31,35 +20,21 @@
       <WebSite/>
     </Operator>
     <Station code="MT012" startDate="1980-01-01T00:00:00+00:00" endDate="1980-01-01T00:00:00+00:00">
-      <Comment id="0">
-        <Value>None</Value>
+      <Comment subject="MT data type">
+        <Value>MT</Value>
       </Comment>
-      <ns1:MT xmlns:ns1="MT">
-        <ns1:channel_layout>L</ns1:channel_layout>
-        <ns1:data_type>MT</ns1:data_type>
-        <ns1:location>
-          <ns1:declination>
-            <ns1:model>WMM</ns1:model>
-            <ns1:value units="DEGREES">12.3</ns1:value>
-          </ns1:declination>
-        </ns1:location>
-        <ns1:orientation>
-          <ns1:method>compass</ns1:method>
-          <ns1:reference_frame>geomagnetic</ns1:reference_frame>
-        </ns1:orientation>
-        <ns1:provenance>
-          <ns1:creation_time>1980-01-01T00:00:00+00:00</ns1:creation_time>
-          <ns1:software>
-            <ns1:author>test</ns1:author>
-            <ns1:name>name</ns1:name>
-            <ns1:version>1.0a</ns1:version>
-          </ns1:software>
-          <ns1:submitter>
-            <ns1:author>name</ns1:author>
-            <ns1:email>test@here.org</ns1:email>
-          </ns1:submitter>
-        </ns1:provenance>
-      </ns1:MT>
+      <Comment subject="metadata creation">
+        <Value>creation: 1980-01-01T00:00:00+00:00, software: name, version: 1.0a</Value>
+        <Author>
+          <Name>name</Name>
+          <Agency/>
+          <Email>test@here.org</Email>
+        </Author>
+      </Comment>
+      <Comment subject="station orientation">
+        <Value>method: compass, reference_frame: geomagnetic</Value>
+      </Comment>
+      <mt:declination comment="None" model="WMM" units="degrees">12.3</mt:declination>
       <Latitude unit="DEGREES">10.0</Latitude>
       <Longitude unit="DEGREES">-112.98</Longitude>
       <Elevation unit="METERS">1234.0</Elevation>
@@ -77,56 +52,35 @@
       <CreationDate>1980-01-01T00:00:00.000000Z</CreationDate>
       <TerminationDate>1980-01-01T00:00:00.000000Z</TerminationDate>
       <Channel code="CQE" startDate="1980-01-01T00:00:00+00:00" endDate="1980-01-01T00:00:00+00:00" locationCode="E2">
-        <ns2:MT xmlns:ns2="MT">
-          <ns2:ac>
-            <ns2:end units="VOLTS">10.2</ns2:end>
-            <ns2:start units="VOLTS">12.1</ns2:start>
-          </ns2:ac>
-          <ns2:channel_number>2</ns2:channel_number>
-          <ns2:component>EX</ns2:component>
-          <ns2:contact_resistance>
-            <ns2:end units="OHMS">1.2</ns2:end>
-            <ns2:start units="OHMS">1.1</ns2:start>
-          </ns2:contact_resistance>
-          <ns2:data_quality>
-            <ns2:rating>
-              <ns2:author>mt</ns2:author>
-              <ns2:method>ml</ns2:method>
-              <ns2:value>4</ns2:value>
-            </ns2:rating>
-          </ns2:data_quality>
-          <ns2:dc>
-            <ns2:end units="VOLTS">1.0</ns2:end>
-            <ns2:start units="VOLTS">2.0</ns2:start>
-          </ns2:dc>
-          <ns2:dipole_length units="METERS">100.0</ns2:dipole_length>
-          <ns2:filter>
-            <ns2:applied>[False]</ns2:applied>
-            <ns2:name>['counts2mv', 'lowpass']</ns2:name>
-          </ns2:filter>
-          <ns2:measurement_azimuth units="DEGREES">90.0</ns2:measurement_azimuth>
-          <ns2:measurement_tilt units="DEGREES">0.0</ns2:measurement_tilt>
-          <ns2:negative>
-            <ns2:elevation units="DEGREES">100.0</ns2:elevation>
-            <ns2:id>a</ns2:id>
-            <ns2:latitude units="DEGREES">12.12</ns2:latitude>
-            <ns2:longitude units="DEGREES">-111.12</ns2:longitude>
-            <ns2:manufacturer>test</ns2:manufacturer>
-            <ns2:model>fats</ns2:model>
-            <ns2:type>pb-pbcl</ns2:type>
-          </ns2:negative>
-          <ns2:positive>
-            <ns2:elevation units="DEGREES">101.0</ns2:elevation>
-            <ns2:id>b</ns2:id>
-            <ns2:latitude units="DEGREES">12.123</ns2:latitude>
-            <ns2:longitude units="DEGREES">-111.14</ns2:longitude>
-            <ns2:manufacturer>test</ns2:manufacturer>
-            <ns2:model>fats</ns2:model>
-            <ns2:type>ag-agcl</ns2:type>
-          </ns2:positive>
-          <ns2:type>electric</ns2:type>
-          <ns2:units>counts</ns2:units>
-        </ns2:MT>
+        <Comment id="0">
+          <Value>None</Value>
+        </Comment>
+        <mt:Magnetotellurics channel_number="2" component="ex" type="electric">
+          <mt:ac>
+            <mt:end units="VOLTS">10.2</mt:end>
+            <mt:start units="VOLTS">12.1</mt:start>
+          </mt:ac>
+          <mt:contact_resistance>
+            <mt:end units="OHMS">1.2</mt:end>
+            <mt:start units="OHMS">1.1</mt:start>
+          </mt:contact_resistance>
+          <mt:data_quality>
+            <mt:rating>
+              <mt:author>mt</mt:author>
+              <mt:method>ml</mt:method>
+              <mt:value>4</mt:value>
+            </mt:rating>
+          </mt:data_quality>
+          <mt:dc>
+            <mt:end units="VOLTS">1.0</mt:end>
+            <mt:start units="VOLTS">2.0</mt:start>
+          </mt:dc>
+          <mt:dipole_length units="METERS">100.0</mt:dipole_length>
+          <mt:filter>
+            <mt:applied>[False]</mt:applied>
+            <mt:name>['counts2mv', 'lowpass']</mt:name>
+          </mt:filter>
+        </mt:Magnetotellurics>
         <Latitude unit="DEGREES">12.123</Latitude>
         <Longitude unit="DEGREES">-111.14</Longitude>
         <Elevation unit="METERS">101.0</Elevation>
@@ -138,37 +92,43 @@
         <CalibrationUnits>
           <Name>counts</Name>
         </CalibrationUnits>
-        <Sensor>
-          <Type>ag-agcl</Type>
-          <Manufacturer>test</Manufacturer>
-          <Model>fats</Model>
-        </Sensor>
         <DataLogger>
           <Type>broadband</Type>
           <Manufacturer>T. Lurric</Manufacturer>
           <Model>Ichiban</Model>
           <SerialNumber>mt091</SerialNumber>
         </DataLogger>
+        <Equipment>
+          <Type>ag-agcl</Type>
+          <Description>positive electrode, latitude: 12.123, longitude: -111.14, elevation: 101.0</Description>
+          <Manufacturer>test</Manufacturer>
+          <Model>fats</Model>
+        </Equipment>
+        <Equipment>
+          <Type>pb-pbcl</Type>
+          <Description>negative electrode, latitude: 12.12, longitude: -111.12, elevation: 100.0</Description>
+          <Manufacturer>test</Manufacturer>
+          <Model>fats</Model>
+        </Equipment>
       </Channel>
       <Channel code="CKN" startDate="1980-01-01T00:00:00+00:00" endDate="1980-01-01T00:00:00+00:00" locationCode="T1">
-        <ns3:MT xmlns:ns3="MT">
-          <ns3:channel_number>1</ns3:channel_number>
-          <ns3:comments>great</ns3:comments>
-          <ns3:component>Temperature</ns3:component>
-          <ns3:data_quality>
-            <ns3:rating>
-              <ns3:author>mt</ns3:author>
-              <ns3:method>ml</ns3:method>
-              <ns3:value>4</ns3:value>
-            </ns3:rating>
-          </ns3:data_quality>
-          <ns3:filter>
-            <ns3:applied>[True]</ns3:applied>
-            <ns3:comments>test</ns3:comments>
-            <ns3:name>['lowpass', 'counts2mv']</ns3:name>
-          </ns3:filter>
-          <ns3:type>temperature</ns3:type>
-        </ns3:MT>
+        <Comment id="0">
+          <Value>great</Value>
+        </Comment>
+        <mt:Magnetotellurics channel_number="1" component="temperature" type="temperature">
+          <mt:data_quality>
+            <mt:rating>
+              <mt:author>mt</mt:author>
+              <mt:method>ml</mt:method>
+              <mt:value>4</mt:value>
+            </mt:rating>
+          </mt:data_quality>
+          <mt:filter>
+            <mt:applied>[True]</mt:applied>
+            <mt:comments>test</mt:comments>
+            <mt:name>['lowpass', 'counts2mv']</mt:name>
+          </mt:filter>
+        </mt:Magnetotellurics>
         <Latitude unit="DEGREES">12.324</Latitude>
         <Longitude unit="DEGREES">-112.03</Longitude>
         <Elevation unit="METERS">1234.0</Elevation>

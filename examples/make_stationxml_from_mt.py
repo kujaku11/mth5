@@ -4,10 +4,10 @@ Created on Wed Jun 10 12:10:48 2020
 
 @author: jpeacock
 """
-from mth5.utils import translator
+from mth5.utils import stationxml_translator
 from mth5 import metadata
 
-to_stationxml = translator.MTToStationXML()
+to_stationxml = stationxml_translator.MTToStationXML()
 
 survey = metadata.Survey()
 survey.from_dict(
@@ -30,7 +30,7 @@ survey.from_dict(
             "project_lead.author": "T. Lurric",
             "project_lead.email": "mt@mt.org",
             "project_lead.organization": "mt rules",
-            "release_license": "CC 0",
+            "release_license": "CC-0",
             "southeast_corner.latitude": -80.0,
             "southeast_corner.longitude": -179.9,
             "summary": None,
