@@ -10,20 +10,31 @@ Created on Wed Aug 26 09:56:40 2020
 # =============================================================================
 # Imports
 # =============================================================================
-from pathlib import Path
+import zipfile
 
 from mth5 import read_file
 from mth5 import mth5
 from mth5 import metadata
 from mth5.utils.mttime import MTime
+from mth5.utils.pathing import DATA_DIR
 
 start = MTime()
 start.now()
 # =============================================================================
 #
 # =============================================================================
-z3d_dir = Path(r"c:\Users\jpeacock\Documents\example_data")
-h5_fn = Path(r"c:\Users\jpeacock\Documents\from_z3d.h5")
+# set to true if you want to interact with the mth5 object in the console 
+interact = True
+nims_dir = DATA_DIR.joinpath("zen")
+h5_fn = DATA_DIR.joinpath("from_zen.mth5")
+
+if h5_fn.exists():
+    h5_fn.unlink()
+    print(f"INFO: Removed existing file {h5_fn}")
+
+# need to unzip the data
+with zipfile.ZipFile(nims_dir.joinpath("zen.zip"), "r") as zip_ref:
+    zip_ref.extractall()
 
 # write some simple metadata for the survey
 survey = metadata.Survey()
@@ -41,8 +52,8 @@ m.survey_group.metadata.from_dict(survey.to_dict())
 
 # add station metadata from z3d files
 ch_list = []
-for fn in list(z3d_dir.glob("*.z3d")):
-    mtts_obj = read_file(fn)
+for fn in zip_ref.filelist:
+    mtts_obj = read_file(fn.filename)
 
     station_group = m.add_station(
         mtts_obj.station_metadata.id, station_metadata=mtts_obj.station_metadata
@@ -55,7 +66,7 @@ for fn in list(z3d_dir.glob("*.z3d")):
 
     run_group = station_group.add_run(run_id, mtts_obj.run_metadata)
 
-    ch_list.append(run_group.from_mtts(mtts_obj))
+    ch_list.append(run_group.from_channel_ts(mtts_obj))
 
     # need to update the station summary table entry
     station_group.summary_table.add_row(
@@ -68,3 +79,6 @@ end = MTime()
 end.now()
 
 print(f"Conversion to MTH5 took {end-start:.2f} seconds")
+
+if not interact:
+    m.close_mth5()
