@@ -1426,7 +1426,7 @@ class Filtered(Base):
                     return True
             elif len(self._name) > 1:
                 if len(self._applied) == 1:
-                    self.logger.info(
+                    self.logger.debug(
                         "Assuming all filters have been "
                         + "applied as {0}".format(self._applied[0])
                     )

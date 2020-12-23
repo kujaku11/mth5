@@ -552,9 +552,10 @@ class MTH5:
         """
 
         try:
+            self.logger.info(f"Flushing and closing {str(self.filename)}")
             self.__hdf5_obj.flush()
             self.__hdf5_obj.close()
-            self.logger.info("Flushed and closed {0}".format(str(self.filename)))
+            
         except AttributeError:
             helpers.close_open_files()
 

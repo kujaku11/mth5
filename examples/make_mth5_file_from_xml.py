@@ -10,7 +10,6 @@ Created on Mon Jun 22 12:20:59 2020
 # imports
 # =============================================================================
 import numpy as np
-import os
 from pathlib import Path
 from xml.etree import cElementTree as et
 
@@ -126,9 +125,14 @@ def add_station(station, directory):
 # set xml directory
 xml_root = DATA_DIR.joinpath('florida_xml_metadata_files')
 
+mth5_filename = DATA_DIR.joinpath("example_02.mth5")
+if mth5_filename.exists():
+    mth5_filename.unlink()
+    print(f"--> Rmoved existing file {mth5_filename}")
+    
 # initialize mth5 object
 mth5_obj = mth5.MTH5()
-mth5_obj.open_mth5(DATA_DIR.joinpath("example_02.mth5"), mode="a")
+mth5_obj.open_mth5(mth5_filename, mode="a")
 
 ### add survey information
 survey_element = read_xml(xml_root.joinpath('survey.xml'))
@@ -140,8 +144,5 @@ survey_obj.write_metadata()
 for station in ["FL001", "FL002"]:
     # add station
     new_station = add_station(station, xml_root)
-
-    # add entry to summary table
-    mth5_obj.stations_group.summary_table.add_row(new_station.table_entry)
 
 mth5_obj.close_mth5()

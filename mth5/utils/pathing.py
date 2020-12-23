@@ -5,26 +5,27 @@ Created on Wed Dec  9 06:55:21 2020
 @author: kkappler
 """
 
+# =============================================================================
+# Imports
+# =============================================================================
 from __future__ import absolute_import, division, print_function
-
 
 import datetime
 import inspect
-import matplotlib.pyplot as plt
-import numpy as np
-import os
-import pandas as pd
-import pdb
-
 from pathlib import Path
 
 import mth5
 
+# =============================================================================
+# global variables
+# =============================================================================
+mth5_dir = Path(inspect.getfile(mth5)).parent
+mth5_git_dir = mth5_dir.parent
+DATA_DIR = mth5_git_dir.parent.joinpath("mth5_test_data")
+DATA_REPO_ROOT_PATH = DATA_DIR
 
-mth5_dir = os.path.dirname(inspect.getfile(mth5))
-mth5_git_dir = os.path.dirname(mth5_dir)
-DATA_DIR = os.path.join(mth5_git_dir, 'data')
-DATA_REPO_ROOT_PATH = Path(DATA_DIR)
+if not DATA_DIR.exists():
+    print("Need to install mth5_test_data repo at https://github.com/kujaku11/mth5_test_data")
 
 def my_function():
     """
