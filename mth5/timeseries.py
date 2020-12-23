@@ -795,7 +795,9 @@ class RunTS:
                              self.dataset[name])
         else:
             # this is a hack for now until figure out who is calling shape, size
-            if name not in self.__dict__.keys() and name not in ["shape", "size", "__len__"]:
+            if name[0] == "_":
+                return None
+            elif name not in self.__dict__.keys() and name not in ["shape", "size"]:
                 msg = f"RunTS has no attribute {name}"
                 self.logger.error(msg)
                 raise NameError(msg)

@@ -53,7 +53,7 @@ survey_group.write_metadata()
 
 for nims_fn in zip_ref.filelist:
 
-    run_ts = read_file(nims_fn.filename)
+    run_ts = read_file(nims_dir.joinpath(nims_fn.filename))
 
     # initialize a station
     station_group = m.add_station(
