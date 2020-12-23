@@ -16,11 +16,8 @@ import numpy as np
 from mth5 import mth5
 
 # =============================================================================
-# inputs
+# functions
 # =============================================================================
-dir_path = Path(r"c:\Users\jpeacock\Documents\GitHub\mth5_test_data\florida_xml_metadata_files")
-
-
 def read_xml(xml_fn):
     """
     
@@ -124,6 +121,9 @@ def add_station(station, directory):
 # =============================================================================
 # script
 # =============================================================================
+dir_path = Path(r"c:\Users\jpeacock\Documents\GitHub\mth5_test_data\florida_xml_metadata_files")
+
+
 # initialize mth5 object
 mth5_obj = mth5.MTH5()
 mth5_obj.open_mth5(dir_path.joinpath("example_02.mth5"), mode="a")
