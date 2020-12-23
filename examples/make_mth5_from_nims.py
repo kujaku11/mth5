@@ -20,12 +20,14 @@ from mth5.utils.pathing import DATA_DIR
 # =============================================================================
 #
 # =============================================================================
+# set to true if you want to interact with the mth5 object in the console 
+interact = True
 nims_dir = DATA_DIR.joinpath("nims")
 h5_fn = DATA_DIR.joinpath("from_nims.mth5")
 
 if h5_fn.exists():
     h5_fn.unlink()
-    print(f"--> Removed existing file {h5_fn}")
+    print(f"INFO: Removed existing file {h5_fn}")
 
 # need to unzip the data
 with zipfile.ZipFile(nims_dir.joinpath("nims.zip"), "r") as zip_ref:
@@ -85,3 +87,6 @@ print(
     f"Making MTH5 file took {(processing_end - processing_start) // 60:02.0f}:"
     f"{(processing_end - processing_start) % 60:02.0f} minutes"
 )
+
+if not interact:
+    m.close_mth5()
