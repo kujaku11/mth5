@@ -27,6 +27,7 @@ from mth5 import metadata
 from mth5.helpers import get_tree
 from mth5.utils.exceptions import MTH5Error
 from mth5.utils.helpers import to_numpy_type
+from mth5.tables import MTH5Table
 
 # make a dictionary of available metadata classes
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
@@ -191,7 +192,7 @@ class BaseGroup:
     @property
     def summary_table(self):
         pass
-        #return MTH5Table(self.hdf5_group["summary"])
+        return MTH5Table(self.hdf5_group["summary"])
 
     @property
     def groups_list(self):
@@ -271,6 +272,4 @@ class BaseGroup:
         """
         self.initialize_summary_table()
         self.write_metadata()
-
-
 
