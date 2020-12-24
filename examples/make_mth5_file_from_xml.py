@@ -106,14 +106,16 @@ def add_station(station, directory, h5_obj):
         # loop over channels
         for channel, channel_fn in run_dict["channels"].items():
             _, _, channel_type, component, _ = channel_fn.split(".")
+            channel = run.add_channel(component, channel_type, np.random.rand(4096))
             channel.metadata.from_xml(read_xml(directory.joinpath(channel_fn)))
             channel.metadata.time_period.start = run.metadata.time_period.start
             channel.metadata.time_period.end = run.metadata.time_period.end
-            channel = run.add_channel(component, channel_type, np.random.rand(4096))          
+            channel.write_metadata()
 
             # update table entry
             table_index = run.summary_table.locate("component", component)
             run.summary_table.add_row(channel.table_entry, table_index)
+            h5_obj.stations_group.summary_table.locate
             
 
     return new_station
