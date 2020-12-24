@@ -1,0 +1,116 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<FDSNStationXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:schemaLocation="http://www.fdsn.org/xml/station/fdsn-station-1.1.xsd" xmlns:mt="http://emiw.org/xmlns/mt/1.0" xmlns="http://www.fdsn.org/xml/station/1" schemaVersion="1.1">
+  <Source>MT Metadata</Source>
+  <Module>ObsPy 1.2.2</Module>
+  <ModuleURI>https://www.obspy.org</ModuleURI>
+  <Created>2020-12-12T00:30:23.407267Z</Created>
+  <Network code="EM" startDate="2080-01-01T00:00:00+00:00" endDate="1980-01-01T00:00:00+00:00" restrictedStatus="open" alternateCode="EM-EARTH">
+    <Identifier type="doi"> http://doi.####</Identifier>
+    <Identifier type="doi"> None</Identifier>
+    <mt:acquired_by>
+      <mt:author>MT</mt:author>
+      <mt:comments>tired</mt:comments>
+    </mt:acquired_by>
+    <Operator>
+      <Agency>mt rules</Agency>
+      <Contact>
+        <Name>T. Lurric</Name>
+        <Email>mt@mt.org</Email>
+      </Contact>
+      <WebSite/>
+    </Operator>
+    <Station code="MT012" startDate="1980-01-01T00:00:00+00:00" endDate="1980-01-01T00:00:00+00:00">
+      <Comment subject="MT data type">
+        <Value>MT</Value>
+      </Comment>
+      <Comment subject="metadata creation">
+        <Value>creation: 1980-01-01T00:00:00+00:00, software: name, version: 1.0a</Value>
+        <Author>
+          <Name>name</Name>
+          <Agency/>
+          <Email>test@here.org</Email>
+        </Author>
+      </Comment>
+      <Comment subject="station orientation">
+        <Value>method: compass, reference_frame: geographic</Value>
+      </Comment>
+      <mt:declination comment="None" model="WMM" units="degrees">12.3</mt:declination>
+      <Latitude unit="DEGREES">10.0</Latitude>
+      <Longitude unit="DEGREES">-112.98</Longitude>
+      <Elevation unit="METERS">1234.0</Elevation>
+      <Site>
+        <Name>mt012</Name>
+        <Description>london</Description>
+      </Site>
+      <Operator>
+        <Agency>None</Agency>
+        <Contact>
+          <Name>mt</Name>
+        </Contact>
+        <WebSite/>
+      </Operator>
+      <CreationDate>1980-01-01T00:00:00.000000Z</CreationDate>
+      <TerminationDate>1980-01-01T00:00:00.000000Z</TerminationDate>
+      <Channel code="CQE" startDate="1980-01-01T00:00:00+00:00" endDate="1980-01-01T00:00:00+00:00" locationCode="E2">
+        <Comment id="0">
+          <Value>None</Value>
+        </Comment>
+        <mt:Magnetotellurics channel_number="2" component="ex" type="electric">
+          <mt:ac>
+            <mt:end units="VOLTS">10.2</mt:end>
+            <mt:start units="VOLTS">12.1</mt:start>
+          </mt:ac>
+          <mt:contact_resistance>
+            <mt:end units="OHMS">1.2</mt:end>
+            <mt:start units="OHMS">1.1</mt:start>
+          </mt:contact_resistance>
+          <mt:data_quality>
+            <mt:rating>
+              <mt:author>mt</mt:author>
+              <mt:method>ml</mt:method>
+              <mt:value>4</mt:value>
+            </mt:rating>
+          </mt:data_quality>
+          <mt:dc>
+            <mt:end units="VOLTS">1.0</mt:end>
+            <mt:start units="VOLTS">2.0</mt:start>
+          </mt:dc>
+          <mt:dipole_length units="METERS">100.0</mt:dipole_length>
+          <mt:filter>
+            <mt:applied>[False]</mt:applied>
+            <mt:name>['counts2mv', 'lowpass']</mt:name>
+          </mt:filter>
+        </mt:Magnetotellurics>
+        <Latitude unit="DEGREES">12.123</Latitude>
+        <Longitude unit="DEGREES">-111.14</Longitude>
+        <Elevation unit="METERS">101.0</Elevation>
+        <Depth unit="METERS">101.0</Depth>
+        <Azimuth unit="DEGREES">90.0</Azimuth>
+        <Dip unit="DEGREES">0.0</Dip>
+        <Type>GEOPHYSICAL</Type>
+        <SampleRate>256.0</SampleRate>
+        <CalibrationUnits>
+          <Name>counts</Name>
+        </CalibrationUnits>
+        <DataLogger>
+          <Type>broadband</Type>
+          <Manufacturer>T. Lurric</Manufacturer>
+          <Model>Ichiban</Model>
+          <SerialNumber>mt091</SerialNumber>
+        </DataLogger>
+        <Equipment>
+          <Type>ag-agcl</Type>
+          <Description>positive electrode, latitude: 12.123, longitude: -111.14, elevation: 101.0</Description>
+          <Manufacturer>test</Manufacturer>
+          <Model>fats</Model>
+        </Equipment>
+        <Equipment>
+          <Type>pb-pbcl</Type>
+          <Description>negative electrode, latitude: 12.12, longitude: -111.12, elevation: 100.0</Description>
+          <Manufacturer>test</Manufacturer>
+          <Model>fats</Model>
+        </Equipment>
+      </Channel>
+    </Station>
+  </Network>
+</FDSNStationXML>
