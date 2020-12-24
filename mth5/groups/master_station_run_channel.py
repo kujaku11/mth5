@@ -371,7 +371,7 @@ class MasterStationGroup(BaseGroup):
             )
             self.logger.exception(msg)
             raise MTH5Error(msg)
-            
+
 
 # =============================================================================
 # Station Group
@@ -788,7 +788,8 @@ class StationGroup(BaseGroup):
         )
 
         self.write_metadata()
-        
+
+
 # =============================================================================
 # Run Group
 # =============================================================================
@@ -1402,6 +1403,7 @@ class RunGroup(BaseGroup):
         ).decode()
 
         self.metadata.time_period.end = max(self.summary_table.array["end"]).decode()
+
 
 class ChannelDataset:
     """
@@ -2516,4 +2518,3 @@ class MagneticDataset(ChannelDataset):
 class AuxiliaryDataset(ChannelDataset):
     def __init__(self, group, **kwargs):
         super().__init__(group, **kwargs)
-

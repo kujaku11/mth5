@@ -11,7 +11,15 @@ Created on Wed Dec 23 21:29:02 2020
 # =============================================================================
 # Imports
 # =============================================================================
-from mth5.metadata import Base, DataQuality, Filtered, Location, TimePeriod, Instrument, Fdsn
+from mth5.metadata import (
+    Base,
+    DataQuality,
+    Filtered,
+    Location,
+    TimePeriod,
+    Instrument,
+    Fdsn,
+)
 from mth5.metadata.helpers import write_lines
 from mth5.metadata.standards.schema import Standards
 

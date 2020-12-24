@@ -133,8 +133,7 @@ class RunTS:
     def __getattr__(self, name):
         # change to look for keys directly and use type to set channel type
         if name in self.dataset.keys():
-            return ChannelTS(self.dataset[name].attrs["type"],
-                             self.dataset[name])
+            return ChannelTS(self.dataset[name].attrs["type"], self.dataset[name])
         else:
             # this is a hack for now until figure out who is calling shape, size
             if name[0] == "_":

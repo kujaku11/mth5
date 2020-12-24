@@ -691,6 +691,3 @@ class ChannelTS:
         self.station_metadata.id = obspy_trace.stats.station
         self.metadata.units = "counts"
         self.ts = obspy_trace.data
-
-
-

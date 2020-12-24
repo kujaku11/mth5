@@ -178,7 +178,7 @@ class Base:
         # a more robust test.
         if v_type == "h5py_reference":
             return value
-        
+
         # return value if the value type is not defined.
         if v_type is None:
             msg = (
@@ -280,7 +280,7 @@ class Base:
                             value_list.append(False)
                     value = value_list
                 return value
-            
+
             elif isinstance(value, (np.bool_)):
                 return bool(value)
 
@@ -567,7 +567,9 @@ class Base:
                 self.logger.debug(msg)
             meta_dict = helpers.flatten_dict(meta_dict[class_name])
         else:
-            self.logger.debug(f"Assuming input dictionary is of type {self._class_name}")
+            self.logger.debug(
+                f"Assuming input dictionary is of type {self._class_name}"
+            )
             meta_dict = helpers.flatten_dict(meta_dict)
 
         # set attributes by key.
@@ -668,4 +670,3 @@ class Base:
         """
 
         self.from_dict(helpers.element_to_dict(xml_element))
-

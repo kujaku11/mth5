@@ -16,6 +16,7 @@ Created on Wed Dec 23 16:59:45 2020
 import numpy as np
 
 from mth5.groups import BaseGroup, MasterStationGroup
+
 # =============================================================================
 # Survey Group
 # =============================================================================

@@ -11,7 +11,15 @@ Created on Wed Dec 23 21:26:05 2020
 # =============================================================================
 # Imports
 # =============================================================================
-from mth5.metadata import Base, Fdsn, Orientation, Person, Provenance, Location, TimePeriod
+from mth5.metadata import (
+    Base,
+    Fdsn,
+    Orientation,
+    Person,
+    Provenance,
+    Location,
+    TimePeriod,
+)
 from mth5.metadata.helpers import write_lines
 from mth5.metadata.standards.schema import Standards
 

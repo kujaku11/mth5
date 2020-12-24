@@ -18,6 +18,7 @@ import numpy as np
 import pandas as pd
 
 from mth5.utils.exceptions import MTH5TableError
+
 # =============================================================================
 # MTH5 Table Class
 # =============================================================================

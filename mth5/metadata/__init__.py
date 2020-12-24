@@ -53,7 +53,7 @@ from .base import Base
 from .declination import Declination
 from .location import Location
 from .instrument import Instrument
-from .fdsn import Fdsn 
+from .fdsn import Fdsn
 from .rating import Rating
 from .data_quality import DataQuality
 from .citation import Citation
@@ -79,8 +79,34 @@ from .electric import Electric
 from .magnetic import Magnetic
 
 
-__all__ = ["Base", "Standards", "Declination", "Location", "Instrument", "Fdsn",
-           "Rating", "DataQuality", "Citation", "Copyright", "Provenance", "Person",
-           "Diagnostic", "Battery", "Electrode", "TimingSystem", "TimePeriod",
-           "Orientation", "Software", "Filtered", "Filter", "DataLogger", "Survey",
-           "Station", "Run", "Channel", "Auxiliary", "Electric", "Magnetic" ]
+__all__ = [
+    "Base",
+    "Standards",
+    "Declination",
+    "Location",
+    "Instrument",
+    "Fdsn",
+    "Rating",
+    "DataQuality",
+    "Citation",
+    "Copyright",
+    "Provenance",
+    "Person",
+    "Diagnostic",
+    "Battery",
+    "Electrode",
+    "TimingSystem",
+    "TimePeriod",
+    "Orientation",
+    "Software",
+    "Filtered",
+    "Filter",
+    "DataLogger",
+    "Survey",
+    "Station",
+    "Run",
+    "Channel",
+    "Auxiliary",
+    "Electric",
+    "Magnetic",
+]

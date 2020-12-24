@@ -29,4 +29,3 @@ class Declination(Base):
         self.model = None
         self.comments = None
         super(Declination, self).__init__(attr_dict=ATTR_DICT["declination"], **kwargs)
-

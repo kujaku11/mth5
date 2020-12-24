@@ -122,7 +122,6 @@ def close_open_files():
             print("Object {} does not have __class__")
 
 
-
 def get_tree(parent):
     """
     Simple function to recursively print the contents of an hdf5 group
@@ -151,6 +150,7 @@ def get_tree(parent):
     # lines.append(parent.name)
     parent.visititems(fancy_print)
     return "\n".join(lines)
+
 
 def to_numpy_type(value):
     """
@@ -196,7 +196,8 @@ def to_numpy_type(value):
 
     else:
         raise TypeError("Type {0} not understood".format(type(value)))
-        
+
+
 # =============================================================================
 #
 # =============================================================================

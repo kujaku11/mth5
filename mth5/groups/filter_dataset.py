@@ -22,6 +22,7 @@ import numpy as np
 from mth5.utils.exceptions import MTH5Error
 from mth5 import metadata
 from mth5.helpers import to_numpy_type
+
 # =============================================================================
 # Filter Dataset
 # =============================================================================

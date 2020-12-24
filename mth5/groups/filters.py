@@ -17,6 +17,7 @@ import numpy as np
 from mth5.groups.base import BaseGroup
 from mth5.metadata import Filter
 from mth5.groups.filter_dataset import FilterDataset
+
 # =============================================================================
 # Standards Group
 # =============================================================================

@@ -66,4 +66,3 @@ class Run(Base):
                 all_channels += rec_list
 
         return all_channels
-

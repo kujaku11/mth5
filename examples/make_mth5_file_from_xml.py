@@ -116,7 +116,6 @@ def add_station(station, directory, h5_obj):
             table_index = run.summary_table.locate("component", component)
             run.summary_table.add_row(channel.table_entry, table_index)
             h5_obj.stations_group.summary_table.locate
-            
 
     return new_station
 
@@ -125,19 +124,19 @@ def add_station(station, directory, h5_obj):
 # script
 # =============================================================================
 # set xml directory
-xml_root = DATA_DIR.joinpath('florida_xml_metadata_files')
+xml_root = DATA_DIR.joinpath("florida_xml_metadata_files")
 
 mth5_filename = DATA_DIR.joinpath("from_xml.mth5")
 if mth5_filename.exists():
     mth5_filename.unlink()
     print(f"--> Rmoved existing file {mth5_filename}")
-    
+
 # initialize mth5 object
 mth5_obj = mth5.MTH5()
 mth5_obj.open_mth5(mth5_filename, mode="a")
 
 ### add survey information
-survey_element = read_xml(xml_root.joinpath('survey.xml'))
+survey_element = read_xml(xml_root.joinpath("survey.xml"))
 
 survey_obj = mth5_obj.survey_group
 survey_obj.metadata.from_xml(survey_element)

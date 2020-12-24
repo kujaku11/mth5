@@ -28,4 +28,3 @@ class DataQuality(Base):
         self.warnings = None
 
         super().__init__(attr_dict=ATTR_DICT["data_quality"], **kwargs)
-        

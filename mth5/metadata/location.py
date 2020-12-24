@@ -235,4 +235,3 @@ class Location(Base):
             self.logger.warning(msg)
 
         return seconds
-

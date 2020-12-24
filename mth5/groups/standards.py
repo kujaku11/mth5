@@ -17,6 +17,7 @@ import numpy as np
 from mth5.groups.base import BaseGroup
 from mth5.utils.exceptions import MTH5TableError
 from mth5.metadata import Standards
+
 # =============================================================================
 # Standards Group
 # =============================================================================
@@ -147,4 +148,3 @@ class StandardsGroup(BaseGroup):
         self.summary_table_from_dict(schema_obj.summarize_standards())
 
         self.write_metadata()
-        

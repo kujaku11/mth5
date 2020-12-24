@@ -28,4 +28,3 @@ class Rating(Base):
         self.value = 0.0
 
         super().__init__(attr_dict=ATTR_DICT["rating"], **kwargs)
-

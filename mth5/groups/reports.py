@@ -16,6 +16,7 @@ import numpy as np
 import h5py
 
 from mth5.groups.base import BaseGroup
+
 # =============================================================================
 # Reports Group
 # =============================================================================
@@ -57,4 +58,3 @@ class ReportsGroup(BaseGroup):
 
         """
         self.logger.error("Not Implemented yet")
-        

@@ -21,6 +21,7 @@ from collections import OrderedDict, defaultdict
 from xml.etree import cElementTree as et
 from xml.dom import minidom
 from operator import itemgetter
+
 # =============================================================================
 # write doc strings
 # =============================================================================
@@ -101,6 +102,7 @@ def write_lines(attr_dict, c1=45, c2=45, c3=15):
         lines.append(hline)
 
     return "\n".join(lines)
+
 
 # code to convert ini_dict to flattened dictionary
 # default seperater '_'
@@ -317,6 +319,7 @@ def element_to_dict(element):
 
 def element_to_string(element):
     return minidom.parseString(et.tostring(element).decode()).toprettyxml(indent="    ")
+
 
 # =============================================================================
 # Helper function to be sure everything is encoded properly

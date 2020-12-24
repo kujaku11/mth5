@@ -272,4 +272,3 @@ class BaseGroup:
         """
         self.initialize_summary_table()
         self.write_metadata()
-

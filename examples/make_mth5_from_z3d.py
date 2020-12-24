@@ -23,7 +23,7 @@ start.now()
 # =============================================================================
 #
 # =============================================================================
-# set to true if you want to interact with the mth5 object in the console 
+# set to true if you want to interact with the mth5 object in the console
 interact = True
 zen_dir = DATA_DIR.joinpath("zen")
 h5_fn = DATA_DIR.joinpath("from_zen.mth5")
