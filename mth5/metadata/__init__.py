@@ -47,6 +47,9 @@ Created on Sun Apr 24 20:50:41 2020
 
 
 """
+### !!! DO NOT CHANGE THE ORDER !!!
+from .standards.schema import Standards
+from .base import Base
 from .declination import Declination
 from .location import Location
 from .instrument import Instrument
@@ -55,15 +58,15 @@ from .rating import Rating
 from .data_quality import DataQuality
 from .citation import Citation
 from .copyright import Copyright
-from .provenance import Provenance
 from .person import Person
+from .software import Software
+from .provenance import Provenance
 from .diagnostic import Diagnostic
 from .battery import Battery
 from .electrode import Electrode
 from .timing_system import TimingSystem
 from .time_period import TimePeriod
 from .orientation import Orientation
-from .software import Software
 from .filtered import Filtered
 from .filter import Filter
 from .data_logger import DataLogger
@@ -74,7 +77,7 @@ from .channel import Channel
 from .auxiliary import Auxiliary
 from .electric import Electric
 from .magnetic import Magnetic
-from .standards.schema import Standards
+
 
 __all__ = ["Base", "Standards", "Declination", "Location", "Instrument", "Fdsn",
            "Rating", "DataQuality", "Citation", "Copyright", "Provenance", "Person",
