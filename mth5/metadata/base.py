@@ -22,7 +22,7 @@ from operator import itemgetter
 
 from mth5.metadata.standards.schema import validate_attribute, validate_type
 from mth5.utils.exceptions import MTSchemaError
-from mth5.utils import helpers
+from mth5.metadata import helpers
 
 # =============================================================================
 #  Base class that everything else will inherit

@@ -26,7 +26,7 @@ import numpy as np
 from mth5 import metadata
 from mth5.helpers import get_tree
 from mth5.utils.exceptions import MTH5Error
-from mth5.utils.helpers import to_numpy_type
+from mth5.helpers import to_numpy_type
 from mth5.tables import MTH5Table
 
 # make a dictionary of available metadata classes

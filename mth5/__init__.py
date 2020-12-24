@@ -3,7 +3,7 @@
 import logging
 import yaml
 from mth5.utils.mth5logger import CONF_FILE
-#from mth5.io.reader import read_file
+from mth5.io.reader import read_file
 
 __author__ = """Jared Peacock"""
 __email__ = "jpeacock@usgs.gov"

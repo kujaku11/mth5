@@ -14,12 +14,18 @@ Created on Tue Jun  2 12:37:50 2020
 # =============================================================================
 # Imports
 # =============================================================================
+from collections.abc import Iterable
+import inspect
+import numpy as np
 import h5py
 import gc
 import logging
 
 logger = logging.getLogger(__name__)
 
+# =============================================================================
+# Acceptable compressions
+# =============================================================================
 COMPRESSION = ["lzf", "gzip", "szip", None]
 COMPRESSION_LEVELS = {
     "lzf": [None],
@@ -145,3 +151,58 @@ def get_tree(parent):
     # lines.append(parent.name)
     parent.visititems(fancy_print)
     return "\n".join(lines)
+
+def to_numpy_type(value):
+    """
+    Need to make the attributes friendly with Numpy and HDF5.  
+    
+    For numbers and bool this is straight forward they are automatically 
+    mapped in h5py to a numpy type.  
+    
+    But for strings this can be a challenge, especially a list of strings.  
+    
+    HDF5 should only deal with ASCII characters or Unicode.  No binary data
+    is allowed.
+    """
+
+    if value is None:
+        return "none"
+    # For now turn references into a generic string
+    if isinstance(value, h5py.h5r.Reference):
+        value = str(value)
+
+    if isinstance(
+        value,
+        (
+            str,
+            np.str_,
+            int,
+            float,
+            bool,
+            complex,
+            np.int,
+            np.float,
+            np.bool,
+            np.complex,
+        ),
+    ):
+        return value
+
+    if isinstance(value, Iterable):
+        if np.any([type(x) in [str, bytes, np.str_] for x in value]):
+            return np.array(value, dtype="S")
+        else:
+            return np.array(value)
+
+    else:
+        raise TypeError("Type {0} not understood".format(type(value)))
+        
+# =============================================================================
+#
+# =============================================================================
+def inherit_doc_string(cls):
+    for base in inspect.getmro(cls):
+        if base.__doc__ is not None:
+            cls.__doc__ = base.__doc__
+            break
+    return cls
