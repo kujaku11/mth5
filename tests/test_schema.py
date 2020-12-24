@@ -12,7 +12,7 @@ Created on Tue Apr 28 18:08:40 2020
 # =============================================================================
 
 import unittest
-from mth5.standards import schema
+from mth5.metadata.standards import schema
 from mth5.utils.exceptions import MTSchemaError
 
 # =============================================================================

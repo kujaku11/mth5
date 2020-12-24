@@ -15,8 +15,8 @@ from pathlib import Path
 import numpy as np
 
 from mth5 import mth5
-from mth5.standards import schema
-from mth5.utils.exceptions import MTH5Error, MTH5TableError
+from mth5.metadata.standards import schema
+from mth5.utils.exceptions import MTH5Error
 from mth5.timeseries import ChannelTS, RunTS
 from mth5.utils.mttime import MTime
 

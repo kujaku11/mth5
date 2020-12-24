@@ -14,7 +14,7 @@ Created on Wed Dec 23 17:05:33 2020
 # =============================================================================
 import numpy as np
 
-from mth5.groups import BaseGroup
+from mth5.groups.base import BaseGroup
 from mth5.utils.exceptions import MTH5TableError
 from mth5.metadata import Standards
 # =============================================================================

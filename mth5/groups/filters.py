@@ -14,9 +14,9 @@ Created on Wed Dec 23 17:08:40 2020
 # =============================================================================
 import numpy as np
 
-from mth5.groups import BaseGroup
-from mth5.metadata import Filtered
-from mth5.datasets import FilterDataset
+from mth5.groups.base import BaseGroup
+from mth5.metadata import Filter
+from mth5.groups.filter_dataset import FilterDataset
 # =============================================================================
 # Standards Group
 # =============================================================================
@@ -81,7 +81,7 @@ class FiltersGroup(BaseGroup):
             raise ValueError(msg)
 
         if filter_metadata is not None:
-            if not isinstance(filter_metadata, Filtered):
+            if not isinstance(filter_metadata, Filter):
                 msg = (
                     "Input metadata must be of type mth5.metadata.Filter, "
                     + f"not {type(filter_metadata)}"
@@ -89,7 +89,7 @@ class FiltersGroup(BaseGroup):
                 self.logger.error(msg)
                 raise ValueError(msg)
         else:
-            filter_metadata = Filtered()
+            filter_metadata = Filter()
             filter_metadata.name = filter_name
             filter_metadata.type = filter_type
 

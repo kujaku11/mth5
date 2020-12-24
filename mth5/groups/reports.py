@@ -15,7 +15,7 @@ Created on Wed Dec 23 17:03:53 2020
 import numpy as np
 import h5py
 
-from mth5.groups import BaseGroup
+from mth5.groups.base import BaseGroup
 # =============================================================================
 # Reports Group
 # =============================================================================
