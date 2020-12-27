@@ -5,6 +5,10 @@ Example script to make an MTH5 file from real data
 Created on Mon Jun 22 12:20:59 2020
 
 @author: jpeacock
+
+Context here is a multiple station MT survey in Florida, and we are going to add a station
+to that survey.  The survey itself is being represented as an mth5 object 
+(in this case a "SurveyGroup")
 """
 # =============================================================================
 # imports
@@ -135,14 +139,42 @@ mth5_obj = mth5.MTH5()
 mth5_obj.open_mth5(mth5_filename, mode="a")
 
 ### add survey information
+#standalone xml
 survey_element = read_xml(xml_root.joinpath('survey.xml'))
+survey_element = xml_to_dict(survey_element) #this obj is a dict "shaped the same as the attrs of h5"
 
+#Adding the info from xml to our mth5 survey
+#USer inputs info to the metadata class, the metadata class validates it!!!,
+# and then the survey, or mth5 object updates based on the metadata validation
+#in this sense, the metadata class is acting as a sort of gatekeeper for changing mth5
+#info, such as survey info or etc.
 survey_obj = mth5_obj.survey_group
+#Probably want a watcher in the mth5 Group(), it watches for changes in metadata.
+#then when (valid) changes in metadata are detected, the mth5 object updates.
+#
+#the metadata that is stored in the HDF5 file is stored in a dictionary of attributes
+#
+
+
+#The metadata (provided that it only updates by setattr and a few from_qqq() methods,
+#then we could use decorators in mth5,
+#e.g.
+#survey_obj.metadata.from_xml(survey_element)
+#-->
+#survey_obj.metadata_from_xml(survey_element)
+#def metadata_from_xml(survey_element)
+#    self.metadata_from_xml(survey_element)
+#    self.write_metadata()
+
+#survey_obj.metadata_from_json(jsonstring)
+#and that is an instance of a "metadata update function"
+#that triggers write_metadata()
+
 survey_obj.metadata.from_xml(survey_element)
 survey_obj.write_metadata()
 
-for station in ["FL001", "FL002"]:
+for station_id in ["FL001", "FL002"]:
     # add station
-    new_station = add_station(station, xml_root)
+    new_station = add_station(station_id, xml_root)
 
 mth5_obj.close_mth5()
