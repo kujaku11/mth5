@@ -27,7 +27,7 @@ from collections import OrderedDict
 from collections.abc import MutableMapping
 from operator import itemgetter
 
-from mth5.standards import CSV_FN_PATHS
+from mth5.metadata.standards import CSV_FN_PATHS
 from mth5.utils.exceptions import MTSchemaError
 
 logger = logging.getLogger(__name__)

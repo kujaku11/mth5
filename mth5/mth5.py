@@ -555,7 +555,7 @@ class MTH5:
             self.logger.info(f"Flushing and closing {str(self.filename)}")
             self.__hdf5_obj.flush()
             self.__hdf5_obj.close()
-            
+
         except AttributeError:
             helpers.close_open_files()
 

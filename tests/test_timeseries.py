@@ -196,7 +196,6 @@ class TestRunTS(unittest.TestCase):
         self.run.temperature should return None, because 'temperature' is not in self.channels
         :return:
         """
-        
 
         self.assertRaises(NameError, getattr, *(self.run, "temperature"))
 
