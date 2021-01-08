@@ -23,15 +23,16 @@ import urllib as url
 import xml.etree.ElementTree as ET
 
 import numpy as np
-
 import pandas as pd
 
 from mth5 import timeseries
-from mth5.utils.mttime import MTime
+from mt_metadata.utils.mttime import MTime
 
 # =============================================================================
 #  Metadata for usgs ascii file
 # =============================================================================
+
+
 class AsciiMetadata:
     """
     Container for all the important metadata in a USGS ascii file.
@@ -56,7 +57,7 @@ class AsciiMetadata:
     ========================= =================================================
 
     :ChnSettings:
-    
+
     ========================= =================================================
     Keys                      Description
     ========================= =================================================
@@ -73,7 +74,8 @@ class AsciiMetadata:
 
     def __init__(self, fn=None, **kwargs):
 
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = logging.getLogger(
+            f"{__name__}.{self.__class__.__name__}")
 
         self.fn = fn
         self.SurveyID = None
@@ -171,7 +173,8 @@ class AsciiMetadata:
                 nm_url.format(self._longitude, self._latitude)
             )
         except url.error.HTTPError:
-            self.logger.error("could not connect to get elevation from national map.")
+            self.logger.error(
+                "could not connect to get elevation from national map.")
             self.logger.debug(nm_url.format(self._longitude, self._latitude))
             return -666
 
@@ -207,7 +210,8 @@ class AsciiMetadata:
         try:
             self._chn_num = int(n_channel)
         except ValueError:
-            self.logger.warning(f"{n_channel} is not a number, setting Nchan to 0")
+            self.logger.warning(
+                f"{n_channel} is not a number, setting Nchan to 0")
 
     @property
     def AcqSmpFreq(self):
@@ -227,7 +231,7 @@ class AsciiMetadata:
 
     def get_component_info(self, comp):
         """
-        
+
         :param comp: DESCRIPTION
         :type comp: TYPE
         :return: DESCRIPTION
@@ -259,7 +263,8 @@ class AsciiMetadata:
             self.fn = fn
         if self.fn is not None:
             with open(self.fn, "r") as fid:
-                meta_lines = [fid.readline() for ii in range(self._metadata_len)]
+                meta_lines = [fid.readline()
+                              for ii in range(self._metadata_len)]
         for ii, line in enumerate(meta_lines):
             if line.find(":") > 0:
                 key, value = line.strip().split(":", 1)
@@ -295,13 +300,13 @@ class AsciiMetadata:
 
     def write_metadata(self, chn_list=["Ex", "Ey", "Hx", "Hy", "Hz"]):
         """
-        
+
         Write out metadata in the format of USGS ascii.
 
         :return: list of metadate lines.
 
         .. note:: meant to use '\n'.join(lines) to write out in a file.
-        
+
         """
 
         lines = []
@@ -327,7 +332,8 @@ class AsciiMetadata:
                 return lines
             else:
                 if key in ["SiteLatitude", "SiteLongitude"]:
-                    lines.append("{0}: {1:.5f}".format(key, getattr(self, key)))
+                    lines.append("{0}: {1:.5f}".format(
+                        key, getattr(self, key)))
                 else:
                     lines.append("{0}: {1}".format(key, getattr(self, key)))
 
@@ -376,7 +382,7 @@ class USGSasc(AsciiMetadata):
         >>> zm.SurveyID = 'MT'
         >>> zm.write_asc_file(str_fmt='%15.7e')
         >>> zm.write_station_info_metadata()
-        
+
     """
 
     def __init__(self, fn=None, **kwargs):
@@ -731,7 +737,7 @@ class USGSasc(AsciiMetadata):
             save_path=save_dir, compression=compress, compress_type=compress_type
         )
         # get the number of characters in the desired string
-        s_num = int(str_fmt[1 : str_fmt.find(".")])
+        s_num = int(str_fmt[1: str_fmt.find(".")])
 
         # convert electric fields into mV/km
         if convert_electrics:
@@ -771,13 +777,14 @@ class USGSasc(AsciiMetadata):
                     et = datetime.datetime.now()
                     write_time = et - st
                     print(
-                        "Writing took: {0} seconds".format(write_time.total_seconds())
+                        "Writing took: {0} seconds".format(
+                            write_time.total_seconds())
                     )
                     return
 
                 for chunk in range(int(self.ts.shape[0] / chunk_size)):
                     out = np.array(
-                        self.ts[chunk * chunk_size : (chunk + 1) * chunk_size]
+                        self.ts[chunk * chunk_size: (chunk + 1) * chunk_size]
                     )
                     out[np.where(out == 0)] = float(self.MissingDataFlag)
                     out = np.char.mod(str_fmt, out)
@@ -816,13 +823,14 @@ class USGSasc(AsciiMetadata):
                     et = datetime.datetime.now()
                     write_time = et - st
                     print(
-                        "Writing took: {0} seconds".format(write_time.total_seconds())
+                        "Writing took: {0} seconds".format(
+                            write_time.total_seconds())
                     )
                     return
 
                 for chunk in range(int(self.ts.shape[0] / chunk_size)):
                     out = np.array(
-                        self.ts[chunk * chunk_size : (chunk + 1) * chunk_size]
+                        self.ts[chunk * chunk_size: (chunk + 1) * chunk_size]
                     )
                     out[np.where(out == 0)] = float(self.MissingDataFlag)
                     out = np.char.mod(str_fmt, out)
@@ -843,7 +851,7 @@ class USGSasc(AsciiMetadata):
 def read_ascii(fn):
     """
     read USGS ASCII formatted file
-    
+
     :param fn: DESCRIPTION
     :type fn: TYPE
     :return: DESCRIPTION

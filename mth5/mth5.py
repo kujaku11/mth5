@@ -31,9 +31,10 @@ import h5py
 
 from mth5.utils.exceptions import MTH5Error
 from mth5 import __version__ as mth5_version
-from mth5.utils.mttime import get_now_utc
 from mth5 import groups as groups
 from mth5 import helpers
+
+from mt_metadata.utils.mttime import get_now_utc
 
 # =============================================================================
 # Acceptable parameters

@@ -29,7 +29,7 @@ import logging
 
 import numpy as np
 
-from mth5.utils.mttime import MTime
+from mt_metadata.utils.mttime import MTime
 from mth5.timeseries import ChannelTS
 
 # ==============================================================================
