@@ -57,7 +57,21 @@ known_third_party = ["Add2Build", "StringIO", "autodoc", "edit_on_github", "envi
 
 
 [tool.black]
-# defaults are just fine
+line-length = 79
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
 
 [build-system]
 requires = ["poetry>=0.12"]
