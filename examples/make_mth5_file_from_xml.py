@@ -6,9 +6,8 @@ Created on Mon Jun 22 12:20:59 2020
 
 @author: jpeacock
 
-Context here is a multiple station MT survey in Florida, and we are going to add a station
-to that survey.  The survey itself is being represented as an mth5 object 
-(in this case a "SurveyGroup")
+This script interrogates a directory containing a collection of XML files and
+reads them into an MTH5 object.
 """
 # =============================================================================
 # imports
@@ -23,9 +22,10 @@ from mth5.utils.pathing import DATA_DIR
 # =============================================================================
 # functions
 # =============================================================================
+
+
 def read_xml(xml_fn):
     """
-    
     :param xml_fn: DESCRIPTION
     :type xml_fn: TYPE
     :return: DESCRIPTION
@@ -39,22 +39,27 @@ def read_xml(xml_fn):
 def collect_xml_fn(station, directory):
     """
     Get all the files associated with a station
-    
+
     :param station: DESCRIPTION
     :type station: TYPE
     :return: DESCRIPTION
     :rtype: TYPE
 
+    fn_list: the list of xml files
+
     """
     if not isinstance(directory, Path):
         directory = Path(directory)
+    # replace above with common one-liner ensure_is_path(directory)
     fn_list = [fn.name for fn in directory.glob("*.xml") if station in fn.name]
-
+    # what is fn? filename?
     station_dict = {"station": None, "runs": {}}
     for fn in fn_list:
         if fn.count(".") == 1:
+            # is_a_station_xml(fn): return fn.count(".") == 1
             station_dict["station"] = fn
         elif fn.count(".") == 2:
+            # is_a_run_xml(fn): return fn.count(".") == 2
             run_letter = fn.split(".")[1]
             try:
                 station_dict["runs"][f"{station}{run_letter}"]["fn"] = fn
@@ -68,7 +73,9 @@ def collect_xml_fn(station, directory):
             run_letter = name_list[1]
             comp = name_list[-2]
             try:
-                station_dict["runs"][f"{station}{run_letter}"]["channels"][comp] = fn
+                station_dict["runs"][f"{station}{run_letter}"]["channels"][
+                    comp
+                ] = fn
             except KeyError:
                 station_dict["runs"][f"{station}{run_letter}"] = {
                     "fn": None,
@@ -82,7 +89,7 @@ def collect_xml_fn(station, directory):
 
 def add_station(station, directory, h5_obj):
     """
-    
+
     :param station: DESCRIPTION
     :type station: TYPE
     :return: DESCRIPTION
@@ -94,7 +101,9 @@ def add_station(station, directory, h5_obj):
 
     # add station
     new_station = h5_obj.stations_group.add_station(station)
-    new_station.metadata.from_xml(read_xml(directory.joinpath(station_dict["station"])))
+    new_station.metadata.from_xml(
+        read_xml(directory.joinpath(station_dict["station"]))
+    )
     new_station.write_metadata()
 
     # loop over runs
@@ -110,7 +119,9 @@ def add_station(station, directory, h5_obj):
         # loop over channels
         for channel, channel_fn in run_dict["channels"].items():
             _, _, channel_type, component, _ = channel_fn.split(".")
-            channel = run.add_channel(component, channel_type, np.random.rand(4096))
+            channel = run.add_channel(
+                component, channel_type, np.random.rand(4096)
+            )
             channel.metadata.from_xml(read_xml(directory.joinpath(channel_fn)))
             channel.metadata.time_period.start = run.metadata.time_period.start
             channel.metadata.time_period.end = run.metadata.time_period.end
@@ -124,58 +135,37 @@ def add_station(station, directory, h5_obj):
     return new_station
 
 
-# =============================================================================
-# script
-# =============================================================================
-# set xml directory
-xml_root = DATA_DIR.joinpath("florida_xml_metadata_files")
+def test_make_mth5_file_from_xml():
+    """"""
+    # =============================================================================
+    # script
+    # =============================================================================
+    # set xml directory
+    xml_root = DATA_DIR.joinpath("florida_xml_metadata_files")
 
-mth5_filename = DATA_DIR.joinpath("from_xml.mth5")
-if mth5_filename.exists():
-    mth5_filename.unlink()
-    print(f"--> Rmoved existing file {mth5_filename}")
+    mth5_filename = DATA_DIR.joinpath("from_xml.mth5")
+    if mth5_filename.exists():
+        mth5_filename.unlink()
+        print(f"--> Rmoved existing file {mth5_filename}")
 
-# initialize mth5 object
-mth5_obj = mth5.MTH5()
-mth5_obj.open_mth5(mth5_filename, mode="a")
+    # initialize mth5 object
+    mth5_obj = mth5.MTH5()
+    mth5_obj.open_mth5(mth5_filename, mode="a")
 
-### add survey information
-#standalone xml
-survey_element = read_xml(xml_root.joinpath('survey.xml'))
-survey_element = xml_to_dict(survey_element) #this obj is a dict "shaped the same as the attrs of h5"
+    ### add survey information
+    survey_element = read_xml(xml_root.joinpath("survey.xml"))
 
-#Adding the info from xml to our mth5 survey
-#USer inputs info to the metadata class, the metadata class validates it!!!,
-# and then the survey, or mth5 object updates based on the metadata validation
-#in this sense, the metadata class is acting as a sort of gatekeeper for changing mth5
-#info, such as survey info or etc.
-survey_obj = mth5_obj.survey_group
-#Probably want a watcher in the mth5 Group(), it watches for changes in metadata.
-#then when (valid) changes in metadata are detected, the mth5 object updates.
-#
-#the metadata that is stored in the HDF5 file is stored in a dictionary of attributes
-#
+    survey_obj = mth5_obj.survey_group
+    survey_obj.metadata.from_xml(survey_element)
+    survey_obj.write_metadata()
+
+    for station in ["FL001", "FL002"]:
+        # add station
+        new_station = add_station(station, xml_root, mth5_obj)
+    # wait how does mth5_obj know about the new station?
+    print(new_station)
+    mth5_obj.close_mth5()
 
 
-#The metadata (provided that it only updates by setattr and a few from_qqq() methods,
-#then we could use decorators in mth5,
-#e.g.
-#survey_obj.metadata.from_xml(survey_element)
-#-->
-#survey_obj.metadata_from_xml(survey_element)
-#def metadata_from_xml(survey_element)
-#    self.metadata_from_xml(survey_element)
-#    self.write_metadata()
-
-#survey_obj.metadata_from_json(jsonstring)
-#and that is an instance of a "metadata update function"
-#that triggers write_metadata()
-
-survey_obj.metadata.from_xml(survey_element)
-survey_obj.write_metadata()
-
-for station_id in ["FL001", "FL002"]:
-    # add station
-    new_station = add_station(station, xml_root, mth5_obj)
-
-mth5_obj.close_mth5()
+if __name__ == "__main__":
+    test_make_mth5_file_from_xml()
