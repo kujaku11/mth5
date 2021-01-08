@@ -16,7 +16,7 @@ from pathlib import Path
 from copy import deepcopy
 
 from mth5.utils.fdsn_tools import make_channel_code, get_location_code
-from mth5 import metadata
+from mt_metadata import timeseries as metadata
 
 from obspy.core import inventory
 from obspy.core.util import AttribDict
