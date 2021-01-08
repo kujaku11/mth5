@@ -24,7 +24,7 @@ import inspect
 import xarray as xr
 from matplotlib import pyplot as plt
 
-from mth5 import metadata
+from mt_metadata import timeseries as metadata
 from mth5.utils.mttime import MTime
 from mth5.utils.exceptions import MTTSError
 from .channel_ts import ChannelTS

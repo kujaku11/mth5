@@ -12,7 +12,6 @@ Created on Wed Dec 23 22:28:28 2020
 # =============================================================================
 # Imports
 # =============================================================================
-import inspect
 import weakref
 import logging
 
@@ -20,7 +19,7 @@ import h5py
 import numpy as np
 
 from mth5.utils.exceptions import MTH5Error
-from mth5 import metadata
+from mt_metadata import timeseries as metadata
 from mth5.helpers import to_numpy_type
 
 # =============================================================================

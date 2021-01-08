@@ -25,7 +25,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from mth5 import metadata
+from mt_metadata import timeseries as metadata
 from mth5.utils.mttime import MTime
 from mth5.utils.exceptions import MTTSError
 

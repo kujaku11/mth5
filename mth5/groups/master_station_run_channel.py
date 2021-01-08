@@ -24,11 +24,11 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
+from mt_metadata import timeseries as metadata
 from mth5.groups.base import BaseGroup
 from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import to_numpy_type, inherit_doc_string
 from mth5.utils.mttime import MTime
-from mth5 import metadata
 from mth5.timeseries import ChannelTS, RunTS
 
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))

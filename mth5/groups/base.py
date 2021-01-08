@@ -23,7 +23,7 @@ import weakref
 import h5py
 import numpy as np
 
-from mth5 import metadata
+from mt_metadata import timeseries as metadata
 from mth5.helpers import get_tree
 from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import to_numpy_type

@@ -14,8 +14,9 @@ Created on Wed Dec 23 17:08:40 2020
 # =============================================================================
 import numpy as np
 
+from mt_metadata.timeseries import Filter
+
 from mth5.groups.base import BaseGroup
-from mth5.metadata import Filter
 from mth5.groups.filter_dataset import FilterDataset
 
 # =============================================================================
