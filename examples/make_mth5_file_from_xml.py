@@ -174,8 +174,9 @@ survey_obj = mth5_obj.survey_group
 survey_obj.metadata.from_xml(survey_element)
 survey_obj.write_metadata()
 
+new_stations = []
 for station_id in ["FL001", "FL002"]:
     # add station
-    new_station = add_station(station, xml_root, mth5_obj)
+    new_stations.append(add_station(station, xml_root, mth5_obj))
 
 mth5_obj.close_mth5()
