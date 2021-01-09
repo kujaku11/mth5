@@ -900,7 +900,7 @@ class Z3D:
 
         meta_dict = {}
         meta_dict["id"] = self.station
-        meta_dict["archive_id"] = self.station
+        meta_dict["fdsn.id"] = self.station
         meta_dict["location.latitude"] = self.latitude
         meta_dict["location.longitude"] = self.longitude
         meta_dict["location.elevation"] = self.elevation

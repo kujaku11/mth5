@@ -53,24 +53,34 @@ def get_logger(logger_name, fn=None, level="debug"):
     :rtype: TYPE
 
     """
+    # if loggers.get(name):
+    #     return loggers.get(name)
     logger = logging.getLogger(logger_name)
+    logger.propagate = False
+    # need to clear the handlers to make sure there is only
+    # one call per logger
+    if (logger.hasHandlers()):
+        logger.handlers.clear()
+ 
     if fn is not None:
         fn = LOG_PATH.joinpath(fn)
         exists = False
         if fn.exists():
             exists = True
+        
         if fn.suffix not in [".log"]:
             fn = Path(fn.parent, f"{fn.stem}.log")
-        fn_handler = logging.handlers.RotatingFileHandler(fn,
-                                                          mode="a",
-                                                          maxBytes=2485760, 
-                                                          backupCount=2)
+            
+        fn_handler = logging.FileHandler(fn)
         fn_handler.setFormatter(FORMATTER)
         fn_handler.setLevel(LEVEL_DICT[level.lower()])
         logger.addHandler(fn_handler)
         if not exists:
             logger.info(f"Logging file can be found {logger.handlers[-1].baseFilename}")
     else:
-        logger.addHandler(logging.NullHandler())
+        null_handler = logging.NullHandler()
+        null_handler.setFormatter(FORMATTER)
+        null_handler.setLevel(LEVEL_DICT[level.lower()])
+        logger.addHandler(null_handler)
 
     return logger

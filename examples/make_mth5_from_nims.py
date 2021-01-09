@@ -21,7 +21,7 @@ from mt_metadata.utils.mttime import MTime
 #
 # =============================================================================
 # set to true if you want to interact with the mth5 object in the console
-interact = True
+interact = False
 nims_dir = DATA_DIR.joinpath("nims")
 h5_fn = DATA_DIR.joinpath("from_nims.mth5")
 

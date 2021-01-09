@@ -17,9 +17,9 @@ loggers:
     __main__:
         level: DEBUG
         handlers: [console]
-        propagate: no
+        propagate: false
 
 root:
     level: DEBUG
     handlers: [console]
-    propogate: yes
+    propogate: false
