@@ -24,6 +24,8 @@ import h5py
 import numpy as np
 
 from mt_metadata import timeseries as metadata
+from mt_metadata.base import Base
+
 from mth5.helpers import get_tree
 from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import to_numpy_type
@@ -93,14 +95,14 @@ class BaseGroup:
         }
 
         # set metadata to the appropriate class.  Standards is not a
-        # metadata.Base object so should be skipped. If the class name is not
+        # Base object so should be skipped. If the class name is not
         # defined yet set to Base class.
-        self.metadata = metadata.Base()
+        self.metadata = Base()
         if self._class_name not in ["Standards"]:
             try:
                 self.metadata = meta_classes[self._class_name]()
             except KeyError:
-                self.metadata = metadata.Base()
+                self.metadata = Base()
 
         # add 2 attributes that will help with querying
         # 1) the metadata class name
@@ -141,7 +143,7 @@ class BaseGroup:
 
         # if metadata, make sure that its the same class type
         if group_metadata is not None:
-            if not isinstance(group_metadata, (type(self.metadata), metadata.Base)):
+            if not isinstance(group_metadata, (type(self.metadata), Base)):
                 msg = "metadata must be type metadata.{0} not {1}".format(
                     self._class_name, type(group_metadata)
                 )

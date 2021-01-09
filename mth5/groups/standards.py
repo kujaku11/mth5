@@ -27,12 +27,14 @@ def summarize_metadata_standards():
     """
     Summarize metadata standards into a dictionary
     """
-    summary_dict = Survey()._attr_dict
-    summary_dict.add_dict(Station()._attr_dict, "station")
-    summary_dict.add_dict(Run()._attr_dict, "run")
-    summary_dict.add_dict(Electric()._attr_dict, "electric")
-    summary_dict.add_dict(Magnetic()._attr_dict, "magnetic")
-    summary_dict.add_dict(Auxiliary()._attr_dict, "auxiliary")
+    # need to be sure to make copies otherwise things will get
+    # added in not great places.
+    summary_dict = Survey()._attr_dict.copy()
+    summary_dict.add_dict(Station()._attr_dict.copy(), "station")
+    summary_dict.add_dict(Run()._attr_dict.copy(), "run")
+    summary_dict.add_dict(Electric()._attr_dict.copy(), "electric")
+    summary_dict.add_dict(Magnetic()._attr_dict.copy(), "magnetic")
+    summary_dict.add_dict(Auxiliary()._attr_dict.copy(), "auxiliary")
     
     return summary_dict
 # =============================================================================

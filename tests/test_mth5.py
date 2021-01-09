@@ -15,10 +15,10 @@ from pathlib import Path
 import numpy as np
 
 from mth5 import mth5
-from mth5.metadata.standards import schema
 from mth5.utils.exceptions import MTH5Error
 from mth5.timeseries import ChannelTS, RunTS
-from mth5.utils.mttime import MTime
+from mth5.groups.standards import summarize_metadata_standards
+from mt_metadata.utils.mttime import MTime
 
 fn_path = Path(__file__).parent
 # =============================================================================
@@ -39,8 +39,7 @@ class TestMTH5(unittest.TestCase):
 
     def test_initial_standards_keys(self):
         stable = self.mth5_obj.standards_group.summary_table
-        standards_obj = schema.Standards()
-        standards_dict = standards_obj.summarize_standards()
+        standards_dict = summarize_metadata_standards()
         standards_keys = sorted(list(standards_dict.keys()))
 
         stable_keys = sorted([ss.decode() for ss in list(stable.array["attribute"])])

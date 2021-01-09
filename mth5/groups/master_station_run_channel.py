@@ -26,6 +26,7 @@ import xarray as xr
 
 from mt_metadata import timeseries as metadata
 from mt_metadata.utils.mttime import MTime
+from mt_metadata.base import Base
 
 from mth5.groups.base import BaseGroup
 from mth5.utils.exceptions import MTH5Error
@@ -1475,13 +1476,13 @@ class ChannelDataset:
             "{0}.{1}".format(__name__, self._class_name))
 
         # set metadata to the appropriate class.  Standards is not a
-        # metadata.Base object so should be skipped. If the class name is not
+        # Base object so should be skipped. If the class name is not
         # defined yet set to Base class.
-        self.metadata = metadata.Base()
+        self.metadata = Base()
         try:
             self.metadata = meta_classes[self._class_name]()
         except KeyError:
-            self.metadata = metadata.Base()
+            self.metadata = Base()
 
         if not hasattr(self.metadata, "mth5_type"):
             self._add_base_attributes()
