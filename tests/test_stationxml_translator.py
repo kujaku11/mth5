@@ -406,8 +406,12 @@ class TestToXML(unittest.TestCase):
         )
 
         self.to_stationxml.add_channel(channel, run, "MT012")
+        self.fn = fn_path.joinpath("Test_station.xml")
+        self.to_stationxml.to_stationxml(self.fn)
 
-        self.to_stationxml.to_stationxml(fn_path.joinpath("Test_station.xml"))
+    def tearDown(self):
+        # be sure to remove the file created.
+        self.fn.unlink()
 
 
 # =============================================================================

@@ -11,30 +11,15 @@ handlers:
         level: INFO
         formatter: standard
         stream: ext://sys.stdout
-    
-    debug_file_handler:
-        class: logging.handlers.RotatingFileHandler
-        level: DEBUG
-        formatter: standard
-        filename: mth5_debug.log
-        maxBytes: 2485760 # 2MB
-        backupCount: 2
-    
-    warning_file_handler:
-        class: logging.handlers.RotatingFileHandler
-        level: WARNING
-        formatter: standard
-        filename: mth5_error.log
-        maxBytes: 2485760 # 2MB
-        backupCount: 2
+   
 
 loggers:
     __main__:
         level: DEBUG
-        handlers: [console, debug_file_handler, warning_file_handler]
+        handlers: [console]
         propagate: no
 
 root:
     level: DEBUG
-    handlers: [console, debug_file_handler, warning_file_handler]
+    handlers: [console]
     propogate: yes
