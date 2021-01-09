@@ -165,6 +165,7 @@ class ChannelTS:
         # get correct metadata class
         try:
             self.metadata = meta_classes[channel_type.capitalize()]()
+            self.metadata.type = channel_type.lower()
         except KeyError:
             msg = (
                 "Channel type is undefined, must be [ electric | "
