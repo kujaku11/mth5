@@ -36,7 +36,7 @@ setup(
         "Programming Language :: Python :: 3.8",
     ],
     description="Archivable and exchangeable format for magnetotelluric data",
-    install_requires=requirements,
+    # install_requires=requirements,
     license="MIT license",
     long_description=readme + "\n\n" + history,
     include_package_data=True,
