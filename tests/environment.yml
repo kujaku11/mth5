@@ -1,0 +1,10 @@
+name: mth5-test
+
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python
+  - pytest
+  - pip:
+    - sphinx-rtd-theme

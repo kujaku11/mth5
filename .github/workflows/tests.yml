@@ -30,14 +30,16 @@ jobs:
       shell: bash
       run: |
         python --version
-        conda install pytest
+        conda env create -f tests/environment.yml
 
     - name: Install Our Package
       shell: bash
       run: |
+        source activate mth5-test
         pip install -e .
 
     - name: Run Tests
       shell: bash
       run: |
+        source activate mth5-test
         pytest -v .
