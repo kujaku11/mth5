@@ -46,4 +46,4 @@ jobs:
       shell: bash
       run: |
         source activate mth5-test
-        pytest -v .
+        pytest .
