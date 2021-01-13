@@ -30,13 +30,16 @@ jobs:
       shell: bash
       run: |
         python --version
-        conda env create -f tests/environment.yml
+        conda env create -n mth5-test
+        conda config --add channels conda-forge
+        conda install pytest
 
     - name: Install Our Package
       shell: bash
       run: |
         source activate mth5-test
         pip install -e .
+        conda list
 
     - name: Run Tests
       shell: bash
