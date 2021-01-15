@@ -264,7 +264,9 @@ class BaseGroup:
         )
         self.logger.debug(
             "used options: "
-            + "; ".join([f"{k} = {v}" for k, v in self.dataset_options.items()])
+            + "; ".join(
+                [f"{k} = {v}" for k, v in self.dataset_options.items()]
+            )
         )
 
     def initialize_group(self):

@@ -134,6 +134,7 @@ def add_station(station, directory, h5_obj):
 
     return new_station
 
+
 def test_make_mth5_file_from_xml():
     """"""
     # =============================================================================
@@ -164,6 +165,7 @@ def test_make_mth5_file_from_xml():
     # wait how does mth5_obj know about the new station?
     print(new_station)
     mth5_obj.close_mth5()
+
 
 if __name__ == "__main__":
     test_make_mth5_file_from_xml()

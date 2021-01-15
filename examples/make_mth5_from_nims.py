@@ -17,6 +17,7 @@ from mth5.utils.pathing import DATA_DIR
 
 from mt_metadata import timeseries as metadata
 from mt_metadata.utils.mttime import MTime
+
 # =============================================================================
 #
 # =============================================================================
@@ -62,7 +63,8 @@ for nims_fn in zip_ref.filelist:
 
     # make a run group
     run_group = station_group.add_run(
-        run_ts.metadata.id, run_metadata=run_ts.metadata)
+        run_ts.metadata.id, run_metadata=run_ts.metadata
+    )
 
     # add data to the run group
     channels = run_group.from_runts(run_ts)

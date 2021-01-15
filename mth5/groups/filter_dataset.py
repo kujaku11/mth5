@@ -262,7 +262,9 @@ class FilterDataset:
 
         for key, value in self.metadata.to_dict(single=True):
             value = to_numpy_type(value)
-            self.logger.debug(f"wrote metadata {key} = {value}".format(key, value))
+            self.logger.debug(
+                f"wrote metadata {key} = {value}".format(key, value)
+            )
             self.hdf5_dataset.attrs.create(key, value)
 
     def to_filter_object(self):

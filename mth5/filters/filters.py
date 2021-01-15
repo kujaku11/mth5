@@ -159,7 +159,10 @@ class PolesZeros:
         """
 
         pz = signal.ZerosPolesGain(
-            self.zeros, self.poles, self.normalization_factor, dt=self.sample_rate
+            self.zeros,
+            self.poles,
+            self.normalization_factor,
+            dt=self.sample_rate,
         )
 
         f, amp = signal.dfreqresp(pz, frequencies)
@@ -214,10 +217,16 @@ class LookupTable:
 
     def __init__(self, frequency, real, imaginary, amplitude_phase=False):
 
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = logging.getLogger(
+            f"{__name__}.{self.__class__.__name__}"
+        )
         self.lookup_table = None
 
-        if frequency is not None and real is not None and imaginary is not None:
+        if (
+            frequency is not None
+            and real is not None
+            and imaginary is not None
+        ):
             if not isinstance(frequency, np.ndarray):
                 frequency = np.array(frequency)
             if not isinstance(real, np.ndarray):
@@ -265,7 +274,10 @@ class LookupTable:
                 + [
                     f"{ff:<14.5e}{vv.real:<14.5e}{vv.imag:<14.5e}{aa:<14.5e}{pp:<14.5e}"
                     for ff, vv, aa, pp in zip(
-                        self.frequency, self.filter_values, self.amplitude, self.phase
+                        self.frequency,
+                        self.filter_values,
+                        self.amplitude,
+                        self.phase,
                     )
                 ]
             )
@@ -319,7 +331,9 @@ class LookupTable:
     @property
     def amplitude(self):
         try:
-            return np.sqrt(self.filter_values.real ** 2 + self.filter_values.imag ** 2)
+            return np.sqrt(
+                self.filter_values.real ** 2 + self.filter_values.imag ** 2
+            )
         except AttributeError:
             return None
 
@@ -423,7 +437,9 @@ class Filter:
         instrument_gain=None,
     ):
 
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = logging.getLogger(
+            f"{__name__}.{self.__class__.__name__}"
+        )
         self.metadata = metadata.Filter()
         if zeros is None:
             zeros = []
@@ -459,14 +475,20 @@ class Filter:
         info = self.metadata.__str__()
         if self.conversion_factor is not None:
             info += "\n".join(
-                ["", "Conversion Factor:", f"\t{self.conversion_factor:<12.5e}"]
+                [
+                    "",
+                    "Conversion Factor:",
+                    f"\t{self.conversion_factor:<12.5e}",
+                ]
             )
         if self.instrument_gain is not None:
             info += "\n".join(
                 ["", "Instrument Gain:", f"\t{self.instrument_gain:<12.5e}"]
             )
         if self.time_delay is not None:
-            info += "\n".join(["", "Time Delay:", f"\t{self.time_delay:<12.5e}"])
+            info += "\n".join(
+                ["", "Time Delay:", f"\t{self.time_delay:<12.5e}"]
+            )
 
         if len(self.zpk.poles) > 0 or len(self.zpk.zeros) > 0:
             pz = [""]

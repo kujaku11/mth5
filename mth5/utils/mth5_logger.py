@@ -14,14 +14,17 @@ import logging.config
 # =============================================================================
 # Global Variables
 # =============================================================================
-LEVEL_DICT = {"debug": logging.DEBUG,
-              "info": logging.INFO,
-              "warning": logging.WARNING,
-              "error": logging.ERROR,
-              "critical": logging.CRITICAL}
+LEVEL_DICT = {
+    "debug": logging.DEBUG,
+    "info": logging.INFO,
+    "warning": logging.WARNING,
+    "error": logging.ERROR,
+    "critical": logging.CRITICAL,
+}
 
 LOG_FORMAT = logging.Formatter(
-    "%(asctime)s [line %(lineno)d] %(name)s.%(funcName)s - %(levelname)s: %(message)s")
+    "%(asctime)s [line %(lineno)d] %(name)s.%(funcName)s - %(levelname)s: %(message)s"
+)
 # Get the configuration file path, should be in same directory as this file
 CONF_PATH = Path(__file__).parent
 CONF_FILE = Path.joinpath(CONF_PATH, "logging_config.yaml")
@@ -70,7 +73,7 @@ def setup_logger(logger_name, fn=None, level="debug"):
     logger = logging.getLogger(logger_name)
     # need to clear the handlers to make sure there is only
     # one call per logger plus stdout
-    if (logger.hasHandlers()):
+    if logger.hasHandlers():
         logger.handlers.clear()
 
     logger.propagate = False
@@ -96,7 +99,8 @@ def setup_logger(logger_name, fn=None, level="debug"):
         logger.addHandler(fn_handler)
         if not exists:
             logger.info(
-                f"Logging file can be found {logger.handlers[-1].baseFilename}")
+                f"Logging file can be found {logger.handlers[-1].baseFilename}"
+            )
     # else, give it a null handler, which will go to default logger.
     else:
         null_handler = logging.NullHandler()

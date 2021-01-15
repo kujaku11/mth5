@@ -39,7 +39,9 @@ class MTH5Table:
             self.array = weakref.ref(hdf5_dataset)()
             self.hdf5_reference = hdf5_dataset.ref
         else:
-            msg = "Input must be a h5py.Dataset not {0}".format(type(hdf5_dataset))
+            msg = "Input must be a h5py.Dataset not {0}".format(
+                type(hdf5_dataset)
+            )
             self.logger.error(msg)
             raise MTH5TableError(msg)
 
@@ -53,7 +55,9 @@ class MTH5Table:
         """
         # if the array is empty
         if self.array.size == 0:
-            length_dict = dict([(key, len(str(key))) for key in list(self.dtype.names)])
+            length_dict = dict(
+                [(key, len(str(key))) for key in list(self.dtype.names)]
+            )
             lines = [
                 " | ".join(
                     ["index"]
@@ -198,14 +202,15 @@ class MTH5Table:
         elif test == "be":
             if not isinstance(value, (list, tuple, np.ndarray)):
                 msg = (
-                    "If testing for between value must be an iterable of" + " length 2."
+                    "If testing for between value must be an iterable of"
+                    + " length 2."
                 )
                 self.logger.error(msg)
                 raise ValueError(msg)
 
-            index_values = np.where((test_array > value[0]) & (test_array < value[1]))[
-                0
-            ]
+            index_values = np.where(
+                (test_array > value[0]) & (test_array < value[1])
+            )[0]
         else:
             raise ValueError("Test {0} not understood".format(test))
 
@@ -231,7 +236,9 @@ class MTH5Table:
         """
 
         if not isinstance(row, (np.ndarray)):
-            msg = "Input must be an numpy.ndarray" + "not {0}".format(type(row))
+            msg = "Input must be an numpy.ndarray" + "not {0}".format(
+                type(row)
+            )
         if isinstance(row, np.ndarray):
             if not self.check_dtypes(row.dtype):
                 msg = "{0}\nInput dtypes:\n{1}\n\nTable dtypes:\n{2}".format(
@@ -247,7 +254,9 @@ class MTH5Table:
 
         # add the row
         self.array[index] = row
-        self.logger.debug("Added row as index {0} with values {1}".format(index, row))
+        self.logger.debug(
+            "Added row as index {0} with values {1}".format(index, row)
+        )
 
         return index
 
@@ -277,7 +286,9 @@ class MTH5Table:
             return self.add_row(null_array, index=index)
 
         except IndexError as error:
-            msg = "Could not find index {0} in shape {1}".format(index, self.shape())
+            msg = "Could not find index {0} in shape {1}".format(
+                index, self.shape()
+            )
             self.logger.exception(msg)
             raise IndexError(f"{error}\n{msg}")
 
@@ -292,7 +303,13 @@ class MTH5Table:
         """
 
         df = pd.DataFrame(self.array[()])
-        for key in ["station", "run", "component", "measurement_type", "units"]:
+        for key in [
+            "station",
+            "run",
+            "component",
+            "measurement_type",
+            "units",
+        ]:
             setattr(df, key, getattr(df, key).str.decode("utf-8"))
         df.start = pd.to_datetime(df.start.str.decode("utf-8"))
         df.end = pd.to_datetime(df.end.str.decode("utf-8"))

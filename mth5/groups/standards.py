@@ -18,7 +18,13 @@ from mth5.groups.base import BaseGroup
 from mth5.utils.exceptions import MTH5TableError
 
 from mt_metadata.timeseries import (
-    Survey, Station, Run, Auxiliary, Electric, Magnetic)
+    Survey,
+    Station,
+    Run,
+    Auxiliary,
+    Electric,
+    Magnetic,
+)
 
 # =============================================================================
 # Summarize standards
@@ -35,8 +41,10 @@ def summarize_metadata_standards():
     summary_dict.add_dict(Electric()._attr_dict.copy(), "electric")
     summary_dict.add_dict(Magnetic()._attr_dict.copy(), "magnetic")
     summary_dict.add_dict(Auxiliary()._attr_dict.copy(), "auxiliary")
-    
+
     return summary_dict
+
+
 # =============================================================================
 # Standards Group
 # =============================================================================
@@ -117,7 +125,9 @@ class StandardsGroup(BaseGroup):
 
         meta_item = self.summary_table.array[find]
         lines = ["", attribute_name, "-" * (len(attribute_name) + 4)]
-        for name, value in zip(meta_item.dtype.names[1:], meta_item.item()[1:]):
+        for name, value in zip(
+            meta_item.dtype.names[1:], meta_item.item()[1:]
+        ):
             if isinstance(value, (bytes, np.bytes_)):
                 value = value.decode()
             lines.append("\t{0:<14} {1}".format(name + ":", value))

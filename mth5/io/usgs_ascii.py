@@ -75,7 +75,8 @@ class AsciiMetadata:
     def __init__(self, fn=None, **kwargs):
 
         self.logger = logging.getLogger(
-            f"{__name__}.{self.__class__.__name__}")
+            f"{__name__}.{self.__class__.__name__}"
+        )
 
         self.fn = fn
         self.SurveyID = None
@@ -174,7 +175,8 @@ class AsciiMetadata:
             )
         except url.error.HTTPError:
             self.logger.error(
-                "could not connect to get elevation from national map.")
+                "could not connect to get elevation from national map."
+            )
             self.logger.debug(nm_url.format(self._longitude, self._latitude))
             return -666
 
@@ -211,7 +213,8 @@ class AsciiMetadata:
             self._chn_num = int(n_channel)
         except ValueError:
             self.logger.warning(
-                f"{n_channel} is not a number, setting Nchan to 0")
+                f"{n_channel} is not a number, setting Nchan to 0"
+            )
 
     @property
     def AcqSmpFreq(self):
@@ -263,8 +266,9 @@ class AsciiMetadata:
             self.fn = fn
         if self.fn is not None:
             with open(self.fn, "r") as fid:
-                meta_lines = [fid.readline()
-                              for ii in range(self._metadata_len)]
+                meta_lines = [
+                    fid.readline() for ii in range(self._metadata_len)
+                ]
         for ii, line in enumerate(meta_lines):
             if line.find(":") > 0:
                 key, value = line.strip().split(":", 1)
@@ -332,8 +336,9 @@ class AsciiMetadata:
                 return lines
             else:
                 if key in ["SiteLatitude", "SiteLongitude"]:
-                    lines.append("{0}: {1:.5f}".format(
-                        key, getattr(self, key)))
+                    lines.append(
+                        "{0}: {1:.5f}".format(key, getattr(self, key))
+                    )
                 else:
                     lines.append("{0}: {1}".format(key, getattr(self, key)))
 
@@ -626,9 +631,9 @@ class USGSasc(AsciiMetadata):
         )
         for ii, comp in enumerate(meta_arr["comp"]):
             if "h" in comp.lower():
-                self.channel_dict[comp.capitalize()]["InstrumentID"] += "-{0}".format(
-                    meta_arr["ch_num"]
-                )
+                self.channel_dict[comp.capitalize()][
+                    "InstrumentID"
+                ] += "-{0}".format(meta_arr["ch_num"])
 
     def read_asc_file(self, fn=None):
         """
@@ -642,7 +647,10 @@ class USGSasc(AsciiMetadata):
         st = datetime.datetime.now()
         data_line = self.read_metadata()
         self.ts = pd.read_csv(
-            self.fn, delim_whitespace=True, skiprows=data_line, dtype=np.float32
+            self.fn,
+            delim_whitespace=True,
+            skiprows=data_line,
+            dtype=np.float32,
         )
         dt_freq = "{0:.0f}N".format(1.0 / (self.AcqSmpFreq) * 1e9)
         dt_index = pd.date_range(
@@ -655,7 +663,9 @@ class USGSasc(AsciiMetadata):
         read_time = et - st
         self.logger.info("Reading took {0}".format(read_time.total_seconds()))
 
-    def _make_file_name(self, save_path=None, compression=True, compress_type="zip"):
+    def _make_file_name(
+        self, save_path=None, compression=True, compress_type="zip"
+    ):
         """
         get the file name to save to
 
@@ -734,10 +744,12 @@ class USGSasc(AsciiMetadata):
         """
         # get the filename to save to
         save_fn = self._make_file_name(
-            save_path=save_dir, compression=compress, compress_type=compress_type
+            save_path=save_dir,
+            compression=compress,
+            compress_type=compress_type,
         )
         # get the number of characters in the desired string
-        s_num = int(str_fmt[1: str_fmt.find(".")])
+        s_num = int(str_fmt[1 : str_fmt.find(".")])
 
         # convert electric fields into mV/km
         if convert_electrics:
@@ -778,13 +790,14 @@ class USGSasc(AsciiMetadata):
                     write_time = et - st
                     print(
                         "Writing took: {0} seconds".format(
-                            write_time.total_seconds())
+                            write_time.total_seconds()
+                        )
                     )
                     return
 
                 for chunk in range(int(self.ts.shape[0] / chunk_size)):
                     out = np.array(
-                        self.ts[chunk * chunk_size: (chunk + 1) * chunk_size]
+                        self.ts[chunk * chunk_size : (chunk + 1) * chunk_size]
                     )
                     out[np.where(out == 0)] = float(self.MissingDataFlag)
                     out = np.char.mod(str_fmt, out)
@@ -824,13 +837,14 @@ class USGSasc(AsciiMetadata):
                     write_time = et - st
                     print(
                         "Writing took: {0} seconds".format(
-                            write_time.total_seconds())
+                            write_time.total_seconds()
+                        )
                     )
                     return
 
                 for chunk in range(int(self.ts.shape[0] / chunk_size)):
                     out = np.array(
-                        self.ts[chunk * chunk_size: (chunk + 1) * chunk_size]
+                        self.ts[chunk * chunk_size : (chunk + 1) * chunk_size]
                     )
                     out[np.where(out == 0)] = float(self.MissingDataFlag)
                     out = np.char.mod(str_fmt, out)
