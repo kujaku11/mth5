@@ -11,7 +11,7 @@ import numpy as np
 from copy import deepcopy
 
 from dateutil import parser as dtparser
-from dateutil.tz.tz import tzutc
+from dateutil.tz.tz import tzutc, tzlocal
 
 from mth5.utils.exceptions import MTTimeError
 
