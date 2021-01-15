@@ -339,16 +339,32 @@ class MTime:
         self.dt_object = dt
 
     def from_str(self, dt_str):
+        """
+        Parse a date-time string using dateutil.parser
+        
+        Need to use dateutil.parser.isoparser to get correct tzinfo=tzutc
+        If the input is a weird date string then try to use parse.
+        
+        :param dt_str: date-time string
+        :type: string
+        
+        
+        """
         try:
-            self.dt_object = self.validate_tzinfo(dtparser.parse(dt_str))
-        except dtparser.ParserError as error:
-            msg = (
-                "{0}".format(error)
-                + "Input must be a valid datetime string, see "
-                + "https://docs.python.org/3.8/library/datetime.html"
-            )
-            self.logger.error(msg)
-            raise MTTimeError(msg)
+            parsed_str = dtparser.isoparser(dt_str)
+        except ValueError:
+            try:
+                parsed_str = dtparser.parse(dt_str)
+            except dtparser.ParserError as error:
+                msg = (
+                    "{0}".format(error)
+                    + "Input must be a valid datetime string, see "
+                    + "https://docs.python.org/3.8/library/datetime.html"
+                )
+                self.logger.error(msg)
+                raise MTTimeError(msg)
+         
+        self.dt_object = self.validate_tzinfo(parsed_str)
 
     def validate_tzinfo(self, dt_object):
         """
@@ -362,6 +378,11 @@ class MTime:
             return dt_object.replace(tzinfo=datetime.timezone.utc)
 
         elif dt_object.tzinfo is None:
+            return dt_object.replace(tzinfo=datetime.timezone.utc)
+        
+        # this seems to happen on linux systems
+        elif isinstance(dt_object.tzinfo, tzlocal):
+            self.logger.info("Local timezone identified setting to UTC")
             return dt_object.replace(tzinfo=datetime.timezone.utc)
 
         elif dt_object.tzinfo != datetime.timezone.utc:
