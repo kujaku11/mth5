@@ -13,14 +13,14 @@ Created on Wed Dec 23 22:28:28 2020
 # Imports
 # =============================================================================
 import weakref
-import logging
 
 import h5py
 import numpy as np
 
 from mth5.utils.exceptions import MTH5Error
-from mt_metadata import timeseries as metadata
 from mth5.helpers import to_numpy_type
+from mth5.utils.mth5_logger import setup_logger
+from mt_metadata import timeseries as metadata
 
 # =============================================================================
 # Filter Dataset
@@ -62,7 +62,7 @@ class FilterDataset:
         if dataset is not None and isinstance(dataset, (h5py.Dataset)):
             self.hdf5_dataset = weakref.ref(dataset)()
 
-        self.logger = logging.getLogger(f"{__name__}.{self._class_name}")
+        self.logger = setup_logger(f"{__name__}.{self._class_name}")
 
         self.metadata = metadata.Filter()
 

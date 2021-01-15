@@ -17,7 +17,6 @@ get a circular import.
 # =============================================================================
 import inspect
 import weakref
-import logging
 
 import h5py
 import numpy as np
@@ -32,6 +31,7 @@ from mth5.groups.base import BaseGroup
 from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import to_numpy_type, inherit_doc_string
 from mth5.timeseries import ChannelTS, RunTS
+from mth5.utils.mth5_logger import setup_logger
 
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
 # =============================================================================
@@ -1472,7 +1472,7 @@ class ChannelDataset:
         if dataset is not None and isinstance(dataset, (h5py.Dataset)):
             self.hdf5_dataset = weakref.ref(dataset)()
 
-        self.logger = logging.getLogger(
+        self.logger = setup_logger(
             "{0}.{1}".format(__name__, self._class_name))
 
         # set metadata to the appropriate class.  Standards is not a

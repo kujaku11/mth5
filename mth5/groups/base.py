@@ -17,7 +17,6 @@ Created on Fri May 29 15:09:48 2020
 # Imports
 # =============================================================================
 import inspect
-import logging
 import weakref
 
 import h5py
@@ -30,6 +29,7 @@ from mth5.helpers import get_tree
 from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import to_numpy_type
 from mth5.tables import MTH5Table
+from mth5.utils.mth5_logger import setup_logger
 
 # make a dictionary of available metadata classes
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
@@ -80,7 +80,7 @@ class BaseGroup:
         self.shuffle = True
         self.fletcher32 = True
 
-        self.logger = logging.getLogger(f"{__name__}.{self._class_name}")
+        self.logger = setup_logger(f"{__name__}.{self._class_name}")
 
         # make sure the reference to the group is weak so there are no lingering
         # references to a closed HDF5 file.

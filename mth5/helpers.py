@@ -19,9 +19,10 @@ import inspect
 import numpy as np
 import h5py
 import gc
-import logging
 
-logger = logging.getLogger(__name__)
+from mth5.utils.mth5_logger import setup_logger
+
+logger = setup_logger(__name__)
 
 # =============================================================================
 # Acceptable compressions

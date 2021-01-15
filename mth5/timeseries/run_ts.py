@@ -18,7 +18,6 @@ convert them back if read in.
 # ==============================================================================
 # Imports
 # ==============================================================================
-import logging
 import inspect
 
 import xarray as xr
@@ -29,6 +28,7 @@ from mt_metadata.utils.mttime import MTime
 
 from mth5.utils.exceptions import MTTSError
 from .channel_ts import ChannelTS
+from mth5.utils.mth5_logger import setup_logger
 
 from obspy.core import Stream
 
@@ -50,7 +50,7 @@ class RunTS:
 
     def __init__(self, array_list=None, run_metadata=None, station_metadata=None):
 
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
         self.metadata = metadata.Run()
         self.station_metadata = metadata.Station()
         self._dataset = xr.Dataset()

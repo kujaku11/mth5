@@ -10,7 +10,6 @@ Created on Wed Dec 23 16:53:55 2020
 # =============================================================================
 # Imports
 # =============================================================================
-import logging
 import weakref
 
 import h5py
@@ -18,6 +17,7 @@ import numpy as np
 import pandas as pd
 
 from mth5.utils.exceptions import MTH5TableError
+from mth5.utils.mth5_logger import setup_logger
 
 # =============================================================================
 # MTH5 Table Class
@@ -32,7 +32,7 @@ class MTH5Table:
     """
 
     def __init__(self, hdf5_dataset):
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
 
         self.hdf5_reference = None
         if isinstance(hdf5_dataset, h5py.Dataset):

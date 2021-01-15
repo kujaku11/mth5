@@ -10,18 +10,17 @@ Created on Tue Jun  9 19:53:32 2020
 # =============================================================================
 # Imports
 # =============================================================================
-import logging
-
 from pathlib import Path
 from copy import deepcopy
 
 from mth5.utils.fdsn_tools import make_channel_code, get_location_code
+from mth5.utils.mth5_logger import setup_logger
 from mt_metadata import timeseries as metadata
 
 from obspy.core import inventory
 from obspy.core.util import AttribDict
 
-logger = logging.getLogger(__name__)
+logger = setup_logger(__name__)
 # =============================================================================
 # Translate between metadata and inventory: mapping dictionaries
 # =============================================================================
@@ -658,7 +657,7 @@ class MTToStationXML:
 
     def __init__(self, inventory_object=None):
 
-        self.logger = logging.getLogger(
+        self.logger = setup_logger(
             "{0}.{1}".format(__name__, self.__class__.__name__)
         )
 

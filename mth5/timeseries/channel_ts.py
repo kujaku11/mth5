@@ -18,7 +18,6 @@ convert them back if read in.
 # ==============================================================================
 # Imports
 # ==============================================================================
-import logging
 import inspect
 
 import numpy as np
@@ -29,6 +28,7 @@ from mt_metadata import timeseries as metadata
 from mt_metadata.utils.mttime import MTime
 
 from mth5.utils.exceptions import MTTSError
+from mth5.utils.mth5_logger import setup_logger
 
 from obspy.core import Trace
 
@@ -157,7 +157,7 @@ class ChannelTS:
         **kwargs,
     ):
 
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
         self.station_metadata = metadata.Station()
         self.run_metadata = metadata.Run()
         self._ts = xr.DataArray([1], coords=[("time", [1])])

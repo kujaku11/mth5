@@ -22,8 +22,6 @@ Created on Sun Dec  9 20:50:41 2018
 # =============================================================================
 # Imports
 # =============================================================================
-import logging
-
 from pathlib import Path
 from platform import platform
 
@@ -33,6 +31,7 @@ from mth5.utils.exceptions import MTH5Error
 from mth5 import __version__ as mth5_version
 from mth5 import groups as groups
 from mth5 import helpers
+from mth5.utils.mth5_logger import setup_logger
 
 from mt_metadata.utils.mttime import get_now_utc
 
@@ -228,7 +227,7 @@ class MTH5:
         data_level=1,
     ):
 
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
 
         # make these private so the user cant accidentally change anything.
         self.__hdf5_obj = None
