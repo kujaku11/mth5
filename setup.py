@@ -11,7 +11,7 @@ with open("HISTORY.rst") as history_file:
     history = history_file.read()
 
 requirements = [
-    "h5py=3.1.0",
+    "h5py",
     "matplotlib",
     "numpy",
     "obspy",
