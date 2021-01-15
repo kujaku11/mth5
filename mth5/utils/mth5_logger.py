@@ -1,9 +1,11 @@
 """
-A more Pythonic way of logging:
-Define a class MtPyLog to wrap the python logging module;
-Use a (optional) configuration file (yaml, ini, json) to configure the logging,
-It will return a logger object with the user-provided config setting.
-see also: http://www.cdotson.com/2015/11/python-logging-best-practices/
+Logger
+===========
+
+Setup a logger with two handlers to remove redundancy between logs entries
+One is a stream handler for any messages to the console.  The other is
+either a file handler or a null handler.
+
 """
 
 from pathlib import Path
