@@ -5,7 +5,7 @@ Created on Wed Jun 10 12:10:48 2020
 @author: jpeacock
 """
 from mth5.utils import stationxml_translator
-from mth5 import metadata
+from mt_metadata import timeseries as metadata
 
 to_stationxml = stationxml_translator.MTToStationXML()
 

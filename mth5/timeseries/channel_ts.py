@@ -18,16 +18,17 @@ convert them back if read in.
 # ==============================================================================
 # Imports
 # ==============================================================================
-import logging
 import inspect
 
 import numpy as np
 import pandas as pd
 import xarray as xr
 
-from mth5 import metadata
-from mth5.utils.mttime import MTime
+from mt_metadata import timeseries as metadata
+from mt_metadata.utils.mttime import MTime
+
 from mth5.utils.exceptions import MTTSError
+from mth5.utils.mth5_logger import setup_logger
 
 from obspy.core import Trace
 
@@ -78,7 +79,9 @@ def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
     dt_freq = "{0:.0f}N".format(1.0e9 / (sample_rate))
 
     dt_index = pd.date_range(
-        start=start_time.iso_str.split("+", 1)[0], periods=n_samples, freq=dt_freq
+        start=start_time.iso_str.split("+", 1)[0],
+        periods=n_samples,
+        freq=dt_freq,
     )
 
     return dt_index
@@ -156,7 +159,7 @@ class ChannelTS:
         **kwargs,
     ):
 
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
         self.station_metadata = metadata.Station()
         self.run_metadata = metadata.Run()
         self._ts = xr.DataArray([1], coords=[("time", [1])])
@@ -164,6 +167,7 @@ class ChannelTS:
         # get correct metadata class
         try:
             self.metadata = meta_classes[channel_type.capitalize()]()
+            self.metadata.type = channel_type.lower()
         except KeyError:
             msg = (
                 "Channel type is undefined, must be [ electric | "
@@ -176,7 +180,9 @@ class ChannelTS:
             if isinstance(channel_metadata, type(self.metadata)):
                 self.metadata.from_dict(channel_metadata.to_dict())
                 self.logger.debug(
-                    "Loading from metadata class {0}".format(type(self.metadata))
+                    "Loading from metadata class {0}".format(
+                        type(self.metadata)
+                    )
                 )
             elif isinstance(channel_metadata, dict):
                 if not channel_type in list(channel_metadata.keys()):
@@ -306,12 +312,19 @@ class ChannelTS:
             self.update_xarray_metadata()
 
         elif isinstance(ts_arr, pd.core.frame.DataFrame):
-            self.logger.debug(f"loading pandas dataframe with shape {ts_arr.shape}")
-            if isinstance(ts_arr.index[0], pd._libs.tslibs.timestamps.Timestamp):
+            self.logger.debug(
+                f"loading pandas dataframe with shape {ts_arr.shape}"
+            )
+            if isinstance(
+                ts_arr.index[0], pd._libs.tslibs.timestamps.Timestamp
+            ):
                 dt = ts_arr.index
             else:
                 dt = make_dt_coordinates(
-                    self.start, self.sample_rate, ts_arr["data"].size, self.logger
+                    self.start,
+                    self.sample_rate,
+                    ts_arr["data"].size,
+                    self.logger,
                 )
             try:
                 self._ts = xr.DataArray(ts_arr["data"], coords=[("time", dt)])
@@ -326,19 +339,28 @@ class ChannelTS:
                 raise MTTSError(msg)
 
         elif isinstance(ts_arr, pd.core.series.Series):
-            self.logger.debug(f"loading pandas series with shape {ts_arr.shape}")
-            if isinstance(ts_arr.index[0], pd._libs.tslibs.timestamps.Timestamp):
+            self.logger.debug(
+                f"loading pandas series with shape {ts_arr.shape}"
+            )
+            if isinstance(
+                ts_arr.index[0], pd._libs.tslibs.timestamps.Timestamp
+            ):
                 dt = ts_arr.index
             else:
                 dt = make_dt_coordinates(
-                    self.start, self.sample_rate, ts_arr["data"].size, self.logger
+                    self.start,
+                    self.sample_rate,
+                    ts_arr["data"].size,
+                    self.logger,
                 )
 
             self._ts = xr.DataArray(ts_arr.values, coords=[("time", dt)])
             self.update_xarray_metadata()
 
         elif isinstance(ts_arr, xr.DataArray):
-            self.logger.debug(f"loading xarra.DataArray with shape {ts_arr.shape}")
+            self.logger.debug(
+                f"loading xarra.DataArray with shape {ts_arr.shape}"
+            )
             # TODO: need to validate the input xarray
             self._ts = ts_arr
             meta_dict = dict([(k, v) for k, v in ts_arr.attrs.items()])
@@ -378,7 +400,9 @@ class ChannelTS:
                 )
                 self.logger.error(msg)
 
-            for key in self.metadata.to_dict()[self.metadata._class_name].keys():
+            for key in self.metadata.to_dict()[
+                self.metadata._class_name
+            ].keys():
                 try:
                     self.metadata.set_attr_from_name(key, m_dict[key])
                 except KeyError:
@@ -404,7 +428,9 @@ class ChannelTS:
         self.metadata.time_period.end = self.end.iso_no_tz
         self.metadata.sample_rate = self.sample_rate
 
-        self._ts.attrs.update(self.metadata.to_dict()[self.metadata._class_name])
+        self._ts.attrs.update(
+            self.metadata.to_dict()[self.metadata._class_name]
+        )
 
     @property
     def component(self):
@@ -464,7 +490,8 @@ class ChannelTS:
         """
         if len(self._ts) > 1:
             if isinstance(
-                self.ts.indexes["time"][0], pd._libs.tslibs.timestamps.Timestamp
+                self.ts.indexes["time"][0],
+                pd._libs.tslibs.timestamps.Timestamp,
             ):
                 return True
             return False
@@ -490,7 +517,9 @@ class ChannelTS:
             else:
                 sr = 1e9 / self._ts.coords.indexes["time"][0].freq.nanos
         else:
-            self.logger.debug("Data has not been set yet, sample rate is from metadata")
+            self.logger.debug(
+                "Data has not been set yet, sample rate is from metadata"
+            )
             sr = self.metadata.sample_rate
             if sr is None:
                 sr = 0.0
@@ -546,7 +575,9 @@ class ChannelTS:
 
         self.metadata.time_period.start = start_time.iso_str
         if self.has_data:
-            if start_time == MTime(self.ts.coords.indexes["time"][0].isoformat()):
+            if start_time == MTime(
+                self.ts.coords.indexes["time"][0].isoformat()
+            ):
                 return
             else:
                 new_dt = make_dt_coordinates(
@@ -567,7 +598,8 @@ class ChannelTS:
             return MTime(self._ts.coords.indexes["time"][-1].isoformat())
         else:
             self.logger.debug(
-                "Data not set yet, pulling end time from " + "metadata.time_period.end"
+                "Data not set yet, pulling end time from "
+                + "metadata.time_period.end"
             )
             return MTime(self.metadata.time_period.end)
 
@@ -584,7 +616,8 @@ class ChannelTS:
         the new start time.
         """
         self.logger.warning(
-            "Cannot set `end`. If you want a slice, then " + "use get_slice method"
+            "Cannot set `end`. If you want a slice, then "
+            + "use get_slice method"
         )
 
     def get_slice(self, start, end):
@@ -613,8 +646,12 @@ class ChannelTS:
             (self.ts.indexes["time"] >= start.iso_no_tz)
             & (self.ts.indexes["time"] <= end.iso_no_tz)
         ]
-        new_ts.attrs["time_period.start"] = new_ts.coords.indexes["time"][0].isoformat()
-        new_ts.attrs["time_period.end"] = new_ts.coords.indexes["time"][-1].isoformat()
+        new_ts.attrs["time_period.start"] = new_ts.coords.indexes["time"][
+            0
+        ].isoformat()
+        new_ts.attrs["time_period.end"] = new_ts.coords.indexes["time"][
+            -1
+        ].isoformat()
 
         return new_ts
 
@@ -632,7 +669,9 @@ class ChannelTS:
 
         new_dt_freq = "{0:.0f}N".format(1e9 / (self.sample_rate / dec_factor))
 
-        new_ts = self.ts.resample(time=new_dt_freq).nearest(tolerance=new_dt_freq)
+        new_ts = self.ts.resample(time=new_dt_freq).nearest(
+            tolerance=new_dt_freq
+        )
         new_ts.attrs["sample_rate"] = self.sample_rate / dec_factor
         self.metadata.sample_rate = new_ts.attrs["sample_rate"]
 
@@ -640,9 +679,13 @@ class ChannelTS:
             self.ts = new_ts
 
         else:
-            new_ts.attrs.update(self.metadata.to_dict()[self.metadata._class_name])
+            new_ts.attrs.update(
+                self.metadata.to_dict()[self.metadata._class_name]
+            )
             # return new_ts
-            return ChannelTS(self.metadata.type, data=new_ts, metadata=self.metadata)
+            return ChannelTS(
+                self.metadata.type, data=new_ts, metadata=self.metadata
+            )
 
     def to_obspy_trace(self):
         """

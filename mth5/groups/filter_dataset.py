@@ -12,16 +12,15 @@ Created on Wed Dec 23 22:28:28 2020
 # =============================================================================
 # Imports
 # =============================================================================
-import inspect
 import weakref
-import logging
 
 import h5py
 import numpy as np
 
 from mth5.utils.exceptions import MTH5Error
-from mth5 import metadata
 from mth5.helpers import to_numpy_type
+from mth5.utils.mth5_logger import setup_logger
+from mt_metadata import timeseries as metadata
 
 # =============================================================================
 # Filter Dataset
@@ -63,7 +62,7 @@ class FilterDataset:
         if dataset is not None and isinstance(dataset, (h5py.Dataset)):
             self.hdf5_dataset = weakref.ref(dataset)()
 
-        self.logger = logging.getLogger(f"{__name__}.{self._class_name}")
+        self.logger = setup_logger(f"{__name__}.{self._class_name}")
 
         self.metadata = metadata.Filter()
 
@@ -263,7 +262,9 @@ class FilterDataset:
 
         for key, value in self.metadata.to_dict(single=True):
             value = to_numpy_type(value)
-            self.logger.debug(f"wrote metadata {key} = {value}".format(key, value))
+            self.logger.debug(
+                f"wrote metadata {key} = {value}".format(key, value)
+            )
             self.hdf5_dataset.attrs.create(key, value)
 
     def to_filter_object(self):

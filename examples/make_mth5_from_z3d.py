@@ -14,9 +14,10 @@ import zipfile
 
 from mth5 import read_file
 from mth5 import mth5
-from mth5 import metadata
-from mth5.utils.mttime import MTime
 from mth5.utils.pathing import DATA_DIR
+
+from mt_metadata import timeseries as metadata
+from mt_metadata.utils.mttime import MTime
 
 start = MTime()
 start.now()
@@ -26,7 +27,7 @@ start.now()
 # set to true if you want to interact with the mth5 object in the console
 interact = True
 zen_dir = DATA_DIR.joinpath("zen")
-h5_fn = DATA_DIR.joinpath("from_zen.mth5")
+h5_fn = DATA_DIR.joinpath("from_zen.h5")
 
 if h5_fn.exists():
     h5_fn.unlink()
@@ -56,7 +57,8 @@ for fn in zip_ref.filelist:
     mtts_obj = read_file(zen_dir.joinpath(fn.filename))
 
     station_group = m.add_station(
-        mtts_obj.station_metadata.id, station_metadata=mtts_obj.station_metadata
+        mtts_obj.station_metadata.id,
+        station_metadata=mtts_obj.station_metadata,
     )
 
     run_id = station_group.locate_run(mtts_obj.sample_rate, mtts_obj.start)

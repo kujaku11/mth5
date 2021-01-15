@@ -13,15 +13,16 @@ Created on Wed Aug 26 09:56:40 2020
 import zipfile
 from mth5 import read_file
 from mth5 import mth5
-from mth5 import metadata
-from mth5.utils.mttime import MTime
 from mth5.utils.pathing import DATA_DIR
+
+from mt_metadata import timeseries as metadata
+from mt_metadata.utils.mttime import MTime
 
 # =============================================================================
 #
 # =============================================================================
 # set to true if you want to interact with the mth5 object in the console
-interact = True
+interact = False
 nims_dir = DATA_DIR.joinpath("nims")
 h5_fn = DATA_DIR.joinpath("from_nims.mth5")
 
@@ -61,7 +62,9 @@ for nims_fn in zip_ref.filelist:
     )
 
     # make a run group
-    run_group = station_group.add_run(run_ts.metadata.id, run_metadata=run_ts.metadata)
+    run_group = station_group.add_run(
+        run_ts.metadata.id, run_metadata=run_ts.metadata
+    )
 
     # add data to the run group
     channels = run_group.from_runts(run_ts)

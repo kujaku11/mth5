@@ -17,17 +17,19 @@ Created on Fri May 29 15:09:48 2020
 # Imports
 # =============================================================================
 import inspect
-import logging
 import weakref
 
 import h5py
 import numpy as np
 
-from mth5 import metadata
+from mt_metadata import timeseries as metadata
+from mt_metadata.base import Base
+
 from mth5.helpers import get_tree
 from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import to_numpy_type
 from mth5.tables import MTH5Table
+from mth5.utils.mth5_logger import setup_logger
 
 # make a dictionary of available metadata classes
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
@@ -78,7 +80,7 @@ class BaseGroup:
         self.shuffle = True
         self.fletcher32 = True
 
-        self.logger = logging.getLogger(f"{__name__}.{self._class_name}")
+        self.logger = setup_logger(f"{__name__}.{self._class_name}")
 
         # make sure the reference to the group is weak so there are no lingering
         # references to a closed HDF5 file.
@@ -93,14 +95,14 @@ class BaseGroup:
         }
 
         # set metadata to the appropriate class.  Standards is not a
-        # metadata.Base object so should be skipped. If the class name is not
+        # Base object so should be skipped. If the class name is not
         # defined yet set to Base class.
-        self.metadata = metadata.Base()
+        self.metadata = Base()
         if self._class_name not in ["Standards"]:
             try:
                 self.metadata = meta_classes[self._class_name]()
             except KeyError:
-                self.metadata = metadata.Base()
+                self.metadata = Base()
 
         # add 2 attributes that will help with querying
         # 1) the metadata class name
@@ -141,7 +143,7 @@ class BaseGroup:
 
         # if metadata, make sure that its the same class type
         if group_metadata is not None:
-            if not isinstance(group_metadata, (type(self.metadata), metadata.Base)):
+            if not isinstance(group_metadata, (type(self.metadata), Base)):
                 msg = "metadata must be type metadata.{0} not {1}".format(
                     self._class_name, type(group_metadata)
                 )
@@ -262,7 +264,9 @@ class BaseGroup:
         )
         self.logger.debug(
             "used options: "
-            + "; ".join([f"{k} = {v}" for k, v in self.dataset_options.items()])
+            + "; ".join(
+                [f"{k} = {v}" for k, v in self.dataset_options.items()]
+            )
         )
 
     def initialize_group(self):

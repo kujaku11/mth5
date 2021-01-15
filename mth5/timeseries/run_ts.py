@@ -18,16 +18,17 @@ convert them back if read in.
 # ==============================================================================
 # Imports
 # ==============================================================================
-import logging
 import inspect
 
 import xarray as xr
 from matplotlib import pyplot as plt
 
-from mth5 import metadata
-from mth5.utils.mttime import MTime
+from mt_metadata import timeseries as metadata
+from mt_metadata.utils.mttime import MTime
+
 from mth5.utils.exceptions import MTTSError
 from .channel_ts import ChannelTS
+from mth5.utils.mth5_logger import setup_logger
 
 from obspy.core import Stream
 
@@ -47,9 +48,11 @@ class RunTS:
     
     """
 
-    def __init__(self, array_list=None, run_metadata=None, station_metadata=None):
+    def __init__(
+        self, array_list=None, run_metadata=None, station_metadata=None
+    ):
 
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
         self.metadata = metadata.Run()
         self.station_metadata = metadata.Station()
         self._dataset = xr.Dataset()
@@ -121,7 +124,9 @@ class RunTS:
                 raise TypeError(msg)
 
         # probably should test for sampling rate.
-        sr_test = dict([(item.component, (item.sample_rate)) for item in array_list])
+        sr_test = dict(
+            [(item.component, (item.sample_rate)) for item in array_list]
+        )
 
         if len(set([v for k, v in sr_test.items()])) != 1:
             msg = f"sample rates are not all the same {sr_test}"
@@ -133,12 +138,17 @@ class RunTS:
     def __getattr__(self, name):
         # change to look for keys directly and use type to set channel type
         if name in self.dataset.keys():
-            return ChannelTS(self.dataset[name].attrs["type"], self.dataset[name])
+            return ChannelTS(
+                self.dataset[name].attrs["type"], self.dataset[name]
+            )
         else:
             # this is a hack for now until figure out who is calling shape, size
             if name[0] == "_":
                 return None
-            elif name not in self.__dict__.keys() and name not in ["shape", "size"]:
+            elif name not in self.__dict__.keys() and name not in [
+                "shape",
+                "size",
+            ]:
                 msg = f"RunTS has no attribute {name}"
                 self.logger.error(msg)
                 raise NameError(msg)
@@ -277,7 +287,9 @@ class RunTS:
         elif isinstance(channel, ChannelTS):
             c = channel
         else:
-            raise ValueError("Input Channel must be type xarray.DataArray or ChannelTS")
+            raise ValueError(
+                "Input Channel must be type xarray.DataArray or ChannelTS"
+            )
 
         ### need to validate the channel to make sure sample rate is the same
         if c.sample_rate != self.sample_rate:
@@ -314,7 +326,9 @@ class RunTS:
     @property
     def end(self):
         if self.has_data:
-            return MTime(self.dataset.coords["time"].to_index()[-1].isoformat())
+            return MTime(
+                self.dataset.coords["time"].to_index()[-1].isoformat()
+            )
         return self.metadata.time_period.end
 
     @property
@@ -378,7 +392,9 @@ class RunTS:
         ### need to merge metadata into something useful, station name is the only
         ### name that is preserved
         try:
-            station = list(set([ss for ss in station_list if ss is not None]))[0]
+            station = list(set([ss for ss in station_list if ss is not None]))[
+                0
+            ]
         except IndexError:
             station = None
             msg = "Could not find station name"

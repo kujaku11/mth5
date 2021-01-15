@@ -17,24 +17,28 @@ get a circular import.
 # =============================================================================
 import inspect
 import weakref
-import logging
 
 import h5py
 import numpy as np
 import pandas as pd
 import xarray as xr
 
+from mt_metadata import timeseries as metadata
+from mt_metadata.utils.mttime import MTime
+from mt_metadata.base import Base
+
 from mth5.groups.base import BaseGroup
 from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import to_numpy_type, inherit_doc_string
-from mth5.utils.mttime import MTime
-from mth5 import metadata
 from mth5.timeseries import ChannelTS, RunTS
+from mth5.utils.mth5_logger import setup_logger
 
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
 # =============================================================================
 # Standards Group
 # =============================================================================
+
+
 class MasterStationGroup(BaseGroup):
     """
     Utility class to holds information about the stations within a survey and
@@ -280,7 +284,9 @@ class MasterStationGroup(BaseGroup):
                     self.logger.error(msg)
                     raise MTH5Error(msg)
             station_obj = StationGroup(
-                station_group, station_metadata=station_metadata, **self.dataset_options
+                station_group,
+                station_metadata=station_metadata,
+                **self.dataset_options,
             )
             station_obj.initialize_group()
 
@@ -289,7 +295,8 @@ class MasterStationGroup(BaseGroup):
 
         except ValueError:
             msg = (
-                f"Station {station_name} already exists, " + "returning existing group."
+                f"Station {station_name} already exists, "
+                + "returning existing group."
             )
             self.logger.info(msg)
             station_obj = StationGroup(self.hdf5_group[station_name])
@@ -322,7 +329,9 @@ class MasterStationGroup(BaseGroup):
         """
 
         try:
-            return StationGroup(self.hdf5_group[station_name], **self.dataset_options)
+            return StationGroup(
+                self.hdf5_group[station_name], **self.dataset_options
+            )
         except KeyError:
             msg = (
                 f"{station_name} does not exist, "
@@ -627,7 +636,7 @@ class StationGroup(BaseGroup):
     def locate_run(self, sample_rate, start):
         """
         Locate a run based on sample rate and start time from the summary table
-        
+
         :param sample_rate: sample rate in samples/seconds
         :type sample_rate: float
         :param start: start time
@@ -646,7 +655,9 @@ class StationGroup(BaseGroup):
 
         sr_find = list(self.summary_table.locate("sample_rate", sample_rate))
         if sr_find == []:
-            self.logger.debug(f"no summary entries with sample rate {sample_rate}")
+            self.logger.debug(
+                f"no summary entries with sample rate {sample_rate}"
+            )
             return None
 
         for ff in sr_find:
@@ -695,7 +706,10 @@ class StationGroup(BaseGroup):
             self.summary_table.add_row(run_obj.table_entry)
 
         except ValueError:
-            msg = f"run {run_name} already exists, " + "returning existing group."
+            msg = (
+                f"run {run_name} already exists, "
+                + "returning existing group."
+            )
             self.logger.info(msg)
             run_obj = RunGroup(self.hdf5_group[run_name])
             run_obj.read_metadata()
@@ -718,7 +732,8 @@ class StationGroup(BaseGroup):
             return RunGroup(self.hdf5_group[run_name], **self.dataset_options)
         except KeyError:
             msg = (
-                f"{run_name} does not exist, " + "check groups_list for existing names"
+                f"{run_name} does not exist, "
+                + "check groups_list for existing names"
             )
             self.logger.exception(msg)
             raise MTH5Error(msg)
@@ -758,7 +773,8 @@ class StationGroup(BaseGroup):
             )
         except KeyError:
             msg = (
-                f"{run_name} does not exist, " + "check station_list for existing names"
+                f"{run_name} does not exist, "
+                + "check station_list for existing names"
             )
             self.logger.exception(msg)
             raise MTH5Error(msg)
@@ -766,7 +782,7 @@ class StationGroup(BaseGroup):
     def validate_station_metadata(self):
         """
         Check metadata from the runs and make sure it matches the station metadata
-        
+
         :return: DESCRIPTION
         :rtype: TYPE
 
@@ -776,12 +792,18 @@ class StationGroup(BaseGroup):
         self.metadata.time_period.start = min(
             self.summary_table.array["start"]
         ).decode()
-        self.metadata.time_period.end = max(self.summary_table.array["end"]).decode()
+        self.metadata.time_period.end = max(
+            self.summary_table.array["end"]
+        ).decode()
         self.metadata.channels_recorded = ",".join(
             list(
                 set(
                     ",".join(
-                        list(self.summary_table.array["components"].astype(np.unicode_))
+                        list(
+                            self.summary_table.array["components"].astype(
+                                np.unicode_
+                            )
+                        )
                     ).split(",")
                 )
             )
@@ -916,13 +938,13 @@ class RunGroup(BaseGroup):
     >>> existing_ex
     Channel Electric:
     -------------------
-    	data type:        Ex
-    	data type:        electric
-    	data format:      float32
-    	data shape:       (4096,)
-    	start:            1980-01-01T00:00:00+00:00
-    	end:              1980-01-01T00:32:+08:00
-    	sample rate:      8
+        data type:        Ex
+        data type:        electric
+        data format:      float32
+        data shape:       (4096,)
+        start:            1980-01-01T00:00:00+00:00
+        end:              1980-01-01T00:32:+08:00
+        sample rate:      8
 
 
     :summary Table:
@@ -989,7 +1011,7 @@ class RunGroup(BaseGroup):
 
         :return: a properly formatted run table entry
         :rtype: :class:`numpy.ndarray` with dtype:
-            
+
         >>> dtype([('id', 'S20'),
                  ('start', 'S32'),
                  ('end', 'S32'),
@@ -1057,13 +1079,13 @@ class RunGroup(BaseGroup):
         >>> new_channel
         Channel Electric:
         -------------------
-        		component:        None
-            	data type:        electric
-            	data format:      float32
-            	data shape:       (1,)
-            	start:            1980-01-01T00:00:00+00:00
-            	end:              1980-01-01T00:00:00+00:00
-            	sample rate:      None
+                        component:        None
+                data type:        electric
+                data format:      float32
+                data shape:       (1,)
+                start:            1980-01-01T00:00:00+00:00
+                end:              1980-01-01T00:00:00+00:00
+                sample rate:      None
 
 
         """
@@ -1120,11 +1142,14 @@ class RunGroup(BaseGroup):
                 channel_obj.metadata.component = channel_name
             channel_obj.write_metadata()
             self.summary_table.add_row(channel_obj.table_entry)
-            self.master_station_group.summary_table.add_row(channel_obj.channel_entry)
+            self.master_station_group.summary_table.add_row(
+                channel_obj.channel_entry
+            )
 
         except (OSError, RuntimeError):
             msg = (
-                f"channel {channel_name} already exists, " + "returning existing group."
+                f"channel {channel_name} already exists, "
+                + "returning existing group."
             )
             self.logger.info(msg)
             if channel_type in ["magnetic"]:
@@ -1163,13 +1188,13 @@ class RunGroup(BaseGroup):
         >>> existing_channel
         Channel Electric:
         -------------------
-        		component:        Ey
-            	data type:        electric
-            	data format:      float32
-            	data shape:       (4096,)
-            	start:            1980-01-01T00:00:00+00:00
-            	end:              1980-01-01T00:00:01+00:00
-            	sample rate:      4096
+                        component:        Ey
+                data type:        electric
+                data format:      float32
+                data shape:       (4096,)
+                start:            1980-01-01T00:00:00+00:00
+                end:              1980-01-01T00:00:01+00:00
+                sample rate:      4096
 
 
         """
@@ -1180,19 +1205,25 @@ class RunGroup(BaseGroup):
                 ch_metadata = meta_classes["Electric"]()
                 ch_metadata.from_dict({"Electric": ch_dataset.attrs})
                 channel = ElectricDataset(
-                    ch_dataset, dataset_metadata=ch_metadata, write_metadata=False
+                    ch_dataset,
+                    dataset_metadata=ch_metadata,
+                    write_metadata=False,
                 )
             elif ch_dataset.attrs["mth5_type"].lower() in ["magnetic"]:
                 ch_metadata = meta_classes["Magnetic"]()
                 ch_metadata.from_dict({"Magnetic": ch_dataset.attrs})
                 channel = MagneticDataset(
-                    ch_dataset, dataset_metadata=ch_metadata, write_metadata=False
+                    ch_dataset,
+                    dataset_metadata=ch_metadata,
+                    write_metadata=False,
                 )
             elif ch_dataset.attrs["mth5_type"].lower() in ["auxiliary"]:
                 ch_metadata = meta_classes["Auxiliary"]()
                 ch_metadata.from_dict({"Auxiliary": ch_dataset.attrs})
                 channel = AuxiliaryDataset(
-                    ch_dataset, dataset_metadata=ch_metadata, write_metadata=False
+                    ch_dataset,
+                    dataset_metadata=ch_metadata,
+                    write_metadata=False,
                 )
             else:
                 channel = ChannelDataset(ch_dataset)
@@ -1257,7 +1288,7 @@ class RunGroup(BaseGroup):
         """
         create a :class:`mth5.timeseries.RunTS` object from channels of the 
         run
-        
+
         :return: DESCRIPTION
         :rtype: TYPE
 
@@ -1275,10 +1306,10 @@ class RunGroup(BaseGroup):
         """
         create channel datasets from a :class:`mth5.timeseries.RunTS` object 
         and update metadata.  
-        
+
         :parameter :class:`mth5.timeseries.RunTS` run_ts_obj: Run object with all
         the appropriate channels and metadata.
-        
+
         Will create a run group and appropriate channel datasets.
         """
 
@@ -1304,7 +1335,9 @@ class RunGroup(BaseGroup):
                 channel_type = "auxiliary"
                 ch_metadata = metadata.Auxiliary()
 
-            ch_metadata.from_dict({channel_type: run_ts_obj.dataset[comp].attrs})
+            ch_metadata.from_dict(
+                {channel_type: run_ts_obj.dataset[comp].attrs}
+            )
             ch_metadata.hdf5_type = channel_type
 
             channels.append(
@@ -1321,7 +1354,7 @@ class RunGroup(BaseGroup):
         """
         create a channel data set from a :class:`mth5.timeseries.ChannelTS` object and 
         update metadata.
-        
+
         :param channel_ts_obj: a single time series object
         :type channel_ts_obj: :class:`mth5.timeseries.ChannelTS`
         :return: new channel dataset
@@ -1344,9 +1377,12 @@ class RunGroup(BaseGroup):
         # need to update the channels recorded
         if channel_ts_obj.metadata.type == "electric":
             if self.metadata.channels_recorded_electric is None:
-                self.metadata.channels_recorded_electric = [channel_ts_obj.component]
+                self.metadata.channels_recorded_electric = [
+                    channel_ts_obj.component
+                ]
             elif (
-                channel_ts_obj.component not in self.metadata.channels_recorded_electric
+                channel_ts_obj.component
+                not in self.metadata.channels_recorded_electric
             ):
                 self.metadata.channels_recorded_electric.append(
                     channel_ts_obj.component
@@ -1354,9 +1390,12 @@ class RunGroup(BaseGroup):
 
         elif channel_ts_obj.metadata.type == "magnetic":
             if self.metadata.channels_recorded_magnetic is None:
-                self.metadata.channels_recorded_magnetic = [channel_ts_obj.component]
+                self.metadata.channels_recorded_magnetic = [
+                    channel_ts_obj.component
+                ]
             elif (
-                channel_ts_obj.component not in self.metadata.channels_recorded_magnetic
+                channel_ts_obj.component
+                not in self.metadata.channels_recorded_magnetic
             ):
                 self.metadata.channels_recorded_magnetic.append(
                     channel_ts_obj.component
@@ -1364,7 +1403,9 @@ class RunGroup(BaseGroup):
 
         elif channel_ts_obj.metadata.type == "auxiliary":
             if self.metadata.channels_recorded_auxiliary is None:
-                self.metadata.channels_recorded_auxiliary = [channel_ts_obj.component]
+                self.metadata.channels_recorded_auxiliary = [
+                    channel_ts_obj.component
+                ]
             elif (
                 channel_ts_obj.component
                 not in self.metadata.channels_recorded_auxiliary
@@ -1378,7 +1419,7 @@ class RunGroup(BaseGroup):
     def validate_run_metadata(self):
         """
         Update metadata and table entries to ensure consistency
-        
+
         :return: DESCRIPTION
         :rtype: TYPE
 
@@ -1402,7 +1443,9 @@ class RunGroup(BaseGroup):
             self.summary_table.array["start"]
         ).decode()
 
-        self.metadata.time_period.end = max(self.summary_table.array["end"]).decode()
+        self.metadata.time_period.end = max(
+            self.summary_table.array["end"]
+        ).decode()
 
 
 class ChannelDataset:
@@ -1422,7 +1465,7 @@ class ChannelDataset:
     :raises MTH5Error: If the dataset is not of the correct type
 
     Utilities will be written to create some common objects like:
-        
+
         * xarray.DataArray
         * pandas.DataFrame
         * zarr
@@ -1439,13 +1482,13 @@ class ChannelDataset:
     >>> channel
     Channel Electric:
     -------------------
-  		component:        Ey
-      	data type:        electric
-      	data format:      float32
-      	data shape:       (4096,)
-      	start:            1980-01-01T00:00:00+00:00
-      	end:              1980-01-01T00:00:01+00:00
-      	sample rate:      4096
+                component:        Ey
+        data type:        electric
+        data format:      float32
+        data shape:       (4096,)
+        start:            1980-01-01T00:00:00+00:00
+        end:              1980-01-01T00:00:01+00:00
+        sample rate:      4096
 
     """
 
@@ -1454,16 +1497,18 @@ class ChannelDataset:
         if dataset is not None and isinstance(dataset, (h5py.Dataset)):
             self.hdf5_dataset = weakref.ref(dataset)()
 
-        self.logger = logging.getLogger("{0}.{1}".format(__name__, self._class_name))
+        self.logger = setup_logger(
+            "{0}.{1}".format(__name__, self._class_name)
+        )
 
         # set metadata to the appropriate class.  Standards is not a
-        # metadata.Base object so should be skipped. If the class name is not
+        # Base object so should be skipped. If the class name is not
         # defined yet set to Base class.
-        self.metadata = metadata.Base()
+        self.metadata = Base()
         try:
             self.metadata = meta_classes[self._class_name]()
         except KeyError:
-            self.metadata = metadata.Base()
+            self.metadata = Base()
 
         if not hasattr(self.metadata, "mth5_type"):
             self._add_base_attributes()
@@ -1547,13 +1592,25 @@ class ChannelDataset:
             lines = ["Channel {0}:".format(self._class_name)]
             lines.append("-" * (len(lines[0]) + 2))
             info_str = "\t{0:<18}{1}"
-            lines.append(info_str.format("component:", self.metadata.component))
+            lines.append(
+                info_str.format("component:", self.metadata.component)
+            )
             lines.append(info_str.format("data type:", self.metadata.type))
-            lines.append(info_str.format("data format:", self.hdf5_dataset.dtype))
-            lines.append(info_str.format("data shape:", self.hdf5_dataset.shape))
-            lines.append(info_str.format("start:", self.metadata.time_period.start))
-            lines.append(info_str.format("end:", self.metadata.time_period.end))
-            lines.append(info_str.format("sample rate:", self.metadata.sample_rate))
+            lines.append(
+                info_str.format("data format:", self.hdf5_dataset.dtype)
+            )
+            lines.append(
+                info_str.format("data shape:", self.hdf5_dataset.shape)
+            )
+            lines.append(
+                info_str.format("start:", self.metadata.time_period.start)
+            )
+            lines.append(
+                info_str.format("end:", self.metadata.time_period.end)
+            )
+            lines.append(
+                info_str.format("sample rate:", self.metadata.sample_rate)
+            )
             return "\n".join(lines)
         except ValueError:
             return "MTH5 file is closed and cannot be accessed."
@@ -1634,7 +1691,7 @@ class ChannelDataset:
     def replace_dataset(self, new_data_array):
         """
         replace the entire dataset with a new one, nothing left behind
-        
+
         :param new_data_array: new data array shape (npts, )
         :type new_data_array: :class:`numpy.ndarray`
 
@@ -1672,14 +1729,14 @@ class ChannelDataset:
         data.  If the start time is before existing start time the data is
         prepended, similarly if the start time is near the end data will be
         appended.  
-        
+
         If the start time is within the existing time range, existing data 
         will be replace with the new data.
-        
+
         If there is a gap between start or end time of the new data with
         the existing data you can either fill the data with a constant value
         or an error will be raise depending on the value of fill.
-        
+
         :param new_data_array: new data array with shape (npts, )
         :type new_data_array: :class:`numpy.ndarray`
         :param start_time: start time of the new data array in UTC
@@ -1703,15 +1760,15 @@ class ChannelDataset:
         :param fill_window: number of points from the end of each data set
                             to estimate fill value from.
         :type fill_window: integer
-        
+
         :raises: :class:`mth5.utils.excptions.MTH5Error` if sample rate is 
                  not the same, or fill value is not understood, 
-                 
+
         Append Example
         ---------------
-        
+
         :rubric:
-            
+
         >>> ex = mth5_obj.get_channel('MT001', 'MT001a', 'Ex')
         >>> ex.n_samples
         4096
@@ -1733,7 +1790,7 @@ class ChannelDataset:
         8200
         >>> ex.end
         2015-01-08T19:40:42.500000+00:00
-        
+
         """
         fw = fill_window
         # check input parameters
@@ -1853,13 +1910,15 @@ class ChannelDataset:
 
                     self.logger.info(f"filling data gap with {fill_value}")
                     self.hdf5_dataset[
-                        self.get_index_from_time(end_time) : self.get_index_from_time(
-                            old_start
-                        )
+                        self.get_index_from_time(
+                            end_time
+                        ) : self.get_index_from_time(old_start)
                     ] = fill_value
             else:
                 self.logger.debug("Prepending data with overlaps.")
-                new_size = (self.n_samples + int(abs(start_t_diff) * sample_rate),)
+                new_size = (
+                    self.n_samples + int(abs(start_t_diff) * sample_rate),
+                )
                 overlap = abs(end_time - self.start)
                 self.logger.warning(
                     f"New data is overlapping by {overlap} s."
@@ -1928,7 +1987,9 @@ class ChannelDataset:
                             np.array(
                                 [
                                     new_data_array[0:fw].mean(),
-                                    np.mean(self.hdf5_dataset[old_index - fw :]),
+                                    np.mean(
+                                        self.hdf5_dataset[old_index - fw :]
+                                    ),
                                 ]
                             )
                         )
@@ -1937,7 +1998,9 @@ class ChannelDataset:
                             np.array(
                                 [
                                     np.median(new_data_array[0:fw]),
-                                    np.median(self.hdf5_dataset[old_index - fw :]),
+                                    np.median(
+                                        self.hdf5_dataset[old_index - fw :]
+                                    ),
                                 ]
                             )
                         )
@@ -1954,9 +2017,9 @@ class ChannelDataset:
 
                     self.logger.info(f"filling data gap with {fill_value}")
                     self.hdf5_dataset[
-                        self.get_index_from_time(old_end) : self.get_index_from_time(
-                            start_time
-                        )
+                        self.get_index_from_time(
+                            old_end
+                        ) : self.get_index_from_time(start_time)
                     ] = fill_value
 
             else:
@@ -1968,13 +2031,15 @@ class ChannelDataset:
                         f"{start_time} -- {end_time} " + "will be overwritten."
                     )
                     self.hdf5_dataset[
-                        self.get_index_from_time(start_time) : self.get_index_from_time(
-                            end_time
-                        )
+                        self.get_index_from_time(
+                            start_time
+                        ) : self.get_index_from_time(end_time)
                     ] = new_data_array
                 else:
                     self.logger.debug("Appending data with overlaps.")
-                    new_size = (self.n_samples + int(abs(start_t_diff) * sample_rate),)
+                    new_size = (
+                        self.n_samples + int(abs(start_t_diff) * sample_rate),
+                    )
                     overlap = abs(self.end - start_time)
                     self.logger.warning(
                         f"New data is overlapping by {overlap} s."
@@ -1996,9 +2061,9 @@ class ChannelDataset:
         """
         :return: a Timeseries with the appropriate time index and metadata
         :rtype: :class:`mth5.timeseries.ChannelTS`
-    
+
         loads from memory (nearly half the size of xarray alone, not sure why)
-    
+
         """
 
         return ChannelTS(
@@ -2014,9 +2079,9 @@ class ChannelDataset:
         :return: an xarray DataArray with appropriate metadata and the 
                  appropriate time index.
         :rtype: :class:`xarray.DataArray`
-        
+
         .. note:: that metadta will not be validated if changed in an xarray.
-        
+
         loads from memory
         """
 
@@ -2028,17 +2093,19 @@ class ChannelDataset:
 
     def to_dataframe(self):
         """
-        
+
         :return: a dataframe where data is stored in the 'data' column and
                  attributes are stored in the experimental attrs attribute 
         :rtype: :class:`pandas.DataFrame`
-        
+
         .. note:: that metadta will not be validated if changed in an xarray.
-        
+
         loads into RAM
         """
 
-        df = pd.DataFrame({"data": self.hdf5_dataset[()]}, index=self.time_index)
+        df = pd.DataFrame(
+            {"data": self.hdf5_dataset[()]}, index=self.time_index
+        )
         df.attrs.update(self.metadata.to_dict(single=True))
 
         return df
@@ -2048,9 +2115,9 @@ class ChannelDataset:
         :return: a numpy structured array with 2 columns (time, channel_data)
         :rtype: :class:`numpy.core.records`
         .. data:: data is a builtin to numpy and cannot be used as a name
-        
+
         loads into RAM
-        
+
         """
 
         return np.core.records.fromarrays(
@@ -2068,20 +2135,20 @@ class ChannelDataset:
     ):
         """
         fill data set from a :class:`mth5.timeseries.ChannelTS` object.
-        
+
         Will check for time alignement, and metadata.
-        
+
         :param channel_ts_obj: time series object
         :type channel_ts_obj: :class:`mth5.timeseries.ChannelTS`
         :param how: how the new array will be input to the existing dataset:
-            
+
             - 'replace' -> replace the entire dataset nothing is left over.
             - 'extend' -> add onto the existing dataset, any  overlapping
               values will be rewritten, if there are gaps between data sets 
               those will be handled depending on the value of fill.
-            
+
          :param fill: If there is a data gap how do you want to fill the gap:
-            
+
             - None -> will raise an :class:`mth5.utils.exceptions.MTH5Error`
             - 'mean'-> will fill with the mean of each data set within
               the fill window
@@ -2089,22 +2156,24 @@ class ChannelDataset:
               within the fill window
             - value -> can be an integer or float to fill the gap
             - 'nan' -> will fill the gap with NaN
-            
+
         :type fill: string, None, float, integer
         :param max_gap_seconds: sets a maximum number of seconds the gap can
                                 be.  Anything over this number will raise 
                                 a :class:`mth5.utils.exceptions.MTH5Error`.
-                                
+
         :type max_gap_seconds: float or integer
         :param fill_window: number of points from the end of each data set
                             to estimate fill value from.
-                            
+
         :type fill_window: integer
 
         """
 
         if not isinstance(channel_ts_obj, ChannelTS):
-            msg = f"Input must be a ChannelTS object not {type(channel_ts_obj)}"
+            msg = (
+                f"Input must be a ChannelTS object not {type(channel_ts_obj)}"
+            )
             self.logger.error(msg)
             raise TypeError(msg)
 
@@ -2124,24 +2193,29 @@ class ChannelDataset:
             # TODO need to check on metadata.
 
     def from_xarray(
-        self, data_array, how="replace", fill=None, max_gap_seconds=1, fill_window=10
+        self,
+        data_array,
+        how="replace",
+        fill=None,
+        max_gap_seconds=1,
+        fill_window=10,
     ):
         """
         fill data set from a :class:`xarray.DataArray` object.
-        
+
         Will check for time alignement, and metadata.
-        
+
         :param data_array_obj: Xarray data array
         :type channel_ts_obj: :class:`xarray.DataArray`
         :param how: how the new array will be input to the existing dataset:
-            
+
             - 'replace' -> replace the entire dataset nothing is left over.
             - 'extend' -> add onto the existing dataset, any  overlapping
             values will be rewritten, if there are gaps between data sets 
             those will be handled depending on the value of fill.
-            
+
          :param fill: If there is a data gap how do you want to fill the gap:
-            
+
             - None -> will raise an :class:`mth5.utils.exceptions.MTH5Error`
             - 'mean'-> will fill with the mean of each data set within
                the fill window
@@ -2149,16 +2223,16 @@ class ChannelDataset:
                within the fill window
             - value -> can be an integer or float to fill the gap
             - 'nan' -> will fill the gap with NaN
-            
+
         :type fill: string, None, float, integer
         :param max_gap_seconds: sets a maximum number of seconds the gap can
                                 be.  Anything over this number will raise 
                                 a :class:`mth5.utils.exceptions.MTH5Error`.
-                                
+
         :type max_gap_seconds: float or integer
         :param fill_window: number of points from the end of each data set
                             to estimate fill value from.
-                            
+
         :type fill_window: integer
 
         """
@@ -2169,7 +2243,9 @@ class ChannelDataset:
             raise TypeError(msg)
 
         if how == "replace":
-            self.metadata.from_dict({self.metadata._class_name: data_array.attrs})
+            self.metadata.from_dict(
+                {self.metadata._class_name: data_array.attrs}
+            )
             self.replace_dataset(data_array.values)
             self.write_metadata()
 
@@ -2187,7 +2263,7 @@ class ChannelDataset:
         """
         Make sure the new array has the same start time if not return the 
         time difference
-        
+
         :param start_time: start time of the new array
         :type start_time: string, int or :class:`mth5.utils.MTime`
         :return: time difference in seconds as new start time minus old.
@@ -2211,7 +2287,7 @@ class ChannelDataset:
         """
         Make sure the new array has the same end time if not return the 
         time difference
-        
+
         :param end_time: end time of the new array
         :type end_time: string, int or :class:`mth5.utils.MTime`
         :return: time difference in seconds as new end time minus old.
@@ -2234,7 +2310,7 @@ class ChannelDataset:
     @property
     def time_index(self):
         """
-        
+
         :return: time index given parameters in metadata
         :rtype: :class:`pandas.DatetimeIndex`
 
@@ -2279,7 +2355,7 @@ class ChannelDataset:
     def channel_entry(self):
         """
         channel entry that will go into a full channel summary of the entire survey
-        
+
         """
         return np.array(
             [
@@ -2323,7 +2399,11 @@ class ChannelDataset:
         )
 
     def time_slice(
-        self, start_time, end_time=None, n_samples=None, return_type="channel_ts"
+        self,
+        start_time,
+        end_time=None,
+        n_samples=None,
+        return_type="channel_ts",
     ):
         """
         Get a time slice from the channel and return the appropriate type
@@ -2348,7 +2428,7 @@ class ChannelDataset:
         :Example with number of samples:
 
         .. code-block:: 
-            
+
             >>> ex = mth5_obj.get_channel('FL001', 'FL001a', 'Ex')
             >>> ex_slice = ex.time_slice("2015-01-08T19:49:15", n_samples=4096)
             >>> ex_slice
@@ -2364,10 +2444,10 @@ class ChannelDataset:
 
             >>> type(ex_slice)
             mth5.timeseries.ChannelTS
-    
+
             # plot the time series
             >>> ex_slice.ts.plot()
-    
+
         :Example with start and end time:
 
         >>> ex_slice = ex.time_slice("2015-01-08T19:49:15",

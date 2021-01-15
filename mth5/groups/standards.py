@@ -16,11 +16,40 @@ import numpy as np
 
 from mth5.groups.base import BaseGroup
 from mth5.utils.exceptions import MTH5TableError
-from mth5.metadata import Standards
+
+from mt_metadata.timeseries import (
+    Survey,
+    Station,
+    Run,
+    Auxiliary,
+    Electric,
+    Magnetic,
+)
+
+# =============================================================================
+# Summarize standards
+# =============================================================================
+def summarize_metadata_standards():
+    """
+    Summarize metadata standards into a dictionary
+    """
+    # need to be sure to make copies otherwise things will get
+    # added in not great places.
+    summary_dict = Survey()._attr_dict.copy()
+    summary_dict.add_dict(Station()._attr_dict.copy(), "station")
+    summary_dict.add_dict(Run()._attr_dict.copy(), "run")
+    summary_dict.add_dict(Electric()._attr_dict.copy(), "electric")
+    summary_dict.add_dict(Magnetic()._attr_dict.copy(), "magnetic")
+    summary_dict.add_dict(Auxiliary()._attr_dict.copy(), "auxiliary")
+
+    return summary_dict
+
 
 # =============================================================================
 # Standards Group
 # =============================================================================
+
+
 class StandardsGroup(BaseGroup):
     """
     The StandardsGroup is a convenience group that stores the metadata
@@ -76,16 +105,16 @@ class StandardsGroup(BaseGroup):
         >>> standards.get_attribute_information('survey.release_license')
         survey.release_license
         --------------------------
-        	type          : string
-        	required      : True
-        	style         : controlled vocabulary
-        	units         :
-        	description   : How the data can be used. The options are based on
+                type          : string
+                required      : True
+                style         : controlled vocabulary
+                units         :
+                description   : How the data can be used. The options are based on
                          Creative Commons licenses. For details visit
                          https://creativecommons.org/licenses/
-        	options       : CC-0,CC-BY,CC-BY-SA,CC-BY-ND,CC-BY-NC-SA,CC-BY-NC-ND
-        	alias         :
-        	example       : CC-0
+                options       : CC-0,CC-BY,CC-BY-SA,CC-BY-ND,CC-BY-NC-SA,CC-BY-NC-ND
+                alias         :
+                example       : CC-0
 
         """
         find = self.summary_table.locate("attribute", attribute_name)
@@ -96,7 +125,9 @@ class StandardsGroup(BaseGroup):
 
         meta_item = self.summary_table.array[find]
         lines = ["", attribute_name, "-" * (len(attribute_name) + 4)]
-        for name, value in zip(meta_item.dtype.names[1:], meta_item.item()[1:]):
+        for name, value in zip(
+            meta_item.dtype.names[1:], meta_item.item()[1:]
+        ):
             if isinstance(value, (bytes, np.bytes_)):
                 value = value.decode()
             lines.append("\t{0:<14} {1}".format(name + ":", value))
@@ -144,7 +175,6 @@ class StandardsGroup(BaseGroup):
 
         """
         self.initialize_summary_table()
-        schema_obj = Standards()
-        self.summary_table_from_dict(schema_obj.summarize_standards())
+        self.summary_table_from_dict(summarize_metadata_standards())
 
         self.write_metadata()

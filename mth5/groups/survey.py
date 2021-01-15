@@ -20,6 +20,8 @@ from mth5.groups import BaseGroup, MasterStationGroup
 # =============================================================================
 # Survey Group
 # =============================================================================
+
+
 class SurveyGroup(BaseGroup):
     """
     Utility class to holds general information about the survey and
@@ -93,12 +95,16 @@ class SurveyGroup(BaseGroup):
     def update_survey_metadata(self):
         """
         update start end dates and location corners from stations_group.summary_table
-        
+
         """
 
-        self.logger.debug("Updating survey metadata from stations summary table")
+        self.logger.debug(
+            "Updating survey metadata from stations summary table"
+        )
         self.metadata.time_period.start_date = min(
-            self.stations_group.summary_table.array["start"].astype(np.unicode_)
+            self.stations_group.summary_table.array["start"].astype(
+                np.unicode_
+            )
         ).split("T")[0]
         self.metadata.time_period.end_date = max(
             self.stations_group.summary_table.array["end"].astype(np.unicode_)
