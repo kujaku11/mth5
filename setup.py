@@ -21,6 +21,10 @@ requirements = [
     "xarray",
 ]
 
+install_requires = [
+        'mt_metadata @ https://github.com/kujaku11/mt_metadata.git',
+    ],
+
 setup_requirements = [
     "pytest-runner",
 ]
