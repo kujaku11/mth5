@@ -34,7 +34,8 @@ jobs:
         source activate mth5-test
         conda config --add channels conda-forge
         conda install pytest
-
+        pip install git+https://github.com/kujaku11/mt_metadata.git
+        
     - name: Install Our Package
       shell: bash
       run: |
