@@ -19,7 +19,7 @@ requirements = [
     "pyyaml",
     "scipy",
     "xarray",
-    "mt_metadata @  https://github.com/kujaku11//tarball/main/#egg=mt_metadata",
+    "git+https://github.com/kujaku11/mth5.git",
 ]
 
 
