@@ -22,7 +22,7 @@ requirements = [
 ]
 
 install_requires = [
-        'mt_metadata @ https://github.com/kujaku11/mt_metadata.git',
+        'mt_metadata @ https://github.com/kujaku11/mt_metadata/tarball/v0.1.0',
     ],
 
 setup_requirements = [
