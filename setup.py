@@ -19,7 +19,7 @@ requirements = [
     "pyyaml",
     "scipy",
     "xarray",
-    "git+https://github.com/kujaku11/mth5.git",
+    "git+https://github.com/kujaku11/mt_metadata.git",
 ]
 
 
