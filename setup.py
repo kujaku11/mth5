@@ -19,11 +19,9 @@ requirements = [
     "pyyaml",
     "scipy",
     "xarray",
+    "mt_metadata @ https://github.com/kujaku11/mt_metadata/tarball/v0.1.0"
 ]
 
-install_requires = [
-        'mt_metadata @ https://github.com/kujaku11/mt_metadata/tarball/v0.1.0',
-    ],
 
 setup_requirements = [
     "pytest-runner",
