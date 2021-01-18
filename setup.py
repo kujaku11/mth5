@@ -19,7 +19,6 @@ requirements = [
     "pyyaml",
     "scipy",
     "xarray",
-    "git+https://github.com/kujaku11/mt_metadata.git",
 ]
 
 
