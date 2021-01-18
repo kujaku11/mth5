@@ -19,7 +19,7 @@ requirements = [
     "pyyaml",
     "scipy",
     "xarray",
-    "mt_metadata @ https://github.com/kujaku11/mt_metadata/tarball/v0.1.0"
+    "mt_metadata @ https://github.com/kujaku11/mt_metadata-main.zip"
 ]
 
 
