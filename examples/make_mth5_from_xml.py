@@ -18,13 +18,24 @@ from xml.etree import cElementTree as et
 
 from mth5 import mth5
 from mth5.utils.pathing import DATA_DIR
+from mth5.utils.pathing import ensure_is_path
 
 # =============================================================================
 # functions
 # =============================================================================
 
+#<XML HELPERS>
+def is_a_station_xml(fn):
+    return fn.count(".") == 1
 
-def read_xml(xml_fn):
+def is_a_run_xml(fn):
+    return fn.count(".") == 2
+
+def is_a_channel_xml(fn):
+    return fn.count(".") > 2
+
+
+def read_xml(xml_file):
     """
     :param xml_fn: DESCRIPTION
     :type xml_fn: TYPE
@@ -33,7 +44,7 @@ def read_xml(xml_fn):
 
     """
 
-    return et.parse(xml_fn).getroot()
+    return et.parse(xml_file).getroot()
 
 
 def collect_xml_fn(station, directory):
@@ -48,44 +59,39 @@ def collect_xml_fn(station, directory):
     fn_list: the list of xml files
 
     """
-    if not isinstance(directory, Path):
-        directory = Path(directory)
-    # replace above with common one-liner ensure_is_path(directory)
-    fn_list = [fn.name for fn in directory.glob("*.xml") if station in fn.name]
-    # what is fn? filename?
+    directory = ensure_is_path(directory)
+    xml_file_list = [x.name for x in directory.glob("*.xml") if station in x.name]
     station_dict = {"station": None, "runs": {}}
-    for fn in fn_list:
-        if fn.count(".") == 1:
-            # is_a_station_xml(fn): return fn.count(".") == 1
-            station_dict["station"] = fn
-        elif fn.count(".") == 2:
-            # is_a_run_xml(fn): return fn.count(".") == 2
-            run_letter = fn.split(".")[1]
+    for xml_file in xml_file_list:
+        if is_a_station_xml(xml_file):
+            station_dict["station"] = xml_file
+        elif is_a_run_xml(xml_file):
+            run_letter = xml_file.split(".")[1]
             try:
-                station_dict["runs"][f"{station}{run_letter}"]["fn"] = fn
+                station_dict["runs"][f"{station}{run_letter}"]["fn"] = xml_file
             except KeyError:
                 station_dict["runs"][f"{station}{run_letter}"] = {
-                    "fn": fn,
+                    "fn": xml_file,
                     "channels": {},
                 }
-        elif fn.count(".") > 2:
-            name_list = fn.split(".")
+        elif is_a_channel_xml(xml_file):
+            name_list = xml_file.split(".")
             run_letter = name_list[1]
-            comp = name_list[-2]
+            component = name_list[-2]
             try:
                 station_dict["runs"][f"{station}{run_letter}"]["channels"][
-                    comp
-                ] = fn
+                    component
+                ] = xml_file
             except KeyError:
                 station_dict["runs"][f"{station}{run_letter}"] = {
                     "fn": None,
-                    "channels": {comp: fn},
+                    "channels": {component: xml_file},
                 }
         else:
             continue
 
     return station_dict
-
+#</XML HELPERS>
 
 def add_station(station, directory, h5_obj):
     """
@@ -135,7 +141,7 @@ def add_station(station, directory, h5_obj):
     return new_station
 
 
-def test_make_mth5_file_from_xml():
+def test_make_mth5_from_xml():
     """"""
     # =============================================================================
     # script
@@ -168,4 +174,4 @@ def test_make_mth5_file_from_xml():
 
 
 if __name__ == "__main__":
-    test_make_mth5_file_from_xml()
+    test_make_mth5_from_xml()

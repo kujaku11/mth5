@@ -33,6 +33,12 @@ if not DATA_DIR.exists():
     )
 
 
+def ensure_is_path(directory):
+    if not isinstance(directory, Path):
+        directory = Path(directory)
+    return directory
+
+
 def my_function():
     """
     """
