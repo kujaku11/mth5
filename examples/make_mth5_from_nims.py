@@ -13,7 +13,7 @@ Created on Wed Aug 26 09:56:40 2020
 import zipfile
 from mth5 import read_file
 from mth5 import mth5
-from mth5.utils.pathing import MTH5_TEST_DATA_DIR
+from mth5.utils.pathing import DATA_DIR
 
 from mt_metadata import timeseries as metadata
 from mt_metadata.utils.mttime import MTime
@@ -25,8 +25,8 @@ from mt_metadata.utils.mttime import MTime
 def test_make_mth5_from_nims():
     # set to true if you want to interact with the mth5 object in the console
     interact = False
-    nims_dir = MTH5_TEST_DATA_DIR.joinpath("nims")
-    h5_fn = MTH5_TEST_DATA_DIR.joinpath("from_nims.mth5")
+    nims_dir = DATA_DIR.joinpath("nims")
+    h5_fn = DATA_DIR.joinpath("from_nims.mth5")
 
     if h5_fn.exists():
         h5_fn.unlink()
