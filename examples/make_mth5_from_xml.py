@@ -20,6 +20,7 @@ from mth5 import mth5
 from mth5.utils.pathing import DATA_DIR
 from mth5.utils.pathing import ensure_is_path
 
+print(DATA_DIR)
 # =============================================================================
 # functions
 # =============================================================================

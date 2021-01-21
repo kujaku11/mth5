@@ -37,6 +37,8 @@ def get_test_data_path():
 # global variables
 # =============================================================================
 DATA_DIR = get_test_data_path()
+print(DATA_DIR)
+
 
 
 def ensure_is_path(directory):
