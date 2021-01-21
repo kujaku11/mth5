@@ -37,7 +37,6 @@ jobs:
         conda install pytest-cov
         pip install git+https://github.com/kujaku11/mt_metadata.git
 	pip install -e git+https://github.com/kujaku11/mth5_test_data.git#egg=mth5_test_data
-#        pip install git+https://github.com/kujaku11/mth5_test_data.git
         
     - name: Install Our Package
       shell: bash
