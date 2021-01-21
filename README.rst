@@ -13,7 +13,8 @@ MTH5
         :target: https://mth5.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
-
+.. image:: https://codecov.io/gh/kujaku11/mth5/branch/master/graph/badge.svg?token=XU5QSRM1ZO
+        :target: https://codecov.io/gh/kujaku11/mth5
 
 
 Archivable and exchangeable format for magnetotelluric data
