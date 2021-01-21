@@ -31,7 +31,7 @@ jobs:
       run: |
         python --version
         conda create -n mth5-test
-        conda activate mth5-test
+        source activate mth5-test
         conda config --add channels conda-forge
         conda install pytest
         conda install pytest-cov
