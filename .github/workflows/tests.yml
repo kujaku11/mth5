@@ -34,6 +34,7 @@ jobs:
         source activate mth5-test
         conda config --add channels conda-forge
         conda install pytest
+        conda install pytest-cov
 
     - name: Install Our Package
       shell: bash
@@ -46,4 +47,10 @@ jobs:
       shell: bash
       run: |
         source activate mth5-test
-        pytest .
+        source activate mtmetadata-test
+        pytest --cov=./ --cov-report=xml --cov=mth5
+        
+    - name: "Upload coverage to Codecov"
+      uses: codecov/codecov-action@v1
+      with:
+        fail_ci_if_error: true
