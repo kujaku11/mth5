@@ -31,12 +31,13 @@ jobs:
       run: |
         python --version
         conda create -n mth5-test
-        source activate mth5-test
+        conda activate mth5-test
         conda config --add channels conda-forge
         conda install pytest
         conda install pytest-cov
         pip install git+https://github.com/kujaku11/mt_metadata.git
-        pip install git+https://github.com/kujaku11/mth5_test_data.git
+	pip install -e git+https://github.com/kujaku11/mth5_test_data.git#egg=mth5_test_data
+#        pip install git+https://github.com/kujaku11/mth5_test_data.git
         
     - name: Install Our Package
       shell: bash
