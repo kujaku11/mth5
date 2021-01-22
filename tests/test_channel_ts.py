@@ -145,7 +145,23 @@ class TestChannelTS(unittest.TestCase):
         self.ts.sample_rate = 8
         self.assertEqual(self.ts.sample_rate, 8.0)
         self.assertEqual(self.ts.n_samples, 4096)
-
+        
+    def test_to_xarray(self):
+        self.ts.sample_rate = 16
+        self.ts.start = "2020-01-01T12:00:00"
+        self.ts.ts = np.arange(4096)
+        self.ts.station_metadata.id = "mt01"
+        self.ts.run_metadata.id = "mt01a"
+        
+        ts_xr = self.ts.to_xarray()
+        
+        self.assertEqual(ts_xr.attrs["station.id"], "mt01")
+        self.assertEqual(ts_xr.attrs["run.id"], "mt01a")
+        self.assertEqual(ts_xr.sample_rate, 16)
+        self.assertEqual(ts_xr.coords["time"].to_index()[0].isoformat(),
+                         ts_xr.attrs["time_period.start"].split("+")[0])
+        self.assertEqual(ts_xr.coords["time"].to_index()[-1].isoformat(),
+                         ts_xr.attrs["time_period.end"].split("+")[0])
 
 # =============================================================================
 # run tests

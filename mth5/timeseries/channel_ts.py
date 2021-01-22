@@ -305,6 +305,7 @@ class ChannelTS:
         """
 
         if isinstance(ts_arr, np.ndarray):
+            # TODO validate an input array to make sure its 1D
             self.logger.debug(f"loading numpy array with shape {ts_arr.shape}")
             dt = make_dt_coordinates(
                 self.start, self.sample_rate, ts_arr.size, self.logger
@@ -432,6 +433,10 @@ class ChannelTS:
         self._ts.attrs.update(
             self.channel_metadata.to_dict()[self.channel_metadata._class_name]
         )
+        # add station and run id's here, for now this is all we need but may need
+        # more metadata down the road.
+        self._ts.attrs["station.id"] = self.station_metadata.id
+        self._ts.attrs["run.id"] = self.run_metadata.id
 
     @property
     def component(self):
