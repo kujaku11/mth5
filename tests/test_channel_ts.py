@@ -92,7 +92,24 @@ class TestChannelTS(unittest.TestCase):
             ts_obj.ts = ts_arr
         self.assertRaises(ValueError, set_ts, self.ts, np.random.rand(2, 4096))
         
+    def test_list_input(self):
+        self.ts.channel_metadata.sample_rate = 1.0
 
+        self.ts.ts = np.random.rand(4096).tolist()
+        end = self.ts.channel_metadata.time_period._start_dt + (4096 - 1)
+
+        # check to make sure the times align
+        self.assertEqual(
+            self.ts._ts.coords.to_index()[0].isoformat(),
+            self.ts.channel_metadata.time_period._start_dt.iso_no_tz,
+        )
+
+        self.assertEqual(
+            self.ts._ts.coords.to_index()[-1].isoformat(), end.iso_no_tz
+        )
+
+        self.assertEqual(self.ts.n_samples, 4096)
+        
     def test_df_without_index_input(self):
         self.ts.channel_metadata.sample_rate = 1.0
 

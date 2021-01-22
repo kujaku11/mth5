@@ -304,8 +304,12 @@ class ChannelTS:
         column name 'data'
         """
 
-        if isinstance(ts_arr, np.ndarray):
-            # TODO validate an input array to make sure its 1D
+        if isinstance(ts_arr, (np.ndarray, list, tuple)):
+            if not isinstance(ts_arr, np.ndarray):
+                self.logger.debug(f"Converting {type(ts_arr)} to np.ndarray")
+                ts_arr = np.array(ts_arr)
+                
+            # Validate an input array to make sure its 1D
             if len(ts_arr.shape) == 2:
                 if 1 in ts_arr.shape:
                     self.logger.debug(f"Flattening input array with shape {ts_arr.shape}"
