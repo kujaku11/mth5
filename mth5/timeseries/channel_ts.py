@@ -306,6 +306,16 @@ class ChannelTS:
 
         if isinstance(ts_arr, np.ndarray):
             # TODO validate an input array to make sure its 1D
+            if len(ts_arr.shape) == 2:
+                if 1 in ts_arr.shape:
+                    self.logger.debug(f"Flattening input array with shape {ts_arr.shape}"
+                                      + f" to {ts_arr.size}")
+                    ts_arr = ts_arr.reshape(ts_arr.size)
+                else:
+                    msg = f"Input array must be 1-D array not {ts_arr.shape}"
+                    self.logger.error(msg)
+                    raise ValueError(msg)
+                    
             self.logger.debug(f"loading numpy array with shape {ts_arr.shape}")
             dt = make_dt_coordinates(
                 self.start, self.sample_rate, ts_arr.size, self.logger

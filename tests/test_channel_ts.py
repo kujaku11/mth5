@@ -85,6 +85,13 @@ class TestChannelTS(unittest.TestCase):
         )
 
         self.assertEqual(self.ts.n_samples, 4096)
+        
+    def test_numpy_input_fail(self):
+        self.ts.channel_metadata.sample_rate = 1.0
+        def set_ts(ts_obj, ts_arr):
+            ts_obj.ts = ts_arr
+        self.assertRaises(ValueError, set_ts, self.ts, np.random.rand(2, 4096))
+        
 
     def test_df_without_index_input(self):
         self.ts.channel_metadata.sample_rate = 1.0
