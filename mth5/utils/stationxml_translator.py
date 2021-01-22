@@ -256,15 +256,11 @@ def mt_survey_to_inventory_network(survey_obj, namespace="MT"):
     ]
     for inv_key, mth5_key in network_translator.items():
         if mth5_key is None:
-            msg = "cannot currently map mth5.survey to network.{0}".format(
-                inv_key
-            )
+            msg = "cannot currently map mth5.survey to network.{0}".format(inv_key)
             logger.debug(msg)
             continue
         if inv_key == "operators":
-            operator = inventory.Operator(
-                agency=[survey_obj.project_lead.organization]
-            )
+            operator = inventory.Operator(agency=[survey_obj.project_lead.organization])
             person = inventory.Person(
                 names=[survey_obj.project_lead.author],
                 emails=[survey_obj.project_lead.email],
@@ -280,9 +276,7 @@ def mt_survey_to_inventory_network(survey_obj, namespace="MT"):
                 comment = inventory.Comment(survey_obj.comments, id=0)
                 network_obj.comments.append(comment)
         elif inv_key == "restricted_status":
-            network_obj.restricted_status = release_dict[
-                survey_obj.release_license
-            ]
+            network_obj.restricted_status = release_dict[survey_obj.release_license]
         elif inv_key == "identifiers":
             for s_key in mth5_key:
                 doi = survey_obj.get_attr_from_name(s_key)
@@ -290,9 +284,7 @@ def mt_survey_to_inventory_network(survey_obj, namespace="MT"):
                 used_list.append(s_key)
 
         else:
-            setattr(
-                network_obj, inv_key, survey_obj.get_attr_from_name(mth5_key)
-            )
+            setattr(network_obj, inv_key, survey_obj.get_attr_from_name(mth5_key))
         used_list.append(mth5_key)
 
     # add any extra metadata that does not fit with StationXML schema
@@ -360,9 +352,7 @@ def mt_station_to_inventory_station(station_obj, namespace="MT"):
                 operator = inventory.Operator(
                     agency=[station_obj.acquired_by.organization]
                 )
-                person = inventory.Person(
-                    names=[station_obj.acquired_by.author]
-                )
+                person = inventory.Person(names=[station_obj.acquired_by.author])
                 operator.contacts = [person]
                 inv_station.operators = [operator]
                 used_list.append("acquired_by.author")
@@ -377,9 +367,7 @@ def mt_station_to_inventory_station(station_obj, namespace="MT"):
                 comment = inventory.Comment(station_obj.comments, id=0)
                 inv_station.comments.append(comment)
         else:
-            setattr(
-                inv_station, inv_key, station_obj.get_attr_from_name(mth5_key)
-            )
+            setattr(inv_station, inv_key, station_obj.get_attr_from_name(mth5_key))
 
     inv_station.extra = AttribDict({})
 
@@ -435,9 +423,7 @@ def mt_station_to_inventory_station(station_obj, namespace="MT"):
     orientation = ", ".join(
         [
             "method: {0}".format(station_obj.orientation.method),
-            "reference_frame: {0}".format(
-                station_obj.orientation.reference_frame
-            ),
+            "reference_frame: {0}".format(station_obj.orientation.reference_frame),
         ]
     )
 
@@ -546,19 +532,13 @@ def mt_channel_to_inventory_channel(channel_obj, run_obj, namespace):
                         [
                             f"{direction} electrode",
                             "latitude: {0}".format(
-                                channel_obj.get_attr_from_name(
-                                    f"{direction}.latitude"
-                                )
+                                channel_obj.get_attr_from_name(f"{direction}.latitude")
                             ),
                             "longitude: {0}".format(
-                                channel_obj.get_attr_from_name(
-                                    f"{direction}.longitude"
-                                )
+                                channel_obj.get_attr_from_name(f"{direction}.longitude")
                             ),
                             "elevation: {0}".format(
-                                channel_obj.get_attr_from_name(
-                                    f"{direction}.elevation"
-                                )
+                                channel_obj.get_attr_from_name(f"{direction}.elevation")
                             ),
                         ]
                     )
@@ -566,12 +546,8 @@ def mt_channel_to_inventory_channel(channel_obj, run_obj, namespace):
                     sensor.manufacturer = channel_obj.get_attr_from_name(
                         f"{direction}.manufacturer"
                     )
-                    sensor.type = channel_obj.get_attr_from_name(
-                        f"{direction}.type"
-                    )
-                    sensor.model = channel_obj.get_attr_from_name(
-                        f"{direction}.model"
-                    )
+                    sensor.type = channel_obj.get_attr_from_name(f"{direction}.type")
+                    sensor.model = channel_obj.get_attr_from_name(f"{direction}.model")
                     sensor.description = desc
 
                     inv_channel.equipments.append(sensor)
@@ -598,9 +574,7 @@ def mt_channel_to_inventory_channel(channel_obj, run_obj, namespace):
         elif inv_key == "types":
             inv_channel.types = ["GEOPHYSICAL"]
         else:
-            setattr(
-                inv_channel, inv_key, channel_obj.get_attr_from_name(mth5_key)
-            )
+            setattr(inv_channel, inv_key, channel_obj.get_attr_from_name(mth5_key))
 
     inv_channel.extra = AttribDict()
     inv_channel.extra.Magnetotellurics = AttribDict(
@@ -683,9 +657,7 @@ class MTToStationXML:
 
     def __init__(self, inventory_object=None):
 
-        self.logger = setup_logger(
-            "{0}.{1}".format(__name__, self.__class__.__name__)
-        )
+        self.logger = setup_logger("{0}.{1}".format(__name__, self.__class__.__name__))
 
         self.mt_namespace = r"http://emiw.org/xmlns/mt/1.0"
         self.namespace_map = {
@@ -741,9 +713,7 @@ class MTToStationXML:
         else:
             network_index = 0
 
-        for ii, sta in enumerate(
-            self.inventory_obj.networks[network_index].stations
-        ):
+        for ii, sta in enumerate(self.inventory_obj.networks[network_index].stations):
             if station == sta.code:
                 return ii
 
@@ -764,17 +734,13 @@ class MTToStationXML:
         )
 
         if network_obj.code in self.inventory_obj.networks:
-            msg = "Network {0} is alread in current inventory".format(
-                network_obj.code
-            )
+            msg = "Network {0} is alread in current inventory".format(network_obj.code)
             self.logger.error(msg)
             raise ValueError(msg)
         self.inventory_obj.networks.append(network_obj)
 
         self.logger.debug(
-            "Added network {0} to inventory".format(
-                mt_survey_obj.archive_network
-            )
+            "Added network {0} to inventory".format(mt_survey_obj.archive_network)
         )
 
     def add_station(self, mt_station_obj, network_code=None):
@@ -930,12 +896,8 @@ def inventory_network_to_mt_survey(network_obj):
             # only allow one person
             try:
                 inv_person = network_obj.operators[0].contacts[0]
-                mt_survey.set_attr_from_name(
-                    "project_lead.author", inv_person.names[0]
-                )
-                mt_survey.set_attr_from_name(
-                    "project_lead.email", inv_person.emails[0]
-                )
+                mt_survey.set_attr_from_name("project_lead.author", inv_person.names[0])
+                mt_survey.set_attr_from_name("project_lead.email", inv_person.emails[0])
                 mt_survey.set_attr_from_name(
                     "project_lead.organization", inv_person.agencies[0]
                 )
@@ -944,8 +906,7 @@ def inventory_network_to_mt_survey(network_obj):
 
             # is this redudant?
             mt_survey.set_attr_from_name(
-                "project_lead.organization",
-                network_obj.operators[0].agencies[0],
+                "project_lead.organization", network_obj.operators[0].agencies[0],
             )
         elif ".doi" in mth5_key:
             try:

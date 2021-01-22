@@ -22,6 +22,7 @@ from mt_metadata.utils.mttime import MTime
 #
 # =============================================================================
 
+
 def test_make_mth5_from_nims():
     print(f"Data Directory: {DATA_DIR}")
     # set to true if you want to interact with the mth5 object in the console
@@ -96,7 +97,6 @@ def test_make_mth5_from_nims():
 
     if not interact:
         m.close_mth5()
-
 
 
 if __name__ == "__main__":

@@ -40,7 +40,6 @@ DATA_DIR = get_test_data_path()
 print(DATA_DIR)
 
 
-
 def ensure_is_path(directory):
     if not isinstance(directory, Path):
         directory = Path(directory)

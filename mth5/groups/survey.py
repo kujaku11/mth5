@@ -98,13 +98,9 @@ class SurveyGroup(BaseGroup):
 
         """
 
-        self.logger.debug(
-            "Updating survey metadata from stations summary table"
-        )
+        self.logger.debug("Updating survey metadata from stations summary table")
         self.metadata.time_period.start_date = min(
-            self.stations_group.summary_table.array["start"].astype(
-                np.unicode_
-            )
+            self.stations_group.summary_table.array["start"].astype(np.unicode_)
         ).split("T")[0]
         self.metadata.time_period.end_date = max(
             self.stations_group.summary_table.array["end"].astype(np.unicode_)

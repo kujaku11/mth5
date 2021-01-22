@@ -91,14 +91,14 @@ def setup_logger(logger_name, fn=None, level="debug"):
         # one call per logger plus stdout
         if logger.hasHandlers():
             logger.handlers.clear()
-    
+
         logger.propagate = False
         # want to add a stream handler for any Info print statements as stdOut
         stream_handler = logging.StreamHandler()
         stream_handler.setFormatter(LOG_FORMAT)
         stream_handler.setLevel(LEVEL_DICT["info"])
         logger.addHandler(stream_handler)
-        
+
         fn = LOG_PATH.joinpath(fn)
         exists = False
         if fn.exists():
@@ -112,9 +112,7 @@ def setup_logger(logger_name, fn=None, level="debug"):
         fn_handler.setLevel(LEVEL_DICT[level.lower()])
         logger.addHandler(fn_handler)
         if not exists:
-            logger.info(
-                f"Logging file can be found {logger.handlers[-1].baseFilename}"
-            )
+            logger.info(f"Logging file can be found {logger.handlers[-1].baseFilename}")
     # else, give it a null handler, which will go to default logger.
     else:
         null_handler = logging.NullHandler()

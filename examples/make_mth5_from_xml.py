@@ -25,12 +25,14 @@ print(DATA_DIR)
 # functions
 # =============================================================================
 
-#<XML HELPERS>
+# <XML HELPERS>
 def is_a_station_xml(fn):
     return fn.count(".") == 1
 
+
 def is_a_run_xml(fn):
     return fn.count(".") == 2
+
 
 def is_a_channel_xml(fn):
     return fn.count(".") > 2
@@ -92,7 +94,10 @@ def collect_xml_fn(station, directory):
             continue
 
     return station_dict
-#</XML HELPERS>
+
+
+# </XML HELPERS>
+
 
 def add_station(station, directory, h5_obj):
     """
@@ -108,9 +113,7 @@ def add_station(station, directory, h5_obj):
 
     # add station
     new_station = h5_obj.stations_group.add_station(station)
-    new_station.metadata.from_xml(
-        read_xml(directory.joinpath(station_dict["station"]))
-    )
+    new_station.metadata.from_xml(read_xml(directory.joinpath(station_dict["station"])))
     new_station.write_metadata()
 
     # loop over runs
@@ -126,9 +129,7 @@ def add_station(station, directory, h5_obj):
         # loop over channels
         for channel, channel_fn in run_dict["channels"].items():
             _, _, channel_type, component, _ = channel_fn.split(".")
-            channel = run.add_channel(
-                component, channel_type, np.random.rand(4096)
-            )
+            channel = run.add_channel(component, channel_type, np.random.rand(4096))
             channel.metadata.from_xml(read_xml(directory.joinpath(channel_fn)))
             channel.metadata.time_period.start = run.metadata.time_period.start
             channel.metadata.time_period.end = run.metadata.time_period.end

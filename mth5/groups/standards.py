@@ -125,9 +125,7 @@ class StandardsGroup(BaseGroup):
 
         meta_item = self.summary_table.array[find]
         lines = ["", attribute_name, "-" * (len(attribute_name) + 4)]
-        for name, value in zip(
-            meta_item.dtype.names[1:], meta_item.item()[1:]
-        ):
+        for name, value in zip(meta_item.dtype.names[1:], meta_item.item()[1:]):
             if isinstance(value, (bytes, np.bytes_)):
                 value = value.decode()
             lines.append("\t{0:<14} {1}".format(name + ":", value))

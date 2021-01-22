@@ -74,9 +74,7 @@ class GPS(object):
 
     def __init__(self, gps_string, index=0):
 
-        self.logger = logging.getLogger(
-            f"{__name__}.{self.__class__.__name__}"
-        )
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
         self.gps_string = gps_string
         self.index = index
@@ -189,9 +187,7 @@ class GPS(object):
                 return gps_string
             except UnicodeDecodeError:
                 logging.debug(
-                    "GPSError: stamp not correct format, {0}".format(
-                        gps_string
-                    )
+                    "GPSError: stamp not correct format, {0}".format(gps_string)
                 )
                 return None
 
@@ -219,9 +215,7 @@ class GPS(object):
                     "GPS time and lat missing a comma adding one, check time"
                 )
                 gps_list = (
-                    gps_list[0:1]
-                    + [gps_list[1][0:6], gps_list[1][6:]]
-                    + gps_list[2:]
+                    gps_list[0:1] + [gps_list[1][0:6], gps_list[1][6:]] + gps_list[2:]
                 )
 
         ### validate the gps list to make sure it is usable
@@ -277,9 +271,7 @@ class GPS(object):
             gps_list[self.type_dict[g_type]["time"]] = None
 
         try:
-            gps_list[
-                self.type_dict[g_type]["latitude"]
-            ] = self._validate_latitude(
+            gps_list[self.type_dict[g_type]["latitude"]] = self._validate_latitude(
                 gps_list[self.type_dict[g_type]["latitude"]],
                 gps_list[self.type_dict[g_type]["latitude_hemisphere"]],
             )
@@ -288,9 +280,7 @@ class GPS(object):
             gps_list[self.type_dict[g_type]["latitude"]] = None
 
         try:
-            gps_list[
-                self.type_dict[g_type]["longitude"]
-            ] = self._validate_longitude(
+            gps_list[self.type_dict[g_type]["longitude"]] = self._validate_longitude(
                 gps_list[self.type_dict[g_type]["longitude"]],
                 gps_list[self.type_dict[g_type]["longitude_hemisphere"]],
             )
@@ -300,9 +290,7 @@ class GPS(object):
 
         if g_type == "gprmc":
             try:
-                gps_list[
-                    self.type_dict["gprmc"]["date"]
-                ] = self._validate_date(
+                gps_list[self.type_dict["gprmc"]["date"]] = self._validate_date(
                     gps_list[self.type_dict["gprmc"]["date"]]
                 )
             except GPSError as error:
@@ -352,9 +340,7 @@ class GPS(object):
         expected_len = self.type_dict[gps_list_type]["length"]
         if len(gps_list) not in expected_len:
             raise GPSError(
-                "GPS string not correct length for {0}.  ".format(
-                    gps_list_type.upper()
-                )
+                "GPS string not correct length for {0}.  ".format(gps_list_type.upper())
                 + "Expected {0}, got {1} \n{2}".format(
                     expected_len, len(gps_list), ",".join(gps_list)
                 )
@@ -370,9 +356,7 @@ class GPS(object):
         try:
             int(time_str)
         except ValueError:
-            raise GPSError(
-                "Could not convert time string {0}".format(time_str)
-            )
+            raise GPSError("Could not convert time string {0}".format(time_str))
 
         return time_str
 
@@ -386,9 +370,7 @@ class GPS(object):
         try:
             int(date_str)
         except ValueError:
-            raise GPSError(
-                "Could not convert date string {0}".format(date_str)
-            )
+            raise GPSError("Could not convert date string {0}".format(date_str))
 
         return date_str
 
@@ -407,16 +389,12 @@ class GPS(object):
             )
         if hemisphere_str.lower() not in ["n", "s"]:
             raise GPSError(
-                "Latitude hemisphere {0} not understood".format(
-                    hemisphere_str.upper()
-                )
+                "Latitude hemisphere {0} not understood".format(hemisphere_str.upper())
             )
         try:
             float(latitude_str)
         except ValueError:
-            raise GPSError(
-                "Could not convert latitude string {0}".format(latitude_str)
-            )
+            raise GPSError("Could not convert latitude string {0}".format(latitude_str))
 
         return latitude_str
 
@@ -435,9 +413,7 @@ class GPS(object):
             )
         if hemisphere_str.lower() not in ["e", "w"]:
             raise GPSError(
-                "Longitude hemisphere {0} not understood".format(
-                    hemisphere_str.upper()
-                )
+                "Longitude hemisphere {0} not understood".format(hemisphere_str.upper())
             )
         try:
             float(longitude_str)
@@ -463,15 +439,9 @@ class GPS(object):
         """
         Latitude in decimal degrees, WGS84
         """
-        if (
-            self._latitude is not None
-            and self._latitude_hemisphere is not None
-        ):
+        if self._latitude is not None and self._latitude_hemisphere is not None:
             index = len(self._latitude) - 7
-            lat = (
-                float(self._latitude[0:index])
-                + float(self._latitude[index:]) / 60
-            )
+            lat = float(self._latitude[0:index]) + float(self._latitude[index:]) / 60
             if "s" in self._latitude_hemisphere.lower():
                 lat *= -1
             return lat
@@ -482,15 +452,9 @@ class GPS(object):
         """
         Latitude in decimal degrees, WGS84
         """
-        if (
-            self._longitude is not None
-            and self._longitude_hemisphere is not None
-        ):
+        if self._longitude is not None and self._longitude_hemisphere is not None:
             index = len(self._longitude) - 7
-            lon = (
-                float(self._longitude[0:index])
-                + float(self._longitude[index:]) / 60
-            )
+            lon = float(self._longitude[0:index]) + float(self._longitude[index:]) / 60
             if "w" in self._longitude_hemisphere.lower():
                 lon *= -1
             return lon
@@ -590,9 +554,7 @@ class NIMSHeader(object):
     """
 
     def __init__(self, fn=None):
-        self.logger = logging.getLogger(
-            f"{__name__}.{self.__class__.__name__}"
-        )
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.fn = fn
         self._max_header_length = 1000
         self.header_dict = None
@@ -701,9 +663,7 @@ class NIMSHeader(object):
                 self.header_gps_stamp = dateutil.parser.parse(
                     " ".join(gps_list[0:2]), dayfirst=True
                 )
-                self.header_gps_latitude = self._get_latitude(
-                    gps_list[2], gps_list[3]
-                )
+                self.header_gps_latitude = self._get_latitude(gps_list[2], gps_list[3])
                 self.header_gps_longitude = self._get_longitude(
                     gps_list[4], gps_list[5]
                 )
@@ -1187,9 +1147,7 @@ class NIMS(NIMSHeader):
                 elif gps_obj.gps_type == "GPGGA":
                     gpgga_list.append(gps_obj)
             else:
-                self.logger.debug(
-                    f"GPS Error: file index {index}, stamp number {ii}"
-                )
+                self.logger.debug(f"GPS Error: file index {index}, stamp number {ii}")
                 max_len = min([len(raw_stamp), 15])
                 self.logger.debug(f"GPS Raw Stamp: {raw_stamp[0:max_len]}")
 
@@ -1290,9 +1248,7 @@ class NIMS(NIMSHeader):
                         del gps_list[ii]
                         break
             if not stamp_find:
-                self.logger.debug(
-                    f"GPS Error: No good GPS stamp at {index} seconds"
-                )
+                self.logger.debug(f"GPS Error: No good GPS stamp at {index} seconds")
 
         return gps_stamps
 
@@ -1360,9 +1316,7 @@ class NIMS(NIMSHeader):
             dup_dict["ts_index_0"] = dup * self.sample_rate
             dup_dict["ts_index_1"] = dup * self.sample_rate + self.sample_rate
             dup_dict["ts_index_2"] = (dup + 1) * self.sample_rate
-            dup_dict["ts_index_3"] = (
-                dup + 1
-            ) * self.sample_rate + self.sample_rate
+            dup_dict["ts_index_3"] = (dup + 1) * self.sample_rate + self.sample_rate
             duplicate_list.append(dup_dict)
         return duplicate_list
 
@@ -1403,9 +1357,7 @@ class NIMS(NIMSHeader):
         
         """
         ### locate
-        duplicate_test_list = self._locate_duplicate_blocks(
-            self.info_array["sequence"]
-        )
+        duplicate_test_list = self._locate_duplicate_blocks(self.info_array["sequence"])
         if duplicate_test_list is None:
             return info_array, data_array, None
 
@@ -1424,19 +1376,14 @@ class NIMS(NIMSHeader):
         ### block
         remove_sequence_index = [d["sequence_index"] for d in duplicate_list]
         remove_data_index = np.array(
-            [
-                np.arange(d["ts_index_0"], d["ts_index_1"], 1)
-                for d in duplicate_list
-            ]
+            [np.arange(d["ts_index_0"], d["ts_index_1"], 1) for d in duplicate_list]
         ).flatten()
         ### remove the data
         return_info_array = np.delete(info_array, remove_sequence_index)
         return_data_array = np.delete(data_array, remove_data_index)
 
         ### set sequence to be monotonic
-        return_info_array["sequence"][:] = np.arange(
-            return_info_array.shape[0]
-        )
+        return_info_array["sequence"][:] = np.arange(return_info_array.shape[0])
 
         return return_info_array, return_data_array, duplicate_list
 
@@ -1519,9 +1466,7 @@ class NIMS(NIMSHeader):
             data = data[0:end_data]
 
         # resized the data into an even amount of blocks
-        data = data.reshape(
-            (int(data.size / self.block_size), self.block_size)
-        )
+        data = data.reshape((int(data.size / self.block_size), self.block_size))
 
         ### need to parse the data
         ### first get the status information
@@ -1553,9 +1498,7 @@ class NIMS(NIMSHeader):
             self.info_array[key][:] = value
 
         ### unwrap sequence
-        self.info_array["sequence"] = self.unwrap_sequence(
-            self.info_array["sequence"]
-        )
+        self.info_array["sequence"] = self.unwrap_sequence(self.info_array["sequence"])
 
         ### get data
         data_array = np.zeros(
@@ -1587,11 +1530,9 @@ class NIMS(NIMSHeader):
             data_array[comp] *= -1
 
         ### remove duplicates
-        (
-            self.info_array,
-            data_array,
-            self.duplicate_list,
-        ) = self.remove_duplicates(self.info_array, data_array)
+        (self.info_array, data_array, self.duplicate_list,) = self.remove_duplicates(
+            self.info_array, data_array
+        )
         ### get GPS stamps with index values
         self.stamps = self.match_status_with_gps_stamps(
             self.info_array["status"], self.gps_list
@@ -1641,9 +1582,7 @@ class NIMS(NIMSHeader):
             if stamp.gps_type == "GPGGA":
                 continue
 
-            time_diff = (
-                stamp.time_stamp - current_stamp.time_stamp
-            ).total_seconds()
+            time_diff = (stamp.time_stamp - current_stamp.time_stamp).total_seconds()
             index_diff = stamp.index - current_stamp.index
 
             time_gap = index_diff - time_diff
@@ -1732,9 +1671,7 @@ class NIMS(NIMSHeader):
         )
 
         dt_index = self.make_dt_index(
-            start_time.isoformat(),
-            self.sample_rate,
-            n_samples=data_array.shape[0],
+            start_time.isoformat(), self.sample_rate, n_samples=data_array.shape[0],
         )
 
         return pd.DataFrame(data_array, index=dt_index)
@@ -1753,9 +1690,7 @@ class NIMS(NIMSHeader):
 
         return ts
 
-    def make_dt_index(
-        self, start_time, sample_rate, stop_time=None, n_samples=None
-    ):
+    def make_dt_index(self, start_time, sample_rate, stop_time=None, n_samples=None):
         """
         make time index array
 
@@ -1775,11 +1710,7 @@ class NIMS(NIMSHeader):
         dt_freq = "{0:.0f}N".format(1.0 / (sample_rate) * 1e9)
         if stop_time is not None:
             dt_index = pd.date_range(
-                start=start_time,
-                end=stop_time,
-                freq=dt_freq,
-                closed="left",
-                tz="UTC",
+                start=start_time, end=stop_time, freq=dt_freq, closed="left", tz="UTC",
             )
         elif n_samples is not None:
             dt_index = pd.date_range(
@@ -1820,13 +1751,7 @@ class Response(object):
                 "ex": -0.2850,
                 "ey": -0.2850,
             },
-            8: {
-                "hx": 0.2455,
-                "hy": 0.2365,
-                "hz": 0.2275,
-                "ex": 0.1525,
-                "ey": 0.1525,
-            },
+            8: {"hx": 0.2455, "hy": 0.2365, "hz": 0.2275, "ex": 0.1525, "ey": 0.1525,},
         }
         self.mag_low_pass = {
             "name": "3 pole butterworth",
@@ -1898,9 +1823,7 @@ class Response(object):
         dt_filter = {
             "type": "dt",
             "name": "time_offset",
-            "parameters": {
-                "offset": self.time_delays_dict[sample_rate][channel]
-            },
+            "parameters": {"offset": self.time_delays_dict[sample_rate][channel]},
         }
         return dt_filter
 
