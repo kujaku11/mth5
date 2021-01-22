@@ -699,8 +699,8 @@ class Z3D:
 
         self._gps_flag_0 = np.int32(2147483647)
         self._gps_flag_1 = np.int32(-2147483648)
-        self._gps_f0 = self._gps_flag_0.tostring()
-        self._gps_f1 = self._gps_flag_1.tostring()
+        self._gps_f0 = self._gps_flag_0.tobytes()
+        self._gps_f1 = self._gps_flag_1.tobytes()
         self.gps_flag = self._gps_f0 + self._gps_f1
 
         self._gps_dtype = np.dtype(
@@ -1199,7 +1199,7 @@ class Z3D:
                         int(32 * ((file_size - file_id.tell()) // 32)),
                     ]
                 )
-                test_str = np.fromstring(
+                test_str = np.frombuffer(
                     file_id.read(read_len), dtype=np.int32
                 )
                 if len(test_str) == 0:
