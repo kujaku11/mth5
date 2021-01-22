@@ -73,17 +73,6 @@ def setup_logger(logger_name, fn=None, level="debug"):
     """
 
     logger = logging.getLogger(logger_name)
-    # # need to clear the handlers to make sure there is only
-    # # one call per logger plus stdout
-    # if logger.hasHandlers():
-    #     logger.handlers.clear()
-
-    # logger.propagate = False
-    # # want to add a stream handler for any Info print statements as stdOut
-    # stream_handler = logging.StreamHandler()
-    # stream_handler.setFormatter(LOG_FORMAT)
-    # stream_handler.setLevel(LEVEL_DICT["info"])
-    # logger.addHandler(stream_handler)
 
     # if there is a file name create file in logs directory
     if fn is not None:
@@ -107,7 +96,10 @@ def setup_logger(logger_name, fn=None, level="debug"):
         if fn.suffix not in [".log"]:
             fn = Path(fn.parent, f"{fn.stem}.log")
 
-        fn_handler = logging.FileHandler(fn)
+        # fn_handler = logging.FileHandler(fn)
+        fn_handler = logging.handlers.RotatingFileHandler(fn,
+                                                          maxBytes=2**21,
+                                                          backupCount=2)
         fn_handler.setFormatter(LOG_FORMAT)
         fn_handler.setLevel(LEVEL_DICT[level.lower()])
         logger.addHandler(fn_handler)
