@@ -73,20 +73,32 @@ def setup_logger(logger_name, fn=None, level="debug"):
     """
 
     logger = logging.getLogger(logger_name)
-    # need to clear the handlers to make sure there is only
-    # one call per logger plus stdout
-    if logger.hasHandlers():
-        logger.handlers.clear()
+    # # need to clear the handlers to make sure there is only
+    # # one call per logger plus stdout
+    # if logger.hasHandlers():
+    #     logger.handlers.clear()
 
-    logger.propagate = False
-    # want to add a stream handler for any Info print statements as stdOut
-    stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(LOG_FORMAT)
-    stream_handler.setLevel(LEVEL_DICT["info"])
-    logger.addHandler(stream_handler)
+    # logger.propagate = False
+    # # want to add a stream handler for any Info print statements as stdOut
+    # stream_handler = logging.StreamHandler()
+    # stream_handler.setFormatter(LOG_FORMAT)
+    # stream_handler.setLevel(LEVEL_DICT["info"])
+    # logger.addHandler(stream_handler)
 
     # if there is a file name create file in logs directory
     if fn is not None:
+        # need to clear the handlers to make sure there is only
+        # one call per logger plus stdout
+        if logger.hasHandlers():
+            logger.handlers.clear()
+    
+        logger.propagate = False
+        # want to add a stream handler for any Info print statements as stdOut
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(LOG_FORMAT)
+        stream_handler.setLevel(LEVEL_DICT["info"])
+        logger.addHandler(stream_handler)
+        
         fn = LOG_PATH.joinpath(fn)
         exists = False
         if fn.exists():
