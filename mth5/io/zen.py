@@ -1246,7 +1246,7 @@ class Z3D:
                     "<" + "i" * int(self._gps_bytes),
                     *data[int(gps_find) : int(gps_find + self._gps_bytes)],
                 )
-                self.gps_stamps[ii] = np.fromstring(
+                self.gps_stamps[ii] = np.frombuffer(
                     gps_str, dtype=self._gps_dtype
                 )
                 if ii > 0:
