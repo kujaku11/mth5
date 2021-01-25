@@ -60,7 +60,10 @@ logger = logging.getLogger(__name__)
 readers = {
     "zen": {"file_types": ["z3d"], "reader": zen.read_z3d},
     "nims": {"file_types": ["bin", "bnn"], "reader": nims.read_nims},
-    "usgs_ascii": {"file_types": [".asc", ".zip"], "reader": usgs_ascii.read_ascii},
+    "usgs_ascii": {
+        "file_types": [".asc", ".zip"],
+        "reader": usgs_ascii.read_ascii,
+    },
     "miniseed": {
         "file_types": ["miniseed", "ms", "mseed"],
         "reader": miniseed.read_miniseed,

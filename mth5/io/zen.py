@@ -29,7 +29,7 @@ import logging
 
 import numpy as np
 
-from mth5.utils.mttime import MTime
+from mt_metadata.utils.mttime import MTime
 from mth5.timeseries import ChannelTS
 
 # ==============================================================================
@@ -79,7 +79,9 @@ class Z3DHeader:
     """
 
     def __init__(self, fn=None, fid=None, **kwargs):
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = logging.getLogger(
+            f"{__name__}.{self.__class__.__name__}"
+        )
 
         self.fn = fn
         self.fid = fid
@@ -162,7 +164,9 @@ class Z3DHeader:
             if h_str.find("=") > 0:
                 h_list = h_str.split("=")
                 h_key = h_list[0].strip().lower()
-                h_key = h_key.replace(" ", "_").replace("/", "").replace(".", "_")
+                h_key = (
+                    h_key.replace(" ", "_").replace("/", "").replace(".", "_")
+                )
                 h_value = self.convert_value(h_key, h_list[1].strip())
                 setattr(self, h_key, h_value)
             elif len(h_str) == 0:
@@ -264,7 +268,9 @@ class Z3DSchedule:
     """
 
     def __init__(self, fn=None, fid=None, **kwargs):
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = logging.getLogger(
+            f"{__name__}.{self.__class__.__name__}"
+        )
         self.fn = fn
         self.fid = fid
         self.meta_string = None
@@ -328,7 +334,9 @@ class Z3DSchedule:
                 m_value = m_list[1].strip()
                 setattr(self, m_key, m_value)
 
-        self.initial_start = MTime(time=f"{self.Date}T{self.Time}", gps_time=True)
+        self.initial_start = MTime(
+            time=f"{self.Date}T{self.Time}", gps_time=True
+        )
 
 
 # ==============================================================================
@@ -392,7 +400,9 @@ class Z3DMetadata:
     """
 
     def __init__(self, fn=None, fid=None, **kwargs):
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = logging.getLogger(
+            f"{__name__}.{self.__class__.__name__}"
+        )
         self.fn = fn
         self.fid = fid
         self.find_metadata = True
@@ -450,13 +460,19 @@ class Z3DMetadata:
             self.logger.waringn("No Z3D file to read")
         elif self.fn is None:
             if self.fid is not None:
-                self.fid.seek(self._header_length + self._schedule_metadata_len)
+                self.fid.seek(
+                    self._header_length + self._schedule_metadata_len
+                )
         elif self.fn is not None:
             if self.fid is None:
                 self.fid = open(self.fn, "rb")
-                self.fid.seek(self._header_length + self._schedule_metadata_len)
+                self.fid.seek(
+                    self._header_length + self._schedule_metadata_len
+                )
             else:
-                self.fid.seek(self._header_length + self._schedule_metadata_len)
+                self.fid.seek(
+                    self._header_length + self._schedule_metadata_len
+                )
 
         # read in calibration and meta data
         self.find_metadata = True
@@ -466,7 +482,9 @@ class Z3DMetadata:
         cal_find = False
         while self.find_metadata == True:
             try:
-                test_str = self.fid.read(self._metadata_length).decode().lower()
+                test_str = (
+                    self.fid.read(self._metadata_length).decode().lower()
+                )
             except UnicodeDecodeError:
                 self.find_metadata = False
                 break
@@ -513,7 +531,10 @@ class Z3DMetadata:
                         t_str = t_str.replace("\x00", "").replace("|", "")
                         try:
                             self.board_cal.append(
-                                [float(tt.strip()) for tt in t_str.strip().split(":")]
+                                [
+                                    float(tt.strip())
+                                    for tt in t_str.strip().split(":")
+                                ]
                             )
                         except ValueError:
                             self.board_cal.append(
@@ -529,7 +550,9 @@ class Z3DMetadata:
                     coil_num = test_list[1].split("|")[1]
                     coil_key, coil_value = coil_num.split("=")
                     setattr(
-                        self, coil_key.replace(".", "_").lower(), coil_value.strip()
+                        self,
+                        coil_key.replace(".", "_").lower(),
+                        coil_value.strip(),
                     )
                     for t_str in test_list[2:]:
                         if "\x00" in t_str:
@@ -544,7 +567,10 @@ class Z3DMetadata:
                             break
                         else:
                             self.coil_cal.append(
-                                [float(tt.strip()) for tt in t_str.strip().split(":")]
+                                [
+                                    float(tt.strip())
+                                    for tt in t_str.strip().split(":")
+                                ]
                             )
 
             else:
@@ -567,7 +593,9 @@ class Z3DMetadata:
                 self.board_cal = None
 
         try:
-            self.station = "{0}{1}".format(self.line_name, self.rx_xyz0.split(":")[0])
+            self.station = "{0}{1}".format(
+                self.line_name, self.rx_xyz0.split(":")[0]
+            )
         except AttributeError:
             if hasattr(self, "rx_stn"):
                 self.station = f"{self.rx_stn}"
@@ -655,7 +683,9 @@ class Z3D:
     """
 
     def __init__(self, fn=None, **kwargs):
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = logging.getLogger(
+            f"{__name__}.{self.__class__.__name__}"
+        )
         self.fn = fn
 
         self.header = Z3DHeader(fn)
@@ -669,8 +699,8 @@ class Z3D:
 
         self._gps_flag_0 = np.int32(2147483647)
         self._gps_flag_1 = np.int32(-2147483648)
-        self._gps_f0 = self._gps_flag_0.tostring()
-        self._gps_f1 = self._gps_flag_1.tostring()
+        self._gps_f0 = self._gps_flag_0.tobytes()
+        self._gps_f1 = self._gps_flag_1.tobytes()
         self.gps_flag = self._gps_f0 + self._gps_f1
 
         self._gps_dtype = np.dtype(
@@ -729,12 +759,16 @@ class Z3D:
             # only ex and ey have xyz2
             if hasattr(self.metadata, "ch_offset_xyz2"):
                 x1, y1, z1 = [
-                    float(offset) for offset in self.metadata.ch_offset_xyz1.split(":")
+                    float(offset)
+                    for offset in self.metadata.ch_offset_xyz1.split(":")
                 ]
                 x2, y2, z2 = [
-                    float(offset) for offset in self.metadata.ch_offset_xyz2.split(":")
+                    float(offset)
+                    for offset in self.metadata.ch_offset_xyz2.split(":")
                 ]
-                length = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2)
+                length = np.sqrt(
+                    (x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2
+                )
                 return np.round(length, 2)
             else:
                 return 0
@@ -833,7 +867,9 @@ class Z3D:
         """
         if not isinstance(schedule_dt, MTime):
             schedule_dt = MTime(schedule_dt)
-            raise TypeError("New schedule datetime must be type datetime.datetime")
+            raise TypeError(
+                "New schedule datetime must be type datetime.datetime"
+            )
         self.schedule.initial_start = schedule_dt
 
     @property
@@ -861,7 +897,8 @@ class Z3D:
                 * self.header.ch_factor
             )
             meta_dict[ts_type]["ac.end"] = (
-                self.time_series[-int(self.sample_rate) :].std() * self.header.ch_factor
+                self.time_series[-int(self.sample_rate) :].std()
+                * self.header.ch_factor
             )
             meta_dict[ts_type]["dc.start"] = (
                 self.time_series[0 : int(self.sample_rate)].mean()
@@ -900,7 +937,7 @@ class Z3D:
 
         meta_dict = {}
         meta_dict["id"] = self.station
-        meta_dict["archive_id"] = self.station
+        meta_dict["fdsn.id"] = self.station
         meta_dict["location.latitude"] = self.latitude
         meta_dict["location.longitude"] = self.longitude
         meta_dict["location.elevation"] = self.elevation
@@ -956,7 +993,9 @@ class Z3D:
             self._gps_stamp_length = 36
             self._gps_bytes = self._gps_stamp_length / 4
             self._gps_flag_0 = -1
-            self._block_len = int(self._gps_stamp_length + self.sample_rate * 4)
+            self._block_len = int(
+                self._gps_stamp_length + self.sample_rate * 4
+            )
             self.gps_flag = self._gps_f0
 
         else:
@@ -1035,7 +1074,9 @@ class Z3D:
 
         self.schedule.read_schedule(fn=self.fn, fid=fid)
         if self.header.old_version:
-            self.schedule.initial_start = MTime(self.header.schedule, gps_time=True)
+            self.schedule.initial_start = MTime(
+                self.header.schedule, gps_time=True
+            )
 
     # ======================================
     def _read_metadata(self, fn=None, fid=None):
@@ -1153,9 +1194,14 @@ class Z3D:
             while True:
                 # need to make sure the last block read is a multiple of 32 bit
                 read_len = min(
-                    [self._block_len, int(32 * ((file_size - file_id.tell()) // 32))]
+                    [
+                        self._block_len,
+                        int(32 * ((file_size - file_id.tell()) // 32)),
+                    ]
                 )
-                test_str = np.fromstring(file_id.read(read_len), dtype=np.int32)
+                test_str = np.frombuffer(
+                    file_id.read(read_len), dtype=np.int32
+                )
                 if len(test_str) == 0:
                     break
                 data[data_count : data_count + len(test_str)] = test_str
@@ -1163,7 +1209,9 @@ class Z3D:
 
         self.raw_data = data.copy()
         # find the gps stamps
-        gps_stamp_find = self.get_gps_stamp_index(data, self.header.old_version)
+        gps_stamp_find = self.get_gps_stamp_index(
+            data, self.header.old_version
+        )
 
         # skip the first two stamps and trim data
         try:
@@ -1174,7 +1222,9 @@ class Z3D:
             raise ZenGPSError(msg)
 
         # find gps stamps of the trimmed data
-        gps_stamp_find = self.get_gps_stamp_index(data, self.header.old_version)
+        gps_stamp_find = self.get_gps_stamp_index(
+            data, self.header.old_version
+        )
 
         self.gps_stamps = np.zeros(len(gps_stamp_find), dtype=self._gps_dtype)
 
@@ -1196,7 +1246,9 @@ class Z3D:
                     "<" + "i" * int(self._gps_bytes),
                     *data[int(gps_find) : int(gps_find + self._gps_bytes)],
                 )
-                self.gps_stamps[ii] = np.fromstring(gps_str, dtype=self._gps_dtype)
+                self.gps_stamps[ii] = np.frombuffer(
+                    gps_str, dtype=self._gps_dtype
+                )
                 if ii > 0:
                     self.gps_stamps[ii]["block_len"] = (
                         gps_find - gps_stamp_find[ii - 1] - self._gps_bytes
@@ -1291,7 +1343,9 @@ class Z3D:
         t_diff = np.zeros_like(self.gps_stamps["time"])
 
         for ii in range(len(t_diff) - 1):
-            t_diff[ii] = self.gps_stamps["time"][ii] - self.gps_stamps["time"][ii + 1]
+            t_diff[ii] = (
+                self.gps_stamps["time"][ii] - self.gps_stamps["time"][ii + 1]
+            )
 
         bad_times = np.where(abs(t_diff) > 0.5)[0]
         if len(bad_times) > 0:
@@ -1306,18 +1360,24 @@ class Z3D:
         
         """
         # first check if the gps stamp blocks are of the correct length
-        bad_blocks = np.where(self.gps_stamps["block_len"][1:] != self.header.ad_rate)[
-            0
-        ]
+        bad_blocks = np.where(
+            self.gps_stamps["block_len"][1:] != self.header.ad_rate
+        )[0]
 
         if len(bad_blocks) > 0:
             if bad_blocks.max() < 5:
-                ts_skip = self.gps_stamps["block_len"][0 : bad_blocks[-1] + 1].sum()
+                ts_skip = self.gps_stamps["block_len"][
+                    0 : bad_blocks[-1] + 1
+                ].sum()
                 self.gps_stamps = self.gps_stamps[bad_blocks[-1] :]
                 self.time_series = self.time_series[ts_skip:]
 
-                self.logger.warning(f"Skipped the first {bad_blocks[-1]} seconds")
-                self.logger.warning(f"Skipped first {ts_skip} poins in time series")
+                self.logger.warning(
+                    f"Skipped the first {bad_blocks[-1]} seconds"
+                )
+                self.logger.warning(
+                    f"Skipped first {ts_skip} poins in time series"
+                )
 
     # ==================================================
     def convert_gps_time(self):
@@ -1409,7 +1469,9 @@ class Z3D:
 
         # compute seconds using weeks and gps time
         utc_seconds = (
-            self._gps_epoch.epoch_seconds + (gps_week * self._week_len) + gps_time
+            self._gps_epoch.epoch_seconds
+            + (gps_week * self._week_len)
+            + gps_time
         )
 
         # compute date and time from seconds and return a datetime object

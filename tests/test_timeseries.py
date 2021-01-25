@@ -20,13 +20,16 @@ import unittest
 import numpy as np
 
 from mth5 import timeseries
-from mth5 import metadata
-from mth5.utils.mttime import MTime
 from mth5.utils.exceptions import MTTSError
+
+from mt_metadata import timeseries as metadata
+from mt_metadata.utils.mttime import MTime
 
 # =============================================================================
 #
 # =============================================================================
+
+
 class TestMTTS(unittest.TestCase):
     def setUp(self):
         self.ts = timeseries.ChannelTS("auxiliary")
@@ -36,19 +39,25 @@ class TestMTTS(unittest.TestCase):
         self.ts = timeseries.ChannelTS("electric")
 
         electric_meta = metadata.Electric()
-        self.assertDictEqual(self.ts.metadata.to_dict(), electric_meta.to_dict())
+        self.assertDictEqual(
+            self.ts.metadata.to_dict(), electric_meta.to_dict()
+        )
 
     def test_input_type_magnetic(self):
         self.ts = timeseries.ChannelTS("magnetic")
 
         magnetic_meta = metadata.Magnetic()
-        self.assertDictEqual(self.ts.metadata.to_dict(), magnetic_meta.to_dict())
+        self.assertDictEqual(
+            self.ts.metadata.to_dict(), magnetic_meta.to_dict()
+        )
 
     def test_input_type_auxiliary(self):
         self.ts = timeseries.ChannelTS("auxiliary")
 
         auxiliary_meta = metadata.Auxiliary()
-        self.assertDictEqual(self.ts.metadata.to_dict(), auxiliary_meta.to_dict())
+        self.assertDictEqual(
+            self.ts.metadata.to_dict(), auxiliary_meta.to_dict()
+        )
 
     def test_input_type_fail(self):
         self.assertRaises(ValueError, timeseries.ChannelTS, "temperature")
@@ -73,7 +82,9 @@ class TestMTTS(unittest.TestCase):
             self.ts.metadata.time_period._start_dt.iso_no_tz,
         )
 
-        self.assertEqual(self.ts.ts.coords.to_index()[-1].isoformat(), end.iso_no_tz)
+        self.assertEqual(
+            self.ts.ts.coords.to_index()[-1].isoformat(), end.iso_no_tz
+        )
 
         self.assertEqual(self.ts.n_samples, 4096)
 
@@ -192,6 +203,10 @@ class TestRunTS(unittest.TestCase):
         self.assertEqual(self.ex.component, "ex")
 
     def test_get_channel_fail(self):
+        """
+        self.run.temperature should return None, because 'temperature' is not in self.channels
+        :return:
+        """
 
         self.assertRaises(NameError, getattr, *(self.run, "temperature"))
 

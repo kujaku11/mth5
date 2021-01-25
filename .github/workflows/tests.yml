@@ -35,7 +35,9 @@ jobs:
         conda config --add channels conda-forge
         conda install pytest
         conda install pytest-cov
-
+        pip install git+https://github.com/kujaku11/mt_metadata.git
+        pip install -e git+https://github.com/kujaku11/mth5_test_data.git#egg=mth5_test_data
+        
     - name: Install Our Package
       shell: bash
       run: |
@@ -47,8 +49,7 @@ jobs:
       shell: bash
       run: |
         source activate mth5-test
-        source activate mth5-test
-        pytest --cov=./ --cov-report=xml --cov=mth5
+        pytest -v --cov=./ --cov-report=xml --cov=mth5
         
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v1

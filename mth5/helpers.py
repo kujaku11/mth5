@@ -14,12 +14,19 @@ Created on Tue Jun  2 12:37:50 2020
 # =============================================================================
 # Imports
 # =============================================================================
+from collections.abc import Iterable
+import inspect
+import numpy as np
 import h5py
 import gc
-import logging
 
-logger = logging.getLogger(__name__)
+from mth5.utils.mth5_logger import setup_logger
 
+logger = setup_logger(__name__)
+
+# =============================================================================
+# Acceptable compressions
+# =============================================================================
 COMPRESSION = ["lzf", "gzip", "szip", None]
 COMPRESSION_LEVELS = {
     "lzf": [None],
@@ -46,7 +53,9 @@ def validate_compression(compression, level):
 
     """
     if not isinstance(compression, (str, type(None))):
-        msg = "compression type must be a string, not {0}".format(type(compression))
+        msg = "compression type must be a string, not {0}".format(
+            type(compression)
+        )
         logger.error(msg)
         raise TypeError(msg)
 
@@ -63,7 +72,8 @@ def validate_compression(compression, level):
     elif compression == " gzip":
         if not isinstance(level, (int)):
             msg = "Level type for gzip must be an int, not {0}.".format(
-                type(level) + f" Options are {0}".format(COMPRESSION_LEVELS["gzip"])
+                type(level)
+                + f" Options are {0}".format(COMPRESSION_LEVELS["gzip"])
             )
             logger.error(msg)
             raise TypeError(msg)
@@ -99,17 +109,21 @@ def recursive_hdf5_tree(group, lines=[]):
 
 def close_open_files():
     for obj in gc.get_objects():
-        if isinstance(obj, h5py.File):
-            msg = "Found HDF5 File object "
-            try:
-                msg = "{0}, ".format(obj.filename)
-                obj.flush()
-                obj.close()
-                msg += "Closed File"
-                logger.info(msg)
-            except:
-                msg += "File already closed."
-                logger.info(msg)
+        try:
+            if isinstance(obj, h5py.File):
+                msg = "Found HDF5 File object "
+                print(msg)
+                try:
+                    msg = "{0}, ".format(obj.filename)
+                    obj.flush()
+                    obj.close()
+                    msg += "Closed File"
+                    logger.info(msg)
+                except:
+                    msg += "File already closed."
+                    logger.info(msg)
+        except:
+            print("Object {} does not have __class__")
 
 
 def get_tree(parent):
@@ -123,7 +137,9 @@ def get_tree(parent):
     """
     lines = ["{0}:".format(parent.name), "=" * 20]
     if not isinstance(parent, (h5py.File, h5py.Group)):
-        raise TypeError("Provided object is not a h5py.File or h5py.Group " "object")
+        raise TypeError(
+            "Provided object is not a h5py.File or h5py.Group " "object"
+        )
 
     def fancy_print(name, obj):
         # lines.append(name)
@@ -132,11 +148,72 @@ def get_tree(parent):
 
         if isinstance(obj, h5py.Group):
             lines.append("{0}|- Group: {1}".format(spacing, group_name))
-            lines.append("{0}{1}".format(spacing, (len(group_name) + 10) * "-"))
+            lines.append(
+                "{0}{1}".format(spacing, (len(group_name) + 10) * "-")
+            )
         elif isinstance(obj, h5py.Dataset):
             lines.append("{0}--> Dataset: {1}".format(spacing, group_name))
-            lines.append("{0}{1}".format(spacing, (len(group_name) + 15) * "."))
+            lines.append(
+                "{0}{1}".format(spacing, (len(group_name) + 15) * ".")
+            )
 
     # lines.append(parent.name)
     parent.visititems(fancy_print)
     return "\n".join(lines)
+
+
+def to_numpy_type(value):
+    """
+    Need to make the attributes friendly with Numpy and HDF5.  
+    
+    For numbers and bool this is straight forward they are automatically 
+    mapped in h5py to a numpy type.  
+    
+    But for strings this can be a challenge, especially a list of strings.  
+    
+    HDF5 should only deal with ASCII characters or Unicode.  No binary data
+    is allowed.
+    """
+
+    if value is None:
+        return "none"
+    # For now turn references into a generic string
+    if isinstance(value, h5py.h5r.Reference):
+        value = str(value)
+
+    if isinstance(
+        value,
+        (
+            str,
+            np.str_,
+            int,
+            float,
+            bool,
+            complex,
+            np.int,
+            np.float,
+            np.bool,
+            np.complex,
+        ),
+    ):
+        return value
+
+    if isinstance(value, Iterable):
+        if np.any([type(x) in [str, bytes, np.str_] for x in value]):
+            return np.array(value, dtype="S")
+        else:
+            return np.array(value)
+
+    else:
+        raise TypeError("Type {0} not understood".format(type(value)))
+
+
+# =============================================================================
+#
+# =============================================================================
+def inherit_doc_string(cls):
+    for base in inspect.getmro(cls):
+        if base.__doc__ is not None:
+            cls.__doc__ = base.__doc__
+            break
+    return cls

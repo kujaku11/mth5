@@ -15,10 +15,10 @@ from pathlib import Path
 import numpy as np
 
 from mth5 import mth5
-from mth5.standards import schema
-from mth5.utils.exceptions import MTH5Error, MTH5TableError
+from mth5.utils.exceptions import MTH5Error
 from mth5.timeseries import ChannelTS, RunTS
-from mth5.utils.mttime import MTime
+from mth5.groups.standards import summarize_metadata_standards
+from mt_metadata.utils.mttime import MTime
 
 fn_path = Path(__file__).parent
 # =============================================================================
@@ -39,11 +39,12 @@ class TestMTH5(unittest.TestCase):
 
     def test_initial_standards_keys(self):
         stable = self.mth5_obj.standards_group.summary_table
-        standards_obj = schema.Standards()
-        standards_dict = standards_obj.summarize_standards()
+        standards_dict = summarize_metadata_standards()
         standards_keys = sorted(list(standards_dict.keys()))
 
-        stable_keys = sorted([ss.decode() for ss in list(stable.array["attribute"])])
+        stable_keys = sorted(
+            [ss.decode() for ss in list(stable.array["attribute"])]
+        )
 
         self.assertListEqual(standards_keys, stable_keys)
 
@@ -96,7 +97,11 @@ class TestMTH5(unittest.TestCase):
 
         self.assertIn(
             "ex",
-            (new_run.summary_table.array["component"].astype(np.unicode_).tolist()),
+            (
+                new_run.summary_table.array["component"]
+                .astype(np.unicode_)
+                .tolist()
+            ),
         )
 
     def test_remove_channel(self):
@@ -109,7 +114,9 @@ class TestMTH5(unittest.TestCase):
     def test_get_channel_fail(self):
         new_station = self.mth5_obj.add_station("MT001")
         new_station.add_run("MT001a")
-        self.assertRaises(MTH5Error, self.mth5_obj.get_channel, "MT001", "MT001a", "Ey")
+        self.assertRaises(
+            MTH5Error, self.mth5_obj.get_channel, "MT001", "MT001a", "Ey"
+        )
 
     def test_channel_mtts(self):
         meta_dict = {
@@ -134,7 +141,9 @@ class TestMTH5(unittest.TestCase):
         new_ts = ex.to_channel_ts()
 
         self.assertEqual(channel_ts.start, new_ts.start)
-        self.assertTrue(channel_ts.ts.time.to_dict() == new_ts.ts.time.to_dict())
+        self.assertTrue(
+            channel_ts.ts.time.to_dict() == new_ts.ts.time.to_dict()
+        )
 
     def test_from_run_ts(self):
         ts_list = []
@@ -168,7 +177,9 @@ class TestMTH5(unittest.TestCase):
         run = station.add_run("MT002a")
         channel_groups = run.from_runts(run_ts)
 
-        self.assertListEqual(["ex", "ey", "hx", "hy", "hz", "summary"], run.groups_list)
+        self.assertListEqual(
+            ["ex", "ey", "hx", "hy", "hz", "summary"], run.groups_list
+        )
 
         # check to make sure the metadata was transfered
         for cg in channel_groups:
