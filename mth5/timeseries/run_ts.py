@@ -115,21 +115,26 @@ class RunTS:
             self.logger.error(msg)
             raise TypeError(msg)
 
+        valid_list = []
         for index, item in enumerate(array_list):
-            if not isinstance(item, ChannelTS):
+            if not isinstance(item, (ChannelTS, xr.DataArray)):
                 msg = f"array entry {index} must be ChannelTS object not {type(item)}"
                 self.logger.error(msg)
                 raise TypeError(msg)
+            if isinstance(item, ChannelTS):
+                valid_list.append(item.to_xarray())
+            else:
+                valid_list.append(item)
 
         # probably should test for sampling rate.
-        sr_test = dict([(item.component, (item.sample_rate)) for item in array_list])
+        sr_test = dict([(item.component, (item.sample_rate)) for item in valid_list])
 
         if len(set([v for k, v in sr_test.items()])) != 1:
             msg = f"sample rates are not all the same {sr_test}"
             self.logger.error(msg)
             raise MTTSError(msg)
 
-        return [x.ts for x in array_list]
+        return valid_list
 
     def __getattr__(self, name):
         # change to look for keys directly and use type to set channel type

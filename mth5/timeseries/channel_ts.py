@@ -184,7 +184,7 @@ class ChannelTS:
                     )
                 )
             elif isinstance(channel_metadata, dict):
-                if not channel_type in list(channel_metadata.keys()):
+                if not channel_type in [cc.lower() for cc in channel_metadata.keys()]:
                     channel_metadata = {channel_type: channel_metadata}
                 self.channel_metadata.from_dict(channel_metadata)
                 self.logger.debug("Loading from metadata dict")
@@ -203,7 +203,7 @@ class ChannelTS:
                 self.station_metadata.from_dict(station_metadata.to_dict())
 
             elif isinstance(station_metadata, dict):
-                if not "Station" in list(station_metadata.keys()):
+                if not "station" in [cc.lower() for cc in station_metadata.keys()]:
                     station_metadata = {"Station": station_metadata}
                 self.station_metadata.from_dict(station_metadata)
                 self.logger.debug("Loading from metadata dict")
@@ -222,7 +222,7 @@ class ChannelTS:
                 self.run_metadata.from_dict(run_metadata.to_dict())
 
             elif isinstance(run_metadata, dict):
-                if not "Run" in list(run_metadata.keys()):
+                if not "run" in [cc.lower() for cc in run_metadata.keys()]:
                     run_metadata = {"Run": run_metadata}
                 self.run_metadata.from_dict(run_metadata)
                 self.logger.debug("Loading from metadata dict")
@@ -360,11 +360,26 @@ class ChannelTS:
             self._update_xarray_metadata()
 
         elif isinstance(ts_arr, xr.DataArray):
-            self.logger.debug(f"loading xarra.DataArray with shape {ts_arr.shape}")
+            self.logger.debug(f"loading xarray.DataArray with shape {ts_arr.shape}")
             # TODO: need to validate the input xarray
             self._ts = ts_arr
+            # need to pull out the metadata as a separate dictionary
             meta_dict = dict([(k, v) for k, v in ts_arr.attrs.items()])
-            self.channel_metadata.from_dict({self.channel_metadata.type: meta_dict})
+            
+            # need to get station and run metadata out
+            station_keys = [k for k in meta_dict.keys() if "station." in k]
+            run_keys = [k for k in meta_dict.keys() if "run." in k]
+            station_dict = {}
+            run_dict = {}
+            for key in station_keys:
+                station_dict[key.split('station.')[-1]] = meta_dict.pop(key)
+            for key in run_keys:
+                run_dict[key.split('run.')[-1]] = meta_dict.pop(key)
+            
+            self.channel_metadata.from_dict({meta_dict["type"]: meta_dict})
+            self.station_metadata.from_dict({"station": station_dict})
+            self.run_metadata.from_dict({"run": run_dict})
+            # need to run this incase things are different.
             self._update_xarray_metadata()
 
         else:

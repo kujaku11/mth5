@@ -17,6 +17,7 @@ import unittest
 
 import numpy as np
 import pandas as pd
+import xarray as xr
 
 from mth5 import timeseries
 from mth5.utils.exceptions import MTTSError
@@ -80,7 +81,8 @@ class TestChannelTS(unittest.TestCase):
             self.ts.channel_metadata.time_period._start_dt.iso_no_tz,
         )
 
-        self.assertEqual(self.ts._ts.coords.to_index()[-1].isoformat(), end.iso_no_tz)
+        self.assertEqual(self.ts._ts.coords.to_index()
+                         [-1].isoformat(), end.iso_no_tz)
 
         self.assertEqual(self.ts.n_samples, 4096)
 
@@ -104,7 +106,8 @@ class TestChannelTS(unittest.TestCase):
             self.ts.channel_metadata.time_period._start_dt.iso_no_tz,
         )
 
-        self.assertEqual(self.ts._ts.coords.to_index()[-1].isoformat(), end.iso_no_tz)
+        self.assertEqual(self.ts._ts.coords.to_index()
+                         [-1].isoformat(), end.iso_no_tz)
 
         self.assertEqual(self.ts.n_samples, 4096)
 
@@ -122,7 +125,8 @@ class TestChannelTS(unittest.TestCase):
             self.ts.channel_metadata.time_period._start_dt.iso_no_tz,
         )
 
-        self.assertEqual(self.ts._ts.coords.to_index()[-1].isoformat(), end.iso_no_tz)
+        self.assertEqual(self.ts._ts.coords.to_index()
+                         [-1].isoformat(), end.iso_no_tz)
 
         self.assertEqual(self.ts.n_samples, 4096)
 
@@ -188,6 +192,23 @@ class TestChannelTS(unittest.TestCase):
             ts_xr.coords["time"].to_index()[-1].isoformat(),
             ts_xr.attrs["time_period.end"].split("+")[0],
         )
+
+    def test_xarray_input(self):
+        ch = timeseries.ChannelTS("auxiliary",
+                                  data=np.random.rand(4096),
+                                  channel_metadata={"auxiliary":
+                                                    {"time_period.start": "2020-01-01T12:00:00",
+                                                     "sample_rate": 8}},
+                                  station_metadata={"Station":
+                                                    {"id": "mt01"}},
+                                  run_metadata={"Run": {"id": "0001"}})
+        self.assertEqual(ch.channel_type, "auxiliary")
+        self.ts.ts = ch.to_xarray()
+        
+        self.assertEqual(self.ts.run_metadata.id, "0001")
+        self.assertEqual(self.ts.station_metadata.id, "mt01")
+        self.assertEqual(self.ts.start, "2020-01-01T12:00:00+00:00")
+        
 
 
 # =============================================================================
