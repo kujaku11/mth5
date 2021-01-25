@@ -742,7 +742,7 @@ class NIMS(NIMSHeader):
         }
         self.info_array = None
         self.stamps = None
-        self.ts = None
+        self.ts_data = None
         self.gaps = None
         self.duplicate_list = None
 
@@ -827,7 +827,7 @@ class NIMS(NIMSHeader):
         beginning of the time series.
         """
         if self.stamps is not None:
-            return self.ts.index[0]
+            return self.ts_data.index[0]
         return None
 
     @property
@@ -837,14 +837,14 @@ class NIMS(NIMSHeader):
         beginning of the time series.
         """
         if self.stamps is not None:
-            return self.ts.index[-1]
+            return self.ts_data.index[-1]
         return None
 
     @property
     def box_temperature(self):
         """data logger temperature, sampled at 1 second"""
 
-        if self.ts is not None:
+        if self.ts_data is not None:
             meta_dict = {
                 "channel_number": 6,
                 "component": "temperature",
@@ -865,9 +865,9 @@ class NIMS(NIMSHeader):
                 station_metadata=self.station_metadata,
             )
             # interpolate temperature onto the same sample rate as the channels.
-            temp.ts = temp.ts.interp_like(self.hx.ts)
-            temp.metadata.sample_rate = self.sample_rate
-            temp.metadata.time_period.end = self.end_time.isoformat()
+            temp._ts = temp._ts.interp_like(self.hx._ts)
+            temp.channel_metadata.sample_rate = self.sample_rate
+            temp.channel_metadata.time_period.end = self.end_time.isoformat()
 
             return temp
         return None
@@ -875,7 +875,7 @@ class NIMS(NIMSHeader):
     @property
     def hx(self):
         """HX"""
-        if self.ts is not None:
+        if self.ts_data is not None:
             meta_dict = {
                 "channel_number": 1,
                 "component": "hx",
@@ -893,7 +893,7 @@ class NIMS(NIMSHeader):
 
             return timeseries.ChannelTS(
                 "magnetic",
-                data=self.ts.hx.to_numpy(),
+                data=self.ts_data.hx.to_numpy(),
                 channel_metadata={"magnetic": meta_dict},
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
@@ -903,7 +903,7 @@ class NIMS(NIMSHeader):
     @property
     def hy(self):
         """HY"""
-        if self.ts is not None:
+        if self.ts_data is not None:
             meta_dict = {
                 "channel_number": 2,
                 "component": "hy",
@@ -921,7 +921,7 @@ class NIMS(NIMSHeader):
 
             return timeseries.ChannelTS(
                 "magnetic",
-                data=self.ts.hy.to_numpy(),
+                data=self.ts_data.hy.to_numpy(),
                 channel_metadata={"magnetic": meta_dict},
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
@@ -931,7 +931,7 @@ class NIMS(NIMSHeader):
     @property
     def hz(self):
         """HZ"""
-        if self.ts is not None:
+        if self.ts_data is not None:
             meta_dict = {
                 "channel_number": 3,
                 "component": "hz",
@@ -949,7 +949,7 @@ class NIMS(NIMSHeader):
 
             return timeseries.ChannelTS(
                 "magnetic",
-                data=self.ts.hz.to_numpy(),
+                data=self.ts_data.hz.to_numpy(),
                 channel_metadata={"magnetic": meta_dict},
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
@@ -959,7 +959,7 @@ class NIMS(NIMSHeader):
     @property
     def ex(self):
         """EX"""
-        if self.ts is not None:
+        if self.ts_data is not None:
             meta_dict = {
                 "channel_number": 4,
                 "component": "ex",
@@ -977,7 +977,7 @@ class NIMS(NIMSHeader):
 
             return timeseries.ChannelTS(
                 "electric",
-                data=self.ts.ex.to_numpy(),
+                data=self.ts_data.ex.to_numpy(),
                 channel_metadata={"electric": meta_dict},
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
@@ -987,7 +987,7 @@ class NIMS(NIMSHeader):
     @property
     def ey(self):
         """EY"""
-        if self.ts is not None:
+        if self.ts_data is not None:
             meta_dict = {
                 "channel_number": 5,
                 "component": "ey",
@@ -1005,7 +1005,7 @@ class NIMS(NIMSHeader):
 
             return timeseries.ChannelTS(
                 "electric",
-                data=self.ts.ey.to_numpy(),
+                data=self.ts_data.ey.to_numpy(),
                 channel_metadata={"electric": meta_dict},
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
@@ -1017,7 +1017,7 @@ class NIMS(NIMSHeader):
     def run_metadata(self):
         """ Run metadata """
 
-        if self.ts is not None:
+        if self.ts_data is not None:
             meta_dict = {
                 "Run": {
                     "channels_recorded_electric": "ex, ey",
@@ -1046,7 +1046,7 @@ class NIMS(NIMSHeader):
     @property
     def station_metadata(self):
         """ Station metadata from nims file """
-        if self.ts is not None:
+        if self.ts_data is not None:
 
             return {
                 "Station": {
@@ -1064,7 +1064,7 @@ class NIMS(NIMSHeader):
     def to_runts(self):
         """ Get xarray for run """
 
-        if self.ts is not None:
+        if self.ts_data is not None:
             return timeseries.RunTS(
                 array_list=[
                     self.hx,
@@ -1538,7 +1538,7 @@ class NIMS(NIMSHeader):
             self.info_array["status"], self.gps_list
         )
         ### align data checking for timing gaps
-        self.ts = self.align_data(data_array, self.stamps)
+        self.ts_data = self.align_data(data_array, self.stamps)
 
         et = datetime.datetime.now()
         read_time = (et - st).total_seconds()

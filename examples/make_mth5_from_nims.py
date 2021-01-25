@@ -67,7 +67,7 @@ def test_make_mth5_from_nims():
 
         # make a run group
         run_group = station_group.add_run(
-            run_ts.metadata.id, run_metadata=run_ts.metadata
+            run_ts.run_metadata.id, run_metadata=run_ts.run_metadata
         )
 
         # add data to the run group
