@@ -1378,7 +1378,7 @@ class RunGroup(BaseGroup):
         ch_obj = self.add_channel(
             channel_ts_obj.component,
             channel_ts_obj.channel_metadata.type,
-            channel_ts_obj.ts.values,
+            channel_ts_obj.ts,
             channel_metadata=channel_ts_obj.channel_metadata,
         )
 
