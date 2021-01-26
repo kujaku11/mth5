@@ -2166,13 +2166,13 @@ class ChannelDataset:
             raise TypeError(msg)
 
         if how == "replace":
-            self.metadata = channel_ts_obj.metadata
-            self.replace_dataset(channel_ts_obj.ts.values)
+            self.metadata = channel_ts_obj.channel_metadata
+            self.replace_dataset(channel_ts_obj.ts)
             self.write_metadata()
 
         elif how == "extend":
             self.extend_dataset(
-                channel_ts_obj.ts.values,
+                channel_ts_obj.ts,
                 channel_ts_obj.start,
                 channel_ts_obj.sample_rate,
                 fill=fill,

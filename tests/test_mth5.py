@@ -133,7 +133,7 @@ class TestMTH5(unittest.TestCase):
         new_ts = ex.to_channel_ts()
 
         self.assertEqual(channel_ts.start, new_ts.start)
-        self.assertTrue(channel_ts.ts.time.to_dict() == new_ts.ts.time.to_dict())
+        self.assertTrue(channel_ts._ts.time.to_dict() == new_ts._ts.time.to_dict())
 
     def test_from_run_ts(self):
         ts_list = []
