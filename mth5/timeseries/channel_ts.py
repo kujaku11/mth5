@@ -365,17 +365,17 @@ class ChannelTS:
             self._ts = ts_arr
             # need to pull out the metadata as a separate dictionary
             meta_dict = dict([(k, v) for k, v in ts_arr.attrs.items()])
-            
+
             # need to get station and run metadata out
             station_keys = [k for k in meta_dict.keys() if "station." in k]
             run_keys = [k for k in meta_dict.keys() if "run." in k]
             station_dict = {}
             run_dict = {}
             for key in station_keys:
-                station_dict[key.split('station.')[-1]] = meta_dict.pop(key)
+                station_dict[key.split("station.")[-1]] = meta_dict.pop(key)
             for key in run_keys:
-                run_dict[key.split('run.')[-1]] = meta_dict.pop(key)
-            
+                run_dict[key.split("run.")[-1]] = meta_dict.pop(key)
+
             self.channel_metadata.from_dict({meta_dict["type"]: meta_dict})
             self.station_metadata.from_dict({"station": station_dict})
             self.run_metadata.from_dict({"run": run_dict})
