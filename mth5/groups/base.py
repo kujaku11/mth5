@@ -193,7 +193,6 @@ class BaseGroup:
 
     @property
     def summary_table(self):
-        pass
         return MTH5Table(self.hdf5_group["summary"])
 
     @property

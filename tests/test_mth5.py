@@ -97,6 +97,20 @@ class TestMTH5(unittest.TestCase):
             "ex",
             (new_run.summary_table.array["component"].astype(np.unicode_).tolist()),
         )
+        
+        self.assertIn(
+            new_channel.metadata.component,
+            (new_run.summary_table.array["component"].astype(np.unicode_).tolist()),
+        )
+        
+        def test_change_metadata(self):
+            new_channel.metadata.time_period.start = "2020-01-01T12:00:00"
+            new_channel.write_metadata()
+            entry_index = new_channel.master_station_group.summary_table.locate(
+                "component", new_channel.metadata.component)
+            entry = new_channel.master_station_group.summary_table[entry_index]
+            self.assertEqual(entry["start"].astype(np.unicode_),
+                             "2020-01-01T12:00:00+00:00")
 
     def test_remove_channel(self):
         new_station = self.mth5_obj.add_station("MT001")
@@ -104,6 +118,15 @@ class TestMTH5(unittest.TestCase):
         new_channel = new_run.add_channel("Ex", "electric", None)
         new_run.remove_channel("Ex")
         self.assertNotIn("ex", new_run.groups_list)
+        self.assertNotIn(
+            "ex",
+            (new_run.summary_table.array["component"].astype(np.unicode_).tolist()),
+        )
+        
+        self.assertNotIn(
+            new_channel.metadata.component,
+            (new_run.summary_table.array["component"].astype(np.unicode_).tolist())
+        )
 
     def test_get_channel_fail(self):
         new_station = self.mth5_obj.add_station("MT001")

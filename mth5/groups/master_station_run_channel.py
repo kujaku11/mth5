@@ -1037,6 +1037,22 @@ class RunGroup(BaseGroup):
             ),
         )
 
+    def write_metadata(self):
+        """
+        Overwrite Base.write_metadata to include updating table entry
+        Write HDF5 metadata from metadata object.
+
+        """
+
+        for key, value in self.metadata.to_dict(single=True).items():
+            value = to_numpy_type(value)
+            self.logger.debug("wrote metadata {0} = {1}".format(key, value))
+            self.hdf5_group.attrs.create(key, value)
+
+        self.station_group.summary_table.add_row(self.table_entry, 
+                                                 index=self.station_group.summary_table.locate("id",
+                                                                                               self.table_entry["id"]))
+
     def add_channel(
         self,
         channel_name,
@@ -1249,11 +1265,13 @@ class RunGroup(BaseGroup):
         channel_name = channel_name.lower()
 
         try:
-            component = self.hdf5_group[channel_name].attrs["component"]
             del self.hdf5_group[channel_name]
             self.summary_table.remove_row(
-                self.summary_table.locate("component", component)
+                self.summary_table.locate("component", channel_name)
             )
+            # self.master_station_group.summary_table.remove_row(
+            #     self.master_station_group.summary_table.locate("hdf5_reference",
+            #                                                    h5_ref))
             self.logger.info(
                 "Deleting a channel does not reduce the HDF5"
                 + "file size it simply remove the reference. If "
@@ -1682,6 +1700,12 @@ class ChannelDataset:
             value = to_numpy_type(value)
             self.logger.debug("wrote metadata {0} = {1}".format(key, value))
             self.hdf5_dataset.attrs.create(key, value)
+
+        # update the entry if metadata is written
+        #self.master_station_group.summary_table.update_row(self.channel_entry)
+        self.run_group.summary_table.add_row(self.table_entry, 
+                                                 index=self.run_group.summary_table.locate("component",
+                                                                                               self.table_entry["component"]))
 
     def replace_dataset(self, new_data_array):
         """
