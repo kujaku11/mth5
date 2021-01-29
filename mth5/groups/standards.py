@@ -202,11 +202,9 @@ class StandardsGroup(BaseGroup):
         )
         self.logger.debug(
             "used options: "
-            + "; ".join(
-                [f"{k} = {v}" for k, v in self.dataset_options.items()]
-            )
+            + "; ".join([f"{k} = {v}" for k, v in self.dataset_options.items()])
         )
-        
+
         self.summary_table_from_dict(summarize_metadata_standards())
 
         self.write_metadata()

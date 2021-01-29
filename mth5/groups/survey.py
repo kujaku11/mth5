@@ -99,11 +99,23 @@ class SurveyGroup(BaseGroup):
         """
 
         self.logger.debug("Updating survey metadata from stations summary table")
-        self.metadata.time_period.start_date = self.stations_group.station_summary.start.min().isoformat().split("T")[0]
-        self.metadata.time_period.end_date = self.stations_group.station_summary.end.max().isoformat().split("T")[0]
-        self.metadata.northwest_corner.latitude = self.stations_group.station_summary.latitude.max()
-        self.metadata.northwest_corner.longitude = self.stations_group.station_summary.longitude.min()
-        self.metadata.southeast_corner.latitude = self.stations_group.station_summary.latitude.min()
-        self.metadata.southeast_corner.longitude = self.stations_group.station_summary.longitude.max()
+        self.metadata.time_period.start_date = (
+            self.stations_group.station_summary.start.min().isoformat().split("T")[0]
+        )
+        self.metadata.time_period.end_date = (
+            self.stations_group.station_summary.end.max().isoformat().split("T")[0]
+        )
+        self.metadata.northwest_corner.latitude = (
+            self.stations_group.station_summary.latitude.max()
+        )
+        self.metadata.northwest_corner.longitude = (
+            self.stations_group.station_summary.longitude.min()
+        )
+        self.metadata.southeast_corner.latitude = (
+            self.stations_group.station_summary.latitude.min()
+        )
+        self.metadata.southeast_corner.longitude = (
+            self.stations_group.station_summary.longitude.max()
+        )
 
         self.write_metadata()

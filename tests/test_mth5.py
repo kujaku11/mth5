@@ -87,7 +87,6 @@ class TestMTH5(unittest.TestCase):
         self.assertIn("ex", new_run.groups_list)
         self.assertIsInstance(new_channel, mth5.groups.ElectricDataset)
 
-    
         # def test_change_metadata(self):
         #     new_channel.metadata.time_period.start = "2020-01-01T12:00:00"
         #     new_channel.write_metadata()

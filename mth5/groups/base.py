@@ -220,4 +220,3 @@ class BaseGroup:
 
         """
         self.write_metadata()
-        

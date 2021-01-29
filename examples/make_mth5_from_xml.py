@@ -120,7 +120,6 @@ def add_station(station, directory, h5_obj):
         run.metadata.from_xml(read_xml(directory.joinpath(run_dict["fn"])))
         run.write_metadata()
 
-
         # loop over channels
         for channel, channel_fn in run_dict["channels"].items():
             _, _, channel_type, component, _ = channel_fn.split(".")
