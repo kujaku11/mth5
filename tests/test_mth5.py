@@ -52,12 +52,6 @@ class TestMTH5(unittest.TestCase):
 
         self.assertListEqual(defaults, groups)
 
-    def test_summary_tables_exist(self):
-        for group_name in self.mth5_obj._default_subgroup_names:
-            group_name = group_name.lower()
-            group = getattr(self.mth5_obj, f"{group_name}_group")
-            self.assertIn("summary", group.groups_list)
-
     def test_add_station(self):
         new_station = self.mth5_obj.add_station("MT001")
         self.assertIn("MT001", self.mth5_obj.stations_group.groups_list)
@@ -93,26 +87,17 @@ class TestMTH5(unittest.TestCase):
         self.assertIn("ex", new_run.groups_list)
         self.assertIsInstance(new_channel, mth5.groups.ElectricDataset)
 
-        self.assertIn(
-            "ex",
-            (new_run.summary_table.array["component"].astype(np.unicode_).tolist()),
-        )
-
-        self.assertIn(
-            new_channel.metadata.component,
-            (new_run.summary_table.array["component"].astype(np.unicode_).tolist()),
-        )
-
-        def test_change_metadata(self):
-            new_channel.metadata.time_period.start = "2020-01-01T12:00:00"
-            new_channel.write_metadata()
-            entry_index = new_channel.master_station_group.summary_table.locate(
-                "component", new_channel.metadata.component
-            )
-            entry = new_channel.master_station_group.summary_table[entry_index]
-            self.assertEqual(
-                entry["start"].astype(np.unicode_), "2020-01-01T12:00:00+00:00"
-            )
+    
+        # def test_change_metadata(self):
+        #     new_channel.metadata.time_period.start = "2020-01-01T12:00:00"
+        #     new_channel.write_metadata()
+        #     entry_index = new_channel.master_station_group.summary_table.locate(
+        #         "component", new_channel.metadata.component
+        #     )
+        #     entry = new_channel.master_station_group.summary_table[entry_index]
+        #     self.assertEqual(
+        #         entry["start"].astype(np.unicode_), "2020-01-01T12:00:00+00:00"
+        #     )
 
     def test_remove_channel(self):
         new_station = self.mth5_obj.add_station("MT001")
@@ -120,15 +105,6 @@ class TestMTH5(unittest.TestCase):
         new_channel = new_run.add_channel("Ex", "electric", None)
         new_run.remove_channel("Ex")
         self.assertNotIn("ex", new_run.groups_list)
-        self.assertNotIn(
-            "ex",
-            (new_run.summary_table.array["component"].astype(np.unicode_).tolist()),
-        )
-
-        self.assertNotIn(
-            new_channel.metadata.component,
-            (new_run.summary_table.array["component"].astype(np.unicode_).tolist()),
-        )
 
     def test_get_channel_fail(self):
         new_station = self.mth5_obj.add_station("MT001")
@@ -192,7 +168,7 @@ class TestMTH5(unittest.TestCase):
         run = station.add_run("MT002a")
         channel_groups = run.from_runts(run_ts)
 
-        self.assertListEqual(["ex", "ey", "hx", "hy", "hz", "summary"], run.groups_list)
+        self.assertListEqual(["ex", "ey", "hx", "hy", "hz"], run.groups_list)
 
         # check to make sure the metadata was transfered
         for cg in channel_groups:

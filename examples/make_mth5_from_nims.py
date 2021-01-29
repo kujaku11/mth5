@@ -76,12 +76,6 @@ def test_make_mth5_from_nims():
         # validate run metadata
         run_group.validate_run_metadata()
 
-        # need to update the station summary table entry
-        station_group.summary_table.add_row(
-            run_group.table_entry,
-            station_group.summary_table.locate("id", run_group.metadata.id),
-        )
-
         # update station metadata to ensure consistency
         station_group.validate_station_metadata()
 

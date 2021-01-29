@@ -71,10 +71,7 @@ def test_make_mth5_from_z3d():
 
         ch_list.append(run_group.from_channel_ts(mtts_obj))
 
-        # need to update the station summary table entry
-        station_group.summary_table.add_row(
-            run_group.table_entry, station_group.summary_table.locate("id", run_id)
-        )
+        # need to update metadata
         station_group.validate_station_metadata()
 
     end = MTime()

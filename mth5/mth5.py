@@ -467,7 +467,7 @@ class MTH5:
                     self._initialize_file()
                 except OSError as error:
                     msg = (
-                        f"{error}. Need to close any references to {self._filename} first. "
+                        f"{error}. Need to close any references to {self.__filename} first. "
                         + "Then reopen the file in the preferred mode"
                     )
                     self.logger.exception(msg)

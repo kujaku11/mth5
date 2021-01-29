@@ -13,14 +13,12 @@ reads them into an MTH5 object.
 # imports
 # =============================================================================
 import numpy as np
-from pathlib import Path
 from xml.etree import cElementTree as et
 
 from mth5 import mth5
 from mth5.utils.pathing import DATA_DIR
 from mth5.utils.pathing import ensure_is_path
 
-print(DATA_DIR)
 # =============================================================================
 # functions
 # =============================================================================
@@ -122,9 +120,6 @@ def add_station(station, directory, h5_obj):
         run.metadata.from_xml(read_xml(directory.joinpath(run_dict["fn"])))
         run.write_metadata()
 
-        # update table entry
-        table_index = new_station.summary_table.locate("id", run_key)
-        new_station.summary_table.add_row(run.table_entry, table_index)
 
         # loop over channels
         for channel, channel_fn in run_dict["channels"].items():
@@ -134,11 +129,6 @@ def add_station(station, directory, h5_obj):
             channel.metadata.time_period.start = run.metadata.time_period.start
             channel.metadata.time_period.end = run.metadata.time_period.end
             channel.write_metadata()
-
-            # update table entry
-            table_index = run.summary_table.locate("component", component)
-            run.summary_table.add_row(channel.table_entry, table_index)
-            h5_obj.stations_group.summary_table.locate
 
     return new_station
 
@@ -170,8 +160,6 @@ def test_make_mth5_from_xml():
     for station in ["FL001", "FL002"]:
         # add station
         new_station = add_station(station, xml_root, mth5_obj)
-    # wait how does mth5_obj know about the new station?
-    print(new_station)
     mth5_obj.close_mth5()
 
 
