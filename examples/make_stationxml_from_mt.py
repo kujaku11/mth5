@@ -201,8 +201,5 @@ def test_make_stationxml_from_mt():
     to_stationxml.to_stationxml("Test_station.xml")
 
 
-
-
 if __name__ == "__main__":
     test_make_stationxml_from_mt()
-

@@ -13,6 +13,7 @@ from make_stationxml_from_mt import test_make_stationxml_from_mt
 
 """
 
+
 def run_the_tests():
     """
     """
@@ -20,7 +21,6 @@ def run_the_tests():
     test_make_mth5_from_xml()
     test_make_mth5_from_z3d()
     test_make_stationxml_from_mt()
-
 
 
 if __name__ == "__main__":

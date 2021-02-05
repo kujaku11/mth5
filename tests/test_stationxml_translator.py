@@ -49,22 +49,17 @@ class TestSurvey2Network(unittest.TestCase):
         self.survey_obj.from_dict(self.meta_dict)
 
     def test_survey_to_network(self):
-        network_obj = translator.mt_survey_to_inventory_network(
-            self.survey_obj
-        )
+        network_obj = translator.mt_survey_to_inventory_network(self.survey_obj)
 
         self.assertEqual(network_obj.code, self.survey_obj.archive_network)
-        self.assertEqual(
-            network_obj.start_date, self.survey_obj.time_period.start
-        )
+        self.assertEqual(network_obj.start_date, self.survey_obj.time_period.start)
         self.assertEqual(network_obj.end_date, self.survey_obj.time_period.end)
         self.assertEqual(
             network_obj.restricted_status,
             translator.release_dict[self.survey_obj.release_license],
         )
         self.assertEqual(
-            network_obj.operators[0].agency,
-            self.survey_obj.project_lead.organization,
+            network_obj.operators[0].agency, self.survey_obj.project_lead.organization,
         )
         self.assertEqual(
             network_obj.operators[0].contacts[0].names[0],
@@ -116,36 +111,18 @@ class TestStationMetadata(unittest.TestCase):
         self.station_obj.from_dict(self.meta_dict)
 
     def test_station_to_station(self):
-        inv_station = translator.mt_station_to_inventory_station(
-            self.station_obj
-        )
+        inv_station = translator.mt_station_to_inventory_station(self.station_obj)
 
-        self.assertEqual(
-            inv_station.latitude, self.station_obj.location.latitude
-        )
-        self.assertEqual(
-            inv_station.longitude, self.station_obj.location.longitude
-        )
-        self.assertEqual(
-            inv_station.elevation, self.station_obj.location.elevation
-        )
-        self.assertEqual(
-            inv_station.start_date, self.station_obj.time_period.start
-        )
-        self.assertEqual(
-            inv_station.end_date, self.station_obj.time_period.end
-        )
+        self.assertEqual(inv_station.latitude, self.station_obj.location.latitude)
+        self.assertEqual(inv_station.longitude, self.station_obj.location.longitude)
+        self.assertEqual(inv_station.elevation, self.station_obj.location.elevation)
+        self.assertEqual(inv_station.start_date, self.station_obj.time_period.start)
+        self.assertEqual(inv_station.end_date, self.station_obj.time_period.end)
         # self.assertListEqual(inv_station.channels,
         #                      self.station_obj.channels_recorded)
-        self.assertEqual(
-            inv_station.creation_date, self.station_obj.time_period.start
-        )
-        self.assertEqual(
-            inv_station.termination_date, self.station_obj.time_period.end
-        )
-        self.assertEqual(
-            inv_station.site.description, self.station_obj.geographic_name
-        )
+        self.assertEqual(inv_station.creation_date, self.station_obj.time_period.start)
+        self.assertEqual(inv_station.termination_date, self.station_obj.time_period.end)
+        self.assertEqual(inv_station.site.description, self.station_obj.geographic_name)
 
 
 # =============================================================================
@@ -241,25 +218,13 @@ class TestElectric2Inventory(unittest.TestCase):
             self.electric_obj, self.run_obj, "MT"
         )
 
-        self.assertEqual(
-            inv_channel.latitude, self.electric_obj.positive.latitude
-        )
-        self.assertEqual(
-            inv_channel.longitude, self.electric_obj.positive.longitude
-        )
-        self.assertEqual(
-            inv_channel.elevation, self.electric_obj.positive.elevation
-        )
-        self.assertEqual(
-            inv_channel.depth, self.electric_obj.positive.elevation
-        )
-        self.assertEqual(
-            inv_channel.azimuth, self.electric_obj.measurement_azimuth
-        )
+        self.assertEqual(inv_channel.latitude, self.electric_obj.positive.latitude)
+        self.assertEqual(inv_channel.longitude, self.electric_obj.positive.longitude)
+        self.assertEqual(inv_channel.elevation, self.electric_obj.positive.elevation)
+        self.assertEqual(inv_channel.depth, self.electric_obj.positive.elevation)
+        self.assertEqual(inv_channel.azimuth, self.electric_obj.measurement_azimuth)
         self.assertEqual(inv_channel.dip, self.electric_obj.measurement_tilt)
-        self.assertEqual(
-            inv_channel.calibration_units, self.electric_obj.units
-        )
+        self.assertEqual(inv_channel.calibration_units, self.electric_obj.units)
 
 
 class TestToXML(unittest.TestCase):

@@ -22,6 +22,7 @@ from mt_metadata.utils.mttime import MTime
 #
 # =============================================================================
 
+
 def test_make_mth5_from_nims():
     print(f"Data Directory: {DATA_DIR}")
     # set to true if you want to interact with the mth5 object in the console
@@ -66,7 +67,7 @@ def test_make_mth5_from_nims():
 
         # make a run group
         run_group = station_group.add_run(
-            run_ts.metadata.id, run_metadata=run_ts.metadata
+            run_ts.run_metadata.id, run_metadata=run_ts.run_metadata
         )
 
         # add data to the run group
@@ -74,12 +75,6 @@ def test_make_mth5_from_nims():
 
         # validate run metadata
         run_group.validate_run_metadata()
-
-        # need to update the station summary table entry
-        station_group.summary_table.add_row(
-            run_group.table_entry,
-            station_group.summary_table.locate("id", run_group.metadata.id),
-        )
 
         # update station metadata to ensure consistency
         station_group.validate_station_metadata()
@@ -96,7 +91,6 @@ def test_make_mth5_from_nims():
 
     if not interact:
         m.close_mth5()
-
 
 
 if __name__ == "__main__":

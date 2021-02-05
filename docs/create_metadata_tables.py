@@ -12,9 +12,7 @@ Created on Thu Jul 30 17:01:34 2020
 from pathlib import Path
 import textwrap
 
-fn = Path(
-    r"c:\Users\peaco\Documents\GitHub\mth5\mth5\docs\mt_metadata_guide.tex"
-)
+fn = Path(r"c:\Users\peaco\Documents\GitHub\mth5\mth5\docs\mt_metadata_guide.tex")
 
 
 def wrap_description(description, column_width):
@@ -53,9 +51,7 @@ def write_lines(lines_list, c1, c2, c3):
 
     lines = [
         hline,
-        line.format(
-            "**Metadata Key**", c1, "**Description**", c2, "**Example**", c3
-        ),
+        line.format("**Metadata Key**", c1, "**Description**", c2, "**Example**", c3),
         mline,
     ]
 
@@ -63,25 +59,19 @@ def write_lines(lines_list, c1, c2, c3):
         d_lines = wrap_description(entry[5], c2)
         e_lines = wrap_description(entry[-1], c3)
         # line 1 is with the entry
-        lines.append(
-            line.format(f"**{entry[0]}**", c1, d_lines[0], c2, e_lines[0], c3)
-        )
+        lines.append(line.format(f"**{entry[0]}**", c1, d_lines[0], c2, e_lines[0], c3))
         # line 2 skip an entry in the
         lines.append(line.format("", c1, d_lines[1], c2, e_lines[1], c3))
         # line 3 required
         lines.append(
-            line.format(
-                f"Required: {entry[1]}", c1, d_lines[2], c2, e_lines[2], c3
-            )
+            line.format(f"Required: {entry[1]}", c1, d_lines[2], c2, e_lines[2], c3)
         )
         # line 4 blank
         lines.append(line.format("", c1, d_lines[3], c2, e_lines[3], c3))
 
         # line 5 units
         lines.append(
-            line.format(
-                f"Units: {entry[2]}", c1, d_lines[4], c2, e_lines[4], c3
-            )
+            line.format(f"Units: {entry[2]}", c1, d_lines[4], c2, e_lines[4], c3)
         )
 
         # line 6 blank
@@ -89,9 +79,7 @@ def write_lines(lines_list, c1, c2, c3):
 
         # line 7 type
         lines.append(
-            line.format(
-                f"Type: {entry[3]}", c1, d_lines[6], c2, e_lines[6], c3
-            )
+            line.format(f"Type: {entry[3]}", c1, d_lines[6], c2, e_lines[6], c3)
         )
 
         # line 8 blank
@@ -99,9 +87,7 @@ def write_lines(lines_list, c1, c2, c3):
 
         # line 9 type
         lines.append(
-            line.format(
-                f"Style: {entry[4]}", c1, d_lines[8], c2, e_lines[8], c3
-            )
+            line.format(f"Style: {entry[4]}", c1, d_lines[8], c2, e_lines[8], c3)
         )
 
         # line 10 blank
@@ -151,9 +137,7 @@ def write_block(entry, c1, c2, c3):
         f"       :widths: {c1} {c2} {c3}",
         "",
         hline,
-        line.format(
-            f"**{entry[0]}**", c1, "**Description**", c2, "**Example**", c3
-        ),
+        line.format(f"**{entry[0]}**", c1, "**Description**", c2, "**Example**", c3),
         mline,
     ]
 
@@ -161,26 +145,20 @@ def write_block(entry, c1, c2, c3):
     e_lines = wrap_description(entry[-1], c3)
     # line 1 is with the entry
     lines.append(
-        line.format(
-            f"**Required**: {entry[1]}", c1, d_lines[0], c2, e_lines[0], c3
-        )
+        line.format(f"**Required**: {entry[1]}", c1, d_lines[0], c2, e_lines[0], c3)
     )
     # line 2 skip an entry in the
     lines.append(line.format("", c1, d_lines[1], c2, e_lines[1], c3))
     # line 3 required
     lines.append(
-        line.format(
-            f"**Units**: {entry[2]}", c1, d_lines[2], c2, e_lines[2], c3
-        )
+        line.format(f"**Units**: {entry[2]}", c1, d_lines[2], c2, e_lines[2], c3)
     )
     # line 4 blank
     lines.append(line.format("", c1, d_lines[3], c2, e_lines[3], c3))
 
     # line 5 units
     lines.append(
-        line.format(
-            f"**Type**: {entry[3]}", c1, d_lines[4], c2, e_lines[4], c3
-        )
+        line.format(f"**Type**: {entry[3]}", c1, d_lines[4], c2, e_lines[4], c3)
     )
 
     # line 6 blank
@@ -188,9 +166,7 @@ def write_block(entry, c1, c2, c3):
 
     # line 7 type
     lines.append(
-        line.format(
-            f"**Style**: {entry[4]}", c1, d_lines[6], c2, e_lines[6], c3
-        )
+        line.format(f"**Style**: {entry[4]}", c1, d_lines[6], c2, e_lines[6], c3)
     )
 
     # line 8 blank

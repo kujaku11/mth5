@@ -13,24 +13,24 @@ reads them into an MTH5 object.
 # imports
 # =============================================================================
 import numpy as np
-from pathlib import Path
 from xml.etree import cElementTree as et
 
 from mth5 import mth5
 from mth5.utils.pathing import DATA_DIR
 from mth5.utils.pathing import ensure_is_path
 
-print(DATA_DIR)
 # =============================================================================
 # functions
 # =============================================================================
 
-#<XML HELPERS>
+# <XML HELPERS>
 def is_a_station_xml(fn):
     return fn.count(".") == 1
 
+
 def is_a_run_xml(fn):
     return fn.count(".") == 2
+
 
 def is_a_channel_xml(fn):
     return fn.count(".") > 2
@@ -92,7 +92,10 @@ def collect_xml_fn(station, directory):
             continue
 
     return station_dict
-#</XML HELPERS>
+
+
+# </XML HELPERS>
+
 
 def add_station(station, directory, h5_obj):
     """
@@ -108,9 +111,7 @@ def add_station(station, directory, h5_obj):
 
     # add station
     new_station = h5_obj.stations_group.add_station(station)
-    new_station.metadata.from_xml(
-        read_xml(directory.joinpath(station_dict["station"]))
-    )
+    new_station.metadata.from_xml(read_xml(directory.joinpath(station_dict["station"])))
     new_station.write_metadata()
 
     # loop over runs
@@ -119,25 +120,14 @@ def add_station(station, directory, h5_obj):
         run.metadata.from_xml(read_xml(directory.joinpath(run_dict["fn"])))
         run.write_metadata()
 
-        # update table entry
-        table_index = new_station.summary_table.locate("id", run_key)
-        new_station.summary_table.add_row(run.table_entry, table_index)
-
         # loop over channels
         for channel, channel_fn in run_dict["channels"].items():
             _, _, channel_type, component, _ = channel_fn.split(".")
-            channel = run.add_channel(
-                component, channel_type, np.random.rand(4096)
-            )
+            channel = run.add_channel(component, channel_type, np.random.rand(4096))
             channel.metadata.from_xml(read_xml(directory.joinpath(channel_fn)))
             channel.metadata.time_period.start = run.metadata.time_period.start
             channel.metadata.time_period.end = run.metadata.time_period.end
             channel.write_metadata()
-
-            # update table entry
-            table_index = run.summary_table.locate("component", component)
-            run.summary_table.add_row(channel.table_entry, table_index)
-            h5_obj.stations_group.summary_table.locate
 
     return new_station
 
@@ -169,8 +159,6 @@ def test_make_mth5_from_xml():
     for station in ["FL001", "FL002"]:
         # add station
         new_station = add_station(station, xml_root, mth5_obj)
-    # wait how does mth5_obj know about the new station?
-    print(new_station)
     mth5_obj.close_mth5()
 
 

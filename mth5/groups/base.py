@@ -20,7 +20,6 @@ import inspect
 import weakref
 
 import h5py
-import numpy as np
 
 from mt_metadata import timeseries as metadata
 from mt_metadata.base import Base
@@ -28,7 +27,6 @@ from mt_metadata.base import Base
 from mth5.helpers import get_tree
 from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import to_numpy_type
-from mth5.tables import MTH5Table
 from mth5.utils.mth5_logger import setup_logger
 
 # make a dictionary of available metadata classes
@@ -86,13 +84,6 @@ class BaseGroup:
         # references to a closed HDF5 file.
         if group is not None and isinstance(group, (h5py.Group, h5py.Dataset)):
             self.hdf5_group = weakref.ref(group)()
-
-        # set default columns of summary table.
-        self._defaults_summary_attrs = {
-            "name": "summary",
-            "max_shape": (10000,),
-            "dtype": np.dtype([("default", np.float)]),
-        }
 
         # set metadata to the appropriate class.  Standards is not a
         # Base object so should be skipped. If the class name is not
@@ -192,11 +183,6 @@ class BaseGroup:
         return self.__class__.__name__.split("Group")[0]
 
     @property
-    def summary_table(self):
-        pass
-        return MTH5Table(self.hdf5_group["summary"])
-
-    @property
     def groups_list(self):
         return list(self.hdf5_group.keys())
 
@@ -228,51 +214,9 @@ class BaseGroup:
             self.logger.debug("wrote metadata {0} = {1}".format(key, value))
             self.hdf5_group.attrs.create(key, value)
 
-    def initialize_summary_table(self):
-        """
-        Initialize summary table as a dataset based on default values to
-
-        ``/Group/summary``
-
-        The initial size is 0, but is extentable to
-        `self._defaults_summary_attrs[max_shape]`
-
-        """
-
-        summary_table = self.hdf5_group.create_dataset(
-            self._defaults_summary_attrs["name"],
-            (0,),
-            maxshape=self._defaults_summary_attrs["max_shape"],
-            dtype=self._defaults_summary_attrs["dtype"],
-            **self.dataset_options,
-        )
-
-        summary_table.attrs.update(
-            {
-                "type": "summary table",
-                "last_updated": "date_time",
-                "reference": summary_table.ref,
-            }
-        )
-
-        self.logger.debug(
-            "Created {0} table with max_shape = {1}, dtype={2}".format(
-                self._defaults_summary_attrs["name"],
-                self._defaults_summary_attrs["max_shape"],
-                self._defaults_summary_attrs["dtype"],
-            )
-        )
-        self.logger.debug(
-            "used options: "
-            + "; ".join(
-                [f"{k} = {v}" for k, v in self.dataset_options.items()]
-            )
-        )
-
     def initialize_group(self):
         """
         Initialize group by making a summary table and writing metadata
 
         """
-        self.initialize_summary_table()
         self.write_metadata()

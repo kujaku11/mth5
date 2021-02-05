@@ -44,33 +44,22 @@ class FiltersGroup(BaseGroup):
             },
             "table": {
                 "dtype": np.dtype(
-                    [
-                        ("frequency", np.float),
-                        ("real", np.float),
-                        ("imag", np.float),
-                    ]
+                    [("frequency", np.float), ("real", np.float), ("imag", np.float),]
                 ),
                 "max_size": (500,),
             },
             "gain": {
-                "dtype": np.dtype(
-                    [("frequency", np.float), ("value", np.float)]
-                ),
+                "dtype": np.dtype([("frequency", np.float), ("value", np.float)]),
                 "max_size": (100,),
             },
             "conversion": {
                 "dtype": np.dtype([("factor", np.float)]),
                 "max_size": (1,),
             },
-            "delay": {
-                "dtype": np.dtype([("delay", np.float)]),
-                "max_size": (10,),
-            },
+            "delay": {"dtype": np.dtype([("delay", np.float)]), "max_size": (10,),},
         }
 
-    def add_filter(
-        self, filter_name, filter_type, values=None, filter_metadata=None
-    ):
+    def add_filter(self, filter_name, filter_type, values=None, filter_metadata=None):
         """
         Add a filter dataset based on type
         
@@ -125,9 +114,7 @@ class FiltersGroup(BaseGroup):
                 **self.dataset_options,
             )
 
-        filter_dataset = FilterDataset(
-            filter_table, dataset_metadata=filter_metadata
-        )
+        filter_dataset = FilterDataset(filter_table, dataset_metadata=filter_metadata)
         filter_dataset.write_metadata()
 
         self.logger.debug(f"Created filter {filter_name}")

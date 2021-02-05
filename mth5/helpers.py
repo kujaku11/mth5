@@ -53,9 +53,7 @@ def validate_compression(compression, level):
 
     """
     if not isinstance(compression, (str, type(None))):
-        msg = "compression type must be a string, not {0}".format(
-            type(compression)
-        )
+        msg = "compression type must be a string, not {0}".format(type(compression))
         logger.error(msg)
         raise TypeError(msg)
 
@@ -72,8 +70,7 @@ def validate_compression(compression, level):
     elif compression == " gzip":
         if not isinstance(level, (int)):
             msg = "Level type for gzip must be an int, not {0}.".format(
-                type(level)
-                + f" Options are {0}".format(COMPRESSION_LEVELS["gzip"])
+                type(level) + f" Options are {0}".format(COMPRESSION_LEVELS["gzip"])
             )
             logger.error(msg)
             raise TypeError(msg)
@@ -137,9 +134,7 @@ def get_tree(parent):
     """
     lines = ["{0}:".format(parent.name), "=" * 20]
     if not isinstance(parent, (h5py.File, h5py.Group)):
-        raise TypeError(
-            "Provided object is not a h5py.File or h5py.Group " "object"
-        )
+        raise TypeError("Provided object is not a h5py.File or h5py.Group " "object")
 
     def fancy_print(name, obj):
         # lines.append(name)
@@ -148,14 +143,10 @@ def get_tree(parent):
 
         if isinstance(obj, h5py.Group):
             lines.append("{0}|- Group: {1}".format(spacing, group_name))
-            lines.append(
-                "{0}{1}".format(spacing, (len(group_name) + 10) * "-")
-            )
+            lines.append("{0}{1}".format(spacing, (len(group_name) + 10) * "-"))
         elif isinstance(obj, h5py.Dataset):
             lines.append("{0}--> Dataset: {1}".format(spacing, group_name))
-            lines.append(
-                "{0}{1}".format(spacing, (len(group_name) + 15) * ".")
-            )
+            lines.append("{0}{1}".format(spacing, (len(group_name) + 15) * "."))
 
     # lines.append(parent.name)
     parent.visititems(fancy_print)

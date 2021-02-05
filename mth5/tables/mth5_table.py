@@ -22,6 +22,8 @@ from mth5.utils.mth5_logger import setup_logger
 # =============================================================================
 # MTH5 Table Class
 # =============================================================================
+
+
 class MTH5Table:
     """
     Use the underlying NumPy basics, there are simple actions in this table,
@@ -39,9 +41,7 @@ class MTH5Table:
             self.array = weakref.ref(hdf5_dataset)()
             self.hdf5_reference = hdf5_dataset.ref
         else:
-            msg = "Input must be a h5py.Dataset not {0}".format(
-                type(hdf5_dataset)
-            )
+            msg = "Input must be a h5py.Dataset not {0}".format(type(hdf5_dataset))
             self.logger.error(msg)
             raise MTH5TableError(msg)
 
@@ -55,9 +55,7 @@ class MTH5Table:
         """
         # if the array is empty
         if self.array.size == 0:
-            length_dict = dict(
-                [(key, len(str(key))) for key in list(self.dtype.names)]
-            )
+            length_dict = dict([(key, len(str(key))) for key in list(self.dtype.names)])
             lines = [
                 " | ".join(
                     ["index"]
@@ -201,16 +199,13 @@ class MTH5Table:
             index_values = np.where(test_array >= value)[0]
         elif test == "be":
             if not isinstance(value, (list, tuple, np.ndarray)):
-                msg = (
-                    "If testing for between value must be an iterable of"
-                    + " length 2."
-                )
+                msg = "If testing for between value must be an iterable of length 2."
                 self.logger.error(msg)
                 raise ValueError(msg)
 
-            index_values = np.where(
-                (test_array > value[0]) & (test_array < value[1])
-            )[0]
+            index_values = np.where((test_array > value[0]) & (test_array < value[1]))[
+                0
+            ]
         else:
             raise ValueError("Test {0} not understood".format(test))
 
@@ -236,9 +231,7 @@ class MTH5Table:
         """
 
         if not isinstance(row, (np.ndarray)):
-            msg = "Input must be an numpy.ndarray" + "not {0}".format(
-                type(row)
-            )
+            msg = "Input must be an numpy.ndarray" + "not {0}".format(type(row))
         if isinstance(row, np.ndarray):
             if not self.check_dtypes(row.dtype):
                 msg = "{0}\nInput dtypes:\n{1}\n\nTable dtypes:\n{2}".format(
@@ -254,11 +247,30 @@ class MTH5Table:
 
         # add the row
         self.array[index] = row
-        self.logger.debug(
-            "Added row as index {0} with values {1}".format(index, row)
-        )
+        self.logger.debug("Added row as index {0} with values {1}".format(index, row))
 
         return index
+
+    def update_row(self, entry):
+        """
+        Update an entry by first locating the index and then rewriting the entry.
+
+        :param entry: numpy array with same datatype as the table
+        :type entry: np.ndarray
+
+        :return: row index.
+        
+        This doesn't work because you cannot test for hdf5_reference, should use
+        add row and locate by index.
+
+        """
+        try:
+            row_index = self.locate("hdf5_reference", entry["hdf5_reference"])[0]
+            return self.add_row(entry, index=row_index)
+
+        except IndexError:
+            self.logger.debug("Could not find row, adding a new one")
+            return self.add_row(entry)
 
     def remove_row(self, index):
         """
@@ -286,16 +298,14 @@ class MTH5Table:
             return self.add_row(null_array, index=index)
 
         except IndexError as error:
-            msg = "Could not find index {0} in shape {1}".format(
-                index, self.shape()
-            )
+            msg = "Could not find index {0} in shape {1}".format(index, self.shape())
             self.logger.exception(msg)
             raise IndexError(f"{error}\n{msg}")
 
     def to_dataframe(self):
         """
         Convert the table into a :class:`pandas.DataFrame` object.  
-        
+
         :return: convert table into a :class:`pandas.DataFrame` with the 
                  appropriate data types.
         :rtype: :class:`pandas.DataFrame`
