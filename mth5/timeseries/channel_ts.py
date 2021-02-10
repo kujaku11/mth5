@@ -161,7 +161,7 @@ class ChannelTS:
         self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
         self.station_metadata = metadata.Station()
         self.run_metadata = metadata.Run()
-        self._ts = xr.DataArray([1], coords=[("time", [1])])
+        self._ts = xr.DataArray([1], coords=[("time", [1])], name="ts")
 
         # get correct metadata class
         try:
@@ -324,7 +324,7 @@ class ChannelTS:
             dt = make_dt_coordinates(
                 self.start, self.sample_rate, ts_arr.size, self.logger
             )
-            self._ts = xr.DataArray(ts_arr, coords=[("time", dt)])
+            self._ts = xr.DataArray(ts_arr, coords=[("time", dt)], name="ts")
             self._update_xarray_metadata()
 
         elif isinstance(ts_arr, pd.core.frame.DataFrame):
@@ -336,7 +336,7 @@ class ChannelTS:
                     self.start, self.sample_rate, ts_arr["data"].size, self.logger,
                 )
             try:
-                self._ts = xr.DataArray(ts_arr["data"], coords=[("time", dt)])
+                self._ts = xr.DataArray(ts_arr["data"], coords=[("time", dt)], name="ts")
                 self._update_xarray_metadata()
 
             except AttributeError:
@@ -356,7 +356,7 @@ class ChannelTS:
                     self.start, self.sample_rate, ts_arr["data"].size, self.logger,
                 )
 
-            self._ts = xr.DataArray(ts_arr.values, coords=[("time", dt)])
+            self._ts = xr.DataArray(ts_arr.values, coords=[("time", dt)], name="ts")
             self._update_xarray_metadata()
 
         elif isinstance(ts_arr, xr.DataArray):
