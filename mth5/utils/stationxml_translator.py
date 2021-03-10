@@ -74,26 +74,90 @@ base_translator = {
 }
 
 ### MT Survey to StationXML Network
-network_translator = deepcopy(base_translator)
-network_translator.update(
-    {
-        "description": "summary",
-        "comments": "comments",
-        "start_date": "time_period.start",
-        "end_date": "time_period.end",
-        "restricted_status": "release_license",
-        "operators": "special",
-        "code": "archive_network",
-        "alternate_code": "project",
-        "identifiers": ["citation_dataset.doi", "citation_journal.doi"],
-    }
-)
+class XMLNetworkMTSurvey:
+    """
+    translate back and forth between StationXML Network and MT Survey
+    """
+    def __init__(self):
+        self.network_translator = deepcopy(base_translator)
+        self.network_translator.update(
+            {
+                "description": "summary",
+                "comments": "comments",
+                "start_date": "time_period.start",
+                "end_date": "time_period.end",
+                "restricted_status": "release_license",
+                "operators": "special",
+                "code": "archive_network",
+                "alternate_code": "project",
+                "identifiers": ["citation_dataset.doi", "citation_journal.doi"],
+            }
+        )
 
-### StationXML to MT Survey
-mt_survey_translator = flip_dict(network_translator)
-mt_survey_translator["project_lead"] = "operator"
-mt_survey_translator["name"] = "alternate_code"
-mt_survey_translator["fdsn.network"] = "code"
+        ### StationXML to MT Survey
+        self.mt_survey_translator = flip_dict(self.network_translator)
+        self.mt_survey_translator["project_lead"] = "operator"
+        self.mt_survey_translator["name"] = "alternate_code"
+        self.mt_survey_translator["fdsn.network"] = "code"
+        
+    def network_to_survey(self, network):
+        """
+        Translate a StationXML Network object to MT Survey object
+        
+        :param network: StationXML network element
+        :type network: :class:`obspy.core.inventory.Network`
+        
+        """
+        
+        mt_survey = metadata.Survey()
+        doi_count = 0
+    
+        for mth5_key, sxml_key in self.mt_survey_translator.items():
+            if mth5_key == "project_lead":
+                # only allow one person
+                try:
+                    inv_person = network.operators[0].contacts[0]
+                    mt_survey.set_attr_from_name("project_lead.author", inv_person.names[0])
+                    mt_survey.set_attr_from_name("project_lead.email", inv_person.emails[0])
+                    mt_survey.set_attr_from_name(
+                        "project_lead.organization", inv_person.agencies[0]
+                    )
+                except IndexError:
+                    pass
+    
+                # is this redudant?
+                try:
+                    mt_survey.set_attr_from_name(
+                        "project_lead.organization", network.operators[0].agencies[0],
+                    )
+                except IndexError: 
+                    pass
+            elif ".doi" in mth5_key:
+                try:
+                    mt_survey.set_attr_from_name(
+                        mth5_key, network.identifiers[doi_count]
+                    )
+                    doi_count += 1
+                except IndexError:
+                    pass
+    
+            else:
+                value = getattr(network, sxml_key)
+                if value is None:
+                    continue
+                if isinstance(value, (list, tuple)):
+                    for k, v in zip(mth5_key, value):
+                        mt_survey.set_attr_from_name(k, v)
+                else:
+                    if sxml_key == "restricted_status":
+                        value = flip_dict(release_dict)[value]
+                    if sxml_key in ["start_date", "end_date"]:
+                        value = value.isoformat()
+    
+                mt_survey.set_attr_from_name(mth5_key, value)
+    
+        return mt_survey
+
 
 ### MT Station to StationXML Station
 station_translator = deepcopy(base_translator)
@@ -905,9 +969,12 @@ def inventory_network_to_mt_survey(network_obj):
                 pass
 
             # is this redudant?
-            mt_survey.set_attr_from_name(
-                "project_lead.organization", network_obj.operators[0].agencies[0],
-            )
+            try:
+                mt_survey.set_attr_from_name(
+                    "project_lead.organization", network_obj.operators[0].agencies[0],
+                )
+            except IndexError: 
+                pass
         elif ".doi" in mth5_key:
             try:
                 mt_survey.set_attr_from_name(

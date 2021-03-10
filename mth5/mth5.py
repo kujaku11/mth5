@@ -606,6 +606,13 @@ class MTH5:
                 + "returning h5 group."
             )
             return referenced
+        
+    def to_experiment(self):
+        """
+        Create an :class:`mt_metadata.timeseries.Experiment` object from the 
+        metadata contained in the MTH5 file.
+        """
+        pass
 
     def add_station(self, name, station_metadata=None):
         """
