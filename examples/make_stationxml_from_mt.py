@@ -17,6 +17,10 @@ def test_make_stationxml_from_mt():
     if fn.exists():
         fn.unlink()
         
+    xml_fn = fn_path.joinpath("example.xml")
+    if fn.exists():
+        fn.unlink()
+        
     survey = metadata.Survey()
     survey.from_dict(
         {
@@ -163,8 +167,8 @@ def test_make_stationxml_from_mt():
                           None, channel_metadata=channel)
 
     translator = stationxml.XMLInventoryMTExperiment()
-    xml_inventory = translator.mt_to_xml(m.to_experiment(),
-                                         stationxml_fn=fn_path.joinpath("example_stationxml.xml"))
+    translator.mt_to_xml(m.to_experiment(),
+                                         stationxml_fn=xml_fn)
 
 
 if __name__ == "__main__":
