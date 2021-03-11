@@ -34,7 +34,7 @@ from mth5 import helpers
 from mth5.utils.mth5_logger import setup_logger
 
 from mt_metadata.utils.mttime import get_now_utc
-from mt_metadata.timeseries import Experiment, Station, Run
+from mt_metadata.timeseries import Experiment
 
 # =============================================================================
 # Acceptable parameters
@@ -46,17 +46,19 @@ acceptable_data_levels = [0, 1, 2, 3]
 # =============================================================================
 # MT HDF5 file
 # =============================================================================
+
+
 class MTH5:
     """
     MTH5 is the main container for the HDF5 file format developed for MT data
-    
+
     It uses the metadata standards developled by the
     `IRIS PASSCAL software group 
     <https://www.iris.edu/hq/about_iris/governance/mt_soft>`_
     and defined in the
     `metadata documentation 
     <https://github.com/kujaku11/MTarchive/blob/tables/docs/mt_metadata_guide.pdf>`_.
-    
+
     MTH5 is built with h5py and therefore numpy.  The structure follows the
     different levels of MT data collection:
     Survey
@@ -66,23 +68,23 @@ class MTH5:
        |_Station
            |_Run
                |_Channel
-            
+
     All timeseries data are stored as individual channels with the appropriate
     metadata defined for the given channel, i.e. electric, magnetic, auxiliary.
-    
+
     Each level is represented as a mth5 group class object which has methods
     to add, remove, and get a group from the level below.  Each group has a 
     metadata attribute that is the approprate metadata class object.  For 
     instance the SurveyGroup has an attribute metadata that is a 
     :class:`mth5.metadata.Survey` object.  Metadata is stored in the HDF5 group 
     attributes as (key, value) pairs.
-    
+
     All groups are represented by their structure tree and can be shown
     at any time from the command line.
-    
+
     Each level has a summary array of the contents of the levels below to 
     hopefully make searching easier. 
-    
+
     :param filename: name of the to be or existing file
     :type filename: string or :class:`pathlib.Path`
     :param compression: compression type.  Supported lossless compressions are
@@ -119,11 +121,11 @@ class MTH5:
          * 2 - Derived product, raw data has been manipulated 
     :type data_level: integer, defaults to 1                
 
-    
+
     :Usage:
 
     * Open a new file and show initialized file
-    
+
     >>> from mth5 import mth5
     >>> mth5_obj = mth5.MTH5()
     >>> # Have a look at the dataset options
@@ -155,9 +157,9 @@ class MTH5:
                 --> Dataset: summary
                 ......................
 
-    
+
     * Add metadata for survey from a dictionary
-    
+
     >>> survey_dict = {'survey':{'acquired_by': 'me', 'archive_id': 'MTCND'}}
     >>> survey = mth5_obj.survey_group
     >>> survey.metadata.from_dict(survey_dict)
@@ -169,9 +171,9 @@ class MTH5:
         "archive_id": "MTCND"
         ...}
     }
-    
+
     * Add a station from the convenience function
-    
+
     >>> station = mth5_obj.add_station('MT001')
     >>> mth5_obj
     /:
@@ -215,7 +217,7 @@ class MTH5:
                  make a new dataset.
 
     .. seealso:: https://www.hdfgroup.org/ and https://www.h5py.org/
-    
+
     """
 
     def __init__(
@@ -344,7 +346,7 @@ class MTH5:
     def file_version(self, value):
         """ set file version while validating input """
         if not isinstance(value, str):
-            msg = f"Input file type must be a string not {type(value)}"
+            msg = f"Input file version must be a string not {type(value)}"
             self.logger.error(msg)
             raise ValueError(msg)
 
@@ -512,7 +514,8 @@ class MTH5:
         survey_obj.write_metadata()
 
         for group_name in self._default_subgroup_names:
-            self.__hdf5_obj.create_group(f"{self._default_root_name}/{group_name}")
+            self.__hdf5_obj.create_group(
+                f"{self._default_root_name}/{group_name}")
             m5_grp = getattr(self, f"{group_name.lower()}_group")
             m5_grp.initialize_group()
 
@@ -523,9 +526,9 @@ class MTH5:
     def validate_file(self):
         """
         Validate an open mth5 file
-        
+
         will test the attribute values and group names
-        
+
         :return: Boolean [ True = valid, False = not valid]
         :rtype: Boolean
 
@@ -577,6 +580,18 @@ class MTH5:
             except ValueError:
                 return False
         return False
+    
+    def has_group(self, group_name):
+        """
+        Check to see if the group name exists
+        """
+        if self.h5_is_write():
+            def has_name(name):
+                if group_name == name:
+                    return True
+            if self.__hdf5_obj.visit(has_name):
+                return True
+            return False
 
     def from_reference(self, h5_reference):
         """
@@ -607,35 +622,44 @@ class MTH5:
                 + "returning h5 group."
             )
             return referenced
-        
+
     def to_experiment(self):
         """
         Create an :class:`mt_metadata.timeseries.Experiment` object from the 
         metadata contained in the MTH5 file.
-        
+
         :returns: :class:`mt_metadata.timeseries.Experiment`
-        
+
         """
-        
+
         if self.h5_is_write():
             experiment = Experiment()
             experiment.surveys.append(self.survey_group.metadata)
-            for station_name in self.station_list:
-                h5_station = self.get_station(station_name)
-                exp_station = h5_station.metadata
-                exp_station.runs = []
-                for run_name in h5_station.groups_list:
-                    h5_run = h5_station.get_run(run_name)
-                    exp_run = h5_run.metadata
-                    exp_run.channels = []
-                    for ch_name in h5_run.groups_list:
-                        h5_channel = h5_run.get_channel(ch_name)
-                        exp_run.channels.append(h5_channel.metadata)
-        
-                    exp_station.runs.append(exp_run)        
-                experiment.surveys[0].stations.append(exp_station)
             return experiment
-        
+
+    def from_experiment(self, experiment, survey_index=0):
+        """
+        Fill out an MTH5 from a :class:`mt_metadata.timeseries.Experiment` object
+        given a survey_id
+
+        :param experiment: Experiment metadata
+        :type experiment: :class:`mt_metadata.timeseries.Experiment`
+        :param survey_index: Index of the survey to write
+        :type survey_index: int, defaults to 0
+
+        """
+        if self.h5_is_write():
+            sg = self.survey_group
+            sg.metadata.from_dict(experiment.surveys[survey_index].to_dict())
+            sg.write_metadata()
+            for station in experiment.surveys[0].stations:
+                mt_station = self.add_station(
+                    station.id, station_metadata=station)
+                for run in station.runs:
+                    mt_run = mt_station.add_run(run.id, run_metadata=run)
+                    for channel in run.channels:
+                        mt_run.add_channel(
+                            channel.component, channel.type, None, channel_metadata=channel)
 
     def add_station(self, name, station_metadata=None):
         """
@@ -818,21 +842,21 @@ class MTH5:
         :rtype: [ :class:`mth5.mth5_groups.ElectricDatset` |
                  :class:`mth5.mth5_groups.MagneticDatset` |
                  :class:`mth5.mth5_groups.AuxiliaryDatset` ]
-        
+
         :Example:
-        
+
         >>> new_channel = mth5_obj.add_channel('MT001', 'MT001a''Ex',
         >>> ...                                'electric', None)
         >>> new_channel
         Channel Electric:
         -------------------
-        		component:        None
-            	data type:        electric
-            	data format:      float32
-            	data shape:       (1,)
-            	start:            1980-01-01T00:00:00+00:00
-            	end:              1980-01-01T00:00:00+00:00
-            	sample rate:      None
+                        component:        None
+                data type:        electric
+                data format:      float32
+                data shape:       (1,)
+                start:            1980-01-01T00:00:00+00:00
+                end:              1980-01-01T00:00:00+00:00
+                sample rate:      None
 
 
         """
@@ -877,13 +901,13 @@ class MTH5:
         >>> existing_channel
         Channel Electric:
         -------------------
-        		component:        Ex
-            	data type:        electric
-            	data format:      float32
-            	data shape:       (4096,)
-            	start:            1980-01-01T00:00:00+00:00
-            	end:              1980-01-01T00:00:01+00:00
-            	sample rate:      4096
+                        component:        Ex
+                data type:        electric
+                data format:      float32
+                data shape:       (4096,)
+                start:            1980-01-01T00:00:00+00:00
+                end:              1980-01-01T00:00:01+00:00
+                sample rate:      4096
 
         """
 

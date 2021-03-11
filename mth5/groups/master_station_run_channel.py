@@ -541,6 +541,17 @@ class StationGroup(BaseGroup):
     def master_station_group(self):
         """ shortcut to master station group """
         return MasterStationGroup(self.hdf5_group.parent)
+    
+    @BaseGroup.metadata.getter
+    def metadata(self):
+        """ Overwrite get metadata to include run information in the station """
+        
+        self._metadata.runs = []
+        for key in self.groups_list:
+            key_group = self.get_run(key)
+            self._metadata.runs.append(key_group.metadata)
+            
+        return self._metadata
 
     @property
     def name(self):
@@ -971,6 +982,17 @@ class RunGroup(BaseGroup):
     def master_station_group(self):
         """ shortcut to master station group """
         return MasterStationGroup(self.hdf5_group.parent.parent)
+    
+    @BaseGroup.metadata.getter
+    def metadata(self):
+        """ Overwrite get metadata to include channel information in the runs """
+        
+        self._metadata.channels = []
+        for ch in self.groups_list:
+            ch_group = self.get_channel(ch)
+            self._metadata.channels.append(ch_group.metadata)
+            
+        return self._metadata
 
     @property
     def channel_summary(self):

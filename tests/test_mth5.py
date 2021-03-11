@@ -87,17 +87,6 @@ class TestMTH5(unittest.TestCase):
         self.assertIn("ex", new_run.groups_list)
         self.assertIsInstance(new_channel, mth5.groups.ElectricDataset)
 
-        # def test_change_metadata(self):
-        #     new_channel.metadata.time_period.start = "2020-01-01T12:00:00"
-        #     new_channel.write_metadata()
-        #     entry_index = new_channel.master_station_group.summary_table.locate(
-        #         "component", new_channel.metadata.component
-        #     )
-        #     entry = new_channel.master_station_group.summary_table[entry_index]
-        #     self.assertEqual(
-        #         entry["start"].astype(np.unicode_), "2020-01-01T12:00:00+00:00"
-        #     )
-
     def test_remove_channel(self):
         new_station = self.mth5_obj.add_station("MT001")
         new_run = new_station.add_run("MT001a")
@@ -179,6 +168,7 @@ class TestMTH5(unittest.TestCase):
 
     def tearDown(self):
         self.mth5_obj.close_mth5()
+        self.fn.unlink()
 
 
 # =============================================================================

@@ -85,69 +85,12 @@ class BaseGroup:
         if group is not None and isinstance(group, (h5py.Group, h5py.Dataset)):
             self.hdf5_group = weakref.ref(group)()
 
-        # set metadata to the appropriate class.  Standards is not a
-        # Base object so should be skipped. If the class name is not
-        # defined yet set to Base class.
-        self.metadata = Base()
-        if self._class_name not in ["Standards"]:
-            try:
-                self.metadata = meta_classes[self._class_name]()
-            except KeyError:
-                self.metadata = Base()
-
-        # add 2 attributes that will help with querying
-        # 1) the metadata class name
-        self.metadata.add_base_attribute(
-            "mth5_type",
-            self._class_name.split("Group")[0],
-            {
-                "type": str,
-                "required": True,
-                "style": "free form",
-                "description": "type of group",
-                "units": None,
-                "options": [],
-                "alias": [],
-                "example": "group_name",
-            },
-        )
-
-        # 2) the HDF5 reference that can be used instead of paths
-        self.metadata.add_base_attribute(
-            "hdf5_reference",
-            self.hdf5_group.ref,
-            {
-                "type": "h5py_reference",
-                "required": True,
-                "style": "free form",
-                "description": "hdf5 internal reference",
-                "units": None,
-                "options": [],
-                "alias": [],
-                "example": "<HDF5 Group Reference>",
-            },
-        )
-
-        # add mth5 and hdf5 attributes
-        self.metadata.mth5_type = self._class_name
-        self.metadata.hdf5_reference = self.hdf5_group.ref
-
+        # initialize metadata
+        self._initialize_metadata()
+        
         # if metadata, make sure that its the same class type
         if group_metadata is not None:
-            if not isinstance(group_metadata, (type(self.metadata), Base)):
-                msg = "metadata must be type metadata.{0} not {1}".format(
-                    self._class_name, type(group_metadata)
-                )
-                self.logger.error(msg)
-                raise MTH5Error(msg)
-
-            # load from dict because of the extra attributes for MTH5
-            self.metadata.from_dict(group_metadata.to_dict())
-
-            # add mth5 and hdf5 attributes because they are overwritten from
-            # group metadata
-            self.metadata.mth5_type = self._class_name
-            self.metadata.hdf5_reference = self.hdf5_group.ref
+            self.metadata = group_metadata
 
             # write out metadata to make sure that its in the file.
             self.write_metadata()
@@ -181,6 +124,87 @@ class BaseGroup:
     @property
     def _class_name(self):
         return self.__class__.__name__.split("Group")[0]
+    
+    def _initialize_metadata(self):
+        """
+        Initialize metadata with custom attributes
+        
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+    
+        self._metadata = Base()
+        if self._class_name not in ["Standards"]:
+            try:
+                self._metadata = meta_classes[self._class_name]()
+            except KeyError:
+                self._metadata = Base()
+
+        # add 2 attributes that will help with querying
+        # 1) the metadata class name
+        self._metadata.add_base_attribute(
+            "mth5_type",
+            self._class_name.split("Group")[0],
+            {
+                "type": str,
+                "required": True,
+                "style": "free form",
+                "description": "type of group",
+                "units": None,
+                "options": [],
+                "alias": [],
+                "example": "group_name",
+            },
+        )
+
+        # 2) the HDF5 reference that can be used instead of paths
+        self._metadata.add_base_attribute(
+            "hdf5_reference",
+            self.hdf5_group.ref,
+            {
+                "type": "h5py_reference",
+                "required": True,
+                "style": "free form",
+                "description": "hdf5 internal reference",
+                "units": None,
+                "options": [],
+                "alias": [],
+                "example": "<HDF5 Group Reference>",
+            },
+        )
+    
+        # add mth5 and hdf5 attributes
+        self._metadata.mth5_type = self._class_name
+        self._metadata.hdf5_reference = self.hdf5_group.ref
+        
+    @property
+    def metadata(self):
+        """ Metadata for the Group based on mt_metadata.timeseries """
+        return self._metadata
+    
+    @metadata.setter
+    def metadata(self, metadata_object):
+        """
+        Do some validating when setting metadata object
+        
+        :param metadata_object: DESCRIPTION
+        :type metadata_object: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if not isinstance(metadata_object, (type(self._metadata), Base)):
+            msg = (f"Metadata must be of type {meta_classes[self._class_name]} "
+                   f"not {type(metadata_object)}")
+            self.logger.error(msg)
+            raise MTH5Error(msg)
+                
+        self._metadata.from_dict(metadata_object.to_dict())
+       
+        self._metadata.mth5_type = self._class_name
+        self._metadata.hdf5_reference = self.hdf5_group.ref
 
     @property
     def groups_list(self):
