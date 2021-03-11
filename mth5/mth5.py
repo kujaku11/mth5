@@ -34,6 +34,7 @@ from mth5 import helpers
 from mth5.utils.mth5_logger import setup_logger
 
 from mt_metadata.utils.mttime import get_now_utc
+from mt_metadata.timeseries import Experiment, Station, Run
 
 # =============================================================================
 # Acceptable parameters
@@ -611,8 +612,30 @@ class MTH5:
         """
         Create an :class:`mt_metadata.timeseries.Experiment` object from the 
         metadata contained in the MTH5 file.
+        
+        :returns: :class:`mt_metadata.timeseries.Experiment`
+        
         """
-        pass
+        
+        if self.h5_is_write():
+            experiment = Experiment()
+            experiment.surveys.append(self.survey_group.metadata)
+            for station_name in self.station_list:
+                h5_station = self.get_station(station_name)
+                exp_station = h5_station.metadata
+                exp_station.runs = []
+                for run_name in h5_station.groups_list:
+                    h5_run = h5_station.get_run(run_name)
+                    exp_run = h5_run.metadata
+                    exp_run.channels = []
+                    for ch_name in h5_run.groups_list:
+                        h5_channel = h5_run.get_channel(ch_name)
+                        exp_run.channels.append(h5_channel.metadata)
+        
+                    exp_station.runs.append(exp_run)        
+                experiment.surveys[0].stations.append(exp_station)
+            return experiment
+        
 
     def add_station(self, name, station_metadata=None):
         """
