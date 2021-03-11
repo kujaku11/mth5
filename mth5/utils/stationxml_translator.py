@@ -78,6 +78,7 @@ class XMLNetworkMTSurvey:
     """
     translate back and forth between StationXML Network and MT Survey
     """
+
     def __init__(self):
         self.network_translator = deepcopy(base_translator)
         self.network_translator.update(
@@ -99,7 +100,7 @@ class XMLNetworkMTSurvey:
         self.mt_survey_translator["project_lead"] = "operator"
         self.mt_survey_translator["name"] = "alternate_code"
         self.mt_survey_translator["fdsn.network"] = "code"
-        
+
     def network_to_survey(self, network):
         """
         Translate a StationXML Network object to MT Survey object
@@ -108,29 +109,33 @@ class XMLNetworkMTSurvey:
         :type network: :class:`obspy.core.inventory.Network`
         
         """
-        
+
         mt_survey = metadata.Survey()
         doi_count = 0
-    
+
         for mth5_key, sxml_key in self.mt_survey_translator.items():
             if mth5_key == "project_lead":
                 # only allow one person
                 try:
                     inv_person = network.operators[0].contacts[0]
-                    mt_survey.set_attr_from_name("project_lead.author", inv_person.names[0])
-                    mt_survey.set_attr_from_name("project_lead.email", inv_person.emails[0])
+                    mt_survey.set_attr_from_name(
+                        "project_lead.author", inv_person.names[0]
+                    )
+                    mt_survey.set_attr_from_name(
+                        "project_lead.email", inv_person.emails[0]
+                    )
                     mt_survey.set_attr_from_name(
                         "project_lead.organization", inv_person.agencies[0]
                     )
                 except IndexError:
                     pass
-    
+
                 # is this redudant?
                 try:
                     mt_survey.set_attr_from_name(
                         "project_lead.organization", network.operators[0].agencies[0],
                     )
-                except IndexError: 
+                except IndexError:
                     pass
             elif ".doi" in mth5_key:
                 try:
@@ -140,7 +145,7 @@ class XMLNetworkMTSurvey:
                     doi_count += 1
                 except IndexError:
                     pass
-    
+
             else:
                 value = getattr(network, sxml_key)
                 if value is None:
@@ -153,9 +158,9 @@ class XMLNetworkMTSurvey:
                         value = flip_dict(release_dict)[value]
                     if sxml_key in ["start_date", "end_date"]:
                         value = value.isoformat()
-    
+
                 mt_survey.set_attr_from_name(mth5_key, value)
-    
+
         return mt_survey
 
 
@@ -973,7 +978,7 @@ def inventory_network_to_mt_survey(network_obj):
                 mt_survey.set_attr_from_name(
                     "project_lead.organization", network_obj.operators[0].agencies[0],
                 )
-            except IndexError: 
+            except IndexError:
                 pass
         elif ".doi" in mth5_key:
             try:

@@ -514,8 +514,7 @@ class MTH5:
         survey_obj.write_metadata()
 
         for group_name in self._default_subgroup_names:
-            self.__hdf5_obj.create_group(
-                f"{self._default_root_name}/{group_name}")
+            self.__hdf5_obj.create_group(f"{self._default_root_name}/{group_name}")
             m5_grp = getattr(self, f"{group_name.lower()}_group")
             m5_grp.initialize_group()
 
@@ -580,15 +579,17 @@ class MTH5:
             except ValueError:
                 return False
         return False
-    
+
     def has_group(self, group_name):
         """
         Check to see if the group name exists
         """
         if self.h5_is_write():
+
             def has_name(name):
                 if group_name == name:
                     return True
+
             if self.__hdf5_obj.visit(has_name):
                 return True
             return False
@@ -653,13 +654,16 @@ class MTH5:
             sg.metadata.from_dict(experiment.surveys[survey_index].to_dict())
             sg.write_metadata()
             for station in experiment.surveys[0].stations:
-                mt_station = self.add_station(
-                    station.id, station_metadata=station)
+                mt_station = self.add_station(station.id, station_metadata=station)
                 for run in station.runs:
                     mt_run = mt_station.add_run(run.id, run_metadata=run)
                     for channel in run.channels:
                         mt_run.add_channel(
-                            channel.component, channel.type, None, channel_metadata=channel)
+                            channel.component,
+                            channel.type,
+                            None,
+                            channel_metadata=channel,
+                        )
 
     def add_station(self, name, station_metadata=None):
         """

@@ -16,11 +16,11 @@ def test_make_stationxml_from_mt():
     fn = fn_path.joinpath("example.h5")
     if fn.exists():
         fn.unlink()
-        
+
     xml_fn = fn_path.joinpath("example.xml")
     if fn.exists():
         fn.unlink()
-        
+
     survey = metadata.Survey()
     survey.from_dict(
         {
@@ -155,7 +155,6 @@ def test_make_stationxml_from_mt():
         }
     )
 
-
     m = mth5.MTH5()
     m.open_mth5(fn)
     survey_group = m.survey_group
@@ -163,12 +162,12 @@ def test_make_stationxml_from_mt():
     survey_group.write_metadata()
     station_group = m.add_station(station.id, station)
     run_group = station_group.add_run(run.id, run)
-    run_group.add_channel(channel.component, "auxiliary",
-                          None, channel_metadata=channel)
+    run_group.add_channel(
+        channel.component, "auxiliary", None, channel_metadata=channel
+    )
 
     translator = stationxml.XMLInventoryMTExperiment()
-    translator.mt_to_xml(m.to_experiment(),
-                                         stationxml_fn=xml_fn)
+    translator.mt_to_xml(m.to_experiment(), stationxml_fn=xml_fn)
 
 
 if __name__ == "__main__":

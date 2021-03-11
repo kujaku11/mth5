@@ -85,11 +85,11 @@ class SurveyGroup(BaseGroup):
     def __init__(self, group, **kwargs):
 
         super().__init__(group, **kwargs)
-        
+
     @BaseGroup.metadata.getter
     def metadata(self):
         """ Overwrite get metadata to include station information """
-        
+
         # need the try statement for when the file is initiated there is no
         # /Station group yet
         try:
@@ -99,7 +99,7 @@ class SurveyGroup(BaseGroup):
                 self._metadata.stations.append(key_group.metadata)
         except KeyError:
             pass
-            
+
         return self._metadata
 
     @property

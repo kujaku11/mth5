@@ -148,7 +148,6 @@ class StandardsGroup(BaseGroup):
 
         """
 
-
         for key, v_dict in summary_dict.items():
             key_list = [key]
             for dkey in self.summary_table.dtype.names[1:]:

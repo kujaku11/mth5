@@ -336,7 +336,9 @@ class ChannelTS:
                     self.start, self.sample_rate, ts_arr["data"].size, self.logger,
                 )
             try:
-                self._ts = xr.DataArray(ts_arr["data"], coords=[("time", dt)], name="ts")
+                self._ts = xr.DataArray(
+                    ts_arr["data"], coords=[("time", dt)], name="ts"
+                )
                 self._update_xarray_metadata()
 
             except AttributeError:

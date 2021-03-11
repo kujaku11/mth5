@@ -87,7 +87,7 @@ class BaseGroup:
 
         # initialize metadata
         self._initialize_metadata()
-        
+
         # if metadata, make sure that its the same class type
         if group_metadata is not None:
             self.metadata = group_metadata
@@ -124,7 +124,7 @@ class BaseGroup:
     @property
     def _class_name(self):
         return self.__class__.__name__.split("Group")[0]
-    
+
     def _initialize_metadata(self):
         """
         Initialize metadata with custom attributes
@@ -133,7 +133,7 @@ class BaseGroup:
         :rtype: TYPE
 
         """
-    
+
         self._metadata = Base()
         if self._class_name not in ["Standards"]:
             try:
@@ -173,16 +173,16 @@ class BaseGroup:
                 "example": "<HDF5 Group Reference>",
             },
         )
-    
+
         # add mth5 and hdf5 attributes
         self._metadata.mth5_type = self._class_name
         self._metadata.hdf5_reference = self.hdf5_group.ref
-        
+
     @property
     def metadata(self):
         """ Metadata for the Group based on mt_metadata.timeseries """
         return self._metadata
-    
+
     @metadata.setter
     def metadata(self, metadata_object):
         """
@@ -196,13 +196,15 @@ class BaseGroup:
         """
 
         if not isinstance(metadata_object, (type(self._metadata), Base)):
-            msg = (f"Metadata must be of type {meta_classes[self._class_name]} "
-                   f"not {type(metadata_object)}")
+            msg = (
+                f"Metadata must be of type {meta_classes[self._class_name]} "
+                f"not {type(metadata_object)}"
+            )
             self.logger.error(msg)
             raise MTH5Error(msg)
-                
+
         self._metadata.from_dict(metadata_object.to_dict())
-       
+
         self._metadata.mth5_type = self._class_name
         self._metadata.hdf5_reference = self.hdf5_group.ref
 

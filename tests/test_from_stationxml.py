@@ -13,6 +13,7 @@ from pathlib import Path
 from mth5 import mth5
 from mt_metadata.timeseries import stationxml
 from mt_metadata.utils import STATIONXML_01
+
 fn_path = Path(__file__).parent
 
 
@@ -23,8 +24,7 @@ class TestFromStationXML01(unittest.TestCase):
 
     def setUp(self):
         self.translator = stationxml.XMLInventoryMTExperiment()
-        self.experiment = self.translator.xml_to_mt(
-            stationxml_fn=STATIONXML_01)
+        self.experiment = self.translator.xml_to_mt(stationxml_fn=STATIONXML_01)
 
         self.fn = fn_path.joinpath("from_stationxml.h5")
         if self.fn.exists():
@@ -39,21 +39,24 @@ class TestFromStationXML01(unittest.TestCase):
         self.assertEqual(self.m.has_group("Survey/Stations"), True)
         self.assertEqual(self.m.has_group("Survey/Stations/CAS04"), True)
         self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001"), True)
-        self.assertEqual(self.m.has_group(
-            "Survey/Stations/CAS04/001/ey"), True)
-        self.assertEqual(self.m.has_group(
-            "Survey/Stations/CAS04/001/hy"), True)
+        self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001/ey"), True)
+        self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001/hy"), True)
 
     def test_survey_metadata(self):
         self.assertEqual(self.m.survey_group.metadata.fdsn.network, "ZU")
         self.assertEqual(
-            self.m.survey_group.metadata.time_period.start_date, "2020-01-01")
+            self.m.survey_group.metadata.time_period.start_date, "2020-01-01"
+        )
         self.assertEqual(
-            self.m.survey_group.metadata.time_period.end_date, "2023-12-31")
-        self.assertEqual(self.m.survey_group.metadata.summary,
-                         "USMTArray South Magnetotelluric Time Series (USMTArray CONUS South-USGS)")
-        self.assertEqual(self.m.survey_group.metadata.citation_dataset.doi,
-                         "10.7914/SN/ZU_2020")
+            self.m.survey_group.metadata.time_period.end_date, "2023-12-31"
+        )
+        self.assertEqual(
+            self.m.survey_group.metadata.summary,
+            "USMTArray South Magnetotelluric Time Series (USMTArray CONUS South-USGS)",
+        )
+        self.assertEqual(
+            self.m.survey_group.metadata.citation_dataset.doi, "10.7914/SN/ZU_2020"
+        )
 
     def test_station_metadata(self):
         station_dict = {
@@ -78,11 +81,9 @@ class TestFromStationXML01(unittest.TestCase):
             "provenance.submitter.author": None,
             "provenance.submitter.email": None,
             "provenance.submitter.organization": None,
-            "run_list": [
-                "001"
-            ],
+            "run_list": ["001"],
             "time_period.end": "2020-07-13T21:46:12+00:00",
-            "time_period.start": "2020-06-02T18:41:43+00:00"
+            "time_period.start": "2020-06-02T18:41:43+00:00",
         }
 
         m_station = self.m.get_station(station_dict["id"]).metadata
@@ -95,7 +96,8 @@ class TestFromStationXML01(unittest.TestCase):
             "channels_recorded_electric": ["ey"],
             "channels_recorded_magnetic": ["hy"],
             "time_period.end": "2020-07-13T21:46:12+00:00",
-            "time_period.start": "2020-06-02T18:41:43+00:00"}
+            "time_period.start": "2020-06-02T18:41:43+00:00",
+        }
 
         m_run = self.m.get_run("CAS04", run_dict["id"]).metadata
         for key, true_value in run_dict.items():
@@ -117,7 +119,8 @@ class TestFromStationXML01(unittest.TestCase):
             "type": "electric",
             "units": "millivolts per kilometer",
             "time_period.end": "2020-07-13T21:46:12+00:00",
-            "time_period.start": "2020-06-02T18:41:43+00:00"}
+            "time_period.start": "2020-06-02T18:41:43+00:00",
+        }
 
         m_ch = self.m.get_channel("CAS04", "001", "ey").metadata
         for key, true_value in ch_dict.items():
@@ -133,7 +136,8 @@ class TestFromStationXML01(unittest.TestCase):
             "sensor.model": "fluxgate NIMS",
             "sensor.type": "Magnetometer",
             "time_period.end": "2020-07-13T21:46:12+00:00",
-            "time_period.start": "2020-06-02T18:41:43+00:00"}
+            "time_period.start": "2020-06-02T18:41:43+00:00",
+        }
 
         m_ch = self.m.get_channel("CAS04", "001", "hy").metadata
         for key, true_value in ch_dict.items():
