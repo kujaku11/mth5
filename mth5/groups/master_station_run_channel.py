@@ -202,7 +202,13 @@ class MasterStationGroup(BaseGroup):
             for run in s_group.groups_list:
                 r_group = RunGroup(s_group.hdf5_group[run])
                 for ch in r_group.groups_list:
-                    ch_dataset = ChannelDataset(r_group.hdf5_group[ch])
+                    ds_type = r_group.hdf5_group[ch].attrs["mth5_type"]
+                    if ds_type.lower() in ["electric"]:
+                        ch_dataset = ElectricDataset(r_group.hdf5_group[ch])
+                    elif ds_type.lower() in ["magnetic"]:
+                        ch_dataset = MagneticDataset(r_group.hdf5_group[ch])
+                    elif ds_type.lower() in ["auxiliary"]:
+                        ch_dataset = AuxiliaryDataset(r_group.hdf5_group[ch])
                     ch_list.append(ch_dataset.channel_entry)
         ch_list = np.array(ch_list)
         return pd.DataFrame(ch_list.flatten())
@@ -953,7 +959,6 @@ class RunGroup(BaseGroup):
     """
 
     def __init__(self, group, run_metadata=None, **kwargs):
-
         super().__init__(group, group_metadata=run_metadata, **kwargs)
 
         # summary of channels in run

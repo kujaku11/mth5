@@ -226,8 +226,7 @@ class BaseGroup:
         read metadata from the HDF5 group into metadata object
 
         """
-
-        self.metadata.from_dict({self._class_name: self.hdf5_group.attrs})
+        self.metadata.from_dict({self._class_name: dict(self.hdf5_group.attrs)})
 
     def write_metadata(self):
         """
