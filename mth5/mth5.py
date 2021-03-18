@@ -467,7 +467,7 @@ class MTH5:
                     f"{self.__filename.name} will be overwritten in 'w' mode"
                 )
                 try:
-                    self._initialize_file()
+                    self._initialize_file(mode)
                 except OSError as error:
                     msg = (
                         f"{error}. Need to close any references to {self.__filename} first. "
@@ -487,7 +487,7 @@ class MTH5:
                 raise MTH5Error(msg)
         else:
             if mode in ["a", "w", "w-", "x"]:
-                self._initialize_file()
+                self._initialize_file(mode=mode)
             else:
                 msg = "Cannot open new file in mode {0} ".format(mode)
                 self.logger.error(msg)
@@ -495,7 +495,7 @@ class MTH5:
 
         # TODO need to add a validation step to check for version and legit file
 
-    def _initialize_file(self):
+    def _initialize_file(self, mode="w"):
         """
         Initialize the default groups for the file
 
@@ -504,7 +504,7 @@ class MTH5:
 
         """
 
-        self.__hdf5_obj = h5py.File(self.__filename, "w")
+        self.__hdf5_obj = h5py.File(self.__filename, mode)
 
         # write general metadata
         self.__hdf5_obj.attrs.update(self._file_attrs)
@@ -518,7 +518,7 @@ class MTH5:
             m5_grp = getattr(self, f"{group_name.lower()}_group")
             m5_grp.initialize_group()
 
-        self.logger.info(f"Initialized MTH5 file {self.filename} in mode 'w'")
+        self.logger.info(f"Initialized MTH5 file {self.filename} in mode {mode}")
 
         return survey_obj
 

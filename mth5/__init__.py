@@ -21,6 +21,6 @@ __version__ = "0.2.0"
 
 load_logging_config()
 debug_logger = setup_logger(__name__, fn="mth5_debug", level="debug")
-debug_logger.debug("Starting MT Metadata Debug Log File")
+debug_logger.debug("Starting MTH5 Debug Log File")
 
 error_logger = setup_logger("error", fn="mth5_error", level="error")
