@@ -22,6 +22,98 @@ from mth5.groups.filter_dataset import FilterDataset
 # =============================================================================
 # Standards Group
 # =============================================================================
+
+class ZPKGroup(BaseGroup):
+    """
+    Container for ZPK type filters
+    
+    """
+    def __init__(self, group, **kwargs):
+        super().__init__(group, **kwargs)
+        
+        
+    @property
+    def filter_dict(self):
+        """
+        
+        Dictionary of available ZPK filters
+        
+        :return: DESCRIPTION
+        :rtype: TYPE
+        """
+        
+        pass
+    
+    
+    def add_filter(self, name, poles, zeros, zpk_metadata):
+        """
+        create an HDF5 group/dataset from information given.  
+        
+        :param name: DESCRIPTION
+        :type name: TYPE
+        :param poles: DESCRIPTION
+        :type poles: TYPE
+        :param zeros: DESCRIPTION
+        :type zeros: TYPE
+        :param zpk_metadata: DESCRIPTION
+        :type zpk_metadata: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        # create a group for the filter by the name
+        zpk_filter_group = self.hdf5_group.create_group(name)
+        
+        # create datasets for the poles and zeros
+        poles_ds = zpk_filter_group.create_dataset(
+            "poles",
+            (poles.size,),
+            dtype=np.dtype([("real", np.float), ("imag", np.float)]),
+            **self.dataset_options,
+        )
+        poles_ds["real"][:] = poles.real
+        poles_ds["imag"][:] = poles.imag
+        
+        
+        zeros_ds = zpk_filter_group.create_dataset(
+            "zeros",
+            (zeros.size),
+            dtype=np.dtype([("real", np.float), ("imag", np.float)]),
+            **self.dataset_options,
+        )
+        zeros_ds["real"][:] = zeros.real
+        zeros_ds["imag"][:] = zeros.imag
+        # fill in the metadata
+        
+        pass
+    
+    def remove_filter(self): 
+        pass
+    
+    def get_filter(self, name):
+        # return self.filter_dict[name]
+        pass
+    
+    def from_zpk_object(self, zpk_object):
+        """
+        make a filter from a zpk object
+        
+        :param zpk_object: DESCRIPTION
+        :type zpk_object: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        pass
+    
+    def to_zpk_object(self):
+        """
+        make a :class:`mt_metadata.timeseries.filters.pole_zeros_filter` object
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+    
 class FiltersGroup(BaseGroup):
     """
     Not implemented yet
