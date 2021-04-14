@@ -83,9 +83,9 @@ class ZPKGroup(BaseGroup):
         )
         zeros_ds["real"][:] = zeros.real
         zeros_ds["imag"][:] = zeros.imag
-        # fill in the metadata
         
-        pass
+        # fill in the metadata
+        zpk_filter_group.attrs.update(zpk_metadata)
     
     def remove_filter(self): 
         pass
