@@ -14,16 +14,13 @@ Created on Wed Dec 23 17:08:40 2020
 # =============================================================================
 import numpy as np
 
-from mt_metadata.timeseries import Filter
 from mt_metadata.timeseries.filters import PoleZeroFilter
 
 from mth5.groups.base import BaseGroup
-from mth5.groups.filter_dataset import FilterDataset
 
 # =============================================================================
-# Standards Group
+# ZPK Group
 # =============================================================================
-
 
 class ZPKGroup(BaseGroup):
     """
@@ -46,7 +43,7 @@ class ZPKGroup(BaseGroup):
         f_dict = {}
         for key in self.hdf5_group.keys():
             zpk_group = self.hdf5_group[key]
-            f_dict[key] = {"type": zpk_group.attrs.type,
+            f_dict[key] = {"type": zpk_group.attrs["type"],
                            "hdf5_ref": zpk_group.ref}
 
         return f_dict
@@ -72,24 +69,26 @@ class ZPKGroup(BaseGroup):
         # create datasets for the poles and zeros
         poles_ds = zpk_filter_group.create_dataset(
             "poles",
-            (poles.size,),
+            poles.shape,
             dtype=np.dtype([("real", np.float), ("imag", np.float)]),
             **self.dataset_options,
         )
-        poles_ds["real"][:] = poles.real
-        poles_ds["imag"][:] = poles.imag
 
+        # when filling data need to fill the full row for what ever reason.
+        poles_ds[:] = [(pr, pi) for pr, pi in zip(poles.real, poles.imag)]
+        
         zeros_ds = zpk_filter_group.create_dataset(
             "zeros",
-            (zeros.size),
+            zeros.shape,
             dtype=np.dtype([("real", np.float), ("imag", np.float)]),
             **self.dataset_options,
         )
-        zeros_ds["real"][:] = zeros.real
-        zeros_ds["imag"][:] = zeros.imag
+        zeros_ds[:] = [(pr, pi) for pr, pi in zip(zeros.real, zeros.imag)]
 
         # fill in the metadata
         zpk_filter_group.attrs.update(zpk_metadata)
+        
+        return zpk_filter_group
 
     def remove_filter(self):
         pass
@@ -119,7 +118,7 @@ class ZPKGroup(BaseGroup):
             self.logger.error(msg)
             raise TypeError(msg)
 
-        self.add_filter(zpk_object.name,
+        zpk_group = self.add_filter(zpk_object.name,
                         zpk_object.poles,
                         zpk_object.zeros,
                         {"name": zpk_object.name,
@@ -128,6 +127,7 @@ class ZPKGroup(BaseGroup):
                          "type": zpk_object.type,
                          "units_in": zpk_object.units_in,
                          "units_out": zpk_object.units_out})
+        return zpk_group
 
     def to_zpk_object(self, name):
         """
@@ -140,8 +140,15 @@ class ZPKGroup(BaseGroup):
         zpk_group = self.get_filter(name)
 
         zpk_obj = PoleZeroFilter()
-        zpk_obj.name = zpk_group.attrs.name
-
+        zpk_obj.name = zpk_group.attrs["name"]
+        zpk_obj.gain = zpk_group.attrs["gain"]
+        zpk_obj.normalization_factor = zpk_group.attrs["normalization_factor"]
+        zpk_obj.units_in = zpk_group.attrs["units_in"]
+        zpk_obj.units_out = zpk_group.attrs["units_out"]
+        zpk_obj.poles = zpk_group["poles"]["real"][:] + zpk_group["poles"]["imag"] * 1j
+        zpk_obj.zeros = zpk_group["zeros"]["real"][:] + zpk_group["zeros"]["imag"] * 1j
+        
+        return zpk_obj
 
 class FiltersGroup(BaseGroup):
     """
@@ -151,95 +158,72 @@ class FiltersGroup(BaseGroup):
     def __init__(self, group, **kwargs):
 
         super().__init__(group, **kwargs)
-        self._dtype_dict = {
-            "zpk": {
-                "dtype": np.dtype(
-                    [
-                        ("poles_real", np.float),
-                        ("poles_imag", np.float),
-                        ("zeros_real", np.float),
-                        ("zeros_imag", np.float),
-                    ]
-                ),
-                "max_size": (100,),
-            },
-            "table": {
-                "dtype": np.dtype(
-                    [("frequency", np.float),
-                     ("real", np.float), ("imag", np.float), ]
-                ),
-                "max_size": (500,),
-            },
-            "gain": {
-                "dtype": np.dtype([("frequency", np.float), ("value", np.float)]),
-                "max_size": (100,),
-            },
-            "conversion": {
-                "dtype": np.dtype([("factor", np.float)]),
-                "max_size": (1,),
-            },
-            "delay": {"dtype": np.dtype([("delay", np.float)]), "max_size": (10,), },
-        }
+        
+        try:
+            self.zpk_group = ZPKGroup(self.hdf5_group.create_group("zpk"))
+        except ValueError:
+            self.zpk_group = ZPKGroup(self.hdf5_group["zpk"])
+                                      
+        # self.fap_group = self.hdf5_group.create_group("fap")
+        
+    @property
+    def filter_dict(self):
+        filter_dict = {}
+        filter_dict.update(self.zpk_group.filter_dict)
+        
+        return filter_dict
 
-    def add_filter(self, filter_name, filter_type, values=None, filter_metadata=None):
+
+    def add_filter(self, filter_object):
         """
         Add a filter dataset based on type
 
         current types are:
-            * zpk --> zeros, poles, gain
-            * table --> frequency look up table
+            * zpk   -->  zeros, poles, gain
+            * fap   -->  frequency look up table
+            * delay --> time delay filter
 
-        :param filter_name: DESCRIPTION
-        :type filter_name: TYPE
-        :param filter_type: DESCRIPTION
-        :type filter_type: TYPE
-        :param values: DESCRIPTION, defaults to None
-        :type values: TYPE, optional
-        :param metadata: DESCRIPTION, defaults to None
-        :type metadata: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :param filter_object: An MT metadata filter object 
+        :type filter_object: :class:`mt_metadata.timeseries.filters`
 
         """
-
-        if filter_type not in list(self._dtype_dict.keys()):
-            msg = f"filter type {filter_type} not understood."
+        
+        if filter_object.type in ["zpk", "poles_zeros"]:
+            return self.zpk_group.from_zpk_object(filter_object)
+        
+    def get_filter(self, name):
+        """
+        Get a filter by name
+        """
+        
+        try:
+            hdf5_ref = self.filter_dict[name]["hdf5_ref"]
+        except KeyError:
+            msg = f"Could not find {name} in the filter dictionary"
             self.logger.error(msg)
-            raise ValueError(msg)
+            raise KeyError(msg)
+            
+        return self.hdf5_group[hdf5_ref]
+    
+    def to_filter_object(self, name):
+        """
+        return the MT metadata representation of the filter
+        """
+        
+        try:
+            f_type = self.filter_dict[name]["type"]
+        except KeyError:
+            msg = f"Could not find {name} in the filter dictionary"
+            self.logger.error(msg)
+            raise KeyError(msg)
+            
+        if f_type in ["zpk"]:
+            return self.zpk_group.to_zpk_object(name)
+        
+    
+            
 
-        if filter_metadata is not None:
-            if not isinstance(filter_metadata, Filter):
-                msg = (
-                    "Input metadata must be of type mth5.metadata.Filter, "
-                    + f"not {type(filter_metadata)}"
-                )
-                self.logger.error(msg)
-                raise ValueError(msg)
-        else:
-            filter_metadata = Filter()
-            filter_metadata.name = filter_name
-            filter_metadata.type = filter_type
+        
+        
+        
 
-        if values is None:
-            filter_table = self.hdf5_group.create_dataset(
-                filter_name,
-                (0,),
-                maxshape=self._dtype_dict[filter_type]["max_size"],
-                dtype=self._dtype_dict[filter_type]["dtype"],
-                **self.dataset_options,
-            )
-        else:
-            filter_table = self.hdf5_group.create_dataset(
-                filter_name,
-                data=values,
-                dtype=self._dtype_dict[filter_type]["dtype"],
-                **self.dataset_options,
-            )
-
-        filter_dataset = FilterDataset(
-            filter_table, dataset_metadata=filter_metadata)
-        filter_dataset.write_metadata()
-
-        self.logger.debug(f"Created filter {filter_name}")
-
-        return filter_dataset
