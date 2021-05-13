@@ -106,7 +106,7 @@ class ZPKGroup(BaseGroup):
         """
         return self.hdf5_group[name]
 
-    def from_zpk_object(self, zpk_object):
+    def from_object(self, zpk_object):
         """
         make a filter from a :class:`mt_metadata.timeseries.filters.PoleZeroFilter`
 
@@ -131,7 +131,7 @@ class ZPKGroup(BaseGroup):
                          "units_out": zpk_object.units_out})
         return zpk_group
 
-    def to_zpk_object(self, name):
+    def to_object(self, name):
         """
         make a :class:`mt_metadata.timeseries.filters.pole_zeros_filter` object
         :return: DESCRIPTION
@@ -219,7 +219,7 @@ class CoefficientGroup(BaseGroup):
         """
         return self.hdf5_group[name]
 
-    def from_coefficient_object(self, coefficient_object):
+    def from_object(self, coefficient_object):
         """
         make a filter from a :class:`mt_metadata.timeseries.filters.PoleZeroFilter`
 
@@ -237,7 +237,7 @@ class CoefficientGroup(BaseGroup):
                                     coefficient_object.to_dict(single=True))
         return coefficient_group
 
-    def to_coefficient_object(self, name):
+    def to_object(self, name):
         """
         make a :class:`mt_metadata.timeseries.filters.pole_zeros_filter` object
         :return: DESCRIPTION
@@ -298,10 +298,18 @@ class FiltersGroup(BaseGroup):
         """
         
         if filter_object.type in ["zpk", "poles_zeros"]:
-            return self.zpk_group.from_zpk_object(filter_object)
+            try:
+                return self.zpk_group.from_object(filter_object)
+            except ValueError:
+                self.logger.debug("group already exists")
+                return self.zpk_group.get_filter(filter_object.name)
         
         elif filter_object.type in ["coefficient"]:
-            return self.coefficient_group.from_coefficient_object(filter_object)
+            try:
+                return self.coefficient_group.from_object(filter_object)
+            except ValueError:
+                self.logger.debug("group already exists")
+                return self.coefficient_group.get_filter(filter_object.name)
         
     def get_filter(self, name):
         """
@@ -330,9 +338,9 @@ class FiltersGroup(BaseGroup):
             raise KeyError(msg)
             
         if f_type in ["zpk"]:
-            return self.zpk_group.to_zpk_object(name)
+            return self.zpk_group.to_object(name)
         elif f_type in ["coefficient"]:
-            return self.coefficient_group.to_coefficient_object(name)
+            return self.coefficient_group.to_object(name)
         
     
             

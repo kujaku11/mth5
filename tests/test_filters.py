@@ -48,6 +48,7 @@ class TestFilters(unittest.TestCase):
         self.coefficient.gain = 10.0
         
         self.zpk_group = self.filter_group.add_filter(self.zpk)
+        self.coefficient_group = self.filter_group.add_filter(self.coefficient)
         
     def test_zpk_in(self):
         
