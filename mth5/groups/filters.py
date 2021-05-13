@@ -14,7 +14,9 @@ Created on Wed Dec 23 17:08:40 2020
 # =============================================================================
 import numpy as np
 
-from mt_metadata.timeseries.filters import PoleZeroFilter
+from mt_metadata.timeseries.filters import (PoleZeroFilter,
+                                            CoefficientFilter,
+                                            TimeDelayFilter)
 
 from mth5.groups.base import BaseGroup
 
@@ -150,6 +152,104 @@ class ZPKGroup(BaseGroup):
         
         return zpk_obj
     
+# =============================================================================
+#  COEFFCIENT Group  
+# =============================================================================
+
+
+class CoefficientGroup(BaseGroup):
+    """
+    Container for Coefficient type filters
+    """
+
+    def __init__(self, group, **kwargs):
+        super().__init__(group, **kwargs)
+
+    @property
+    def filter_dict(self):
+        """
+
+        Dictionary of available coefficient filters
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+        """
+        f_dict = {}
+        for key in self.hdf5_group.keys():
+            coefficient_group = self.hdf5_group[key]
+            f_dict[key] = {"type": coefficient_group.attrs["type"],
+                           "hdf5_ref": coefficient_group.ref}
+
+        return f_dict
+
+    def add_filter(self, name, coefficient_metadata):
+        """
+        create an HDF5 group/dataset from information given.  
+
+        :param name: Nane of the filter
+        :type name: string
+        :param poles: poles of the filter as complex numbers
+        :type poles: np.ndarray(dtype=complex)
+        :param zeros: zeros of the filter as complex numbers
+        :type zeros: np.ndarray(dtype=comples)
+        :param coefficient_metadata: metadata dictionary see 
+        :class:`mt_metadata.timeseries.filters.Coefficient` for details on entries
+        :type coefficient_metadata: dictionary
+
+        """
+        # create a group for the filter by the name
+        coefficient_filter_group = self.hdf5_group.create_group(name)
+
+        # fill in the metadata
+        coefficient_filter_group.attrs.update(coefficient_metadata)
+        
+        return coefficient_filter_group
+
+    def remove_filter(self):
+        pass
+
+    def get_filter(self, name):
+        """
+        Get a filter from the name
+
+        :param name: name of the filter
+        :type name: string
+
+        :return: HDF5 group of the ZPK filter
+        """
+        return self.hdf5_group[name]
+
+    def from_coefficient_object(self, coefficient_object):
+        """
+        make a filter from a :class:`mt_metadata.timeseries.filters.PoleZeroFilter`
+
+        :param zpk_object: MT metadata PoleZeroFilter
+        :type zpk_object: :class:`mt_metadata.timeseries.filters.PoleZeroFilter`
+
+        """
+
+        if not isinstance(coefficient_object, CoefficientFilter):
+            msg = f"Filter must be a CoefficientFilter not {type(coefficient_object)}"
+            self.logger.error(msg)
+            raise TypeError(msg)
+
+        coefficient_group = self.add_filter(coefficient_object.name,
+                                    coefficient_object.to_dict(single=True))
+        return coefficient_group
+
+    def to_coefficient_object(self, name):
+        """
+        make a :class:`mt_metadata.timeseries.filters.pole_zeros_filter` object
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        coefficient_group = self.get_filter(name)
+
+        coefficient_obj = CoefficientFilter(**coefficient_group.attrs)
+        
+        return coefficient_obj    
 
 
 class FiltersGroup(BaseGroup):
@@ -165,6 +265,11 @@ class FiltersGroup(BaseGroup):
             self.zpk_group = ZPKGroup(self.hdf5_group.create_group("zpk"))
         except ValueError:
             self.zpk_group = ZPKGroup(self.hdf5_group["zpk"])
+            
+        try:
+            self.coefficient_group = CoefficientGroup(self.hdf5_group.create_group("coefficient"))
+        except ValueError:
+            self.coefficient_group = CoefficientGroup(self.hdf5_group["coefficient"])
                                       
         # self.fap_group = self.hdf5_group.create_group("fap")
         
@@ -172,6 +277,7 @@ class FiltersGroup(BaseGroup):
     def filter_dict(self):
         filter_dict = {}
         filter_dict.update(self.zpk_group.filter_dict)
+        filter_dict.update(self.coefficient_group.filter_dict)
         
         return filter_dict
 
@@ -181,9 +287,10 @@ class FiltersGroup(BaseGroup):
         Add a filter dataset based on type
 
         current types are:
-            * zpk   -->  zeros, poles, gain
-            * fap   -->  frequency look up table
-            * delay --> time delay filter
+            * zpk         -->  zeros, poles, gain
+            * fap         -->  frequency look up table
+            * delay       -->  time delay filter
+            * coefficient -->  coefficient filter
 
         :param filter_object: An MT metadata filter object 
         :type filter_object: :class:`mt_metadata.timeseries.filters`
@@ -192,6 +299,9 @@ class FiltersGroup(BaseGroup):
         
         if filter_object.type in ["zpk", "poles_zeros"]:
             return self.zpk_group.from_zpk_object(filter_object)
+        
+        elif filter_object.type in ["coefficient"]:
+            return self.coefficient_group.from_coefficient_object(filter_object)
         
     def get_filter(self, name):
         """
@@ -221,6 +331,8 @@ class FiltersGroup(BaseGroup):
             
         if f_type in ["zpk"]:
             return self.zpk_group.to_zpk_object(name)
+        elif f_type in ["coefficient"]:
+            return self.coefficient_group.to_coefficient_object(name)
         
     
             

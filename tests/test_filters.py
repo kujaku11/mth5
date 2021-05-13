@@ -16,7 +16,8 @@ from pathlib import Path
 import numpy as np
 
 from mth5 import mth5
-from mt_metadata.timeseries.filters import PoleZeroFilter
+from mt_metadata.timeseries.filters import (PoleZeroFilter,
+                                            CoefficientFilter)
 
 fn_path = Path(__file__).parent
 # =============================================================================
@@ -36,15 +37,21 @@ class TestFilters(unittest.TestCase):
         self.zpk = PoleZeroFilter()
         self.zpk.units_in = "counts"
         self.zpk.units_out = "mv"
-        self.zpk.name = "ftest"
+        self.zpk.name = "zpk_test"
         self.zpk.poles = np.array([1 + 2j, 0, 1 - 2j])
         self.zpk.zeros = np.array([10 - 1j, 10 + 1j])
+        
+        self.coefficient = CoefficientFilter()
+        self.coefficient.units_in = "volts"
+        self.coefficient.units_out = "millivolts per meter"
+        self.coefficient.name = "coefficient_test"
+        self.coefficient.gain = 10.0
         
         self.zpk_group = self.filter_group.add_filter(self.zpk)
         
     def test_zpk_in(self):
         
-        self.assertIn("ftest", self.filter_group.zpk_group.groups_list)
+        self.assertIn("zpk_test", self.filter_group.zpk_group.groups_list)
         
     def test_zpk_name(self):
         self.assertEqual(self.zpk_group.attrs["name"], self.zpk.name)
@@ -72,6 +79,23 @@ class TestFilters(unittest.TestCase):
         
         self.assertTrue(new_zpk == self.zpk)
         
+    def test_coefficient_in(self):
+        
+        self.assertIn("coefficient_test", self.filter_group.coefficient_group.groups_list)
+        
+    def test_coefficient_name(self):
+        self.assertEqual(self.coefficient_group.attrs["name"], self.coefficient.name)
+        
+    def test_coefficient_units_in(self):
+        self.assertEqual(self.coefficient_group.attrs["units_in"], self.coefficient.units_in)
+        
+    def test_coefficient_units_out(self):
+        self.assertEqual(self.coefficient_group.attrs["units_out"], self.coefficient.units_out)
+        
+    def test_coefficient_out(self):
+        new_coefficient = self.filter_group.to_filter_object(self.coefficient.name)
+        
+        self.assertTrue(new_coefficient == self.coefficient)
 
     def tearDown(self):
         self.m_obj.close_mth5()
