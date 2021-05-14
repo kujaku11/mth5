@@ -788,8 +788,8 @@ class MTH5:
         >>> existing_run = mth5_obj.get_run('MT001', 'MT001a')
 
         """
-
-        return self.stations_group.get_station(station_name).get_run(run_name)
+        
+        return groups.RunGroup(self.__hdf5_obj[f"Survey/Stations/{station_name}/{run_name}"])
 
     def remove_run(self, station_name, run_name):
         """
@@ -917,7 +917,8 @@ class MTH5:
                 sample rate:      4096
 
         """
-
+        # ch = f"Survey/Stations/{station_name}/{run_name}/{channel_name}" 
+        # return groups.ChannelDataset(self.__hdf5_obj[ch])
         return (
             self.stations_group.get_station(station_name)
             .get_run(run_name)
