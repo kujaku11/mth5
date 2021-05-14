@@ -26,8 +26,10 @@ import xarray as xr
 from mt_metadata import timeseries as metadata
 from mt_metadata.utils.mttime import MTime
 from mt_metadata.base import Base
+from mt_metadata.timeseries.filters import ChannelResponseFilter
 
 from mth5.groups.base import BaseGroup
+from mth5.groups import FiltersGroup
 from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import to_numpy_type, inherit_doc_string
 from mth5.timeseries import ChannelTS, RunTS
@@ -1243,7 +1245,19 @@ class RunGroup(BaseGroup):
                 )
             else:
                 channel = ChannelDataset(ch_dataset)
-
+                
+            # get the filters to make a channel response
+            filters_group = FiltersGroup(self.hdf5_group.parent.parent.parent["Filters"])
+            f_list = []
+            for name in channel.metadata.filter.name:
+                name = name.replace("/", " per ").lower()
+                try:
+                    f_list.append(filters_group.to_filter_object(name))
+                except KeyError:
+                    continue
+                
+            channel.channel_response_filter = ChannelResponseFilter(filters_list=f_list)
+            
             return channel
 
         except KeyError:

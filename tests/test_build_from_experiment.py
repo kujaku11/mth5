@@ -56,6 +56,8 @@ class TestMTH5(unittest.TestCase):
             h5_sd.pop("hdf5_reference")
             h5_sd.pop("mth5_type")
             
+            self.assertDictEqual(h5_sd, sd)
+            
     def test_runs(self):
         runs = self.experiment.surveys[0].stations[0].runs
         for run in runs:
@@ -68,6 +70,8 @@ class TestMTH5(unittest.TestCase):
             h5_sd = h5_run.metadata.to_dict(single=True)
             h5_sd.pop("hdf5_reference")
             h5_sd.pop("mth5_type")
+            
+            self.assertDictEqual(h5_sd, sd)
             
     def test_channels(self):
         runs = self.experiment.surveys[0].stations[0].runs
@@ -85,13 +89,16 @@ class TestMTH5(unittest.TestCase):
                 h5_sd.pop("hdf5_reference")
                 h5_sd.pop("mth5_type")
                 
+                self.assertDictEqual(h5_sd, sd)
+                
     def test_filters(self):
         exp_filters = self.experiment.surveys[0].filters
         
         for key, value in exp_filters.items():
             sd = value.to_dict(single=True)
             h5_sd = self.mth5_obj.filters_group.to_filter_object(key)
-            self.assertEqual(sd, h5_sd)
+            h5_sd = h5_sd.to_dict(single=True)
+            self.assertDictEqual(h5_sd, sd)
             
         
     def tearDown(self):

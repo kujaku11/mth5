@@ -26,6 +26,7 @@ import xarray as xr
 
 from mt_metadata import timeseries as metadata
 from mt_metadata.utils.mttime import MTime
+from mt_metadata.timeseries.filters import ChannelResponseFilter
 
 from mth5.utils.exceptions import MTTSError
 from mth5.utils.mth5_logger import setup_logger
@@ -162,6 +163,7 @@ class ChannelTS:
         self.station_metadata = metadata.Station()
         self.run_metadata = metadata.Run()
         self._ts = xr.DataArray([1], coords=[("time", [1])], name="ts")
+        self._channel_response = ChannelResponseFilter()
 
         # get correct metadata class
         try:
@@ -646,6 +648,40 @@ class ChannelTS:
         self.logger.warning(
             "Cannot set `end`. If you want a slice, then " + "use get_slice method"
         )
+
+    @property
+    def channel_response_filter(self):
+        """
+        Full channel response filter
+        
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        
+        return self._channel_response
+    
+    @channel_response_filter.setter
+    def channel_response_filter(self, value):
+        """
+        
+        :param value: DESCRIPTION
+        :type value: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        
+        if not isinstance(value, ChannelResponseFilter):
+            msg = ("channel response must be a "
+                   "mt_metadata.timeseries.filters.ChannelResponseFilter object "
+                   f"not {type(value)}.")
+            self.logger.error(msg)
+            raise TypeError(msg)
+            
+        self._channel_response = value
+        
+        
 
     def get_slice(self, start, end):
         """
