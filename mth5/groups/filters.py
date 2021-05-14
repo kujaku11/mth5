@@ -147,9 +147,18 @@ class ZPKGroup(BaseGroup):
         zpk_obj.normalization_factor = zpk_group.attrs["normalization_factor"]
         zpk_obj.units_in = zpk_group.attrs["units_in"]
         zpk_obj.units_out = zpk_group.attrs["units_out"]
-        zpk_obj.poles = zpk_group["poles"]["real"][:] + zpk_group["poles"]["imag"][:] * 1j
-        zpk_obj.zeros = zpk_group["zeros"]["real"][:] + zpk_group["zeros"]["imag"][:] * 1j
+        try:
+            zpk_obj.poles = zpk_group["poles"]["real"][:] + zpk_group["poles"]["imag"][:] * 1j
+        except TypeError:
+            self.logger.debug(f"ZPK filter {name} has no poles")
+            zpk_obj.poles = []
         
+        try:
+            zpk_obj.zeros = zpk_group["zeros"]["real"][:] + zpk_group["zeros"]["imag"][:] * 1j
+        except TypeError:
+            self.logger.debug(f"ZPK filter {name} has no zeros")
+            zpk_obj.zeros = []
+            
         return zpk_obj
     
 # =============================================================================
@@ -249,7 +258,116 @@ class CoefficientGroup(BaseGroup):
 
         coefficient_obj = CoefficientFilter(**coefficient_group.attrs)
         
-        return coefficient_obj    
+        return coefficient_obj  
+    
+# =============================================================================
+# TimeDelay Group
+# =============================================================================
+
+class TimeDelayGroup(BaseGroup):
+    """
+    Container for time_delay type filters
+
+    """
+
+    def __init__(self, group, **kwargs):
+        super().__init__(group, **kwargs)
+
+    @property
+    def filter_dict(self):
+        """
+
+        Dictionary of available time_delay filters
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+        """
+        f_dict = {}
+        for key in self.hdf5_group.keys():
+            time_delay_group = self.hdf5_group[key]
+            f_dict[key] = {"type": time_delay_group.attrs["type"],
+                           "hdf5_ref": time_delay_group.ref}
+
+        return f_dict
+
+    def add_filter(self, name, time_delay_metadata):
+        """
+        create an HDF5 group/dataset from information given.  
+
+        :param name: Nane of the filter
+        :type name: string
+        :param poles: poles of the filter as complex numbers
+        :type poles: np.ndarray(dtype=complex)
+        :param zeros: zeros of the filter as complex numbers
+        :type zeros: np.ndarray(dtype=comples)
+        :param time_delay_metadata: metadata dictionary see 
+        :class:`mt_metadata.timeseries.filters.PoleZeroFilter` for details on entries
+        :type time_delay_metadata: dictionary
+
+        """
+        # create a group for the filter by the name
+        time_delay_filter_group = self.hdf5_group.create_group(name)
+
+        # fill in the metadata
+        time_delay_filter_group.attrs.update(time_delay_metadata)
+        
+        return time_delay_filter_group
+
+    def remove_filter(self):
+        pass
+
+    def get_filter(self, name):
+        """
+        Get a filter from the name
+
+        :param name: name of the filter
+        :type name: string
+
+        :return: HDF5 group of the time_delay filter
+        """
+        return self.hdf5_group[name]
+
+    def from_object(self, time_delay_object):
+        """
+        make a filter from a :class:`mt_metadata.timeseries.filters.PoleZeroFilter`
+
+        :param time_delay_object: MT metadata PoleZeroFilter
+        :type time_delay_object: :class:`mt_metadata.timeseries.filters.PoleZeroFilter`
+
+        """
+
+        if not isinstance(time_delay_object, TimeDelayFilter):
+            msg = f"Filter must be a TimeDelayFilter not {type(time_delay_object)}"
+            self.logger.error(msg)
+            raise TypeError(msg)
+
+        time_delay_group = self.add_filter(time_delay_object.name,
+                        time_delay_object.poles,
+                        time_delay_object.zeros,
+                        {"name": time_delay_object.name,
+                         "delay": time_delay_object.delay,
+                         "type": time_delay_object.type,
+                         "units_in": time_delay_object.units_in,
+                         "units_out": time_delay_object.units_out})
+        return time_delay_group
+
+    def to_object(self, name):
+        """
+        make a :class:`mt_metadata.timeseries.filters.pole_zeros_filter` object
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        time_delay_group = self.get_filter(name)
+
+        time_delay_obj = PoleZeroFilter()
+        time_delay_obj.name = time_delay_group.attrs["name"]
+        time_delay_obj.delay = time_delay_group.attrs["delay"]
+        time_delay_obj.units_in = time_delay_group.attrs["units_in"]
+        time_delay_obj.units_out = time_delay_group.attrs["units_out"]
+            
+        return time_delay_obj
 
 
 class FiltersGroup(BaseGroup):
@@ -270,6 +388,11 @@ class FiltersGroup(BaseGroup):
             self.coefficient_group = CoefficientGroup(self.hdf5_group.create_group("coefficient"))
         except ValueError:
             self.coefficient_group = CoefficientGroup(self.hdf5_group["coefficient"])
+            
+        try:
+            self.time_delay_group = TimeDelayGroup(self.hdf5_group.create_group("time_delay"))
+        except ValueError:
+            self.time_delay_group = TimeDelayGroup(self.hdf5_group["time_delay"])
                                       
         # self.fap_group = self.hdf5_group.create_group("fap")
         
@@ -278,6 +401,7 @@ class FiltersGroup(BaseGroup):
         filter_dict = {}
         filter_dict.update(self.zpk_group.filter_dict)
         filter_dict.update(self.coefficient_group.filter_dict)
+        filter_dict.update(self.time_delay_group.filter_dict)
         
         return filter_dict
 
@@ -289,7 +413,7 @@ class FiltersGroup(BaseGroup):
         current types are:
             * zpk         -->  zeros, poles, gain
             * fap         -->  frequency look up table
-            * delay       -->  time delay filter
+            * time_delay  -->  time delay filter
             * coefficient -->  coefficient filter
 
         :param filter_object: An MT metadata filter object 
@@ -311,6 +435,13 @@ class FiltersGroup(BaseGroup):
             except ValueError:
                 self.logger.debug("group already exists")
                 return self.coefficient_group.get_filter(filter_object.name)
+            
+        elif filter_object.type in ["time_delay"]:
+            try:
+                return self.time_delay_group.from_object(filter_object)
+            except ValueError:
+                self.logger.debug("group already exists")
+                return self.time_delay_group.get_filter(filter_object.name)
         
     def get_filter(self, name):
         """
@@ -342,4 +473,6 @@ class FiltersGroup(BaseGroup):
             return self.zpk_group.to_object(name)
         elif f_type in ["coefficient"]:
             return self.coefficient_group.to_object(name)
+        elif f_type in ["time_delay"]:
+            return self.time_delay_group.to_object(name)
         
