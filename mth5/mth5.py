@@ -667,7 +667,6 @@ class MTH5:
                         
             for k, v in experiment.surveys[0].filters.items():
                 self.filters_group.add_filter(v)
-                print(f"added {k}")
 
     def add_station(self, name, station_metadata=None):
         """

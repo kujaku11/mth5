@@ -147,8 +147,8 @@ class ZPKGroup(BaseGroup):
         zpk_obj.normalization_factor = zpk_group.attrs["normalization_factor"]
         zpk_obj.units_in = zpk_group.attrs["units_in"]
         zpk_obj.units_out = zpk_group.attrs["units_out"]
-        zpk_obj.poles = zpk_group["poles"]["real"][:] + zpk_group["poles"]["imag"] * 1j
-        zpk_obj.zeros = zpk_group["zeros"]["real"][:] + zpk_group["zeros"]["imag"] * 1j
+        zpk_obj.poles = zpk_group["poles"]["real"][:] + zpk_group["poles"]["imag"][:] * 1j
+        zpk_obj.zeros = zpk_group["zeros"]["real"][:] + zpk_group["zeros"]["imag"][:] * 1j
         
         return zpk_obj
     
@@ -296,6 +296,7 @@ class FiltersGroup(BaseGroup):
         :type filter_object: :class:`mt_metadata.timeseries.filters`
 
         """
+        filter_object.name = filter_object.name.replace("/", " per ")
         
         if filter_object.type in ["zpk", "poles_zeros"]:
             try:
@@ -342,10 +343,3 @@ class FiltersGroup(BaseGroup):
         elif f_type in ["coefficient"]:
             return self.coefficient_group.to_object(name)
         
-    
-            
-
-        
-        
-        
-
