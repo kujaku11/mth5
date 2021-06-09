@@ -159,6 +159,8 @@ class ChannelTS:
         **kwargs,
     ):
 
+        print(channel_type)
+        print(channel_metadata)
         self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
         self.station_metadata = metadata.Station()
         self.run_metadata = metadata.Run()
@@ -169,6 +171,8 @@ class ChannelTS:
         try:
             self.channel_metadata = meta_classes[channel_type.capitalize()]()
             self.channel_metadata.type = channel_type.lower()
+            
+            print("x"*3, type(self.channel_metadata))
         except KeyError:
             msg = (
                 "Channel type is undefined, must be [ electric | "

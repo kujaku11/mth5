@@ -789,9 +789,12 @@ class MTH5:
 
         """
 
-        return groups.RunGroup(
-            self.__hdf5_obj[f"Survey/Stations/{station_name}/{run_name}"]
-        )
+        try:
+            return groups.RunGroup(
+                self.__hdf5_obj[f"Survey/Stations/{station_name}/{run_name}"]
+            )
+        except KeyError:
+            raise MTH5Error(f"Could not find {station_name}/{run_name}")
 
     def remove_run(self, station_name, run_name):
         """
