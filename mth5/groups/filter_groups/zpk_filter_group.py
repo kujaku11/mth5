@@ -127,6 +127,7 @@ class ZPKGroup(BaseGroup):
                 "type": zpk_object.type,
                 "units_in": zpk_object.units_in,
                 "units_out": zpk_object.units_out,
+                "comments": zpk_object.comments,
             },
         )
         return zpk_group

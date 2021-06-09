@@ -110,6 +110,7 @@ class TimeDelayGroup(BaseGroup):
                 "type": time_delay_object.type,
                 "units_in": time_delay_object.units_in,
                 "units_out": time_delay_object.units_out,
+                "comments": time_delay_object.comments,
             },
         )
         return time_delay_group

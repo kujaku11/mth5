@@ -122,6 +122,7 @@ class FAPGroup(BaseGroup):
                 "type": fap_object.type,
                 "units_in": fap_object.units_in,
                 "units_out": fap_object.units_out,
+                "comments": fap_object.comments,
             },
         )
         return fap_group

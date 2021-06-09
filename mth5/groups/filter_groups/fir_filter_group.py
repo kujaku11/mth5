@@ -113,6 +113,7 @@ class FIRGroup(BaseGroup):
                 "type": fir_object.type,
                 "units_in": fir_object.units_in,
                 "units_out": fir_object.units_out,
+                "comments": fir_object.comments,
             },
         )
         return fir_group

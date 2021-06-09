@@ -98,10 +98,18 @@ class TestMTH5(unittest.TestCase):
         exp_filters = self.experiment.surveys[0].filters
 
         for key, value in exp_filters.items():
-            sd = value.to_dict(single=True)
+            sd = value.to_dict(single=True, required=False)
             h5_sd = self.mth5_obj.filters_group.to_filter_object(key)
-            h5_sd = h5_sd.to_dict(single=True)
-            self.assertDictEqual(h5_sd, sd)
+            h5_sd = h5_sd.to_dict(single=True, required=False)
+            for key in sd.keys():
+                v1 = sd[key]
+                v2 = h5_sd[key]
+                if isinstance(v1, (float, int)):
+                    self.assertAlmostEquals(v1, v2, 5)
+                else:
+                    self.assertEqual(v1, v2)
+                
+            #self.assertDictEqual(h5_sd, sd)
 
     def tearDown(self):
         self.mth5_obj.close_mth5()
