@@ -102,11 +102,10 @@ class TimeDelayGroup(BaseGroup):
 
         time_delay_group = self.add_filter(
             time_delay_object.name,
-            time_delay_object.poles,
-            time_delay_object.zeros,
             {
                 "name": time_delay_object.name,
                 "delay": time_delay_object.delay,
+                "gain": time_delay_object.gain,
                 "type": time_delay_object.type,
                 "units_in": time_delay_object.units_in,
                 "units_out": time_delay_object.units_out,
@@ -131,5 +130,6 @@ class TimeDelayGroup(BaseGroup):
         time_delay_obj.units_in = time_delay_group.attrs["units_in"]
         time_delay_obj.units_out = time_delay_group.attrs["units_out"]
         time_delay_obj.comments = time_delay_group.attrs["comments"]
+        time_delay_obj.gain = time_delay_group.attrs['gain']
 
         return time_delay_obj

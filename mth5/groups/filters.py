@@ -109,7 +109,7 @@ class FiltersGroup(BaseGroup):
                 self.logger.info("group %s already exists", filter_object.name)
                 return self.coefficient_group.get_filter(filter_object.name)
 
-        elif filter_object.type in ["time_delay"]:
+        elif filter_object.type in ["time_delay", "time delay"]:
             try:
                 return self.time_delay_group.from_object(filter_object)
             except ValueError:
@@ -160,7 +160,7 @@ class FiltersGroup(BaseGroup):
             return self.zpk_group.to_object(name)
         elif f_type in ["coefficient"]:
             return self.coefficient_group.to_object(name)
-        elif f_type in ["time_delay"]:
+        elif f_type in ["time_delay", "time delay"]:
             return self.time_delay_group.to_object(name)
         elif f_type in ["fap", "frequency response table"]:
             return self.fap_group.to_object(name)
