@@ -45,10 +45,10 @@ class TestFromStationXML01(unittest.TestCase):
     def test_survey_metadata(self):
         self.assertEqual(self.m.survey_group.metadata.fdsn.network, "ZU")
         self.assertEqual(
-            self.m.survey_group.metadata.time_period.start_date, "2020-01-01"
+            self.m.survey_group.metadata.time_period.start_date, "2020-06-02"
         )
         self.assertEqual(
-            self.m.survey_group.metadata.time_period.end_date, "2023-12-31"
+            self.m.survey_group.metadata.time_period.end_date, "2020-07-13"
         )
         self.assertEqual(
             self.m.survey_group.metadata.summary,
