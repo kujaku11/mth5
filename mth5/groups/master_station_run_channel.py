@@ -1661,6 +1661,7 @@ class ChannelDataset:
             try:
                 f_list.append(filters_group.to_filter_object(name))
             except KeyError:
+                self.logger.warning("Could not locate filter %s", name)
                 continue
             
         return ChannelResponseFilter(filters_list=f_list)

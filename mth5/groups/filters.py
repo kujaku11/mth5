@@ -145,9 +145,9 @@ class FiltersGroup(BaseGroup):
         try:
             f_type = self.filter_dict[name]["type"]
         except KeyError:
-            msg = f"Could not find {name} in the filter dictionary"
-            self.logger.error(msg)
-            raise KeyError(msg)
+            msg = "Could not find %s in the filter dictionary"
+            self.logger.error(msg, name)
+            raise KeyError(msg, name)
             
         if f_type in ["zpk"]:
             return self.zpk_group.to_object(name)

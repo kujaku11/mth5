@@ -13,6 +13,7 @@ Created on Wed Jun  9 08:55:16 2021
 # Imports
 # =============================================================================
 
+
 from mt_metadata.timeseries.filters import FIRFilter
 
 from mth5.groups.base import BaseGroup
@@ -131,7 +132,7 @@ class FIRGroup(BaseGroup):
         fir_obj.units_in = fir_group.attrs["units_in"]
         fir_obj.units_out = fir_group.attrs["units_out"]
         try:
-            fir_obj.coefficients = fir_group["fir_table"]["frequency"][:] 
+            fir_obj.coefficients = fir_group["coefficients"][:] 
         except TypeError:
             self.logger.debug("fir filter %s has no coefficients", name)
             fir_obj.coefficients = []
