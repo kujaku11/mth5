@@ -127,7 +127,7 @@ class ZPKGroup(BaseGroup):
                 "type": zpk_object.type,
                 "units_in": zpk_object.units_in,
                 "units_out": zpk_object.units_out,
-                "comments": zpk_object.comments,
+                "comments": str(zpk_object.comments),
             },
         )
         return zpk_group
@@ -148,6 +148,7 @@ class ZPKGroup(BaseGroup):
         zpk_obj.normalization_factor = zpk_group.attrs["normalization_factor"]
         zpk_obj.units_in = zpk_group.attrs["units_in"]
         zpk_obj.units_out = zpk_group.attrs["units_out"]
+        zpk_obj.comments = zpk_group.attrs["comments"]
         try:
             zpk_obj.poles = (
                 zpk_group["poles"]["real"][:] + zpk_group["poles"]["imag"][:] * 1j

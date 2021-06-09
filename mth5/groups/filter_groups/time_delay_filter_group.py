@@ -110,7 +110,7 @@ class TimeDelayGroup(BaseGroup):
                 "type": time_delay_object.type,
                 "units_in": time_delay_object.units_in,
                 "units_out": time_delay_object.units_out,
-                "comments": time_delay_object.comments,
+                "comments": str(time_delay_object.comments),
             },
         )
         return time_delay_group
@@ -130,5 +130,6 @@ class TimeDelayGroup(BaseGroup):
         time_delay_obj.delay = time_delay_group.attrs["delay"]
         time_delay_obj.units_in = time_delay_group.attrs["units_in"]
         time_delay_obj.units_out = time_delay_group.attrs["units_out"]
+        time_delay_obj.comments = time_delay_group.attrs["comments"]
 
         return time_delay_obj

@@ -113,7 +113,7 @@ class FIRGroup(BaseGroup):
                 "type": fir_object.type,
                 "units_in": fir_object.units_in,
                 "units_out": fir_object.units_out,
-                "comments": fir_object.comments,
+                "comments": str(fir_object.comments),
             },
         )
         return fir_group
@@ -133,6 +133,7 @@ class FIRGroup(BaseGroup):
         fir_obj.gain = fir_group.attrs["gain"]
         fir_obj.units_in = fir_group.attrs["units_in"]
         fir_obj.units_out = fir_group.attrs["units_out"]
+        fir_obj.comments = fir_group.attrs["comments"]
         try:
             fir_obj.coefficients = fir_group["coefficients"][:]
         except TypeError:

@@ -122,7 +122,7 @@ class FAPGroup(BaseGroup):
                 "type": fap_object.type,
                 "units_in": fap_object.units_in,
                 "units_out": fap_object.units_out,
-                "comments": fap_object.comments,
+                "comments": str(fap_object.comments),
             },
         )
         return fap_group
@@ -142,6 +142,7 @@ class FAPGroup(BaseGroup):
         fap_obj.gain = fap_group.attrs["gain"]
         fap_obj.units_in = fap_group.attrs["units_in"]
         fap_obj.units_out = fap_group.attrs["units_out"]
+        fap_obj.comments = fap_group.attrs["comments"]
         try:
             fap_obj.frequencies = fap_group["fap_table"]["frequency"][:]
         except TypeError:

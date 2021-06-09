@@ -97,8 +97,7 @@ class CoefficientGroup(BaseGroup):
             raise TypeError(msg)
 
         coefficient_group = self.add_filter(
-            coefficient_object.name, coefficient_object.to_dict(single=True, required=False)
-        )
+            coefficient_object.name, coefficient_object.to_dict(single=True))
         return coefficient_group
 
     def to_object(self, name):
