@@ -16,7 +16,6 @@ from .master_station_run_channel import (
     AuxiliaryDataset,
 )
 from .survey import SurveyGroup
-from .filter_dataset import FilterDataset
 
 
 __all__ = [
@@ -32,5 +31,4 @@ __all__ = [
     "ElectricDataset",
     "MagneticDataset",
     "AuxiliaryDataset",
-    "FilterDataset",
 ]
