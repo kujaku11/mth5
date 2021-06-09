@@ -98,9 +98,7 @@ def setup_logger(logger_name, fn=None, level="debug"):
             fn = Path(fn.parent, f"{fn.stem}.log")
 
         # fn_handler = logging.FileHandler(fn)
-        fn_handler = ConcurrentRotatingFileHandler(
-            fn, maxBytes=2 ** 21, backupCount=2
-        )
+        fn_handler = ConcurrentRotatingFileHandler(fn, maxBytes=2 ** 21, backupCount=2)
         fn_handler.setFormatter(LOG_FORMAT)
         fn_handler.setLevel(LEVEL_DICT[level.lower()])
         logger.addHandler(fn_handler)

@@ -1245,7 +1245,7 @@ class RunGroup(BaseGroup):
                 )
             else:
                 channel = ChannelDataset(ch_dataset)
-            
+
             return channel
 
         except KeyError:
@@ -1650,11 +1650,13 @@ class ChannelDataset:
     def master_station_group(self):
         """ shortcut to master station group """
         return MasterStationGroup(self.hdf5_dataset.parent.parent.parent)
-    
+
     @property
     def channel_response_filter(self):
         # get the filters to make a channel response
-        filters_group = FiltersGroup(self.hdf5_dataset.parent.parent.parent.parent["Filters"])
+        filters_group = FiltersGroup(
+            self.hdf5_dataset.parent.parent.parent.parent["Filters"]
+        )
         f_list = []
         for name in self.metadata.filter.name:
             name = name.replace("/", " per ").lower()
@@ -1663,7 +1665,7 @@ class ChannelDataset:
             except KeyError:
                 self.logger.warning("Could not locate filter %s", name)
                 continue
-            
+
         return ChannelResponseFilter(filters_list=f_list)
 
     @property

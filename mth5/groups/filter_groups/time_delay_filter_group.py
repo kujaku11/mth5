@@ -15,9 +15,11 @@ Created on Wed Jun  9 09:01:55 2021
 from mt_metadata.timeseries.filters import TimeDelayFilter
 
 from mth5.groups.base import BaseGroup
+
 # =============================================================================
 # TimeDelay Group
 # =============================================================================
+
 
 class TimeDelayGroup(BaseGroup):
     """
@@ -40,8 +42,10 @@ class TimeDelayGroup(BaseGroup):
         f_dict = {}
         for key in self.hdf5_group.keys():
             time_delay_group = self.hdf5_group[key]
-            f_dict[key] = {"type": time_delay_group.attrs["type"],
-                           "hdf5_ref": time_delay_group.ref}
+            f_dict[key] = {
+                "type": time_delay_group.attrs["type"],
+                "hdf5_ref": time_delay_group.ref,
+            }
 
         return f_dict
 
@@ -65,7 +69,7 @@ class TimeDelayGroup(BaseGroup):
 
         # fill in the metadata
         time_delay_filter_group.attrs.update(time_delay_metadata)
-        
+
         return time_delay_filter_group
 
     def remove_filter(self):
@@ -96,14 +100,18 @@ class TimeDelayGroup(BaseGroup):
             self.logger.error(msg)
             raise TypeError(msg)
 
-        time_delay_group = self.add_filter(time_delay_object.name,
-                        time_delay_object.poles,
-                        time_delay_object.zeros,
-                        {"name": time_delay_object.name,
-                         "delay": time_delay_object.delay,
-                         "type": time_delay_object.type,
-                         "units_in": time_delay_object.units_in,
-                         "units_out": time_delay_object.units_out})
+        time_delay_group = self.add_filter(
+            time_delay_object.name,
+            time_delay_object.poles,
+            time_delay_object.zeros,
+            {
+                "name": time_delay_object.name,
+                "delay": time_delay_object.delay,
+                "type": time_delay_object.type,
+                "units_in": time_delay_object.units_in,
+                "units_out": time_delay_object.units_out,
+            },
+        )
         return time_delay_group
 
     def to_object(self, name):
@@ -121,5 +129,5 @@ class TimeDelayGroup(BaseGroup):
         time_delay_obj.delay = time_delay_group.attrs["delay"]
         time_delay_obj.units_in = time_delay_group.attrs["units_in"]
         time_delay_obj.units_out = time_delay_group.attrs["units_out"]
-            
+
         return time_delay_obj

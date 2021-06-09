@@ -658,9 +658,9 @@ class ChannelTS:
         :rtype: TYPE
 
         """
-        
+
         return self._channel_response
-    
+
     @channel_response_filter.setter
     def channel_response_filter(self, value):
         """
@@ -671,17 +671,17 @@ class ChannelTS:
         :rtype: TYPE
 
         """
-        
+
         if not isinstance(value, ChannelResponseFilter):
-            msg = ("channel response must be a "
-                   "mt_metadata.timeseries.filters.ChannelResponseFilter object "
-                   f"not {type(value)}.")
+            msg = (
+                "channel response must be a "
+                "mt_metadata.timeseries.filters.ChannelResponseFilter object "
+                f"not {type(value)}."
+            )
             self.logger.error(msg)
             raise TypeError(msg)
-            
+
         self._channel_response = value
-        
-        
 
     def get_slice(self, start, end):
         """

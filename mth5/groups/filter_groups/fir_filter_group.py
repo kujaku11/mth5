@@ -42,8 +42,7 @@ class FIRGroup(BaseGroup):
         f_dict = {}
         for key in self.hdf5_group.keys():
             fir_group = self.hdf5_group[key]
-            f_dict[key] = {"type": fir_group.attrs["type"],
-                           "hdf5_ref": fir_group.ref}
+            f_dict[key] = {"type": fir_group.attrs["type"], "hdf5_ref": fir_group.ref}
 
         return f_dict
 
@@ -64,19 +63,17 @@ class FIRGroup(BaseGroup):
         """
         # create a group for the filter by the name
         fir_filter_group = self.hdf5_group.create_group(name)
-        
+
         # create datasets for the poles and zeros
         fir_ds = fir_filter_group.create_dataset(
-            "coefficients",
-            coefficients.shape,
-            **self.dataset_options,
+            "coefficients", coefficients.shape, **self.dataset_options,
         )
 
         fir_ds[:] = coefficients
 
         # fill in the metadata
         fir_filter_group.attrs.update(fir_metadata)
-        
+
         return fir_filter_group
 
     def remove_filter(self):
@@ -107,13 +104,17 @@ class FIRGroup(BaseGroup):
             self.logger.error(msg, type(fir_object))
             raise TypeError(msg)
 
-        fir_group = self.add_filter(fir_object.name,
-                        fir_object.coefficients,
-                        {"name": fir_object.name,
-                         "gain": fir_object.gain,
-                         "type": fir_object.type,
-                         "units_in": fir_object.units_in,
-                         "units_out": fir_object.units_out})
+        fir_group = self.add_filter(
+            fir_object.name,
+            fir_object.coefficients,
+            {
+                "name": fir_object.name,
+                "gain": fir_object.gain,
+                "type": fir_object.type,
+                "units_in": fir_object.units_in,
+                "units_out": fir_object.units_out,
+            },
+        )
         return fir_group
 
     def to_object(self, name):
@@ -132,7 +133,7 @@ class FIRGroup(BaseGroup):
         fir_obj.units_in = fir_group.attrs["units_in"]
         fir_obj.units_out = fir_group.attrs["units_out"]
         try:
-            fir_obj.coefficients = fir_group["coefficients"][:] 
+            fir_obj.coefficients = fir_group["coefficients"][:]
         except TypeError:
             self.logger.debug("fir filter %s has no coefficients", name)
             fir_obj.coefficients = []

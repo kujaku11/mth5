@@ -23,6 +23,4 @@ mth5_obj.from_experiment(mt_experiment)
 
 run_01 = mth5_obj.get_run("REW09", "a")
 
-runts_object = run_01.to_runts()  
-
- 
+runts_object = run_01.to_runts()

@@ -17,7 +17,7 @@ from mt_metadata.timeseries.filters import CoefficientFilter
 from mth5.groups.base import BaseGroup
 
 # =============================================================================
-#  COEFFCIENT Group  
+#  COEFFCIENT Group
 # =============================================================================
 
 
@@ -41,8 +41,10 @@ class CoefficientGroup(BaseGroup):
         f_dict = {}
         for key in self.hdf5_group.keys():
             coefficient_group = self.hdf5_group[key]
-            f_dict[key] = {"type": coefficient_group.attrs["type"],
-                           "hdf5_ref": coefficient_group.ref}
+            f_dict[key] = {
+                "type": coefficient_group.attrs["type"],
+                "hdf5_ref": coefficient_group.ref,
+            }
 
         return f_dict
 
@@ -63,7 +65,7 @@ class CoefficientGroup(BaseGroup):
 
         # fill in the metadata
         coefficient_filter_group.attrs.update(coefficient_metadata)
-        
+
         return coefficient_filter_group
 
     def remove_filter(self):
@@ -94,8 +96,9 @@ class CoefficientGroup(BaseGroup):
             self.logger.error(msg)
             raise TypeError(msg)
 
-        coefficient_group = self.add_filter(coefficient_object.name,
-                                    coefficient_object.to_dict(single=True))
+        coefficient_group = self.add_filter(
+            coefficient_object.name, coefficient_object.to_dict(single=True)
+        )
         return coefficient_group
 
     def to_object(self, name):
@@ -110,6 +113,5 @@ class CoefficientGroup(BaseGroup):
         coefficient_group = self.get_filter(name)
 
         coefficient_obj = CoefficientFilter(**coefficient_group.attrs)
-        
-        return coefficient_obj  
-    
+
+        return coefficient_obj

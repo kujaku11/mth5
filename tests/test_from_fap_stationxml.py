@@ -18,16 +18,17 @@ from mt_metadata.utils import STATIONXML_FAP
 
 fn_path = Path(__file__).parent
 
+
 class TestFAPMTH5(unittest.TestCase):
     """
     Test making an MTH5 file from a FAP filtered StationXML
     
     """
-    
+
     def setUp(self):
         self.translator = XMLInventoryMTExperiment()
         self.experiment = self.translator.xml_to_mt(stationxml_fn=STATIONXML_FAP)
-        
+
         self.fn = fn_path.joinpath("from_fap_stationxml.h5")
         if self.fn.exists():
             self.fn.unlink()
@@ -35,8 +36,8 @@ class TestFAPMTH5(unittest.TestCase):
         self.m = mth5.MTH5()
         self.m.open_mth5(self.fn)
         self.m.from_experiment(self.experiment, 0)
-        
-    def test_groups(self):
+
+    def test_has_groups(self):
         self.assertEqual(self.m.has_group("Survey"), True)
         self.assertEqual(self.m.has_group("Survey/Stations"), True)
         self.assertEqual(self.m.has_group("Survey/Stations/FL001"), True)
@@ -44,10 +45,19 @@ class TestFAPMTH5(unittest.TestCase):
         self.assertEqual(self.m.has_group("Survey/Stations/FL001/b"), True)
         self.assertEqual(self.m.has_group("Survey/Stations/FL001/a/hx"), True)
         self.assertEqual(self.m.has_group("Survey/Stations/FL001/b/hx"), True)
-        
-    def test_get_run(self):
+        self.assertEqual(
+            self.m.has_group("/Survey/Filters/fap/frequency response table_00"), True
+        )
+        self.assertEqual(
+            self.m.has_group("/Survey/Filters/coefficient/v to counts (electric)"), True
+        )
+
+    def test_get_channel(self):
         self.hx = self.m.get_channel("FL001", "a", "hx")
-        def test_filters(self):
-            s
-            
-        
+        fnames = [f.name for f in self.hx.channel_response_filter.filter_list]
+        self.assertIn("frequency response table_00", fnames)
+        self.assertIn("v to counts (electric)", fnames)
+
+    def tearDown(self):
+        self.m.close_mth5()
+        self.fn.unlink()

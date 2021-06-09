@@ -42,8 +42,7 @@ class ZPKGroup(BaseGroup):
         f_dict = {}
         for key in self.hdf5_group.keys():
             zpk_group = self.hdf5_group[key]
-            f_dict[key] = {"type": zpk_group.attrs["type"],
-                           "hdf5_ref": zpk_group.ref}
+            f_dict[key] = {"type": zpk_group.attrs["type"], "hdf5_ref": zpk_group.ref}
 
         return f_dict
 
@@ -75,7 +74,7 @@ class ZPKGroup(BaseGroup):
 
         # when filling data need to fill the full row for what ever reason.
         poles_ds[:] = [(pr, pi) for pr, pi in zip(poles.real, poles.imag)]
-        
+
         zeros_ds = zpk_filter_group.create_dataset(
             "zeros",
             zeros.shape,
@@ -86,7 +85,7 @@ class ZPKGroup(BaseGroup):
 
         # fill in the metadata
         zpk_filter_group.attrs.update(zpk_metadata)
-        
+
         return zpk_filter_group
 
     def remove_filter(self):
@@ -117,15 +116,19 @@ class ZPKGroup(BaseGroup):
             self.logger.error(msg)
             raise TypeError(msg)
 
-        zpk_group = self.add_filter(zpk_object.name,
-                        zpk_object.poles,
-                        zpk_object.zeros,
-                        {"name": zpk_object.name,
-                         "gain": zpk_object.gain,
-                         "normalization_factor": zpk_object.normalization_factor,
-                         "type": zpk_object.type,
-                         "units_in": zpk_object.units_in,
-                         "units_out": zpk_object.units_out})
+        zpk_group = self.add_filter(
+            zpk_object.name,
+            zpk_object.poles,
+            zpk_object.zeros,
+            {
+                "name": zpk_object.name,
+                "gain": zpk_object.gain,
+                "normalization_factor": zpk_object.normalization_factor,
+                "type": zpk_object.type,
+                "units_in": zpk_object.units_in,
+                "units_out": zpk_object.units_out,
+            },
+        )
         return zpk_group
 
     def to_object(self, name):
@@ -145,15 +148,19 @@ class ZPKGroup(BaseGroup):
         zpk_obj.units_in = zpk_group.attrs["units_in"]
         zpk_obj.units_out = zpk_group.attrs["units_out"]
         try:
-            zpk_obj.poles = zpk_group["poles"]["real"][:] + zpk_group["poles"]["imag"][:] * 1j
+            zpk_obj.poles = (
+                zpk_group["poles"]["real"][:] + zpk_group["poles"]["imag"][:] * 1j
+            )
         except TypeError:
             self.logger.debug(f"ZPK filter {name} has no poles")
             zpk_obj.poles = []
-        
+
         try:
-            zpk_obj.zeros = zpk_group["zeros"]["real"][:] + zpk_group["zeros"]["imag"][:] * 1j
+            zpk_obj.zeros = (
+                zpk_group["zeros"]["real"][:] + zpk_group["zeros"]["imag"][:] * 1j
+            )
         except TypeError:
             self.logger.debug(f"ZPK filter {name} has no zeros")
             zpk_obj.zeros = []
-            
+
         return zpk_obj
