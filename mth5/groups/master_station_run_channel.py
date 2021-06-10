@@ -1567,7 +1567,8 @@ class ChannelDataset:
 
             # load from dict because of the extra attributes for MTH5
             self.metadata.from_dict(dataset_metadata.to_dict())
-            
+            self.metadata.hdf5_reference = self.hdf5_dataset.ref
+            self.metadata.mth5_type = self._class_name
 
             # write out metadata to make sure that its in the file.
             self.write_metadata()

@@ -121,10 +121,7 @@ class TestMTH5(unittest.TestCase):
         run = station.add_run("MT002a")
         ex = run.add_channel("Ex", "electric", None)
         ex.from_channel_ts(channel_ts)
-        print(f"EX: {type(ex)}")
-        print(ex.metadata)
         new_ts = ex.to_channel_ts()
-        print(type(new_ts))
 
         self.assertEqual(channel_ts.start, new_ts.start)
         self.assertTrue(channel_ts._ts.time.to_dict() == new_ts._ts.time.to_dict())
