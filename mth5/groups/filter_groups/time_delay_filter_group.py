@@ -99,16 +99,13 @@ class TimeDelayGroup(BaseGroup):
             msg = f"Filter must be a TimeDelayFilter not {type(time_delay_object)}"
             self.logger.error(msg)
             raise TypeError(msg)
-            
+
         input_dict = time_delay_object.to_dict(single=True, required=False)
         for k, v in input_dict.items():
             if v is None:
                 input_dict[k] = str(v)
 
-        time_delay_group = self.add_filter(
-            time_delay_object.name,
-            input_dict,
-        )
+        time_delay_group = self.add_filter(time_delay_object.name, input_dict,)
         return time_delay_group
 
     def to_object(self, name):

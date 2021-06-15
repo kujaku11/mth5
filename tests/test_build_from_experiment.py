@@ -109,8 +109,8 @@ class TestMTH5(unittest.TestCase):
                     self.assertAlmostEqual(v1, float(v2), 5)
                 else:
                     self.assertEqual(v1, v2)
-                
-            #self.assertDictEqual(h5_sd, sd)
+
+            # self.assertDictEqual(h5_sd, sd)
 
     def tearDown(self):
         self.mth5_obj.close_mth5()

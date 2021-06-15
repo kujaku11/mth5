@@ -115,7 +115,7 @@ class ZPKGroup(BaseGroup):
             msg = f"Filter must be a PoleZeroFilter not {type(zpk_object)}"
             self.logger.error(msg)
             raise TypeError(msg)
-            
+
         input_dict = zpk_object.to_dict(single=True, required=False)
         input_dict.pop("poles")
         input_dict.pop("zeros")
@@ -124,10 +124,7 @@ class ZPKGroup(BaseGroup):
                 input_dict[k] = str(v)
 
         zpk_group = self.add_filter(
-            zpk_object.name,
-            zpk_object.poles,
-            zpk_object.zeros,
-            input_dict,
+            zpk_object.name, zpk_object.poles, zpk_object.zeros, input_dict,
         )
         return zpk_group
 

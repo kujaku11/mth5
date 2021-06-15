@@ -100,8 +100,7 @@ class CoefficientGroup(BaseGroup):
         for k, v in input_dict.items():
             if v is None:
                 input_dict[k] = str(v)
-        coefficient_group = self.add_filter(
-            coefficient_object.name, input_dict)
+        coefficient_group = self.add_filter(coefficient_object.name, input_dict)
         return coefficient_group
 
     def to_object(self, name):

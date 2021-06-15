@@ -110,7 +110,7 @@ class FAPGroup(BaseGroup):
             )
             self.logger.error(msg)
             raise TypeError(msg)
-            
+
         input_dict = fap_object.to_dict(single=True, required=False)
         input_dict.pop("frequencies")
         input_dict.pop("amplitudes")

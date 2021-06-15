@@ -109,11 +109,9 @@ class FIRGroup(BaseGroup):
         for k, v in input_dict.items():
             if v is None:
                 input_dict[k] = str(v)
-                
+
         fir_group = self.add_filter(
-            fir_object.name,
-            fir_object.coefficients,
-            input_dict,
+            fir_object.name, fir_object.coefficients, input_dict,
         )
         return fir_group
 

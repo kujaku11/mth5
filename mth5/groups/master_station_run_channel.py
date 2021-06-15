@@ -1535,7 +1535,7 @@ class ChannelDataset:
             self.metadata = meta_classes[self._class_name]()
         except KeyError:
             self.metadata = Base()
-            
+
         if not hasattr(self.metadata, "mth5_type"):
             self._add_base_attributes()
             self.metadata.hdf5_reference = self.hdf5_dataset.ref
@@ -1554,7 +1554,7 @@ class ChannelDataset:
             self.metadata.from_dict(
                 {self.hdf5_dataset.attrs["mth5_type"]: self.hdf5_dataset.attrs}
             )
-        
+
         # if metadata is input, make sure that its the same class type amd write
         # to the hdf5 dataset
         if dataset_metadata is not None:
@@ -2203,7 +2203,7 @@ class ChannelDataset:
             self.replace_dataset(channel_ts_obj.ts)
             # apparently need to reset these otherwise they get overwritten with None
             self.metadata.hdf5_reference = self.hdf5_dataset.ref
-            self.metadata.mth5_type = self._class_name 
+            self.metadata.mth5_type = self._class_name
             self.write_metadata()
 
         elif how == "extend":
@@ -2214,9 +2214,8 @@ class ChannelDataset:
                 fill=fill,
             )
 
-
-        # 
-            # TODO need to check on metadata.
+        #
+        # TODO need to check on metadata.
 
     def from_xarray(
         self, data_array, how="replace", fill=None, max_gap_seconds=1, fill_window=10,

@@ -14,6 +14,7 @@ from mth5 import mth5
 
 from mt_metadata.timeseries.stationxml import XMLInventoryMTExperiment
 from mt_metadata.utils import STATIONXML_FIR, STATIONXML_ELECTRIC
+
 # from mt_metadata.utils import MT_EXPERIMENT_SINGLE_STATION
 translator = XMLInventoryMTExperiment()
 experiment = translator.xml_to_mt(stationxml_fn=STATIONXML_ELECTRIC)

@@ -114,7 +114,7 @@ class TestMTH5(unittest.TestCase):
         channel_ts = ChannelTS(
             channel_type="electric",
             data=np.random.rand(4096),
-            channel_metadata=meta_dict
+            channel_metadata=meta_dict,
         )
 
         station = self.mth5_obj.add_station("MT002")
