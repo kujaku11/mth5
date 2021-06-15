@@ -104,17 +104,16 @@ class FIRGroup(BaseGroup):
             self.logger.error(msg, type(fir_object))
             raise TypeError(msg)
 
+        input_dict = fir_object.to_dict(single=True, required=False)
+        input_dict.pop("coefficients")
+        for k, v in input_dict.items():
+            if v is None:
+                input_dict[k] = str(v)
+                
         fir_group = self.add_filter(
             fir_object.name,
             fir_object.coefficients,
-            {
-                "name": fir_object.name,
-                "gain": fir_object.gain,
-                "type": fir_object.type,
-                "units_in": fir_object.units_in,
-                "units_out": fir_object.units_out,
-                "comments": str(fir_object.comments),
-            },
+            input_dict,
         )
         return fir_group
 
@@ -128,12 +127,8 @@ class FIRGroup(BaseGroup):
 
         fir_group = self.get_filter(name)
 
-        fir_obj = FIRFilter()
-        fir_obj.name = fir_group.attrs["name"]
-        fir_obj.gain = fir_group.attrs["gain"]
-        fir_obj.units_in = fir_group.attrs["units_in"]
-        fir_obj.units_out = fir_group.attrs["units_out"]
-        fir_obj.comments = fir_group.attrs["comments"]
+        fir_obj = FIRFilter(**fir_group.attrs)
+
         try:
             fir_obj.coefficients = fir_group["coefficients"][:]
         except TypeError:

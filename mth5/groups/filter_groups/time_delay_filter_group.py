@@ -99,18 +99,15 @@ class TimeDelayGroup(BaseGroup):
             msg = f"Filter must be a TimeDelayFilter not {type(time_delay_object)}"
             self.logger.error(msg)
             raise TypeError(msg)
+            
+        input_dict = time_delay_object.to_dict(single=True, required=False)
+        for k, v in input_dict.items():
+            if v is None:
+                input_dict[k] = str(v)
 
         time_delay_group = self.add_filter(
             time_delay_object.name,
-            {
-                "name": time_delay_object.name,
-                "delay": time_delay_object.delay,
-                "gain": time_delay_object.gain,
-                "type": time_delay_object.type,
-                "units_in": time_delay_object.units_in,
-                "units_out": time_delay_object.units_out,
-                "comments": str(time_delay_object.comments),
-            },
+            input_dict,
         )
         return time_delay_group
 
@@ -124,12 +121,6 @@ class TimeDelayGroup(BaseGroup):
 
         time_delay_group = self.get_filter(name)
 
-        time_delay_obj = TimeDelayFilter()
-        time_delay_obj.name = time_delay_group.attrs["name"]
-        time_delay_obj.delay = time_delay_group.attrs["delay"]
-        time_delay_obj.units_in = time_delay_group.attrs["units_in"]
-        time_delay_obj.units_out = time_delay_group.attrs["units_out"]
-        time_delay_obj.comments = time_delay_group.attrs["comments"]
-        time_delay_obj.gain = time_delay_group.attrs['gain']
+        time_delay_obj = TimeDelayFilter(**time_delay_group.attrs)
 
         return time_delay_obj

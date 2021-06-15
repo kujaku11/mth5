@@ -115,20 +115,19 @@ class ZPKGroup(BaseGroup):
             msg = f"Filter must be a PoleZeroFilter not {type(zpk_object)}"
             self.logger.error(msg)
             raise TypeError(msg)
+            
+        input_dict = zpk_object.to_dict(single=True, required=False)
+        input_dict.pop("poles")
+        input_dict.pop("zeros")
+        for k, v in input_dict.items():
+            if v is None:
+                input_dict[k] = str(v)
 
         zpk_group = self.add_filter(
             zpk_object.name,
             zpk_object.poles,
             zpk_object.zeros,
-            {
-                "name": zpk_object.name,
-                "gain": zpk_object.gain,
-                "normalization_factor": zpk_object.normalization_factor,
-                "type": zpk_object.type,
-                "units_in": zpk_object.units_in,
-                "units_out": zpk_object.units_out,
-                "comments": str(zpk_object.comments),
-            },
+            input_dict,
         )
         return zpk_group
 
@@ -142,13 +141,8 @@ class ZPKGroup(BaseGroup):
 
         zpk_group = self.get_filter(name)
 
-        zpk_obj = PoleZeroFilter()
-        zpk_obj.name = zpk_group.attrs["name"]
-        zpk_obj.gain = zpk_group.attrs["gain"]
-        zpk_obj.normalization_factor = zpk_group.attrs["normalization_factor"]
-        zpk_obj.units_in = zpk_group.attrs["units_in"]
-        zpk_obj.units_out = zpk_group.attrs["units_out"]
-        zpk_obj.comments = zpk_group.attrs["comments"]
+        zpk_obj = PoleZeroFilter(**zpk_group.attrs)
+
         try:
             zpk_obj.poles = (
                 zpk_group["poles"]["real"][:] + zpk_group["poles"]["imag"][:] * 1j

@@ -96,8 +96,12 @@ class CoefficientGroup(BaseGroup):
             self.logger.error(msg)
             raise TypeError(msg)
 
+        input_dict = coefficient_object.to_dict(single=True, required=False)
+        for k, v in input_dict.items():
+            if v is None:
+                input_dict[k] = str(v)
         coefficient_group = self.add_filter(
-            coefficient_object.name, coefficient_object.to_dict(single=True))
+            coefficient_object.name, input_dict)
         return coefficient_group
 
     def to_object(self, name):

@@ -110,20 +110,21 @@ class FAPGroup(BaseGroup):
             )
             self.logger.error(msg)
             raise TypeError(msg)
+            
+        input_dict = fap_object.to_dict(single=True, required=False)
+        input_dict.pop("frequencies")
+        input_dict.pop("amplitudes")
+        input_dict.pop("phases")
+        for k, v in input_dict.items():
+            if v is None:
+                input_dict[k] = str(v)
 
         fap_group = self.add_filter(
             fap_object.name,
             fap_object.frequencies,
             fap_object.amplitudes,
             fap_object.phases,
-            {
-                "name": fap_object.name,
-                "gain": fap_object.gain,
-                "type": fap_object.type,
-                "units_in": fap_object.units_in,
-                "units_out": fap_object.units_out,
-                "comments": str(fap_object.comments),
-            },
+            input_dict,
         )
         return fap_group
 
@@ -137,12 +138,8 @@ class FAPGroup(BaseGroup):
 
         fap_group = self.get_filter(name)
 
-        fap_obj = FrequencyResponseTableFilter()
-        fap_obj.name = fap_group.attrs["name"]
-        fap_obj.gain = fap_group.attrs["gain"]
-        fap_obj.units_in = fap_group.attrs["units_in"]
-        fap_obj.units_out = fap_group.attrs["units_out"]
-        fap_obj.comments = fap_group.attrs["comments"]
+        fap_obj = FrequencyResponseTableFilter(**fap_group.attrs)
+
         try:
             fap_obj.frequencies = fap_group["fap_table"]["frequency"][:]
         except TypeError:

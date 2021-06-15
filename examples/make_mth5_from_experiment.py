@@ -17,7 +17,7 @@ mt_experiment = Experiment()
 mt_experiment.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)
 
 mth5_obj = MTH5()
-mth5_obj.open_mth5(r"test.h5", "w")
+mth5_obj.open_mth5(MT_EXPERIMENT_SINGLE_STATION.parent.joinpath(r"test.h5"), mode="w")
 
 mth5_obj.from_experiment(mt_experiment)
 
