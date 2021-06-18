@@ -192,11 +192,9 @@ class ChannelTS:
                 self.logger.debug("Loading from metadata dict")
 
             else:
-                msg = "input metadata must be type {0} or dict, not {1}".format(
-                    type(self.channel_metadata), type(channel_metadata)
-                )
-                self.logger.error(msg)
-                raise MTTSError(msg)
+                msg = "input metadata must be type %s or dict, not %s"
+                self.logger.error(msg, type(self.channel_metadata), type(channel_metadata))
+                raise MTTSError(msg % (type(self.channel_metadata), type(channel_metadata)))
 
         # add station metadata, this will be important when propogating a single
         # channel such that it can stand alone.
@@ -230,11 +228,9 @@ class ChannelTS:
                 self.logger.debug("Loading from metadata dict")
 
             else:
-                msg = "input metadata must be type {0} or dict, not {1}".format(
-                    type(self.run_metadata), type(run_metadata)
-                )
-                self.logger.error(msg)
-                raise MTTSError(msg)
+                msg = "input metadata must be type %s or dict, not %s"
+                self.logger.error(msg, type(self.run_metadata), type(run_metadata))
+                raise MTTSError(msg % (type(self.run_metadata), type(run_metadata)))
 
         # input data
         if data is not None:
@@ -306,23 +302,17 @@ class ChannelTS:
 
         if isinstance(ts_arr, (np.ndarray, list, tuple)):
             if not isinstance(ts_arr, np.ndarray):
-                self.logger.debug(f"Converting {type(ts_arr)} to np.ndarray")
                 ts_arr = np.array(ts_arr)
 
             # Validate an input array to make sure its 1D
             if len(ts_arr.shape) == 2:
                 if 1 in ts_arr.shape:
-                    self.logger.debug(
-                        f"Flattening input array with shape {ts_arr.shape}"
-                        + f" to {ts_arr.size}"
-                    )
                     ts_arr = ts_arr.reshape(ts_arr.size)
                 else:
                     msg = f"Input array must be 1-D array not {ts_arr.shape}"
                     self.logger.error(msg)
                     raise ValueError(msg)
 
-            self.logger.debug(f"loading numpy array with shape {ts_arr.shape}")
             dt = make_dt_coordinates(
                 self.start, self.sample_rate, ts_arr.size, self.logger
             )
@@ -330,7 +320,6 @@ class ChannelTS:
             self._update_xarray_metadata()
 
         elif isinstance(ts_arr, pd.core.frame.DataFrame):
-            self.logger.debug(f"loading pandas dataframe with shape {ts_arr.shape}")
             if isinstance(ts_arr.index[0], pd._libs.tslibs.timestamps.Timestamp):
                 dt = ts_arr.index
             else:
@@ -352,7 +341,6 @@ class ChannelTS:
                 raise MTTSError(msg)
 
         elif isinstance(ts_arr, pd.core.series.Series):
-            self.logger.debug(f"loading pandas series with shape {ts_arr.shape}")
             if isinstance(ts_arr.index[0], pd._libs.tslibs.timestamps.Timestamp):
                 dt = ts_arr.index
             else:
@@ -364,7 +352,6 @@ class ChannelTS:
             self._update_xarray_metadata()
 
         elif isinstance(ts_arr, xr.DataArray):
-            self.logger.debug(f"loading xarray.DataArray with shape {ts_arr.shape}")
             # TODO: need to validate the input xarray
             self._ts = ts_arr
             # need to pull out the metadata as a separate dictionary

@@ -86,14 +86,11 @@ class RunTS:
                 if not "Station" in list(station_metadata.keys()):
                     station_metadata = {"Station": station_metadata}
                 self.station_metadata.from_dict(station_metadata)
-                self.logger.debug("Loading from metadata dict")
 
             else:
-                msg = "input metadata must be type {0} or dict, not {1}".format(
-                    type(self.station_metadata), type(station_metadata)
-                )
-                self.logger.error(msg)
-                raise MTTSError(msg)
+                msg = "input metadata must be type %s or dict, not %s"
+                self.logger.error(msg, type(self.station_metadata), type(station_metadata))
+                raise MTTSError(msg % (type(self.station_metadata), type(station_metadata)))
 
         
 

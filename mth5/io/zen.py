@@ -896,7 +896,6 @@ class Z3D:
                     "filter.applied": [False],
                 }
             }
-            self.logger.debug("Making Magnetic Channel")
 
         meta_dict[ts_type]["time_period.start"] = self.start.isoformat()
         meta_dict[ts_type]["time_period.end"] = self.end.isoformat()

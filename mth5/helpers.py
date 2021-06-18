@@ -53,7 +53,7 @@ def validate_compression(compression, level):
 
     """
     if compression is None:
-        return None, 0
+        return None, None
     if not isinstance(compression, (str, type(None))):
         msg = "compression type must be a string, not {0}".format(type(compression))
         logger.error(msg)

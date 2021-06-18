@@ -266,7 +266,7 @@ class MasterStationGroup(BaseGroup):
             raise Exception
         try:
             station_group = self.hdf5_group.create_group(station_name)
-            self.logger.debug("Created group {0}".format(station_group.name))
+            self.logger.debug("Created group %s", station_group.name)
 
             if station_metadata is None:
                 station_metadata = metadata.Station(id=station_name)
@@ -290,10 +290,8 @@ class MasterStationGroup(BaseGroup):
             # self.summary_table.add_row(station_obj.table_entry)
 
         except ValueError:
-            msg = (
-                f"Station {station_name} already exists, " + "returning existing group."
-            )
-            self.logger.info(msg)
+            msg = "Station %s already exists, returning existing group."
+            self.logger.info(msg, station_name)
             station_obj = StationGroup(self.hdf5_group[station_name])
             station_obj.read_metadata()
 
@@ -664,7 +662,6 @@ class StationGroup(BaseGroup):
             start = MTime(start)
 
         if self.run_summary.size < 1:
-            self.logger.debug("No rows in summary table")
             return None
 
         sr_find = self.run_summary[
@@ -672,7 +669,6 @@ class StationGroup(BaseGroup):
             & (self.run_summary.start == start)
         ]
         if sr_find.size < 1:
-            self.logger.debug(f"no summary entries with sample rate {sample_rate}")
             return None
         return sr_find
 
@@ -695,16 +691,12 @@ class StationGroup(BaseGroup):
 
         try:
             run_group = self.hdf5_group.create_group(run_name)
-            self.logger.debug("Created group {0}".format(run_group.name))
             if run_metadata is None:
                 run_metadata = metadata.Run(id=run_name)
             elif run_metadata.id != run_name:
-                msg = (
-                    f"Run name {run_name} must be the same as "
-                    + f"run_metadata.id {run_metadata.id}"
-                )
-                self.logger.error(msg)
-                raise MTH5Error(msg)
+                msg = "Run name %s must be the same as run_metadata.id %s"
+                self.logger.error(msg, run_name, run_metadata.id)
+                raise MTH5Error(msg % (run_name, run_metadata.id))
 
             run_obj = RunGroup(
                 run_group, run_metadata=run_metadata, **self.dataset_options
@@ -789,7 +781,6 @@ class StationGroup(BaseGroup):
 
         """
 
-        self.logger.debug("Updating station metadata from summary table")
         self.metadata.time_period.start = self.run_summary.start.min().isoformat()
         self.metadata.time_period.end = self.run_summary.end.max().isoformat()
         self.metadata.channels_recorded = ",".join(
@@ -1072,7 +1063,6 @@ class RunGroup(BaseGroup):
 
         for key, value in self.metadata.to_dict(single=True).items():
             value = to_numpy_type(value)
-            self.logger.debug("wrote metadata {0} = {1}".format(key, value))
             self.hdf5_group.attrs.create(key, value)
 
     def add_channel(
@@ -1080,7 +1070,7 @@ class RunGroup(BaseGroup):
         channel_name,
         channel_type,
         data,
-        channel_dtype="i32",
+        channel_dtype="int32",
         max_shape=(None,),
         chunks=True,
         channel_metadata=None,
@@ -1125,7 +1115,6 @@ class RunGroup(BaseGroup):
         if data is not None:
             if data.size < 1024:
                 chunks = None
-
         try:
             if data is not None:
                 channel_group = self.hdf5_group.create_dataset(
@@ -1146,8 +1135,11 @@ class RunGroup(BaseGroup):
                     chunks=chunks,
                     **self.dataset_options,
                 )
+                
+                
+            if channel_metadata.component is None:
+                channel_metadata.component = channel_name
 
-            self.logger.debug("Created group {0}".format(channel_group.name))
             if channel_type.lower() in ["magnetic"]:
                 channel_obj = MagneticDataset(
                     channel_group, dataset_metadata=channel_metadata
@@ -1167,9 +1159,7 @@ class RunGroup(BaseGroup):
                 )
                 self.logger.error(msg)
                 raise MTH5Error(msg)
-            if channel_obj.metadata.component is None:
-                channel_obj.metadata.component = channel_name
-            channel_obj.write_metadata()
+
 
         except (OSError, RuntimeError):
             msg = (
@@ -1337,72 +1327,31 @@ class RunGroup(BaseGroup):
         channels = []
 
         for comp in run_ts_obj.channels:
+            ch = getattr(run_ts_obj, comp)
 
-            if comp[0] in ["e"]:
-                channel_type = "electric"
-                ch_metadata = metadata.Electric()
-
-            elif comp[0] in ["h", "b"]:
-                channel_type = "magnetic"
-                ch_metadata = metadata.Magnetic()
-            else:
-                channel_type = "auxiliary"
-                ch_metadata = metadata.Auxiliary()
-
-            # need to pop off station and run metadata
-            ch_dict = dict([(k, v) for k, v in run_ts_obj.dataset[comp].attrs.items()])
-            station_keys = [k for k in ch_dict.keys() if "station." in k]
-            run_keys = [k for k in ch_dict.keys() if "run." in k]
-            station_metadata = dict(
-                [(key.split("station.")[-1], ch_dict.pop(key)) for key in station_keys]
-            )
-            run_metadata = dict(
-                [(key.split("run.")[-1], ch_dict.pop(key)) for key in run_keys]
-            )
-
-            try:
-                if station_metadata["id"] is not None:
-                    if station_metadata["id"] != self.station_group.metadata.id:
-                        self.logger.warning(
-                            f"Channel station.id {station_metadata['id']} != "
-                            + f" group station.id {self.station_group.metadata.id}"
-                        )
-            except KeyError:
-                pass
-
-            try:
-                if run_metadata["id"] is not None:
-                    if run_metadata["id"] != self.metadata.id:
-                        self.logger.warning(
-                            f"Channel run.id {run_metadata['id']} != "
-                            + f" group run.id {self.metadata.id}"
-                        )
-            except KeyError:
-                pass
-
-            ch_metadata.from_dict({channel_type: ch_dict})
-            ch_metadata.hdf5_type = channel_type
-            
-            try:
-                if kwargs["compression"] is None:
-                    channels.append(
-                        self.add_channel(
-                            comp,
-                            channel_type,
-                            run_ts_obj.dataset[comp].values,
-                            channel_metadata=ch_metadata,
-                        )
+            if ch.station_metadata.id is not None:
+                if ch.station_metadata.id != self.station_group.metadata.id:
+                    self.logger.warning(
+                        f"Channel station.id {ch.station_metadata.id} != "
+                        + f" group station.id {self.station_group.metadata.id}"
                     )
-            except KeyError:
-                channels.append(
-                    self.add_channel(
-                        comp,
-                        channel_type,
-                        run_ts_obj.dataset[comp].values,
-                        channel_metadata=ch_metadata,
-                        **kwargs
+
+            if ch.run_metadata.id is not None:
+                if ch.run_metadata.id != self.metadata.id:
+                    self.logger.warning(
+                        f"Channel run.id {ch.run_metadata.id} != "
+                        + f" group run.id {self.metadata.id}"
                     )
+
+            channels.append(
+                self.add_channel(
+                    comp,
+                    ch.channel_metadata.type,
+                    ch.ts,
+                    channel_metadata=ch.channel_metadata,
+                    **kwargs
                 )
+            )
         return channels
 
     def from_channel_ts(self, channel_ts_obj):
@@ -1471,8 +1420,6 @@ class RunGroup(BaseGroup):
         :rtype: TYPE
 
         """
-
-        self.logger.debug("Updating run metadata from summary table.")
         channels_recorded = self.channel_summary.component.to_list()
         self.metadata.channels_recorded_electric = [
             cc for cc in channels_recorded if cc[0] in ["e"]
@@ -1554,13 +1501,6 @@ class ChannelDataset:
             self.metadata.hdf5_reference = self.hdf5_dataset.ref
             self.metadata.mth5_type = self._class_name
 
-        # set summary attributes
-        self.logger.debug(
-            "Metadata class for {0} is {1}".format(
-                self._class_name, type(self.metadata)
-            )
-        )
-
         # if the input data set already has filled attributes, namely if the
         # channel data already exists then read them in with our writing back
         if "mth5_type" in list(self.hdf5_dataset.attrs.keys()):
@@ -1572,11 +1512,9 @@ class ChannelDataset:
         # to the hdf5 dataset
         if dataset_metadata is not None:
             if not isinstance(dataset_metadata, type(self.metadata)):
-                msg = "metadata must be type metadata.{0} not {1}".format(
-                    self._class_name, type(dataset_metadata)
-                )
-                self.logger.error(msg)
-                raise MTH5Error(msg)
+                msg = "metadata must be type metadata.%s not %s"
+                self.logger.error(msg, self._class_name, type(dataset_metadata))
+                raise MTH5Error(msg % self._class_name, type(dataset_metadata))
 
             # load from dict because of the extra attributes for MTH5
             self.metadata.from_dict(dataset_metadata.to_dict())
@@ -1731,7 +1669,6 @@ class ChannelDataset:
         meta_dict = self.metadata.to_dict()[self.metadata._class_name.lower()]
         for key, value in meta_dict.items():
             value = to_numpy_type(value)
-            self.logger.debug("wrote metadata {0} = {1}".format(key, value))
             self.hdf5_dataset.attrs.create(key, value)
 
     def replace_dataset(self, new_data_array):
@@ -1751,15 +1688,8 @@ class ChannelDataset:
                 raise TypeError(msg)
 
         if new_data_array.shape != self.hdf5_dataset.shape:
-            msg = (
-                f"resizing dataset {self.hdf5_dataset.name} "
-                + f"from {self.hdf5_dataset.shape} to "
-                + f"{new_data_array.shape}"
-            )
-            self.logger.debug(msg)
             self.hdf5_dataset.resize(new_data_array.shape)
         self.hdf5_dataset[...] = new_data_array
-        self.logger.debug(f"replacing {self.hdf5_dataset.name}")
 
     def extend_dataset(
         self,
@@ -1867,11 +1797,11 @@ class ChannelDataset:
         start_t_diff = self._get_diff_new_array_start(start_time)
         end_t_diff = self._get_diff_new_array_end(end_time)
 
-        self.logger.debug("Extending data.")
-        self.logger.debug(f"Existing start time {self.start}")
-        self.logger.debug(f"New start time      {start_time}")
-        self.logger.debug(f"Existing end time   {self.end}")
-        self.logger.debug(f"New end time        {end_time}")
+        self.logger.info("Extending data.")
+        self.logger.info(f"Existing start time {self.start}")
+        self.logger.info(f"New start time      {start_time}")
+        self.logger.info(f"Existing end time   {self.end}")
+        self.logger.info(f"New end time        {end_time}")
 
         # prepend data
         if start_t_diff < 0:
@@ -1961,7 +1891,6 @@ class ChannelDataset:
                         )
                     ] = fill_value
             else:
-                self.logger.debug("Prepending data with overlaps.")
                 new_size = (self.n_samples + int(abs(start_t_diff) * sample_rate),)
                 overlap = abs(end_time - self.start)
                 self.logger.warning(
@@ -2076,7 +2005,6 @@ class ChannelDataset:
                         )
                     ] = new_data_array
                 else:
-                    self.logger.debug("Appending data with overlaps.")
                     new_size = (self.n_samples + int(abs(start_t_diff) * sample_rate),)
                     overlap = abs(self.end - start_time)
                     self.logger.warning(
@@ -2540,16 +2468,6 @@ class ChannelDataset:
             periods=npts,
             freq=dt_freq,
             closed=None,
-        )
-
-        self.logger.debug(
-            f"Slicing from {dt_index[0]} (index={start_index}) to"
-            + f"{dt_index[-1]} (index={end_index})"
-        )
-
-        self.logger.debug(
-            f"Slice start={dt_index[0]}, stop={dt_index[-1]}, "
-            + f"step={dt_freq}, n_samples={npts}"
         )
 
         meta_dict = self.metadata.to_dict()[self.metadata._class_name]
