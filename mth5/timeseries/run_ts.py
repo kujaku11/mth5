@@ -54,7 +54,12 @@ class RunTS:
         self.run_metadata = metadata.Run()
         self.station_metadata = metadata.Station()
         self._dataset = xr.Dataset()
+        
+        # load the arrays first this will write run and station metadata
+        if array_list is not None:
+            self.dataset = array_list
 
+        # if the use inputs metadata, overwrite all values in the metadata element
         if run_metadata is not None:
             if isinstance(run_metadata, dict):
                 # make sure the input dictionary has the correct form
@@ -90,8 +95,7 @@ class RunTS:
                 self.logger.error(msg)
                 raise MTTSError(msg)
 
-        if array_list is not None:
-            self.dataset = array_list
+        
 
     def __str__(self):
         s_list = [
@@ -123,6 +127,16 @@ class RunTS:
                 raise TypeError(msg)
             if isinstance(item, ChannelTS):
                 valid_list.append(item.to_xarray())
+                
+                # if a channelTS is input then it comes with run and station metadata
+                # use those first, then the user can update later.
+                self.run_metadata.channels.append(item.channel_metadata)
+                if index == 0:
+                    self.station_metadata.from_dict(item.station_metadata.to_dict())
+                    self.run_metadata.from_dict(item.run_metadata.to_dict())
+                else:
+                    self.station_metadata.update(item.station_metadata, match=["id"])
+                    self.run_metadata.update(item.run_metadata, match=["id"])
             else:
                 valid_list.append(item)
 
@@ -230,6 +244,8 @@ class RunTS:
                     self.run_metadata.channels_recorded_magnetic.append(ch)
                 else:
                     self.run_metadata.channels_recorded_auxiliary.append(ch)
+                    
+            self.station_metadata.runs.append(self.run_metadata)
 
     def set_dataset(self, array_list, align_type="outer"):
         """
@@ -258,7 +274,7 @@ class RunTS:
         xdict = dict([(x.component.lower(), x) for x in x_array_list])
         self._dataset = xr.Dataset(xdict)
         self.validate_metadata()
-        self._dataset.attrs.update(self.run_metadata.to_dict()["run"])
+        self._dataset.attrs.update(self.run_metadata.to_dict(single=True))
 
     def add_channel(self, channel):
         """
@@ -285,6 +301,7 @@ class RunTS:
             c.ts = channel
         elif isinstance(channel, ChannelTS):
             c = channel
+            self.run_metadata.runs.append(c.channel_metadata)
         else:
             raise ValueError("Input Channel must be type xarray.DataArray or ChannelTS")
 

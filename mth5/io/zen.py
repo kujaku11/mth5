@@ -179,7 +179,7 @@ class Z3DHeader:
                     elif len(hh.split(":", 1)) == 2:
                         m_key, m_value = hh.split(":", 1)
                     else:
-                        print(hh)
+                        self.logger.warning("found %s", hh)
 
                     m_key = (
                         m_key.strip()
@@ -703,6 +703,8 @@ class Z3D:
 
         self.units = "counts"
         self.sample_rate = None
+        
+        self.ch_dict = {"hx": 1, "hy": 2, "hz": 3, "ex":4, "ey":5}
 
     @property
     def station(self):
@@ -847,6 +849,16 @@ class Z3D:
             return self.metadata.ch_number
         else:
             return None
+        
+    @property
+    def channel_number(self):
+        ch_num = int(float(self.metadata.ch_number))
+        if ch_num > 6:
+            try:
+                ch_num = self.ch_dict[self.component]
+            except KeyError:
+                ch_num = 6
+        return ch_num
 
     @property
     def channel_metadata(self):
@@ -880,17 +892,19 @@ class Z3D:
                     "sensor.manufacturer": "Geotell",
                     "sensor.model": "ANT-4",
                     "sensor.type": "induction coil",
+                    "filter.name": [f"ant4_{self.coil_num}_response"],
+                    "filter.applied": [False],
                 }
             }
             self.logger.debug("Making Magnetic Channel")
 
-        meta_dict[ts_type]["time_period.start"] = self.start.iso_str
-        meta_dict[ts_type]["time_period.end"] = self.end.iso_str
+        meta_dict[ts_type]["time_period.start"] = self.start.isoformat()
+        meta_dict[ts_type]["time_period.end"] = self.end.isoformat()
         meta_dict[ts_type]["component"] = self.component
         meta_dict[ts_type]["sample_rate"] = self.sample_rate
         meta_dict[ts_type]["measurement_azimuth"] = self.azimuth
-        meta_dict[ts_type]["units"] = "counts"
-        meta_dict[ts_type]["channel_number"] = self.metadata.ch_number
+        meta_dict[ts_type]["units"] = "digital counts"
+        meta_dict[ts_type]["channel_number"] = self.channel_number
 
         return meta_dict
 
@@ -904,6 +918,8 @@ class Z3D:
         meta_dict["location.latitude"] = self.latitude
         meta_dict["location.longitude"] = self.longitude
         meta_dict["location.elevation"] = self.elevation
+        meta_dict["time_period.start"] = self.start.isoformat()
+        meta_dict["time_period.end"] = self.end.isoformat()
 
         return {"Station": meta_dict}
 
@@ -915,10 +931,12 @@ class Z3D:
         meta_dict["data_logger.id"] = self.header.data_logger
         meta_dict["data_logger.manufacturer"] = "Zonge International"
         meta_dict["data_logger.model"] = "ZEN"
-        meta_dict["time_period.start"] = self.start.iso_str
-        meta_dict["time_period.end"] = self.end.iso_str
+        meta_dict["time_period.start"] = self.start.isoformat()
+        meta_dict["time_period.end"] = self.end.isoformat()
         meta_dict["sample_rate"] = self.sample_rate
         meta_dict["data_type"] = "MTBB"
+        meta_dict["time_period.start"] = self.start.isoformat()
+        meta_dict["time_period.end"] = self.end.isoformat()
 
         return {"Run": meta_dict}
 
