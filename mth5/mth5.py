@@ -224,7 +224,7 @@ class MTH5:
         self,
         filename=None,
         compression="gzip",
-        compression_opts=3,
+        compression_opts=9,
         shuffle=True,
         fletcher32=True,
         data_level=1,
@@ -237,9 +237,9 @@ class MTH5:
         (self.__compression, self.__compression_opts,) = helpers.validate_compression(
             compression, compression_opts
         )
-        self.__shuffle = True
-        self.__fletcher32 = True
-        self.__data_level = 1
+        self.__shuffle = shuffle
+        self.__fletcher32 = fletcher32
+        self.__data_level = data_level
         self.__filename = None
         self.filename = filename
 

@@ -1080,7 +1080,7 @@ class RunGroup(BaseGroup):
         channel_name,
         channel_type,
         data,
-        channel_dtype="f",
+        channel_dtype="i32",
         max_shape=(None,),
         chunks=True,
         channel_metadata=None,
@@ -1131,7 +1131,6 @@ class RunGroup(BaseGroup):
                 channel_group = self.hdf5_group.create_dataset(
                     channel_name,
                     data=data,
-                    maxshape=max_shape,
                     dtype=data.dtype,
                     chunks=chunks,
                     **self.dataset_options,
@@ -1316,7 +1315,7 @@ class RunGroup(BaseGroup):
             ch_list.append(ts_obj)
         return RunTS(ch_list, run_metadata=self.metadata)
 
-    def from_runts(self, run_ts_obj):
+    def from_runts(self, run_ts_obj, **kwargs):
         """
         create channel datasets from a :class:`mth5.timeseries.RunTS` object 
         and update metadata.  
@@ -1389,6 +1388,7 @@ class RunGroup(BaseGroup):
                     channel_type,
                     run_ts_obj.dataset[comp].values,
                     channel_metadata=ch_metadata,
+                    **kwargs
                 )
             )
         return channels
