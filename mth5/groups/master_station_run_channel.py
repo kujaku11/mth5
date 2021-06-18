@@ -1135,8 +1135,7 @@ class RunGroup(BaseGroup):
                     chunks=chunks,
                     **self.dataset_options,
                 )
-                
-                
+
             if channel_metadata.component is None:
                 channel_metadata.component = channel_name
 
@@ -1159,7 +1158,6 @@ class RunGroup(BaseGroup):
                 )
                 self.logger.error(msg)
                 raise MTH5Error(msg)
-
 
         except (OSError, RuntimeError):
             msg = (
@@ -1349,7 +1347,7 @@ class RunGroup(BaseGroup):
                     ch.channel_metadata.type,
                     ch.ts,
                     channel_metadata=ch.channel_metadata,
-                    **kwargs
+                    **kwargs,
                 )
             )
         return channels

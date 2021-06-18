@@ -203,9 +203,9 @@ class StandardsGroup(BaseGroup):
 
         self.logger.debug(
             "Created %s table with max_shape = %s, dtype=%s",
-                self._defaults_summary_attrs["name"],
-                self._defaults_summary_attrs["max_shape"],
-                self._defaults_summary_attrs["dtype"],
+            self._defaults_summary_attrs["name"],
+            self._defaults_summary_attrs["max_shape"],
+            self._defaults_summary_attrs["dtype"],
         )
         self.logger.debug(
             "used options: "

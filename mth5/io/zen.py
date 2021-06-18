@@ -703,8 +703,8 @@ class Z3D:
 
         self.units = "counts"
         self.sample_rate = None
-        
-        self.ch_dict = {"hx": 1, "hy": 2, "hz": 3, "ex":4, "ey":5}
+
+        self.ch_dict = {"hx": 1, "hy": 2, "hz": 3, "ex": 4, "ey": 5}
 
     @property
     def station(self):
@@ -849,7 +849,7 @@ class Z3D:
             return self.metadata.ch_number
         else:
             return None
-        
+
     @property
     def channel_number(self):
         ch_num = int(float(self.metadata.ch_number))

@@ -120,17 +120,9 @@ class SurveyGroup(BaseGroup):
         self.metadata.time_period.end_date = (
             station_summary.end.max().isoformat().split("T")[0]
         )
-        self.metadata.northwest_corner.latitude = (
-            station_summary.latitude.max()
-        )
-        self.metadata.northwest_corner.longitude = (
-            station_summary.longitude.min()
-        )
-        self.metadata.southeast_corner.latitude = (
-            station_summary.latitude.min()
-        )
-        self.metadata.southeast_corner.longitude = (
-            station_summary.longitude.max()
-        )
+        self.metadata.northwest_corner.latitude = station_summary.latitude.max()
+        self.metadata.northwest_corner.longitude = station_summary.longitude.min()
+        self.metadata.southeast_corner.latitude = station_summary.latitude.min()
+        self.metadata.southeast_corner.longitude = station_summary.longitude.max()
 
         self.write_metadata()

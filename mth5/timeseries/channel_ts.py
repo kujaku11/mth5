@@ -193,8 +193,12 @@ class ChannelTS:
 
             else:
                 msg = "input metadata must be type %s or dict, not %s"
-                self.logger.error(msg, type(self.channel_metadata), type(channel_metadata))
-                raise MTTSError(msg % (type(self.channel_metadata), type(channel_metadata)))
+                self.logger.error(
+                    msg, type(self.channel_metadata), type(channel_metadata)
+                )
+                raise MTTSError(
+                    msg % (type(self.channel_metadata), type(channel_metadata))
+                )
 
         # add station metadata, this will be important when propogating a single
         # channel such that it can stand alone.

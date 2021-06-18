@@ -54,7 +54,7 @@ class RunTS:
         self.run_metadata = metadata.Run()
         self.station_metadata = metadata.Station()
         self._dataset = xr.Dataset()
-        
+
         # load the arrays first this will write run and station metadata
         if array_list is not None:
             self.dataset = array_list
@@ -89,10 +89,12 @@ class RunTS:
 
             else:
                 msg = "input metadata must be type %s or dict, not %s"
-                self.logger.error(msg, type(self.station_metadata), type(station_metadata))
-                raise MTTSError(msg % (type(self.station_metadata), type(station_metadata)))
-
-        
+                self.logger.error(
+                    msg, type(self.station_metadata), type(station_metadata)
+                )
+                raise MTTSError(
+                    msg % (type(self.station_metadata), type(station_metadata))
+                )
 
     def __str__(self):
         s_list = [
@@ -124,7 +126,7 @@ class RunTS:
                 raise TypeError(msg)
             if isinstance(item, ChannelTS):
                 valid_list.append(item.to_xarray())
-                
+
                 # if a channelTS is input then it comes with run and station metadata
                 # use those first, then the user can update later.
                 self.run_metadata.channels.append(item.channel_metadata)
@@ -241,7 +243,7 @@ class RunTS:
                     self.run_metadata.channels_recorded_magnetic.append(ch)
                 else:
                     self.run_metadata.channels_recorded_auxiliary.append(ch)
-                    
+
             self.station_metadata.runs.append(self.run_metadata)
 
     def set_dataset(self, array_list, align_type="outer"):
