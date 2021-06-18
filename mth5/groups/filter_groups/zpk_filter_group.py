@@ -71,16 +71,15 @@ class ZPKGroup(BaseGroup):
             dtype=np.dtype([("real", np.float), ("imag", np.float)]),
             **self.dataset_options,
         )
-
-        # when filling data need to fill the full row for what ever reason.
-        poles_ds[:] = [(pr, pi) for pr, pi in zip(poles.real, poles.imag)]
-
         zeros_ds = zpk_filter_group.create_dataset(
             "zeros",
             zeros.shape,
             dtype=np.dtype([("real", np.float), ("imag", np.float)]),
             **self.dataset_options,
         )
+
+        # when filling data need to fill the full row for what ever reason.
+        poles_ds[:] = [(pr, pi) for pr, pi in zip(poles.real, poles.imag)]
         zeros_ds[:] = [(pr, pi) for pr, pi in zip(zeros.real, zeros.imag)]
 
         # fill in the metadata

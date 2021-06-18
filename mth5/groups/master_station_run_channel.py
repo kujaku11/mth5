@@ -1133,6 +1133,7 @@ class RunGroup(BaseGroup):
                     data=data,
                     dtype=data.dtype,
                     chunks=chunks,
+                    maxshape=max_shape,
                     **self.dataset_options,
                 )
             # initialize an resizable data array
@@ -1381,16 +1382,27 @@ class RunGroup(BaseGroup):
 
             ch_metadata.from_dict({channel_type: ch_dict})
             ch_metadata.hdf5_type = channel_type
-
-            channels.append(
-                self.add_channel(
-                    comp,
-                    channel_type,
-                    run_ts_obj.dataset[comp].values,
-                    channel_metadata=ch_metadata,
-                    **kwargs
+            
+            try:
+                if kwargs["compression"] is None:
+                    channels.append(
+                        self.add_channel(
+                            comp,
+                            channel_type,
+                            run_ts_obj.dataset[comp].values,
+                            channel_metadata=ch_metadata,
+                        )
+                    )
+            except KeyError:
+                channels.append(
+                    self.add_channel(
+                        comp,
+                        channel_type,
+                        run_ts_obj.dataset[comp].values,
+                        channel_metadata=ch_metadata,
+                        **kwargs
+                    )
                 )
-            )
         return channels
 
     def from_channel_ts(self, channel_ts_obj):
@@ -1474,6 +1486,7 @@ class RunGroup(BaseGroup):
 
         self.metadata.time_period.start = self.channel_summary.start.min().isoformat()
         self.metadata.time_period.end = self.channel_summary.end.max().isoformat()
+        self.write_metadata()
 
 
 class ChannelDataset:

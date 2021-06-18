@@ -73,10 +73,10 @@ class BaseGroup:
     """
 
     def __init__(self, group, group_metadata=None, **kwargs):
-        self.compression = "gzip"
-        self.compression_opts = 3
-        self.shuffle = True
-        self.fletcher32 = True
+        self.compression = None
+        self.compression_opts = None
+        self.shuffle = False
+        self.fletcher32 = False
 
         self.logger = setup_logger(f"{__name__}.{self._class_name}")
 

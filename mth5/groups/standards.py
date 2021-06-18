@@ -177,13 +177,21 @@ class StandardsGroup(BaseGroup):
         Also, write generic metadata information.
 
         """
-        summary_dataset = self.hdf5_group.create_dataset(
-            self._defaults_summary_attrs["name"],
-            (0,),
-            maxshape=self._defaults_summary_attrs["max_shape"],
-            dtype=self._defaults_summary_attrs["dtype"],
-            **self.dataset_options,
-        )
+        if self.dataset_options["compression"] is None:
+            summary_dataset = self.hdf5_group.create_dataset(
+                self._defaults_summary_attrs["name"],
+                (0,),
+                maxshape=self._defaults_summary_attrs["max_shape"],
+                dtype=self._defaults_summary_attrs["dtype"],
+            )
+        else:
+            summary_dataset = self.hdf5_group.create_dataset(
+                self._defaults_summary_attrs["name"],
+                (0,),
+                maxshape=self._defaults_summary_attrs["max_shape"],
+                dtype=self._defaults_summary_attrs["dtype"],
+                **self.dataset_options,
+            )
 
         summary_dataset.attrs.update(
             {
@@ -194,15 +202,14 @@ class StandardsGroup(BaseGroup):
         )
 
         self.logger.debug(
-            "Created {0} table with max_shape = {1}, dtype={2}".format(
+            "Created %s table with max_shape = %s, dtype=%s",
                 self._defaults_summary_attrs["name"],
                 self._defaults_summary_attrs["max_shape"],
                 self._defaults_summary_attrs["dtype"],
-            )
         )
         self.logger.debug(
             "used options: "
-            + "; ".join([f"{k} = {v}" for k, v in self.dataset_options.items()])
+            + "; ".join(["%s = %s" % (k, v) for k, v in self.dataset_options.items()])
         )
 
         self.summary_table_from_dict(summarize_metadata_standards())

@@ -1136,7 +1136,7 @@ class Z3D:
         if Z3Dfn is not None:
             self.fn = Z3Dfn
 
-        self.logger.info(f"Reading {self.fn}")
+        self.logger.debug(f"Reading {self.fn}")
         st = datetime.datetime.now()
 
         # get the file size to get an estimate of how many data points there are
@@ -1231,13 +1231,13 @@ class Z3D:
         self.convert_gps_time()
         self.zen_schedule = self.check_start_time()
 
-        self.logger.info(f"found {self.gps_stamps.shape[0]} GPS time stamps")
-        self.logger.info(f"found {self.time_series.size} data points")
+        self.logger.debug(f"found {self.gps_stamps.shape[0]} GPS time stamps")
+        self.logger.debug(f"found {self.time_series.size} data points")
 
         # time it
         et = datetime.datetime.now()
         read_time = (et - st).total_seconds()
-        self.logger.info(f"Reading data took: {read_time:.3f} seconds")
+        self.logger.debug(f"Reading data took: {read_time:.3f} seconds")
 
     # =================================================
     def get_gps_stamp_index(self, ts_data, old_version=False):
@@ -1293,9 +1293,9 @@ class Z3D:
 
         # estimate the time difference between the two
         time_diff = zen_start_utc - self.schedule.initial_start
-        self.logger.info(f"Scheduled time was {self.schedule.initial_start}")
-        self.logger.info(f"1st good stamp was {zen_start_utc}")
-        self.logger.info(f"difference of {time_diff:.2f} seconds")
+        self.logger.debug(f"Scheduled time was {self.schedule.initial_start}")
+        self.logger.debug(f"1st good stamp was {zen_start_utc}")
+        self.logger.debug(f"difference of {time_diff:.2f} seconds")
 
         return zen_start_utc
 
@@ -1477,11 +1477,13 @@ class ZenInputFileError(Exception):
     pass
 
 
-def read_z3d(fn):
+def read_z3d(fn, logger_file_handler=None):
     """
     generic tool to read z3d file
     """
 
     z3d_obj = Z3D(fn)
+    if logger_file_handler:
+        z3d_obj.logger.addHandler(logger_file_handler)
     z3d_obj.read_z3d()
     return z3d_obj.to_channelts()

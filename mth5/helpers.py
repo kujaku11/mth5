@@ -52,6 +52,8 @@ def validate_compression(compression, level):
     :raises: TypeError if compression level is not a string
 
     """
+    if compression is None:
+        return None, 0
     if not isinstance(compression, (str, type(None))):
         msg = "compression type must be a string, not {0}".format(type(compression))
         logger.error(msg)
