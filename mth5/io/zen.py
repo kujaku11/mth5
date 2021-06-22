@@ -868,6 +868,8 @@ class Z3D:
         if "e" in self.component:
             ts_type = "electric"
             meta_dict = {"electric": {"dipole_length": self.dipole_len}}
+            meta_dict[ts_type]["filter.name"] = ["counts2mv"]
+            meta_dict[ts_type]["filter.applied"] = [False]
             meta_dict[ts_type]["ac.start"] = (
                 self.time_series[0 : int(self.sample_rate)].std()
                 * self.header.ch_factor
@@ -883,7 +885,6 @@ class Z3D:
                 self.time_series[-int(self.sample_rate) :].mean()
                 * self.header.ch_factor
             )
-            self.logger.debug("Making Electric Channel")
         elif "h" in self.component:
             ts_type = "magnetic"
             meta_dict = {
@@ -892,10 +893,25 @@ class Z3D:
                     "sensor.manufacturer": "Geotell",
                     "sensor.model": "ANT-4",
                     "sensor.type": "induction coil",
-                    "filter.name": [f"ant4_{self.coil_num}_response"],
-                    "filter.applied": [False],
+                    "filter.name": ["counts2mv", f"ant4_{self.coil_num}_response"],
+                    "filter.applied": [False, False],
                 }
             }
+            meta_dict[ts_type]["h_field_max.start"] = (
+                self.time_series[0 : int(self.sample_rate)].max()
+                * self.header.ch_factor
+            )
+            meta_dict[ts_type]["h_field_max.end"] = (
+                self.time_series[-int(self.sample_rate) :].max() * self.header.ch_factor
+            )
+            meta_dict[ts_type]["h_field_min.start"] = (
+                self.time_series[0 : int(self.sample_rate)].min()
+                * self.header.ch_factor
+            )
+            meta_dict[ts_type]["h_field_min.end"] = (
+                self.time_series[-int(self.sample_rate) :].min()
+                * self.header.ch_factor
+            )
 
         meta_dict[ts_type]["time_period.start"] = self.start.isoformat()
         meta_dict[ts_type]["time_period.end"] = self.end.isoformat()
