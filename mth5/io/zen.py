@@ -30,6 +30,10 @@ import logging
 import numpy as np
 
 from mt_metadata.utils.mttime import MTime
+from mt_metadata.timeseries.filters import (
+    ChannelResponseFilter, 
+    FrequencyResponseTableFilter,
+    CoefficientFilter)
 from mth5.timeseries import ChannelTS
 
 # ==============================================================================
@@ -474,7 +478,9 @@ class Z3DMetadata:
             if "metadata" in test_str:
                 self.count += 1
                 test_str = test_str.strip().split("record")[1].strip()
-                if test_str.count("|") > 1:
+                
+                # split the metadata records with key=value style
+                if test_str.count("|") >= 1 and test_str.count(",") == 0: 
                     for t_str in test_str.split("|"):
                         # get metadata name and value
                         if (
@@ -538,7 +544,7 @@ class Z3DMetadata:
                             [float(tt.strip()) for tt in t_str.split(":")]
                         )
                 elif cal_find and self.count > 3:
-                    t_list = test_str.split(",")
+                    t_list = test_str.replace("|", ",").split(",")
                     for t_str in t_list:
                         if "\x00" in t_str:
                             break
@@ -954,6 +960,70 @@ class Z3D:
         meta_dict["time_period.end"] = self.end.isoformat()
 
         return {"Run": meta_dict}
+    
+    @property
+    def counts2mv_filter(self):
+        """
+        Create a counts2mv coefficient filter
+        """
+        
+        c2mv = CoefficientFilter()
+        c2mv.units_in = "digital counts"
+        c2mv.units_out = "millivolts"
+        c2mv.name = "zen_counts2mv"
+        c2mv.gain = self.header.ch_factor
+        c2mv.comments = "digital counts to millivolts"
+        
+        return c2mv
+    
+    @property
+    def coil_response(self):
+        """
+        Make the coile response into a FAP filter
+        """
+        fap = None
+        if self.metadata.cal_ant is not None:
+            fap = FrequencyResponseTableFilter() 
+            fap.units_in = "millivolts"
+            fap.units_out = "nanotesla"
+            fap.frequencies = self.metadata.coil_cal.frequency
+            fap.amplitudes = self.metadata.coil_cal.amplitude
+            fap.phases = np.rad2deg(self.metadata.coil_cal.phase/1E3)
+            fap.name = f"ant4_{self.coil_num}_response"
+            fap.comments = "induction coil response read from z3d file"
+            
+        return fap
+    
+    @property
+    def zen_response(self):
+        fap = None
+        if self.metadata.board_cal is not None:
+            if self.metadata.board_cal[0][0] == '':
+                return fap
+            sr_dict = {256: 0, 1024: 1, 4096:4}
+            sr_int = sr_dict[int(self.sample_rate)]
+            fap_table = self.metadata.board_cal[np.where(self.metadata.board_cal.rate==sr_int)]
+            fap = FrequencyResponseTableFilter() 
+            fap.units_in = "millivolts"
+            fap.units_out = "millivolts"
+            fap.frequencies = fap_table.frequency
+            fap.amplitudes = fap_table.amplitude
+            fap.phases = np.rad2deg(fap_table.phase/1E3)
+            fap.name = f"{self.header.data_logger.lower()}_response"
+            fap.comments = "data logger response read from z3d file"
+            
+        return fap
+    
+    @property
+    def channel_response(self):
+        filter_list = [self.counts2mv_filter]
+        if self.zen_response:
+            filter_list.append(self.zen_response)
+        if self.coil_response:
+            filter_list.append(self.coil_response)
+
+        return ChannelResponseFilter(filters_list=filter_list)
+        
 
     @property
     def filter_metadata(self):
