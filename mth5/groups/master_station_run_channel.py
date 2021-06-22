@@ -263,7 +263,7 @@ class MasterStationGroup(BaseGroup):
 
         """
         if station_name is None:
-            raise Exception
+            raise Exception("station name is None, do not know what to name it")
         try:
             station_group = self.hdf5_group.create_group(station_name)
             self.logger.debug("Created group %s", station_group.name)

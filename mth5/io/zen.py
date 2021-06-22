@@ -480,7 +480,7 @@ class Z3DMetadata:
                 test_str = test_str.strip().split("record")[1].strip()
                 
                 # split the metadata records with key=value style
-                if test_str.count("|") >= 1 and test_str.count(",") == 0: 
+                if test_str.count("|") > 1: 
                     for t_str in test_str.split("|"):
                         # get metadata name and value
                         if (
@@ -727,12 +727,13 @@ class Z3D:
         self.metadata.station = station
 
     @property
-    def dipole_len(self):
+    def dipole_length(self):
         """
         dipole length
         """
+        length = 0
         if self.metadata.ch_length is not None:
-            return self.metadata.ch_length
+            length = float(self.metadata.ch_length)
         elif hasattr(self.metadata, "ch_offset_xyz1"):
             # only ex and ey have xyz2
             if hasattr(self.metadata, "ch_offset_xyz2"):
@@ -743,14 +744,16 @@ class Z3D:
                     float(offset) for offset in self.metadata.ch_offset_xyz2.split(":")
                 ]
                 length = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2)
-                return np.round(length, 2)
+                length = np.round(length, 2)
             else:
-                return 0
+                length = 0
         elif self.metadata.ch_xyz1 is not None:
             x1, y1 = [float(d) for d in self.metadata.ch_xyz1.split(":")]
             x2, y2 = [float(d) for d in self.metadata.ch_xyz2.split(":")]
             length = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2) * 100.0
-            return np.round(length, 2)
+            length = np.round(length, 2)
+            
+        return length
 
     @property
     def azimuth(self):
@@ -873,9 +876,7 @@ class Z3D:
         # fill the time series object
         if "e" in self.component:
             ts_type = "electric"
-            meta_dict = {"electric": {"dipole_length": self.dipole_len}}
-            meta_dict[ts_type]["filter.name"] = ["counts2mv"]
-            meta_dict[ts_type]["filter.applied"] = [False]
+            meta_dict = {"electric": {"dipole_length": self.dipole_length}}
             meta_dict[ts_type]["ac.start"] = (
                 self.time_series[0 : int(self.sample_rate)].std()
                 * self.header.ch_factor
@@ -899,8 +900,6 @@ class Z3D:
                     "sensor.manufacturer": "Geotell",
                     "sensor.model": "ANT-4",
                     "sensor.type": "induction coil",
-                    "filter.name": ["counts2mv", f"ant4_{self.coil_num}_response"],
-                    "filter.applied": [False, False],
                 }
             }
             meta_dict[ts_type]["h_field_max.start"] = (
@@ -926,7 +925,9 @@ class Z3D:
         meta_dict[ts_type]["measurement_azimuth"] = self.azimuth
         meta_dict[ts_type]["units"] = "digital counts"
         meta_dict[ts_type]["channel_number"] = self.channel_number
-
+        meta_dict[ts_type]["filter.name"] = self.channel_response.names
+        meta_dict[ts_type]["filter.applied"] = [False] * len(self.channel_response.names)
+        
         return meta_dict
 
     @property
@@ -1021,8 +1022,24 @@ class Z3D:
             filter_list.append(self.zen_response)
         if self.coil_response:
             filter_list.append(self.coil_response)
+        if self.dipole_filter:
+            filter_list.append(self.dipole_filter)
 
         return ChannelResponseFilter(filters_list=filter_list)
+    
+    @property
+    def dipole_filter(self):
+        dipole = None
+        if self.dipole_length != 0:
+            dipole = CoefficientFilter()
+            dipole.units_in = "millivolts"
+            dipole.units_out = "millivolts per kilometer"
+            dipole.name = f"{self.header.data_logger}_{self.component}_dipole"
+            dipole.gain = self.dipole_length / 1000.
+            dipole.comments = "convert to electric field"
+            
+        return dipole
+            
         
 
     @property
