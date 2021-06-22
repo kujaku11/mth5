@@ -1010,7 +1010,7 @@ class Z3D:
             fap.frequencies = fap_table.frequency
             fap.amplitudes = fap_table.amplitude
             fap.phases = np.rad2deg(fap_table.phase/1E3)
-            fap.name = f"{self.header.data_logger.lower()}_response"
+            fap.name = f"{self.header.data_logger.lower()}_{self.sample_rate:.0f}_response"
             fap.comments = "data logger response read from z3d file"
             
         return fap
@@ -1034,7 +1034,7 @@ class Z3D:
             dipole = CoefficientFilter()
             dipole.units_in = "millivolts"
             dipole.units_out = "millivolts per kilometer"
-            dipole.name = f"{self.header.data_logger}_{self.component}_dipole"
+            dipole.name = f"{self.station}_{self.component}_dipole"
             dipole.gain = self.dipole_length / 1000.
             dipole.comments = "convert to electric field"
             

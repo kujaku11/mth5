@@ -588,8 +588,8 @@ class StationGroup(BaseGroup):
             dtype=np.dtype(
                 [
                     ("id", "U5"),
-                    ("start", "datetime64[s]"),
-                    ("end", "datetime64[s]"),
+                    ("start", "datetime64[ns]"),
+                    ("end", "datetime64[ns]"),
                     ("components", "U100"),
                     ("measurement_type", "U12"),
                     ("latitude", np.float),
@@ -989,6 +989,7 @@ class RunGroup(BaseGroup):
         for ch in self.groups_list:
             ch_group = self.get_channel(ch)
             self._metadata.channels.append(ch_group.metadata)
+            self._metadata.hdf5_ref = str(self.hdf5_group.ref)
 
         return self._metadata
 
@@ -1044,8 +1045,8 @@ class RunGroup(BaseGroup):
             dtype=np.dtype(
                 [
                     ("id", "U20"),
-                    ("start", "datetime64[s]"),
-                    ("end", "datetime64[s]"),
+                    ("start", "datetime64[ns]"),
+                    ("end", "datetime64[ns]"),
                     ("components", "U100"),
                     ("measurement_type", "U12"),
                     ("sample_rate", np.float),
@@ -2298,8 +2299,8 @@ class ChannelDataset:
             dtype=np.dtype(
                 [
                     ("component", "U20"),
-                    ("start", "datetime64[s]"),
-                    ("end", "datetime64[s]"),
+                    ("start", "datetime64[ns]"),
+                    ("end", "datetime64[ns]"),
                     ("n_samples", np.int),
                     ("measurement_type", "U12"),
                     ("units", "U25"),
@@ -2342,8 +2343,8 @@ class ChannelDataset:
                     ("longitude", np.float),
                     ("elevation", np.float),
                     ("component", "U20"),
-                    ("start", "datetime64[s]"),
-                    ("end", "datetime64[s]"),
+                    ("start", "datetime64[ns]"),
+                    ("end", "datetime64[ns]"),
                     ("n_samples", np.int),
                     ("sample_rate", np.float),
                     ("measurement_type", "U12"),

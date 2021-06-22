@@ -203,15 +203,6 @@ class RunTS:
 
         # check sampling rate
         if self.has_data:
-            if self.sample_rate != self.run_metadata.sample_rate:
-                msg = (
-                    f"sample rate of dataset {self.sample_rate} does not "
-                    f"match metadata sample rate {self.run_metadata.sample_rate} "
-                    f"updating metatdata value to {self.sample_rate}"
-                )
-                self.logger.warning(msg)
-                self.run_metadata.sample_rate = self.sample_rate
-
             # check start time
             if self.start != self.run_metadata.time_period.start:
                 msg = (
@@ -231,6 +222,15 @@ class RunTS:
                 )
                 self.logger.warning(msg)
                 self.run_metadata.time_period.end = self.end.iso_str
+                
+            if self.sample_rate != self.run_metadata.sample_rate:
+                msg = (
+                    f"sample rate of dataset {self.sample_rate} does not "
+                    f"match metadata sample rate {self.run_metadata.sample_rate} "
+                    f"updating metatdata value to {self.sample_rate}"
+                )
+                self.logger.warning(msg)
+                self.run_metadata.sample_rate = self.sample_rate
 
             # update channels recorded
             self.run_metadata.channels_recorded_auxiliary = []
