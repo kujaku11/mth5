@@ -106,7 +106,7 @@ class SurveyGroup(BaseGroup):
     def stations_group(self):
         return MasterStationGroup(self.hdf5_group["Stations"])
 
-    def update_survey_metadata(self):
+    def update_survey_metadata(self, survey_dict=None):
         """
         update start end dates and location corners from stations_group.summary_table
 
@@ -114,6 +114,10 @@ class SurveyGroup(BaseGroup):
 
         station_summary = self.stations_group.station_summary.copy()
         self.logger.debug("Updating survey metadata from stations summary table")
+        
+        if survey_dict:
+            self.metadata.from_dict(survey_dict, skip_none=True)
+        
         self.metadata.time_period.start_date = (
             station_summary.start.min().isoformat().split("T")[0]
         )

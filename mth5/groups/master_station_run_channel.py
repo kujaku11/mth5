@@ -989,7 +989,7 @@ class RunGroup(BaseGroup):
         for ch in self.groups_list:
             ch_group = self.get_channel(ch)
             self._metadata.channels.append(ch_group.metadata)
-            self._metadata.hdf5_ref = str(self.hdf5_group.ref)
+            self._metadata.hdf5_reference = self.hdf5_group.ref
 
         return self._metadata
 

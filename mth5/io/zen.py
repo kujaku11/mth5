@@ -942,6 +942,7 @@ class Z3D:
         meta_dict["location.elevation"] = self.elevation
         meta_dict["time_period.start"] = self.start.isoformat()
         meta_dict["time_period.end"] = self.end.isoformat()
+        meta_dict["acquired_by.author"] = self.metadata.gdp_operator
 
         return {"Station": meta_dict}
 
@@ -959,6 +960,7 @@ class Z3D:
         meta_dict["data_type"] = "MTBB"
         meta_dict["time_period.start"] = self.start.isoformat()
         meta_dict["time_period.end"] = self.end.isoformat()
+        meta_dict["acquired_by.author"] = self.metadata.gdp_operator
 
         return {"Run": meta_dict}
     
