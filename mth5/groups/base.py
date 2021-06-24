@@ -239,9 +239,11 @@ class BaseGroup:
             self.logger.debug("wrote metadata {0} = {1}".format(key, value))
             self.hdf5_group.attrs.create(key, value)
 
-    def initialize_group(self):
+    def initialize_group(self, **kwargs):
         """
         Initialize group by making a summary table and writing metadata
 
         """
+        for key, value in kwargs.items():
+            setattr(self, key, value)
         self.write_metadata()

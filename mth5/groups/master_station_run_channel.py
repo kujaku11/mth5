@@ -1116,6 +1116,7 @@ class RunGroup(BaseGroup):
         if data is not None:
             if data.size < 1024:
                 chunks = None
+
         try:
             if data is not None:
                 print(self.dataset_options)
@@ -1137,8 +1138,9 @@ class RunGroup(BaseGroup):
                     chunks=chunks,
                     **self.dataset_options,
                 )
+                
 
-            if channel_metadata.component is None:
+            if channel_metadata and channel_metadata.component is None:
                 channel_metadata.component = channel_name
 
             if channel_type.lower() in ["magnetic"]:
@@ -1161,7 +1163,7 @@ class RunGroup(BaseGroup):
                 self.logger.error(msg)
                 raise MTH5Error(msg)
 
-        except (OSError, RuntimeError):
+        except (OSError, RuntimeError, ValueError):
             msg = (
                 f"channel {channel_name} already exists, " + "returning existing group."
             )
