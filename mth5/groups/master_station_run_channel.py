@@ -1118,7 +1118,6 @@ class RunGroup(BaseGroup):
 
         try:
             if data is not None:
-                print(self.dataset_options)
                 channel_group = self.hdf5_group.create_dataset(
                     channel_name,
                     data=data,
