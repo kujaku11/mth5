@@ -100,8 +100,6 @@ class BaseGroup:
         # if any other keywords
         for key, value in kwargs.items():
             setattr(self, key, value)
-            
-        print(f"{self.__class__.__name__} compressions: {self.dataset_options}")
 
     def __str__(self):
         try:
