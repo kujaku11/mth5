@@ -510,7 +510,7 @@ class MTH5:
         self.__hdf5_obj.attrs.update(self._file_attrs)
 
         survey_group = self.__hdf5_obj.create_group(self._default_root_name)
-        survey_obj = groups.SurveyGroup(survey_group)
+        survey_obj = groups.SurveyGroup(survey_group, **self.dataset_options)
         survey_obj.write_metadata()
 
         for group_name in self._default_subgroup_names:
