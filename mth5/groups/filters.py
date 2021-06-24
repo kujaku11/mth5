@@ -99,35 +99,35 @@ class FiltersGroup(BaseGroup):
             try:
                 return self.zpk_group.from_object(filter_object)
             except ValueError:
-                self.logger.info("group %s already exists", filter_object.name)
+                self.logger.debug("group %s already exists", filter_object.name)
                 return self.zpk_group.get_filter(filter_object.name)
 
         elif filter_object.type in ["coefficient"]:
             try:
                 return self.coefficient_group.from_object(filter_object)
             except ValueError:
-                self.logger.info("group %s already exists", filter_object.name)
+                self.logger.debug("group %s already exists", filter_object.name)
                 return self.coefficient_group.get_filter(filter_object.name)
 
         elif filter_object.type in ["time_delay", "time delay"]:
             try:
                 return self.time_delay_group.from_object(filter_object)
             except ValueError:
-                self.logger.info("group %s already exists", filter_object.name)
+                self.logger.debug("group %s already exists", filter_object.name)
                 return self.time_delay_group.get_filter(filter_object.name)
 
         elif filter_object.type in ["fap", "frequency response table"]:
             try:
                 return self.fap_group.from_object(filter_object)
             except ValueError:
-                self.logger.info("group %s already exists", filter_object.name)
+                self.logger.debug("group %s already exists", filter_object.name)
                 return self.fap_group.get_filter(filter_object.name)
 
         elif filter_object.type in ["fir"]:
             try:
                 return self.fir_group.from_object(filter_object)
             except ValueError:
-                self.logger.info("group %s already exists", filter_object.name)
+                self.logger.debug("group %s already exists", filter_object.name)
                 return self.fir_group.get_filter(filter_object.name)
 
     def get_filter(self, name):

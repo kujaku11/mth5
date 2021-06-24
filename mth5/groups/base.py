@@ -100,6 +100,8 @@ class BaseGroup:
         # if any other keywords
         for key, value in kwargs.items():
             setattr(self, key, value)
+            
+        print(f"{self.__class__.__name__} compressions: {self.dataset_options}")
 
     def __str__(self):
         try:
@@ -239,9 +241,11 @@ class BaseGroup:
             self.logger.debug("wrote metadata {0} = {1}".format(key, value))
             self.hdf5_group.attrs.create(key, value)
 
-    def initialize_group(self):
+    def initialize_group(self, **kwargs):
         """
         Initialize group by making a summary table and writing metadata
 
         """
+        for key, value in kwargs.items():
+            setattr(self, key, value)
         self.write_metadata()
