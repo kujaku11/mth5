@@ -292,8 +292,7 @@ class MasterStationGroup(BaseGroup):
         except ValueError:
             msg = "Station %s already exists, returning existing group."
             self.logger.info(msg, station_name)
-            station_obj = StationGroup(self.hdf5_group[station_name])
-            station_obj.read_metadata()
+            station_obj = self.get_station(station_name)
 
         return station_obj
 
@@ -322,7 +321,8 @@ class MasterStationGroup(BaseGroup):
         """
 
         try:
-            return StationGroup(self.hdf5_group[station_name], **self.dataset_options)
+            return StationGroup(self.hdf5_group[station_name],
+                                **self.dataset_options)
         except KeyError:
             msg = (
                 f"{station_name} does not exist, "
@@ -706,8 +706,7 @@ class StationGroup(BaseGroup):
         except ValueError:
             msg = f"run {run_name} already exists, " + "returning existing group."
             self.logger.info(msg)
-            run_obj = RunGroup(self.hdf5_group[run_name])
-            run_obj.read_metadata()
+            run_obj = self.get_run(run_name)
 
         return run_obj
 
@@ -1168,13 +1167,14 @@ class RunGroup(BaseGroup):
                 f"channel {channel_name} already exists, " + "returning existing group."
             )
             self.logger.info(msg)
-            if channel_type in ["magnetic"]:
-                channel_obj = MagneticDataset(self.hdf5_group[channel_name])
-            elif channel_type in ["electric"]:
-                channel_obj = ElectricDataset(self.hdf5_group[channel_name])
-            elif channel_type in ["auxiliary"]:
-                channel_obj = AuxiliaryDataset(self.hdf5_group[channel_name])
-            channel_obj.read_metadata()
+            channel_obj = self.get_channel(channel_name)
+            # if channel_type in ["magnetic"]:
+            #     channel_obj = MagneticDataset(self.hdf5_group[channel_name])
+            # elif channel_type in ["electric"]:
+            #     channel_obj = ElectricDataset(self.hdf5_group[channel_name])
+            # elif channel_type in ["auxiliary"]:
+            #     channel_obj = AuxiliaryDataset(self.hdf5_group[channel_name])
+            # channel_obj.read_metadata()
 
         return channel_obj
 
@@ -1237,6 +1237,8 @@ class RunGroup(BaseGroup):
                 )
             else:
                 channel = ChannelDataset(ch_dataset)
+                
+            channel.read_metadata()
 
             return channel
 
