@@ -48,24 +48,27 @@ class RunTS:
     
     """
 
-    def __init__(
-        self, array_list=None, run_metadata=None, station_metadata=None
-    ):
+    def __init__(self, array_list=None, run_metadata=None, station_metadata=None):
 
         self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
-        self.metadata = metadata.Run()
+        self.run_metadata = metadata.Run()
         self.station_metadata = metadata.Station()
         self._dataset = xr.Dataset()
 
+        # load the arrays first this will write run and station metadata
+        if array_list is not None:
+            self.dataset = array_list
+
+        # if the use inputs metadata, overwrite all values in the metadata element
         if run_metadata is not None:
             if isinstance(run_metadata, dict):
                 # make sure the input dictionary has the correct form
                 if "Run" not in list(run_metadata.keys()):
                     run_metadata = {"Run": run_metadata}
-                self.metadata.from_dict(run_metadata)
+                self.run_metadata.from_dict(run_metadata)
 
             elif isinstance(run_metadata, metadata.Run):
-                self.metadata.from_dict(run_metadata.to_dict())
+                self.run_metadata.from_dict(run_metadata.to_dict())
             else:
                 msg = (
                     "Input metadata must be a dictionary or Run object, "
@@ -83,22 +86,20 @@ class RunTS:
                 if not "Station" in list(station_metadata.keys()):
                     station_metadata = {"Station": station_metadata}
                 self.station_metadata.from_dict(station_metadata)
-                self.logger.debug("Loading from metadata dict")
 
             else:
-                msg = "input metadata must be type {0} or dict, not {1}".format(
-                    type(self.station_metadata), type(station_metadata)
+                msg = "input metadata must be type %s or dict, not %s"
+                self.logger.error(
+                    msg, type(self.station_metadata), type(station_metadata)
                 )
-                self.logger.error(msg)
-                raise MTTSError(msg)
-
-        if array_list is not None:
-            self.dataset = array_list
+                raise MTTSError(
+                    msg % (type(self.station_metadata), type(station_metadata))
+                )
 
     def __str__(self):
         s_list = [
             f"Station:     {self.station_metadata.id}",
-            f"Run:         {self.metadata.id}",
+            f"Run:         {self.run_metadata.id}",
             f"Start:       {self.start}",
             f"End:         {self.end}",
             f"Sample Rate: {self.sample_rate}",
@@ -117,30 +118,41 @@ class RunTS:
             self.logger.error(msg)
             raise TypeError(msg)
 
+        valid_list = []
         for index, item in enumerate(array_list):
-            if not isinstance(item, ChannelTS):
+            if not isinstance(item, (ChannelTS, xr.DataArray)):
                 msg = f"array entry {index} must be ChannelTS object not {type(item)}"
                 self.logger.error(msg)
                 raise TypeError(msg)
+            if isinstance(item, ChannelTS):
+                valid_list.append(item.to_xarray())
+
+                # if a channelTS is input then it comes with run and station metadata
+                # use those first, then the user can update later.
+                self.run_metadata.channels.append(item.channel_metadata)
+                if index == 0:
+                    self.station_metadata.from_dict(item.station_metadata.to_dict())
+                    self.run_metadata.from_dict(item.run_metadata.to_dict())
+                else:
+                    self.station_metadata.update(item.station_metadata, match=["id"])
+                    self.run_metadata.update(item.run_metadata, match=["id"])
+            else:
+                valid_list.append(item)
 
         # probably should test for sampling rate.
-        sr_test = dict(
-            [(item.component, (item.sample_rate)) for item in array_list]
-        )
+        sr_test = dict([(item.component, (item.sample_rate)) for item in valid_list])
 
         if len(set([v for k, v in sr_test.items()])) != 1:
             msg = f"sample rates are not all the same {sr_test}"
             self.logger.error(msg)
             raise MTTSError(msg)
 
-        return [x.ts for x in array_list]
+        return valid_list
 
     def __getattr__(self, name):
         # change to look for keys directly and use type to set channel type
         if name in self.dataset.keys():
-            return ChannelTS(
-                self.dataset[name].attrs["type"], self.dataset[name]
-            )
+            return ChannelTS(self.dataset[name].attrs["type"], self.dataset[name])
         else:
             # this is a hack for now until figure out who is calling shape, size
             if name[0] == "_":
@@ -191,46 +203,48 @@ class RunTS:
 
         # check sampling rate
         if self.has_data:
-            if self.sample_rate != self.metadata.sample_rate:
-                msg = (
-                    f"sample rate of dataset {self.sample_rate} does not "
-                    f"match metadata sample rate {self.metadata.sample_rate} "
-                    f"updating metatdata value to {self.sample_rate}"
-                )
-                self.logger.warning(msg)
-                self.metadata.sample_rate = self.sample_rate
-
             # check start time
-            if self.start != self.metadata.time_period.start:
+            if self.start != self.run_metadata.time_period.start:
                 msg = (
                     f"start time of dataset {self.start} does not "
-                    f"match metadata start {self.metadata.time_period.start} "
+                    f"match metadata start {self.run_metadata.time_period.start} "
                     f"updating metatdata value to {self.start}"
                 )
                 self.logger.warning(msg)
-                self.metadata.time_period.start = self.start.iso_str
+                self.run_metadata.time_period.start = self.start.iso_str
 
             # check end time
-            if self.end != self.metadata.time_period.end:
+            if self.end != self.run_metadata.time_period.end:
                 msg = (
                     f"end time of dataset {self.end} does not "
-                    f"match metadata end {self.metadata.time_period.end} "
+                    f"match metadata end {self.run_metadata.time_period.end} "
                     f"updating metatdata value to {self.end}"
                 )
                 self.logger.warning(msg)
-                self.metadata.time_period.end = self.end.iso_str
+                self.run_metadata.time_period.end = self.end.iso_str
+                
+            if self.sample_rate != self.run_metadata.sample_rate:
+                msg = (
+                    f"sample rate of dataset {self.sample_rate} does not "
+                    f"match metadata sample rate {self.run_metadata.sample_rate} "
+                    f"updating metatdata value to {self.sample_rate}"
+                )
+                self.logger.warning(msg)
+                self.run_metadata.sample_rate = self.sample_rate
 
             # update channels recorded
-            self.metadata.channels_recorded_auxiliary = []
-            self.metadata.channels_recorded_electric = []
-            self.metadata.channels_recorded_magnetic = []
+            self.run_metadata.channels_recorded_auxiliary = []
+            self.run_metadata.channels_recorded_electric = []
+            self.run_metadata.channels_recorded_magnetic = []
             for ch in self.channels:
                 if ch[0] in ["e"]:
-                    self.metadata.channels_recorded_electric.append(ch)
+                    self.run_metadata.channels_recorded_electric.append(ch)
                 elif ch[0] in ["h", "b"]:
-                    self.metadata.channels_recorded_magnetic.append(ch)
+                    self.run_metadata.channels_recorded_magnetic.append(ch)
                 else:
-                    self.metadata.channels_recorded_auxiliary.append(ch)
+                    self.run_metadata.channels_recorded_auxiliary.append(ch)
+
+            self.station_metadata.runs.append(self.run_metadata)
 
     def set_dataset(self, array_list, align_type="outer"):
         """
@@ -259,7 +273,7 @@ class RunTS:
         xdict = dict([(x.component.lower(), x) for x in x_array_list])
         self._dataset = xr.Dataset(xdict)
         self.validate_metadata()
-        self._dataset.attrs.update(self.metadata.to_dict()["run"])
+        self._dataset.attrs.update(self.run_metadata.to_dict(single=True))
 
     def add_channel(self, channel):
         """
@@ -286,10 +300,9 @@ class RunTS:
             c.ts = channel
         elif isinstance(channel, ChannelTS):
             c = channel
+            self.run_metadata.runs.append(c.channel_metadata)
         else:
-            raise ValueError(
-                "Input Channel must be type xarray.DataArray or ChannelTS"
-            )
+            raise ValueError("Input Channel must be type xarray.DataArray or ChannelTS")
 
         ### need to validate the channel to make sure sample rate is the same
         if c.sample_rate != self.sample_rate:
@@ -321,21 +334,19 @@ class RunTS:
     def start(self):
         if self.has_data:
             return MTime(self.dataset.coords["time"].to_index()[0].isoformat())
-        return self.metadata.time_period.start
+        return self.run_metadata.time_period.start
 
     @property
     def end(self):
         if self.has_data:
-            return MTime(
-                self.dataset.coords["time"].to_index()[-1].isoformat()
-            )
-        return self.metadata.time_period.end
+            return MTime(self.dataset.coords["time"].to_index()[-1].isoformat())
+        return self.run_metadata.time_period.end
 
     @property
     def sample_rate(self):
         if self.has_data:
             return 1e9 / self.dataset.coords["time"].to_index().freq.n
-        return self.metadata.sample_rate
+        return self.run_metadata.sample_rate
 
     @property
     def channels(self):
@@ -392,9 +403,7 @@ class RunTS:
         ### need to merge metadata into something useful, station name is the only
         ### name that is preserved
         try:
-            station = list(set([ss for ss in station_list if ss is not None]))[
-                0
-            ]
+            station = list(set([ss for ss in station_list if ss is not None]))[0]
         except IndexError:
             station = None
             msg = "Could not find station name"

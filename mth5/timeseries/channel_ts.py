@@ -26,6 +26,7 @@ import xarray as xr
 
 from mt_metadata import timeseries as metadata
 from mt_metadata.utils.mttime import MTime
+from mt_metadata.timeseries.filters import ChannelResponseFilter
 
 from mth5.utils.exceptions import MTTSError
 from mth5.utils.mth5_logger import setup_logger
@@ -79,9 +80,7 @@ def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
     dt_freq = "{0:.0f}N".format(1.0e9 / (sample_rate))
 
     dt_index = pd.date_range(
-        start=start_time.iso_str.split("+", 1)[0],
-        periods=n_samples,
-        freq=dt_freq,
+        start=start_time.iso_str.split("+", 1)[0], periods=n_samples, freq=dt_freq,
     )
 
     return dt_index
@@ -118,7 +117,8 @@ class ChannelTS:
     This way a single channel will hold all information needed to represent the 
     channel.  
     
-    
+    :rubric: 
+        
     Example
     ---------
         
@@ -162,12 +162,13 @@ class ChannelTS:
         self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
         self.station_metadata = metadata.Station()
         self.run_metadata = metadata.Run()
-        self._ts = xr.DataArray([1], coords=[("time", [1])])
+        self._ts = xr.DataArray([1], coords=[("time", [1])], name="ts")
+        self._channel_response = ChannelResponseFilter()
 
         # get correct metadata class
         try:
-            self.metadata = meta_classes[channel_type.capitalize()]()
-            self.metadata.type = channel_type.lower()
+            self.channel_metadata = meta_classes[channel_type.capitalize()]()
+            self.channel_metadata.type = channel_type.lower()
         except KeyError:
             msg = (
                 "Channel type is undefined, must be [ electric | "
@@ -177,25 +178,27 @@ class ChannelTS:
             raise ValueError(msg)
 
         if channel_metadata is not None:
-            if isinstance(channel_metadata, type(self.metadata)):
-                self.metadata.from_dict(channel_metadata.to_dict())
+            if isinstance(channel_metadata, type(self.channel_metadata)):
+                self.channel_metadata.from_dict(channel_metadata.to_dict())
                 self.logger.debug(
                     "Loading from metadata class {0}".format(
-                        type(self.metadata)
+                        type(self.channel_metadata)
                     )
                 )
             elif isinstance(channel_metadata, dict):
-                if not channel_type in list(channel_metadata.keys()):
+                if not channel_type in [cc.lower() for cc in channel_metadata.keys()]:
                     channel_metadata = {channel_type: channel_metadata}
-                self.metadata.from_dict(channel_metadata)
+                self.channel_metadata.from_dict(channel_metadata)
                 self.logger.debug("Loading from metadata dict")
 
             else:
-                msg = "input metadata must be type {0} or dict, not {1}".format(
-                    type(self.metadata), type(channel_metadata)
+                msg = "input metadata must be type %s or dict, not %s"
+                self.logger.error(
+                    msg, type(self.channel_metadata), type(channel_metadata)
                 )
-                self.logger.error(msg)
-                raise MTTSError(msg)
+                raise MTTSError(
+                    msg % (type(self.channel_metadata), type(channel_metadata))
+                )
 
         # add station metadata, this will be important when propogating a single
         # channel such that it can stand alone.
@@ -204,7 +207,7 @@ class ChannelTS:
                 self.station_metadata.from_dict(station_metadata.to_dict())
 
             elif isinstance(station_metadata, dict):
-                if not "Station" in list(station_metadata.keys()):
+                if not "station" in [cc.lower() for cc in station_metadata.keys()]:
                     station_metadata = {"Station": station_metadata}
                 self.station_metadata.from_dict(station_metadata)
                 self.logger.debug("Loading from metadata dict")
@@ -223,23 +226,21 @@ class ChannelTS:
                 self.run_metadata.from_dict(run_metadata.to_dict())
 
             elif isinstance(run_metadata, dict):
-                if not "Run" in list(run_metadata.keys()):
+                if not "run" in [cc.lower() for cc in run_metadata.keys()]:
                     run_metadata = {"Run": run_metadata}
                 self.run_metadata.from_dict(run_metadata)
                 self.logger.debug("Loading from metadata dict")
 
             else:
-                msg = "input metadata must be type {0} or dict, not {1}".format(
-                    type(self.run_metadata), type(run_metadata)
-                )
-                self.logger.error(msg)
-                raise MTTSError(msg)
+                msg = "input metadata must be type %s or dict, not %s"
+                self.logger.error(msg, type(self.run_metadata), type(run_metadata))
+                raise MTTSError(msg % (type(self.run_metadata), type(run_metadata)))
 
         # input data
         if data is not None:
             self.ts = data
 
-        self.update_xarray_metadata()
+        self._update_xarray_metadata()
 
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
@@ -266,7 +267,7 @@ class ChannelTS:
         if not isinstance(other, ChannelTS):
             raise ValueError(f"Cannot compare ChannelTS with {type(other)}")
 
-        if not other.metadata == self.metadata:
+        if not other.metadata == self.channel_metadata:
             return False
 
         if self.ts.equals(other.ts) is False:
@@ -294,7 +295,7 @@ class ChannelTS:
     ### Properties ------------------------------------------------------------
     @property
     def ts(self):
-        return self._ts
+        return self._ts.data
 
     @ts.setter
     def ts(self, ts_arr):
@@ -303,32 +304,37 @@ class ChannelTS:
         column name 'data'
         """
 
-        if isinstance(ts_arr, np.ndarray):
-            self.logger.debug(f"loading numpy array with shape {ts_arr.shape}")
+        if isinstance(ts_arr, (np.ndarray, list, tuple)):
+            if not isinstance(ts_arr, np.ndarray):
+                ts_arr = np.array(ts_arr)
+
+            # Validate an input array to make sure its 1D
+            if len(ts_arr.shape) == 2:
+                if 1 in ts_arr.shape:
+                    ts_arr = ts_arr.reshape(ts_arr.size)
+                else:
+                    msg = f"Input array must be 1-D array not {ts_arr.shape}"
+                    self.logger.error(msg)
+                    raise ValueError(msg)
+
             dt = make_dt_coordinates(
                 self.start, self.sample_rate, ts_arr.size, self.logger
             )
-            self._ts = xr.DataArray(ts_arr, coords=[("time", dt)])
-            self.update_xarray_metadata()
+            self._ts = xr.DataArray(ts_arr, coords=[("time", dt)], name="ts")
+            self._update_xarray_metadata()
 
         elif isinstance(ts_arr, pd.core.frame.DataFrame):
-            self.logger.debug(
-                f"loading pandas dataframe with shape {ts_arr.shape}"
-            )
-            if isinstance(
-                ts_arr.index[0], pd._libs.tslibs.timestamps.Timestamp
-            ):
+            if isinstance(ts_arr.index[0], pd._libs.tslibs.timestamps.Timestamp):
                 dt = ts_arr.index
             else:
                 dt = make_dt_coordinates(
-                    self.start,
-                    self.sample_rate,
-                    ts_arr["data"].size,
-                    self.logger,
+                    self.start, self.sample_rate, ts_arr["data"].size, self.logger,
                 )
             try:
-                self._ts = xr.DataArray(ts_arr["data"], coords=[("time", dt)])
-                self.update_xarray_metadata()
+                self._ts = xr.DataArray(
+                    ts_arr["data"], coords=[("time", dt)], name="ts"
+                )
+                self._update_xarray_metadata()
 
             except AttributeError:
                 msg = (
@@ -339,33 +345,37 @@ class ChannelTS:
                 raise MTTSError(msg)
 
         elif isinstance(ts_arr, pd.core.series.Series):
-            self.logger.debug(
-                f"loading pandas series with shape {ts_arr.shape}"
-            )
-            if isinstance(
-                ts_arr.index[0], pd._libs.tslibs.timestamps.Timestamp
-            ):
+            if isinstance(ts_arr.index[0], pd._libs.tslibs.timestamps.Timestamp):
                 dt = ts_arr.index
             else:
                 dt = make_dt_coordinates(
-                    self.start,
-                    self.sample_rate,
-                    ts_arr["data"].size,
-                    self.logger,
+                    self.start, self.sample_rate, ts_arr["data"].size, self.logger,
                 )
 
-            self._ts = xr.DataArray(ts_arr.values, coords=[("time", dt)])
-            self.update_xarray_metadata()
+            self._ts = xr.DataArray(ts_arr.values, coords=[("time", dt)], name="ts")
+            self._update_xarray_metadata()
 
         elif isinstance(ts_arr, xr.DataArray):
-            self.logger.debug(
-                f"loading xarra.DataArray with shape {ts_arr.shape}"
-            )
             # TODO: need to validate the input xarray
             self._ts = ts_arr
+            # need to pull out the metadata as a separate dictionary
             meta_dict = dict([(k, v) for k, v in ts_arr.attrs.items()])
-            self.metadata.from_dict({self.metadata.type: meta_dict})
-            self.update_xarray_metadata()
+
+            # need to get station and run metadata out
+            station_keys = [k for k in meta_dict.keys() if "station." in k]
+            run_keys = [k for k in meta_dict.keys() if "run." in k]
+            station_dict = {}
+            run_dict = {}
+            for key in station_keys:
+                station_dict[key.split("station.")[-1]] = meta_dict.pop(key)
+            for key in run_keys:
+                run_dict[key.split("run.")[-1]] = meta_dict.pop(key)
+
+            self.channel_metadata.from_dict({meta_dict["type"]: meta_dict})
+            self.station_metadata.from_dict({"station": station_dict})
+            self.run_metadata.from_dict({"run": run_dict})
+            # need to run this incase things are different.
+            self._update_xarray_metadata()
 
         else:
             msg = (
@@ -378,16 +388,16 @@ class ChannelTS:
     @property
     def channel_type(self):
         """ Channel Type """
-        return self.metadata._class_name
+        return self.channel_metadata._class_name
 
     @channel_type.setter
     def channel_type(self, value):
         """ change channel type means changing the metadata type """
 
-        if value.lower() != self.metadata._class_name.lower():
-            m_dict = self.metadata.to_dict()[self.metadata._class_name]
+        if value.lower() != self.channel_metadata._class_name.lower():
+            m_dict = self.channel_metadata.to_dict()[self.channel_metadata._class_name]
             try:
-                self.metadata = meta_classes[value.capitalize()]()
+                self.channel_metadata = meta_classes[value.capitalize()]()
                 msg = (
                     f"Changing metadata to {value.capitalize()}"
                     + "will translate any similar attributes."
@@ -400,19 +410,19 @@ class ChannelTS:
                 )
                 self.logger.error(msg)
 
-            for key in self.metadata.to_dict()[
-                self.metadata._class_name
+            for key in self.channel_metadata.to_dict()[
+                self.channel_metadata._class_name
             ].keys():
                 try:
-                    self.metadata.set_attr_from_name(key, m_dict[key])
+                    self.channel_metadata.set_attr_from_name(key, m_dict[key])
                 except KeyError:
                     pass
         return
 
-    def update_xarray_metadata(self):
+    def _update_xarray_metadata(self):
         """
         Update xarray attrs dictionary with metadata.  Here we are assuming that 
-        self.metadata is the parent and attrs in xarray are children because all 
+        self.channel_metadata is the parent and attrs in xarray are children because all 
         metadata will be validated by :class:`mth5.metadata` class objects.  
         
         Eventually there should be a way that this is automatic, but I'm not that 
@@ -424,23 +434,27 @@ class ChannelTS:
         """
         self.logger.debug("Updating xarray attributes")
 
-        self.metadata.time_period.start = self.start.iso_no_tz
-        self.metadata.time_period.end = self.end.iso_no_tz
-        self.metadata.sample_rate = self.sample_rate
+        self.channel_metadata.time_period.start = self.start.iso_no_tz
+        self.channel_metadata.time_period.end = self.end.iso_no_tz
+        self.channel_metadata.sample_rate = self.sample_rate
 
         self._ts.attrs.update(
-            self.metadata.to_dict()[self.metadata._class_name]
+            self.channel_metadata.to_dict()[self.channel_metadata._class_name]
         )
+        # add station and run id's here, for now this is all we need but may need
+        # more metadata down the road.
+        self._ts.attrs["station.id"] = self.station_metadata.id
+        self._ts.attrs["run.id"] = self.run_metadata.id
 
     @property
     def component(self):
         """ component """
-        return self.metadata.component
+        return self.channel_metadata.component
 
     @component.setter
     def component(self, comp):
         """ set component in metadata and carry through """
-        if self.metadata.type == "electric":
+        if self.channel_metadata.type == "electric":
             if comp[0].lower() != "e":
                 msg = (
                     "The current timeseries is an electric channel. "
@@ -449,7 +463,7 @@ class ChannelTS:
                 self.logger.error(msg)
                 raise MTTSError(msg)
 
-        elif self.metadata.type == "magnetic":
+        elif self.channel_metadata.type == "magnetic":
             if comp[0].lower() not in ["h", "b"]:
                 msg = (
                     "The current timeseries is a magnetic channel. "
@@ -458,7 +472,7 @@ class ChannelTS:
                 self.logger.error(msg)
                 raise MTTSError(msg)
 
-        if self.metadata.type == "auxiliary":
+        if self.channel_metadata.type == "auxiliary":
             if comp[0].lower() in ["e", "h", "b"]:
                 msg = (
                     "The current timeseries is an auxiliary channel. "
@@ -467,8 +481,8 @@ class ChannelTS:
                 self.logger.error(msg)
                 raise MTTSError(msg)
 
-        self.metadata.component = comp
-        self.update_xarray_metadata()
+        self.channel_metadata.component = comp
+        self._update_xarray_metadata()
 
     # --> number of samples just to make sure there is consistency
     @property
@@ -490,8 +504,7 @@ class ChannelTS:
         """
         if len(self._ts) > 1:
             if isinstance(
-                self.ts.indexes["time"][0],
-                pd._libs.tslibs.timestamps.Timestamp,
+                self._ts.indexes["time"][0], pd._libs.tslibs.timestamps.Timestamp,
             ):
                 return True
             return False
@@ -517,10 +530,8 @@ class ChannelTS:
             else:
                 sr = 1e9 / self._ts.coords.indexes["time"][0].freq.nanos
         else:
-            self.logger.debug(
-                "Data has not been set yet, sample rate is from metadata"
-            )
-            sr = self.metadata.sample_rate
+            self.logger.debug("Data has not been set yet, sample rate is from metadata")
+            sr = self.channel_metadata.sample_rate
             if sr is None:
                 sr = 0.0
         return np.round(sr, 0)
@@ -532,14 +543,27 @@ class ChannelTS:
 
         type float
         """
-        if self.metadata.sample_rate not in [0.0, None]:
+        if self.has_data:
             self.logger.warning(
-                "Setting ChannelTS.metadata.sample_rate. "
-                + "If you want to change existing time series sample"
-                + " rate use method `resample`."
+                "Resetting sample_rate assumes same start time and "
+                + "same number of samples, resulting in new end time. "
+                + "If you want to downsample existing time series "
+                + "use the method channelTS.resample()"
             )
-        self.metadata.sample_rate = sample_rate
-        self.update_xarray_metadata()
+            self.logger.debug(
+                f"Resetting sample rate from {self.sample_rate} to {sample_rate}"
+            )
+            new_dt = make_dt_coordinates(
+                self.start, sample_rate, self.n_samples, self.logger
+            )
+            self._ts.coords["time"] = new_dt
+        else:
+            if self.channel_metadata.sample_rate not in [0.0, None]:
+                self.logger.warning(
+                    f"Resetting ChannelTS.channel_metadata.sample_rate to {sample_rate}. "
+                )
+            self.channel_metadata.sample_rate = sample_rate
+        self._update_xarray_metadata()
 
     ## set time and set index
     @property
@@ -552,7 +576,7 @@ class ChannelTS:
                 "Data not set yet, pulling start time from "
                 + "metadata.time_period.start"
             )
-            return MTime(self.metadata.time_period.start)
+            return MTime(self.channel_metadata.time_period.start)
 
     @start.setter
     def start(self, start_time):
@@ -573,23 +597,21 @@ class ChannelTS:
         if not isinstance(start_time, MTime):
             start_time = MTime(start_time)
 
-        self.metadata.time_period.start = start_time.iso_str
+        self.channel_metadata.time_period.start = start_time.iso_str
         if self.has_data:
-            if start_time == MTime(
-                self.ts.coords.indexes["time"][0].isoformat()
-            ):
+            if start_time == MTime(self._ts.coords.indexes["time"][0].isoformat()):
                 return
             else:
                 new_dt = make_dt_coordinates(
                     start_time, self.sample_rate, self.n_samples, self.logger
                 )
-                self.ts.coords["time"] = new_dt
+                self._ts.coords["time"] = new_dt
 
         # make a time series that the data can be indexed by
         else:
             self.logger.debug("No data, just updating metadata start")
 
-        self.update_xarray_metadata()
+        self._update_xarray_metadata()
 
     @property
     def end(self):
@@ -598,10 +620,9 @@ class ChannelTS:
             return MTime(self._ts.coords.indexes["time"][-1].isoformat())
         else:
             self.logger.debug(
-                "Data not set yet, pulling end time from "
-                + "metadata.time_period.end"
+                "Data not set yet, pulling end time from " + "metadata.time_period.end"
             )
-            return MTime(self.metadata.time_period.end)
+            return MTime(self.channel_metadata.time_period.end)
 
     @end.setter
     def end(self, end_time):
@@ -616,9 +637,42 @@ class ChannelTS:
         the new start time.
         """
         self.logger.warning(
-            "Cannot set `end`. If you want a slice, then "
-            + "use get_slice method"
+            "Cannot set `end`. If you want a slice, then " + "use get_slice method"
         )
+
+    @property
+    def channel_response_filter(self):
+        """
+        Full channel response filter
+        
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        return self._channel_response
+
+    @channel_response_filter.setter
+    def channel_response_filter(self, value):
+        """
+        
+        :param value: DESCRIPTION
+        :type value: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if not isinstance(value, ChannelResponseFilter):
+            msg = (
+                "channel response must be a "
+                "mt_metadata.timeseries.filters.ChannelResponseFilter object "
+                f"not {type(value)}."
+            )
+            self.logger.error(msg)
+            raise TypeError(msg)
+
+        self._channel_response = value
 
     def get_slice(self, start, end):
         """
@@ -642,16 +696,12 @@ class ChannelTS:
         if not isinstance(end, MTime):
             end = MTime(end)
 
-        new_ts = self.ts.loc[
+        new_ts = self._ts.loc[
             (self.ts.indexes["time"] >= start.iso_no_tz)
             & (self.ts.indexes["time"] <= end.iso_no_tz)
         ]
-        new_ts.attrs["time_period.start"] = new_ts.coords.indexes["time"][
-            0
-        ].isoformat()
-        new_ts.attrs["time_period.end"] = new_ts.coords.indexes["time"][
-            -1
-        ].isoformat()
+        new_ts.attrs["time_period.start"] = new_ts.coords.indexes["time"][0].isoformat()
+        new_ts.attrs["time_period.end"] = new_ts.coords.indexes["time"][-1].isoformat()
 
         return new_ts
 
@@ -669,23 +719,43 @@ class ChannelTS:
 
         new_dt_freq = "{0:.0f}N".format(1e9 / (self.sample_rate / dec_factor))
 
-        new_ts = self.ts.resample(time=new_dt_freq).nearest(
-            tolerance=new_dt_freq
-        )
+        new_ts = self._ts.resample(time=new_dt_freq).nearest(tolerance=new_dt_freq)
         new_ts.attrs["sample_rate"] = self.sample_rate / dec_factor
-        self.metadata.sample_rate = new_ts.attrs["sample_rate"]
+        self.channel_metadata.sample_rate = new_ts.attrs["sample_rate"]
 
         if inplace:
             self.ts = new_ts
 
         else:
             new_ts.attrs.update(
-                self.metadata.to_dict()[self.metadata._class_name]
+                self.channel_metadata.to_dict()[self.channel_metadata._class_name]
             )
             # return new_ts
             return ChannelTS(
-                self.metadata.type, data=new_ts, metadata=self.metadata
+                self.channel_metadata.type, data=new_ts, metadata=self.channel_metadata
             )
+
+    def to_xarray(self):
+        """
+        Returns a :class:`xarray.DataArray` object of the channel timeseries
+        this way metadata from the metadata class is updated upon return.
+        
+        :return: Returns a :class:`xarray.DataArray` object of the channel timeseries
+        this way metadata from the metadata class is updated upon return.
+        :rtype: :class:`xarray.DataArray`
+        
+        
+        >>> import numpy as np
+        >>> from mth5.timeseries import ChannelTS
+        >>> ex = ChannelTS("electric")
+        >>> ex.start = "2020-01-01T12:00:00"
+        >>> ex.sample_rate = 16
+        >>> ex.ts = np.random.rand(4096)
+        
+
+        """
+        self._update_xarray_metadata()
+        return self._ts
 
     def to_obspy_trace(self):
         """
@@ -720,17 +790,17 @@ class ChannelTS:
             raise MTTSError(msg)
 
         if obspy_trace.stats.channel[0].lower() in ["e", "q"]:
-            self.metadata = metadata.Electric()
+            self.channel_metadata = metadata.Electric()
         elif obspy_trace.stats.channel[0].lower() in ["h", "b", "f"]:
-            self.metadata = metadata.Magnetic()
+            self.channel_metadata = metadata.Magnetic()
         else:
-            self.metadata = metadata.Auxiliary()
+            self.channel_metadata = metadata.Auxiliary()
 
-        self.metadata.component = obspy_trace.stats.channel
+        self.channel_metadata.component = obspy_trace.stats.channel
         self.start = obspy_trace.stats.starttime.isoformat()
         self.sample_rate = obspy_trace.stats.sampling_rate
         self.station_metadata.fdsn.id = obspy_trace.stats.station
         self.station_metadata.fdsn.network = obspy_trace.stats.network
         self.station_metadata.id = obspy_trace.stats.station
-        self.metadata.units = "counts"
+        self.channel_metadata.units = "counts"
         self.ts = obspy_trace.data

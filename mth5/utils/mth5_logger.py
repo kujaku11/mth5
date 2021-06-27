@@ -12,6 +12,7 @@ from pathlib import Path
 import yaml
 import logging
 import logging.config
+from concurrent_log_handler import ConcurrentRotatingFileHandler
 
 # =============================================================================
 # Global Variables
@@ -73,20 +74,21 @@ def setup_logger(logger_name, fn=None, level="debug"):
     """
 
     logger = logging.getLogger(logger_name)
-    # need to clear the handlers to make sure there is only
-    # one call per logger plus stdout
-    if logger.hasHandlers():
-        logger.handlers.clear()
-
-    logger.propagate = False
-    # want to add a stream handler for any Info print statements as stdOut
-    stream_handler = logging.StreamHandler()
-    stream_handler.setFormatter(LOG_FORMAT)
-    stream_handler.setLevel(LEVEL_DICT["info"])
-    logger.addHandler(stream_handler)
 
     # if there is a file name create file in logs directory
     if fn is not None:
+        # need to clear the handlers to make sure there is only
+        # one call per logger plus stdout
+        if logger.hasHandlers():
+            logger.handlers.clear()
+
+        logger.propagate = False
+        # want to add a stream handler for any Info print statements as stdOut
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(LOG_FORMAT)
+        stream_handler.setLevel(LEVEL_DICT["info"])
+        logger.addHandler(stream_handler)
+
         fn = LOG_PATH.joinpath(fn)
         exists = False
         if fn.exists():
@@ -95,19 +97,12 @@ def setup_logger(logger_name, fn=None, level="debug"):
         if fn.suffix not in [".log"]:
             fn = Path(fn.parent, f"{fn.stem}.log")
 
-        fn_handler = logging.FileHandler(fn)
+        # fn_handler = logging.FileHandler(fn)
+        fn_handler = ConcurrentRotatingFileHandler(fn, maxBytes=2 ** 21, backupCount=2)
         fn_handler.setFormatter(LOG_FORMAT)
         fn_handler.setLevel(LEVEL_DICT[level.lower()])
         logger.addHandler(fn_handler)
         if not exists:
-            logger.info(
-                f"Logging file can be found {logger.handlers[-1].baseFilename}"
-            )
-    # else, give it a null handler, which will go to default logger.
-    else:
-        null_handler = logging.NullHandler()
-        null_handler.setFormatter(LOG_FORMAT)
-        null_handler.setLevel(LEVEL_DICT[level.lower()])
-        logger.addHandler(null_handler)
+            logger.info(f"Logging file can be found {logger.handlers[-1].baseFilename}")
 
     return logger

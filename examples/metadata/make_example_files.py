@@ -19,9 +19,7 @@ for style in style_list:
         s = getattr(metadata, c)()
         if style == "xml":
             x = s.to_xml(required=False)
-            with open(
-                p.joinpath("{0}_example.xml".format(c.lower())), "w"
-            ) as fid:
+            with open(p.joinpath("{0}_example.xml".format(c.lower())), "w") as fid:
                 fid.write(
                     minidom.parseString(et.tostring(x).decode()).toprettyxml(
                         indent="    "
@@ -29,7 +27,5 @@ for style in style_list:
                 )
         elif style == "json":
             jstr = s.to_json(nested=True, required=False)
-            with open(
-                p.joinpath("{0}_example.json".format(c.lower())), "w"
-            ) as fid:
+            with open(p.joinpath("{0}_example.json".format(c.lower())), "w") as fid:
                 fid.write(jstr)

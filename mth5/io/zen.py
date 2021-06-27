@@ -30,6 +30,10 @@ import logging
 import numpy as np
 
 from mt_metadata.utils.mttime import MTime
+from mt_metadata.timeseries.filters import (
+    ChannelResponseFilter, 
+    FrequencyResponseTableFilter,
+    CoefficientFilter)
 from mth5.timeseries import ChannelTS
 
 # ==============================================================================
@@ -79,9 +83,7 @@ class Z3DHeader:
     """
 
     def __init__(self, fn=None, fid=None, **kwargs):
-        self.logger = logging.getLogger(
-            f"{__name__}.{self.__class__.__name__}"
-        )
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
         self.fn = fn
         self.fid = fid
@@ -164,9 +166,7 @@ class Z3DHeader:
             if h_str.find("=") > 0:
                 h_list = h_str.split("=")
                 h_key = h_list[0].strip().lower()
-                h_key = (
-                    h_key.replace(" ", "_").replace("/", "").replace(".", "_")
-                )
+                h_key = h_key.replace(" ", "_").replace("/", "").replace(".", "_")
                 h_value = self.convert_value(h_key, h_list[1].strip())
                 setattr(self, h_key, h_value)
             elif len(h_str) == 0:
@@ -183,7 +183,7 @@ class Z3DHeader:
                     elif len(hh.split(":", 1)) == 2:
                         m_key, m_value = hh.split(":", 1)
                     else:
-                        print(hh)
+                        self.logger.warning("found %s", hh)
 
                     m_key = (
                         m_key.strip()
@@ -268,9 +268,7 @@ class Z3DSchedule:
     """
 
     def __init__(self, fn=None, fid=None, **kwargs):
-        self.logger = logging.getLogger(
-            f"{__name__}.{self.__class__.__name__}"
-        )
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.fn = fn
         self.fid = fid
         self.meta_string = None
@@ -334,9 +332,7 @@ class Z3DSchedule:
                 m_value = m_list[1].strip()
                 setattr(self, m_key, m_value)
 
-        self.initial_start = MTime(
-            time=f"{self.Date}T{self.Time}", gps_time=True
-        )
+        self.initial_start = MTime(time=f"{self.Date}T{self.Time}", gps_time=True)
 
 
 # ==============================================================================
@@ -400,9 +396,7 @@ class Z3DMetadata:
     """
 
     def __init__(self, fn=None, fid=None, **kwargs):
-        self.logger = logging.getLogger(
-            f"{__name__}.{self.__class__.__name__}"
-        )
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.fn = fn
         self.fid = fid
         self.find_metadata = True
@@ -460,19 +454,13 @@ class Z3DMetadata:
             self.logger.waringn("No Z3D file to read")
         elif self.fn is None:
             if self.fid is not None:
-                self.fid.seek(
-                    self._header_length + self._schedule_metadata_len
-                )
+                self.fid.seek(self._header_length + self._schedule_metadata_len)
         elif self.fn is not None:
             if self.fid is None:
                 self.fid = open(self.fn, "rb")
-                self.fid.seek(
-                    self._header_length + self._schedule_metadata_len
-                )
+                self.fid.seek(self._header_length + self._schedule_metadata_len)
             else:
-                self.fid.seek(
-                    self._header_length + self._schedule_metadata_len
-                )
+                self.fid.seek(self._header_length + self._schedule_metadata_len)
 
         # read in calibration and meta data
         self.find_metadata = True
@@ -482,9 +470,7 @@ class Z3DMetadata:
         cal_find = False
         while self.find_metadata == True:
             try:
-                test_str = (
-                    self.fid.read(self._metadata_length).decode().lower()
-                )
+                test_str = self.fid.read(self._metadata_length).decode().lower()
             except UnicodeDecodeError:
                 self.find_metadata = False
                 break
@@ -492,7 +478,9 @@ class Z3DMetadata:
             if "metadata" in test_str:
                 self.count += 1
                 test_str = test_str.strip().split("record")[1].strip()
-                if test_str.count("|") > 1:
+                
+                # split the metadata records with key=value style
+                if test_str.count("|") > 1: 
                     for t_str in test_str.split("|"):
                         # get metadata name and value
                         if (
@@ -531,10 +519,7 @@ class Z3DMetadata:
                         t_str = t_str.replace("\x00", "").replace("|", "")
                         try:
                             self.board_cal.append(
-                                [
-                                    float(tt.strip())
-                                    for tt in t_str.strip().split(":")
-                                ]
+                                [float(tt.strip()) for tt in t_str.strip().split(":")]
                             )
                         except ValueError:
                             self.board_cal.append(
@@ -550,9 +535,7 @@ class Z3DMetadata:
                     coil_num = test_list[1].split("|")[1]
                     coil_key, coil_value = coil_num.split("=")
                     setattr(
-                        self,
-                        coil_key.replace(".", "_").lower(),
-                        coil_value.strip(),
+                        self, coil_key.replace(".", "_").lower(), coil_value.strip(),
                     )
                     for t_str in test_list[2:]:
                         if "\x00" in t_str:
@@ -561,16 +544,13 @@ class Z3DMetadata:
                             [float(tt.strip()) for tt in t_str.split(":")]
                         )
                 elif cal_find and self.count > 3:
-                    t_list = test_str.split(",")
+                    t_list = test_str.replace("|", ",").split(",")
                     for t_str in t_list:
                         if "\x00" in t_str:
                             break
                         else:
                             self.coil_cal.append(
-                                [
-                                    float(tt.strip())
-                                    for tt in t_str.strip().split(":")
-                                ]
+                                [float(tt.strip()) for tt in t_str.strip().split(":")]
                             )
 
             else:
@@ -593,9 +573,7 @@ class Z3DMetadata:
                 self.board_cal = None
 
         try:
-            self.station = "{0}{1}".format(
-                self.line_name, self.rx_xyz0.split(":")[0]
-            )
+            self.station = "{0}{1}".format(self.line_name, self.rx_xyz0.split(":")[0])
         except AttributeError:
             if hasattr(self, "rx_stn"):
                 self.station = f"{self.rx_stn}"
@@ -683,9 +661,7 @@ class Z3D:
     """
 
     def __init__(self, fn=None, **kwargs):
-        self.logger = logging.getLogger(
-            f"{__name__}.{self.__class__.__name__}"
-        )
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.fn = fn
 
         self.header = Z3DHeader(fn)
@@ -734,6 +710,8 @@ class Z3D:
         self.units = "counts"
         self.sample_rate = None
 
+        self.ch_dict = {"hx": 1, "hy": 2, "hz": 3, "ex": 4, "ey": 5}
+
     @property
     def station(self):
         """
@@ -749,34 +727,33 @@ class Z3D:
         self.metadata.station = station
 
     @property
-    def dipole_len(self):
+    def dipole_length(self):
         """
         dipole length
         """
+        length = 0
         if self.metadata.ch_length is not None:
-            return self.metadata.ch_length
+            length = float(self.metadata.ch_length)
         elif hasattr(self.metadata, "ch_offset_xyz1"):
             # only ex and ey have xyz2
             if hasattr(self.metadata, "ch_offset_xyz2"):
                 x1, y1, z1 = [
-                    float(offset)
-                    for offset in self.metadata.ch_offset_xyz1.split(":")
+                    float(offset) for offset in self.metadata.ch_offset_xyz1.split(":")
                 ]
                 x2, y2, z2 = [
-                    float(offset)
-                    for offset in self.metadata.ch_offset_xyz2.split(":")
+                    float(offset) for offset in self.metadata.ch_offset_xyz2.split(":")
                 ]
-                length = np.sqrt(
-                    (x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2
-                )
-                return np.round(length, 2)
+                length = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2)
+                length = np.round(length, 2)
             else:
-                return 0
+                length = 0
         elif self.metadata.ch_xyz1 is not None:
             x1, y1 = [float(d) for d in self.metadata.ch_xyz1.split(":")]
             x2, y2 = [float(d) for d in self.metadata.ch_xyz2.split(":")]
             length = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2) * 100.0
-            return np.round(length, 2)
+            length = np.round(length, 2)
+            
+        return length
 
     @property
     def azimuth(self):
@@ -867,9 +844,7 @@ class Z3D:
         """
         if not isinstance(schedule_dt, MTime):
             schedule_dt = MTime(schedule_dt)
-            raise TypeError(
-                "New schedule datetime must be type datetime.datetime"
-            )
+            raise TypeError("New schedule datetime must be type datetime.datetime")
         self.schedule.initial_start = schedule_dt
 
     @property
@@ -885,20 +860,29 @@ class Z3D:
             return None
 
     @property
+    def channel_number(self):
+        ch_num = int(float(self.metadata.ch_number))
+        if ch_num > 6:
+            try:
+                ch_num = self.ch_dict[self.component]
+            except KeyError:
+                ch_num = 6
+        return ch_num
+
+    @property
     def channel_metadata(self):
         """ Channel metadata """
 
         # fill the time series object
         if "e" in self.component:
             ts_type = "electric"
-            meta_dict = {"electric": {"dipole_length": self.dipole_len}}
+            meta_dict = {"electric": {"dipole_length": self.dipole_length}}
             meta_dict[ts_type]["ac.start"] = (
                 self.time_series[0 : int(self.sample_rate)].std()
                 * self.header.ch_factor
             )
             meta_dict[ts_type]["ac.end"] = (
-                self.time_series[-int(self.sample_rate) :].std()
-                * self.header.ch_factor
+                self.time_series[-int(self.sample_rate) :].std() * self.header.ch_factor
             )
             meta_dict[ts_type]["dc.start"] = (
                 self.time_series[0 : int(self.sample_rate)].mean()
@@ -908,7 +892,6 @@ class Z3D:
                 self.time_series[-int(self.sample_rate) :].mean()
                 * self.header.ch_factor
             )
-            self.logger.debug("Making Electric Channel")
         elif "h" in self.component:
             ts_type = "magnetic"
             meta_dict = {
@@ -919,16 +902,32 @@ class Z3D:
                     "sensor.type": "induction coil",
                 }
             }
-            self.logger.debug("Making Magnetic Channel")
+            meta_dict[ts_type]["h_field_max.start"] = (
+                self.time_series[0 : int(self.sample_rate)].max()
+                * self.header.ch_factor
+            )
+            meta_dict[ts_type]["h_field_max.end"] = (
+                self.time_series[-int(self.sample_rate) :].max() * self.header.ch_factor
+            )
+            meta_dict[ts_type]["h_field_min.start"] = (
+                self.time_series[0 : int(self.sample_rate)].min()
+                * self.header.ch_factor
+            )
+            meta_dict[ts_type]["h_field_min.end"] = (
+                self.time_series[-int(self.sample_rate) :].min()
+                * self.header.ch_factor
+            )
 
-        meta_dict[ts_type]["time_period.start"] = self.start.iso_str
-        meta_dict[ts_type]["time_period.end"] = self.end.iso_str
+        meta_dict[ts_type]["time_period.start"] = self.start.isoformat()
+        meta_dict[ts_type]["time_period.end"] = self.end.isoformat()
         meta_dict[ts_type]["component"] = self.component
         meta_dict[ts_type]["sample_rate"] = self.sample_rate
         meta_dict[ts_type]["measurement_azimuth"] = self.azimuth
-        meta_dict[ts_type]["units"] = "counts"
-        meta_dict[ts_type]["channel_number"] = self.metadata.ch_number
-
+        meta_dict[ts_type]["units"] = "digital counts"
+        meta_dict[ts_type]["channel_number"] = self.channel_number
+        meta_dict[ts_type]["filter.name"] = self.channel_response.names
+        meta_dict[ts_type]["filter.applied"] = [False] * len(self.channel_response.names)
+        
         return meta_dict
 
     @property
@@ -941,6 +940,9 @@ class Z3D:
         meta_dict["location.latitude"] = self.latitude
         meta_dict["location.longitude"] = self.longitude
         meta_dict["location.elevation"] = self.elevation
+        meta_dict["time_period.start"] = self.start.isoformat()
+        meta_dict["time_period.end"] = self.end.isoformat()
+        meta_dict["acquired_by.author"] = self.metadata.gdp_operator
 
         return {"Station": meta_dict}
 
@@ -952,12 +954,95 @@ class Z3D:
         meta_dict["data_logger.id"] = self.header.data_logger
         meta_dict["data_logger.manufacturer"] = "Zonge International"
         meta_dict["data_logger.model"] = "ZEN"
-        meta_dict["time_period.start"] = self.start.iso_str
-        meta_dict["time_period.end"] = self.end.iso_str
+        meta_dict["time_period.start"] = self.start.isoformat()
+        meta_dict["time_period.end"] = self.end.isoformat()
         meta_dict["sample_rate"] = self.sample_rate
         meta_dict["data_type"] = "MTBB"
+        meta_dict["time_period.start"] = self.start.isoformat()
+        meta_dict["time_period.end"] = self.end.isoformat()
+        meta_dict["acquired_by.author"] = self.metadata.gdp_operator
 
         return {"Run": meta_dict}
+    
+    @property
+    def counts2mv_filter(self):
+        """
+        Create a counts2mv coefficient filter
+        """
+        
+        c2mv = CoefficientFilter()
+        c2mv.units_in = "digital counts"
+        c2mv.units_out = "millivolts"
+        c2mv.name = "zen_counts2mv"
+        c2mv.gain = self.header.ch_factor
+        c2mv.comments = "digital counts to millivolts"
+        
+        return c2mv
+    
+    @property
+    def coil_response(self):
+        """
+        Make the coile response into a FAP filter
+        """
+        fap = None
+        if self.metadata.cal_ant is not None:
+            fap = FrequencyResponseTableFilter() 
+            fap.units_in = "millivolts"
+            fap.units_out = "nanotesla"
+            fap.frequencies = self.metadata.coil_cal.frequency
+            fap.amplitudes = self.metadata.coil_cal.amplitude
+            fap.phases = np.rad2deg(self.metadata.coil_cal.phase/1E3)
+            fap.name = f"ant4_{self.coil_num}_response"
+            fap.comments = "induction coil response read from z3d file"
+            
+        return fap
+    
+    @property
+    def zen_response(self):
+        fap = None
+        if self.metadata.board_cal is not None:
+            if self.metadata.board_cal[0][0] == '':
+                return fap
+            sr_dict = {256: 0, 1024: 1, 4096:4}
+            sr_int = sr_dict[int(self.sample_rate)]
+            fap_table = self.metadata.board_cal[np.where(self.metadata.board_cal.rate==sr_int)]
+            fap = FrequencyResponseTableFilter() 
+            fap.units_in = "millivolts"
+            fap.units_out = "millivolts"
+            fap.frequencies = fap_table.frequency
+            fap.amplitudes = fap_table.amplitude
+            fap.phases = np.rad2deg(fap_table.phase/1E3)
+            fap.name = f"{self.header.data_logger.lower()}_{self.sample_rate:.0f}_response"
+            fap.comments = "data logger response read from z3d file"
+            
+        return fap
+    
+    @property
+    def channel_response(self):
+        filter_list = [self.counts2mv_filter]
+        if self.zen_response:
+            filter_list.append(self.zen_response)
+        if self.coil_response:
+            filter_list.append(self.coil_response)
+        if self.dipole_filter:
+            filter_list.append(self.dipole_filter)
+
+        return ChannelResponseFilter(filters_list=filter_list)
+    
+    @property
+    def dipole_filter(self):
+        dipole = None
+        if self.dipole_length != 0:
+            dipole = CoefficientFilter()
+            dipole.units_in = "millivolts"
+            dipole.units_out = "millivolts per kilometer"
+            dipole.name = f"{self.station}_{self.component}_dipole"
+            dipole.gain = self.dipole_length / 1000.
+            dipole.comments = "convert to electric field"
+            
+        return dipole
+            
+        
 
     @property
     def filter_metadata(self):
@@ -993,9 +1078,7 @@ class Z3D:
             self._gps_stamp_length = 36
             self._gps_bytes = self._gps_stamp_length / 4
             self._gps_flag_0 = -1
-            self._block_len = int(
-                self._gps_stamp_length + self.sample_rate * 4
-            )
+            self._block_len = int(self._gps_stamp_length + self.sample_rate * 4)
             self.gps_flag = self._gps_f0
 
         else:
@@ -1074,9 +1157,7 @@ class Z3D:
 
         self.schedule.read_schedule(fn=self.fn, fid=fid)
         if self.header.old_version:
-            self.schedule.initial_start = MTime(
-                self.header.schedule, gps_time=True
-            )
+            self.schedule.initial_start = MTime(self.header.schedule, gps_time=True)
 
     # ======================================
     def _read_metadata(self, fn=None, fid=None):
@@ -1159,7 +1240,7 @@ class Z3D:
         if Z3Dfn is not None:
             self.fn = Z3Dfn
 
-        self.logger.info(f"Reading {self.fn}")
+        self.logger.debug(f"Reading {self.fn}")
         st = datetime.datetime.now()
 
         # get the file size to get an estimate of how many data points there are
@@ -1194,14 +1275,9 @@ class Z3D:
             while True:
                 # need to make sure the last block read is a multiple of 32 bit
                 read_len = min(
-                    [
-                        self._block_len,
-                        int(32 * ((file_size - file_id.tell()) // 32)),
-                    ]
+                    [self._block_len, int(32 * ((file_size - file_id.tell()) // 32)),]
                 )
-                test_str = np.frombuffer(
-                    file_id.read(read_len), dtype=np.int32
-                )
+                test_str = np.frombuffer(file_id.read(read_len), dtype=np.int32)
                 if len(test_str) == 0:
                     break
                 data[data_count : data_count + len(test_str)] = test_str
@@ -1209,9 +1285,7 @@ class Z3D:
 
         self.raw_data = data.copy()
         # find the gps stamps
-        gps_stamp_find = self.get_gps_stamp_index(
-            data, self.header.old_version
-        )
+        gps_stamp_find = self.get_gps_stamp_index(data, self.header.old_version)
 
         # skip the first two stamps and trim data
         try:
@@ -1222,9 +1296,7 @@ class Z3D:
             raise ZenGPSError(msg)
 
         # find gps stamps of the trimmed data
-        gps_stamp_find = self.get_gps_stamp_index(
-            data, self.header.old_version
-        )
+        gps_stamp_find = self.get_gps_stamp_index(data, self.header.old_version)
 
         self.gps_stamps = np.zeros(len(gps_stamp_find), dtype=self._gps_dtype)
 
@@ -1246,9 +1318,7 @@ class Z3D:
                     "<" + "i" * int(self._gps_bytes),
                     *data[int(gps_find) : int(gps_find + self._gps_bytes)],
                 )
-                self.gps_stamps[ii] = np.frombuffer(
-                    gps_str, dtype=self._gps_dtype
-                )
+                self.gps_stamps[ii] = np.frombuffer(gps_str, dtype=self._gps_dtype)
                 if ii > 0:
                     self.gps_stamps[ii]["block_len"] = (
                         gps_find - gps_stamp_find[ii - 1] - self._gps_bytes
@@ -1265,13 +1335,13 @@ class Z3D:
         self.convert_gps_time()
         self.zen_schedule = self.check_start_time()
 
-        self.logger.info(f"found {self.gps_stamps.shape[0]} GPS time stamps")
-        self.logger.info(f"found {self.time_series.size} data points")
+        self.logger.debug(f"found {self.gps_stamps.shape[0]} GPS time stamps")
+        self.logger.debug(f"found {self.time_series.size} data points")
 
         # time it
         et = datetime.datetime.now()
         read_time = (et - st).total_seconds()
-        self.logger.info(f"Reading data took: {read_time:.3f} seconds")
+        self.logger.debug(f"Reading data took: {read_time:.3f} seconds")
 
     # =================================================
     def get_gps_stamp_index(self, ts_data, old_version=False):
@@ -1327,9 +1397,9 @@ class Z3D:
 
         # estimate the time difference between the two
         time_diff = zen_start_utc - self.schedule.initial_start
-        self.logger.info(f"Scheduled time was {self.schedule.initial_start}")
-        self.logger.info(f"1st good stamp was {zen_start_utc}")
-        self.logger.info(f"difference of {time_diff:.2f} seconds")
+        self.logger.debug(f"Scheduled time was {self.schedule.initial_start}")
+        self.logger.debug(f"1st good stamp was {zen_start_utc}")
+        self.logger.debug(f"difference of {time_diff:.2f} seconds")
 
         return zen_start_utc
 
@@ -1343,9 +1413,7 @@ class Z3D:
         t_diff = np.zeros_like(self.gps_stamps["time"])
 
         for ii in range(len(t_diff) - 1):
-            t_diff[ii] = (
-                self.gps_stamps["time"][ii] - self.gps_stamps["time"][ii + 1]
-            )
+            t_diff[ii] = self.gps_stamps["time"][ii] - self.gps_stamps["time"][ii + 1]
 
         bad_times = np.where(abs(t_diff) > 0.5)[0]
         if len(bad_times) > 0:
@@ -1360,24 +1428,18 @@ class Z3D:
         
         """
         # first check if the gps stamp blocks are of the correct length
-        bad_blocks = np.where(
-            self.gps_stamps["block_len"][1:] != self.header.ad_rate
-        )[0]
+        bad_blocks = np.where(self.gps_stamps["block_len"][1:] != self.header.ad_rate)[
+            0
+        ]
 
         if len(bad_blocks) > 0:
             if bad_blocks.max() < 5:
-                ts_skip = self.gps_stamps["block_len"][
-                    0 : bad_blocks[-1] + 1
-                ].sum()
+                ts_skip = self.gps_stamps["block_len"][0 : bad_blocks[-1] + 1].sum()
                 self.gps_stamps = self.gps_stamps[bad_blocks[-1] :]
                 self.time_series = self.time_series[ts_skip:]
 
-                self.logger.warning(
-                    f"Skipped the first {bad_blocks[-1]} seconds"
-                )
-                self.logger.warning(
-                    f"Skipped first {ts_skip} poins in time series"
-                )
+                self.logger.warning(f"Skipped the first {bad_blocks[-1]} seconds")
+                self.logger.warning(f"Skipped first {ts_skip} poins in time series")
 
     # ==================================================
     def convert_gps_time(self):
@@ -1469,9 +1531,7 @@ class Z3D:
 
         # compute seconds using weeks and gps time
         utc_seconds = (
-            self._gps_epoch.epoch_seconds
-            + (gps_week * self._week_len)
-            + gps_time
+            self._gps_epoch.epoch_seconds + (gps_week * self._week_len) + gps_time
         )
 
         # compute date and time from seconds and return a datetime object
@@ -1491,6 +1551,7 @@ class Z3D:
             channel_metadata=self.channel_metadata,
             station_metadata=self.station_metadata,
             run_metadata=self.run_metadata,
+            channel_response_filter=self.channel_response
         )
 
 
@@ -1521,11 +1582,13 @@ class ZenInputFileError(Exception):
     pass
 
 
-def read_z3d(fn):
+def read_z3d(fn, logger_file_handler=None):
     """
     generic tool to read z3d file
     """
 
     z3d_obj = Z3D(fn)
+    if logger_file_handler:
+        z3d_obj.logger.addHandler(logger_file_handler)
     z3d_obj.read_z3d()
     return z3d_obj.to_channelts()

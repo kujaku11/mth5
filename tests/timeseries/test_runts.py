@@ -19,97 +19,20 @@ import unittest
 
 import numpy as np
 
-from mth5 import timeseries
+from mth5.timeseries import ChannelTS, RunTS
 from mth5.utils.exceptions import MTTSError
 
-from mt_metadata import timeseries as metadata
 from mt_metadata.utils.mttime import MTime
-
-# =============================================================================
-#
-# =============================================================================
-
-
-class TestMTTS(unittest.TestCase):
-    def setUp(self):
-        self.ts = timeseries.ChannelTS("auxiliary")
-        self.maxDiff = None
-
-    def test_input_type_electric(self):
-        self.ts = timeseries.ChannelTS("electric")
-
-        electric_meta = metadata.Electric()
-        self.assertDictEqual(
-            self.ts.metadata.to_dict(), electric_meta.to_dict()
-        )
-
-    def test_input_type_magnetic(self):
-        self.ts = timeseries.ChannelTS("magnetic")
-
-        magnetic_meta = metadata.Magnetic()
-        self.assertDictEqual(
-            self.ts.metadata.to_dict(), magnetic_meta.to_dict()
-        )
-
-    def test_input_type_auxiliary(self):
-        self.ts = timeseries.ChannelTS("auxiliary")
-
-        auxiliary_meta = metadata.Auxiliary()
-        self.assertDictEqual(
-            self.ts.metadata.to_dict(), auxiliary_meta.to_dict()
-        )
-
-    def test_input_type_fail(self):
-        self.assertRaises(ValueError, timeseries.ChannelTS, "temperature")
-
-    def test_intialize_with_metadata(self):
-        self.ts = timeseries.ChannelTS(
-            "electric", channel_metadata={"electric": {"component": "ex"}}
-        )
-        self.assertEqual(self.ts.metadata.component, "ex")
-        self.assertEqual(self.ts.ts.attrs["component"], "ex")
-
-    def test_numpy_input(self):
-        self.ts.metadata.sample_rate = 1.0
-        self.ts.update_xarray_metadata()
-
-        self.ts.ts = np.random.rand(4096)
-        end = self.ts.metadata.time_period._start_dt + (4096 - 1)
-
-        # check to make sure the times align
-        self.assertEqual(
-            self.ts.ts.coords.to_index()[0].isoformat(),
-            self.ts.metadata.time_period._start_dt.iso_no_tz,
-        )
-
-        self.assertEqual(
-            self.ts.ts.coords.to_index()[-1].isoformat(), end.iso_no_tz
-        )
-
-        self.assertEqual(self.ts.n_samples, 4096)
-
-    def test_set_component(self):
-        self.ts = timeseries.ChannelTS(
-            "electric", channel_metadata={"electric": {"component": "ex"}}
-        )
-
-        def set_comp(comp):
-            self.ts.component = comp
-
-        self.assertRaises(MTTSError, set_comp, "hx")
-        self.assertRaises(MTTSError, set_comp, "bx")
-        self.assertRaises(MTTSError, set_comp, "temperature")
-
 
 # =============================================================================
 # test run
 # =============================================================================
 class TestRunTS(unittest.TestCase):
     def setUp(self):
-        self.run = timeseries.RunTS()
+        self.run = RunTS()
         self.maxDiff = None
 
-        self.ex = timeseries.ChannelTS(
+        self.ex = ChannelTS(
             "electric",
             data=np.random.rand(4096),
             channel_metadata={
@@ -120,7 +43,7 @@ class TestRunTS(unittest.TestCase):
                 }
             },
         )
-        self.ey = timeseries.ChannelTS(
+        self.ey = ChannelTS(
             "electric",
             data=np.random.rand(4096),
             channel_metadata={
@@ -131,7 +54,7 @@ class TestRunTS(unittest.TestCase):
                 }
             },
         )
-        self.hx = timeseries.ChannelTS(
+        self.hx = ChannelTS(
             "magnetic",
             data=np.random.rand(4096),
             channel_metadata={
@@ -142,7 +65,7 @@ class TestRunTS(unittest.TestCase):
                 }
             },
         )
-        self.hy = timeseries.ChannelTS(
+        self.hy = ChannelTS(
             "magnetic",
             data=np.random.rand(4096),
             channel_metadata={
@@ -153,7 +76,7 @@ class TestRunTS(unittest.TestCase):
                 }
             },
         )
-        self.hz = timeseries.ChannelTS(
+        self.hz = ChannelTS(
             "magnetic",
             data=np.random.rand(4096),
             channel_metadata={
@@ -176,7 +99,7 @@ class TestRunTS(unittest.TestCase):
         self.assertEqual(self.run.end, MTime("2015-01-08T19:57:49.875000"))
 
     def test_sr_fail(self):
-        self.hz = timeseries.ChannelTS(
+        self.hz = ChannelTS(
             "magnetic",
             data=np.random.rand(4096),
             channel_metadata={
@@ -196,7 +119,7 @@ class TestRunTS(unittest.TestCase):
 
     def test_ex(self):
 
-        self.assertIsInstance(self.run.ex, timeseries.ChannelTS)
+        self.assertIsInstance(self.run.ex, ChannelTS)
         self.assertEqual(self.ex.sample_rate, self.run.sample_rate)
         self.assertEqual(self.run.start, self.ex.start)
         self.assertEqual(self.run.end, self.ex.end)
@@ -211,18 +134,18 @@ class TestRunTS(unittest.TestCase):
         self.assertRaises(NameError, getattr, *(self.run, "temperature"))
 
     def test_wrong_metadata(self):
-        self.run.metadata.sample_rate = 10
+        self.run.run_metadata.sample_rate = 10
         self.run.validate_metadata()
 
-        self.assertEqual(self.ex.sample_rate, self.run.metadata.sample_rate)
+        self.assertEqual(self.ex.sample_rate, self.run.run_metadata.sample_rate)
 
-        self.run.metadata.start = "2020-01-01T00:00:00"
+        self.run.run_metadata.start = "2020-01-01T00:00:00"
         self.run.validate_metadata()
-        self.assertEqual(self.run.start, self.run.metadata.time_period.start)
+        self.assertEqual(self.run.start, self.run.run_metadata.time_period.start)
 
-        self.run.metadata.end = "2020-01-01T00:00:00"
+        self.run.run_metadata.end = "2020-01-01T00:00:00"
         self.run.validate_metadata()
-        self.assertEqual(self.run.end, self.run.metadata.time_period.end)
+        self.assertEqual(self.run.end, self.run.run_metadata.time_period.end)
 
 
 # =============================================================================

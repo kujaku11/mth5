@@ -13,8 +13,6 @@ Created on Wed Dec 23 16:59:45 2020
 # =============================================================================
 # Imports
 # =============================================================================
-import numpy as np
-
 from mth5.groups import BaseGroup, MasterStationGroup
 
 # =============================================================================
@@ -88,38 +86,47 @@ class SurveyGroup(BaseGroup):
 
         super().__init__(group, **kwargs)
 
+    @BaseGroup.metadata.getter
+    def metadata(self):
+        """ Overwrite get metadata to include station information """
+
+        # need the try statement for when the file is initiated there is no
+        # /Station group yet
+        try:
+            self._metadata.stations = []
+            for key in self.stations_group.groups_list:
+                key_group = self.stations_group.get_station(key)
+                self._metadata.stations.append(key_group.metadata)
+        except KeyError:
+            pass
+
+        return self._metadata
+
     @property
     def stations_group(self):
         return MasterStationGroup(self.hdf5_group["Stations"])
 
-    def update_survey_metadata(self):
+    def update_survey_metadata(self, survey_dict=None):
         """
         update start end dates and location corners from stations_group.summary_table
 
         """
 
-        self.logger.debug(
-            "Updating survey metadata from stations summary table"
+        station_summary = self.stations_group.station_summary.copy()
+        self.logger.debug("Updating survey metadata from stations summary table")
+        
+        if survey_dict:
+            self.metadata.from_dict(survey_dict, skip_none=True)
+        
+        self.metadata.time_period.start_date = (
+            station_summary.start.min().isoformat().split("T")[0]
         )
-        self.metadata.time_period.start_date = min(
-            self.stations_group.summary_table.array["start"].astype(
-                np.unicode_
-            )
-        ).split("T")[0]
-        self.metadata.time_period.end_date = max(
-            self.stations_group.summary_table.array["end"].astype(np.unicode_)
-        ).split("T")[0]
-        self.metadata.northwest_corner.latitude = self.stations_group.summary_table.array[
-            "latitude"
-        ].max()
-        self.metadata.northwest_corner.longitude = self.stations_group.summary_table.array[
-            "longitude"
-        ].min()
-        self.metadata.southeast_corner.latitude = self.stations_group.summary_table.array[
-            "latitude"
-        ].min()
-        self.metadata.southeast_corner.longitude = self.stations_group.summary_table.array[
-            "longitude"
-        ].max()
+        self.metadata.time_period.end_date = (
+            station_summary.end.max().isoformat().split("T")[0]
+        )
+        self.metadata.northwest_corner.latitude = station_summary.latitude.max()
+        self.metadata.northwest_corner.longitude = station_summary.longitude.min()
+        self.metadata.southeast_corner.latitude = station_summary.latitude.min()
+        self.metadata.southeast_corner.longitude = station_summary.longitude.max()
 
         self.write_metadata()

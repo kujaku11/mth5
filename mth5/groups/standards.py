@@ -15,6 +15,7 @@ Created on Wed Dec 23 17:05:33 2020
 import numpy as np
 
 from mth5.groups.base import BaseGroup
+from mth5.tables import MTH5Table
 from mth5.utils.exceptions import MTH5TableError
 
 from mt_metadata.timeseries import (
@@ -90,6 +91,10 @@ class StandardsGroup(BaseGroup):
             ),
         }
 
+    @property
+    def summary_table(self):
+        return MTH5Table(self.hdf5_group["summary"])
+
     def get_attribute_information(self, attribute_name):
         """
         get information about an attribute
@@ -125,9 +130,7 @@ class StandardsGroup(BaseGroup):
 
         meta_item = self.summary_table.array[find]
         lines = ["", attribute_name, "-" * (len(attribute_name) + 4)]
-        for name, value in zip(
-            meta_item.dtype.names[1:], meta_item.item()[1:]
-        ):
+        for name, value in zip(meta_item.dtype.names[1:], meta_item.item()[1:]):
             if isinstance(value, (bytes, np.bytes_)):
                 value = value.decode()
             lines.append("\t{0:<14} {1}".format(name + ":", value))
@@ -174,7 +177,41 @@ class StandardsGroup(BaseGroup):
         Also, write generic metadata information.
 
         """
-        self.initialize_summary_table()
+        if self.dataset_options["compression"] is None:
+            summary_dataset = self.hdf5_group.create_dataset(
+                self._defaults_summary_attrs["name"],
+                (0,),
+                maxshape=self._defaults_summary_attrs["max_shape"],
+                dtype=self._defaults_summary_attrs["dtype"],
+            )
+        else:
+            summary_dataset = self.hdf5_group.create_dataset(
+                self._defaults_summary_attrs["name"],
+                (0,),
+                maxshape=self._defaults_summary_attrs["max_shape"],
+                dtype=self._defaults_summary_attrs["dtype"],
+                **self.dataset_options,
+            )
+
+        summary_dataset.attrs.update(
+            {
+                "type": "summary table",
+                "last_updated": "date_time",
+                "reference": summary_dataset.ref,
+            }
+        )
+
+        self.logger.debug(
+            "Created %s table with max_shape = %s, dtype=%s",
+            self._defaults_summary_attrs["name"],
+            self._defaults_summary_attrs["max_shape"],
+            self._defaults_summary_attrs["dtype"],
+        )
+        self.logger.debug(
+            "used options: "
+            + "; ".join(["%s = %s" % (k, v) for k, v in self.dataset_options.items()])
+        )
+
         self.summary_table_from_dict(summarize_metadata_standards())
 
         self.write_metadata()

@@ -74,26 +74,95 @@ base_translator = {
 }
 
 ### MT Survey to StationXML Network
-network_translator = deepcopy(base_translator)
-network_translator.update(
-    {
-        "description": "summary",
-        "comments": "comments",
-        "start_date": "time_period.start",
-        "end_date": "time_period.end",
-        "restricted_status": "release_license",
-        "operators": "special",
-        "code": "archive_network",
-        "alternate_code": "project",
-        "identifiers": ["citation_dataset.doi", "citation_journal.doi"],
-    }
-)
+class XMLNetworkMTSurvey:
+    """
+    translate back and forth between StationXML Network and MT Survey
+    """
 
-### StationXML to MT Survey
-mt_survey_translator = flip_dict(network_translator)
-mt_survey_translator["project_lead"] = "operator"
-mt_survey_translator["name"] = "alternate_code"
-mt_survey_translator["fdsn.network"] = "code"
+    def __init__(self):
+        self.network_translator = deepcopy(base_translator)
+        self.network_translator.update(
+            {
+                "description": "summary",
+                "comments": "comments",
+                "start_date": "time_period.start",
+                "end_date": "time_period.end",
+                "restricted_status": "release_license",
+                "operators": "special",
+                "code": "archive_network",
+                "alternate_code": "project",
+                "identifiers": ["citation_dataset.doi", "citation_journal.doi"],
+            }
+        )
+
+        ### StationXML to MT Survey
+        self.mt_survey_translator = flip_dict(self.network_translator)
+        self.mt_survey_translator["project_lead"] = "operator"
+        self.mt_survey_translator["name"] = "alternate_code"
+        self.mt_survey_translator["fdsn.network"] = "code"
+
+    def network_to_survey(self, network):
+        """
+        Translate a StationXML Network object to MT Survey object
+        
+        :param network: StationXML network element
+        :type network: :class:`obspy.core.inventory.Network`
+        
+        """
+
+        mt_survey = metadata.Survey()
+        doi_count = 0
+
+        for mth5_key, sxml_key in self.mt_survey_translator.items():
+            if mth5_key == "project_lead":
+                # only allow one person
+                try:
+                    inv_person = network.operators[0].contacts[0]
+                    mt_survey.set_attr_from_name(
+                        "project_lead.author", inv_person.names[0]
+                    )
+                    mt_survey.set_attr_from_name(
+                        "project_lead.email", inv_person.emails[0]
+                    )
+                    mt_survey.set_attr_from_name(
+                        "project_lead.organization", inv_person.agencies[0]
+                    )
+                except IndexError:
+                    pass
+
+                # is this redudant?
+                try:
+                    mt_survey.set_attr_from_name(
+                        "project_lead.organization", network.operators[0].agencies[0],
+                    )
+                except IndexError:
+                    pass
+            elif ".doi" in mth5_key:
+                try:
+                    mt_survey.set_attr_from_name(
+                        mth5_key, network.identifiers[doi_count]
+                    )
+                    doi_count += 1
+                except IndexError:
+                    pass
+
+            else:
+                value = getattr(network, sxml_key)
+                if value is None:
+                    continue
+                if isinstance(value, (list, tuple)):
+                    for k, v in zip(mth5_key, value):
+                        mt_survey.set_attr_from_name(k, v)
+                else:
+                    if sxml_key == "restricted_status":
+                        value = flip_dict(release_dict)[value]
+                    if sxml_key in ["start_date", "end_date"]:
+                        value = value.isoformat()
+
+                mt_survey.set_attr_from_name(mth5_key, value)
+
+        return mt_survey
+
 
 ### MT Station to StationXML Station
 station_translator = deepcopy(base_translator)
@@ -256,15 +325,11 @@ def mt_survey_to_inventory_network(survey_obj, namespace="MT"):
     ]
     for inv_key, mth5_key in network_translator.items():
         if mth5_key is None:
-            msg = "cannot currently map mth5.survey to network.{0}".format(
-                inv_key
-            )
+            msg = "cannot currently map mth5.survey to network.{0}".format(inv_key)
             logger.debug(msg)
             continue
         if inv_key == "operators":
-            operator = inventory.Operator(
-                agency=[survey_obj.project_lead.organization]
-            )
+            operator = inventory.Operator(agency=[survey_obj.project_lead.organization])
             person = inventory.Person(
                 names=[survey_obj.project_lead.author],
                 emails=[survey_obj.project_lead.email],
@@ -280,9 +345,7 @@ def mt_survey_to_inventory_network(survey_obj, namespace="MT"):
                 comment = inventory.Comment(survey_obj.comments, id=0)
                 network_obj.comments.append(comment)
         elif inv_key == "restricted_status":
-            network_obj.restricted_status = release_dict[
-                survey_obj.release_license
-            ]
+            network_obj.restricted_status = release_dict[survey_obj.release_license]
         elif inv_key == "identifiers":
             for s_key in mth5_key:
                 doi = survey_obj.get_attr_from_name(s_key)
@@ -290,9 +353,7 @@ def mt_survey_to_inventory_network(survey_obj, namespace="MT"):
                 used_list.append(s_key)
 
         else:
-            setattr(
-                network_obj, inv_key, survey_obj.get_attr_from_name(mth5_key)
-            )
+            setattr(network_obj, inv_key, survey_obj.get_attr_from_name(mth5_key))
         used_list.append(mth5_key)
 
     # add any extra metadata that does not fit with StationXML schema
@@ -360,9 +421,7 @@ def mt_station_to_inventory_station(station_obj, namespace="MT"):
                 operator = inventory.Operator(
                     agency=[station_obj.acquired_by.organization]
                 )
-                person = inventory.Person(
-                    names=[station_obj.acquired_by.author]
-                )
+                person = inventory.Person(names=[station_obj.acquired_by.author])
                 operator.contacts = [person]
                 inv_station.operators = [operator]
                 used_list.append("acquired_by.author")
@@ -377,9 +436,7 @@ def mt_station_to_inventory_station(station_obj, namespace="MT"):
                 comment = inventory.Comment(station_obj.comments, id=0)
                 inv_station.comments.append(comment)
         else:
-            setattr(
-                inv_station, inv_key, station_obj.get_attr_from_name(mth5_key)
-            )
+            setattr(inv_station, inv_key, station_obj.get_attr_from_name(mth5_key))
 
     inv_station.extra = AttribDict({})
 
@@ -435,9 +492,7 @@ def mt_station_to_inventory_station(station_obj, namespace="MT"):
     orientation = ", ".join(
         [
             "method: {0}".format(station_obj.orientation.method),
-            "reference_frame: {0}".format(
-                station_obj.orientation.reference_frame
-            ),
+            "reference_frame: {0}".format(station_obj.orientation.reference_frame),
         ]
     )
 
@@ -546,19 +601,13 @@ def mt_channel_to_inventory_channel(channel_obj, run_obj, namespace):
                         [
                             f"{direction} electrode",
                             "latitude: {0}".format(
-                                channel_obj.get_attr_from_name(
-                                    f"{direction}.latitude"
-                                )
+                                channel_obj.get_attr_from_name(f"{direction}.latitude")
                             ),
                             "longitude: {0}".format(
-                                channel_obj.get_attr_from_name(
-                                    f"{direction}.longitude"
-                                )
+                                channel_obj.get_attr_from_name(f"{direction}.longitude")
                             ),
                             "elevation: {0}".format(
-                                channel_obj.get_attr_from_name(
-                                    f"{direction}.elevation"
-                                )
+                                channel_obj.get_attr_from_name(f"{direction}.elevation")
                             ),
                         ]
                     )
@@ -566,12 +615,8 @@ def mt_channel_to_inventory_channel(channel_obj, run_obj, namespace):
                     sensor.manufacturer = channel_obj.get_attr_from_name(
                         f"{direction}.manufacturer"
                     )
-                    sensor.type = channel_obj.get_attr_from_name(
-                        f"{direction}.type"
-                    )
-                    sensor.model = channel_obj.get_attr_from_name(
-                        f"{direction}.model"
-                    )
+                    sensor.type = channel_obj.get_attr_from_name(f"{direction}.type")
+                    sensor.model = channel_obj.get_attr_from_name(f"{direction}.model")
                     sensor.description = desc
 
                     inv_channel.equipments.append(sensor)
@@ -598,9 +643,7 @@ def mt_channel_to_inventory_channel(channel_obj, run_obj, namespace):
         elif inv_key == "types":
             inv_channel.types = ["GEOPHYSICAL"]
         else:
-            setattr(
-                inv_channel, inv_key, channel_obj.get_attr_from_name(mth5_key)
-            )
+            setattr(inv_channel, inv_key, channel_obj.get_attr_from_name(mth5_key))
 
     inv_channel.extra = AttribDict()
     inv_channel.extra.Magnetotellurics = AttribDict(
@@ -683,9 +726,7 @@ class MTToStationXML:
 
     def __init__(self, inventory_object=None):
 
-        self.logger = setup_logger(
-            "{0}.{1}".format(__name__, self.__class__.__name__)
-        )
+        self.logger = setup_logger("{0}.{1}".format(__name__, self.__class__.__name__))
 
         self.mt_namespace = r"http://emiw.org/xmlns/mt/1.0"
         self.namespace_map = {
@@ -741,9 +782,7 @@ class MTToStationXML:
         else:
             network_index = 0
 
-        for ii, sta in enumerate(
-            self.inventory_obj.networks[network_index].stations
-        ):
+        for ii, sta in enumerate(self.inventory_obj.networks[network_index].stations):
             if station == sta.code:
                 return ii
 
@@ -764,17 +803,13 @@ class MTToStationXML:
         )
 
         if network_obj.code in self.inventory_obj.networks:
-            msg = "Network {0} is alread in current inventory".format(
-                network_obj.code
-            )
+            msg = "Network {0} is alread in current inventory".format(network_obj.code)
             self.logger.error(msg)
             raise ValueError(msg)
         self.inventory_obj.networks.append(network_obj)
 
         self.logger.debug(
-            "Added network {0} to inventory".format(
-                mt_survey_obj.archive_network
-            )
+            "Added network {0} to inventory".format(mt_survey_obj.archive_network)
         )
 
     def add_station(self, mt_station_obj, network_code=None):
@@ -930,12 +965,8 @@ def inventory_network_to_mt_survey(network_obj):
             # only allow one person
             try:
                 inv_person = network_obj.operators[0].contacts[0]
-                mt_survey.set_attr_from_name(
-                    "project_lead.author", inv_person.names[0]
-                )
-                mt_survey.set_attr_from_name(
-                    "project_lead.email", inv_person.emails[0]
-                )
+                mt_survey.set_attr_from_name("project_lead.author", inv_person.names[0])
+                mt_survey.set_attr_from_name("project_lead.email", inv_person.emails[0])
                 mt_survey.set_attr_from_name(
                     "project_lead.organization", inv_person.agencies[0]
                 )
@@ -943,10 +974,12 @@ def inventory_network_to_mt_survey(network_obj):
                 pass
 
             # is this redudant?
-            mt_survey.set_attr_from_name(
-                "project_lead.organization",
-                network_obj.operators[0].agencies[0],
-            )
+            try:
+                mt_survey.set_attr_from_name(
+                    "project_lead.organization", network_obj.operators[0].agencies[0],
+                )
+            except IndexError:
+                pass
         elif ".doi" in mth5_key:
             try:
                 mt_survey.set_attr_from_name(

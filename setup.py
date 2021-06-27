@@ -19,6 +19,7 @@ requirements = [
     "pyyaml",
     "scipy",
     "xarray",
+    "mt_metadata",
 ]
 
 

@@ -4,12 +4,22 @@ Created on Wed Jun 10 12:10:48 2020
 
 @author: jpeacock
 """
-from mth5.utils import stationxml_translator
+from pathlib import Path
+from mth5 import mth5
 from mt_metadata import timeseries as metadata
+from mt_metadata.timeseries import stationxml
 
 
 def test_make_stationxml_from_mt():
-    to_stationxml = stationxml_translator.MTToStationXML()
+
+    fn_path = Path(__file__).parent
+    fn = fn_path.joinpath("example.h5")
+    if fn.exists():
+        fn.unlink()
+
+    xml_fn = fn_path.joinpath("example.xml")
+    if fn.exists():
+        fn.unlink()
 
     survey = metadata.Survey()
     survey.from_dict(
@@ -18,7 +28,7 @@ def test_make_stationxml_from_mt():
                 "acquired_by.author": "MT",
                 "acquired_by.comments": "tired",
                 "archive_id": "MT01",
-                "archive_network": "EM",
+                "fdsn.network": "EM",
                 "citation_dataset.doi": "http://doi.####",
                 "citation_journal.doi": None,
                 "comments": None,
@@ -42,8 +52,6 @@ def test_make_stationxml_from_mt():
         }
     )
 
-    to_stationxml.add_network(survey)
-
     station = metadata.Station()
     station.from_dict(
         {
@@ -52,11 +60,11 @@ def test_make_stationxml_from_mt():
                 "acquired_by.comments": None,
                 "archive_id": "MT012",
                 "channel_layout": "L",
-                "channels_recorded": "Ex, Ey, Hx, Hy",
                 "comments": None,
                 "data_type": "MT",
                 "geographic_name": "london",
                 "id": "mt012",
+                "fdsn.id": "mt012",
                 "location.declination.comments": None,
                 "location.declination.model": "WMM",
                 "location.declination.value": 12.3,
@@ -80,62 +88,15 @@ def test_make_stationxml_from_mt():
         }
     )
 
-    to_stationxml.add_station(station)
-
-    channel = metadata.Electric()
-    channel.from_dict(
-        {
-            "electric": {
-                "ac.end": 10.2,
-                "ac.start": 12.1,
-                "comments": None,
-                "component": "EX",
-                "contact_resistance.end": 1.2,
-                "contact_resistance.start": 1.1,
-                "channel_number": 2,
-                "data_quality.rating.author": "mt",
-                "data_quality.rating.method": "ml",
-                "data_quality.rating.value": 4,
-                "data_quality.warning": None,
-                "dc.end": 1.0,
-                "dc.start": 2.0,
-                "dipole_length": 100.0,
-                "filter.applied": [False],
-                "filter.comments": None,
-                "filter.name": ["counts2mv", "lowpass"],
-                "measurement_azimuth": 90.0,
-                "negative.elevation": 100.0,
-                "negative.id": "a",
-                "negative.latitude": 12.12,
-                "negative.longitude": -111.12,
-                "negative.manufacturer": "test",
-                "negative.model": "fats",
-                "negative.type": "pb-pbcl",
-                "positive.elevation": 101.0,
-                "positive.id": "b",
-                "positive.latitude": 12.123,
-                "positive.longitude": -111.14,
-                "positive.manufacturer": "test",
-                "positive.model": "fats",
-                "positive.type": "ag-agcl",
-                "sample_rate": 256.0,
-                "time_period.end": "1980-01-01T00:00:00+00:00",
-                "time_period.start": "1980-01-01T00:00:00+00:00",
-                "type": "electric",
-                "units": "counts",
-            }
-        }
-    )
-
     run = metadata.Run()
     run.from_dict(
         {
             "run": {
                 "acquired_by.author": "MT guru",
                 "acquired_by.comments": "lazy",
-                "channels_recorded_auxiliary": None,
-                "channels_recorded_electric": ["EX", "EY"],
-                "channels_recorded_magnetic": ["HX", "HY", "HZ"],
+                "channels_recorded_auxiliary": ["temperature"],
+                "channels_recorded_electric": [],
+                "channels_recorded_magnetic": [],
                 "comments": "Cloudy solar panels failed",
                 "data_logger.firmware.author": "MT instruments",
                 "data_logger.firmware.name": "FSGMT",
@@ -166,20 +127,18 @@ def test_make_stationxml_from_mt():
         }
     )
 
-    to_stationxml.add_channel(channel, run, "MT012")
-
-    channel = metadata.Channel()
+    channel = metadata.Auxiliary()
     channel.from_dict(
         {
-            "channel": {
+            "auxiliary": {
                 "comments": "great",
-                "component": "Temperature",
+                "component": "temperature",
                 "channel_number": 1,
                 "data_quality.rating.author": "mt",
                 "data_quality.rating.method": "ml",
                 "data_quality.rating.value": 4,
                 "data_quality.warning": None,
-                "filter.applied": [True],
+                "filter.applied": [True, False],
                 "filter.comments": "test",
                 "filter.name": ["lowpass", "counts2mv"],
                 "location.elevation": 1234.0,
@@ -196,13 +155,20 @@ def test_make_stationxml_from_mt():
         }
     )
 
-    to_stationxml.add_channel(channel, run, "MT012")
+    m = mth5.MTH5()
+    m.open_mth5(fn)
+    survey_group = m.survey_group
+    survey_group.metadata.from_dict(survey.to_dict())
+    survey_group.write_metadata()
+    station_group = m.add_station(station.id, station)
+    run_group = station_group.add_run(run.id, run)
+    run_group.add_channel(
+        channel.component, "auxiliary", None, channel_metadata=channel
+    )
 
-    to_stationxml.to_stationxml("Test_station.xml")
-
-
+    translator = stationxml.XMLInventoryMTExperiment()
+    translator.mt_to_xml(m.to_experiment(), stationxml_fn=xml_fn)
 
 
 if __name__ == "__main__":
     test_make_stationxml_from_mt()
-
