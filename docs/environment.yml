@@ -17,4 +17,5 @@ dependencies:
   - sphinx_rtd_theme>=0.4
   - xarray
   - PyYAML
-  - mt_metadata
+  - pip:
+    - mt_metadata
