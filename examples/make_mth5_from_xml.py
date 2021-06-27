@@ -16,7 +16,6 @@ import numpy as np
 from xml.etree import cElementTree as et
 
 from mth5 import mth5
-from mth5.utils.pathing import DATA_DIR
 from mth5.utils.pathing import ensure_is_path
 
 # =============================================================================
@@ -132,35 +131,27 @@ def add_station(station, directory, h5_obj):
     return new_station
 
 
-def test_make_mth5_from_xml():
-    """"""
-    # =============================================================================
-    # script
-    # =============================================================================
-    # set xml directory
-    xml_root = DATA_DIR.joinpath("florida_xml_metadata_files")
 
-    mth5_filename = DATA_DIR.joinpath("from_xml.mth5")
-    if mth5_filename.exists():
-        mth5_filename.unlink()
-        print(f"--> Rmoved existing file {mth5_filename}")
+xml_root = "path/to/metadata/files.xml"
 
-    # initialize mth5 object
-    mth5_obj = mth5.MTH5()
-    mth5_obj.open_mth5(mth5_filename, mode="a")
+mth5_filename = "from_xml.mth5"
+if mth5_filename.exists():
+    mth5_filename.unlink()
+    print(f"--> Rmoved existing file {mth5_filename}")
 
-    ### add survey information
-    survey_element = read_xml(xml_root.joinpath("survey.xml"))
+# initialize mth5 object
+mth5_obj = mth5.MTH5()
+mth5_obj.open_mth5(mth5_filename, mode="a")
 
-    survey_obj = mth5_obj.survey_group
-    survey_obj.metadata.from_xml(survey_element)
-    survey_obj.write_metadata()
+### add survey information
+survey_element = read_xml(xml_root.joinpath("survey.xml"))
 
-    for station in ["FL001", "FL002"]:
-        # add station
-        new_station = add_station(station, xml_root, mth5_obj)
-    mth5_obj.close_mth5()
+survey_obj = mth5_obj.survey_group
+survey_obj.metadata.from_xml(survey_element)
+survey_obj.write_metadata()
 
+for station in ["FL001", "FL002"]:
+    # add station
+    new_station = add_station(station, xml_root, mth5_obj)
+mth5_obj.close_mth5()
 
-if __name__ == "__main__":
-    test_make_mth5_from_xml()
