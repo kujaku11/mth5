@@ -69,7 +69,7 @@ class FAPGroup(BaseGroup):
             "fap_table",
             frequency.shape,
             dtype=np.dtype(
-                [("frequency", np.float), ("amplitude", np.float), ("phase", np.float)]
+                [("frequency", float), ("amplitude", float), ("phase", float)]
             ),
             **self.dataset_options,
         )

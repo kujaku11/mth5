@@ -68,13 +68,13 @@ class ZPKGroup(BaseGroup):
         poles_ds = zpk_filter_group.create_dataset(
             "poles",
             poles.shape,
-            dtype=np.dtype([("real", np.float), ("imag", np.float)]),
+            dtype=np.dtype([("real", float), ("imag", float)]),
             **self.dataset_options,
         )
         zeros_ds = zpk_filter_group.create_dataset(
             "zeros",
             zeros.shape,
-            dtype=np.dtype([("real", np.float), ("imag", np.float)]),
+            dtype=np.dtype([("real", float), ("imag", float)]),
             **self.dataset_options,
         )
 

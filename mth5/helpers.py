@@ -183,10 +183,10 @@ def to_numpy_type(value):
             float,
             bool,
             complex,
-            np.int,
-            np.float,
-            np.bool,
-            np.complex,
+            np.int_,
+            np.float_,
+            np.bool_,
+            np.complex_,
         ),
     ):
         return value
