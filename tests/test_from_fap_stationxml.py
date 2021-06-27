@@ -24,7 +24,7 @@ fn_path = Path(__file__).parent
 class TestFAPMTH5(unittest.TestCase):
     """
     Test making an MTH5 file from a FAP filtered StationXML
-    
+
     """
 
     def setUp(self):

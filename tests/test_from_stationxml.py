@@ -19,7 +19,7 @@ fn_path = Path(__file__).parent
 
 class TestFromStationXML01(unittest.TestCase):
     """
-    test from a stationxml 
+    test from a stationxml
     """
 
     def setUp(self):
