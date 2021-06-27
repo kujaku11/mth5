@@ -1126,6 +1126,7 @@ class RunGroup(BaseGroup):
                     maxshape=max_shape,
                     **self.dataset_options,
                 )
+
             # initialize an resizable data array
             else:
                 channel_group = self.hdf5_group.create_dataset(
