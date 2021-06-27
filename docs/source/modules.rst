@@ -5,5 +5,3 @@ mth5
    :maxdepth: 4
 
    mth5
-   setup
-   tests

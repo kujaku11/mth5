@@ -1,8 +1,6 @@
 mth5.utils package
 ==================
 
-.. contents::  :local:
-
 Submodules
 ----------
 
@@ -14,26 +12,18 @@ mth5.utils.exceptions module
    :undoc-members:
    :show-inheritance:
 
-mth5.utils.helpers module
--------------------------
+mth5.utils.fdsn\_tools module
+-----------------------------
 
-.. automodule:: mth5.utils.helpers
+.. automodule:: mth5.utils.fdsn_tools
    :members:
    :undoc-members:
    :show-inheritance:
 
-mth5.utils.mth5logger module
-----------------------------
+mth5.utils.mth5\_logger module
+------------------------------
 
-.. automodule:: mth5.utils.mth5logger
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-mth5.utils.mttime module
-------------------------
-
-.. automodule:: mth5.utils.mttime
+.. automodule:: mth5.utils.mth5_logger
    :members:
    :undoc-members:
    :show-inheritance:
@@ -45,7 +35,6 @@ mth5.utils.stationxml\_translator module
    :members:
    :undoc-members:
    :show-inheritance:
-
 
 Module contents
 ---------------
