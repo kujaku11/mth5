@@ -474,12 +474,16 @@ class MTH5:
                         + "Then reopen the file in the preferred mode"
                     )
                     self.logger.exception(msg)
-            elif mode in ["a", "r", "r+", "w-", "x"]:
+            elif mode in ["a", "w-", "x",  "r+"]:
                 self.__hdf5_obj = h5py.File(self.__filename, mode=mode)
                 if not self.validate_file():
                     msg = "Input file is not a valid MTH5 file"
                     self.logger.error(msg)
                     raise MTH5Error(msg)
+                    
+            elif mode in ["r"]:
+                self.__hdf5_obj = h5py.File(self.__filename, mode=mode)
+                self.validate_file()
 
             else:
                 msg = "mode {0} is not understood".format(mode)
@@ -535,23 +539,24 @@ class MTH5:
 
         if self.h5_is_write():
             if self.file_type not in acceptable_file_types:
-                msg = f"Unaccetable file type {self.file_type}"
+                msg = f"Unacceptable file type {self.file_type}"
                 self.logger.error(msg)
                 return False
             if self.file_version not in acceptable_file_versions:
-                msg = f"Unaccetable file version {self.file_version}"
+                msg = f"Unacceptable file version {self.file_version}"
                 self.logger.error(msg)
                 return False
             if self.data_level not in acceptable_data_levels:
-                msg = f"Unaccetable data_level {self.data_level}"
+                msg = f"Unacceptable data_level {self.data_level}"
                 self.logger.error(msg)
                 return False
             for gr in self.survey_group.groups_list:
                 if gr not in self._default_subgroup_names:
-                    msg = f"Unaccetable group {gr}"
+                    msg = f"Unacceptable group {gr}"
                     self.logger.error(msg)
                     return False
             return True
+        self.logger.warning("HDF5 file is not writeable")
         return False
 
     def close_mth5(self):
