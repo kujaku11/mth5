@@ -18,6 +18,7 @@ from mth5.groups.base import BaseGroup
 from mth5.tables import MTH5Table
 from mth5.utils.exceptions import MTH5TableError
 
+from mt_metadata.base import BaseDict
 from mt_metadata.timeseries import (
     Survey,
     Station,
@@ -36,7 +37,8 @@ def summarize_metadata_standards():
     """
     # need to be sure to make copies otherwise things will get
     # added in not great places.
-    summary_dict = Survey()._attr_dict.copy()
+    summary_dict = BaseDict()
+    summary_dict.add_dict(Survey()._attr_dict.copy(), "survey")
     summary_dict.add_dict(Station()._attr_dict.copy(), "station")
     summary_dict.add_dict(Run()._attr_dict.copy(), "run")
     summary_dict.add_dict(Electric()._attr_dict.copy(), "electric")
