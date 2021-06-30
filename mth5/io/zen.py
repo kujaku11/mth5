@@ -861,13 +861,15 @@ class Z3D:
 
     @property
     def channel_number(self):
-        ch_num = int(float(self.metadata.ch_number))
-        if ch_num > 6:
-            try:
-                ch_num = self.ch_dict[self.component]
-            except KeyError:
-                ch_num = 6
-        return ch_num
+        if self.metadata.ch_number:
+            ch_num = int(float(self.metadata.ch_number))
+            if ch_num > 6:
+                try:
+                    ch_num = self.ch_dict[self.component]
+                except KeyError:
+                    ch_num = 6
+            return ch_num
+        return 0
 
     @property
     def channel_metadata(self):
