@@ -232,7 +232,6 @@ class RunTS:
                     )
                     self.logger.warning(msg)
                 self.run_metadata.time_period.end = self.end.iso_str
-            print(self.sample_rate)
             if self.sample_rate != self.run_metadata.sample_rate:
                 if self.run_metadata.sample_rate is not None:
                     msg = (
