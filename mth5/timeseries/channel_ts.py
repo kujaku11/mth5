@@ -30,6 +30,7 @@ from mt_metadata.timeseries.filters import ChannelResponseFilter
 
 from mth5.utils.exceptions import MTTSError
 from mth5.utils.mth5_logger import setup_logger
+from mth5.utils import fdsn_tools
 
 from obspy.core import Trace
 
@@ -805,7 +806,8 @@ class ChannelTS:
         else:
             self.channel_metadata = metadata.Auxiliary()
 
-        self.channel_metadata.component = obspy_trace.stats.channel
+        mt_code = fdsn_tools.make_mt_channel(fdsn_tools.read_channel_code(obspy_trace.stats.channel))
+        self.channel_metadata.component = mt_code
         self.start = obspy_trace.stats.starttime.isoformat()
         self.sample_rate = obspy_trace.stats.sampling_rate
         self.station_metadata.fdsn.id = obspy_trace.stats.station

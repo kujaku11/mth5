@@ -54,13 +54,15 @@ measurement_code_dict = {
 measurement_code_dict_reverse = dict([(v, k) for k, v in measurement_code_dict.items()])
 
 orientation_code_dict = {
-    "N": {"min": 0, "max": 5},
-    "E": {"min": 85, "max": 90},
-    "Z": {"min": 0, "max": 5},
-    "1": {"min": 5, "max": 45},
-    "2": {"min": 45, "max": 85},
-    "3": {"min": 5, "max": 85},
+    "N": {"min": 0, "max": 15},
+    "E": {"min": 75, "max": 90},
+    "Z": {"min": 0, "max": 15},
+    "1": {"min": 15, "max": 45},
+    "2": {"min": 45, "max": 75},
+    "3": {"min": 15, "max": 75},
 }
+
+mt_code_dict = {"magnetics": "h", "electric": "e"}
 
 
 def get_location_code(channel_obj):
@@ -193,7 +195,7 @@ def read_channel_code(channel_code):
         raise ValueError(msg)
 
     try:
-        period_range = period_code_dict[channel_code[0]]
+        period_range = period_code_dict[channel_code[0].upper()]
     except KeyError:
         msg = (
             f"Could not find period range for {channel_code[0]}. ",
@@ -202,14 +204,17 @@ def read_channel_code(channel_code):
         period_range = {"min": 1, "max": 1}
 
     try:
-        component = measurement_code_dict_reverse[channel_code[1]]
+        component = measurement_code_dict_reverse[channel_code[1].upper()]
     except KeyError:
         msg = f"Could not find component for {channel_code[1]}"
         logger.error(msg)
         raise ValueError(msg)
 
+    vertical = False
     try:
-        orientation = orientation_code_dict[channel_code[2]]
+        orientation = orientation_code_dict[channel_code[2].upper()]
+        if channel_code[2].upper() in ["3", "Z"]:
+            vertical = True
     except KeyError:
         msg = (
             f"Could not find orientation for {channel_code[2]}. ",
@@ -222,4 +227,40 @@ def read_channel_code(channel_code):
         "period": period_range,
         "component": component,
         "orientation": orientation,
+        "vertical": vertical,
     }
+
+def make_mt_channel(code_dict, angle_tol=15):
+    """
+    
+    :param code_dict: DESCRIPTION
+    :type code_dict: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+    
+    mt_comp = mt_code_dict[code_dict["component"]]
+    
+    if not code_dict["vertical"]:
+        if code_dict["orientation"]["min"] >= 0 and code_dict["orientation"]["max"] <= angle_tol:
+            mt_dir = "x"
+        elif code_dict["orientation"]["min"] >= angle_tol and code_dict["orientation"]["max"] <= 45:
+            mt_dir = "1"
+        if code_dict["orientation"]["min"] >= (90 - angle_tol) and code_dict["orientation"]["max"] <= 90:
+            mt_dir = "y"
+        elif code_dict["orientation"]["min"] >= 45 and code_dict["orientation"]["max"] <= (90 - angle_tol):
+            mt_dir = "2"
+            
+    else:
+        if code_dict["orientation"]["min"] >= 0 and code_dict["orientation"]["max"] <= angle_tol:
+            mt_dir = "z"
+        elif code_dict["orientation"]["min"] >= angle_tol and code_dict["orientation"]["max"] <= 90:
+            mt_dir = "3"
+            
+    mt_code = f"{mt_comp}{mt_dir}"
+    
+    return mt_code
+    
+    
+    
