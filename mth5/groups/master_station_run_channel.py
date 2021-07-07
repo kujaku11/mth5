@@ -1484,12 +1484,15 @@ class ChannelDataset:
 
     """
 
-    def __init__(self, dataset, dataset_metadata=None, **kwargs):
-
+    def __init__(self, dataset, dataset_metadata=None, write_metadata=True, 
+                 **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+            
         if dataset is not None and isinstance(dataset, (h5py.Dataset)):
             self.hdf5_dataset = weakref.ref(dataset)()
 
-        self.logger = setup_logger("{0}.{1}".format(__name__, self._class_name))
+        self.logger = setup_logger(f"{__name__}.{self._class_name}")
 
         # set metadata to the appropriate class.  Standards is not a
         # Base object so should be skipped. If the class name is not
@@ -1526,15 +1529,14 @@ class ChannelDataset:
             self.metadata.mth5_type = self._class_name
 
             # write out metadata to make sure that its in the file.
-            self.write_metadata()
+            if write_metadata:
+                self.write_metadata()
 
         # if the attrs don't have the proper metadata keys yet write them
         if not "mth5_type" in list(self.hdf5_dataset.attrs.keys()):
             self.write_metadata()
 
-        # if any other keywords
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+        
 
     def _add_base_attributes(self):
         # add 2 attributes that will help with querying

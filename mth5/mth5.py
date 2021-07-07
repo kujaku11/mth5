@@ -39,7 +39,7 @@ from mt_metadata.timeseries import Experiment
 # =============================================================================
 # Acceptable parameters
 # =============================================================================
-acceptable_file_types = ["mth5", "MTH5"]
+acceptable_file_types = ["mth5", "MTH5", "h5", "H5"]
 acceptable_file_versions = ["0.1.0"]
 acceptable_data_levels = [0, 1, 2, 3]
 
@@ -262,7 +262,7 @@ class MTH5:
         }
 
     def __str__(self):
-        if self.h5_is_write():
+        if self.h5_is_read():
             return helpers.get_tree(self.__hdf5_obj)
 
         return "HDF5 file is closed and cannot be accessed."
@@ -283,7 +283,7 @@ class MTH5:
     @property
     def filename(self):
         """ file name of the hdf5 file """
-        if self.h5_is_write():
+        if self.h5_is_read():
             return Path(self.__hdf5_obj.filename)
         msg = (
             "MTH5 file is not open or has not been created yet. "
@@ -316,7 +316,7 @@ class MTH5:
     def file_type(self):
         """ File Type should be MTH5 """
 
-        if self.h5_is_write():
+        if self.h5_is_read():
             return self.__hdf5_obj.attrs["file.type"]
         return None
 
@@ -328,7 +328,7 @@ class MTH5:
             self.logger.error(msg)
             raise ValueError(msg)
 
-        if self.h5_is_write():
+        if self.h5_is_read():
             if value in acceptable_file_types:
                 self.__hdf5_obj.attrs["file.type"] = value
             msg = f"Input file.type is not valid, must be {acceptable_file_types}"
@@ -338,7 +338,7 @@ class MTH5:
     @property
     def file_version(self):
         """ mth5 file version """
-        if self.h5_is_write():
+        if self.h5_is_read():
             return self.__hdf5_obj.attrs["file.version"]
         return None
 
@@ -350,7 +350,7 @@ class MTH5:
             self.logger.error(msg)
             raise ValueError(msg)
 
-        if self.h5_is_write():
+        if self.h5_is_read():
             if value in acceptable_file_versions:
                 self.__hdf5_obj.attrs["file.version"] = value
             msg = f"Input file.version is not valid, must be {acceptable_file_versions}"
@@ -360,14 +360,14 @@ class MTH5:
     @property
     def software_name(self):
         """ software name that wrote the file """
-        if self.h5_is_write():
+        if self.h5_is_read():
             return self.__hdf5_obj.attrs["mth5.software.name"]
         return None
 
     @property
     def data_level(self):
         """ data level """
-        if self.h5_is_write():
+        if self.h5_is_read():
             return self.__hdf5_obj.attrs["data_level"]
         return None
 
@@ -379,7 +379,7 @@ class MTH5:
             self.logger.error(msg)
             raise ValueError(msg)
 
-        if self.h5_is_write():
+        if self.h5_is_read():
             if value in acceptable_file_versions:
                 self.__hdf5_obj.attrs["data_level"] = value
             msg = f"Input data_level is not valid, must be {acceptable_data_levels}"
