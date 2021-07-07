@@ -389,7 +389,7 @@ class MTH5:
     @property
     def survey_group(self):
         """ Convenience property for /Survey group """
-        if self.h5_is_write():
+        if self.h5_is_read():
             return groups.SurveyGroup(
                 self.__hdf5_obj["/Survey"], **self.dataset_options
             )
@@ -399,7 +399,7 @@ class MTH5:
     @property
     def reports_group(self):
         """ Convenience property for /Survey/Reports group """
-        if self.h5_is_write():
+        if self.h5_is_read():
             return groups.ReportsGroup(
                 self.__hdf5_obj["/Survey/Reports"], **self.dataset_options
             )
@@ -409,7 +409,7 @@ class MTH5:
     @property
     def filters_group(self):
         """ Convenience property for /Survey/Filters group """
-        if self.h5_is_write():
+        if self.h5_is_read():
             return groups.FiltersGroup(
                 self.__hdf5_obj["/Survey/Filters"], **self.dataset_options
             )
@@ -419,7 +419,7 @@ class MTH5:
     @property
     def standards_group(self):
         """ Convenience property for /Survey/Standards group"""
-        if self.h5_is_write():
+        if self.h5_is_read():
             return groups.StandardsGroup(
                 self.__hdf5_obj["/Survey/Standards"], **self.dataset_options
             )
@@ -429,7 +429,7 @@ class MTH5:
     @property
     def stations_group(self):
         """ Convenience property for /Survey/Stations group"""
-        if self.h5_is_write():
+        if self.h5_is_read():
             return groups.MasterStationGroup(
                 self.__hdf5_obj["/Survey/Stations"], **self.dataset_options
             )
@@ -537,7 +537,7 @@ class MTH5:
 
         """
 
-        if self.h5_is_write():
+        if self.h5_is_read():
             if self.file_type not in acceptable_file_types:
                 msg = f"Unacceptable file type {self.file_type}"
                 self.logger.error(msg)
@@ -556,7 +556,7 @@ class MTH5:
                     self.logger.error(msg)
                     return False
             return True
-        self.logger.warning("HDF5 file is not writeable")
+        self.logger.warning("HDF5 file is not open")
         return False
 
     def close_mth5(self):
@@ -584,12 +584,30 @@ class MTH5:
             except ValueError:
                 return False
         return False
+    
+    def h5_is_read(self):
+        """
+        check to see if the hdf5 file is open and readable
+        
+        :return: True if readable, False if not
+        :rtype: Boolean
+
+        """
+        
+        if isinstance(self.__hdf5_obj, h5py.File):
+            try:
+                if self.__hdf5_obj.mode in ["r", "r+", "a", "w", "w-", "x"]:
+                    return True
+                return False
+            except ValueError:
+                return False
+        return False
 
     def has_group(self, group_name):
         """
         Check to see if the group name exists
         """
-        if self.h5_is_write():
+        if self.h5_is_read():
 
             def has_name(name):
                 if group_name == name:
@@ -638,7 +656,7 @@ class MTH5:
 
         """
 
-        if self.h5_is_write():
+        if self.h5_is_read():
             experiment = Experiment()
             experiment.surveys.append(self.survey_group.metadata)
             return experiment
