@@ -43,9 +43,9 @@ meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
 class RunTS:
     """
     holds all run ts in one aligned array
-    
+
     components --> {'ex': ex_xarray, 'ey': ey_xarray}
-    
+
     """
 
     def __init__(self, array_list=None, run_metadata=None, station_metadata=None):
@@ -111,7 +111,7 @@ class RunTS:
         return self.__str__()
 
     def _validate_array_list(self, array_list):
-        """ check to make sure all entries are a :class:`ChannelTS` object"""
+        """check to make sure all entries are a :class:`ChannelTS` object"""
 
         if not isinstance(array_list, (tuple, list)):
             msg = f"array_list must be a list or tuple, not {type(array_list)}"
@@ -159,23 +159,22 @@ class RunTS:
                 return None
             if name not in ["shape", "size"]:
                 try:
-                     return super().__getattribute__(name)
+                    return super().__getattribute__(name)
                 except AttributeError:
-                # elif name not in self.__dict__.keys() and name not in [
-                #     "shape",
-                #     "size",
-                #     "sample_rate",
-                #     "start",
-                #     "end",
-                # ]:
+                    # elif name not in self.__dict__.keys() and name not in [
+                    #     "shape",
+                    #     "size",
+                    #     "sample_rate",
+                    #     "start",
+                    #     "end",
+                    # ]:
                     msg = f"RunTS has no attribute {name}"
                     self.logger.error(msg)
                     raise NameError(msg)
 
-               
     @property
     def has_data(self):
-        """ check to see if there is data """
+        """check to see if there is data"""
         if len(self.channels) > 0:
             return True
         return False
@@ -183,9 +182,9 @@ class RunTS:
     @property
     def summarize_metadata(self):
         """
-        
+
         Get a summary of all the metadata
-        
+
         :return: DESCRIPTION
         :rtype: TYPE
 
@@ -200,9 +199,9 @@ class RunTS:
     def validate_metadata(self):
         """
         Check to make sure that the metadata matches what is in the data set.
-        
+
         updates metadata from the data.
-        
+
         Check the start and end times, channels recorded
         :return: DESCRIPTION
         :rtype: TYPE
@@ -258,7 +257,7 @@ class RunTS:
 
     def set_dataset(self, array_list, align_type="outer"):
         """
-        
+
         :param array_list: list of xarrays
         :type array_list: list of :class:`mth5.timeseries.ChannelTS` objects
         :param align_type: how the different times will be aligned
@@ -289,19 +288,19 @@ class RunTS:
         """
         Add a channel to the dataset, can be an :class:`xarray.DataArray` or
         :class:`mth5.timeseries.ChannelTS` object.
-        
+
         Need to be sure that the coordinates and dimensions are the same as the
         existing dataset, namely coordinates are time, and dimensions are the same,
         if the dimesions are larger than the existing dataset then the added channel
-        will be clipped to the dimensions of the existing dataset.  
-        
+        will be clipped to the dimensions of the existing dataset.
+
         If the start time is not the same nan's will be placed at locations where the
         timing does not match the current start time.  This is a feature of xarray.
-        
-        
+
+
         :param channel: a channel xarray or ChannelTS to add to the run
         :type channel: :class:`xarray.DataArray` or :class:`mth5.timeseries.ChannelTS`
-        
+
 
         """
 
@@ -359,7 +358,7 @@ class RunTS:
                 return 1e9 / self.dataset.coords["time"].to_index().freq.n
             except AttributeError:
                 self.logger.warning("Something weird happend with xarray time indexing")
-                
+
                 raise ValueError("Something weird happend with xarray time indexing")
         return self.run_metadata.sample_rate
 
@@ -369,9 +368,9 @@ class RunTS:
 
     def to_obspy_stream(self):
         """
-        convert time series to an :class:`obspy.core.Stream` which is like a 
+        convert time series to an :class:`obspy.core.Stream` which is like a
         list of :class:`obspy.core.Trace` objects.
-        
+
         :return: An Obspy Stream object from the time series data
         :rtype: :class:`obspy.core.Stream`
 
@@ -394,10 +393,10 @@ class RunTS:
         """
         Get a run from an :class:`obspy.core.stream` which is a list of
         :class:`obspy.core.Trace` objects.
-        
+
         :param obspy_stream: Obspy Stream object
         :type obspy_stream: :class:`obspy.core.Stream`
-        
+
 
         """
 
@@ -430,9 +429,9 @@ class RunTS:
 
     def plot(self):
         """
-        
+
         plot the time series probably slow for large data sets
-        
+
         :return: DESCRIPTION
         :rtype: TYPE
 

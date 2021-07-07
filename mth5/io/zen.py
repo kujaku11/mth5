@@ -31,9 +31,10 @@ import numpy as np
 
 from mt_metadata.utils.mttime import MTime
 from mt_metadata.timeseries.filters import (
-    ChannelResponseFilter, 
+    ChannelResponseFilter,
     FrequencyResponseTableFilter,
-    CoefficientFilter)
+    CoefficientFilter,
+)
 from mth5.timeseries import ChannelTS
 
 # ==============================================================================
@@ -41,12 +42,12 @@ class Z3DHeader:
     """
     Read in the header information of a Z3D file and make each metadata
     entry an attirbute.
-    
+
     :param fn: full path to Z3D file
     :type fn: string or :class:`pathlib.Path`
     :param fid:  file object ex. open(Z3Dfile, 'rb')
     :type fid: file
-              
+
     ======================== ==================================================
     Attributes               Definition
     ======================== ==================================================
@@ -75,7 +76,7 @@ class Z3DHeader:
     ======================== ==================================================
 
     :Example:
-    
+
         >>> import mtpy.usgs.zen as zen
         >>> Z3Dfn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
         >>> header_obj = zen.Z3DHeader()
@@ -120,25 +121,25 @@ class Z3DHeader:
 
     @property
     def data_logger(self):
-        """ Data logger name as ZEN{box_number} """
+        """Data logger name as ZEN{box_number}"""
         return "ZEN{0:03}".format(int(self.box_number))
 
     def read_header(self, fn=None, fid=None):
         """
         Read the header information into appropriate attributes
-        
+
         :param fn: full path to Z3D file
         :type fn: string or :class:`pathlib.Path`
         :param fid:  file object ex. open(Z3Dfile, 'rb')
         :type fid: file
-        
+
         :Example:
-    
+
         >>> import mtpy.usgs.zen as zen
         >>> Z3Dfn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
         >>> header_obj = zen.Z3DHeader()
         >>> header_obj.read_header()
-        
+
         """
         if fn is not None:
             self.fn = fn
@@ -222,14 +223,14 @@ class Z3DHeader:
 # ==============================================================================
 class Z3DSchedule:
     """
-    Will read in the schedule information of a Z3D file and make each metadata 
+    Will read in the schedule information of a Z3D file and make each metadata
     entry an attirbute. The attributes are left in capitalization of the Z3D file.
 
     :param fn: full path to Z3D file
     :type fn: string or :class:`pathlib.Path`
     :param fid:  file object ex. open(Z3Dfile, 'rb')
     :type fid: file
-    
+
     ======================== ==================================================
     Attributes               Definition
     ======================== ==================================================
@@ -264,7 +265,7 @@ class Z3DSchedule:
         >>> Z3Dfn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
         >>> header_obj = zen.Z3DSchedule()
         >>> header_obj.read_schedule()
-        
+
     """
 
     def __init__(self, fn=None, fid=None, **kwargs):
@@ -341,14 +342,14 @@ class Z3DSchedule:
 class Z3DMetadata:
     """
     Will read in the metadata information of a Z3D file and make each metadata
-    entry an attirbute.The attributes are left in capitalization of the Z3D 
+    entry an attirbute.The attributes are left in capitalization of the Z3D
     file.
 
     :param fn: full path to Z3D file
     :type fn: string or :class:`pathlib.Path`
     :param fid:  file object ex. open(Z3Dfile, 'rb')
     :type fid: file
-    
+
     ======================== ==================================================
     Attributes               Definition
     ======================== ==================================================
@@ -392,7 +393,7 @@ class Z3DMetadata:
         >>> Z3Dfn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
         >>> header_obj = zen.Z3DMetadata()
         >>> header_obj.read_metadata()
-        
+
     """
 
     def __init__(self, fn=None, fid=None, **kwargs):
@@ -440,7 +441,7 @@ class Z3DMetadata:
     def read_metadata(self, fn=None, fid=None):
         """
         read meta data
-        
+
         :param string fn: full path to file, optional if already initialized.
         :param file fid: open file object, optional if already initialized.
         """
@@ -478,9 +479,9 @@ class Z3DMetadata:
             if "metadata" in test_str:
                 self.count += 1
                 test_str = test_str.strip().split("record")[1].strip()
-                
+
                 # split the metadata records with key=value style
-                if test_str.count("|") > 1: 
+                if test_str.count("|") > 1:
                     for t_str in test_str.split("|"):
                         # get metadata name and value
                         if (
@@ -535,7 +536,9 @@ class Z3DMetadata:
                     coil_num = test_list[1].split("|")[1]
                     coil_key, coil_value = coil_num.split("=")
                     setattr(
-                        self, coil_key.replace(".", "_").lower(), coil_value.strip(),
+                        self,
+                        coil_key.replace(".", "_").lower(),
+                        coil_value.strip(),
                     )
                     for t_str in test_list[2:]:
                         if "\x00" in t_str:
@@ -628,7 +631,7 @@ class Z3D:
     zen_schedule             time when zen was set to         None
                              run
     ======================== ================================ =================
-   
+
     * gps_dtype is formated as np.dtype([('flag0', np.int32),
                                         ('flag1', np.int32),
                                         ('time', np.int32),
@@ -643,7 +646,7 @@ class Z3D:
                                         ('pps_count', np.int32),
                                         ('dac_tune', np.int32),
                                         ('block_len', np.int32)])
-    
+
 
     :Example:
 
@@ -752,7 +755,7 @@ class Z3D:
             x2, y2 = [float(d) for d in self.metadata.ch_xyz2.split(":")]
             length = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2) * 100.0
             length = np.round(length, 2)
-            
+
         return length
 
     @property
@@ -873,7 +876,7 @@ class Z3D:
 
     @property
     def channel_metadata(self):
-        """ Channel metadata """
+        """Channel metadata"""
 
         # fill the time series object
         if "e" in self.component:
@@ -916,8 +919,7 @@ class Z3D:
                 * self.header.ch_factor
             )
             meta_dict[ts_type]["h_field_min.end"] = (
-                self.time_series[-int(self.sample_rate) :].min()
-                * self.header.ch_factor
+                self.time_series[-int(self.sample_rate) :].min() * self.header.ch_factor
             )
 
         meta_dict[ts_type]["time_period.start"] = self.start.isoformat()
@@ -928,13 +930,15 @@ class Z3D:
         meta_dict[ts_type]["units"] = "digital counts"
         meta_dict[ts_type]["channel_number"] = self.channel_number
         meta_dict[ts_type]["filter.name"] = self.channel_response.names
-        meta_dict[ts_type]["filter.applied"] = [False] * len(self.channel_response.names)
-        
+        meta_dict[ts_type]["filter.applied"] = [False] * len(
+            self.channel_response.names
+        )
+
         return meta_dict
 
     @property
     def station_metadata(self):
-        """ station metadta """
+        """station metadta"""
 
         meta_dict = {}
         meta_dict["id"] = self.station
@@ -950,7 +954,7 @@ class Z3D:
 
     @property
     def run_metadata(self):
-        """ Run metadata """
+        """Run metadata"""
         meta_dict = {}
         meta_dict["data_logger.firmware.version"] = self.header.version
         meta_dict["data_logger.id"] = self.header.data_logger
@@ -965,22 +969,22 @@ class Z3D:
         meta_dict["acquired_by.author"] = self.metadata.gdp_operator
 
         return {"Run": meta_dict}
-    
+
     @property
     def counts2mv_filter(self):
         """
         Create a counts2mv coefficient filter
         """
-        
+
         c2mv = CoefficientFilter()
         c2mv.units_in = "digital counts"
         c2mv.units_out = "millivolts"
         c2mv.name = "zen_counts2mv"
         c2mv.gain = self.header.ch_factor
         c2mv.comments = "digital counts to millivolts"
-        
+
         return c2mv
-    
+
     @property
     def coil_response(self):
         """
@@ -988,37 +992,41 @@ class Z3D:
         """
         fap = None
         if self.metadata.cal_ant is not None:
-            fap = FrequencyResponseTableFilter() 
+            fap = FrequencyResponseTableFilter()
             fap.units_in = "millivolts"
             fap.units_out = "nanotesla"
             fap.frequencies = self.metadata.coil_cal.frequency
             fap.amplitudes = self.metadata.coil_cal.amplitude
-            fap.phases = np.rad2deg(self.metadata.coil_cal.phase/1E3)
+            fap.phases = np.rad2deg(self.metadata.coil_cal.phase / 1e3)
             fap.name = f"ant4_{self.coil_num}_response"
             fap.comments = "induction coil response read from z3d file"
-            
+
         return fap
-    
+
     @property
     def zen_response(self):
         fap = None
         if self.metadata.board_cal is not None:
-            if self.metadata.board_cal[0][0] == '':
+            if self.metadata.board_cal[0][0] == "":
                 return fap
-            sr_dict = {256: 0, 1024: 1, 4096:4}
+            sr_dict = {256: 0, 1024: 1, 4096: 4}
             sr_int = sr_dict[int(self.sample_rate)]
-            fap_table = self.metadata.board_cal[np.where(self.metadata.board_cal.rate==sr_int)]
-            fap = FrequencyResponseTableFilter() 
+            fap_table = self.metadata.board_cal[
+                np.where(self.metadata.board_cal.rate == sr_int)
+            ]
+            fap = FrequencyResponseTableFilter()
             fap.units_in = "millivolts"
             fap.units_out = "millivolts"
             fap.frequencies = fap_table.frequency
             fap.amplitudes = fap_table.amplitude
-            fap.phases = np.rad2deg(fap_table.phase/1E3)
-            fap.name = f"{self.header.data_logger.lower()}_{self.sample_rate:.0f}_response"
+            fap.phases = np.rad2deg(fap_table.phase / 1e3)
+            fap.name = (
+                f"{self.header.data_logger.lower()}_{self.sample_rate:.0f}_response"
+            )
             fap.comments = "data logger response read from z3d file"
-            
+
         return fap
-    
+
     @property
     def channel_response(self):
         filter_list = [self.counts2mv_filter]
@@ -1030,7 +1038,7 @@ class Z3D:
             filter_list.append(self.dipole_filter)
 
         return ChannelResponseFilter(filters_list=filter_list)
-    
+
     @property
     def dipole_filter(self):
         dipole = None
@@ -1039,16 +1047,14 @@ class Z3D:
             dipole.units_in = "millivolts"
             dipole.units_out = "millivolts per kilometer"
             dipole.name = f"{self.station}_{self.component}_dipole"
-            dipole.gain = self.dipole_length / 1000.
+            dipole.gain = self.dipole_length / 1000.0
             dipole.comments = "convert to electric field"
-            
+
         return dipole
-            
-        
 
     @property
     def filter_metadata(self):
-        """ Filter metadata """
+        """Filter metadata"""
 
         meta_dict = {}
         meta_dict["filters"] = {
@@ -1099,14 +1105,14 @@ class Z3D:
         Outputs:
         ----------
             * fills the Zen3ZD.header object's attributes
-        
+
         Example with just a file name
         ------------
             >>> import mtpy.usgs.zen as zen
             >>> fn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
             >>> Z3Dobj = zen.Zen3D()
             >>> Z3Dobj.read_header(fn)
-        
+
         Example with file object
         ------------
             >>> import mtpy.usgs.zen as zen
@@ -1137,14 +1143,14 @@ class Z3D:
         Outputs:
         ----------
             * fills the Zen3ZD.schedule object's attributes
-        
+
         Example with just a file name
         ------------
             >>> import mtpy.usgs.zen as zen
             >>> fn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
             >>> Z3Dobj = zen.Zen3D()
             >>> Z3Dobj.read_schedule(fn)
-        
+
         Example with file object
         ------------
             >>> import mtpy.usgs.zen as zen
@@ -1174,14 +1180,14 @@ class Z3D:
         Outputs:
         ----------
             * fills the Zen3ZD.metadata object's attributes
-        
+
         Example with just a file name
         ------------
             >>> import mtpy.usgs.zen as zen
             >>> fn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
             >>> Z3Dobj = zen.Zen3D()
             >>> Z3Dobj.read_metadata(fn)
-        
+
         Example with file object
         ------------
             >>> import mtpy.usgs.zen as zen
@@ -1213,14 +1219,14 @@ class Z3D:
     def read_z3d(self, Z3Dfn=None):
         """
         read in z3d file and populate attributes accordingly
-        
+
         1. Read in the entire file as chunks as np.int32.
-       
+
         2. Extract the gps stamps and convert accordingly. Check to make sure
-           gps time stamps are 1 second apart and incrementing as well as 
+           gps time stamps are 1 second apart and incrementing as well as
            checking the number of data points between stamps is the
            same as the sampling rate.
-        
+
         3. Converts gps_stamps['time'] to seconds relative to header.gps_week
             Note we skip the first two gps stamps because there is something
             wrong with the data there due to some type of buffering.
@@ -1228,15 +1234,15 @@ class Z3D:
             will notice that gps_stamps[0]['block_len'] = 0, this is because there
             is nothing previous to this time stamp and so the 'block_len' measures
             backwards from the corresponding time index.
-            
+
         4. Put the data chunks into Pandas data frame that is indexed by time
-        
+
         :Example:
-            
+
         >>> from mth5.io import zen
         >>> z_obj = zen.Z3D(r"home/mt_data/zen/mt001.z3d")
         >>> z_obj.read_z3d()
-        
+
         """
 
         if Z3Dfn is not None:
@@ -1277,7 +1283,10 @@ class Z3D:
             while True:
                 # need to make sure the last block read is a multiple of 32 bit
                 read_len = min(
-                    [self._block_len, int(32 * ((file_size - file_id.tell()) // 32)),]
+                    [
+                        self._block_len,
+                        int(32 * ((file_size - file_id.tell()) // 32)),
+                    ]
                 )
                 test_str = np.frombuffer(file_id.read(read_len), dtype=np.int32)
                 if len(test_str) == 0:
@@ -1373,9 +1382,9 @@ class Z3D:
         """
         apparently need to skip the first 2 seconds of data because of
         something to do with the SD buffer
-        
+
         This method will be deprecated after field testing
-        
+
         """
         # the block length is the number of data points before the time stamp
         # therefore the first block length is 0.  The indexing in python
@@ -1409,7 +1418,7 @@ class Z3D:
     def validate_gps_time(self):
         """
         make sure each time stamp is 1 second apart
-        
+
         """
 
         t_diff = np.zeros_like(self.gps_stamps["time"])
@@ -1427,7 +1436,7 @@ class Z3D:
     def validate_time_blocks(self):
         """
         validate gps time stamps and make sure each block is the proper length
-        
+
         """
         # first check if the gps stamp blocks are of the correct length
         bad_blocks = np.where(self.gps_stamps["block_len"][1:] != self.header.ad_rate)[
@@ -1447,7 +1456,7 @@ class Z3D:
     def convert_gps_time(self):
         """
         convert gps time integer to relative seconds from gps_week
-        
+
         """
         # need to convert gps_time to type float from int
         dt = self._gps_dtype.descr
@@ -1469,7 +1478,7 @@ class Z3D:
     def convert_counts_to_mv(self, data):
         """
         convert the time series from counts to millivolts
-        
+
         """
 
         data *= self._counts_to_mv_conversion
@@ -1479,7 +1488,7 @@ class Z3D:
     def convert_mv_to_counts(self, data):
         """
         convert millivolts to counts assuming no other scaling has been applied
-        
+
         """
 
         data /= self._counts_to_mv_conversion
@@ -1496,7 +1505,7 @@ class Z3D:
                             the seconds and computed from gps_week += 1
         :returns: gps_time as number of seconds from the beginning of the relative
                   gps week.
-                  
+
         """
 
         gps_seconds = gps_int / 1024.0
@@ -1517,13 +1526,13 @@ class Z3D:
     def get_UTC_date_time(self, gps_week, gps_time):
         """
         get the actual date and time of measurement as UTC.
-        
+
 
         :param int gps_week: integer value of gps_week that the data was collected
         :param int gps_time: number of seconds from beginning of gps_week
-        
+
         :return: :class:`mth5.utils.mttime.MTime`
-        
+
         """
         # need to check to see if the time in seconds is more than a gps week
         # if it is add 1 to the gps week and reduce the gps time by a week
@@ -1553,7 +1562,7 @@ class Z3D:
             channel_metadata=self.channel_metadata,
             station_metadata=self.station_metadata,
             run_metadata=self.run_metadata,
-            channel_response_filter=self.channel_response
+            channel_response_filter=self.channel_response,
         )
 
 

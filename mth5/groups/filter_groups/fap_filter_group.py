@@ -48,7 +48,7 @@ class FAPGroup(BaseGroup):
 
     def add_filter(self, name, frequency, amplitude, phase, fap_metadata):
         """
-        create an HDF5 group/dataset from information given.  
+        create an HDF5 group/dataset from information given.
 
         :param name: Nane of the filter
         :type name: string
@@ -56,7 +56,7 @@ class FAPGroup(BaseGroup):
         :type poles: np.ndarray(dtype=complex)
         :param zeros: zeros of the filter as complex numbers
         :type zeros: np.ndarray(dtype=comples)
-        :param fap_metadata: metadata dictionary see 
+        :param fap_metadata: metadata dictionary see
         :class:`mt_metadata.timeseries.filters.PoleZeroFilter` for details on entries
         :type fap_metadata: dictionary
 

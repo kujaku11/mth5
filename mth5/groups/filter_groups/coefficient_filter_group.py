@@ -51,7 +51,7 @@ class CoefficientGroup(BaseGroup):
     def add_filter(self, name, coefficient_metadata):
         """
         Add a coefficient Filter
-        
+
         :param name: DESCRIPTION
         :type name: TYPE
         :param coefficient_metadata: DESCRIPTION
@@ -106,7 +106,7 @@ class CoefficientGroup(BaseGroup):
     def to_object(self, name):
         """
         make a :class:`mt_metadata.timeseries.filters.CoefficientFilter` object
-        
+
         :return: DESCRIPTION
         :rtype: TYPE
 

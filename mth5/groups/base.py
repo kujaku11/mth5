@@ -128,7 +128,7 @@ class BaseGroup:
     def _initialize_metadata(self):
         """
         Initialize metadata with custom attributes
-        
+
         :return: DESCRIPTION
         :rtype: TYPE
 
@@ -180,14 +180,14 @@ class BaseGroup:
 
     @property
     def metadata(self):
-        """ Metadata for the Group based on mt_metadata.timeseries """
+        """Metadata for the Group based on mt_metadata.timeseries"""
         return self._metadata
 
     @metadata.setter
     def metadata(self, metadata_object):
         """
         Do some validating when setting metadata object
-        
+
         :param metadata_object: DESCRIPTION
         :type metadata_object: TYPE
         :return: DESCRIPTION

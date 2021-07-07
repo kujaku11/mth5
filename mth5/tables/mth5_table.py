@@ -259,7 +259,7 @@ class MTH5Table:
         :type entry: np.ndarray
 
         :return: row index.
-        
+
         This doesn't work because you cannot test for hdf5_reference, should use
         add row and locate by index.
 
@@ -304,9 +304,9 @@ class MTH5Table:
 
     def to_dataframe(self):
         """
-        Convert the table into a :class:`pandas.DataFrame` object.  
+        Convert the table into a :class:`pandas.DataFrame` object.
 
-        :return: convert table into a :class:`pandas.DataFrame` with the 
+        :return: convert table into a :class:`pandas.DataFrame` with the
                  appropriate data types.
         :rtype: :class:`pandas.DataFrame`
 

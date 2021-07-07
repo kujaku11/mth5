@@ -88,7 +88,7 @@ class SurveyGroup(BaseGroup):
 
     @BaseGroup.metadata.getter
     def metadata(self):
-        """ Overwrite get metadata to include station information """
+        """Overwrite get metadata to include station information"""
 
         # need the try statement for when the file is initiated there is no
         # /Station group yet
@@ -114,10 +114,10 @@ class SurveyGroup(BaseGroup):
 
         station_summary = self.stations_group.station_summary.copy()
         self.logger.debug("Updating survey metadata from stations summary table")
-        
+
         if survey_dict:
             self.metadata.from_dict(survey_dict, skip_none=True)
-        
+
         self.metadata.time_period.start_date = (
             station_summary.start.min().isoformat().split("T")[0]
         )

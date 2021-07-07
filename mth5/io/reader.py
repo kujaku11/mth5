@@ -60,20 +60,26 @@ logger = logging.getLogger(__name__)
 readers = {
     "zen": {"file_types": ["z3d"], "reader": zen.read_z3d},
     "nims": {"file_types": ["bin", "bnn"], "reader": nims.read_nims},
-    "usgs_ascii": {"file_types": ["asc", "zip"], "reader": usgs_ascii.read_ascii,},
+    "usgs_ascii": {
+        "file_types": ["asc", "zip"],
+        "reader": usgs_ascii.read_ascii,
+    },
     "miniseed": {
         "file_types": ["miniseed", "ms", "mseed"],
         "reader": miniseed.read_miniseed,
     },
-    "lemi424": {"file_types": ["txt"], "reader": lemi424.read_lemi424,},
+    "lemi424": {
+        "file_types": ["txt"],
+        "reader": lemi424.read_lemi424,
+    },
 }
 
 
 def get_reader(extension):
     """
-    
+
     get the proper reader for file extension
-    
+
     :param extension: file extension
     :type extension: string
     :return: the correct function to read the file
@@ -92,7 +98,7 @@ def get_reader(extension):
 
 def read_file(fn, file_type=None):
     """
-    
+
     :param fn: full path to file
     :type fn: string or :class:`pathlib.Path`
     :param string file_type: a specific file time if the extension is ambiguous.

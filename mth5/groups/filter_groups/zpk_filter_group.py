@@ -48,7 +48,7 @@ class ZPKGroup(BaseGroup):
 
     def add_filter(self, name, poles, zeros, zpk_metadata):
         """
-        create an HDF5 group/dataset from information given.  
+        create an HDF5 group/dataset from information given.
 
         :param name: Nane of the filter
         :type name: string
@@ -56,7 +56,7 @@ class ZPKGroup(BaseGroup):
         :type poles: np.ndarray(dtype=complex)
         :param zeros: zeros of the filter as complex numbers
         :type zeros: np.ndarray(dtype=comples)
-        :param zpk_metadata: metadata dictionary see 
+        :param zpk_metadata: metadata dictionary see
         :class:`mt_metadata.timeseries.filters.PoleZeroFilter` for details on entries
         :type zpk_metadata: dictionary
 
@@ -123,7 +123,10 @@ class ZPKGroup(BaseGroup):
                 input_dict[k] = str(v)
 
         zpk_group = self.add_filter(
-            zpk_object.name, zpk_object.poles, zpk_object.zeros, input_dict,
+            zpk_object.name,
+            zpk_object.poles,
+            zpk_object.zeros,
+            input_dict,
         )
         return zpk_group
 

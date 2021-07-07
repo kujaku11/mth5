@@ -27,7 +27,7 @@ logger = setup_logger(__name__)
 def flip_dict(original_dict):
     """
     Flip keys and values of the dictionary
-    
+
     :param original_dict: DESCRIPTION
     :type original_dict: TYPE
     :return: DESCRIPTION
@@ -104,10 +104,10 @@ class XMLNetworkMTSurvey:
     def network_to_survey(self, network):
         """
         Translate a StationXML Network object to MT Survey object
-        
+
         :param network: StationXML network element
         :type network: :class:`obspy.core.inventory.Network`
-        
+
         """
 
         mt_survey = metadata.Survey()
@@ -133,7 +133,8 @@ class XMLNetworkMTSurvey:
                 # is this redudant?
                 try:
                     mt_survey.set_attr_from_name(
-                        "project_lead.organization", network.operators[0].agencies[0],
+                        "project_lead.organization",
+                        network.operators[0].agencies[0],
                     )
                 except IndexError:
                     pass
@@ -227,25 +228,25 @@ def add_custom_element(
 ):
     """
     Add a custom MT element to Obspy Inventory object
-    
-    :param obj: :class:`~obspy.core.inventory.Inventory` object that will 
+
+    :param obj: :class:`~obspy.core.inventory.Inventory` object that will
                 have the element added
     :type obj: :class:`~obspy.core.inventory.Inventory`
-    
+
     :param custom_key: name of custom element, if the key has a '.' it will
                        be recursively split to assure proper nesting.
     :type custom_key: str
-    
+
     :param custom_value: value of custom element
     :type custom_value: [ int | float | string ]
-    
+
     :Example: ::
-        
+
         >>> from obspy.core import inventory
         >>> from obspy.util import AttribDict()
         >>> channel_01 = inventory.Channel('SQE', "", 39.0, -112.0, 150, 0,
         ...                                azimuth=90,
-        ...                                sample_rate=256, dip=0, 
+        ...                                sample_rate=256, dip=0,
         ...                                types=['ELECTRIC POTENTIAL'])
         >>> # add custom element
         >>> channel_01.extra = AttribDict({'namespace':'MT'})
@@ -295,9 +296,9 @@ def add_custom_element(
 def mt_survey_to_inventory_network(survey_obj, namespace="MT"):
     """
     Translate MT survey metadata to inventory Network in StationXML
-    
+
     Metadata that does not fit under StationXML schema is added as extra.
-    
+
     :param survey_obj: MT survey metadata
     :type survey_obj: :class:`~mth5.metadata.Survey`
     :return: DESCRIPTION
@@ -380,9 +381,9 @@ def mt_survey_to_inventory_network(survey_obj, namespace="MT"):
 def mt_station_to_inventory_station(station_obj, namespace="MT"):
     """
     Translate MT station metadata to inventory station
-    
+
     Metadata that does not fit under StationXML schema is added as extra.
-    
+
     :param station_obj: MT station metadata
     :type station_obj: :class:`~mth5.metadata.Station`
 
@@ -521,16 +522,16 @@ def mt_station_to_inventory_station(station_obj, namespace="MT"):
 # =============================================================================
 def mt_channel_to_inventory_channel(channel_obj, run_obj, namespace):
     """
-    
+
     Translate MT channel metadata to inventory channel
-    
+
     Metadata that does not fit under StationXML schema is added as extra.
-    
+
     :param channel_obj: MT  channel metadata
-    :type channel_obj: :class:`~mth5.metadata.Channel`, 
-                       :class:`~mth5.metadata.Electric`, 
+    :type channel_obj: :class:`~mth5.metadata.Channel`,
+                       :class:`~mth5.metadata.Electric`,
                        :class:`~mth5.metadata.Magnetic`,
-                       :class:`~mth5.metadata.Auxiliary`, 
+                       :class:`~mth5.metadata.Auxiliary`,
     :param run_obj: MT run metadata to get data logger information
     :type run_obj: :class:`~mth5.metadata.Run`
     :return: StationXML channel
@@ -678,39 +679,39 @@ def mt_channel_to_inventory_channel(channel_obj, run_obj, namespace):
 class MTToStationXML:
     """
     Translate MT metadata to StationXML using Obspy Inventory classes.
-    
+
     Any metadata that does not fit under the StationXML schema will be added
     as extra metadata in the namespace MT.
-    
+
     MT metadata is mapped into StationXML
-    
+
     >>> # inventory mapping
-    Inventory 
+    Inventory
     ===========
       |--> Network (MT Survey)
-      -------------- 
+      --------------
         |--> Station (MT Station)
         -------------
           |--> Channel (MT Channel + MT Run)
           -------------
-              
+
     :Example:
-        
+
     >>> from mth5.utils import translator
     >>> from mth import metadata
-    >>> # survey_dict = metadata for survey 
+    >>> # survey_dict = metadata for survey
     >>> mt2xml = translator.MTToStationXML()
     >>> mt_survey = metadata.Survey()
     >>> mt_survey.from_dict(survey_dict)
     >>> mt2xml.add_network(mt_survey)
-    
+
     :Add a station from an xml file with root <station>:
-        
+
     >>> from xml.etree import ElementTree as et
     >>> mt_station = metadata.Station()
     >>> mt_station.from_xml(et.parse("mt_station_xml_fn.xml").getroot())
     >>> mt2xml.add_station(mt_station)
-    
+
     :Add a channel from an json files with {channel:{}} and {run:{}} format:
 
     >>> import json
@@ -721,7 +722,7 @@ class MTToStationXML:
     >>> with open("run_json_fn.json", 'r') as fid:
     >>> ... mt_run.from_json(json.load(fid))
     >>> mt2xml.add_channel(mt_electric, mt_run, mt_station.archive_id)
-        
+
     """
 
     def __init__(self, inventory_object=None):
@@ -748,13 +749,13 @@ class MTToStationXML:
     def find_network_index(self, network):
         """
         locate the index of given network
-        
+
         :param network: name of the network to look for
         :type network: 2 character string
-        
+
         :return: index of network in inventory.networks
         :rtype: int
-        
+
         """
 
         for ii, net in enumerate(self.inventory_obj.networks):
@@ -764,13 +765,13 @@ class MTToStationXML:
 
     def find_station_index(self, station, network=None):
         """
-        locate the index of given station in 
+        locate the index of given station in
         Inventory.networks[network].stations
-        
+
         :param station: 5 character SEED station name
         :type station: 5 character string
-        :param network: Network name, defaults to None which will use 
-                        Inventory.networks[0] 
+        :param network: Network name, defaults to None which will use
+                        Inventory.networks[0]
         :type network: 2 character string, optional
         :return: Index of station in Inventory.networks[network].stations
         :rtype: int
@@ -793,8 +794,8 @@ class MTToStationXML:
         Add a network from an MT survey object.  Will fill the appropriate
         metadata in Inventory.Network, any metadata that does not fit within
         the StationXML schema will be added as extra.
-        
-        :param mt_survey_obj: MT Survey metadata 
+
+        :param mt_survey_obj: MT Survey metadata
         :type mt_survey_obj: :class:`~mth5.metadata.Survey`
 
         """
@@ -814,14 +815,14 @@ class MTToStationXML:
 
     def add_station(self, mt_station_obj, network_code=None):
         """
-        
+
         Add a station from an MT station object.  Will fill the appropriate
         metadata in Inventory.Network[network].station, any metadata that
         does not fit within the StationXML schema will be added as extra.
-        
+
         :param mt_station_obj: MT station metadata
         :type mt_station_obj: :class:`~mth5.metadata.Station`
-        :param network_code: Network code that the station belongs to. 
+        :param network_code: Network code that the station belongs to.
                              Defaults to None which will  use
                              Inventory.networks[0]
         :type network_code: 2 character code. optional
@@ -848,21 +849,21 @@ class MTToStationXML:
         """
         Add a station from a MT channel and run objects. The run object is
         needed to fill the datalogger information.
-        
-        Will fill the appropriate metadata in 
+
+        Will fill the appropriate metadata in
         Inventory.Network[network].station[station], any metadata that
         does not fit within the StationXML schema will be added as extra.
-        
+
         :param mt_channel: MT channel metadata
-        :type mt_channel: :class:`~mth5.metadata.Channel`, 
-                          :class:`~mth5.metadata.Electric`, 
+        :type mt_channel: :class:`~mth5.metadata.Channel`,
+                          :class:`~mth5.metadata.Electric`,
                           :class:`~mth5.metadata.Magnetic`,
                           :class:`~mth5.metadata.Auxiliary`
         :param mt_run: MT run metadata
         :dtype mt_run: :class:`~mth5.metadata.Run`
         :param station: Station name to add the channel to
         :type station: 5 character string
-        :param network_code: Network code that the station belongs to. 
+        :param network_code: Network code that the station belongs to.
                              Defaults to None which will  use
                              Inventory.networks[0]
         :type network_code: 2 character code. optional
@@ -892,7 +893,7 @@ class MTToStationXML:
     def to_stationxml(self, station_xml_fn):
         """
         Write a StationXML file using Inventory.write
-        
+
         :param station_xml_fn: Full path to StationXML file
         :type station_xml_fn: string or Path
         :return: path to StationXML
@@ -924,7 +925,7 @@ class MTToStationXML:
 # =============================================================================
 def read_comment(inv_comment):
     """
-    
+
     :param inv_comment: DESCRIPTION
     :type inv_comment: TYPE
     :return: DESCRIPTION
@@ -947,9 +948,9 @@ def read_comment(inv_comment):
 
 def inventory_network_to_mt_survey(network_obj):
     """
-    Convert an inventory.Network oject to an :class:`mth5.metadata.Survey` 
+    Convert an inventory.Network oject to an :class:`mth5.metadata.Survey`
     object
-    
+
     :param network_obj: DESCRIPTION
     :type network_obj: TYPE
     :return: DESCRIPTION
@@ -976,7 +977,8 @@ def inventory_network_to_mt_survey(network_obj):
             # is this redudant?
             try:
                 mt_survey.set_attr_from_name(
-                    "project_lead.organization", network_obj.operators[0].agencies[0],
+                    "project_lead.organization",
+                    network_obj.operators[0].agencies[0],
                 )
             except IndexError:
                 pass
@@ -1009,7 +1011,7 @@ def inventory_network_to_mt_survey(network_obj):
 
 def inventory_station_to_mt_station(inv_station_obj):
     """
-    
+
     :param inv_station_obj: DESCRIPTION
     :type inv_station_obj: TYPE
     :return: DESCRIPTION
@@ -1036,7 +1038,7 @@ def inventory_station_to_mt_station(inv_station_obj):
 class StationXMLToMTH5:
     """
     Translate a station XML to MT metadata standards
-    
+
     """
 
     pass

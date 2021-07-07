@@ -48,7 +48,7 @@ class FIRGroup(BaseGroup):
 
     def add_filter(self, name, coefficients, fir_metadata):
         """
-        create an HDF5 group/dataset from information given.  
+        create an HDF5 group/dataset from information given.
 
         :param name: Nane of the filter
         :type name: string
@@ -56,7 +56,7 @@ class FIRGroup(BaseGroup):
         :type poles: np.ndarray(dtype=complex)
         :param zeros: zeros of the filter as complex numbers
         :type zeros: np.ndarray(dtype=comples)
-        :param fir_metadata: metadata dictionary see 
+        :param fir_metadata: metadata dictionary see
         :class:`mt_metadata.timeseries.filters.PoleZeroFilter` for details on entries
         :type fir_metadata: dictionary
 
@@ -66,7 +66,9 @@ class FIRGroup(BaseGroup):
 
         # create datasets for the poles and zeros
         fir_ds = fir_filter_group.create_dataset(
-            "coefficients", coefficients.shape, **self.dataset_options,
+            "coefficients",
+            coefficients.shape,
+            **self.dataset_options,
         )
 
         fir_ds[:] = coefficients
@@ -111,7 +113,9 @@ class FIRGroup(BaseGroup):
                 input_dict[k] = str(v)
 
         fir_group = self.add_filter(
-            fir_object.name, fir_object.coefficients, input_dict,
+            fir_object.name,
+            fir_object.coefficients,
+            input_dict,
         )
         return fir_group
 

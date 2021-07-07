@@ -51,7 +51,7 @@ class TimeDelayGroup(BaseGroup):
 
     def add_filter(self, name, time_delay_metadata):
         """
-        create an HDF5 group/dataset from information given.  
+        create an HDF5 group/dataset from information given.
 
         :param name: Nane of the filter
         :type name: string
@@ -59,7 +59,7 @@ class TimeDelayGroup(BaseGroup):
         :type poles: np.ndarray(dtype=complex)
         :param zeros: zeros of the filter as complex numbers
         :type zeros: np.ndarray(dtype=comples)
-        :param time_delay_metadata: metadata dictionary see 
+        :param time_delay_metadata: metadata dictionary see
         :class:`mt_metadata.timeseries.filters.PoleZeroFilter` for details on entries
         :type time_delay_metadata: dictionary
 
@@ -105,7 +105,10 @@ class TimeDelayGroup(BaseGroup):
             if v is None:
                 input_dict[k] = str(v)
 
-        time_delay_group = self.add_filter(time_delay_object.name, input_dict,)
+        time_delay_group = self.add_filter(
+            time_delay_object.name,
+            input_dict,
+        )
         return time_delay_group
 
     def to_object(self, name):

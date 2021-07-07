@@ -53,10 +53,10 @@ class MTH5:
     MTH5 is the main container for the HDF5 file format developed for MT data
 
     It uses the metadata standards developled by the
-    `IRIS PASSCAL software group 
+    `IRIS PASSCAL software group
     <https://www.iris.edu/hq/about_iris/governance/mt_soft>`_
     and defined in the
-    `metadata documentation 
+    `metadata documentation
     <https://github.com/kujaku11/MTarchive/blob/tables/docs/mt_metadata_guide.pdf>`_.
 
     MTH5 is built with h5py and therefore numpy.  The structure follows the
@@ -73,53 +73,53 @@ class MTH5:
     metadata defined for the given channel, i.e. electric, magnetic, auxiliary.
 
     Each level is represented as a mth5 group class object which has methods
-    to add, remove, and get a group from the level below.  Each group has a 
-    metadata attribute that is the approprate metadata class object.  For 
-    instance the SurveyGroup has an attribute metadata that is a 
-    :class:`mth5.metadata.Survey` object.  Metadata is stored in the HDF5 group 
+    to add, remove, and get a group from the level below.  Each group has a
+    metadata attribute that is the approprate metadata class object.  For
+    instance the SurveyGroup has an attribute metadata that is a
+    :class:`mth5.metadata.Survey` object.  Metadata is stored in the HDF5 group
     attributes as (key, value) pairs.
 
     All groups are represented by their structure tree and can be shown
     at any time from the command line.
 
-    Each level has a summary array of the contents of the levels below to 
-    hopefully make searching easier. 
+    Each level has a summary array of the contents of the levels below to
+    hopefully make searching easier.
 
     :param filename: name of the to be or existing file
     :type filename: string or :class:`pathlib.Path`
     :param compression: compression type.  Supported lossless compressions are
-        * 'lzf' - Available with every installation of h5py 
-                 (C source code also available). Low to 
+        * 'lzf' - Available with every installation of h5py
+                 (C source code also available). Low to
                  moderate compression, very fast. No options.
         * 'gzip' - Available with every installation of HDF5,
-                  so it’s best where portability is required. 
-                  Good compression, moderate speed. 
-                  compression_opts sets the compression level 
-                  and may be an integer from 0 to 9, 
+                  so it’s best where portability is required.
+                  Good compression, moderate speed.
+                  compression_opts sets the compression level
+                  and may be an integer from 0 to 9,
                   default is 3.
         * 'szip' - Patent-encumbered filter used in the NASA
-                   community. Not available with all 
+                   community. Not available with all
                    installations of HDF5 due to legal reasons.
                    Consult the HDF5 docs for filter options.
     :param compression_opts: compression options, see above
     :type compression_opts: string or int depending on compression type
     :param shuffle: Block-oriented compressors like GZIP or LZF work better
-                    when presented with runs of similar values. Enabling the 
+                    when presented with runs of similar values. Enabling the
                     shuffle filter rearranges the bytes in the chunk and may
                     improve compression ratio. No significant speed penalty,
                     lossless.
     :type shuffle: boolean
     :param fletcher32: Adds a checksum to each chunk to detect data corruption.
-                       Attempts to read corrupted chunks will fail with an 
-                       error. No significant speed penalty. Obviously 
+                       Attempts to read corrupted chunks will fail with an
+                       error. No significant speed penalty. Obviously
                        shouldn’t be used with lossy compression filters.
     :type fletcher32: boolean
     :param data_level: level the data are stored following levels defined by
        `NASA ESDS <https://earthdata.nasa.gov/collaborate/open-data-services-and-software/data-information-policy/data-levels>`_
-         * 0 - Raw data 
+         * 0 - Raw data
          * 1 - Raw data with response information and full metadata
-         * 2 - Derived product, raw data has been manipulated 
-    :type data_level: integer, defaults to 1                
+         * 2 - Derived product, raw data has been manipulated
+    :type data_level: integer, defaults to 1
 
 
     :Usage:
@@ -234,9 +234,10 @@ class MTH5:
 
         # make these private so the user cant accidentally change anything.
         self.__hdf5_obj = None
-        (self.__compression, self.__compression_opts,) = helpers.validate_compression(
-            compression, compression_opts
-        )
+        (
+            self.__compression,
+            self.__compression_opts,
+        ) = helpers.validate_compression(compression, compression_opts)
         self.__shuffle = shuffle
         self.__fletcher32 = fletcher32
         self.__data_level = data_level
@@ -272,7 +273,7 @@ class MTH5:
 
     @property
     def dataset_options(self):
-        """ summary of dataset options"""
+        """summary of dataset options"""
         return {
             "compression": self.__compression,
             "compression_opts": self.__compression_opts,
@@ -282,7 +283,7 @@ class MTH5:
 
     @property
     def filename(self):
-        """ file name of the hdf5 file """
+        """file name of the hdf5 file"""
         if self.h5_is_read():
             return Path(self.__hdf5_obj.filename)
         msg = (
@@ -294,7 +295,7 @@ class MTH5:
 
     @filename.setter
     def filename(self, value):
-        """ make sure file has the proper extension """
+        """make sure file has the proper extension"""
         if value is None:
             return None
 
@@ -314,7 +315,7 @@ class MTH5:
 
     @property
     def file_type(self):
-        """ File Type should be MTH5 """
+        """File Type should be MTH5"""
 
         if self.h5_is_read():
             return self.__hdf5_obj.attrs["file.type"]
@@ -322,7 +323,7 @@ class MTH5:
 
     @file_type.setter
     def file_type(self, value):
-        """ set file type while validating input """
+        """set file type while validating input"""
         if not isinstance(value, str):
             msg = f"Input file type must be a string not {type(value)}"
             self.logger.error(msg)
@@ -337,14 +338,14 @@ class MTH5:
 
     @property
     def file_version(self):
-        """ mth5 file version """
+        """mth5 file version"""
         if self.h5_is_read():
             return self.__hdf5_obj.attrs["file.version"]
         return None
 
     @file_version.setter
     def file_version(self, value):
-        """ set file version while validating input """
+        """set file version while validating input"""
         if not isinstance(value, str):
             msg = f"Input file version must be a string not {type(value)}"
             self.logger.error(msg)
@@ -359,21 +360,21 @@ class MTH5:
 
     @property
     def software_name(self):
-        """ software name that wrote the file """
+        """software name that wrote the file"""
         if self.h5_is_read():
             return self.__hdf5_obj.attrs["mth5.software.name"]
         return None
 
     @property
     def data_level(self):
-        """ data level """
+        """data level"""
         if self.h5_is_read():
             return self.__hdf5_obj.attrs["data_level"]
         return None
 
     @data_level.setter
     def data_level(self, value):
-        """ set data level while validating input """
+        """set data level while validating input"""
         if not isinstance(value, int):
             msg = f"Input file type must be an integer not {type(value)}"
             self.logger.error(msg)
@@ -388,7 +389,7 @@ class MTH5:
 
     @property
     def survey_group(self):
-        """ Convenience property for /Survey group """
+        """Convenience property for /Survey group"""
         if self.h5_is_read():
             return groups.SurveyGroup(
                 self.__hdf5_obj["/Survey"], **self.dataset_options
@@ -398,7 +399,7 @@ class MTH5:
 
     @property
     def reports_group(self):
-        """ Convenience property for /Survey/Reports group """
+        """Convenience property for /Survey/Reports group"""
         if self.h5_is_read():
             return groups.ReportsGroup(
                 self.__hdf5_obj["/Survey/Reports"], **self.dataset_options
@@ -408,7 +409,7 @@ class MTH5:
 
     @property
     def filters_group(self):
-        """ Convenience property for /Survey/Filters group """
+        """Convenience property for /Survey/Filters group"""
         if self.h5_is_read():
             return groups.FiltersGroup(
                 self.__hdf5_obj["/Survey/Filters"], **self.dataset_options
@@ -418,7 +419,7 @@ class MTH5:
 
     @property
     def standards_group(self):
-        """ Convenience property for /Survey/Standards group"""
+        """Convenience property for /Survey/Standards group"""
         if self.h5_is_read():
             return groups.StandardsGroup(
                 self.__hdf5_obj["/Survey/Standards"], **self.dataset_options
@@ -428,7 +429,7 @@ class MTH5:
 
     @property
     def stations_group(self):
-        """ Convenience property for /Survey/Stations group"""
+        """Convenience property for /Survey/Stations group"""
         if self.h5_is_read():
             return groups.MasterStationGroup(
                 self.__hdf5_obj["/Survey/Stations"], **self.dataset_options
@@ -448,7 +449,7 @@ class MTH5:
         :return: Survey Group
         :type: groups.SurveyGroup
 
-        :Example: 
+        :Example:
 
         >>> from mth5 import mth5
         >>> mth5_object = mth5.MTH5()
@@ -474,13 +475,13 @@ class MTH5:
                         + "Then reopen the file in the preferred mode"
                     )
                     self.logger.exception(msg)
-            elif mode in ["a", "w-", "x",  "r+"]:
+            elif mode in ["a", "w-", "x", "r+"]:
                 self.__hdf5_obj = h5py.File(self.__filename, mode=mode)
                 if not self.validate_file():
                     msg = "Input file is not a valid MTH5 file"
                     self.logger.error(msg)
                     raise MTH5Error(msg)
-                    
+
             elif mode in ["r"]:
                 self.__hdf5_obj = h5py.File(self.__filename, mode=mode)
                 self.validate_file()
@@ -584,16 +585,16 @@ class MTH5:
             except ValueError:
                 return False
         return False
-    
+
     def h5_is_read(self):
         """
         check to see if the hdf5 file is open and readable
-        
+
         :return: True if readable, False if not
         :rtype: Boolean
 
         """
-        
+
         if isinstance(self.__hdf5_obj, h5py.File):
             try:
                 if self.__hdf5_obj.mode in ["r", "r+", "a", "w", "w-", "x"]:
@@ -649,7 +650,7 @@ class MTH5:
 
     def to_experiment(self):
         """
-        Create an :class:`mt_metadata.timeseries.Experiment` object from the 
+        Create an :class:`mt_metadata.timeseries.Experiment` object from the
         metadata contained in the MTH5 file.
 
         :returns: :class:`mt_metadata.timeseries.Experiment`
@@ -756,7 +757,7 @@ class MTH5:
         :param station_name: existing station name
         :type station_name: string
 
-        :Example: 
+        :Example:
 
         >>> mth5_obj.remove_station('MT001')
 

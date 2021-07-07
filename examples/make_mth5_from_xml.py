@@ -131,7 +131,6 @@ def add_station(station, directory, h5_obj):
     return new_station
 
 
-
 xml_root = "path/to/metadata/files.xml"
 
 mth5_filename = "from_xml.mth5"
@@ -154,4 +153,3 @@ for station in ["FL001", "FL002"]:
     # add station
     new_station = add_station(station, xml_root, mth5_obj)
 mth5_obj.close_mth5()
-

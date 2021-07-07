@@ -41,16 +41,16 @@ meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
 
 def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
     """
-        get the date time index from the data
+    get the date time index from the data
 
-        :param string start_time: start time in time format
-        :param float sample_rate: sample rate in samples per seconds
-        :param int n_samples: number of samples in time series
-        :param :class:`logging.logger` logger: logger class object
-        
-        :return: date-time index
-        
-        """
+    :param string start_time: start time in time format
+    :param float sample_rate: sample rate in samples per seconds
+    :param int n_samples: number of samples in time series
+    :param :class:`logging.logger` logger: logger class object
+
+    :return: date-time index
+
+    """
 
     if sample_rate in [0, None]:
         msg = (
@@ -80,7 +80,9 @@ def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
     dt_freq = "{0:.0f}N".format(1.0e9 / (sample_rate))
 
     dt_index = pd.date_range(
-        start=start_time.iso_str.split("+", 1)[0], periods=n_samples, freq=dt_freq,
+        start=start_time.iso_str.split("+", 1)[0],
+        periods=n_samples,
+        freq=dt_freq,
     )
 
     return dt_index
@@ -91,37 +93,37 @@ def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
 # ==============================================================================
 class ChannelTS:
     """
-    
+
     .. note:: Assumes equally spaced samples from the start time.
-    
-    The time series is stored in an :class:`xarray.Dataset` that has 
+
+    The time series is stored in an :class:`xarray.Dataset` that has
     coordinates of time and is a 1-D array labeled 'data'.  The :class:`xarray.Dataset`
-    can be accessed and set from the :attribute:`ts`.  The data is stored in 
+    can be accessed and set from the :attribute:`ts`.  The data is stored in
     :attribute:'ts.data' and the time index is a coordinate of :attribute:`ts`.
-    
-    The time coordinate is made from the start time, sample rate and 
-    number of samples.  Currently, End time is a derived property and 
-    cannot be set. 
-    
+
+    The time coordinate is made from the start time, sample rate and
+    number of samples.  Currently, End time is a derived property and
+    cannot be set.
+
     Channel time series object is based on xarray and :class:`mth5.metadata` therefore
     any type of interpolation, resampling, groupby, etc can be done using xarray
     methods.
-    
+
     There are 3 metadata classes that hold important metadata
-    
+
         * :class:`mth5.metadata.Station` holds information about the station
         * :class:`mth5.metadata.Run` holds information about the run the channel
         belongs to.
         * :class`mth5.metadata.Channel` holds information specific to the channel.
-        
-    This way a single channel will hold all information needed to represent the 
-    channel.  
-    
-    :rubric: 
-        
+
+    This way a single channel will hold all information needed to represent the
+    channel.
+
+    :rubric:
+
     Example
     ---------
-        
+
         >>> from mth5.timeseries import ChannelTS
         >>> ts_obj = ChannelTS('auxiliary')
         >>> ts_obj.sample_rate = 8
@@ -131,21 +133,21 @@ class ChannelTS:
         >>> ts_obj.run_metadata.id = 'MT001a'
         >>> ts_obj.component = 'temperature'
         >>> print(ts_obj)
-	        Station      = MT001
-	        Run          = MT001a
-	        Channel Type = auxiliary
+                Station      = MT001
+                Run          = MT001a
+                Channel Type = auxiliary
             Component    = temperature
-	        Sample Rate  = 8.0
-	        Start        = 2020-01-01T12:00:00+00:00
-	        End          = 2020-01-01T12:08:31.875000+00:00
-	        N Samples    = 4096
-            
+                Sample Rate  = 8.0
+                Start        = 2020-01-01T12:00:00+00:00
+                End          = 2020-01-01T12:08:31.875000+00:00
+                N Samples    = 4096
+
     Plot time series with xarray
     ------------------------------
-    
+
         >>> p = ts_obj.ts.plot()
-        
-        
+
+
 
     """
 
@@ -328,7 +330,10 @@ class ChannelTS:
                 dt = ts_arr.index
             else:
                 dt = make_dt_coordinates(
-                    self.start, self.sample_rate, ts_arr["data"].size, self.logger,
+                    self.start,
+                    self.sample_rate,
+                    ts_arr["data"].size,
+                    self.logger,
                 )
             try:
                 self._ts = xr.DataArray(
@@ -349,7 +354,10 @@ class ChannelTS:
                 dt = ts_arr.index
             else:
                 dt = make_dt_coordinates(
-                    self.start, self.sample_rate, ts_arr["data"].size, self.logger,
+                    self.start,
+                    self.sample_rate,
+                    ts_arr["data"].size,
+                    self.logger,
                 )
 
             self._ts = xr.DataArray(ts_arr.values, coords=[("time", dt)], name="ts")
@@ -387,12 +395,12 @@ class ChannelTS:
 
     @property
     def channel_type(self):
-        """ Channel Type """
+        """Channel Type"""
         return self.channel_metadata._class_name
 
     @channel_type.setter
     def channel_type(self, value):
-        """ change channel type means changing the metadata type """
+        """change channel type means changing the metadata type"""
 
         if value.lower() != self.channel_metadata._class_name.lower():
             m_dict = self.channel_metadata.to_dict()[self.channel_metadata._class_name]
@@ -421,15 +429,15 @@ class ChannelTS:
 
     def _update_xarray_metadata(self):
         """
-        Update xarray attrs dictionary with metadata.  Here we are assuming that 
-        self.channel_metadata is the parent and attrs in xarray are children because all 
-        metadata will be validated by :class:`mth5.metadata` class objects.  
-        
-        Eventually there should be a way that this is automatic, but I'm not that 
+        Update xarray attrs dictionary with metadata.  Here we are assuming that
+        self.channel_metadata is the parent and attrs in xarray are children because all
+        metadata will be validated by :class:`mth5.metadata` class objects.
+
+        Eventually there should be a way that this is automatic, but I'm not that
         clever yet.
-        
-        This should be mainly used internally but gives the user a way to update 
-        metadata.  
+
+        This should be mainly used internally but gives the user a way to update
+        metadata.
 
         """
         self.logger.debug("Updating xarray attributes")
@@ -448,12 +456,12 @@ class ChannelTS:
 
     @property
     def component(self):
-        """ component """
+        """component"""
         return self.channel_metadata.component
 
     @component.setter
     def component(self, comp):
-        """ set component in metadata and carry through """
+        """set component in metadata and carry through"""
         if self.channel_metadata.type == "electric":
             if comp[0].lower() != "e":
                 msg = (
@@ -504,7 +512,8 @@ class ChannelTS:
         """
         if len(self._ts) > 1:
             if isinstance(
-                self._ts.indexes["time"][0], pd._libs.tslibs.timestamps.Timestamp,
+                self._ts.indexes["time"][0],
+                pd._libs.tslibs.timestamps.Timestamp,
             ):
                 return True
             return False
@@ -589,9 +598,9 @@ class ChannelTS:
 
         Resets how the ts data frame is indexed, setting the starting time to
         the new start time.
-        
+
         :param start_time: start time of time series, can be string or epoch seconds
-        
+
         """
 
         if not isinstance(start_time, MTime):
@@ -644,7 +653,7 @@ class ChannelTS:
     def channel_response_filter(self):
         """
         Full channel response filter
-        
+
         :return: DESCRIPTION
         :rtype: TYPE
 
@@ -655,7 +664,7 @@ class ChannelTS:
     @channel_response_filter.setter
     def channel_response_filter(self, value):
         """
-        
+
         :param value: DESCRIPTION
         :type value: TYPE
         :return: DESCRIPTION
@@ -677,11 +686,11 @@ class ChannelTS:
     def get_slice(self, start, end):
         """
         Get a slice from the time series given a start and end time.
-        
+
         Looks for >= start & <= end
-        
+
         Uses loc to be exact with milliseconds
-        
+
         :param start: DESCRIPTION
         :type start: TYPE
         :param end: DESCRIPTION
@@ -739,19 +748,19 @@ class ChannelTS:
         """
         Returns a :class:`xarray.DataArray` object of the channel timeseries
         this way metadata from the metadata class is updated upon return.
-        
+
         :return: Returns a :class:`xarray.DataArray` object of the channel timeseries
         this way metadata from the metadata class is updated upon return.
         :rtype: :class:`xarray.DataArray`
-        
-        
+
+
         >>> import numpy as np
         >>> from mth5.timeseries import ChannelTS
         >>> ex = ChannelTS("electric")
         >>> ex.start = "2020-01-01T12:00:00"
         >>> ex.sample_rate = 16
         >>> ex.ts = np.random.rand(4096)
-        
+
 
         """
         self._update_xarray_metadata()
@@ -762,7 +771,7 @@ class ChannelTS:
         Convert the time series to an :class:`obspy.core.trace.Trace` object.  This
         will be helpful for converting between data pulled from IRIS and data going
         into IRIS.
-        
+
         :return: DESCRIPTION
         :rtype: TYPE
 
@@ -779,9 +788,9 @@ class ChannelTS:
     def from_obspy_trace(self, obspy_trace):
         """
         Fill data from an :class:`obspy.core.Trace`
-        
+
         :param obspy.core.trace obspy_trace: Obspy trace object
-        
+
         """
 
         if not isinstance(obspy_trace, Trace):

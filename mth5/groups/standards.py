@@ -35,15 +35,20 @@ def summarize_metadata_standards():
     """
     # need to be sure to make copies otherwise things will get
     # added in not great places.
-        # need to be sure to make copies otherwise things will get
+    # need to be sure to make copies otherwise things will get
     # added in not great places.
     summary_dict = BaseDict()
     for key in ["survey", "station", "run", "electric", "magnetic", "auxiliary"]:
         obj = ts_classes[key.capitalize()]()
         summary_dict.add_dict(obj._attr_dict.copy(), key)
-    
-    for key in ["Coefficient", "FIR", "FrequencyResponseTable",
-                "PoleZero", "TimeDelay"]:
+
+    for key in [
+        "Coefficient",
+        "FIR",
+        "FrequencyResponseTable",
+        "PoleZero",
+        "TimeDelay",
+    ]:
         key += "Filter"
         obj = flt_classes[key]()
         summary_dict.add_dict(obj._attr_dict.copy(), validate_attribute(key))

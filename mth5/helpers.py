@@ -39,11 +39,11 @@ COMPRESSION_LEVELS = {
 def validate_compression(compression, level):
     """
     validate that the input compression is supported.
-    
+
     :param compression: type of lossless compression
-    :type compression: string, [ 'lzf' | 'gzip' | 'szip' | None ] 
+    :type compression: string, [ 'lzf' | 'gzip' | 'szip' | None ]
     :param level: compression level if supported
-    :type level: string for 'szip' or int for 'gzip' 
+    :type level: string for 'szip' or int for 'gzip'
     :return: compression type
     :rtype: string
     :return: compressiong level
@@ -157,13 +157,13 @@ def get_tree(parent):
 
 def to_numpy_type(value):
     """
-    Need to make the attributes friendly with Numpy and HDF5.  
-    
-    For numbers and bool this is straight forward they are automatically 
-    mapped in h5py to a numpy type.  
-    
-    But for strings this can be a challenge, especially a list of strings.  
-    
+    Need to make the attributes friendly with Numpy and HDF5.
+
+    For numbers and bool this is straight forward they are automatically
+    mapped in h5py to a numpy type.
+
+    But for strings this can be a challenge, especially a list of strings.
+
     HDF5 should only deal with ASCII characters or Unicode.  No binary data
     is allowed.
     """

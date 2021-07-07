@@ -66,7 +66,7 @@ orientation_code_dict = {
 def get_location_code(channel_obj):
     """
     Get the location code given the components and channel number
-    
+
     :param channel_obj: Channel object
     :type channel_obj: :class:`~mth5.metadata.Channel`
     :return: 2 character location code
@@ -84,7 +84,7 @@ def get_location_code(channel_obj):
 def get_period_code(sample_rate):
     """
     Get the SEED sampling rate code given a sample rate
-    
+
     :param sample_rate: sample rate in samples per second
     :type sample_rate: float
     :return: single character SEED sampling code
@@ -102,7 +102,7 @@ def get_period_code(sample_rate):
 def get_measurement_code(measurement):
     """
     get SEED sensor code given the measurement type
-    
+
     :param measurement: measurement type, e.g.
         * temperature
         * electric
@@ -124,7 +124,7 @@ def get_orientation_code(azimuth, orientation="horizontal"):
     """
     Get orientation code given angle and orientation.  This is a general
     code and the true azimuth is stored in channel
-    
+
     :param azimuth: angel assuming 0 is north, 90 is east, 0 is vertical down
     :type azimuth: float
     :return: single character SEED orientation code
@@ -154,12 +154,12 @@ def get_orientation_code(azimuth, orientation="horizontal"):
 def make_channel_code(channel_obj):
     """
     Make the 3 character SEED channel code
-    
+
     :param channel_obj: Channel metadata
     :type channel_obj: :class:`~mth5.metadata.Channel`
     :return: 3 character channel code
     :type: string
-    
+
     """
 
     period_code = get_period_code(channel_obj.sample_rate)
@@ -179,7 +179,7 @@ def make_channel_code(channel_obj):
 def read_channel_code(channel_code):
     """
     read FDSN channel code
-    
+
     :param channel_code: DESCRIPTION
     :type channel_code: TYPE
     :return: DESCRIPTION

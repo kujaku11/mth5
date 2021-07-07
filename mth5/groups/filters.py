@@ -89,7 +89,7 @@ class FiltersGroup(BaseGroup):
             * time_delay  -->  time delay filter
             * coefficient -->  coefficient filter
 
-        :param filter_object: An MT metadata filter object 
+        :param filter_object: An MT metadata filter object
         :type filter_object: :class:`mt_metadata.timeseries.filters`
 
         """

@@ -62,14 +62,14 @@ class ResponseError(Exception):
 class GPS(object):
     """
     class to parse GPS stamp from the NIMS
-    
+
     Depending on the type of Stamp different attributes will be filled.
-    
+
     GPRMC has full date and time information and declination
     GPGGA has elevation data
-    
+
     .. note:: GPGGA date is set to 1980-01-01 so that the time can be estimated.
-              Should use GPRMC for accurate date/time information.  
+              Should use GPRMC for accurate date/time information.
     """
 
     def __init__(self, gps_string, index=0):
@@ -147,7 +147,7 @@ class GPS(object):
         self.parse_gps_string(self.gps_string)
 
     def __str__(self):
-        """ string representation """
+        """string representation"""
         msg = [
             f"type = {self.gps_type}",
             f"index = {self.index}",
@@ -168,9 +168,9 @@ class GPS(object):
         """
         make sure the string is valid, remove any binary numbers and find
         the end of the string as '*'
-        
+
         :param string gps_string: raw GPS string to be validated
-        
+
         :returns: validated string or None if there is something wrong
         """
         for replace_str in [b"\xd9", b"\xc7", b"\xcc"]:
@@ -194,8 +194,8 @@ class GPS(object):
     def parse_gps_string(self, gps_string):
         """
         Parse a raw gps string from the NIMS and set appropriate attributes.
-        GPS string will first be validated, then parsed. 
-        
+        GPS string will first be validated, then parsed.
+
         :param string gps_string: raw GPS string to be parsed
         """
         gps_string = self.validate_gps_string(gps_string)
@@ -239,7 +239,7 @@ class GPS(object):
         """
         check to make sure the gps stamp is the correct format, checks each element
         for the proper format
-        
+
         :param gps_list: a parsed gps string from a NIMS
         :type gps_list: list
         :raises: :class:`mth5.io.nims.GPSError` if anything is wrong.
@@ -347,7 +347,7 @@ class GPS(object):
             )
 
     def _validate_time(self, time_str):
-        """ validate time string, should be 6 characters long and an int """
+        """validate time string, should be 6 characters long and an int"""
         if len(time_str) != 6:
             raise GPSError(
                 "Length of time string {0} not correct.  ".format(time_str)
@@ -361,7 +361,7 @@ class GPS(object):
         return time_str
 
     def _validate_date(self, date_str):
-        """ validate date string, should be 6 characters long and an int """
+        """validate date string, should be 6 characters long and an int"""
         if len(date_str) != 6:
             raise GPSError(
                 "Length of date string not correct {0}.  ".format(date_str)
@@ -522,12 +522,12 @@ class GPS(object):
 
 class NIMSHeader(object):
     """
-    class to hold the NIMS header information.  
-    
+    class to hold the NIMS header information.
+
     A typical header looks like
-    
+
     .. code-block::
-        
+
         >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         >>>user field>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         SITE NAME: Budwieser Spring
@@ -550,7 +550,7 @@ class NIMSHeader(object):
         COMMENT: N/S CRS: .95/.96 DCV: 3.5 ACV:1
         E/W CRS: .85/.86 DCV: 1.5 ACV: 1
         Redeployed site for run b b/c possible animal disturbance
-    
+
     """
 
     def __init__(self, fn=None):
@@ -584,11 +584,11 @@ class NIMSHeader(object):
     def read_header(self, fn=None):
         """
         read header information
-        
+
         :param fn: full path to file to read
         :type fn: string or :class:`pathlib.Path`
         :raises: :class:`mth5.io.nims.NIMSError` if something is not right.
-        
+
         """
         if fn is not None:
             self.fn = fn
@@ -693,27 +693,27 @@ class NIMSHeader(object):
 class NIMS(NIMSHeader):
     """
     NIMS Class will read in a NIMS DATA.BIN file.
-    
-    A fast way to read the binary files are to first read in the GPS strings, 
-    the third byte in each block as a character and parse that into valid 
+
+    A fast way to read the binary files are to first read in the GPS strings,
+    the third byte in each block as a character and parse that into valid
     GPS stamps.
-    
+
     Then read in the entire data set as unsigned 8 bit integers and reshape
-    the data to be n seconds x block size.  Then parse that array into the 
+    the data to be n seconds x block size.  Then parse that array into the
     status information and data.
-    
-    I only have a limited amount of .BIN files to test so this will likely 
-    break if there are issues such as data gaps.  This has been tested against the 
+
+    I only have a limited amount of .BIN files to test so this will likely
+    break if there are issues such as data gaps.  This has been tested against the
     matlab program loadNIMS by Anna Kelbert and the match for all the .bin files
     I have.  If something looks weird check it against that program.
-    
+
     .. todo:: deal with timing issues, right now a warning is sent to the user
               need to figure out a way to find where the gap is and adjust
               accordingly.
-              
-    .. warning:: 
-        Currently Only 8 Hz data is supported 
-        
+
+    .. warning::
+        Currently Only 8 Hz data is supported
+
     """
 
     def __init__(self, fn=None):
@@ -755,7 +755,7 @@ class NIMS(NIMSHeader):
         """
         median latitude value from all the GPS stamps in decimal degrees
         WGS84
-        
+
         Only get from the GPRMC stamp as they should be duplicates
         """
         if self.stamps is not None:
@@ -770,7 +770,7 @@ class NIMS(NIMSHeader):
         """
         median longitude value from all the GPS stamps in decimal degrees
         WGS84
-        
+
         Only get from the first stamp within the sets
         """
         if self.stamps is not None:
@@ -785,7 +785,7 @@ class NIMS(NIMSHeader):
         """
         median elevation value from all the GPS stamps in decimal degrees
         WGS84
-        
+
         Only get from the first stamp within the sets
         """
         if self.stamps is not None:
@@ -806,7 +806,7 @@ class NIMS(NIMSHeader):
         """
         median elevation value from all the GPS stamps in decimal degrees
         WGS84
-        
+
         Only get from the first stamp within the sets
         """
         if self.stamps is not None:
@@ -1015,7 +1015,7 @@ class NIMS(NIMSHeader):
 
     @property
     def run_metadata(self):
-        """ Run metadata """
+        """Run metadata"""
 
         if self.ts_data is not None:
             meta_dict = {
@@ -1045,7 +1045,7 @@ class NIMS(NIMSHeader):
 
     @property
     def station_metadata(self):
-        """ Station metadata from nims file """
+        """Station metadata from nims file"""
         if self.ts_data is not None:
 
             return {
@@ -1062,7 +1062,7 @@ class NIMS(NIMSHeader):
         return None
 
     def to_runts(self):
-        """ Get xarray for run """
+        """Get xarray for run"""
 
         if self.ts_data is not None:
             return timeseries.RunTS(
@@ -1101,15 +1101,15 @@ class NIMS(NIMSHeader):
         take the 3rd value in each block, concatenate into a long string and
         then make a list by splitting by '$'.  The index values of where the
         '$' are found are also calculated.
-        
+
         :param str nims_string: raw binary string output by NIMS
-        
+
         :returns: list of index values associated with the location of the '$'
-        
+
         :returns: list of possible raw GPS strings
-        
-        .. note:: This assumes that there are an even amount of data blocks.  
-                  Might be a bad assumption          
+
+        .. note:: This assumes that there are an even amount of data blocks.
+                  Might be a bad assumption
         """
         ### get index values of $ and gps_strings
         index_values = []
@@ -1127,7 +1127,7 @@ class NIMS(NIMSHeader):
         """
         get a list of valid GPS strings and match synchronous GPRMC with GPGGA
         stamps if possible.
-        
+
         :param str nims_string: raw GPS string output by NIMS
         """
         ### read in GPS strings into a list to be parsed later
@@ -1156,14 +1156,14 @@ class NIMS(NIMSHeader):
     def _gps_match_gprmc_gpgga_strings(self, gprmc_list, gpgga_list):
         """
         match GPRMC and GPGGA strings together into a list
-        
+
         [[GPRMC, GPGGA], ...]
-        
+
         :param list gprmc_list: list of GPS objects for the GPRMC stamps
         :param list gpgga_list: list of GPS objects for the GPGGA stamps
-        
-        :returns: list of matched GPRMC and GPGGA stamps 
-        
+
+        :returns: list of matched GPRMC and GPGGA stamps
+
         """
         ### match up the GPRMC and GPGGA together
         gps_match_list = []
@@ -1182,13 +1182,13 @@ class NIMS(NIMSHeader):
 
     def _get_gps_stamp_indices_from_status(self, status_array):
         """
-        get the index location of the stamps from the status array assuming 
+        get the index location of the stamps from the status array assuming
         that 0 indicates GPS lock.
-        
+
         :param :class:`np.ndarray` status_array: an array of status values from data blocks
-        
+
         :returns: array of index values where GPS lock was acquired ignoring
-                  sequential locks.   
+                  sequential locks.
         """
 
         index_values = np.where(status_array == 0)[0]
@@ -1204,15 +1204,15 @@ class NIMS(NIMSHeader):
 
     def match_status_with_gps_stamps(self, status_array, gps_list):
         """
-        Match the index values from the status array with the index values of 
+        Match the index values from the status array with the index values of
         the GPS stamps.  There appears to be a bit of wiggle room between when the
-        lock is recorded and the stamp was actually recorded.  This is typically 1 
-        second and sometimes 2.  
-        
+        lock is recorded and the stamp was actually recorded.  This is typically 1
+        second and sometimes 2.
+
         :param array status_array: array of status values from each data block
         :param list gps_list: list of valid GPS stamps [[GPRMC, GPGGA], ...]
-        
-        .. note:: I think there is a 2 second gap between the lock and the 
+
+        .. note:: I think there is a 2 second gap between the lock and the
                   first stamp character.
         """
 
@@ -1255,15 +1255,15 @@ class NIMS(NIMSHeader):
     def find_sequence(self, data_array, block_sequence=None):
         """
         find a sequence in a given array
-        
+
         :param array data_array: array of the data with shape [n, m]
                                  where n is the number of seconds recorded
                                  m is the block length for a given sampling
                                  rate.
         :param list block_sequence: sequence pattern to locate
-                                    *default* is [1, 131] the start of a 
+                                    *default* is [1, 131] the start of a
                                     data block.
-                                    
+
         :returns: array of index locations where the sequence is found.
         """
         if block_sequence is not None:
@@ -1282,10 +1282,10 @@ class NIMS(NIMSHeader):
         """
         unwrap the sequence to be sequential numbers instead of modulated by
         256.  sets the first number to 0
-        
+
         :param list sequence: sequence of bytes numbers
         :return: unwrapped number of counts
-        
+
         """
         count = 0
         unwrapped = np.zeros_like(sequence)
@@ -1301,7 +1301,7 @@ class NIMS(NIMSHeader):
     def _locate_duplicate_blocks(self, sequence):
         """
         locate the sequence number where the duplicates exist
-        
+
         :param list sequence: sequence to match duplicate numbers.
         :returns: list of duplicate index values.
         """
@@ -1323,14 +1323,14 @@ class NIMS(NIMSHeader):
     def _check_duplicate_blocks(self, block_01, block_02, info_01, info_02):
         """
         make sure the blocks are truly duplicates
-        
+
         :param np.array block_01: block of data to compare
         :param np.array block_02: block of data to compare
         :param np.array info_01: information array from info_array[sequence_index]
         :param np.array info_02: information array from info_array[sequence_index]
-        
+
         :returns: boolean if the blocks and information match
-        
+
         """
         if np.array_equal(block_01, block_02):
             if np.array_equal(info_01, info_02):
@@ -1343,18 +1343,18 @@ class NIMS(NIMSHeader):
     def remove_duplicates(self, info_array, data_array):
         """
         remove duplicate blocks, removing the first duplicate as suggested by
-        Paul and Anna. Checks to make sure that the mag data are identical for 
+        Paul and Anna. Checks to make sure that the mag data are identical for
         the duplicate blocks.  Removes the blocks from the information and
         data arrays and returns the reduced arrays.  This should sync up the
         timing of GPS stamps and index values.
-        
+
         :param np.array info_array: structured array of block information
         :param np.array data_array: structured array of the data
-        
+
         :returns: reduced information array
         :returns: reduced data array
         :returns: index of duplicates in raw data
-        
+
         """
         ### locate
         duplicate_test_list = self._locate_duplicate_blocks(self.info_array["sequence"])
@@ -1390,45 +1390,45 @@ class NIMS(NIMSHeader):
     def read_nims(self, fn=None):
         """
         Read NIMS DATA.BIN file.
-        
+
         1. Read in the header information and stores those as attributes
            with the same names as in the header file.
-        
-        2. Locate the beginning of the data blocks by looking for the 
+
+        2. Locate the beginning of the data blocks by looking for the
            first [1, 131, ...] combo.  Anything before that is cut out.
-        
+
         3. Make sure the data is a multiple of the block length, if the
            data is longer the extra bits are cut off.
-        
+
         4. Read in the GPS data (3rd byte of each block) as characters.
            Parses those into valid GPS stamps with appropriate index locations
            of where the '$' was found.
-          
+
         5. Read in the data as unsigned 8-bit integers and reshape the array
            into [N, data_block_length].  Parse this array into the status
            information and the data.
-           
+
         6. Remove duplicate blocks, by removing the first of the duplicates
-           as suggested by Anna and Paul.  
-           
+           as suggested by Anna and Paul.
+
         7. Match the GPS locks from the status with valid GPS stamps.
-                
+
         8. Check to make sure that there is the correct number of seconds
            between the first and last GPS stamp.  The extra seconds are cut
            off from the end of the time series.  Not sure if this is the
            best way to accommodate gaps in the data.
-        
+
         .. note:: The data and information array returned have the duplicates
                   removed and the sequence reset to be monotonic.
-        
+
         :param str fn: full path to DATA.BIN file
-        
+
         :Example:
-            
+
         >>> from mth5.io import nims
         >>> n = nims.NIMS(r"/home/mt_data/nims/mt001.bin")
-        
-        
+
+
         """
 
         if fn is not None:
@@ -1530,9 +1530,11 @@ class NIMS(NIMSHeader):
             data_array[comp] *= -1
 
         ### remove duplicates
-        (self.info_array, data_array, self.duplicate_list,) = self.remove_duplicates(
-            self.info_array, data_array
-        )
+        (
+            self.info_array,
+            data_array,
+            self.duplicate_list,
+        ) = self.remove_duplicates(self.info_array, data_array)
         ### get GPS stamps with index values
         self.stamps = self.match_status_with_gps_stamps(
             self.info_array["status"], self.gps_list
@@ -1564,11 +1566,11 @@ class NIMS(NIMSHeader):
 
     def _locate_timing_gaps(self, stamps):
         """
-        locate timing gaps in the data by comparing the stamp index with the 
+        locate timing gaps in the data by comparing the stamp index with the
         GPS time stamp.  The number of points and seconds should be the same
-        
+
         :param list stamps: list of GPS stamps [[status_index, [GPRMC, GPGGA]]]
-        
+
         :returns: list of gap index values
         """
         stamp_01 = self._get_first_gps_stamp(stamps)[1][0]
@@ -1594,7 +1596,8 @@ class NIMS(NIMSHeader):
                 gap_beginning.append(stamp.index)
                 self.logger.debug(
                     "GPS tamp at {0} is off from previous time by {1} seconds".format(
-                        stamp.time_stamp.isoformat(), time_gap,
+                        stamp.time_stamp.isoformat(),
+                        time_gap,
                     )
                 )
 
@@ -1605,13 +1608,13 @@ class NIMS(NIMSHeader):
         """
         make sure that there are the correct number of seconds in between
         the first and last GPS GPRMC stamps
-        
+
         :param list stamps: list of GPS stamps [[status_index, [GPRMC, GPGGA]]]
-        
+
         :returns: [ True | False ] if data is valid or not.
         :returns: gap index locations
-        
-        .. note:: currently it is assumed that if a data gap occurs the data can be 
+
+        .. note:: currently it is assumed that if a data gap occurs the data can be
                   squeezed to remove them.  Probably a more elegant way of doing it.
         """
         gaps = None
@@ -1631,19 +1634,19 @@ class NIMS(NIMSHeader):
     def align_data(self, data_array, stamps):
         """
         Need to match up the first good GPS stamp with the data
-        
+
         Do this by using the first GPS stamp and assuming that the time from
         the first time stamp to the start is the index value.
-        
+
         put the data into a pandas data frame that is indexed by time
-        
-        :param array data_array: structure array with columns for each 
+
+        :param array data_array: structure array with columns for each
                                  component [hx, hy, hz, ex, ey]
         :param list stamps: list of GPS stamps [[status_index, [GPRMC, GPGGA]]]
-        
-        :returns: pandas DataFrame with colums of components and indexed by 
+
+        :returns: pandas DataFrame with colums of components and indexed by
                   time initialized by the start time.
-        
+
         .. note:: Data gaps are squeezed cause not sure what a gap actually means.
         """
         ### check timing first to make sure there is no drift
@@ -1671,7 +1674,9 @@ class NIMS(NIMSHeader):
         )
 
         dt_index = self.make_dt_index(
-            start_time.isoformat(), self.sample_rate, n_samples=data_array.shape[0],
+            start_time.isoformat(),
+            self.sample_rate,
+            n_samples=data_array.shape[0],
         )
 
         return pd.DataFrame(data_array, index=dt_index)
@@ -1679,7 +1684,7 @@ class NIMS(NIMSHeader):
     def calibrate_data(self, ts):
         """
         Apply calibrations to data
-        
+
         .. note:: this needs work, would not use this now.
         """
 
@@ -1710,7 +1715,11 @@ class NIMS(NIMSHeader):
         dt_freq = "{0:.0f}N".format(1.0 / (sample_rate) * 1e9)
         if stop_time is not None:
             dt_index = pd.date_range(
-                start=start_time, end=stop_time, freq=dt_freq, closed="left", tz="UTC",
+                start=start_time,
+                end=stop_time,
+                freq=dt_freq,
+                closed="left",
+                tz="UTC",
             )
         elif n_samples is not None:
             dt_index = pd.date_range(
@@ -1725,7 +1734,7 @@ class NIMS(NIMSHeader):
 class Response(object):
     """
     class for instrument response functions.
-    
+
     """
 
     def __init__(self, system_id=None, **kwargs):
@@ -1751,7 +1760,13 @@ class Response(object):
                 "ex": -0.2850,
                 "ey": -0.2850,
             },
-            8: {"hx": 0.2455, "hy": 0.2365, "hz": 0.2275, "ex": 0.1525, "ey": 0.1525,},
+            8: {
+                "hx": 0.2455,
+                "hy": 0.2365,
+                "hz": 0.2275,
+                "ex": 0.1525,
+                "ey": 0.1525,
+            },
         }
         self.mag_low_pass = {
             "name": "3 pole butterworth",
@@ -1891,7 +1906,7 @@ class Response(object):
 # =============================================================================
 def read_nims(fn):
     """
-    
+
     :param fn: DESCRIPTION
     :type fn: TYPE
     :return: DESCRIPTION
