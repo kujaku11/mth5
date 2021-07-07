@@ -157,14 +157,22 @@ class RunTS:
             # this is a hack for now until figure out who is calling shape, size
             if name[0] == "_":
                 return None
-            elif name not in self.__dict__.keys() and name not in [
-                "shape",
-                "size",
-            ]:
-                msg = f"RunTS has no attribute {name}"
-                self.logger.error(msg)
-                raise NameError(msg)
+            if name not in ["shape", "size"]:
+                try:
+                     return super().__getattribute__(name)
+                except AttributeError:
+                # elif name not in self.__dict__.keys() and name not in [
+                #     "shape",
+                #     "size",
+                #     "sample_rate",
+                #     "start",
+                #     "end",
+                # ]:
+                    msg = f"RunTS has no attribute {name}"
+                    self.logger.error(msg)
+                    raise NameError(msg)
 
+               
     @property
     def has_data(self):
         """ check to see if there is data """
@@ -224,7 +232,7 @@ class RunTS:
                     )
                     self.logger.warning(msg)
                 self.run_metadata.time_period.end = self.end.iso_str
-                
+            print(self.sample_rate)
             if self.sample_rate != self.run_metadata.sample_rate:
                 if self.run_metadata.sample_rate is not None:
                     msg = (
@@ -303,7 +311,7 @@ class RunTS:
             c.ts = channel
         elif isinstance(channel, ChannelTS):
             c = channel
-            self.run_metadata.runs.append(c.channel_metadata)
+            self.run_metadata.channels.append(c.channel_metadata)
         else:
             raise ValueError("Input Channel must be type xarray.DataArray or ChannelTS")
 
@@ -348,7 +356,12 @@ class RunTS:
     @property
     def sample_rate(self):
         if self.has_data:
-            return 1e9 / self.dataset.coords["time"].to_index().freq.n
+            try:
+                return 1e9 / self.dataset.coords["time"].to_index().freq.n
+            except AttributeError:
+                self.logger.warning("Something weird happend with xarray time indexing")
+                
+                raise ValueError("Something weird happend with xarray time indexing")
         return self.run_metadata.sample_rate
 
     @property
