@@ -51,7 +51,7 @@ Created on Wed Aug 26 10:32:45 2020
 from pathlib import Path
 import logging
 
-from mth5.io import zen, nims, usgs_ascii, miniseed
+from mth5.io import zen, nims, usgs_ascii, miniseed, lemi424
 
 logger = logging.getLogger(__name__)
 # =============================================================================
@@ -60,11 +60,12 @@ logger = logging.getLogger(__name__)
 readers = {
     "zen": {"file_types": ["z3d"], "reader": zen.read_z3d},
     "nims": {"file_types": ["bin", "bnn"], "reader": nims.read_nims},
-    "usgs_ascii": {"file_types": [".asc", ".zip"], "reader": usgs_ascii.read_ascii,},
+    "usgs_ascii": {"file_types": ["asc", "zip"], "reader": usgs_ascii.read_ascii,},
     "miniseed": {
         "file_types": ["miniseed", "ms", "mseed"],
         "reader": miniseed.read_miniseed,
     },
+    "lemi424": {"file_types": ["txt"], "reader": lemi424.read_lemi424,},
 }
 
 
@@ -119,6 +120,6 @@ def read_file(fn, file_type=None):
             logger.error(msg)
             raise KeyError(msg)
     else:
-        file_type, file_reader = get_reader(fn.suffix.replace(".", ""))
+        file_type, file_reader = get_reader(fn.suffix[1:])
 
     return file_reader(fn)

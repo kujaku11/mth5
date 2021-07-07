@@ -12,6 +12,7 @@ Created on Wed Dec 23 17:05:33 2020
 # =============================================================================
 # Imports
 # =============================================================================
+import inspect
 import numpy as np
 
 from mth5.groups.base import BaseGroup
@@ -19,15 +20,12 @@ from mth5.tables import MTH5Table
 from mth5.utils.exceptions import MTH5TableError
 
 from mt_metadata.base import BaseDict
-from mt_metadata.timeseries import (
-    Survey,
-    Station,
-    Run,
-    Auxiliary,
-    Electric,
-    Magnetic,
-)
+from mt_metadata import timeseries
+from mt_metadata.timeseries import filters
+from mt_metadata.utils.validators import validate_attribute
 
+ts_classes = dict(inspect.getmembers(timeseries, inspect.isclass))
+flt_classes = dict(inspect.getmembers(filters, inspect.isclass))
 # =============================================================================
 # Summarize standards
 # =============================================================================
@@ -37,14 +35,18 @@ def summarize_metadata_standards():
     """
     # need to be sure to make copies otherwise things will get
     # added in not great places.
+        # need to be sure to make copies otherwise things will get
+    # added in not great places.
     summary_dict = BaseDict()
-    summary_dict.add_dict(Survey()._attr_dict.copy(), "survey")
-    summary_dict.add_dict(Station()._attr_dict.copy(), "station")
-    summary_dict.add_dict(Run()._attr_dict.copy(), "run")
-    summary_dict.add_dict(Electric()._attr_dict.copy(), "electric")
-    summary_dict.add_dict(Magnetic()._attr_dict.copy(), "magnetic")
-    summary_dict.add_dict(Auxiliary()._attr_dict.copy(), "auxiliary")
-
+    for key in ["survey", "station", "run", "electric", "magnetic", "auxiliary"]:
+        obj = ts_classes[key.capitalize()]()
+        summary_dict.add_dict(obj.attr_dict.copy(), key)
+    
+    for key in ["Coefficient", "FIR", "FrequencyResponseTable",
+                "PoleZero", "TimeDelay"]:
+        key += "Filter"
+        obj = flt_classes[key]()
+        summary_dict.add_dict(obj._attr_dict.copy(), validate_attribute(key))
     return summary_dict
 
 

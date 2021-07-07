@@ -205,31 +205,34 @@ class RunTS:
         if self.has_data:
             # check start time
             if self.start != self.run_metadata.time_period.start:
-                msg = (
-                    f"start time of dataset {self.start} does not "
-                    f"match metadata start {self.run_metadata.time_period.start} "
-                    f"updating metatdata value to {self.start}"
-                )
-                self.logger.warning(msg)
+                if self.run_metadata.time_period.start != "1980-01-01T00:00:00+00:00":
+                    msg = (
+                        f"start time of dataset {self.start} does not "
+                        f"match metadata start {self.run_metadata.time_period.start} "
+                        f"updating metatdata value to {self.start}"
+                    )
+                    self.logger.warning(msg)
                 self.run_metadata.time_period.start = self.start.iso_str
 
             # check end time
             if self.end != self.run_metadata.time_period.end:
-                msg = (
-                    f"end time of dataset {self.end} does not "
-                    f"match metadata end {self.run_metadata.time_period.end} "
-                    f"updating metatdata value to {self.end}"
-                )
-                self.logger.warning(msg)
+                if self.run_metadata.time_period.end != "1980-01-01T00:00:00+00:00":
+                    msg = (
+                        f"end time of dataset {self.end} does not "
+                        f"match metadata end {self.run_metadata.time_period.end} "
+                        f"updating metatdata value to {self.end}"
+                    )
+                    self.logger.warning(msg)
                 self.run_metadata.time_period.end = self.end.iso_str
                 
             if self.sample_rate != self.run_metadata.sample_rate:
-                msg = (
-                    f"sample rate of dataset {self.sample_rate} does not "
-                    f"match metadata sample rate {self.run_metadata.sample_rate} "
-                    f"updating metatdata value to {self.sample_rate}"
-                )
-                self.logger.warning(msg)
+                if self.run_metadata.sample_rate is not None:
+                    msg = (
+                        f"sample rate of dataset {self.sample_rate} does not "
+                        f"match metadata sample rate {self.run_metadata.sample_rate} "
+                        f"updating metatdata value to {self.sample_rate}"
+                    )
+                    self.logger.warning(msg)
                 self.run_metadata.sample_rate = self.sample_rate
 
             # update channels recorded
