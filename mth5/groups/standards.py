@@ -40,7 +40,7 @@ def summarize_metadata_standards():
     summary_dict = BaseDict()
     for key in ["survey", "station", "run", "electric", "magnetic", "auxiliary"]:
         obj = ts_classes[key.capitalize()]()
-        summary_dict.add_dict(obj.attr_dict.copy(), key)
+        summary_dict.add_dict(obj._attr_dict.copy(), key)
     
     for key in ["Coefficient", "FIR", "FrequencyResponseTable",
                 "PoleZero", "TimeDelay"]:

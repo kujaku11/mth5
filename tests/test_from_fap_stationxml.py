@@ -32,11 +32,11 @@ class TestFAPMTH5(unittest.TestCase):
         self.experiment = self.translator.xml_to_mt(stationxml_fn=STATIONXML_FAP)
 
         self.fn = fn_path.joinpath("from_fap_stationxml.h5")
-        if self.fn.exists():
-            self.fn.unlink()
+        # if self.fn.exists():
+        #     self.fn.unlink()
 
         self.m = mth5.MTH5()
-        self.m.open_mth5(self.fn)
+        self.m.open_mth5(self.fn, mode="a")
         self.m.from_experiment(self.experiment, 0)
 
     def test_has_survey(self):
