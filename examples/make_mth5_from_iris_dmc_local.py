@@ -44,7 +44,6 @@ for index, times in enumerate(zip(start_times, end_times), 1):
     run_ts_obj = RunTS()
     run_ts_obj.from_obspy_stream(run_stream, run_metadata)
     
-    
     run_group = station_group.add_run(f"{index:03}")
     run_group.from_runts(run_ts_obj)
     
