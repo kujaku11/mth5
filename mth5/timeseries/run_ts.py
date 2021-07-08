@@ -389,7 +389,7 @@ class RunTS:
 
         return Stream(traces=trace_list)
 
-    def from_obspy_stream(self, obspy_stream):
+    def from_obspy_stream(self, obspy_stream, run_metadata=None):
         """
         Get a run from an :class:`obspy.core.stream` which is a list of
         :class:`obspy.core.Trace` objects.
@@ -410,6 +410,12 @@ class RunTS:
         for obs_trace in obspy_stream:
             channel_ts = ChannelTS()
             channel_ts.from_obspy_trace(obs_trace)
+            if run_metadata:
+                try:
+                    ch = [ch for ch in run_metadata.channels if ch.component==channel_ts.component][0]
+                    channel_ts.channel_metadata.update(ch)
+                except IndexError:
+                    self.logger.warning("could not find %s" % channel_ts.component)
             station_list.append(channel_ts.station_metadata.fdsn.id)
 
             array_list.append(channel_ts)
@@ -426,6 +432,8 @@ class RunTS:
         self.station_metadata.fdsn.id = station
 
         self.set_dataset(array_list)
+        
+        self.validate_metadata()
 
     def plot(self):
         """

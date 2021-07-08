@@ -799,9 +799,9 @@ class ChannelTS:
             self.logger.error(msg)
             raise MTTSError(msg)
 
-        if obspy_trace.stats.channel[0].lower() in ["e", "q"]:
+        if obspy_trace.stats.channel[1].lower() in ["e", "q"]:
             self.channel_metadata = metadata.Electric()
-        elif obspy_trace.stats.channel[0].lower() in ["h", "b", "f"]:
+        elif obspy_trace.stats.channel[1].lower() in ["h", "b", "f"]:
             self.channel_metadata = metadata.Magnetic()
         else:
             self.channel_metadata = metadata.Auxiliary()

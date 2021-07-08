@@ -1162,17 +1162,15 @@ class RunGroup(BaseGroup):
 
         except (OSError, RuntimeError, ValueError):
             msg = (
-                f"channel {channel_name} already exists, " + "returning existing group."
+                f"channel {channel_name} already exists, returning existing group."
             )
             self.logger.info(msg)
             channel_obj = self.get_channel(channel_name)
-            # if channel_type in ["magnetic"]:
-            #     channel_obj = MagneticDataset(self.hdf5_group[channel_name])
-            # elif channel_type in ["electric"]:
-            #     channel_obj = ElectricDataset(self.hdf5_group[channel_name])
-            # elif channel_type in ["auxiliary"]:
-            #     channel_obj = AuxiliaryDataset(self.hdf5_group[channel_name])
-            # channel_obj.read_metadata()
+            
+            if channel_obj.n_samples <= 1 and data is not None:
+                self.logger.info("updating data and metadata")
+                channel_obj.replace_dataset(data)
+                channel_obj.metadata.from_dict(channel_metadata.to_dict())
 
         return channel_obj
 
@@ -1360,6 +1358,8 @@ class RunGroup(BaseGroup):
                     **kwargs,
                 )
             )
+            
+        self.validate_run_metadata()
         return channels
 
     def from_channel_ts(self, channel_ts_obj):
@@ -1428,7 +1428,8 @@ class RunGroup(BaseGroup):
         :rtype: TYPE
 
         """
-        channels_recorded = self.channel_summary.component.to_list()
+        channel_summary = self.channel_summary.copy()
+        channels_recorded = channel_summary.component.to_list()
         self.metadata.channels_recorded_electric = [
             cc for cc in channels_recorded if cc[0] in ["e"]
         ]
@@ -1439,8 +1440,8 @@ class RunGroup(BaseGroup):
             cc for cc in channels_recorded if cc[0] not in ["e", "h", "b"]
         ]
 
-        self.metadata.time_period.start = self.channel_summary.start.min().isoformat()
-        self.metadata.time_period.end = self.channel_summary.end.max().isoformat()
+        self.metadata.time_period.start = channel_summary.start.min().isoformat()
+        self.metadata.time_period.end = channel_summary.end.max().isoformat()
         self.write_metadata()
 
 
