@@ -230,37 +230,52 @@ def read_channel_code(channel_code):
         "vertical": vertical,
     }
 
+
 def make_mt_channel(code_dict, angle_tol=15):
     """
-    
+
     :param code_dict: DESCRIPTION
     :type code_dict: TYPE
     :return: DESCRIPTION
     :rtype: TYPE
 
     """
-    
+
     mt_comp = mt_code_dict[code_dict["component"]]
-    
+
     if not code_dict["vertical"]:
-        if code_dict["orientation"]["min"] >= 0 and code_dict["orientation"]["max"] <= angle_tol:
+        if (
+            code_dict["orientation"]["min"] >= 0
+            and code_dict["orientation"]["max"] <= angle_tol
+        ):
             mt_dir = "x"
-        elif code_dict["orientation"]["min"] >= angle_tol and code_dict["orientation"]["max"] <= 45:
+        elif (
+            code_dict["orientation"]["min"] >= angle_tol
+            and code_dict["orientation"]["max"] <= 45
+        ):
             mt_dir = "1"
-        if code_dict["orientation"]["min"] >= (90 - angle_tol) and code_dict["orientation"]["max"] <= 90:
+        if (
+            code_dict["orientation"]["min"] >= (90 - angle_tol)
+            and code_dict["orientation"]["max"] <= 90
+        ):
             mt_dir = "y"
-        elif code_dict["orientation"]["min"] >= 45 and code_dict["orientation"]["max"] <= (90 - angle_tol):
+        elif code_dict["orientation"]["min"] >= 45 and code_dict["orientation"][
+            "max"
+        ] <= (90 - angle_tol):
             mt_dir = "2"
-            
+
     else:
-        if code_dict["orientation"]["min"] >= 0 and code_dict["orientation"]["max"] <= angle_tol:
+        if (
+            code_dict["orientation"]["min"] >= 0
+            and code_dict["orientation"]["max"] <= angle_tol
+        ):
             mt_dir = "z"
-        elif code_dict["orientation"]["min"] >= angle_tol and code_dict["orientation"]["max"] <= 90:
+        elif (
+            code_dict["orientation"]["min"] >= angle_tol
+            and code_dict["orientation"]["max"] <= 90
+        ):
             mt_dir = "3"
-            
+
     mt_code = f"{mt_comp}{mt_dir}"
-    
+
     return mt_code
-    
-    
-    

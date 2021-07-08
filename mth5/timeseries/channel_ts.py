@@ -806,7 +806,9 @@ class ChannelTS:
         else:
             self.channel_metadata = metadata.Auxiliary()
 
-        mt_code = fdsn_tools.make_mt_channel(fdsn_tools.read_channel_code(obspy_trace.stats.channel))
+        mt_code = fdsn_tools.make_mt_channel(
+            fdsn_tools.read_channel_code(obspy_trace.stats.channel)
+        )
         self.channel_metadata.component = mt_code
         self.start = obspy_trace.stats.starttime.isoformat()
         self.sample_rate = obspy_trace.stats.sampling_rate

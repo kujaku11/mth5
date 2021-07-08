@@ -1161,12 +1161,10 @@ class RunGroup(BaseGroup):
                 raise MTH5Error(msg)
 
         except (OSError, RuntimeError, ValueError):
-            msg = (
-                f"channel {channel_name} already exists, returning existing group."
-            )
+            msg = f"channel {channel_name} already exists, returning existing group."
             self.logger.info(msg)
             channel_obj = self.get_channel(channel_name)
-            
+
             if channel_obj.n_samples <= 1 and data is not None:
                 self.logger.info("updating data and metadata")
                 channel_obj.replace_dataset(data)
@@ -1358,7 +1356,7 @@ class RunGroup(BaseGroup):
                     **kwargs,
                 )
             )
-            
+
         self.validate_run_metadata()
         return channels
 

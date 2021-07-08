@@ -412,7 +412,11 @@ class RunTS:
             channel_ts.from_obspy_trace(obs_trace)
             if run_metadata:
                 try:
-                    ch = [ch for ch in run_metadata.channels if ch.component==channel_ts.component][0]
+                    ch = [
+                        ch
+                        for ch in run_metadata.channels
+                        if ch.component == channel_ts.component
+                    ][0]
                     channel_ts.channel_metadata.update(ch)
                 except IndexError:
                     self.logger.warning("could not find %s" % channel_ts.component)
@@ -432,7 +436,7 @@ class RunTS:
         self.station_metadata.fdsn.id = station
 
         self.set_dataset(array_list)
-        
+
         self.validate_metadata()
 
     def plot(self):

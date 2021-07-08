@@ -21,11 +21,12 @@ end = UTCDateTime("2020-07-13T21:46:12.000000Z")
 client = fdsn.Client("IRIS")
 
 # get the data
-streams = client.get_waveforms(network, station, None, None, start, end) 
+streams = client.get_waveforms(network, station, None, None, start, end)
 
 # get the metadata
-inventory = client.get_stations(start, end, network=network, station=station,
-                                level="channel")
+inventory = client.get_stations(
+    start, end, network=network, station=station, level="channel"
+)
 # translate obspy.core.Inventory to an mt_metadata.timeseries.Experiment
 translator = XMLInventoryMTExperiment()
 experiment = translator.xml_to_mt(inventory)
@@ -48,7 +49,5 @@ for index, times in enumerate(zip(start_times, end_times), 1):
     run_ts_obj.from_obspy_stream(run_stream)
     run_group = station_group.add_run(f"{index:03}")
     run_group.from_runts(run_ts_obj)
-    
+
 m.close_mth5()
-    
-    

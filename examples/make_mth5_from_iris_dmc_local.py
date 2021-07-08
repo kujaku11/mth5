@@ -18,10 +18,12 @@ if h5_fn.exists():
     h5_fn.unlink()
 
 # get the data
-streams = read(r"c:\Users\jpeacock\Documents\test_data\miniseed_cas04\cas04.mseed") 
+streams = read(r"c:\Users\jpeacock\Documents\test_data\miniseed_cas04\cas04.mseed")
 
 # get the metadata
-inventory = read_inventory(r"c:\Users\jpeacock\Documents\test_data\miniseed_cas04\cas04_response.xml")
+inventory = read_inventory(
+    r"c:\Users\jpeacock\Documents\test_data\miniseed_cas04\cas04_response.xml"
+)
 # translate obspy.core.Inventory to an mt_metadata.timeseries.Experiment
 translator = XMLInventoryMTExperiment()
 experiment = translator.xml_to_mt(inventory)
@@ -43,11 +45,9 @@ for index, times in enumerate(zip(start_times, end_times), 1):
     run_stream = streams.slice(UTCDateTime(times[0]), UTCDateTime(times[1]))
     run_ts_obj = RunTS()
     run_ts_obj.from_obspy_stream(run_stream, run_metadata)
-    
+
     run_group = station_group.add_run(f"{index:03}")
     run_group.from_runts(run_ts_obj)
-    
-    
+
+
 m.close_mth5()
-    
-    
