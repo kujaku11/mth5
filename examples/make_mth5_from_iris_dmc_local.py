@@ -13,7 +13,7 @@ from mth5.mth5 import MTH5
 from mth5.timeseries import RunTS
 
 station = "CAS04"
-h5_fn = Path(r"c:\Users\jpeacock\from_iris_dmc.h5")
+h5_fn = Path(r"c:\Users\jpeacock\Documents\test_data\miniseed_cas04\from_iris_dmc.h5")
 if h5_fn.exists():
     h5_fn.unlink()
 
@@ -44,10 +44,13 @@ end_times = sorted(list(set([tr.stats.endtime.isoformat() for tr in streams])))
 for index, times in enumerate(zip(start_times, end_times), 1):
     run_stream = streams.slice(UTCDateTime(times[0]), UTCDateTime(times[1]))
     run_ts_obj = RunTS()
+    # need to add run metadata because in the stationxml the channel metadata
+    # is only one entry for all similar channels regardless of their duration
+    # so we need to make sure that propagates to the MTH5.
     run_ts_obj.from_obspy_stream(run_stream, run_metadata)
 
     run_group = station_group.add_run(f"{index:03}")
     run_group.from_runts(run_ts_obj)
 
 
-m.close_mth5()
+# m.close_mth5()
