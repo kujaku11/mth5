@@ -1,0 +1,12 @@
+In this folder are some tools shared by Maeva Pourpoint at Passcal specifically
+for reading lemi data.  Below is the text of her email dated 20210513.
+______________________________________________________________________
+
+Hi Jared,
+
+After chatting more with Bruce, we decided that we should go ahead and share with you the modules handling the parsing of the ASCII files as outputted by the LEMI-424 data logger (see attached). We want to reiterate that these modules haven't been fully tested and reviewed yet and they might be subject to some minor changes.
+
+Details regarding the formatting of the ASCII files can be found in the LEMI manual I sent out a few days ago. Let us know if you have any questions.
+
+Best,
+Maeva
