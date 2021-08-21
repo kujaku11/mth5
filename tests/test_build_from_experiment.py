@@ -17,7 +17,7 @@ from pathlib import Path
 
 from mth5 import mth5
 from mt_metadata.timeseries import Experiment
-from mt_metadata.utils import MT_EXPERIMENT_SINGLE_STATION
+from mt_metadata import MT_EXPERIMENT_SINGLE_STATION
 
 fn_path = Path(__file__).parent
 # =============================================================================
