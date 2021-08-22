@@ -16,7 +16,7 @@ import numpy.testing as npt
 from mth5 import mth5
 
 from mt_metadata.timeseries.stationxml import XMLInventoryMTExperiment
-from mt_metadata.utils import STATIONXML_FAP
+from mt_metadata import STATIONXML_FAP
 
 fn_path = Path(__file__).parent
 
