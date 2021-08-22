@@ -32,8 +32,9 @@ to_stationxml = True
 interact = True
 
 # if testing on local machine use local so you don't have to download each test
-local = True 
-local_path = Path(r"c:\Users\jpeacock\Documents\test_data\miniseed_cas04")
+local = False 
+local_path = Path(r"c:\Users\peaco\Documents\test_data\miniseed_cas04")
+save_local = True
 h5_fn = local_path.joinpath("from_iris_dmc.h5")
 if h5_fn.exists():
     h5_fn.unlink()
@@ -52,6 +53,9 @@ if not local:
     inventory = client.get_stations(
         start, end, network=network, station=station, level="response"
     )
+    if save_local:
+        streams.write(local_path.joinpath(f"{station}.mseed").as_posix(), "mseed")
+        inventory.write(local_path.joinpath(f"{station}.xml").as_posix(), "stationxml")
 
 # just to be explicit
 if local:
