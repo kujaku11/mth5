@@ -12,7 +12,7 @@ import unittest
 from pathlib import Path
 from mth5 import mth5
 from mt_metadata.timeseries import stationxml
-from mt_metadata.utils import STATIONXML_01
+from mt_metadata import STATIONXML_01
 
 fn_path = Path(__file__).parent
 
