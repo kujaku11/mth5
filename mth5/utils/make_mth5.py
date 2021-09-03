@@ -18,6 +18,20 @@ class MakeMTH5():
 
     def make_mth5_from_iris(network, station, starttime, endtime, path=None,
                             client='IRIS'):
+        """
+        Create an MTH5 file by pulling data from IRIS.  
+        
+        To do this we use Obspy to talk to the IRIS DMC through 
+        :class:`obspy.clients.fdsn.Client`
+        
+        :parameter str network: FDSN network code
+        :parameter str station: FDSN station code
+        :parameter starttime: start date and time
+        :type starttime: :class:`obspy.UTCDateTime`
+        :parameter endtime: end date and time
+        :type endtime: :class:`obspy.UTCDateTime`
+        
+        """
 
         if path is None:
             path = str(os.getcwd()) + '/'
