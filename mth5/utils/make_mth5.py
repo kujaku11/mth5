@@ -14,7 +14,7 @@ from mth5.timeseries import RunTS
 import os
 
 
-class Make_MTH5():
+class MakeMTH5():
 
     def make_mth5_from_iris(network, station, starttime, endtime, path=None,
                             client='IRIS'):
