@@ -1168,7 +1168,7 @@ class RunGroup(BaseGroup):
             if channel_obj.n_samples <= 1 and data is not None:
                 self.logger.info("updating data and metadata")
                 channel_obj.replace_dataset(data)
-                
+
                 channel_obj.metadata.update(channel_metadata)
                 channel_obj.write_metadata()
 
@@ -1217,25 +1217,19 @@ class RunGroup(BaseGroup):
                 ch_metadata = meta_classes["Electric"]()
                 ch_metadata.from_dict({"Electric": ch_dataset.attrs})
                 channel = ElectricDataset(
-                    ch_dataset,
-                    dataset_metadata=ch_metadata,
-                    write_metadata=False,
+                    ch_dataset, dataset_metadata=ch_metadata, write_metadata=False,
                 )
             elif ch_dataset.attrs["mth5_type"].lower() in ["magnetic"]:
                 ch_metadata = meta_classes["Magnetic"]()
                 ch_metadata.from_dict({"Magnetic": ch_dataset.attrs})
                 channel = MagneticDataset(
-                    ch_dataset,
-                    dataset_metadata=ch_metadata,
-                    write_metadata=False,
+                    ch_dataset, dataset_metadata=ch_metadata, write_metadata=False,
                 )
             elif ch_dataset.attrs["mth5_type"].lower() in ["auxiliary"]:
                 ch_metadata = meta_classes["Auxiliary"]()
                 ch_metadata.from_dict({"Auxiliary": ch_dataset.attrs})
                 channel = AuxiliaryDataset(
-                    ch_dataset,
-                    dataset_metadata=ch_metadata,
-                    write_metadata=False,
+                    ch_dataset, dataset_metadata=ch_metadata, write_metadata=False,
                 )
             else:
                 channel = ChannelDataset(ch_dataset)
@@ -2167,12 +2161,7 @@ class ChannelDataset:
         # TODO need to check on metadata.
 
     def from_xarray(
-        self,
-        data_array,
-        how="replace",
-        fill=None,
-        max_gap_seconds=1,
-        fill_window=10,
+        self, data_array, how="replace", fill=None, max_gap_seconds=1, fill_window=10,
     ):
         """
         fill data set from a :class:`xarray.DataArray` object.
@@ -2371,11 +2360,7 @@ class ChannelDataset:
         )
 
     def time_slice(
-        self,
-        start_time,
-        end_time=None,
-        n_samples=None,
-        return_type="channel_ts",
+        self, start_time, end_time=None, n_samples=None, return_type="channel_ts",
     ):
         """
         Get a time slice from the channel and return the appropriate type

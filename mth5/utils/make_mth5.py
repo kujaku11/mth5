@@ -14,10 +14,10 @@ from mth5.timeseries import RunTS
 import os
 
 
-class MakeMTH5():
-
-    def make_mth5_from_iris(network, station, starttime, endtime, path=None,
-                            client='IRIS'):
+class MakeMTH5:
+    def make_mth5_from_iris(
+        network, station, starttime, endtime, path=None, client="IRIS"
+    ):
         """
         Create an MTH5 file by pulling data from IRIS.  
         
@@ -34,12 +34,12 @@ class MakeMTH5():
         """
 
         if path is None:
-            path = str(os.getcwd()) + '/'
+            path = str(os.getcwd()) + "/"
         network = network
         station = station
         start = UTCDateTime(starttime)
         end = UTCDateTime(endtime)
-        file_name = path + network + '_' + station + '_' + starttime + '.h5'
+        file_name = path + network + "_" + station + "_" + starttime + ".h5"
         # need to know network, station, start and end times before hand
         client = fdsn.Client(client)
 
@@ -62,7 +62,9 @@ class MakeMTH5():
         station_group = m.get_station(station)
 
         # runs can be split into channels with similar start times and sample rates
-        start_times = sorted(list(set([tr.stats.starttime.isoformat() for tr in streams])))
+        start_times = sorted(
+            list(set([tr.stats.starttime.isoformat() for tr in streams]))
+        )
         end_times = sorted(list(set([tr.stats.endtime.isoformat() for tr in streams])))
 
         for index, times in enumerate(zip(start_times, end_times), 1):

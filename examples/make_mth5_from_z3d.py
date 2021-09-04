@@ -57,8 +57,7 @@ for fn in zip_ref.filelist:
     mtts_obj = read_file(zen_dir.joinpath(fn.filename))
 
     station_group = m.add_station(
-        mtts_obj.station_metadata.id,
-        station_metadata=mtts_obj.station_metadata,
+        mtts_obj.station_metadata.id, station_metadata=mtts_obj.station_metadata,
     )
 
     run_id = station_group.locate_run(mtts_obj.sample_rate, mtts_obj.start)

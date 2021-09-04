@@ -123,10 +123,7 @@ class ZPKGroup(BaseGroup):
                 input_dict[k] = str(v)
 
         zpk_group = self.add_filter(
-            zpk_object.name,
-            zpk_object.poles,
-            zpk_object.zeros,
-            input_dict,
+            zpk_object.name, zpk_object.poles, zpk_object.zeros, input_dict,
         )
         return zpk_group
 

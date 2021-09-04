@@ -81,9 +81,7 @@ def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
     dt_freq = "{0:.0f}N".format(1.0e9 / (sample_rate))
 
     dt_index = pd.date_range(
-        start=start_time.iso_str.split("+", 1)[0],
-        periods=n_samples,
-        freq=dt_freq,
+        start=start_time.iso_str.split("+", 1)[0], periods=n_samples, freq=dt_freq,
     )
 
     return dt_index
@@ -331,10 +329,7 @@ class ChannelTS:
                 dt = ts_arr.index
             else:
                 dt = make_dt_coordinates(
-                    self.start,
-                    self.sample_rate,
-                    ts_arr["data"].size,
-                    self.logger,
+                    self.start, self.sample_rate, ts_arr["data"].size, self.logger,
                 )
             try:
                 self._ts = xr.DataArray(
@@ -355,10 +350,7 @@ class ChannelTS:
                 dt = ts_arr.index
             else:
                 dt = make_dt_coordinates(
-                    self.start,
-                    self.sample_rate,
-                    ts_arr["data"].size,
-                    self.logger,
+                    self.start, self.sample_rate, ts_arr["data"].size, self.logger,
                 )
 
             self._ts = xr.DataArray(ts_arr.values, coords=[("time", dt)], name="ts")
@@ -513,8 +505,7 @@ class ChannelTS:
         """
         if len(self._ts) > 1:
             if isinstance(
-                self._ts.indexes["time"][0],
-                pd._libs.tslibs.timestamps.Timestamp,
+                self._ts.indexes["time"][0], pd._libs.tslibs.timestamps.Timestamp,
             ):
                 return True
             return False

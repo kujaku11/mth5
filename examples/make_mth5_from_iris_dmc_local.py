@@ -32,22 +32,22 @@ to_stationxml = True
 interact = True
 
 # if testing on local machine use local so you don't have to download each test
-local = False 
+local = False
 local_path = Path(r"c:\Users\peaco\Documents\test_data\miniseed_cas04")
 save_local = True
 h5_fn = local_path.joinpath("from_iris_dmc.h5")
 if h5_fn.exists():
     h5_fn.unlink()
-    
+
 # =============================================================================
 # get the station xml and data
 if not local:
     # need to know network, station, start and end times before hand
     client = fdsn.Client("IRIS")
-    
+
     # get the data
     streams = client.get_waveforms(network, station, None, None, start, end)
-    
+
     # get the metadata, be sure the level is response to get all the filter
     # information.
     inventory = client.get_stations(
@@ -61,7 +61,7 @@ if not local:
 if local:
     # get the data
     streams = read(local_path.joinpath(f"{station}.mseed").as_posix())
-    
+
     # get the metadata
     inventory = read_inventory(local_path.joinpath(f"{station}.xml").as_posix())
 
@@ -95,7 +95,9 @@ for index, times in enumerate(zip(start_times, end_times), 1):
     run_group.from_runts(run_ts_obj)
 
 if to_stationxml:
-    new_inv = translator.mt_to_xml(m.to_experiment(), stationxml_fn=local_path.joinpath(f"{station}_from_mth5.xml"))
+    new_inv = translator.mt_to_xml(
+        m.to_experiment(), stationxml_fn=local_path.joinpath(f"{station}_from_mth5.xml")
+    )
 
 if not interact:
     m.close_mth5()

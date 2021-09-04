@@ -97,12 +97,12 @@ class SurveyGroup(BaseGroup):
             for key in self.stations_group.groups_list:
                 key_group = self.stations_group.get_station(key)
                 self._metadata.stations.append(key_group.metadata)
-                
+
             # need to add filters
             flt_group = FiltersGroup(self.hdf5_group["Filters"])
             for key in flt_group.filter_dict.keys():
                 self._metadata.filters[key] = flt_group.to_filter_object(key)
-            
+
         except KeyError:
             pass
 

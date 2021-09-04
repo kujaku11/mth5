@@ -41,6 +41,7 @@ if not LOG_PATH.exists():
 if not CONF_FILE.exists():
     CONF_FILE = None
 
+
 def load_logging_config(config_fn=CONF_FILE):
     """
     configure/setup the logging according to the input configfile
@@ -56,19 +57,32 @@ def load_logging_config(config_fn=CONF_FILE):
 
     else:
         config_dict = {
-            'version': 1,
-            'disable_existing_loggers': False,
-            'formatters': {'standard': {'format': '%(asctime)s [line %(lineno)d] %(name)s.%(funcName)s - %(levelname)s: %(message)s',
-                                        'datefmt': '%Y-%m-%dT%H:%M:%S'}},
-            'handlers': {'console': {'class': 'logging.StreamHandler',
-                                     'level': 'INFO',
-                                     'formatter': 'standard',
-                                     'stream': 'ext://sys.stdout'}},
-            'loggers': {'__main__': {'level': 'DEBUG',
-                                     'handlers': ['console'],
-                                     'propagate': False}},
-            'root': {'level': 'DEBUG', 'handlers': ['console'], 'propogate': False}}
-        
+            "version": 1,
+            "disable_existing_loggers": False,
+            "formatters": {
+                "standard": {
+                    "format": "%(asctime)s [line %(lineno)d] %(name)s.%(funcName)s - %(levelname)s: %(message)s",
+                    "datefmt": "%Y-%m-%dT%H:%M:%S",
+                }
+            },
+            "handlers": {
+                "console": {
+                    "class": "logging.StreamHandler",
+                    "level": "INFO",
+                    "formatter": "standard",
+                    "stream": "ext://sys.stdout",
+                }
+            },
+            "loggers": {
+                "__main__": {
+                    "level": "DEBUG",
+                    "handlers": ["console"],
+                    "propagate": False,
+                }
+            },
+            "root": {"level": "DEBUG", "handlers": ["console"], "propogate": False},
+        }
+
     logging.config.dictConfig(config_dict)
 
 
@@ -113,13 +127,11 @@ def setup_logger(logger_name, fn=None, level="debug"):
             fn = Path(fn.parent, f"{fn.stem}.log")
 
         # fn_handler = logging.FileHandler(fn)
-        fn_handler = ConcurrentRotatingFileHandler(
-            fn, maxBytes=2 ** 21, backupCount=2)
+        fn_handler = ConcurrentRotatingFileHandler(fn, maxBytes=2 ** 21, backupCount=2)
         fn_handler.setFormatter(LOG_FORMAT)
         fn_handler.setLevel(LEVEL_DICT[level.lower()])
         logger.addHandler(fn_handler)
         if not exists:
-            logger.info(
-                f"Logging file can be found {logger.handlers[-1].baseFilename}")
+            logger.info(f"Logging file can be found {logger.handlers[-1].baseFilename}")
 
     return logger
