@@ -555,6 +555,21 @@ class Z3DMetadata:
                             self.coil_cal.append(
                                 [float(tt.strip()) for tt in t_str.strip().split(":")]
                             )
+                            
+            elif "caldata" in test_str:
+                t_list = test_str.replace("|", ",").split(",")
+                for t_str in t_list:
+                    if "\x00" in t_str:
+                        continue
+                    else:
+                        try:
+                            self.board_cal.append(
+                                [float(tt.strip()) for tt in t_str.strip().split(":")]
+                            )
+                        except ValueError:
+                            self.board_cal.append(
+                                [tt.strip() for tt in t_str.strip().split(":")]
+                            )
 
             else:
                 self.find_metadata = False
@@ -1006,7 +1021,7 @@ class Z3D:
     @property
     def zen_response(self):
         fap = None
-        if self.metadata.board_cal is not None:
+        if self.metadata.board_cal not in [None, []]:
             if self.metadata.board_cal[0][0] == "":
                 return fap
             sr_dict = {256: 0, 1024: 1, 4096: 4}
