@@ -2,16 +2,16 @@
 """
 .. module:: timeseries
    :synopsis: Deal with MT time series
-   
-.. todo:: Check the conversion to netcdf.  There are some weird serializations of 
+
+.. todo:: Check the conversion to netcdf.  There are some weird serializations of
 lists and arrays that goes on, seems easiest to convert all lists to strings and then
 convert them back if read in.
 
 
 :copyright:
     Jared Peacock (jpeacock@usgs.gov)
-    
-:license: 
+
+:license:
     MIT
 """
 
@@ -36,6 +36,7 @@ from obspy.core import Stream
 # make a dictionary of available metadata classes
 # =============================================================================
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
+
 
 # =============================================================================
 # run container
@@ -83,7 +84,7 @@ class RunTS:
                 self.station_metadata.from_dict(station_metadata.to_dict())
 
             elif isinstance(station_metadata, dict):
-                if not "Station" in list(station_metadata.keys()):
+                if "Station" not in list(station_metadata.keys()):
                     station_metadata = {"Station": station_metadata}
                 self.station_metadata.from_dict(station_metadata)
 
@@ -410,6 +411,16 @@ class RunTS:
         for obs_trace in obspy_stream:
             channel_ts = ChannelTS()
             channel_ts.from_obspy_trace(obs_trace)
+            if channel_ts.channel_metadata.component == "e1":
+                channel_ts.channel_metadata.component = "ex"
+            if channel_ts.channel_metadata.component == "e2":
+                channel_ts.channel_metadata.component = "ey"
+            if channel_ts.channel_metadata.component == "h1":
+                channel_ts.channel_metadata.component = "hx"
+            if channel_ts.channel_metadata.component == "h2":
+                channel_ts.channel_metadata.component = "hy"
+            if channel_ts.channel_metadata.component == "h3":
+                channel_ts.channel_metadata.component = "hz"
             if run_metadata:
                 try:
                     ch = [
