@@ -48,7 +48,7 @@ class MakeMTH5:
 
         # get the metadata
         inventory = client.get_stations(
-            start, end, network=network, station=station, level="channel"
+            start, end, network=network, station=station, level="response"
         )
         # translate obspy.core.Inventory to an mt_metadata.timeseries.Experiment
         translator = XMLInventoryMTExperiment()
@@ -122,7 +122,7 @@ class MakeMTH5:
             returned_network = net_inv.networks[0]
             for station in stations:
                 sta_inv = client.get_stations(
-                    start, end, network=network, station=station, level="channel")
+                    start, end, network=network, station=station, level="response")
                 returned_sta = sta_inv.networks[0].stations[0]
                 returned_network.stations.append(returned_sta)
             inv.networks.append(returned_network)
