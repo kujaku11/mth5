@@ -126,8 +126,8 @@ class MakeMTH5:
                 returned_sta = sta_inv.networks[0].stations[0]
                 returned_network.stations.append(returned_sta)
             inv.networks.append(returned_network)
-        inv.get_contents()
-        for station in stations:
+        for i_station, station in enumerate(stations):
+
             # get the data
             streams = client.get_waveforms(network, station, None, None, start, end)
 
@@ -143,11 +143,11 @@ class MakeMTH5:
                 list(set([tr.stats.starttime.isoformat() for tr in streams]))
             )
             end_times = sorted(list(set([tr.stats.endtime.isoformat() for tr in streams])))
-
+            run_metadata = experiment.surveys[0].stations[i_station].runs[0]
             for index, times in enumerate(zip(start_times, end_times), 1):
                 run_stream = streams.slice(UTCDateTime(times[0]), UTCDateTime(times[1]))
                 run_ts_obj = RunTS()
-                run_ts_obj.from_obspy_stream(run_stream)
+                run_ts_obj.from_obspy_stream(run_stream, run_metadata)
                 run_group = station_group.add_run(f"{index:03}")
                 run_group.from_runts(run_ts_obj)
             print(station + " has been added to MTH5" + file_name + ".")
