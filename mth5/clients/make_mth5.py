@@ -15,6 +15,7 @@ from mth5.utils import fdsn_tools
 from mth5.timeseries import RunTS
 from mth5.timeseries import ChannelTS
 import os
+import numpy as np
 
 
 class MakeMTH5:
@@ -38,63 +39,38 @@ class MakeMTH5:
         :type endtime: :class:`obspy.UTCDateTime`
 
         """
-        # if type(networks) != list:
-        #    raise TypeError('Input network code(s) must be formatted as a list.')
-
-        # if type(stations) != list:
-        #    raise TypeError('Input station code(s) must be formatted as a list.')
-        makemth5 = MakeMTH5()
-        run_ts = RunTS()
         if path is None:
             path = str(os.getcwd()) + "/"
         net_list, sta_list, loc_list, chan_list = self.unique_df_combo(df)
-        # start = UTCDateTime(starttime)
-        # end = UTCDateTime(endtime)
         file_name = path + "".join(net_list) + "_" + "".join(sta_list) + ".h5"
-        # need to know network, station, start and end times before hand
         # initiate MTH5 file
+        if len(net_list) != 1:
+            raise AttributeError('MTH5 supports one survey/network per container.')
         m = MTH5()
         streams = obsread()
         streams.clear()
         m.open_mth5(r"" + file_name, "w")
         inv, streams = self.inv_from_df(df, client)
-        # get the metadata
         # translate obspy.core.Inventory to an mt_metadata.timeseries.Experiment
         translator = XMLInventoryMTExperiment()
         experiment = translator.xml_to_mt(inv)
-
-        # Loop through the expiemrent and not through the stationxml
+        m.from_experiment(experiment)
+        # TODO: Add survey level when structure allows.
         for msta_id in sta_list:
-            m.from_experiment(experiment)
             run_list = m.get_station(msta_id).groups_list
             for mrun_id in run_list:
-                run_ts = RunTS()
-                runts_list = []
-                chan_list = m.stations_group.get_station(msta_id).get_run(mrun_id).groups_list
-                for mchan_id in chan_list:
-                    mth5_chan = m.stations_group.get_station(msta_id)\
-                                 .get_run(mrun_id).get_channel(mchan_id)
-                    tmp_fdsn_chan = fdsn_tools.make_channel_code(mth5_chan.metadata)
-                    # Map the channel but mth5 and ph5
-                    fdsn_channel_map = self.get_fdsn_channel_map()
-                    mstream_chan = fdsn_channel_map.get(tmp_fdsn_chan)
-                    # Get FDSN Channe code from dictionary
-                    channel_ts = ChannelTS()
-                    try:
-                        mtrace = streams.select(station=msta_id, channel=tmp_fdsn_chan)
-                        for trace in mtrace:
-                            channel_ts.from_obspy_trace(trace)
-                    except IndexError:
-                        mtrace = streams.select(station=msta_id, channel=mstream_chan)
-                        for trace in mtrace:
-                            channel_ts.from_obspy_trace(mtrace)
-                    runts_list.append(channel_ts)
-                run_ts.set_dataset(runts_list)
-
+                msstreams = streams.select(station=msta_id)
+                tracestart_times = sorted(list(set([tr.stats.starttime.isoformat() for tr in msstreams])))
+                tracend_times = sorted(list(set([tr.stats.endtime.isoformat() for tr in msstreams])))
+                for index, times in enumerate(zip(tracestart_times, tracend_times), 1):
+                    run_stream = msstreams.slice(UTCDateTime(times[0]), UTCDateTime(times[1]))
+                    run_ts_obj = RunTS()
+                    run_ts_obj.from_obspy_stream(run_stream)
+                    run_group = m.stations_group.get_station(msta_id).add_run(f"{index:03}")
+                    run_group.from_runts(run_ts_obj)
         return file_name
 
     def inv_from_df(self, df, client):
-        # THe only input is a dataframe
 
         # get the metadata
         client = fdsn.Client(client)
@@ -125,20 +101,24 @@ class MakeMTH5:
                 continue
             for sta_index, n_sta_cle in df.iterrows():
                 # Station Loop
+
                 station = n_sta_cle['sta']
                 sta_start = n_sta_cle['startdate']
                 sta_end = n_sta_cle['enddate']
-                if station not in usedsta:
-                    sta_inv = client.get_stations(sta_start, sta_end, network=network, station=station, level="station")
-                    returned_sta = sta_inv.networks[0].stations[0]
-                    usedsta[station] = [sta_start]
-                elif usedsta.get(station) is not None and sta_start not in usedsta.get(station):
-                    # Checks for epoch
-                    sta_inv = client.get_stations(sta_start, sta_end, network=network, station=station, level="station")
-                    returned_sta = sta_inv.networks[0].stations[0]
-                    usedsta[station].append(sta_start)
-                else:
+                if network != n_sta_cle['net']:
                     continue
+                else:
+                    if station not in usedsta:
+                        sta_inv = client.get_stations(sta_start, sta_end, network=network, station=station, level="station")
+                        returned_sta = sta_inv.networks[0].stations[0]
+                        usedsta[station] = [sta_start]
+                    elif usedsta.get(station) is not None and sta_start not in usedsta.get(station):
+                        # Checks for epoch
+                        sta_inv = client.get_stations(sta_start, sta_end, network=network, station=station, level="station")
+                        returned_sta = sta_inv.networks[0].stations[0]
+                        usedsta[station].append(sta_start)
+                    else:
+                        continue
                 for chan_index, ns_cha_le in df.iterrows():
                     # Channel loop
                     net_channel = ns_cha_le['net']
@@ -155,9 +135,15 @@ class MakeMTH5:
                         returned_sta.channels.append(returned_chan)
                         #  Builds streams and inventories at the same time.
                         if streams is None:
-                            streams = client.get_waveforms(network, station, location, channel, UTCDateTime(chan_start), UTCDateTime(chan_end))
+                            streams = client.get_waveforms(network, station, location,
+                                                           channel,
+                                                           UTCDateTime(chan_start),
+                                                           UTCDateTime(chan_end))
                         else:
-                            streams = client.get_waveforms(network, station, location, channel, UTCDateTime(chan_start), UTCDateTime(chan_end)) + streams
+                            streams = client.get_waveforms(network, station,
+                                                           location, channel,
+                                                           UTCDateTime(chan_start),
+                                                           UTCDateTime(chan_end)) + streams
                     else:
                         continue
                 returned_network.stations.append(returned_sta)
