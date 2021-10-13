@@ -1166,13 +1166,14 @@ class RunGroup(BaseGroup):
             channel_obj = self.get_channel(channel_name)
 
             if channel_obj.n_samples <= 1 and data is not None:
-                self.logger.info("updating data and metadata for channel %s", 
-                                 channel_name)
+                self.logger.info("Replacing data with new shape %s", 
+                                 data.shape)
                 channel_obj.replace_dataset(data)
 
+                self.logger.info("Updating metadata")
                 channel_obj.metadata.update(channel_metadata)
                 channel_obj.write_metadata()
-
+                self.logger.info("Done with %s", channel_name)
         return channel_obj
 
     def get_channel(self, channel_name):
@@ -1493,6 +1494,7 @@ class ChannelDataset:
 
         self.logger = setup_logger(f"{__name__}.{self._class_name}")
 
+        self._chunk_size = 2**13
         # set metadata to the appropriate class.  Standards is not a
         # Base object so should be skipped. If the class name is not
         # defined yet set to Base class.
@@ -1692,7 +1694,17 @@ class ChannelDataset:
 
         if new_data_array.shape != self.hdf5_dataset.shape:
             self.hdf5_dataset.resize(new_data_array.shape)
-        self.hdf5_dataset[...] = new_data_array
+        
+        # need to do some sort of chunking here when the data is large this can be very 
+        # inefficient
+        if new_data_array.size > self._chunk_size:
+            chunks = np.arange(0, new_data_array.size, self._chunk_size)
+            remainder = new_data_array.size - chunks[-1]
+            for ii, index in enumerate(chunks[:-1]):
+                self.hdf5_dataset[index:chunks[ii+1]] = new_data_array[index:chunks[ii+1]]
+            self.hdf5_dataset[-remainder:] =  new_data_array[-remainder:]
+        else:
+            self.hdf5_dataset[...] = new_data_array
 
     def extend_dataset(
         self,
