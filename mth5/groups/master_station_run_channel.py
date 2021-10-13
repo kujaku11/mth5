@@ -1166,7 +1166,8 @@ class RunGroup(BaseGroup):
             channel_obj = self.get_channel(channel_name)
 
             if channel_obj.n_samples <= 1 and data is not None:
-                self.logger.info("updating data and metadata")
+                self.logger.info("updating data and metadata for channel %s", 
+                                 channel_name)
                 channel_obj.replace_dataset(data)
 
                 channel_obj.metadata.update(channel_metadata)
