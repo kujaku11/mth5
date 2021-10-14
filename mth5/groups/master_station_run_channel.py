@@ -1698,11 +1698,13 @@ class ChannelDataset:
         # need to do some sort of chunking here when the data is large this can be very 
         # inefficient
         if new_data_array.size > self._chunk_size:
-            chunks = np.arange(0, new_data_array.size, self._chunk_size)
-            remainder = new_data_array.size - chunks[-1]
-            for ii, index in enumerate(chunks[:-1]):
-                self.hdf5_dataset[index:chunks[ii+1]] = new_data_array[index:chunks[ii+1]]
-            self.hdf5_dataset[-remainder:] =  new_data_array[-remainder:]
+            for chunk in self.hdf5_dataset.iter_chunks():
+                self.hdf5_dataset[chunk] = new_data_array[chunk]
+            # chunks = np.arange(0, new_data_array.size, self._chunk_size)
+            # remainder = new_data_array.size - chunks[-1]
+            # for ii, index in enumerate(chunks[:-1]):
+            #     self.hdf5_dataset[index:chunks[ii+1]] = new_data_array[index:chunks[ii+1]]
+            # self.hdf5_dataset[-remainder:] =  new_data_array[-remainder:]
         else:
             self.hdf5_dataset[...] = new_data_array
 
