@@ -1128,9 +1128,20 @@ class RunGroup(BaseGroup):
 
             # initialize an resizable data array
             else:
+                # can estimate a size, this will help with allocating
+                # and set the chunk size to a realistic value
+                if channel_metadata.time_period.start != channel_metadata.time_period.end:
+                    if channel_metadata.sample_rate > 0:
+                        estimate_size = (
+                            channel_metadata.time_period.end - channel_metadata.time_period.start) * channel_metadata.sample_rate 
+                    else:
+                        estimate_size = (1, )
+                else:
+                    estimate_size = (1, )
+                
                 channel_group = self.hdf5_group.create_dataset(
                     channel_name,
-                    shape=(1,),
+                    shape=estimate_size,
                     maxshape=max_shape,
                     dtype=channel_dtype,
                     chunks=chunks,
