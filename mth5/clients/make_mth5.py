@@ -112,7 +112,7 @@ class MakeMTH5:
                 
         m.close_mth5()
 
-        return file_name
+        return experiment, file_name
 
     def inv_from_df(self, df, client):
 
