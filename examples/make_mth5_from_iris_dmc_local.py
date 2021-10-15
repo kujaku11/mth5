@@ -32,8 +32,8 @@ to_stationxml = True
 interact = True
 
 # if testing on local machine use local so you don't have to download each test
-local = False
-local_path = Path(r"c:\Users\peaco\Documents\test_data\miniseed_cas04")
+local = True
+local_path = Path(r"c:\Users\jpeacock\Documents\test_data\miniseed_cas04")
 save_local = True
 h5_fn = local_path.joinpath("from_iris_dmc.h5")
 if h5_fn.exists():

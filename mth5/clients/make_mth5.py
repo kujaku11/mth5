@@ -4,25 +4,25 @@ Updated on Wed Aug  25 19:57:00 2021
 
 @author: jpeacock + tronan
 """
+# =============================================================================
+# Imports
+# =============================================================================
+from pathlib import Path
 
 from obspy.clients import fdsn
 from obspy import UTCDateTime
 from obspy import read as obsread
-from obspy.core.inventory import Inventory, Network, Station, Channel, Site
-from mt_metadata.timeseries.stationxml import XMLInventoryMTExperiment
-from mth5.mth5 import MTH5
-from mth5.utils import fdsn_tools
-from mth5.timeseries import RunTS
-from mth5.timeseries import ChannelTS
-import os
-import numpy as np
+from obspy.core.inventory import Inventory
 
+from mt_metadata.timeseries.stationxml import XMLInventoryMTExperiment
+
+from mth5.mth5 import MTH5
+from mth5.timeseries import RunTS
+# =============================================================================
 
 class MakeMTH5:
 
-    def make_mth5_from_fdsnclient(
-        self, df, path=None, client="IRIS"
-    ):
+    def make_mth5_from_fdsnclient(self, df, path=None, client="IRIS"):
         """
         networks, stations, channels, starttime, endtime,
         Create an MTH5 file by pulling data from IRIS.
@@ -40,35 +40,79 @@ class MakeMTH5:
 
         """
         if path is None:
-            path = str(os.getcwd()) + "/"
+            path = Path().cwd()
+        else:
+            path = Path(path)
+        
         net_list, sta_list, loc_list, chan_list = self.unique_df_combo(df)
-        file_name = path + "".join(net_list) + "_" + "".join(sta_list) + ".h5"
-        # initiate MTH5 file
         if len(net_list) != 1:
             raise AttributeError('MTH5 supports one survey/network per container.')
+        
+        file_name = path.joinpath(f"{''.join(net_list)}_{'_'.join(sta_list)}.h5")
+
+        # initiate MTH5 file
         m = MTH5()
-        streams = obsread()
-        streams.clear()
-        m.open_mth5(r"" + file_name, "w")
+        m.open_mth5(file_name, "w")
+        
+        # read in inventory and streams
         inv, streams = self.inv_from_df(df, client)
+        print("Got Streams")
         # translate obspy.core.Inventory to an mt_metadata.timeseries.Experiment
         translator = XMLInventoryMTExperiment()
         experiment = translator.xml_to_mt(inv)
+        print(experiment)
         m.from_experiment(experiment)
+        
         # TODO: Add survey level when structure allows.
         for msta_id in sta_list:
+            # get the streams for the given station
+            msstreams = streams.select(station=msta_id)
+            trace_start_times = sorted(list(set([tr.stats.starttime.isoformat() for tr in msstreams])))
+            trace_end_times = sorted(list(set([tr.stats.endtime.isoformat() for tr in msstreams])))
+            if len(trace_start_times) != len(trace_end_times):
+                raise ValueError(
+                    f"Do not have the same number of start {len(trace_start_times)}"
+                    f" and end times {len(trace_end_times)} from streams")
             run_list = m.get_station(msta_id).groups_list
-            for mrun_id in run_list:
-                msstreams = streams.select(station=msta_id)
-                tracestart_times = sorted(list(set([tr.stats.starttime.isoformat() for tr in msstreams])))
-                tracend_times = sorted(list(set([tr.stats.endtime.isoformat() for tr in msstreams])))
-                for index, times in enumerate(zip(tracestart_times, tracend_times), 1):
-                    run_stream = msstreams.slice(UTCDateTime(times[0]), UTCDateTime(times[1]))
+            print(f"runs: {run_list}")
+            n_times = len(trace_start_times)
+            print(n_times)
+            
+            if len(run_list) == n_times:
+                for run_id, start, end in zip(run_list, trace_start_times, trace_end_times):
+                    print("="*50)
+                    print(run_id)
+                    print("="*50)
+                    run_stream = msstreams.slice(UTCDateTime(start), UTCDateTime(end))
                     run_ts_obj = RunTS()
                     run_ts_obj.from_obspy_stream(run_stream)
-                    run_group = m.stations_group.get_station(msta_id).add_run(f"{index:03}")
+                    run_group = m.stations_group.get_station(msta_id).add_run(run_id)
                     run_group.from_runts(run_ts_obj)
-        return file_name
+            elif len(run_list) == 1:
+                if n_times > 1:
+                    for run_id, times in enumerate(zip(trace_start_times, trace_end_times), 1):
+                        print("="*50)
+                        print(run_id)
+                        print("="*50)
+                        run_stream = msstreams.slice(UTCDateTime(times[0]), 
+                                                     UTCDateTime(times[1]))
+                        run_ts_obj = RunTS()
+                        run_ts_obj.from_obspy_stream(run_stream)
+                        run_group = m.stations_group.get_station(msta_id).add_run(f"{run_id:03}")
+                        run_group.from_runts(run_ts_obj)
+                elif n_times == 1:
+                    run_stream = msstreams.slice(UTCDateTime(times[0]), 
+                                                 UTCDateTime(times[1]))
+                    run_ts_obj = RunTS()
+                    run_ts_obj.from_obspy_stream(run_stream)
+                    run_group = m.stations_group.get_station(msta_id).add_run(run_list[0])
+                    run_group.from_runts(run_ts_obj)
+            else:
+                print("failed")
+                
+        m.close_mth5()
+
+        return experiment, file_name
 
     def inv_from_df(self, df, client):
 
