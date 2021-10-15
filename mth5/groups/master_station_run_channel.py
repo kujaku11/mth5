@@ -5,7 +5,7 @@ Created on Wed Dec 23 17:18:29 2020
 .. note:: Need to keep these groups together, if you split them into files you
 get a circular import.
 
-:copyright: 
+:copyright:
     Jared Peacock (jpeacock@usgs.gov)
 
 :license: MIT
@@ -34,7 +34,7 @@ from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import to_numpy_type, inherit_doc_string
 from mth5.timeseries import ChannelTS, RunTS
 from mth5.utils.mth5_logger import setup_logger
-
+from obspy import UTCDateTime
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
 # =============================================================================
 # Standards Group
@@ -1132,13 +1132,15 @@ class RunGroup(BaseGroup):
                 # and set the chunk size to a realistic value
                 if channel_metadata.time_period.start != channel_metadata.time_period.end:
                     if channel_metadata.sample_rate > 0:
-                        estimate_size = (
-                            channel_metadata.time_period.end - channel_metadata.time_period.start) * channel_metadata.sample_rate 
+                        end_time = UTCDateTime(channel_metadata.time_period.end)
+                        start_time = UTCDateTime(channel_metadata.time_period.start)
+                        delta_time_seconds = end_time - start_time
+                        n_samples_ish = delta_time_seconds * channel_metadata.sample_rate
+                        estimate_size = (int(n_samples_ish),)
                     else:
                         estimate_size = (1, )
                 else:
                     estimate_size = (1, )
-                
                 channel_group = self.hdf5_group.create_dataset(
                     channel_name,
                     shape=estimate_size,
@@ -1177,7 +1179,7 @@ class RunGroup(BaseGroup):
             channel_obj = self.get_channel(channel_name)
 
             if channel_obj.n_samples <= 1 and data is not None:
-                self.logger.info("Replacing data with new shape %s", 
+                self.logger.info("Replacing data with new shape %s",
                                  data.shape)
                 channel_obj.replace_dataset(data)
 
@@ -1705,8 +1707,8 @@ class ChannelDataset:
 
         if new_data_array.shape != self.hdf5_dataset.shape:
             self.hdf5_dataset.resize(new_data_array.shape)
-        
-        # need to do some sort of chunking here when the data is large this 
+
+        # need to do some sort of chunking here when the data is large this
         # can be very inefficient
         if new_data_array.size > self._chunk_size:
             chunks = np.arange(0, new_data_array.size, self._chunk_size)
@@ -1730,9 +1732,9 @@ class ChannelDataset:
         Append data according to how the start time aligns with existing
         data.  If the start time is before existing start time the data is
         prepended, similarly if the start time is near the end data will be
-        appended.  
+        appended.
 
-        If the start time is within the existing time range, existing data 
+        If the start time is within the existing time range, existing data
         will be replace with the new data.
 
         If there is a gap between start or end time of the new data with
@@ -1743,28 +1745,28 @@ class ChannelDataset:
         :type new_data_array: :class:`numpy.ndarray`
         :param start_time: start time of the new data array in UTC
         :type start_time: string or :class:`mth5.utils.mttime.MTime`
-        :param sample_rate: Sample rate of the new data array, must match 
+        :param sample_rate: Sample rate of the new data array, must match
                             existing sample rate
         :type sample_rate: float
         :param fill: If there is a data gap how do you want to fill the gap
             * None: will raise an  :class:`mth5.utils.exceptions.MTH5Error`
             * 'mean': will fill with the mean of each data set within
             the fill window
-            * 'median': will fill with the median of each data set 
+            * 'median': will fill with the median of each data set
             within the fill window
             * value: can be an integer or float to fill the gap
             * 'nan': will fill the gap with NaN
         :type fill: string, None, float, integer
         :param max_gap_seconds: sets a maximum number of seconds the gap can
-                                be.  Anything over this number will raise 
+                                be.  Anything over this number will raise
                                 a :class:`mth5.utils.exceptions.MTH5Error`.
         :type max_gap_seconds: float or integer
         :param fill_window: number of points from the end of each data set
                             to estimate fill value from.
         :type fill_window: integer
 
-        :raises: :class:`mth5.utils.excptions.MTH5Error` if sample rate is 
-                 not the same, or fill value is not understood, 
+        :raises: :class:`mth5.utils.excptions.MTH5Error` if sample rate is
+                 not the same, or fill value is not understood,
 
         Append Example
         ---------------
@@ -1782,8 +1784,8 @@ class ChannelDataset:
         ...                                   .01),
         ...                     channel_metadata={'electric':{
         ...                        'component': 'ex',
-        ...                        'sample_rate': 8, 
-        ...                        'time_period.start':(ex.end+(1)).iso_str}}) 
+        ...                        'sample_rate': 8,
+        ...                        'time_period.start':(ex.end+(1)).iso_str}})
         >>> ex.extend_dataset(t.ts, t.start, t.sample_rate, fill='median',
         ...                   max_gap_seconds=2)
         2020-07-02T18:02:47 - mth5.groups.Electric.extend_dataset - INFO -
