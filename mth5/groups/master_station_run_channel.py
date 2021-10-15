@@ -28,6 +28,7 @@ from mt_metadata.utils.mttime import MTime
 from mt_metadata.base import Base
 from mt_metadata.timeseries.filters import ChannelResponseFilter
 
+from mth5 import CHUNK_SIZE
 from mth5.groups.base import BaseGroup
 from mth5.groups import FiltersGroup
 from mth5.utils.exceptions import MTH5Error
@@ -1127,18 +1128,34 @@ class RunGroup(BaseGroup):
                 )
 
             # initialize an resizable data array
+            # need to set the chunk size to something useful, if the chunk
+            # size is 1 this causes performance issues and bloating of the 
+            # hdf5 file.  Set to 8196 for now.  Should add a parameter for 
+            # this
             else:
                 # can estimate a size, this will help with allocating
                 # and set the chunk size to a realistic value
-                if channel_metadata.time_period.start != channel_metadata.time_period.end:
+                if (
+                    channel_metadata.time_period.start
+                    != channel_metadata.time_period.end
+                ):
                     if channel_metadata.sample_rate > 0:
                         estimate_size = (
-                            channel_metadata.time_period.end - channel_metadata.time_period.start) * channel_metadata.sample_rate 
+                            int(
+                                (
+                                    channel_metadata.time_period._end_dt
+                                    - channel_metadata.time_period._start_dt
+                                )
+                                * channel_metadata.sample_rate
+                            ),
+                        )
                     else:
-                        estimate_size = (1, )
+                        estimate_size = (1,)
+                        chunks = CHUNK_SIZE
                 else:
-                    estimate_size = (1, )
-                
+                    estimate_size = (1,)
+                    chunks = CHUNK_SIZE
+
                 channel_group = self.hdf5_group.create_dataset(
                     channel_name,
                     shape=estimate_size,
@@ -1173,18 +1190,17 @@ class RunGroup(BaseGroup):
 
         except (OSError, RuntimeError, ValueError):
             msg = f"channel {channel_name} already exists, returning existing group."
-            self.logger.info(msg)
+            self.logger.debug(msg)
             channel_obj = self.get_channel(channel_name)
 
-            if channel_obj.n_samples <= 1 and data is not None:
-                self.logger.info("Replacing data with new shape %s", 
-                                 data.shape)
+            if data is not None:
+                self.logger.debug("Replacing data with new shape %s", data.shape)
                 channel_obj.replace_dataset(data)
 
-                self.logger.info("Updating metadata")
+                self.logger.debug("Updating metadata")
                 channel_obj.metadata.update(channel_metadata)
                 channel_obj.write_metadata()
-                self.logger.info("Done with %s", channel_name)
+                self.logger.debug("Done with %s", channel_name)
         return channel_obj
 
     def get_channel(self, channel_name):
@@ -1230,19 +1246,25 @@ class RunGroup(BaseGroup):
                 ch_metadata = meta_classes["Electric"]()
                 ch_metadata.from_dict({"Electric": ch_dataset.attrs})
                 channel = ElectricDataset(
-                    ch_dataset, dataset_metadata=ch_metadata, write_metadata=False,
+                    ch_dataset,
+                    dataset_metadata=ch_metadata,
+                    write_metadata=False,
                 )
             elif ch_dataset.attrs["mth5_type"].lower() in ["magnetic"]:
                 ch_metadata = meta_classes["Magnetic"]()
                 ch_metadata.from_dict({"Magnetic": ch_dataset.attrs})
                 channel = MagneticDataset(
-                    ch_dataset, dataset_metadata=ch_metadata, write_metadata=False,
+                    ch_dataset,
+                    dataset_metadata=ch_metadata,
+                    write_metadata=False,
                 )
             elif ch_dataset.attrs["mth5_type"].lower() in ["auxiliary"]:
                 ch_metadata = meta_classes["Auxiliary"]()
                 ch_metadata.from_dict({"Auxiliary": ch_dataset.attrs})
                 channel = AuxiliaryDataset(
-                    ch_dataset, dataset_metadata=ch_metadata, write_metadata=False,
+                    ch_dataset,
+                    dataset_metadata=ch_metadata,
+                    write_metadata=False,
                 )
             else:
                 channel = ChannelDataset(ch_dataset)
@@ -1505,7 +1527,7 @@ class ChannelDataset:
 
         self.logger = setup_logger(f"{__name__}.{self._class_name}")
 
-        self._chunk_size = 2**13
+        self._chunk_size = 2 ** 13
         # set metadata to the appropriate class.  Standards is not a
         # Base object so should be skipped. If the class name is not
         # defined yet set to Base class.
@@ -1705,17 +1727,19 @@ class ChannelDataset:
 
         if new_data_array.shape != self.hdf5_dataset.shape:
             self.hdf5_dataset.resize(new_data_array.shape)
-        
-        # need to do some sort of chunking here when the data is large this 
-        # can be very inefficient
-        if new_data_array.size > self._chunk_size:
-            chunks = np.arange(0, new_data_array.size, self._chunk_size)
-            remainder = new_data_array.size - chunks[-1]
-            for ii, index in enumerate(chunks[:-1]):
-                self.hdf5_dataset[index:chunks[ii+1]] = new_data_array[index:chunks[ii+1]]
-            self.hdf5_dataset[-remainder:] =  new_data_array[-remainder:]
-        else:
-            self.hdf5_dataset[...] = new_data_array
+
+        # # need to do some sort of chunking here when the data is large this
+        # # can be very inefficient
+        # if new_data_array.size > self._chunk_size:
+        #     chunks = np.arange(0, new_data_array.size, self._chunk_size)
+        #     remainder = new_data_array.size - chunks[-1]
+        #     for ii, index in enumerate(chunks[:-1]):
+        #         self.hdf5_dataset[index : chunks[ii + 1]] = new_data_array[
+        #             index : chunks[ii + 1]
+        #         ]
+        #     self.hdf5_dataset[-remainder:] = new_data_array[-remainder:]
+        # else:
+        self.hdf5_dataset[...] = new_data_array
 
     def extend_dataset(
         self,
@@ -2185,7 +2209,12 @@ class ChannelDataset:
         # TODO need to check on metadata.
 
     def from_xarray(
-        self, data_array, how="replace", fill=None, max_gap_seconds=1, fill_window=10,
+        self,
+        data_array,
+        how="replace",
+        fill=None,
+        max_gap_seconds=1,
+        fill_window=10,
     ):
         """
         fill data set from a :class:`xarray.DataArray` object.
@@ -2384,7 +2413,11 @@ class ChannelDataset:
         )
 
     def time_slice(
-        self, start_time, end_time=None, n_samples=None, return_type="channel_ts",
+        self,
+        start_time,
+        end_time=None,
+        n_samples=None,
+        return_type="channel_ts",
     ):
         """
         Get a time slice from the channel and return the appropriate type

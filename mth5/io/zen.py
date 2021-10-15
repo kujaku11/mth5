@@ -536,7 +536,9 @@ class Z3DMetadata:
                     coil_num = test_list[1].split("|")[1]
                     coil_key, coil_value = coil_num.split("=")
                     setattr(
-                        self, coil_key.replace(".", "_").lower(), coil_value.strip(),
+                        self,
+                        coil_key.replace(".", "_").lower(),
+                        coil_value.strip(),
                     )
                     for t_str in test_list[2:]:
                         if "\x00" in t_str:
@@ -1296,7 +1298,10 @@ class Z3D:
             while True:
                 # need to make sure the last block read is a multiple of 32 bit
                 read_len = min(
-                    [self._block_len, int(32 * ((file_size - file_id.tell()) // 32)),]
+                    [
+                        self._block_len,
+                        int(32 * ((file_size - file_id.tell()) // 32)),
+                    ]
                 )
                 test_str = np.frombuffer(file_id.read(read_len), dtype=np.int32)
                 if len(test_str) == 0:

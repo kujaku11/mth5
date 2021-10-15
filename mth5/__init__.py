@@ -22,3 +22,8 @@ __version__ = "0.2.0"
 load_logging_config()
 debug_logger = setup_logger(__name__, fn="mth5_debug", level="info")
 debug_logger.debug("Starting MTH5 Debug Log File")
+
+# =============================================================================
+# Defualt Parameters
+# =============================================================================
+CHUNK_SIZE = 8196

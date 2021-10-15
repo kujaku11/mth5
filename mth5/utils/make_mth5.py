@@ -15,7 +15,6 @@ import os
 
 
 class MakeMTH5:
-
     def make_mth5_from_fdsnclient(
         networks, stations, starttime, endtime, path=None, client="IRIS"
     ):
@@ -34,16 +33,18 @@ class MakeMTH5:
 
         """
         if type(networks) != list:
-            raise TypeError('Input network code(s) must be formatted as a list.')
+            raise TypeError("Input network code(s) must be formatted as a list.")
 
         if type(stations) != list:
-            raise TypeError('Input station code(s) must be formatted as a list.')
+            raise TypeError("Input station code(s) must be formatted as a list.")
 
         if path is None:
             path = str(os.getcwd()) + "/"
         start = UTCDateTime(starttime)
         end = UTCDateTime(endtime)
-        file_name = path + "".join(networks) + "_" + "".join(stations) + "_" + starttime + ".h5"
+        file_name = (
+            path + "".join(networks) + "_" + "".join(stations) + "_" + starttime + ".h5"
+        )
         # need to know network, station, start and end times before hand
         # initiate MTH5 file
         m = MTH5()
@@ -53,13 +54,12 @@ class MakeMTH5:
         inv = Inventory(networks=[], source="MTH5")
         for network in networks:
             # Builds an obspy inventory from a fdsn client.
-            net_inv = client.get_stations(start, end, network=network,
-                                          level="network"
-                                          )
+            net_inv = client.get_stations(start, end, network=network, level="network")
             returned_network = net_inv.networks[0]
             for station in stations:
                 sta_inv = client.get_stations(
-                    start, end, network=network, station=station, level="response")
+                    start, end, network=network, station=station, level="response"
+                )
                 returned_sta = sta_inv.networks[0].stations[0]
                 returned_network.stations.append(returned_sta)
             inv.networks.append(returned_network)
@@ -81,7 +81,9 @@ class MakeMTH5:
             start_times = sorted(
                 list(set([tr.stats.starttime.isoformat() for tr in streams]))
             )
-            end_times = sorted(list(set([tr.stats.endtime.isoformat() for tr in streams])))
+            end_times = sorted(
+                list(set([tr.stats.endtime.isoformat() for tr in streams]))
+            )
             run_metadata = experiment.surveys[0].stations[i_station].runs[0]
             for index, times in enumerate(zip(start_times, end_times), 1):
                 run_stream = streams.slice(UTCDateTime(times[0]), UTCDateTime(times[1]))

@@ -637,7 +637,10 @@ class USGSasc(AsciiMetadata):
         st = datetime.datetime.now()
         data_line = self.read_metadata()
         self.ts = pd.read_csv(
-            self.fn, delim_whitespace=True, skiprows=data_line, dtype=np.float32,
+            self.fn,
+            delim_whitespace=True,
+            skiprows=data_line,
+            dtype=np.float32,
         )
         dt_freq = "{0:.0f}N".format(1.0 / (self.AcqSmpFreq) * 1e9)
         dt_index = pd.date_range(
@@ -729,7 +732,9 @@ class USGSasc(AsciiMetadata):
         """
         # get the filename to save to
         save_fn = self._make_file_name(
-            save_path=save_dir, compression=compress, compress_type=compress_type,
+            save_path=save_dir,
+            compression=compress,
+            compress_type=compress_type,
         )
         # get the number of characters in the desired string
         s_num = int(str_fmt[1 : str_fmt.find(".")])
