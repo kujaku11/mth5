@@ -704,8 +704,8 @@ class StationGroup(BaseGroup):
             run_obj.initialize_group()
 
         except ValueError:
-            msg = f"run {run_name} already exists, " + "returning existing group."
-            self.logger.info(msg)
+            msg = "run %s already exists, returning existing group."
+            self.logger.info(msg, run_name)
             run_obj = self.get_run(run_name)
 
         return run_obj

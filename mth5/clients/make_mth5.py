@@ -57,11 +57,9 @@ class MakeMTH5:
 
         # read in inventory and streams
         inv, streams = self.inv_from_df(df, client)
-        print("Got Streams")
         # translate obspy.core.Inventory to an mt_metadata.timeseries.Experiment
         translator = XMLInventoryMTExperiment()
         experiment = translator.xml_to_mt(inv)
-        print(experiment)
         m.from_experiment(experiment)
 
         # TODO: Add survey level when structure allows.
@@ -82,41 +80,48 @@ class MakeMTH5:
             run_list = m.get_station(msta_id).groups_list
             n_times = len(trace_start_times)
 
+            # adding logic if there are already runs filled in
             if len(run_list) == n_times:
                 for run_id, start, end in zip(
                     run_list, trace_start_times, trace_end_times
                 ):
+                    # add the group first this will get the already filled in
+                    # metadata to update the run_ts_obj.
+                    run_group = m.stations_group.get_station(msta_id).add_run(run_id)
+                    # then get the streams an add existing metadata
                     run_stream = msstreams.slice(UTCDateTime(start), UTCDateTime(end))
                     run_ts_obj = RunTS()
-                    run_ts_obj.from_obspy_stream(run_stream)
-                    run_group = m.stations_group.get_station(msta_id).add_run(run_id)
+                    run_ts_obj.from_obspy_stream(run_stream, run_group.metadata)
                     run_group.from_runts(run_ts_obj)
+             
+            # if there is just one run
             elif len(run_list) == 1:
                 if n_times > 1:
                     for run_id, times in enumerate(
                         zip(trace_start_times, trace_end_times), 1
                     ):
+                        run_group = m.stations_group.get_station(msta_id).add_run(
+                            f"{run_id:03}"
+                        )
                         run_stream = msstreams.slice(
                             UTCDateTime(times[0]), UTCDateTime(times[1])
                         )
                         run_ts_obj = RunTS()
-                        run_ts_obj.from_obspy_stream(run_stream)
-                        run_group = m.stations_group.get_station(msta_id).add_run(
-                            f"{run_id:03}"
-                        )
+                        run_ts_obj.from_obspy_stream(run_stream, run_group.metadata)
                         run_group.from_runts(run_ts_obj)
+                        
                 elif n_times == 1:
+                    run_group = m.stations_group.get_station(msta_id).add_run(
+                        run_list[0]
+                    )
                     run_stream = msstreams.slice(
                         UTCDateTime(times[0]), UTCDateTime(times[1])
                     )
                     run_ts_obj = RunTS()
-                    run_ts_obj.from_obspy_stream(run_stream)
-                    run_group = m.stations_group.get_station(msta_id).add_run(
-                        run_list[0]
-                    )
+                    run_ts_obj.from_obspy_stream(run_stream, run_group.metadata)
                     run_group.from_runts(run_ts_obj)
             else:
-                raise ValueError("Cannot add Run")
+                raise ValueError("Cannot add Run for some reason.")
 
         m.close_mth5()
 
