@@ -1133,25 +1133,23 @@ class RunGroup(BaseGroup):
             # hdf5 file.  Set to 8196 for now.  Should add a parameter for 
             # this
             else:
-                # can estimate a size, this will help with allocating
-                # and set the chunk size to a realistic value
-                if (
-                    channel_metadata.time_period.start
-                    != channel_metadata.time_period.end
-                ):
-                    if channel_metadata.sample_rate > 0:
-                        estimate_size = (
-                            int(
-                                (
-                                    channel_metadata.time_period._end_dt
-                                    - channel_metadata.time_period._start_dt
-                                )
-                                * channel_metadata.sample_rate
-                            ),
-                        )
-                    else:
-                        estimate_size = (1,)
-                        chunks = CHUNK_SIZE
+                if channel_metadata is not None:
+                    # can estimate a size, this will help with allocating
+                    # and set the chunk size to a realistic value
+                    if (
+                        channel_metadata.time_period.start
+                        != channel_metadata.time_period.end
+                    ):
+                        if channel_metadata.sample_rate > 0:
+                            estimate_size = (
+                                int(
+                                    (
+                                        channel_metadata.time_period._end_dt
+                                        - channel_metadata.time_period._start_dt
+                                    )
+                                    * channel_metadata.sample_rate
+                                ),
+                            )
                 else:
                     estimate_size = (1,)
                     chunks = CHUNK_SIZE
