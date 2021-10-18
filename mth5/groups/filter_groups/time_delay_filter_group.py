@@ -105,7 +105,10 @@ class TimeDelayGroup(BaseGroup):
             if v is None:
                 input_dict[k] = str(v)
 
-        time_delay_group = self.add_filter(time_delay_object.name, input_dict,)
+        time_delay_group = self.add_filter(
+            time_delay_object.name,
+            input_dict,
+        )
         return time_delay_group
 
     def to_object(self, name):

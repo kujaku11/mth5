@@ -234,9 +234,10 @@ class MTH5:
 
         # make these private so the user cant accidentally change anything.
         self.__hdf5_obj = None
-        (self.__compression, self.__compression_opts,) = helpers.validate_compression(
-            compression, compression_opts
-        )
+        (
+            self.__compression,
+            self.__compression_opts,
+        ) = helpers.validate_compression(compression, compression_opts)
         self.__shuffle = shuffle
         self.__fletcher32 = fletcher32
         self.__data_level = data_level

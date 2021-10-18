@@ -1530,9 +1530,11 @@ class NIMS(NIMSHeader):
             data_array[comp] *= -1
 
         ### remove duplicates
-        (self.info_array, data_array, self.duplicate_list,) = self.remove_duplicates(
-            self.info_array, data_array
-        )
+        (
+            self.info_array,
+            data_array,
+            self.duplicate_list,
+        ) = self.remove_duplicates(self.info_array, data_array)
         ### get GPS stamps with index values
         self.stamps = self.match_status_with_gps_stamps(
             self.info_array["status"], self.gps_list
@@ -1594,7 +1596,8 @@ class NIMS(NIMSHeader):
                 gap_beginning.append(stamp.index)
                 self.logger.debug(
                     "GPS tamp at {0} is off from previous time by {1} seconds".format(
-                        stamp.time_stamp.isoformat(), time_gap,
+                        stamp.time_stamp.isoformat(),
+                        time_gap,
                     )
                 )
 
@@ -1671,7 +1674,9 @@ class NIMS(NIMSHeader):
         )
 
         dt_index = self.make_dt_index(
-            start_time.isoformat(), self.sample_rate, n_samples=data_array.shape[0],
+            start_time.isoformat(),
+            self.sample_rate,
+            n_samples=data_array.shape[0],
         )
 
         return pd.DataFrame(data_array, index=dt_index)
@@ -1710,7 +1715,11 @@ class NIMS(NIMSHeader):
         dt_freq = "{0:.0f}N".format(1.0 / (sample_rate) * 1e9)
         if stop_time is not None:
             dt_index = pd.date_range(
-                start=start_time, end=stop_time, freq=dt_freq, closed="left", tz="UTC",
+                start=start_time,
+                end=stop_time,
+                freq=dt_freq,
+                closed="left",
+                tz="UTC",
             )
         elif n_samples is not None:
             dt_index = pd.date_range(
@@ -1751,7 +1760,13 @@ class Response(object):
                 "ex": -0.2850,
                 "ey": -0.2850,
             },
-            8: {"hx": 0.2455, "hy": 0.2365, "hz": 0.2275, "ex": 0.1525, "ey": 0.1525,},
+            8: {
+                "hx": 0.2455,
+                "hy": 0.2365,
+                "hz": 0.2275,
+                "ex": 0.1525,
+                "ey": 0.1525,
+            },
         }
         self.mag_low_pass = {
             "name": "3 pole butterworth",

@@ -28,6 +28,12 @@ leap_second_dict = {
     14: {"min": datetime.date(2006, 1, 1), "max": datetime.date(2009, 1, 1)},
     15: {"min": datetime.date(2009, 1, 1), "max": datetime.date(2012, 6, 30)},
     16: {"min": datetime.date(2012, 6, 30), "max": datetime.date(2015, 6, 30)},
-    17: {"min": datetime.date(2015, 6, 30), "max": datetime.date(2016, 12, 31),},
-    18: {"min": datetime.date(2016, 12, 31), "max": datetime.date(2020, 12, 1),},
+    17: {
+        "min": datetime.date(2015, 6, 30),
+        "max": datetime.date(2016, 12, 31),
+    },
+    18: {
+        "min": datetime.date(2016, 12, 31),
+        "max": datetime.date(2020, 12, 1),
+    },
 }
