@@ -9,6 +9,8 @@ Updated on Wed Aug  25 19:57:00 2021
 # =============================================================================
 from pathlib import Path
 
+import pandas as pd
+
 from obspy.clients import fdsn
 from obspy import UTCDateTime
 from obspy import read as obsread
@@ -28,6 +30,11 @@ class MakeMTH5:
         self.column_names = [
             "network", "station", "location", "channel", "start", "end"
             ]
+        
+    def _is_dataframe(self, df):
+        if not isinstance(df, pd.DataFrame):
+            raise ValueError(f"Input must be a pandas.Dataframe not {type(df)}")
+        return True
         
     def make_mth5_from_fdsnclient(self, df, path=None, client="IRIS"):
         """
@@ -68,6 +75,8 @@ class MakeMTH5:
             path = Path().cwd()
         else:
             path = Path(path)
+            
+        assert self._is_dataframe(df) == True
 
         net_list, sta_list, loc_list, chan_list = self.unique_df_combo(df)
         if len(net_list) != 1:
@@ -181,7 +190,8 @@ class MakeMTH5:
         within the given start and end time will be returned.
         
         """
-
+        assert self._is_dataframe(df) == True
+        
         # get the metadata from an obspy client
         client = fdsn.Client(client)
         
@@ -294,8 +304,16 @@ class MakeMTH5:
 
         """
         
-        pass
-        
+        rows = []
+        for network in inventory.networks:
+            for station in network.stations:
+                for channel in station.channels:
+                    entry = (network.code, station.code, channel.location_code,
+                             channel.code,
+                             channel.start_date, channel.end_date)
+                    rows.append(entry)
+                    
+        return pd.DataFrame(rows, columns=self.column_names)
 
     def unique_df_combo(self, df):
         """
@@ -308,6 +326,8 @@ class MakeMTH5:
         :rtype: TYPE
 
         """
+        assert self._is_dataframe(df) == True
+        
         net_list = df["network"].unique()
         sta_list = df["station"].unique()
         loc_list = df["location"].unique()
