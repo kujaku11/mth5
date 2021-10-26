@@ -40,11 +40,13 @@ class MakeMTH5:
                     raise IOError(f"File {fn} does not exist. Check path")
                 df = pd.read_csv(fn)
                 df = df.fillna("")
-                if df.columns.to_list() != self.column_names:
-                    raise ValueError(
-                        f"column names in file {df.columns} are not the expected {self.column_names}")
             else:
                 raise ValueError(f"Input must be a pandas.Dataframe not {type(df)}")
+                
+        if df.columns.to_list() != self.column_names:
+            raise ValueError(
+                f"column names in file {df.columns} are not the expected {self.column_names}")
+            
         return df
         
     def make_mth5_from_fdsnclient(self, df, path=None, client=None):

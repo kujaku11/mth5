@@ -88,15 +88,15 @@ class TestMakeMTH5Input(unittest.TestCase):
             
     def test_fail_csv_inventory(self):
         self.assertRaises(ValueError, self.make_mth5.get_inventory_from_df, 
-                          self.metadata_df_fail, {'data':False})
+                          *(self.metadata_df_fail, self.make_mth5.client, False))
     
     def test_fail_wrong_input_type(self):
         self.assertRaises(ValueError, self.make_mth5.get_inventory_from_df, 
-                          ("bad tuple"), {'data':False})
+                          *(("bad tuple", "bad_tuple"), self.make_mth5.client, False))
         
     def test_fail_non_existing_file(self):
         self.assertRaises(IOError, self.make_mth5.get_inventory_from_df, 
-                          "c:\bad\file\name", {'data':False})
+                          *("c:\bad\file\name", self.make_mth5.client, False))
         
         
 # =============================================================================
