@@ -46,6 +46,10 @@ class TestMakeMTH5Input(unittest.TestCase):
             )
         self.metadata_df.to_csv(self.csv_fn, index=False)
         
+        self.metadata_df_fail = pd.DataFrame(
+            metadata_list, columns=["net", "sta", "loc", "chn", "startdate", "enddate"]
+            )
+        
     def test_df_input_inventory(self):
         inv, streams = self.make_mth5.get_inventory_from_df(self.metadata_df, data=False)
         with self.subTest(name="stations"):
@@ -81,6 +85,19 @@ class TestMakeMTH5Input(unittest.TestCase):
                 self.channels,
                 [ss.code for ss in inv.networks[0].stations[1].channels]
                 )
+            
+    def test_fail_csv_inventory(self):
+        self.assertRaises(ValueError, self.make_mth5.get_inventory_from_df, 
+                          self.metadata_df_fail, {'data':False})
+    
+    def test_fail_wrong_input_type(self):
+        self.assertRaises(ValueError, self.make_mth5.get_inventory_from_df, 
+                          ("bad tuple"), {'data':False})
+        
+    def test_fail_non_existing_file(self):
+        self.assertRaises(IOError, self.make_mth5.get_inventory_from_df, 
+                          "c:\bad\file\name", {'data':False})
+        
         
 # =============================================================================
 # Run        
