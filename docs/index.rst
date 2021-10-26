@@ -18,6 +18,7 @@ Welcome to MTH5's documentation!
     source/runs
     source/file_readers
     source/conventions
+    source/examples
 	
 .. toctree::
 	:maxdepth: 1
