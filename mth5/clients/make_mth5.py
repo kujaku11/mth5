@@ -49,7 +49,7 @@ class MakeMTH5:
             
         return df
         
-    def make_mth5_from_fdsnclient(self, df, path=None, client=None):
+    def make_mth5_from_fdsnclient(self, df, path=None, client=None, interact=False):
         """
         Make an MTH5 file from an FDSN data center
         
@@ -172,9 +172,12 @@ class MakeMTH5:
             else:
                 raise ValueError("Cannot add Run for some reason.")
 
-        m.close_mth5()
+        if not interact:
+            m.close_mth5()
 
-        return file_name
+            return file_name
+        if interact:
+            return m
 
     def get_inventory_from_df(self, df, client=None, data=True):
         """
@@ -345,7 +348,6 @@ class MakeMTH5:
         :rtype: TYPE
 
         """
-        assert self._is_dataframe(df) == True
         
         net_list = df["network"].unique()
         sta_list = df["station"].unique()
