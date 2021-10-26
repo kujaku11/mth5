@@ -9,6 +9,8 @@ Updated on Wed Aug  25 19:57:00 2021
 # =============================================================================
 from pathlib import Path
 
+import pandas as pd
+
 from obspy.clients import fdsn
 from obspy import UTCDateTime
 from obspy import read as obsread
@@ -23,27 +25,74 @@ from mth5.timeseries import RunTS
 
 
 class MakeMTH5:
-    def make_mth5_from_fdsnclient(self, df, path=None, client="IRIS"):
+    
+    def __init__(self):
+        self.column_names = [
+            "network", "station", "location", "channel", "start", "end"
+            ]
+        self.client = "IRIS"
+        
+    def _validate_dataframe(self, df):
+        if not isinstance(df, pd.DataFrame):
+            if isinstance(df, (str, Path)):
+                fn = Path(df)
+                if not fn.exists():
+                    raise IOError(f"File {fn} does not exist. Check path")
+                df = pd.read_csv(fn)
+                df = df.fillna("")
+            else:
+                raise ValueError(f"Input must be a pandas.Dataframe not {type(df)}")
+                
+        if df.columns.to_list() != self.column_names:
+            raise ValueError(
+                f"column names in file {df.columns} are not the expected {self.column_names}")
+            
+        return df
+        
+    def make_mth5_from_fdsnclient(self, df, path=None, client=None, interact=False):
         """
-        networks, stations, channels, starttime, endtime,
-        Create an MTH5 file by pulling data from IRIS.
-
-        To do this we use Obspy to talk to the IRIS DMC through
-        :class:`obspy.clients.fdsn.Client`
-
-        :parameter list[str] of network codes: FDSN network code
-        :parameter list[str] of station codes: FDSN station code
-        :parameter dictionary of channel and location codes: FDSN channel code
-        :parameter starttime: start date and time
-        :type starttime: :class:`obspy.UTCDateTime`
-        :parameter endtime: end date and time
-        :type endtime: :class:`obspy.UTCDateTime`
+        Make an MTH5 file from an FDSN data center
+        
+        :param df: DataFrame with columns
+            
+            - 'network'   --> FDSN Network code
+            - 'station'   --> FDSN Station code
+            - 'location'  --> FDSN Location code  
+            - 'channel'   --> FDSN Channel code
+            - 'start'     --> Start time YYYY-MM-DDThh:mm:ss 
+            - 'end'       --> End time YYYY-MM-DDThh:mm:ss
+        
+        :type df: :class:`pandas.DataFrame`
+        :param path: Path to save MTH5 file to, defaults to None
+        :type path: string or :class:`pathlib.Path`, optional
+        :param client: FDSN client name, defaults to "IRIS" 
+        :type client: string, optional
+        :raises AttributeError: If the input DataFrame is not properly 
+        formatted an Attribute Error will be raised.
+        :raises ValueError: If the values of the DataFrame are not correct a
+        ValueError will be raised.
+        :return: MTH5 file name
+        :rtype: :class:`pathlib.Path`
+        
+        
+        .. seealso:: https://docs.obspy.org/packages/obspy.clients.fdsn.html#id1
+        
+        .. note:: If any of the column values are blank, then any value will 
+        searched for.  For example if you leave 'station' blank, any station 
+        within the given start and end time will be returned.           
+        
+        
 
         """
         if path is None:
             path = Path().cwd()
         else:
             path = Path(path)
+            
+        if client is not None:
+            self.client = client
+            
+        df = self._validate_dataframe(df)
 
         net_list, sta_list, loc_list, chan_list = self.unique_df_combo(df)
         if len(net_list) != 1:
@@ -56,7 +105,7 @@ class MakeMTH5:
         m.open_mth5(file_name, "w")
 
         # read in inventory and streams
-        inv, streams = self.inv_from_df(df, client)
+        inv, streams = self.get_inventory_from_df(df, self.client)
         # translate obspy.core.Inventory to an mt_metadata.timeseries.Experiment
         translator = XMLInventoryMTExperiment()
         experiment = translator.xml_to_mt(inv)
@@ -123,134 +172,188 @@ class MakeMTH5:
             else:
                 raise ValueError("Cannot add Run for some reason.")
 
-        m.close_mth5()
+        if not interact:
+            m.close_mth5()
 
-        return experiment, file_name
+            return file_name
+        if interact:
+            return m
 
-    def inv_from_df(self, df, client):
+    def get_inventory_from_df(self, df, client=None, data=True):
+        """
+        Get an :class:`obspy.Inventory` object from a 
+        :class:`pandas.DataFrame`
+        
+        :param df: DataFrame with columns
+            
+            - 'network'   --> FDSN Network code
+            - 'station'   --> FDSN Station code
+            - 'location'  --> FDSN Location code  
+            - 'channel'   --> FDSN Channel code
+            - 'start'     --> Start time YYYY-MM-DDThh:mm:ss 
+            - 'end'       --> End time YYYY-MM-DDThh:mm:ss
+        
+        :type df: :class:`pandas.DataFrame`
+        :param client: FDSN client
+        :type client: string
+        :param data: True if you want data False if you want just metadata, 
+        defaults to True
+        :type data: boolean, optional
+        :return: An inventory of metadata requested and data
+        :rtype: :class:`obspy.Inventory` and :class:`obspy.Stream`
+        
+        .. seealso:: https://docs.obspy.org/packages/obspy.clients.fdsn.html#id1
 
-        # get the metadata
-        client = fdsn.Client(client)
+        .. note:: If any of the column values are blank, then any value will 
+        searched for.  For example if you leave 'station' blank, any station 
+        within the given start and end time will be returned.
+        
+        """
+        if client is not None:
+            self.client = client
+            
+        df = self._validate_dataframe(df)
+        
+        # get the metadata from an obspy client
+        client = fdsn.Client(self.client)
+        
+        # creat an empty stream to add to
         streams = obsread()
         streams.clear()
+        
         inv = Inventory(networks=[], source="MTH5")
-        net_list, sta_list, loc_list, chan_list = self.unique_df_combo(df)
-        df.sort_values(["net", "sta", "loc", "chan", "startdate"])
-        usednet = dict()
-        usedsta = dict()
-        for net_index, net_scle in df.iterrows():
-
+        
+        # sort the values to be logically ordered
+        df.sort_values(self.column_names[:-1])
+        
+        used_network = dict()
+        used_station = dict()
+        for row in df.itertuples():
             # First for loop buids out networks and stations
-            network = net_scle["net"]
-            net_start = net_scle["startdate"]
-            net_end = net_scle["enddate"]
-            if network not in usednet:
+            if row.network not in used_network:
                 net_inv = client.get_stations(
-                    net_start, net_end, network=network, level="network"
+                    row.start, row.end, network=row.network, level="network"
                 )
                 returned_network = net_inv.networks[0]
-                usednet[network] = [net_start]
-            elif usednet.get(network) is not None and net_start not in usednet.get(
-                network
+                used_network[row.network] = [row.start]
+            elif used_network.get(row.network) is not None and row.start not in used_network.get(
+                row.network
             ):
                 net_inv = client.get_stations(
-                    net_start, net_end, network=network, level="network"
+                    row.start, row.end, network=row.network, level="network"
                 )
                 returned_network = net_inv.networks[0]
-                usednet[network].append(net_start)
+                used_network[row.network].append(row.start)
             else:
                 continue
-            for sta_index, n_sta_cle in df.iterrows():
-                # Station Loop
-
-                station = n_sta_cle["sta"]
-                sta_start = n_sta_cle["startdate"]
-                sta_end = n_sta_cle["enddate"]
-                if network != n_sta_cle["net"]:
+            for st_row in df.itertuples():
+                if row.network != st_row.network:
                     continue
                 else:
-                    if station not in usedsta:
+                    if st_row.station not in used_station:
                         sta_inv = client.get_stations(
-                            sta_start,
-                            sta_end,
-                            network=network,
-                            station=station,
+                            st_row.start,
+                            st_row.end,
+                            network=row.network,
+                            station=st_row.station,
                             level="station",
                         )
                         returned_sta = sta_inv.networks[0].stations[0]
-                        usedsta[station] = [sta_start]
-                    elif usedsta.get(
-                        station
-                    ) is not None and sta_start not in usedsta.get(station):
+                        used_station[st_row.station] = [st_row.start]
+                    elif used_station.get(
+                        st_row.station
+                    ) is not None and st_row.start not in used_station.get(st_row.station):
                         # Checks for epoch
                         sta_inv = client.get_stations(
-                            sta_start,
-                            sta_end,
-                            network=network,
-                            station=station,
+                            st_row.start,
+                            st_row.end,
+                            network=st_row.network,
+                            station=st_row.station,
                             level="station",
                         )
                         returned_sta = sta_inv.networks[0].stations[0]
-                        usedsta[station].append(sta_start)
+                        used_station[st_row.station].append(st_row.start)
                     else:
                         continue
-                for chan_index, ns_cha_le in df.iterrows():
-                    # Channel loop
-                    net_channel = ns_cha_le["net"]
-                    sta_channel = ns_cha_le["sta"]
-                    location = ns_cha_le["loc"]
-                    channel = ns_cha_le["chan"]
-                    chan_start = ns_cha_le["startdate"]
-                    chan_end = ns_cha_le["enddate"]
+                for ch_row in df.itertuples():
                     if (
-                        net_channel == network
-                        and sta_channel == station
-                        and chan_start == sta_start
+                        ch_row.network == row.network
+                        and st_row.station == ch_row.station
+                        and ch_row.start == st_row.start
                     ):
                         cha_inv = client.get_stations(
-                            chan_start,
-                            chan_end,
-                            network=network,
-                            station=station,
-                            loc=location,
-                            channel=channel,
+                            ch_row.start,
+                            ch_row.end,
+                            network=ch_row.network,
+                            station=ch_row.station,
+                            loc=ch_row.location,
+                            channel=ch_row.channel,
                             level="response",
                         )
                         returned_chan = cha_inv.networks[0].stations[0].channels[0]
                         returned_sta.channels.append(returned_chan)
-                        #  Builds streams and inventories at the same time.
-                        if streams is None:
-                            streams = client.get_waveforms(
-                                network,
-                                station,
-                                location,
-                                channel,
-                                UTCDateTime(chan_start),
-                                UTCDateTime(chan_end),
-                            )
-                        else:
+                        
+                        # -----------------------------
+                        # get data if desired
+                        if data:
                             streams = (
                                 client.get_waveforms(
-                                    network,
-                                    station,
-                                    location,
-                                    channel,
-                                    UTCDateTime(chan_start),
-                                    UTCDateTime(chan_end),
+                                    ch_row.network,
+                                    ch_row.station,
+                                    ch_row.location,
+                                    ch_row.channel,
+                                    UTCDateTime(ch_row.start),
+                                    UTCDateTime(ch_row.end),
                                 )
                                 + streams
                             )
                     else:
                         continue
+                        
                 returned_network.stations.append(returned_sta)
             inv.networks.append(returned_network)
+            
         return inv, streams
+    
+    def get_df_from_inventory(self, inventory):
+        """
+        Create an data frame from an inventory object
+        
+        :param inventory: inventory object
+        :type inventory: :class:`obspy.Inventory`
+        :return: dataframe in proper format
+        :rtype: :class:`pandas.DataFrame`
+
+        """
+        
+        rows = []
+        for network in inventory.networks:
+            for station in network.stations:
+                for channel in station.channels:
+                    entry = (network.code, station.code, channel.location_code,
+                             channel.code,
+                             channel.start_date, channel.end_date)
+                    rows.append(entry)
+                    
+        return pd.DataFrame(rows, columns=self.column_names)
 
     def unique_df_combo(self, df):
-        net_list = df["net"].unique()
-        sta_list = df["sta"].unique()
-        loc_list = df["loc"].unique()
-        chan_list = df["chan"].unique()
+        """
+        Get unique lists of networks, stations, locations, and channels from
+        a given data frame.
+        
+        :param df: DESCRIPTION
+        :type df: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        
+        net_list = df["network"].unique()
+        sta_list = df["station"].unique()
+        loc_list = df["location"].unique()
+        chan_list = df["channel"].unique()
+        
         return net_list, sta_list, loc_list, chan_list
 
     def get_fdsn_channel_map(self):
