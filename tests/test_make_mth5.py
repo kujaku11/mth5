@@ -111,17 +111,24 @@ class TestMakeMTH5(unittest.TestCase):
         with self.subTest(name="CAS04_runs"):
             self.assertListEqual(["a", "b", "c", "d"], self.m.get_station("CAS04").groups_list)
         
-        for station in self.stations:
-            for run in ["a", "b", "c", "d"]:
-                for ch in ["ex", "ey", "hx", "hy", "hz"]:
-                    with self.subTest(name=f"has data {station}.{run}.{ch}"):
-                        x = self.m.get_channel(station, run, ch)
-                        self.assertFalse(np.all(x.hdf5_dataset == 0))
-            
+        for run in ["a", "b", "c", "d"]:
+            for ch in ["ex", "ey", "hx", "hy", "hz"]:
+                with self.subTest(name=f"has data CAS04.{run}.{ch}"):
+                    x = self.m.get_channel("CAS04", run, ch)
+                    self.assertFalse(np.all(x.hdf5_dataset == 0))
+                    
+        for run in ["a", "b", "c"]:
+            for ch in ["ex", "ey", "hx", "hy", "hz"]:
+                with self.subTest(name=f"has data NVR08.{run}.{ch}"):
+                    x = self.m.get_channel("NVR08", run, ch)
+                    self.assertFalse(np.all(x.hdf5_dataset == 0))
+
+        self.m.close_mth5()
         self.m.filename.unlink()
         
     def tearDown(self):
         self.csv_fn.unlink()
+        
         
 # =============================================================================
 # Run        
