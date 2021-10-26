@@ -98,7 +98,8 @@ class TestMakeMTH5Input(unittest.TestCase):
         self.assertRaises(IOError, self.make_mth5.get_inventory_from_df, 
                           *("c:\bad\file\name", self.make_mth5.client, False))
         
-        
+    def tearDown(self):
+        self.csv_fn.unlink()
 # =============================================================================
 # Run        
 # =============================================================================
