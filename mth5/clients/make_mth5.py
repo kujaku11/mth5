@@ -30,13 +30,24 @@ class MakeMTH5:
         self.column_names = [
             "network", "station", "location", "channel", "start", "end"
             ]
+        self.client = "IRIS"
         
-    def _is_dataframe(self, df):
+    def _validate_dataframe(self, df):
         if not isinstance(df, pd.DataFrame):
-            raise ValueError(f"Input must be a pandas.Dataframe not {type(df)}")
-        return True
+            if isinstance(df, (str, Path)):
+                fn = Path(df)
+                if not fn.exists():
+                    raise IOError(f"File {fn} does not exist. Check path")
+                df = pd.read_csv(fn)
+                df = df.fillna("")
+                if df.columns.to_list() != self.column_names:
+                    raise ValueError(
+                        f"column names in file {df.columns} are not the expected {self.column_names}")
+            else:
+                raise ValueError(f"Input must be a pandas.Dataframe not {type(df)}")
+        return df
         
-    def make_mth5_from_fdsnclient(self, df, path=None, client="IRIS"):
+    def make_mth5_from_fdsnclient(self, df, path=None, client=None):
         """
         Make an MTH5 file from an FDSN data center
         
@@ -76,7 +87,10 @@ class MakeMTH5:
         else:
             path = Path(path)
             
-        assert self._is_dataframe(df) == True
+        if client is not None:
+            self.client = client
+            
+        df = self._validate_dataframe(df)
 
         net_list, sta_list, loc_list, chan_list = self.unique_df_combo(df)
         if len(net_list) != 1:
@@ -89,7 +103,7 @@ class MakeMTH5:
         m.open_mth5(file_name, "w")
 
         # read in inventory and streams
-        inv, streams = self.get_inventory_from_df(df, client)
+        inv, streams = self.get_inventory_from_df(df, self.client)
         # translate obspy.core.Inventory to an mt_metadata.timeseries.Experiment
         translator = XMLInventoryMTExperiment()
         experiment = translator.xml_to_mt(inv)
@@ -160,7 +174,7 @@ class MakeMTH5:
 
         return file_name
 
-    def get_inventory_from_df(self, df, client, data=True):
+    def get_inventory_from_df(self, df, client=None, data=True):
         """
         Get an :class:`obspy.Inventory` object from a 
         :class:`pandas.DataFrame`
@@ -190,10 +204,13 @@ class MakeMTH5:
         within the given start and end time will be returned.
         
         """
-        assert self._is_dataframe(df) == True
+        if client is not None:
+            self.client = client
+            
+        df = self._validate_dataframe(df)
         
         # get the metadata from an obspy client
-        client = fdsn.Client(client)
+        client = fdsn.Client(self.client)
         
         # creat an empty stream to add to
         streams = obsread()
@@ -297,10 +314,10 @@ class MakeMTH5:
         """
         Create an data frame from an inventory object
         
-        :param inventory: DESCRIPTION
-        :type inventory: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :param inventory: inventory object
+        :type inventory: :class:`obspy.Inventory`
+        :return: dataframe in proper format
+        :rtype: :class:`pandas.DataFrame`
 
         """
         
