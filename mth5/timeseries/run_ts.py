@@ -447,6 +447,10 @@ class RunTS:
         self.station_metadata.fdsn.id = station
 
         self.set_dataset(array_list)
+        
+        # need to be sure update any input metadata.
+        if run_metadata is not None:
+            self.run_metadata.update(run_metadata)
 
         self.validate_metadata()
 

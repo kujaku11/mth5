@@ -1355,7 +1355,7 @@ class RunGroup(BaseGroup):
             self.logger.error(msg)
             raise MTH5Error(msg)
 
-        self.metadata.from_dict(run_ts_obj.run_metadata.to_dict())
+        self.metadata.update(run_ts_obj.run_metadata)
 
         channels = []
 
