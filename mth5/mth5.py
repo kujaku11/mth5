@@ -39,8 +39,8 @@ from mt_metadata.timeseries import Experiment
 # =============================================================================
 # Acceptable parameters
 # =============================================================================
-acceptable_file_types = ["mth5", "MTH5", "h5", "H5"]
-acceptable_file_versions = ["0.1.0"]
+acceptable_file_types = [".mth5", ".MTH5", ".h5", ".H5"]
+acceptable_file_versions = ["0.1.0", "0.2.0"]
 acceptable_data_levels = [0, 1, 2, 3]
 
 # =============================================================================
@@ -228,6 +228,7 @@ class MTH5:
         shuffle=True,
         fletcher32=True,
         data_level=1,
+        file_version="0.2.0",
     ):
 
         self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
@@ -240,27 +241,15 @@ class MTH5:
         ) = helpers.validate_compression(compression, compression_opts)
         self.__shuffle = shuffle
         self.__fletcher32 = fletcher32
-        self.__data_level = data_level
-        self.__filename = None
+        
+        self.data_level = data_level
         self.filename = filename
+        self.file_version = file_version
+        
+        self._set_default_groups()
+        
+        
 
-        self._default_root_name = "Survey"
-        self._default_subgroup_names = [
-            "Stations",
-            "Reports",
-            "Filters",
-            "Standards",
-        ]
-
-        self._file_attrs = {
-            "file.type": "MTH5",
-            "file.version": acceptable_file_versions[-1],
-            "file.access.platform": platform(),
-            "file.access.time": get_now_utc(),
-            "mth5.software.version": mth5_version,
-            "mth5.software.name": "mth5",
-            "data_level": self.__data_level,
-        }
 
     def __str__(self):
         if self.h5_is_read():
@@ -280,6 +269,18 @@ class MTH5:
             "shuffle": self.__shuffle,
             "fletcher32": self.__fletcher32,
         }
+    
+    @property
+    def file_attributes(self):
+        return {
+            "file.type": "MTH5",
+            "file.version": self.file_version,
+            "file.access.platform": platform(),
+            "file.access.time": get_now_utc(),
+            "mth5.software.version": mth5_version,
+            "mth5.software.name": "mth5",
+            "data_level": self.data_level,
+        }
 
     @property
     def filename(self):
@@ -296,22 +297,21 @@ class MTH5:
     @filename.setter
     def filename(self, value):
         """make sure file has the proper extension"""
-        if value is None:
-            return None
-
-        if not isinstance(value, Path):
-            value = Path(value)
-
-        if value.suffix not in [".h5"]:
-            msg = (
-                f"file extension {value.suffix} is not correct. "
-                "Changing to default .h5"
-            )
-            self.logger.info(msg)
-            self.__filename = value.with_suffix(".h5")
-
-        else:
-            self.__filename = value
+        self.__filename = None
+        if value is not None:
+            if not isinstance(value, Path):
+                value = Path(value)
+    
+            if value.suffix not in acceptable_file_types:
+                msg = (
+                    f"file extension {value.suffix} is not correct. "
+                    "Changing to default .h5"
+                )
+                self.logger.info(msg)
+                self.__filename = value.with_suffix(".h5")
+    
+            else:
+                self.__filename = value
 
     @property
     def file_type(self):
@@ -341,7 +341,7 @@ class MTH5:
         """mth5 file version"""
         if self.h5_is_read():
             return self.__hdf5_obj.attrs["file.version"]
-        return None
+        return self.__file_version
 
     @file_version.setter
     def file_version(self, value):
@@ -351,6 +351,7 @@ class MTH5:
             self.logger.error(msg)
             raise ValueError(msg)
 
+        self.__file_version = value
         if self.h5_is_read():
             if value in acceptable_file_versions:
                 self.__hdf5_obj.attrs["file.version"] = value
@@ -370,7 +371,8 @@ class MTH5:
         """data level"""
         if self.h5_is_read():
             return self.__hdf5_obj.attrs["data_level"]
-        return None
+        else: 
+            return self.__data_level
 
     @data_level.setter
     def data_level(self, value):
@@ -380,12 +382,39 @@ class MTH5:
             self.logger.error(msg)
             raise ValueError(msg)
 
+        self.__data_level = value
+        
         if self.h5_is_read():
-            if value in acceptable_file_versions:
+            if value in acceptable_data_levels:
                 self.__hdf5_obj.attrs["data_level"] = value
             msg = f"Input data_level is not valid, must be {acceptable_data_levels}"
             self.logger.error(msg)
             raise ValueError(msg)
+            
+    def _set_default_groups(self):
+        """ get the default groups based on file version """
+        
+        if self.file_version in ["0.1.0"]:
+
+            self._default_root_name = "Survey"
+            self._default_subgroup_names = [
+                "Stations",
+                "Reports",
+                "Filters",
+                "Standards",
+            ]
+            
+        elif self.file_version in ["0.2.0"]:
+            self._default_root_name = "Experiment"
+            self._default_subgroup_names = [
+                "Survey",
+                [
+                "Stations",
+                "Reports",
+                "Filters",
+                "Standards",
+                ],
+            ]
 
     @property
     def survey_group(self):
