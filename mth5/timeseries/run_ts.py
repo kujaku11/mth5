@@ -461,14 +461,14 @@ class RunTS:
 
         self.validate_metadata()
         
-    def get_slice(self, start, stop=None, n_samples=None):
+    def get_slice(self, start, end=None, n_samples=None):
         """
         Get just a chunk of data from the run
         
         :param start: DESCRIPTION
         :type start: TYPE
-        :param stop: DESCRIPTION
-        :type stop: TYPE
+        :param end: DESCRIPTION
+        :type end: TYPE
         :return: DESCRIPTION
         :rtype: TYPE
 
@@ -478,17 +478,17 @@ class RunTS:
             
         if n_samples is not None:
             seconds = n_samples / self.sample_rate
-            stop = start + seconds
+            end = start + seconds
             
-        if stop is not None:
-            if not isinstance(stop, MTime):
-                stop = MTime(stop)
+        if end is not None:
+            if not isinstance(end, MTime):
+                end = MTime(end)
                 
         new_runts = RunTS()
         new_runts.station_metadata = self.station_metadata
         new_runts.run_metadata = self.run_metadata
         new_runts.dataset = self._dataset.sel(time=slice(start.iso_no_tz,
-                                                       stop.iso_no_tz))
+                                                       end.iso_no_tz))
         
         return new_runts
 

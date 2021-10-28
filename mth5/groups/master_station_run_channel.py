@@ -2524,7 +2524,7 @@ class ChannelDataset:
             end_index = start_index + n_samples
             npts = n_samples
 
-        if npts > self.hdf5_dataset.size:
+        if npts > self.hdf5_dataset.size or end_index > self.hdf5_dataset.size:
             msg = (
                 "Requested slice is larger than data.  "
                 + f"Slice length = {npts}, data length = {self.hdf5_dataset.shape}"
