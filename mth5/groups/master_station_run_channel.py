@@ -1342,7 +1342,8 @@ class RunGroup(BaseGroup):
             else:
                 ts_obj = ch_obj.to_channel_ts()
             ch_list.append(ts_obj)
-        return RunTS(ch_list, run_metadata=self.metadata)
+        return RunTS(ch_list, run_metadata=self.metadata, 
+                     station_metadata=self.station_group.metadata)
 
     def from_runts(self, run_ts_obj, **kwargs):
         """
