@@ -274,14 +274,19 @@ class RunTS:
         :type align_type: string
 
         """
-        x_array_list = self._validate_array_list(array_list)
-
-        # first need to align the time series.
-        x_array_list = xr.align(*x_array_list, join=align_type)
-
-        # input as a dictionary
-        xdict = dict([(x.component.lower(), x) for x in x_array_list])
-        self._dataset = xr.Dataset(xdict)
+        if isinstance(array_list, (list, tuple)):
+            x_array_list = self._validate_array_list(array_list)
+    
+            # first need to align the time series.
+            x_array_list = xr.align(*x_array_list, join=align_type)
+    
+            # input as a dictionary
+            xdict = dict([(x.component.lower(), x) for x in x_array_list])
+            self._dataset = xr.Dataset(xdict)
+            
+        elif isinstance(array_list, xr.Dataset):
+            self._dataset = array_list
+            
         self.validate_metadata()
         self._dataset.attrs.update(self.run_metadata.to_dict(single=True))
 
@@ -454,7 +459,7 @@ class RunTS:
 
         self.validate_metadata()
         
-    def get_slice(self, start, stop):
+    def get_slice(self, start, stop=None, n_samples=None):
         """
         Get just a chunk of data from the run
         
@@ -466,7 +471,24 @@ class RunTS:
         :rtype: TYPE
 
         """
-        pass
+        if not isinstance(start, MTime):
+            start = MTime(start)
+            
+        if n_samples is not None:
+            seconds = n_samples / self.sample_rate
+            stop = start + seconds
+            
+        if stop is not None:
+            if not isinstance(stop, MTime):
+                stop = MTime(stop)
+                
+        new_runts = RunTS()
+        new_runts.station_metadata = self.station_metadata
+        new_runts.run_metadata = self.run_metadata
+        new_runts.dataset = self._dataset.sel(time=slice(start.iso_no_tz,
+                                                       stop.iso_no_tz))
+        
+        return new_runts
 
     def plot(self):
         """
