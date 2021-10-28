@@ -1476,6 +1476,16 @@ class RunGroup(BaseGroup):
         self.metadata.time_period.start = channel_summary.start.min().isoformat()
         self.metadata.time_period.end = channel_summary.end.max().isoformat()
         self.write_metadata()
+        
+        
+    def plot(self, start=None, end=None, n_samples=None):
+        """
+        Produce a simple matplotlib plot using runts
+        """
+        
+        runts = self.to_runts(start=start, end=end, n_samples=n_samples)
+        
+        runts.plot()
 
 
 class ChannelDataset:
