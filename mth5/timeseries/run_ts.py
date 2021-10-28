@@ -21,6 +21,8 @@ convert them back if read in.
 import inspect
 
 import xarray as xr
+import numpy as np
+
 from matplotlib import pyplot as plt
 
 from mt_metadata import timeseries as metadata
@@ -361,7 +363,7 @@ class RunTS:
     def sample_rate(self):
         if self.has_data:
             try:
-                return 1e9 / self.dataset.coords["time"].to_index().freq.n
+                return 1./ np.float64((np.median(np.diff(self.dataset.coords["time"].to_index()) / np.timedelta64(1, 's'))))
             except AttributeError:
                 self.logger.warning("Something weird happend with xarray time indexing")
 

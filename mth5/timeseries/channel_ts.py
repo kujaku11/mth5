@@ -183,7 +183,7 @@ class ChannelTS:
 
         if channel_metadata is not None:
             if isinstance(channel_metadata, type(self.channel_metadata)):
-                self.channel_metadata.from_dict(channel_metadata.to_dict())
+                self.channel_metadata.update(channel_metadata)
                 self.logger.debug(
                     "Loading from metadata class {0}".format(
                         type(self.channel_metadata)
@@ -208,7 +208,7 @@ class ChannelTS:
         # channel such that it can stand alone.
         if station_metadata is not None:
             if isinstance(station_metadata, metadata.Station):
-                self.station_metadata.from_dict(station_metadata.to_dict())
+                self.station_metadata.update(station_metadata)
 
             elif isinstance(station_metadata, dict):
                 if not "station" in [cc.lower() for cc in station_metadata.keys()]:
@@ -227,7 +227,7 @@ class ChannelTS:
         # channel such that it can stand alone.
         if run_metadata is not None:
             if isinstance(run_metadata, metadata.Run):
-                self.run_metadata.from_dict(run_metadata.to_dict())
+                self.run_metadata.update(run_metadata)
 
             elif isinstance(run_metadata, dict):
                 if not "run" in [cc.lower() for cc in run_metadata.keys()]:
@@ -527,19 +527,8 @@ class ChannelTS:
     def sample_rate(self):
         """sample rate in samples/second"""
         if self.has_data:
-            # this is a hack cause I don't understand how the freq can be none,
-            # but this is the case with xarray if you interpolate data
-            if self._ts.coords.indexes["time"][0].freq is None:
-                freq = pd.infer_freq(self._ts.coords.indexes["time"])
-                if "L" in freq:
-                    sr = 1.0 / (1e-3 * float(freq[0:-1]))
-                elif "U" in freq:
-                    sr = 1.0 / (1e-6 * float(freq[0:-1]))
-                elif "N" in freq:
-                    sr = 1.0 / (1e-9 * float(freq[0:-1]))
-
-            else:
-                sr = 1e9 / self._ts.coords.indexes["time"][0].freq.nanos
+            sr = 1./ np.float64((np.median(np.diff(self._ts.coords.indexes["time"])) / np.timedelta64(1, 's')))
+            
         else:
             self.logger.debug("Data has not been set yet, sample rate is from metadata")
             sr = self.channel_metadata.sample_rate
@@ -685,7 +674,7 @@ class ChannelTS:
 
         self._channel_response = value
 
-    def get_slice(self, start, end):
+    def get_slice(self, start, end=None, n_samples=None):
         """
         Get a slice from the time series given a start and end time.
 
@@ -702,19 +691,39 @@ class ChannelTS:
 
         """
 
+        if n_samples is None and end is None:
+            msg = "Must input either end_time or n_samples."
+            self.logger.error(msg)
+            raise ValueError(msg)
+
+        if n_samples is not None and end is not None:
+            msg = "Must input either end_time or n_samples, not both."
+            self.logger.error(msg)
+            raise ValueError(msg)
+
         if not isinstance(start, MTime):
             start = MTime(start)
-        if not isinstance(end, MTime):
-            end = MTime(end)
+            
+        if n_samples is not None:
+            n_samples = int(n_samples)
+            end = start + n_samples / self.sample_rate
+            
+        if end is not None:
+            if not isinstance(end, MTime):
+                end = MTime(end)
 
         new_ts = self._ts.loc[
             (self._ts.indexes["time"] >= start.iso_no_tz)
             & (self._ts.indexes["time"] <= end.iso_no_tz)
         ]
-        new_ts.attrs["time_period.start"] = new_ts.coords.indexes["time"][0].isoformat()
-        new_ts.attrs["time_period.end"] = new_ts.coords.indexes["time"][-1].isoformat()
-
-        return new_ts
+        
+        new_ch_ts = ChannelTS(channel_type=self.channel_type,
+                              data=new_ts,
+                              channel_metadata=self.channel_metadata,
+                              run_metadata=self.run_metadata,
+                              station_metadata=self.station_metadata)
+        
+        return new_ch_ts
 
     # decimate data
     def resample(self, dec_factor=1, inplace=False):
