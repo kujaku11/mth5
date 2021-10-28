@@ -453,6 +453,20 @@ class RunTS:
             self.run_metadata.update(run_metadata)
 
         self.validate_metadata()
+        
+    def get_slice(self, start, stop):
+        """
+        Get just a chunk of data from the run
+        
+        :param start: DESCRIPTION
+        :type start: TYPE
+        :param stop: DESCRIPTION
+        :type stop: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        pass
 
     def plot(self):
         """

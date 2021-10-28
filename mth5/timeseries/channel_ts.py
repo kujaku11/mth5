@@ -84,6 +84,7 @@ def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
         start=start_time.iso_str.split("+", 1)[0],
         periods=n_samples,
         freq=dt_freq,
+        closed=None,
     )
 
     return dt_index
@@ -707,8 +708,8 @@ class ChannelTS:
             end = MTime(end)
 
         new_ts = self._ts.loc[
-            (self.ts.indexes["time"] >= start.iso_no_tz)
-            & (self.ts.indexes["time"] <= end.iso_no_tz)
+            (self._ts.indexes["time"] >= start.iso_no_tz)
+            & (self._ts.indexes["time"] <= end.iso_no_tz)
         ]
         new_ts.attrs["time_period.start"] = new_ts.coords.indexes["time"][0].isoformat()
         new_ts.attrs["time_period.end"] = new_ts.coords.indexes["time"][-1].isoformat()
