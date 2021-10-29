@@ -183,10 +183,16 @@ class TestChannelTS(unittest.TestCase):
         self.ts.ts = np.arange(4096)
 
         self.assertEqual(self.ts.sample_rate, 16.0)
+        
+        with self.subTest(name="sample_interval"):
+            self.assertEqual(self.ts.sample_interval, 1. / 16.0)
 
         self.ts.sample_rate = 8
         self.assertEqual(self.ts.sample_rate, 8.0)
         self.assertEqual(self.ts.n_samples, 4096)
+        
+        with self.subTest(name="sample_interval"):
+            self.assertEqual(self.ts.sample_interval, 1. / 8.0)
 
     def test_to_xarray(self):
         self.ts.sample_rate = 16

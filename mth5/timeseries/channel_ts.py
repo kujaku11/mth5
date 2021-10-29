@@ -564,6 +564,19 @@ class ChannelTS:
                 )
             self.channel_metadata.sample_rate = sample_rate
         self._update_xarray_metadata()
+        
+    @property
+    def sample_interval(self):
+        """
+        Sample interval = 1 / sample_rate
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        
+        if self.sample_rate != 0:
+            return 1./self.sample_rate
+        return 0.
 
     ## set time and set index
     @property

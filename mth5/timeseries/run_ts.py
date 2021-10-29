@@ -369,6 +369,19 @@ class RunTS:
 
                 raise ValueError("Something weird happend with xarray time indexing")
         return self.run_metadata.sample_rate
+    
+    @property
+    def sample_interval(self):
+        """
+        Sample interval = 1 / sample_rate
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        
+        if self.sample_rate != 0:
+            return 1./self.sample_rate
+        return 0.
 
     @property
     def channels(self):
