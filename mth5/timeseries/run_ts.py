@@ -21,6 +21,8 @@ convert them back if read in.
 import inspect
 
 import xarray as xr
+import numpy as np
+
 from matplotlib import pyplot as plt
 
 from mt_metadata import timeseries as metadata
@@ -274,14 +276,19 @@ class RunTS:
         :type align_type: string
 
         """
-        x_array_list = self._validate_array_list(array_list)
-
-        # first need to align the time series.
-        x_array_list = xr.align(*x_array_list, join=align_type)
-
-        # input as a dictionary
-        xdict = dict([(x.component.lower(), x) for x in x_array_list])
-        self._dataset = xr.Dataset(xdict)
+        if isinstance(array_list, (list, tuple)):
+            x_array_list = self._validate_array_list(array_list)
+    
+            # first need to align the time series.
+            x_array_list = xr.align(*x_array_list, join=align_type)
+    
+            # input as a dictionary
+            xdict = dict([(x.component.lower(), x) for x in x_array_list])
+            self._dataset = xr.Dataset(xdict)
+            
+        elif isinstance(array_list, xr.Dataset):
+            self._dataset = array_list
+            
         self.validate_metadata()
         self._dataset.attrs.update(self.run_metadata.to_dict(single=True))
 
@@ -356,12 +363,25 @@ class RunTS:
     def sample_rate(self):
         if self.has_data:
             try:
-                return 1e9 / self.dataset.coords["time"].to_index().freq.n
+                return 1./ np.float64((np.median(np.diff(self.dataset.coords["time"].to_index()) / np.timedelta64(1, 's'))))
             except AttributeError:
                 self.logger.warning("Something weird happend with xarray time indexing")
 
                 raise ValueError("Something weird happend with xarray time indexing")
         return self.run_metadata.sample_rate
+    
+    @property
+    def sample_interval(self):
+        """
+        Sample interval = 1 / sample_rate
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        
+        if self.sample_rate != 0:
+            return 1./self.sample_rate
+        return 0.
 
     @property
     def channels(self):
@@ -453,6 +473,37 @@ class RunTS:
             self.run_metadata.update(run_metadata)
 
         self.validate_metadata()
+        
+    def get_slice(self, start, end=None, n_samples=None):
+        """
+        Get just a chunk of data from the run
+        
+        :param start: DESCRIPTION
+        :type start: TYPE
+        :param end: DESCRIPTION
+        :type end: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        if not isinstance(start, MTime):
+            start = MTime(start)
+            
+        if n_samples is not None:
+            seconds = n_samples / self.sample_rate
+            end = start + seconds
+            
+        if end is not None:
+            if not isinstance(end, MTime):
+                end = MTime(end)
+                
+        new_runts = RunTS()
+        new_runts.station_metadata = self.station_metadata
+        new_runts.run_metadata = self.run_metadata
+        new_runts.dataset = self._dataset.sel(time=slice(start.iso_no_tz,
+                                                       end.iso_no_tz))
+        
+        return new_runts
 
     def plot(self):
         """

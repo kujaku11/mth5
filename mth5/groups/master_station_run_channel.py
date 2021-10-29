@@ -34,6 +34,7 @@ from mth5.groups import FiltersGroup
 from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import to_numpy_type, inherit_doc_string
 from mth5.timeseries import ChannelTS, RunTS
+from mth5.timeseries.channel_ts import make_dt_coordinates
 from mth5.utils.mth5_logger import setup_logger
 
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
@@ -1321,7 +1322,7 @@ class RunGroup(BaseGroup):
             self.logger.exception(msg)
             raise MTH5Error(msg)
 
-    def to_runts(self):
+    def to_runts(self, start=None, end=None, n_samples=None):
         """
         create a :class:`mth5.timeseries.RunTS` object from channels of the
         run
@@ -1335,9 +1336,14 @@ class RunGroup(BaseGroup):
             if channel in ["summary"]:
                 continue
             ch_obj = self.get_channel(channel)
-            ts_obj = ch_obj.to_channel_ts()
+            
+            if start is not None:
+                ts_obj = ch_obj.time_slice(start, end=end, n_samples=n_samples)
+            else:
+                ts_obj = ch_obj.to_channel_ts()
             ch_list.append(ts_obj)
-        return RunTS(ch_list, run_metadata=self.metadata)
+        return RunTS(ch_list, run_metadata=self.metadata, 
+                     station_metadata=self.station_group.metadata)
 
     def from_runts(self, run_ts_obj, **kwargs):
         """
@@ -1470,6 +1476,16 @@ class RunGroup(BaseGroup):
         self.metadata.time_period.start = channel_summary.start.min().isoformat()
         self.metadata.time_period.end = channel_summary.end.max().isoformat()
         self.write_metadata()
+        
+        
+    def plot(self, start=None, end=None, n_samples=None):
+        """
+        Produce a simple matplotlib plot using runts
+        """
+        
+        runts = self.to_runts(start=start, end=end, n_samples=n_samples)
+        
+        runts.plot()
 
 
 class ChannelDataset:
@@ -1686,6 +1702,21 @@ class ChannelDataset:
     @property
     def n_samples(self):
         return self.hdf5_dataset.size
+    
+    @property
+    def time_index(self):
+        """
+        Create a time index based on the metadata.  This can help when asking
+        for time windows from the data
+        
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        
+        return make_dt_coordinates(
+            self.start, self.sample_rate, self.n_samples, self._logger
+            )
 
     def read_metadata(self):
         """
@@ -2320,19 +2351,6 @@ class ChannelDataset:
         return t_diff
 
     @property
-    def time_index(self):
-        """
-
-        :return: time index given parameters in metadata
-        :rtype: :class:`pandas.DatetimeIndex`
-
-        """
-        dt_freq = "{0:.0f}N".format(1.0e9 / (self.sample_rate))
-        return pd.date_range(
-            start=self.start.iso_no_tz, periods=self.n_samples, freq=dt_freq
-        )
-
-    @property
     def table_entry(self):
         """
         Creat a table entry to put into the run summary table.
@@ -2412,8 +2430,8 @@ class ChannelDataset:
 
     def time_slice(
         self,
-        start_time,
-        end_time=None,
+        start,
+        end=None,
         n_samples=None,
         return_type="channel_ts",
     ):
@@ -2426,10 +2444,10 @@ class ChannelDataset:
             * :class:`mth5.timeseries.ChannelTS` 'default'
             * dask.DataFrame with metadata 'not yet'
 
-        :param start_time: start time of the slice
-        :type start_time: string or :class:`mth5.utils.mttime.MTime`
-        :param end_time: end time of the slice
-        :type end_time: string or :class:`mth5.utils.mttime.MTime`, optional
+        :param start: start time of the slice
+        :type start: string or :class:`mth5.utils.mttime.MTime`
+        :param end: end time of the slice
+        :type end: string or :class:`mth5.utils.mttime.MTime`, optional
         :param n_samples: number of samples to read in
         :type n_samples: integer, optional
         :return: the correct container for the time series.
@@ -2474,39 +2492,39 @@ class ChannelDataset:
 
         """
 
-        if not isinstance(start_time, MTime):
-            start_time = MTime(start_time)
+        if not isinstance(start, MTime):
+            start = MTime(start)
 
-        if end_time is not None:
-            if not isinstance(end_time, MTime):
-                end_time = MTime(end_time)
+        if end is not None:
+            if not isinstance(end, MTime):
+                end = MTime(end)
 
         if n_samples is not None:
             n_samples = int(n_samples)
 
-        if n_samples is None and end_time is None:
+        if n_samples is None and end is None:
             msg = "Must input either end_time or n_samples."
             self.logger.error(msg)
             raise ValueError(msg)
 
-        if n_samples is not None and end_time is not None:
+        if n_samples is not None and end is not None:
             msg = "Must input either end_time or n_samples, not both."
             self.logger.error(msg)
             raise ValueError(msg)
 
         # if end time is given
-        if end_time is not None and n_samples is None:
-            start_index = self.get_index_from_time(start_time)
-            end_index = self.get_index_from_time(end_time)
+        if end is not None and n_samples is None:
+            start_index = self.get_index_from_time(start)
+            end_index = self.get_index_from_time(end)
             npts = int(end_index - start_index)
 
         # if n_samples are given
-        elif end_time is None and n_samples is not None:
-            start_index = self.get_index_from_time(start_time)
+        elif end is None and n_samples is not None:
+            start_index = self.get_index_from_time(start)
             end_index = start_index + n_samples
             npts = n_samples
 
-        if npts > self.hdf5_dataset.size:
+        if npts > self.hdf5_dataset.size or end_index > self.hdf5_dataset.size:
             msg = (
                 "Requested slice is larger than data.  "
                 + f"Slice length = {npts}, data length = {self.hdf5_dataset.shape}"
@@ -2518,14 +2536,7 @@ class ChannelDataset:
         # create a regional reference that can be used, need +1 to be inclusive
         regional_ref = self.hdf5_dataset.regionref[start_index : end_index + 1]
 
-        dt_freq = "{0:.0f}N".format(1.0e9 / (self.metadata.sample_rate))
-
-        dt_index = pd.date_range(
-            start=start_time.iso_str.split("+", 1)[0],
-            periods=npts,
-            freq=dt_freq,
-            closed=None,
-        )
+        dt_index = make_dt_coordinates(start, self.sample_rate, npts, self.logger )
 
         meta_dict = self.metadata.to_dict()[self.metadata._class_name]
         meta_dict["time_period.start"] = dt_index[0].isoformat()
