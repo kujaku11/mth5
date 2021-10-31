@@ -245,11 +245,9 @@ class MTH5:
         self.data_level = data_level
         self.filename = filename
         self.file_version = file_version
+        self.file_type = "mth5"
         
         self._set_default_groups()
-        
-        
-
 
     def __str__(self):
         if self.h5_is_read():
@@ -321,8 +319,13 @@ class MTH5:
         """File Type should be MTH5"""
 
         if self.h5_is_read():
-            return self.__hdf5_obj.attrs["file.type"]
-        return None
+            # need the try statement for when a file is initialize it does
+            # not have the attributes yet.
+            try:
+                return self.__hdf5_obj.attrs["file.type"]
+            except KeyError:
+                return self.__file_type
+        return self.__file_type
 
     @file_type.setter
     def file_type(self, value):
@@ -332,18 +335,26 @@ class MTH5:
             self.logger.error(msg)
             raise ValueError(msg)
 
-        if self.h5_is_read():
-            if value in acceptable_file_types:
-                self.__hdf5_obj.attrs["file.type"] = value
+        if value not in acceptable_file_types:
             msg = f"Input file.type is not valid, must be {acceptable_file_types}"
             self.logger.error(msg)
             raise ValueError(msg)
+            
+        self.__file_type = value
 
+        if self.h5_is_read():
+            self.__hdf5_obj.attrs["file.type"] = value
+            
     @property
     def file_version(self):
         """mth5 file version"""
         if self.h5_is_read():
-            return self.__hdf5_obj.attrs["file.version"]
+            # need the try statement for when a file is initialize it does
+            # not have the attributes yet.
+            try:
+                return self.__hdf5_obj.attrs["file.version"]
+            except KeyError:
+                return self.__file_version
         return self.__file_version
 
     @file_version.setter
@@ -353,27 +364,32 @@ class MTH5:
             msg = f"Input file version must be a string not {type(value)}"
             self.logger.error(msg)
             raise ValueError(msg)
-
-        self.__file_version = value
-        if self.h5_is_read():
-            if value in acceptable_file_versions:
-                self.__hdf5_obj.attrs["file.version"] = value
+            
+        if value not in acceptable_file_versions:
             msg = f"Input file.version is not valid, must be {acceptable_file_versions}"
             self.logger.error(msg)
             raise ValueError(msg)
+
+        self.__file_version = value
+        
+        if self.h5_is_read():
+            self.__hdf5_obj.attrs["file.version"] = value
 
     @property
     def software_name(self):
         """software name that wrote the file"""
         if self.h5_is_read():
             return self.__hdf5_obj.attrs["mth5.software.name"]
-        return None
+        return "mth5"
 
     @property
     def data_level(self):
         """data level"""
         if self.h5_is_read():
-            return self.__hdf5_obj.attrs["data_level"]
+            try:
+                return self.__hdf5_obj.attrs["data_level"]
+            except KeyError:
+                return self.__data_level
         else: 
             return self.__data_level
 
@@ -385,14 +401,15 @@ class MTH5:
             self.logger.error(msg)
             raise ValueError(msg)
 
+        if value not in acceptable_data_levels:
+             msg = f"Input data_level is not valid, must be {acceptable_data_levels}"
+             self.logger.error(msg)
+             raise ValueError(msg)
+             
         self.__data_level = value
         
         if self.h5_is_read():
-            if value in acceptable_data_levels:
-                self.__hdf5_obj.attrs["data_level"] = value
-            msg = f"Input data_level is not valid, must be {acceptable_data_levels}"
-            self.logger.error(msg)
-            raise ValueError(msg)
+           self.__hdf5_obj.attrs["data_level"] = value
             
     def _set_default_groups(self):
         """ get the default groups based on file version """
@@ -412,7 +429,7 @@ class MTH5:
         elif self.file_version in ["0.2.0"]:
             self._default_root_name = "Experiment"
             self._default_subgroup_names = [
-                "Survey",
+                "Surveys",
                 [
                 "Stations",
                 "Reports",
@@ -442,7 +459,7 @@ class MTH5:
         """Convenience property for /Survey group"""
         if self.h5_is_read():
             return groups.SurveyGroup(
-                self.__hdf5_obj["/Survey"], **self.dataset_options
+                self.__hdf5_obj[f"{self._root_path}/Survey"], **self.dataset_options
             )
         self.logger.info("File is closed cannot access /Survey")
         return None
@@ -564,20 +581,29 @@ class MTH5:
         self.__hdf5_obj = h5py.File(self.__filename, mode)
 
         # write general metadata
-        self.__hdf5_obj.attrs.update(self._file_attrs)
+        self.__hdf5_obj.attrs.update(self.file_attributes)
 
-        survey_group = self.__hdf5_obj.create_group(self._default_root_name)
-        survey_obj = groups.SurveyGroup(survey_group, **self.dataset_options)
-        survey_obj.write_metadata()
-
-        for group_name in self._default_subgroup_names:
-            self.__hdf5_obj.create_group(f"{self._default_root_name}/{group_name}")
-            m5_grp = getattr(self, f"{group_name.lower()}_group")
-            m5_grp.initialize_group()
+        self.__hdf5_obj.create_group(self._default_root_name)
+        
+        if self.file_version in ["0.1.0"]:
+    
+            for group_name in self._default_subgroup_names:
+                self.__hdf5_obj.create_group(f"{self._default_root_name}/{group_name}")
+                m5_grp = getattr(self, f"{group_name.lower()}_group")
+                m5_grp.initialize_group()
+                
+        elif self.file_version in ["0.2.0"]:
+            
+            root_survey = f"{self._default_root_name}/{self._default_subgroup_names[0]}"
+            self.__hdf5_obj.create_group(root_survey)
+            print(root_survey)
+            for group_name in self._default_subgroup_names[1]:
+                print(group_name)
+                self.__hdf5_obj.create_group(f"{root_survey}/{group_name}")
+                m5_grp = getattr(self.survey_group, f"{group_name.lower()}_group")
+                m5_grp.initialize_group() 
 
         self.logger.info(f"Initialized MTH5 file {self.filename} in mode {mode}")
-
-        return survey_obj
 
     def validate_file(self):
         """
