@@ -16,10 +16,12 @@ from .master_station_run_channel import (
     AuxiliaryDataset,
 )
 from .survey import MasterSurveyGroup, SurveyGroup
+from .experiment import ExperimentGroup
 
 
 __all__ = [
     "BaseGroup",
+    "ExperimentGroup",
     "SurveyGroup",
     "ReportsGroup",
     "StandardsGroup",

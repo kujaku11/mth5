@@ -430,13 +430,9 @@ class MTH5:
             self._default_root_name = "Experiment"
             self._default_subgroup_names = [
                 "Surveys",
-                [
-                "Stations",
                 "Reports",
-                "Filters",
                 "Standards",
-                ],
-            ]
+                ]
             
             self._root_path = "/Experiment"
     
@@ -445,31 +441,49 @@ class MTH5:
         """Convenience property for /Experiment group """
         if self.h5_is_read():
             if self.file_version in ["0.2.0"]:
-                return groups.MasterSurveyGroup(
-                    self.__hdf5_obj[f"{self._root_path}/Survey"], **self.dataset_options
+                return groups.ExperimentGroup(
+                    self.__hdf5_obj[f"{self._root_path}"], **self.dataset_options
                 )
             else:
                 self.logger.info(f"File version {self.file_version} does not have an Experiment Group")
                 return None
-        self.logger.info("File is closed cannot access /Experiment/Survey")
+        self.logger.info("File is closed cannot access /Experiment")
         return None
 
     @property
     def survey_group(self):
         """Convenience property for /Survey group"""
-        if self.h5_is_read():
-            return groups.SurveyGroup(
-                self.__hdf5_obj[f"{self._root_path}/Survey"], **self.dataset_options
-            )
-        self.logger.info("File is closed cannot access /Survey")
-        return None
+        if self.file_version in ["0.1.0"]:
+            if self.h5_is_read():
+                return groups.SurveyGroup(
+                    self.__hdf5_obj["{self._root_path}/Survey"], **self.dataset_options
+                )
+            self.logger.info("File is closed cannot access /Survey")
+            return None
+        
+        elif self.file_version in ["0.2.0"]:
+            self.logger.info(f"File version {self.file_version} does not have a survey_group, try surveys_group")
+
+    @property
+    def surveys_group(self):
+        """Convenience property for /Surveys group"""
+        if self.file_version in ["0.1.0"]:
+            self.logger.info(f"File version {self.file_version} does not have a survey_group, try surveys_group")
+        
+        elif self.file_version in ["0.2.0"]:
+            if self.h5_is_read():
+                return groups.MasterSurveyGroup(
+                    self.__hdf5_obj[f"{self._root_path}/Surveys"], **self.dataset_options
+                )
+            self.logger.info("File is closed cannot access /Surveys")
+            return None
 
     @property
     def reports_group(self):
         """Convenience property for /Survey/Reports group"""
         if self.h5_is_read():
             return groups.ReportsGroup(
-                self.__hdf5_obj["/Survey/Reports"], **self.dataset_options
+                self.__hdf5_obj[f"/{self._root_path}/Reports"], **self.dataset_options
             )
         self.logger.info("File is closed cannot access /Reports")
         return None
@@ -486,10 +500,10 @@ class MTH5:
 
     @property
     def standards_group(self):
-        """Convenience property for /Survey/Standards group"""
+        """Convenience property for /Standards group"""
         if self.h5_is_read():
             return groups.StandardsGroup(
-                self.__hdf5_obj["/Survey/Standards"], **self.dataset_options
+                self.__hdf5_obj[f"{self._root_path}/Standards"], **self.dataset_options
             )
         self.logger.info("File is closed cannot access /Standards")
         return None
@@ -585,23 +599,21 @@ class MTH5:
 
         self.__hdf5_obj.create_group(self._default_root_name)
         
-        if self.file_version in ["0.1.0"]:
+        # if self.file_version in ["0.1.0"]:
     
-            for group_name in self._default_subgroup_names:
-                self.__hdf5_obj.create_group(f"{self._default_root_name}/{group_name}")
-                m5_grp = getattr(self, f"{group_name.lower()}_group")
-                m5_grp.initialize_group()
+        for group_name in self._default_subgroup_names:
+            self.__hdf5_obj.create_group(f"{self._default_root_name}/{group_name}")
+            m5_grp = getattr(self, f"{group_name.lower()}_group")
+            m5_grp.initialize_group()
                 
-        elif self.file_version in ["0.2.0"]:
+        # elif self.file_version in ["0.2.0"]:
             
-            root_survey = f"{self._default_root_name}/{self._default_subgroup_names[0]}"
-            self.__hdf5_obj.create_group(root_survey)
-            print(root_survey)
-            for group_name in self._default_subgroup_names[1]:
-                print(group_name)
-                self.__hdf5_obj.create_group(f"{root_survey}/{group_name}")
-                m5_grp = getattr(self.survey_group, f"{group_name.lower()}_group")
-                m5_grp.initialize_group() 
+        #     root_survey = f"{self._default_root_name}/{self._default_subgroup_names[0]}"
+        #     self.__hdf5_obj.create_group(root_survey)
+        #     for group_name in self._default_subgroup_names:
+        #         self.__hdf5_obj.create_group(f"{root_survey}/{group_name}")
+        #         m5_grp = getattr(self.survey_group, f"{group_name.lower()}_group")
+        #         m5_grp.initialize_group() 
 
         self.logger.info(f"Initialized MTH5 file {self.filename} in mode {mode}")
 

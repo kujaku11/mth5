@@ -173,6 +173,7 @@ class MasterSurveyGroup(BaseGroup):
     def __init__(self, group, **kwargs):
 
         super().__init__(group, **kwargs)
+        
 
     @property
     def channel_summary(self):
@@ -394,6 +395,27 @@ class SurveyGroup(BaseGroup):
     def __init__(self, group, **kwargs):
 
         super().__init__(group, **kwargs)
+        
+        self._default_subgroup_names = [
+            "Stations",
+            "Reports",
+            "Filters",
+            "Standards",
+        ]
+
+    def initialize_group(self, **kwargs):
+        """
+        Initialize group by making a summary table and writing metadata
+
+        """
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        self.write_metadata()
+        
+        for group_name in self._default_subgroup_names:
+            self.hdf5_group.create_group(f"{group_name}")
+            m5_grp = getattr(self, f"{group_name.lower()}_group")
+            m5_grp.initialize_group()
 
     @BaseGroup.metadata.getter
     def metadata(self):
