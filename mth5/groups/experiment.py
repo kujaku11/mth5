@@ -13,7 +13,7 @@ Created on Wed Dec 23 16:59:45 2020
 # =============================================================================
 # Imports
 # =============================================================================
-from mth5.groups import BaseGroup, MasterStationGroup, FiltersGroup
+from mth5.groups import BaseGroup, MasterSurveyGroup
 
 # =============================================================================
 # Survey Group
@@ -93,15 +93,10 @@ class ExperimentGroup(BaseGroup):
         # need the try statement for when the file is initiated there is no
         # /Station group yet
         try:
-            self._metadata.stations = []
-            for key in self.stations_group.groups_list:
-                key_group = self.stations_group.get_station(key)
-                self._metadata.stations.append(key_group.metadata)
-
-            # need to add filters
-            flt_group = FiltersGroup(self.hdf5_group["Filters"])
-            for key in flt_group.filter_dict.keys():
-                self._metadata.filters[key] = flt_group.to_filter_object(key)
+            self._metadata.surveys = []
+            for key in self.survey_group.groups_list:
+                key_group = self.survey_group.get_survey(key)
+                self._metadata.surveys.append(key_group.metadata)
 
         except KeyError:
             pass
@@ -109,30 +104,6 @@ class ExperimentGroup(BaseGroup):
         return self._metadata
 
     @property
-    def stations_group(self):
-        return MasterStationGroup(self.hdf5_group["Stations"])
+    def surveys_group(self):
+        return MasterSurveyGroup(self.hdf5_group["Survey"])
 
-    def update_survey_metadata(self, survey_dict=None):
-        """
-        update start end dates and location corners from stations_group.summary_table
-
-        """
-
-        station_summary = self.stations_group.station_summary.copy()
-        self.logger.debug("Updating survey metadata from stations summary table")
-
-        if survey_dict:
-            self.metadata.from_dict(survey_dict, skip_none=True)
-
-        self.metadata.time_period.start_date = (
-            station_summary.start.min().isoformat().split("T")[0]
-        )
-        self.metadata.time_period.end_date = (
-            station_summary.end.max().isoformat().split("T")[0]
-        )
-        self.metadata.northwest_corner.latitude = station_summary.latitude.max()
-        self.metadata.northwest_corner.longitude = station_summary.longitude.min()
-        self.metadata.southeast_corner.latitude = station_summary.latitude.min()
-        self.metadata.southeast_corner.longitude = station_summary.longitude.max()
-
-        self.write_metadata()

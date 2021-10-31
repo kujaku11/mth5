@@ -15,7 +15,7 @@ from .master_station_run_channel import (
     ChannelDataset,
     AuxiliaryDataset,
 )
-from .survey import SurveyGroup
+from .survey import MasterSurveyGroup, SurveyGroup
 
 
 __all__ = [
@@ -25,6 +25,7 @@ __all__ = [
     "StandardsGroup",
     "StationGroup",
     "MasterStationGroup",
+    "MasterSurveyGroup",
     "FiltersGroup",
     "RunGroup",
     "ChannelDataset",

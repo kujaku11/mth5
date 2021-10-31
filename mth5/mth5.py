@@ -39,7 +39,7 @@ from mt_metadata.timeseries import Experiment
 # =============================================================================
 # Acceptable parameters
 # =============================================================================
-acceptable_file_types = [".mth5", ".MTH5", ".h5", ".H5"]
+acceptable_file_types = ["mth5", "MTH5", "h5", "H5"]
 acceptable_file_versions = ["0.1.0", "0.2.0"]
 acceptable_data_levels = [0, 1, 2, 3]
 
@@ -259,6 +259,9 @@ class MTH5:
 
     def __repr__(self):
         return self.__str__()
+    
+    def __exit__(self):
+        self.close_mth5()
 
     @property
     def dataset_options(self):
@@ -404,6 +407,8 @@ class MTH5:
                 "Standards",
             ]
             
+            self._root_path = ""
+            
         elif self.file_version in ["0.2.0"]:
             self._default_root_name = "Experiment"
             self._default_subgroup_names = [
@@ -415,6 +420,22 @@ class MTH5:
                 "Standards",
                 ],
             ]
+            
+            self._root_path = "/Experiment"
+    
+    @property
+    def experiment_group(self):
+        """Convenience property for /Experiment group """
+        if self.h5_is_read():
+            if self.file_version in ["0.2.0"]:
+                return groups.MasterSurveyGroup(
+                    self.__hdf5_obj[f"{self._root_path}/Survey"], **self.dataset_options
+                )
+            else:
+                self.logger.info(f"File version {self.file_version} does not have an Experiment Group")
+                return None
+        self.logger.info("File is closed cannot access /Experiment/Survey")
+        return None
 
     @property
     def survey_group(self):
@@ -506,6 +527,7 @@ class MTH5:
                     self.logger.exception(msg)
             elif mode in ["a", "w-", "x", "r+"]:
                 self.__hdf5_obj = h5py.File(self.__filename, mode=mode)
+                self._set_default_groups()
                 if not self.validate_file():
                     msg = "Input file is not a valid MTH5 file"
                     self.logger.error(msg)
@@ -513,6 +535,7 @@ class MTH5:
 
             elif mode in ["r"]:
                 self.__hdf5_obj = h5py.File(self.__filename, mode=mode)
+                self._set_default_groups()
                 self.validate_file()
 
             else:
