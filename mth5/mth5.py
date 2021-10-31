@@ -527,7 +527,14 @@ class MTH5:
     @property
     def station_list(self):
         """list of existing stations names"""
-        return self.stations_group.groups_list
+        if self.file_version in ["0.1.0"]:
+            return self.stations_group.groups_list
+        elif self.file_version in ["0.2.0"]:
+            station_list = []
+            for survey in self.surveys_group.groups_list:
+                sg = self.surveys_group.get_survey(survey)
+                station_list += sg.stations_group.groups_list
+            return station_list
 
     def open_mth5(self, filename=None, mode="a"):
         """
