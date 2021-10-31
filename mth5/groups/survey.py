@@ -240,6 +240,7 @@ class MasterSurveyGroup(BaseGroup):
                     )
                     self.logger.error(msg)
                     raise MTH5Error(msg)
+                    
             survey_obj = SurveyGroup(
                 survey_group,
                 survey_metadata=survey_metadata,
@@ -392,9 +393,9 @@ class SurveyGroup(BaseGroup):
 
     """
 
-    def __init__(self, group, **kwargs):
+    def __init__(self, group, survey_metadata=None, **kwargs):
 
-        super().__init__(group, **kwargs)
+        super().__init__(group, group_metadata=survey_metadata, **kwargs)
         
         self._default_subgroup_names = [
             "Stations",
@@ -417,27 +418,27 @@ class SurveyGroup(BaseGroup):
             m5_grp = getattr(self, f"{group_name.lower()}_group")
             m5_grp.initialize_group()
 
-    @BaseGroup.metadata.getter
-    def metadata(self):
-        """Overwrite get metadata to include station information"""
+    # @BaseGroup.metadata.getter
+    # def metadata(self):
+    #     """Overwrite get metadata to include station information"""
 
-        # need the try statement for when the file is initiated there is no
-        # /Station group yet
-        try:
-            self._metadata.stations = []
-            for key in self.stations_group.groups_list:
-                key_group = self.stations_group.get_station(key)
-                self._metadata.stations.append(key_group.metadata)
+    #     # need the try statement for when the file is initiated there is no
+    #     # /Station group yet
+    #     try:
+    #         self._metadata.stations = []
+    #         for key in self.stations_group.groups_list:
+    #             key_group = self.stations_group.get_station(key)
+    #             self._metadata.stations.append(key_group.metadata)
 
-            # need to add filters
-            flt_group = FiltersGroup(self.hdf5_group["Filters"])
-            for key in flt_group.filter_dict.keys():
-                self._metadata.filters[key] = flt_group.to_filter_object(key)
+    #         # need to add filters
+    #         flt_group = FiltersGroup(self.hdf5_group["Filters"])
+    #         for key in flt_group.filter_dict.keys():
+    #             self._metadata.filters[key] = flt_group.to_filter_object(key)
 
-        except KeyError:
-            pass
+    #     except KeyError:
+    #         pass
 
-        return self._metadata
+    #     return self._metadata
 
     @property
     def stations_group(self):

@@ -512,6 +512,12 @@ class MTH5:
     def stations_group(self):
         """Convenience property for /Survey/Stations group"""
         if self.h5_is_read():
+            if self.file_version in ["0.1.0"]:
+                self.logger.info(
+                    f"File version {self.file_version} does not have a Stations. "
+                    "try surveys_group.")
+                return None
+            
             return groups.MasterStationGroup(
                 self.__hdf5_obj["/Survey/Stations"], **self.dataset_options
             )
@@ -605,15 +611,6 @@ class MTH5:
             self.__hdf5_obj.create_group(f"{self._default_root_name}/{group_name}")
             m5_grp = getattr(self, f"{group_name.lower()}_group")
             m5_grp.initialize_group()
-                
-        # elif self.file_version in ["0.2.0"]:
-            
-        #     root_survey = f"{self._default_root_name}/{self._default_subgroup_names[0]}"
-        #     self.__hdf5_obj.create_group(root_survey)
-        #     for group_name in self._default_subgroup_names:
-        #         self.__hdf5_obj.create_group(f"{root_survey}/{group_name}")
-        #         m5_grp = getattr(self.survey_group, f"{group_name.lower()}_group")
-        #         m5_grp.initialize_group() 
 
         self.logger.info(f"Initialized MTH5 file {self.filename} in mode {mode}")
 
@@ -641,11 +638,18 @@ class MTH5:
                 msg = f"Unacceptable data_level {self.data_level}"
                 self.logger.error(msg)
                 return False
-            for gr in self.survey_group.groups_list:
-                if gr not in self._default_subgroup_names:
-                    msg = f"Unacceptable group {gr}"
-                    self.logger.error(msg)
-                    return False
+            if self.file_version in ["0.1.0"]:
+                for gr in self.survey_group.groups_list:
+                    if gr not in self._default_subgroup_names:
+                        msg = f"Unacceptable group {gr}"
+                        self.logger.error(msg)
+                        return False
+            elif self.file_version in ["0.2.0"]:
+                for gr in self.experiment_group.groups_list:
+                    if gr not in self._default_subgroup_names:
+                        msg = f"Unacceptable group {gr}"
+                        self.logger.error(msg)
+                        return False
             return True
         self.logger.warning("HDF5 file is not open")
         return False

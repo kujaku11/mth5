@@ -94,8 +94,8 @@ class ExperimentGroup(BaseGroup):
         # /Station group yet
         try:
             self._metadata.surveys = []
-            for key in self.survey_group.groups_list:
-                key_group = self.survey_group.get_survey(key)
+            for key in self.surveys_group.groups_list:
+                key_group = self.surveys_group.get_survey(key)
                 self._metadata.surveys.append(key_group.metadata)
 
         except KeyError:
@@ -105,5 +105,5 @@ class ExperimentGroup(BaseGroup):
 
     @property
     def surveys_group(self):
-        return MasterSurveyGroup(self.hdf5_group["Survey"])
+        return MasterSurveyGroup(self.hdf5_group["Surveys"])
 
