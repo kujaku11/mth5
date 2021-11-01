@@ -792,8 +792,118 @@ class MTH5:
 
             for k, v in experiment.surveys[0].filters.items():
                 self.filters_group.add_filter(v)
+                
+    def add_survey(self, survey_name, survey_metadata=None):
+         """
+         Add a survey with metadata if given with the path:
+             ``/Survey/surveys/survey_name``
 
-    def add_station(self, name, station_metadata=None):
+         If the survey already exists, will return that station and nothing
+         is added.
+
+         :param station_name: Name of the station, should be the same as
+                              metadata.id
+         :type station_name: string
+         :param station_metadata: Station metadata container, defaults to None
+         :type station_metadata: :class:`mth5.metadata.Station`, optional
+         :return: A convenience class for the added station
+         :rtype: :class:`mth5_groups.StationGroup`
+
+         :Example: ::
+
+             >>> from mth5 import mth5
+             >>> mth5_obj = mth5.MTH5()
+             >>> mth5_obj.open_mth5(r"/test.mth5", mode='a')
+             >>> # one option
+             >>> stations = mth5_obj.stations_group
+             >>> new_station = stations.add_station('MT001')
+             >>> # another option
+             >>> new_staiton = mth5_obj.stations_group.add_station('MT001')
+
+         .. todo:: allow dictionaries, json string, xml elements as metadata
+                   input.
+
+         """
+         return self.surveys_group.add_survey(
+             survey_name, survey_metadata=survey_metadata)
+                
+    def get_survey(self, survey_name):
+         """
+         Get a survey with the same name as survey_name
+
+         :param survey_name: existing survey name
+         :type survey_name: string
+         :return: convenience survey class
+         :rtype: :class:`mth5.mth5_groups.surveyGroup`
+         :raises MTH5Error:  if the survey name is not found.
+
+         :Example:
+
+         >>> from mth5 import mth5
+         >>> mth5_obj = mth5.MTH5()
+         >>> mth5_obj.open_mth5(r"/test.mth5", mode='a')
+         >>> # one option
+         >>> surveys = mth5_obj.surveys_group
+         >>> existing_survey = surveys.get_survey('MT001')
+         >>> # another option
+         >>> existing_staiton = mth5_obj.surveys_group.get_survey('MT001')
+         MTH5Error: MT001 does not exist, check survey_list for existing names
+
+         """
+
+         try:
+             return groups.SurveyGroup(
+                 self.__hdf5_obj[f"{self._root_path}/Surveys/{survey_name}"], **self.dataset_options)
+         except KeyError:
+             msg = (
+                 f"{self._root_path}/Surveys/{survey_name} does not exist, "
+                 + "check survey_list for existing names"
+             )
+             self.logger.exception(msg)
+             raise MTH5Error(msg)
+             
+    def remove_survey(self, survey_name):
+        """
+        Remove a survey from the file.
+
+        .. note:: Deleting a survey is not as simple as del(survey).  In HDF5
+              this does not free up memory, it simply removes the reference
+              to that survey.  The common way to get around this is to
+              copy what you want into a new file, or overwrite the survey.
+
+        :param survey_name: existing survey name
+        :type survey_name: string
+
+        :Example: ::
+
+            >>> from mth5 import mth5
+            >>> mth5_obj = mth5.MTH5()
+            >>> mth5_obj.open_mth5(r"/test.mth5", mode='a')
+            >>> # one option
+            >>> surveys = mth5_obj.surveys_group
+            >>> surveys.remove_survey('MT001')
+            >>> # another option
+            >>> mth5_obj.surveys_group.remove_survey('MT001')
+
+        """
+
+        try:
+            del self.__hdf5_obj[f"{self._root_path}/Surveys/{survey_name}"]
+            self.logger.info(
+                "Deleting a survey does not reduce the HDF5"
+                + "file size it simply remove the reference. If "
+                + "file size reduction is your goal, simply copy"
+                + " what you want into another file."
+            )
+        except KeyError:
+            msg = (
+                f"{self._root_path}/Surveys/{survey_name} does not exist, "
+                + "check station_list for existing names"
+            )
+            self.logger.exception(msg)
+            raise MTH5Error(msg)
+
+    def add_station(self, station_name, station_metadata=None, survey=None):
         """
         Convenience function to add a station using
         ``mth5.stations_group.add_station``
@@ -818,10 +928,18 @@ class MTH5:
         >>> new_staiton = mth5_obj.add_station('MT001')
 
         """
+        if self.file_version in ["0.1.0"]:
+            return self.stations_group.add_station(
+                station_name, station_metadata=station_metadata)
+        elif self.file_version in ["0.2.0"]:
+            if survey is None:
+                msg = "Need to input 'survey' for file version %s"
+                self.logger.error(msg, self.file_version)
+                raise ValueError(msg % self.file_version)
+            sg = self.get_survey(survey)
+            return sg.stations_group.add_station(station_name, station_metadata=station_metadata)
 
-        return self.stations_group.add_station(name, station_metadata=station_metadata)
-
-    def get_station(self, station_name):
+    def get_station(self, station_name, survey=None):
         """
         Convenience function to get a station using
         ``mth5.stations_group.get_station``
@@ -840,10 +958,18 @@ class MTH5:
         MTH5Error: MT001 does not exist, check station_list for existing names
 
         """
+        if self.file_version in ["0.1.0"]:
+            return self.stations_group.get_station(station_name)
+        
+        elif self.file_version in ["0.2.0"]:
+            if survey is None:
+                msg = "Need to input 'survey' for file version %s"
+                self.logger.error(msg, self.file_version)
+                raise ValueError(msg % self.file_version)
+            sg = self.get_survey(survey)
+            return sg.stations_group.get_station(station_name)
 
-        return self.stations_group.get_station(station_name)
-
-    def remove_station(self, station_name):
+    def remove_station(self, station_name, survey=None):
         """
         Convenience function to remove a station using
         ``mth5.stations_group.remove_station``
@@ -864,9 +990,18 @@ class MTH5:
 
         """
 
-        self.stations_group.remove_station(station_name)
+        if self.file_version in ["0.1.0"]:
+            return self.stations_group.remove_station(station_name)
+        
+        elif self.file_version in ["0.2.0"]:
+            if survey is None:
+                msg = "Need to input 'survey' for file version %s"
+                self.logger.error(msg, self.file_version)
+                raise ValueError(msg % self.file_version)
+            sg = self.get_survey(survey)
+            return sg.stations_group.remove_station(station_name)
 
-    def add_run(self, station_name, run_name, run_metadata=None):
+    def add_run(self, station_name, run_name, run_metadata=None, survey=None):
         """
         Convenience function to add a run using
         ``mth5.stations_group.get_station(station_name).add_run()``
@@ -890,11 +1025,11 @@ class MTH5:
 
         """
 
-        return self.stations_group.get_station(station_name).add_run(
+        return self.get_station(station_name, survey=survey).add_run(
             run_name, run_metadata=run_metadata
         )
 
-    def get_run(self, station_name, run_name):
+    def get_run(self, station_name, run_name, survey=None):
         """
         Convenience function to get a run using
         ``mth5.stations_group.get_station(station_name).get_run()``
@@ -914,14 +1049,20 @@ class MTH5:
 
         """
 
+        if self.file_version in ["0.1.0"]:
+            run_path = f"{self._root_path}/Stations/{station_name}/{run_name}"
+        elif self.file_version in ["0.2.0"]:
+            if survey is None:
+                msg = "Need to input 'survey' for file version %s"
+                self.logger.error(msg, self.file_version)
+                raise ValueError(msg % self.file_version)
+            run_path = f"{self._root_path}/Surveys/{survey}/Stations/{station_name}/{run_name}"
         try:
-            return groups.RunGroup(
-                self.__hdf5_obj[f"Survey/Stations/{station_name}/{run_name}"]
-            )
+            return groups.RunGroup(self.__hdf5_obj[run_path])
         except KeyError:
-            raise MTH5Error(f"Could not find {station_name}/{run_name}")
+            raise MTH5Error(f"Could not find {run_path}")
 
-    def remove_run(self, station_name, run_name):
+    def remove_run(self, station_name, run_name, survey=None):
         """
         Convenience function to add a run using
         ``mth5.stations_group.get_station(station_name).remove_run()``
@@ -944,7 +1085,7 @@ class MTH5:
 
         """
 
-        return self.stations_group.get_station(station_name).remove_run(run_name)
+        return self.get_station(station_name, survey=survey).remove_run(run_name)
 
     def add_channel(
         self,
@@ -954,6 +1095,7 @@ class MTH5:
         channel_type,
         data,
         channel_metadata=None,
+        survey=None,
     ):
         """
         Convenience function to add a channel using
@@ -999,8 +1141,7 @@ class MTH5:
         """
 
         return (
-            self.stations_group.get_station(station_name)
-            .get_run(run_name)
+            self.get_run(station_name, run_name, survey=survey)
             .add_channel(
                 channel_name,
                 channel_type,
@@ -1010,7 +1151,7 @@ class MTH5:
             )
         )
 
-    def get_channel(self, station_name, run_name, channel_name):
+    def get_channel(self, station_name, run_name, channel_name, survey=None):
         """
         Convenience function to get a channel using
         ``mth5.stations_group.get_station().get_run().get_channel()``
@@ -1050,12 +1191,12 @@ class MTH5:
         # ch = f"Survey/Stations/{station_name}/{run_name}/{channel_name}"
         # return groups.ChannelDataset(self.__hdf5_obj[ch])
         return (
-            self.stations_group.get_station(station_name)
+            self.get_station(station_name, survey=survey)
             .get_run(run_name)
             .get_channel(channel_name)
         )
 
-    def remove_channel(self, station_name, run_name, channel_name):
+    def remove_channel(self, station_name, run_name, channel_name, survey=None):
         """
         Convenience function to remove a channel using
         ``mth5.stations_group.get_station().get_run().remove_channel()``
@@ -1081,7 +1222,7 @@ class MTH5:
         """
 
         return (
-            self.stations_group.get_station(station_name)
+            self.get_station(station_name, survey=survey)
             .get_run(run_name)
             .remove_channel(channel_name)
         )
