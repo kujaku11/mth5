@@ -36,7 +36,7 @@ class MasterSurveyGroup(BaseGroup):
     Utility class to hold information about the surveys within an experiment and
     accompanying metadata.  This class is next level down from Experiment for
     stations ``Experiment/Surveys``.  This class provides methods to add and
-    get surveys.  
+    get surveys.
 
     To access MasterSurveyGroup from an open MTH5 file:
 
@@ -194,10 +194,9 @@ class MasterSurveyGroup(BaseGroup):
                             ),
                         )
                         ch_list.append(entry)
-                        
+
         ch_list = np.array(ch_list)
         return pd.DataFrame(ch_list.flatten())
-
 
     def add_survey(self, survey_name, survey_metadata=None):
         """

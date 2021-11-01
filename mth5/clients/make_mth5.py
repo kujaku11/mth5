@@ -105,7 +105,6 @@ class MakeMTH5:
             if len(unique_list) != 1:
                 raise AttributeError("MTH5 supports one survey/network per container.")
 
-        
         file_name = path.joinpath(self.make_filename(df))
 
         # initiate MTH5 file
@@ -162,9 +161,9 @@ class MakeMTH5:
                         for run_id, times in enumerate(
                             zip(trace_start_times, trace_end_times), 1
                         ):
-                            run_group = m.stations_group.get_station(station_id).add_run(
-                                f"{run_id:03}"
-                            )
+                            run_group = m.stations_group.get_station(
+                                station_id
+                            ).add_run(f"{run_id:03}")
                             run_stream = msstreams.slice(
                                 UTCDateTime(times[0]), UTCDateTime(times[1])
                             )
@@ -432,12 +431,12 @@ class MakeMTH5:
         """
         Get unique lists of networks, stations, locations, and channels from
         a given data frame.
-        
+
         [{'network': FDSN code, "stations": [list of stations for network]}]
 
         :param df: request data frame
         :type df: :class:`pandas.DataFrame`
-        :return: list of network dictionaries with 
+        :return: list of network dictionaries with
         [{'network': FDSN code, "stations": [list of stations for network]}]
         :rtype: list
 
@@ -445,26 +444,31 @@ class MakeMTH5:
         unique_list = []
         net_list = df["network"].unique()
         for network in net_list:
-            network_dict = {"network": network, 
-                            "stations": df[df.network==network].station.unique().tolist()}
+            network_dict = {
+                "network": network,
+                "stations": df[df.network == network].station.unique().tolist(),
+            }
             unique_list.append(network_dict)
 
         return unique_list
-    
+
     def make_filename(self, df):
         """
         Make a filename from a data frame that is networks and stations
-        
+
         :param df: request data frame
         :type df: :class:`pandas.DataFrame`
         :return: file name as network_01+stations_network_02+stations.h5
         :rtype: string
 
         """
-        
+
         unique_list = self.get_unique_networks_and_stations(df)
-        
-        return "_".join([f"{d['network']}_{'_'.join(d['stations'])}" for d in unique_list]) + ".h5"
+
+        return (
+            "_".join([f"{d['network']}_{'_'.join(d['stations'])}" for d in unique_list])
+            + ".h5"
+        )
 
     def get_fdsn_channel_map(self):
         FDSN_CHANNEL_MAP = {}

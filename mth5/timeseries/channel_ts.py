@@ -527,8 +527,13 @@ class ChannelTS:
     def sample_rate(self):
         """sample rate in samples/second"""
         if self.has_data:
-            sr = 1./ np.float64((np.median(np.diff(self._ts.coords.indexes["time"])) / np.timedelta64(1, 's')))
-            
+            sr = 1.0 / np.float64(
+                (
+                    np.median(np.diff(self._ts.coords.indexes["time"]))
+                    / np.timedelta64(1, "s")
+                )
+            )
+
         else:
             self.logger.debug("Data has not been set yet, sample rate is from metadata")
             sr = self.channel_metadata.sample_rate
@@ -564,7 +569,7 @@ class ChannelTS:
                 )
             self.channel_metadata.sample_rate = sample_rate
         self._update_xarray_metadata()
-        
+
     @property
     def sample_interval(self):
         """
@@ -573,10 +578,10 @@ class ChannelTS:
         :rtype: TYPE
 
         """
-        
+
         if self.sample_rate != 0:
-            return 1./self.sample_rate
-        return 0.
+            return 1.0 / self.sample_rate
+        return 0.0
 
     ## set time and set index
     @property
@@ -716,11 +721,11 @@ class ChannelTS:
 
         if not isinstance(start, MTime):
             start = MTime(start)
-            
+
         if n_samples is not None:
             n_samples = int(n_samples)
             end = start + n_samples / self.sample_rate
-            
+
         if end is not None:
             if not isinstance(end, MTime):
                 end = MTime(end)
@@ -729,13 +734,15 @@ class ChannelTS:
             (self._ts.indexes["time"] >= start.iso_no_tz)
             & (self._ts.indexes["time"] <= end.iso_no_tz)
         ]
-        
-        new_ch_ts = ChannelTS(channel_type=self.channel_type,
-                              data=new_ts,
-                              channel_metadata=self.channel_metadata,
-                              run_metadata=self.run_metadata,
-                              station_metadata=self.station_metadata)
-        
+
+        new_ch_ts = ChannelTS(
+            channel_type=self.channel_type,
+            data=new_ts,
+            channel_metadata=self.channel_metadata,
+            run_metadata=self.run_metadata,
+            station_metadata=self.station_metadata,
+        )
+
         return new_ch_ts
 
     # decimate data

@@ -574,7 +574,7 @@ class MTH5:
         >>> from mth5 import mth5
         >>> mth5_object = mth5.MTH5(file_version='0.1.0')
         >>> survey_object = mth5_object.open_mth5('Test.mth5', 'w')
-        
+
         >>> from mth5 import mth5
         >>> mth5_object = mth5.MTH5()
         >>> survey_object = mth5_object.open_mth5('Test.mth5', 'w')
@@ -849,14 +849,14 @@ class MTH5:
 
                     for k, v in survey.filters.items():
                         sg.filters_group.add_filter(v)
-                        
+
     @property
     def channel_summary(self):
-        """ return a dataframe of channels """
-        
+        """return a dataframe of channels"""
+
         if self.file_version in ["0.1.0"]:
             return self.stations_group.channel_summary
-        
+
         elif self.file_version in ["0.2.0"]:
             return self.surveys_group.channel_summary
 
@@ -975,7 +975,7 @@ class MTH5:
 
         Add a station with metadata if given with the path [v0.1.0]:
             ``/Survey/Stations/station_name``
-            
+
         Add a station with metadata if given with the path [v0.2.0]:
             ``Experiment/Surveys/survey/Stations/station_name``
 
