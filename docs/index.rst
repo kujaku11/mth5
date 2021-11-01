@@ -3,6 +3,8 @@ Welcome to MTH5's documentation!
 .. image:: source/images/mth5_logo.png
 	:align: center
 
+\
+
 .. toctree::
     :maxdepth: 2
     :caption: Contents:
@@ -10,6 +12,7 @@ Welcome to MTH5's documentation!
     readme
     installation
     usage
+    usage_v2
     contributing
     authors
     history

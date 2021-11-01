@@ -29,5 +29,9 @@ MTH5 Format
    attached at each level.
 
 .. figure:: source/images/example_mt_file_structure.png
-   :alt: MTH5 Format
+   :alt: MTH5 Format version 0.1.0
+   :align: center
+   
+.. figure:: source/images/example_mt_file_structure.png
+   :alt: MTH5 Format version 0.2.0
    :align: center

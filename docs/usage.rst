@@ -1,10 +1,12 @@
-=====
-Usage
-=====
+=============
+Usage v0.1.0
+=============
 
 .. contents::  :local:
 
 **MTH5** is written to make read/writing an *.mth5* file easier.
+
+.. important:: This usage describes using MTH5 version 0.2.0
 
 .. hint:: MTH5 is comprehensively logged, therefore if any problems arise you can always check the mth5_debug.log and the mth5_error.log, which will be written to your current working directory.
 
@@ -25,14 +27,14 @@ Opening and Closing Files
 To open a new *.mth5* file::
 
 >>> from mth5 import mth5
->>> mth5_obj = mth5.MTH5()
+>>> mth5_obj = mth5.MTH5(file_version='0.1.0')
 >>> mth5_obj.open(r"path/to/file.mth5", mode="w")
 	
 To open an exiting *.mth5* file::
 
 
 >>> from mth5 import mth5
->>> mth5_obj = mth5.MTH5()
+>>> mth5_obj = mth5.MTH5(file_version='0.1.0')
 >>> mth5_obj.open(r"path/to/file.mth5", mode="a")
 	
 .. note:: If 'w' is used for the mode, it will overwrite any file of the same name, so be careful you don't overwrite any files.  Using 'a' for the mode is safer as this will open  an existing file of the same name and will give you write privilages.
@@ -111,19 +113,20 @@ Metadata can be input either manually by setting the appropriate attribute::
 Metadata Help
 """""""""""""""""
 
-To get help with any metadata attribute you can use::
+To get help with any metadata attribute you can use
 
+.. code-block:: python 
 
->>> existing_station.metadata.attribute_information('archive_id')
-archive_id:
-	alias: []
-	description: station name that is archived {a-z;A-Z;0-9}
-	example: MT201
-	options: []
-	required: True
-	style: alpha numeric
-	type: string
-	units: None
+	>>> existing_station.metadata.attribute_information('archive_id')
+	archive_id:
+		alias: []
+		description: station name that is archived {a-z;A-Z;0-9}
+		example: MT201
+		options: []
+		required: True
+		style: alpha numeric
+		type: string
+		units: None
 	
 If no argument is given information for all metadata attributes will be printed.
 
@@ -132,15 +135,17 @@ Creating New Attributes
 
 If you want to add new standard attributes to the metadata you can do this through :function:`mth5.metadata.Base.add_base_attribute method`
 
->>> extra = {'type': str,
-...          'style': 'controlled vocabulary',
-...          'required': False,
-...          'units': 'celsius',
-...          'description': 'local temperature',
-...          'alias': ['temp'],
-...          'options': [ 'ambient', 'air', 'other'],
-...          'example': 'ambient'}
->>> existing_station.metadata.add_base_attribute('temperature', 'ambient', extra)
+.. code-block:: python
+
+	>>> extra = {'type': str,
+			     'style': 'controlled vocabulary',
+			     'required': False,
+			     'units': 'celsius',
+			     'description': 'local temperature',
+			     'alias': ['temp'],
+			     'options': [ 'ambient', 'air', 'other'],
+			     'example': 'ambient'}
+	>>> existing_station.metadata.add_base_attribute('temperature', 'ambient', extra)
 
 Dictionary Input/Output
 """""""""""""""""""""""""
@@ -155,37 +160,37 @@ You can input a dictionary of attributes
 	>>> existing_station.metadata.from_dict(meta_dict)
 	>>> exiting_station.metadata.to_dict()
 	{'station': OrderedDict([('acquired_by.author', None),
-              ('acquired_by.comments', None),
-              ('archive_id', 'MT010'),
-              ('channel_layout', 'X'),
-              ('channels_recorded', ['Hx', 'Hy', 'Hz', 'Ex', 'Ey']),
-              ('comments', None),
-              ('data_type', 'BB, LP'),
-              ('geographic_name', 'Beachy Keen, FL, USA'),
-              ('hdf5_reference', '<HDF5 object reference>'),
-              ('id', 'FL001'),
-              ('location.declination.comments',
-               'Declination obtained from the instrument GNSS NMEA sequence'),
-              ('location.declination.model', 'Unknown'),
-              ('location.declination.value', -4.1),
-              ('location.elevation', 0.0),
-              ('location.latitude', 29.7203555),
-              ('location.longitude', -83.4854715),
-              ('mth5_type', 'Station'),
-              ('orientation.method', 'compass'),
-              ('orientation.reference_frame', 'geographic'),
-              ('provenance.comments', None),
-              ('provenance.creation_time', '2020-05-29T21:08:40+00:00'),
-              ('provenance.log', None),
-              ('provenance.software.author', 'Anna Kelbert, USGS'),
-              ('provenance.software.name', 'mth5_metadata.m'),
-              ('provenance.software.version', '2020-05-29'),
-              ('provenance.submitter.author', 'Anna Kelbert, USGS'),
-              ('provenance.submitter.email', 'akelbert@usgs.gov'),
-              ('provenance.submitter.organization',
-               'USGS Geomagnetism Program'),
-              ('time_period.end', '2015-01-29T16:18:14+00:00'),
-              ('time_period.start', '2015-01-08T19:49:15+00:00')])}
+			  ('acquired_by.comments', None),
+			  ('archive_id', 'MT010'),
+			  ('channel_layout', 'X'),
+			  ('channels_recorded', ['Hx', 'Hy', 'Hz', 'Ex', 'Ey']),
+			  ('comments', None),
+			  ('data_type', 'BB, LP'),
+			  ('geographic_name', 'Beachy Keen, FL, USA'),
+			  ('hdf5_reference', '<HDF5 object reference>'),
+			  ('id', 'FL001'),
+			  ('location.declination.comments',
+			   'Declination obtained from the instrument GNSS NMEA sequence'),
+			  ('location.declination.model', 'Unknown'),
+			  ('location.declination.value', -4.1),
+			  ('location.elevation', 0.0),
+			  ('location.latitude', 29.7203555),
+			  ('location.longitude', -83.4854715),
+			  ('mth5_type', 'Station'),
+			  ('orientation.method', 'compass'),
+			  ('orientation.reference_frame', 'geographic'),
+			  ('provenance.comments', None),
+			  ('provenance.creation_time', '2020-05-29T21:08:40+00:00'),
+			  ('provenance.log', None),
+			  ('provenance.software.author', 'Anna Kelbert, USGS'),
+			  ('provenance.software.name', 'mth5_metadata.m'),
+			  ('provenance.software.version', '2020-05-29'),
+			  ('provenance.submitter.author', 'Anna Kelbert, USGS'),
+			  ('provenance.submitter.email', 'akelbert@usgs.gov'),
+			  ('provenance.submitter.organization',
+			   'USGS Geomagnetism Program'),
+			  ('time_period.end', '2015-01-29T16:18:14+00:00'),
+			  ('time_period.start', '2015-01-08T19:49:15+00:00')])}
 
 
 JSON Input/Output

@@ -30,7 +30,7 @@ class TestMTH5(unittest.TestCase):
     def setUp(self):
         self.maxDiff = None
         self.fn = fn_path.joinpath("test.mth5")
-        self.mth5_obj = mth5.MTH5()
+        self.mth5_obj = mth5.MTH5(file_version="0.1.0")
         self.mth5_obj.open_mth5(self.fn, mode="w")
         self.experiment = Experiment()
         self.experiment.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)

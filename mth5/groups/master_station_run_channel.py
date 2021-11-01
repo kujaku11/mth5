@@ -1130,8 +1130,8 @@ class RunGroup(BaseGroup):
 
             # initialize an resizable data array
             # need to set the chunk size to something useful, if the chunk
-            # size is 1 this causes performance issues and bloating of the 
-            # hdf5 file.  Set to 8196 for now.  Should add a parameter for 
+            # size is 1 this causes performance issues and bloating of the
+            # hdf5 file.  Set to 8196 for now.  Should add a parameter for
             # this
             else:
                 if channel_metadata is not None:

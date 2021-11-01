@@ -18,9 +18,13 @@ First, read in the MTH5 file
 	m.open_mth5("ZU_CAS04_NVR08.h5", "a")
 
 
-Now lets gets some data
+Now lets gets some data v0.1.0
 
 >>> run_a = m.get_run("CAS04", "a")
+
+Now lets gets some data v0.2.0
+
+>>> run_a = m.get_run("CAS04", "a", survey="ZU")
 
 If there is not too much data we can plot this using matplotlib
 

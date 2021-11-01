@@ -19,6 +19,14 @@ mth5.groups.base module
    :members:
    :undoc-members:
    :show-inheritance:
+   
+mth5.groups.experiment module
+-------------------------
+
+.. automodule:: mth5.groups.experiment
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 mth5.groups.filters module
 --------------------------
