@@ -189,8 +189,8 @@ From here you can interogate the inventory.  This is an :class:`obspy.Inventory`
 			
 This looks correct from what was requested.  If it does not look correct have a look at your inputs. 
 
-Build MTH5 File
-~~~~~~~~~~~~~~~~~
+Build MTH5 File v0.1.0
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 Now we can request data and build an MTH5 file.  
 
@@ -198,6 +198,7 @@ Now we can request data and build an MTH5 file.
 
     st = MTime(get_now_utc())
     make_mth5 = MakeMTH5()
+	make_mth5.mth5_version = '0.1.0'
  
 	# This will build and MTH5 and allow the user to interact with
 	# the MTH5 from Python.  If you just want to write a file
@@ -206,7 +207,7 @@ Now we can request data and build an MTH5 file.
 
     et = MTime(get_now_utc())
 
-    print(f"Took {(int(et - st) // 60)}:{(et - st) % 60:.2f} minutes")
+    print(f"Took {(int(et - st) // 60)}:{(et - st) % 60:05.2f} minutes")
 
 Now we can interogate the created MTH5 file
 
@@ -449,3 +450,223 @@ array([144812, 144378, 146214, 144470, 145275, 138457, 140016, 139721,
 >>> mth5_object.close_mth5()
 2021-10-26 16:06:34,097 [line 569] mth5.mth5.MTH5.close_mth5 - INFO: Flushing and closing ZU_CAS04_NVR08.h5
 
+Build MTH5 File v0.2.0
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Now we can request data and build an MTH5 file.  
+
+.. code-block:: python
+
+    st = MTime(get_now_utc())
+    make_mth5 = MakeMTH5()
+	make_mth5.mth5_version = '0.2.0'
+ 
+	# This will build and MTH5 and allow the user to interact with
+	# the MTH5 from Python.  If you just want to write a file
+	# set 'interact' to False, or don't input 'interact' by default is False
+    mth5_object = make_mth5.make_mth5_from_fdsnclient("example.csv", interact=True)
+
+    et = MTime(get_now_utc())
+
+    print(f"Took {(int(et - st) // 60)}:{(et - st) % 60:05.2f} minutes")
+
+Now we can interogate the created MTH5 file
+
+Check the file name
+
+>>> mth5_object.filename
+WindowsPath('ZU_CAS04_NVR08.h5')
+
+Have a look at the contents
+
+>>> mth5_object
+/:
+====================
+    |- Group: Experiment
+    --------------------
+        |- Group: Reports
+        -----------------
+        |- Group: Standards
+        -------------------
+            --> Dataset: summary
+            ......................
+        |- Group: Surveys
+        -----------------
+            |- Group: ZU
+            ------------
+                |- Group: Filters
+                -----------------
+                    |- Group: coefficient
+                    ---------------------
+                        |- Group: v to counts (electric)
+                        --------------------------------
+                        |- Group: v to counts (magnetic)
+                        --------------------------------
+                    |- Group: fap
+                    -------------
+                    |- Group: fir
+                    -------------
+                    |- Group: time_delay
+                    --------------------
+                        |- Group: electric time offset
+                        ------------------------------
+                        |- Group: hx time offset
+                        ------------------------
+                        |- Group: hy time offset
+                        ------------------------
+                        |- Group: hz time offset
+                        ------------------------
+                    |- Group: zpk
+                    -------------
+                        |- Group: electric field 1 pole butterworth high-pass
+                        -----------------------------------------------------
+                            --> Dataset: poles
+                            ....................
+                            --> Dataset: zeros
+                            ....................
+                        |- Group: electric field 5 pole butterworth low-pass
+                        ----------------------------------------------------
+                            --> Dataset: poles
+                            ....................
+                            --> Dataset: zeros
+                            ....................
+                        |- Group: magnetic field 3 pole butterworth low-pass
+                        ----------------------------------------------------
+                            --> Dataset: poles
+                            ....................
+                            --> Dataset: zeros
+                            ....................
+                        |- Group: mv per km to v per m
+                        ------------------------------
+                            --> Dataset: poles
+                            ....................
+                            --> Dataset: zeros
+                            ....................
+                        |- Group: v per m to v
+                        ----------------------
+                            --> Dataset: poles
+                            ....................
+                            --> Dataset: zeros
+                            ....................
+                |- Group: Reports
+                -----------------
+                |- Group: Standards
+                -------------------
+                    --> Dataset: summary
+                    ......................
+                |- Group: Stations
+                ------------------
+                    |- Group: CAS04
+                    ---------------
+                        |- Group: a
+                        -----------
+                            --> Dataset: ex
+                            .................
+                            --> Dataset: ey
+                            .................
+                            --> Dataset: hx
+                            .................
+                            --> Dataset: hy
+                            .................
+                            --> Dataset: hz
+                            .................
+                        |- Group: b
+                        -----------
+                            --> Dataset: ex
+                            .................
+                            --> Dataset: ey
+                            .................
+                            --> Dataset: hx
+                            .................
+                            --> Dataset: hy
+                            .................
+                            --> Dataset: hz
+                            .................
+                        |- Group: c
+                        -----------
+                            --> Dataset: ex
+                            .................
+                            --> Dataset: ey
+                            .................
+                            --> Dataset: hx
+                            .................
+                            --> Dataset: hy
+                            .................
+                            --> Dataset: hz
+                            .................
+                        |- Group: d
+                        -----------
+                            --> Dataset: ex
+                            .................
+                            --> Dataset: ey
+                            .................
+                            --> Dataset: hx
+                            .................
+                            --> Dataset: hy
+                            .................
+                            --> Dataset: hz
+                            .................
+                    |- Group: NVR08
+                    ---------------
+                        |- Group: a
+                        -----------
+                            --> Dataset: ex
+                            .................
+                            --> Dataset: ey
+                            .................
+                            --> Dataset: hx
+                            .................
+                            --> Dataset: hy
+                            .................
+                            --> Dataset: hz
+                            .................
+                        |- Group: b
+                        -----------
+                            --> Dataset: ex
+                            .................
+                            --> Dataset: ey
+                            .................
+                            --> Dataset: hx
+                            .................
+                            --> Dataset: hy
+                            .................
+                            --> Dataset: hz
+                            .................
+                        |- Group: c
+                        -----------
+                            --> Dataset: ex
+                            .................
+                            --> Dataset: ey
+                            .................
+                            --> Dataset: hx
+                            .................
+                            --> Dataset: hy
+                            .................
+                            --> Dataset: hz
+                            .................
+
+Have a look at a single channel
+
+>>> ex = mth5_object.get_channel("CAS04", "a", "ex", survey="ZU")
+>>> ex
+Channel Electric:
+-------------------
+	component:        ex
+	data type:        electric
+	data format:      int32
+	data shape:       (11267,)
+	start:            2020-06-02T19:00:00+00:00
+	end:              2020-06-02T22:07:46+00:00
+	sample rate:      1.0
+	
+Make sure there is data
+
+>>> ex.hdf5_dataset[0:20]
+array([144812, 144378, 146214, 144470, 145275, 138457, 140016, 139721,
+       134734, 133218, 134701, 135473, 131894, 130241, 132098, 132902,
+       129276, 128781, 132266, 133412])
+	   
+.. important:: Make sure to close the MTH5 file
+
+>>> mth5_object.close_mth5()
+2021-10-31 16:06:34,097 [line 569] mth5.mth5.MTH5.close_mth5 - INFO: Flushing and closing ZU_CAS04_NVR08.h5
