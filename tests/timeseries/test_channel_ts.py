@@ -65,8 +65,11 @@ class TestChannelTS(unittest.TestCase):
         self.ts = timeseries.ChannelTS(
             "electric", channel_metadata={"electric": {"component": "ex"}}
         )
-        self.assertEqual(self.ts.channel_metadata.component, "ex")
-        self.assertEqual(self.ts._ts.attrs["component"], "ex")
+        with self.subTest(name="component in metadata"):
+            self.assertEqual(self.ts.channel_metadata.component, "ex")
+            
+        with self.subTest(name="compnent in attrs"):
+            self.assertEqual(self.ts._ts.attrs["component"], "ex")
 
     def test_numpy_input(self):
         self.ts.channel_metadata.sample_rate = 1.0
@@ -76,14 +79,18 @@ class TestChannelTS(unittest.TestCase):
         end = self.ts.channel_metadata.time_period._start_dt + (4096 - 1)
 
         # check to make sure the times align
-        self.assertEqual(
-            self.ts._ts.coords.to_index()[0].isoformat(),
-            self.ts.channel_metadata.time_period._start_dt.iso_no_tz,
-        )
+        with self.subTest(name="is aligned"):
+            self.assertEqual(
+                self.ts._ts.coords.to_index()[0].isoformat(),
+                self.ts.channel_metadata.time_period._start_dt.iso_no_tz,
+            )
 
-        self.assertEqual(self.ts._ts.coords.to_index()[-1].isoformat(), end.iso_no_tz)
+        with self.subTest(name="has index"):
+            self.assertEqual(self.ts._ts.coords.to_index()[-1].isoformat(),
+                             end.iso_no_tz)
 
-        self.assertEqual(self.ts.n_samples, 4096)
+        with self.subTest(name="has n samples"):
+            self.assertEqual(self.ts.n_samples, 4096)
 
     def test_numpy_input_fail(self):
         self.ts.channel_metadata.sample_rate = 1.0
@@ -100,14 +107,18 @@ class TestChannelTS(unittest.TestCase):
         end = self.ts.channel_metadata.time_period._start_dt + (4096 - 1)
 
         # check to make sure the times align
-        self.assertEqual(
-            self.ts._ts.coords.to_index()[0].isoformat(),
-            self.ts.channel_metadata.time_period._start_dt.iso_no_tz,
-        )
-
-        self.assertEqual(self.ts._ts.coords.to_index()[-1].isoformat(), end.iso_no_tz)
-
-        self.assertEqual(self.ts.n_samples, 4096)
+        with self.subTest(name="is aligned"):
+            self.assertEqual(
+                self.ts._ts.coords.to_index()[0].isoformat(),
+                self.ts.channel_metadata.time_period._start_dt.iso_no_tz,
+            )
+        
+        with self.subTest(name="has index"):
+            self.assertEqual(self.ts._ts.coords.to_index()[-1].isoformat(),
+                             end.iso_no_tz)
+        
+        with self.subTest(name="has n samples"):
+            self.assertEqual(self.ts.n_samples, 4096)
 
     def test_df_without_index_input(self):
         self.ts.channel_metadata.sample_rate = 1.0
@@ -118,14 +129,18 @@ class TestChannelTS(unittest.TestCase):
         end = self.ts.channel_metadata.time_period._start_dt + (4096 - 1)
 
         # check to make sure the times align
-        self.assertEqual(
-            self.ts._ts.coords.to_index()[0].isoformat(),
-            self.ts.channel_metadata.time_period._start_dt.iso_no_tz,
-        )
+        with self.subTest(name="is aligned"):
+            self.assertEqual(
+                self.ts._ts.coords.to_index()[0].isoformat(),
+                self.ts.channel_metadata.time_period._start_dt.iso_no_tz,
+            )
 
-        self.assertEqual(self.ts._ts.coords.to_index()[-1].isoformat(), end.iso_no_tz)
+        with self.subTest(name="has index"):
+            self.assertEqual(self.ts._ts.coords.to_index()[-1].isoformat(),
+                             end.iso_no_tz)
 
-        self.assertEqual(self.ts.n_samples, 4096)
+        with self.subTest(name="has n samples"):
+            self.assertEqual(self.ts.n_samples, 4096)
 
     def test_df_with_index_input(self):
         n_samples = 4096
@@ -136,15 +151,19 @@ class TestChannelTS(unittest.TestCase):
             ),
         )
 
+
         # check to make sure the times align
-        self.assertEqual(
-            self.ts._ts.coords.to_index()[0].isoformat(),
-            self.ts.channel_metadata.time_period._start_dt.iso_no_tz,
-        )
+        with self.subTest(name="is aligned"):
+            self.assertEqual(
+                self.ts._ts.coords.to_index()[0].isoformat(),
+                self.ts.channel_metadata.time_period._start_dt.iso_no_tz,
+            )
 
-        self.assertEqual(self.ts.sample_rate, 4096.0)
+        with self.subTest(name="sample rate"):
+            self.assertEqual(self.ts.sample_rate, 4096.0)
 
-        self.assertEqual(self.ts.n_samples, n_samples)
+        with self.subTest(name="has n samples"):
+            self.assertEqual(self.ts.n_samples, n_samples)
 
     def test_set_component(self):
         self.ts = timeseries.ChannelTS(
@@ -154,9 +173,9 @@ class TestChannelTS(unittest.TestCase):
         def set_comp(comp):
             self.ts.component = comp
 
-        self.assertRaises(MTTSError, set_comp, "hx")
-        self.assertRaises(MTTSError, set_comp, "bx")
-        self.assertRaises(MTTSError, set_comp, "temperature")
+        for ch in ["hx", "bx", "temperature"]:
+            with self.subTest(name=f"fail {ch}"):
+                self.assertRaises(MTTSError, set_comp, ch)
 
     def test_change_sample_rate(self):
         self.ts.sample_rate = 16
@@ -164,10 +183,16 @@ class TestChannelTS(unittest.TestCase):
         self.ts.ts = np.arange(4096)
 
         self.assertEqual(self.ts.sample_rate, 16.0)
+        
+        with self.subTest(name="sample_interval"):
+            self.assertEqual(self.ts.sample_interval, 1. / 16.0)
 
         self.ts.sample_rate = 8
         self.assertEqual(self.ts.sample_rate, 8.0)
         self.assertEqual(self.ts.n_samples, 4096)
+        
+        with self.subTest(name="sample_interval"):
+            self.assertEqual(self.ts.sample_interval, 1. / 8.0)
 
     def test_to_xarray(self):
         self.ts.sample_rate = 16
@@ -209,6 +234,24 @@ class TestChannelTS(unittest.TestCase):
         self.assertEqual(self.ts.run_metadata.id, "0001")
         self.assertEqual(self.ts.station_metadata.id, "mt01")
         self.assertEqual(self.ts.start, "2020-01-01T12:00:00+00:00")
+        
+    def test_time_slice(self):
+        self.ts.sample_rate = 16
+        self.ts.start = "2020-01-01T12:00:00"
+        self.ts.ts = np.arange(4096)
+        
+        with self.subTest(name="nsamples"):
+            new_ts = self.ts.get_slice("2020-01-01T12:00:00", n_samples=48)
+            self.assertEqual(new_ts.ts.size, 49)
+        
+        with self.subTest(name="end time"):
+            new_ts = self.ts.get_slice("2020-01-01T12:00:00", 
+                                       end="2020-01-01T12:00:03")
+            self.assertEqual(new_ts.ts.size, 49)
+            
+            
+            
+        
 
 
 # =============================================================================
