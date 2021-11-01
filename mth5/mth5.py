@@ -61,9 +61,9 @@ class MTH5:
 
     MTH5 is built with h5py and therefore numpy.  The structure follows the
     different levels of MT data collection:
-    
+
     For version 0.1.0:
-    
+
         Survey
            |-Reports
            |-Standards
@@ -71,9 +71,9 @@ class MTH5:
            |-Stations
                |-Run
                    |-Channel
-                   
+
     For version 0.2.0:
-        
+
         Experiment
             |-Reports
             |-Standards
@@ -84,8 +84,8 @@ class MTH5:
                |-Stations
                    |-Run
                        |-Channel
-               
-               
+
+
     All timeseries data are stored as individual channels with the appropriate
     metadata defined for the given channel, i.e. electric, magnetic, auxiliary.
 
@@ -249,7 +249,7 @@ class MTH5:
         file_version="0.2.0",
     ):
         """
-        
+
         :param filename: DESCRIPTION, defaults to None
         :type filename: TYPE, optional
         :param compression: DESCRIPTION, defaults to "gzip"
@@ -281,12 +281,12 @@ class MTH5:
         ) = helpers.validate_compression(compression, compression_opts)
         self.__shuffle = shuffle
         self.__fletcher32 = fletcher32
-        
+
         self.data_level = data_level
         self.filename = filename
         self.file_version = file_version
         self.file_type = "mth5"
-        
+
         self._set_default_groups()
 
     def __str__(self):
@@ -297,7 +297,7 @@ class MTH5:
 
     def __repr__(self):
         return self.__str__()
-    
+
     def __exit__(self):
         self.close_mth5()
 
@@ -310,7 +310,7 @@ class MTH5:
             "shuffle": self.__shuffle,
             "fletcher32": self.__fletcher32,
         }
-    
+
     @property
     def file_attributes(self):
         return {
@@ -342,7 +342,7 @@ class MTH5:
         if value is not None:
             if not isinstance(value, Path):
                 value = Path(value)
-    
+
             if value.suffix not in acceptable_file_types:
                 msg = (
                     f"file extension {value.suffix} is not correct. "
@@ -350,7 +350,7 @@ class MTH5:
                 )
                 self.logger.info(msg)
                 self.__filename = value.with_suffix(".h5")
-    
+
             else:
                 self.__filename = value
 
@@ -379,12 +379,12 @@ class MTH5:
             msg = f"Input file.type is not valid, must be {acceptable_file_types}"
             self.logger.error(msg)
             raise ValueError(msg)
-            
+
         self.__file_type = value
 
         if self.h5_is_read():
             self.__hdf5_obj.attrs["file.type"] = value
-            
+
     @property
     def file_version(self):
         """mth5 file version"""
@@ -404,14 +404,14 @@ class MTH5:
             msg = f"Input file version must be a string not {type(value)}"
             self.logger.error(msg)
             raise ValueError(msg)
-            
+
         if value not in acceptable_file_versions:
             msg = f"Input file.version is not valid, must be {acceptable_file_versions}"
             self.logger.error(msg)
             raise ValueError(msg)
 
         self.__file_version = value
-        
+
         if self.h5_is_read():
             self.__hdf5_obj.attrs["file.version"] = value
 
@@ -430,7 +430,7 @@ class MTH5:
                 return self.__hdf5_obj.attrs["data_level"]
             except KeyError:
                 return self.__data_level
-        else: 
+        else:
             return self.__data_level
 
     @data_level.setter
@@ -442,18 +442,18 @@ class MTH5:
             raise ValueError(msg)
 
         if value not in acceptable_data_levels:
-             msg = f"Input data_level is not valid, must be {acceptable_data_levels}"
-             self.logger.error(msg)
-             raise ValueError(msg)
-             
+            msg = f"Input data_level is not valid, must be {acceptable_data_levels}"
+            self.logger.error(msg)
+            raise ValueError(msg)
+
         self.__data_level = value
-        
+
         if self.h5_is_read():
-           self.__hdf5_obj.attrs["data_level"] = value
-            
+            self.__hdf5_obj.attrs["data_level"] = value
+
     def _set_default_groups(self):
-        """ get the default groups based on file version """
-        
+        """get the default groups based on file version"""
+
         if self.file_version in ["0.1.0"]:
 
             self._default_root_name = "Survey"
@@ -463,29 +463,31 @@ class MTH5:
                 "Filters",
                 "Standards",
             ]
-            
+
             self._root_path = "/Survey"
-            
+
         elif self.file_version in ["0.2.0"]:
             self._default_root_name = "Experiment"
             self._default_subgroup_names = [
                 "Surveys",
                 "Reports",
                 "Standards",
-                ]
-            
+            ]
+
             self._root_path = "/Experiment"
-    
+
     @property
     def experiment_group(self):
-        """Convenience property for /Experiment group """
+        """Convenience property for /Experiment group"""
         if self.h5_is_read():
             if self.file_version in ["0.2.0"]:
                 return groups.ExperimentGroup(
                     self.__hdf5_obj[f"{self._root_path}"], **self.dataset_options
                 )
             else:
-                self.logger.info(f"File version {self.file_version} does not have an Experiment Group")
+                self.logger.info(
+                    f"File version {self.file_version} does not have an Experiment Group"
+                )
                 return None
         self.logger.info("File is closed cannot access /Experiment")
         return None
@@ -500,20 +502,25 @@ class MTH5:
                 )
             self.logger.info("File is closed cannot access /Survey")
             return None
-        
+
         elif self.file_version in ["0.2.0"]:
-            self.logger.info(f"File version {self.file_version} does not have a survey_group, try surveys_group")
+            self.logger.info(
+                f"File version {self.file_version} does not have a survey_group, try surveys_group"
+            )
 
     @property
     def surveys_group(self):
         """Convenience property for /Surveys group"""
         if self.file_version in ["0.1.0"]:
-            self.logger.info(f"File version {self.file_version} does not have a survey_group, try surveys_group")
-        
+            self.logger.info(
+                f"File version {self.file_version} does not have a survey_group, try surveys_group"
+            )
+
         elif self.file_version in ["0.2.0"]:
             if self.h5_is_read():
                 return groups.MasterSurveyGroup(
-                    self.__hdf5_obj[f"{self._root_path}/Surveys"], **self.dataset_options
+                    self.__hdf5_obj[f"{self._root_path}/Surveys"],
+                    **self.dataset_options,
                 )
             self.logger.info("File is closed cannot access /Surveys")
             return None
@@ -555,9 +562,10 @@ class MTH5:
             if self.file_version not in ["0.1.0"]:
                 self.logger.info(
                     f"File version {self.file_version} does not have a Stations. "
-                    "try surveys_group.")
+                    "try surveys_group."
+                )
                 return None
-            
+
             return groups.MasterStationGroup(
                 self.__hdf5_obj[f"{self._root_path}/Stations"], **self.dataset_options
             )
@@ -652,7 +660,7 @@ class MTH5:
 
         # create the default group
         self.__hdf5_obj.create_group(self._default_root_name)
-    
+
         for group_name in self._default_subgroup_names:
             self.__hdf5_obj.create_group(f"{self._default_root_name}/{group_name}")
             m5_grp = getattr(self, f"{group_name.lower()}_group")
@@ -832,19 +840,21 @@ class MTH5:
                                 None,
                                 channel_metadata=channel,
                             )
-    
+
                 for k, v in experiment.surveys[0].filters.items():
                     self.filters_group.add_filter(v)
-            
+
             elif self.file_version in ["0.2.0"]:
-                
+
                 for survey_name in experiment.survey_names:
                     sg = self.add_survey(
-                        survey_name,
-                        survey_metadata=experiment.surveys[survey_index]) 
+                        survey_name, survey_metadata=experiment.surveys[survey_index]
+                    )
 
                     for station in experiment.surveys[0].stations:
-                        mt_station = self.add_station(station.id, station_metadata=station, survey=survey_name)
+                        mt_station = self.add_station(
+                            station.id, station_metadata=station, survey=survey_name
+                        )
                         for run in station.runs:
                             mt_run = mt_station.add_run(run.id, run_metadata=run)
                             for channel in run.channels:
@@ -854,79 +864,82 @@ class MTH5:
                                     None,
                                     channel_metadata=channel,
                                 )
-        
+
                     for k, v in experiment.surveys[0].filters.items():
                         sg.filters_group.add_filter(v)
-                
+
     def add_survey(self, survey_name, survey_metadata=None):
-         """
-         Add a survey with metadata if given with the path:
-             ``/Survey/surveys/survey_name``
+        """
+        Add a survey with metadata if given with the path:
+            ``/Survey/surveys/survey_name``
 
-         If the survey already exists, will return that station and nothing
-         is added.
+        If the survey already exists, will return that station and nothing
+        is added.
 
-         :param station_name: Name of the station, should be the same as
-                              metadata.id
-         :type station_name: string
-         :param station_metadata: Station metadata container, defaults to None
-         :type station_metadata: :class:`mth5.metadata.Station`, optional
-         :return: A convenience class for the added station
-         :rtype: :class:`mth5_groups.StationGroup`
+        :param station_name: Name of the station, should be the same as
+                             metadata.id
+        :type station_name: string
+        :param station_metadata: Station metadata container, defaults to None
+        :type station_metadata: :class:`mth5.metadata.Station`, optional
+        :return: A convenience class for the added station
+        :rtype: :class:`mth5_groups.StationGroup`
 
-         :Example: ::
+        :Example: ::
 
-             >>> from mth5 import mth5
-             >>> mth5_obj = mth5.MTH5()
-             >>> mth5_obj.open_mth5(r"/test.mth5", mode='a')
-             >>> # one option
-             >>> stations = mth5_obj.stations_group
-             >>> new_station = stations.add_station('MT001')
-             >>> # another option
-             >>> new_staiton = mth5_obj.stations_group.add_station('MT001')
+            >>> from mth5 import mth5
+            >>> mth5_obj = mth5.MTH5()
+            >>> mth5_obj.open_mth5(r"/test.mth5", mode='a')
+            >>> # one option
+            >>> stations = mth5_obj.stations_group
+            >>> new_station = stations.add_station('MT001')
+            >>> # another option
+            >>> new_staiton = mth5_obj.stations_group.add_station('MT001')
 
-         .. todo:: allow dictionaries, json string, xml elements as metadata
-                   input.
+        .. todo:: allow dictionaries, json string, xml elements as metadata
+                  input.
 
-         """
-         return self.surveys_group.add_survey(
-             survey_name, survey_metadata=survey_metadata)
-                
+        """
+        return self.surveys_group.add_survey(
+            survey_name, survey_metadata=survey_metadata
+        )
+
     def get_survey(self, survey_name):
-         """
-         Get a survey with the same name as survey_name
+        """
+        Get a survey with the same name as survey_name
 
-         :param survey_name: existing survey name
-         :type survey_name: string
-         :return: convenience survey class
-         :rtype: :class:`mth5.mth5_groups.surveyGroup`
-         :raises MTH5Error:  if the survey name is not found.
+        :param survey_name: existing survey name
+        :type survey_name: string
+        :return: convenience survey class
+        :rtype: :class:`mth5.mth5_groups.surveyGroup`
+        :raises MTH5Error:  if the survey name is not found.
 
-         :Example:
+        :Example:
 
-         >>> from mth5 import mth5
-         >>> mth5_obj = mth5.MTH5()
-         >>> mth5_obj.open_mth5(r"/test.mth5", mode='a')
-         >>> # one option
-         >>> surveys = mth5_obj.surveys_group
-         >>> existing_survey = surveys.get_survey('MT001')
-         >>> # another option
-         >>> existing_staiton = mth5_obj.surveys_group.get_survey('MT001')
-         MTH5Error: MT001 does not exist, check survey_list for existing names
+        >>> from mth5 import mth5
+        >>> mth5_obj = mth5.MTH5()
+        >>> mth5_obj.open_mth5(r"/test.mth5", mode='a')
+        >>> # one option
+        >>> surveys = mth5_obj.surveys_group
+        >>> existing_survey = surveys.get_survey('MT001')
+        >>> # another option
+        >>> existing_staiton = mth5_obj.surveys_group.get_survey('MT001')
+        MTH5Error: MT001 does not exist, check survey_list for existing names
 
-         """
+        """
 
-         try:
-             return groups.SurveyGroup(
-                 self.__hdf5_obj[f"{self._root_path}/Surveys/{survey_name}"], **self.dataset_options)
-         except KeyError:
-             msg = (
-                 f"{self._root_path}/Surveys/{survey_name} does not exist, "
-                 + "check survey_list for existing names"
-             )
-             self.logger.exception(msg)
-             raise MTH5Error(msg)
-             
+        try:
+            return groups.SurveyGroup(
+                self.__hdf5_obj[f"{self._root_path}/Surveys/{survey_name}"],
+                **self.dataset_options,
+            )
+        except KeyError:
+            msg = (
+                f"{self._root_path}/Surveys/{survey_name} does not exist, "
+                + "check survey_list for existing names"
+            )
+            self.logger.exception(msg)
+            raise MTH5Error(msg)
+
     def remove_survey(self, survey_name):
         """
         Remove a survey from the file.
@@ -997,14 +1010,17 @@ class MTH5:
         """
         if self.file_version in ["0.1.0"]:
             return self.stations_group.add_station(
-                station_name, station_metadata=station_metadata)
+                station_name, station_metadata=station_metadata
+            )
         elif self.file_version in ["0.2.0"]:
             if survey is None:
                 msg = "Need to input 'survey' for file version %s"
                 self.logger.error(msg, self.file_version)
                 raise ValueError(msg % self.file_version)
             sg = self.get_survey(survey)
-            return sg.stations_group.add_station(station_name, station_metadata=station_metadata)
+            return sg.stations_group.add_station(
+                station_name, station_metadata=station_metadata
+            )
 
     def get_station(self, station_name, survey=None):
         """
@@ -1029,7 +1045,7 @@ class MTH5:
         """
         if self.file_version in ["0.1.0"]:
             return self.stations_group.get_station(station_name)
-        
+
         elif self.file_version in ["0.2.0"]:
             if survey is None:
                 msg = "Need to input 'survey' for file version %s"
@@ -1063,7 +1079,7 @@ class MTH5:
 
         if self.file_version in ["0.1.0"]:
             return self.stations_group.remove_station(station_name)
-        
+
         elif self.file_version in ["0.2.0"]:
             if survey is None:
                 msg = "Need to input 'survey' for file version %s"
@@ -1131,7 +1147,9 @@ class MTH5:
                 msg = "Need to input 'survey' for file version %s"
                 self.logger.error(msg, self.file_version)
                 raise ValueError(msg % self.file_version)
-            run_path = f"{self._root_path}/Surveys/{survey}/Stations/{station_name}/{run_name}"
+            run_path = (
+                f"{self._root_path}/Surveys/{survey}/Stations/{station_name}/{run_name}"
+            )
         try:
             return groups.RunGroup(self.__hdf5_obj[run_path])
         except KeyError:
@@ -1219,15 +1237,12 @@ class MTH5:
 
         """
 
-        return (
-            self.get_run(station_name, run_name, survey=survey)
-            .add_channel(
-                channel_name,
-                channel_type,
-                data,
-                channel_metadata=channel_metadata,
-                **self.dataset_options,
-            )
+        return self.get_run(station_name, run_name, survey=survey).add_channel(
+            channel_name,
+            channel_type,
+            data,
+            channel_metadata=channel_metadata,
+            **self.dataset_options,
         )
 
     def get_channel(self, station_name, run_name, channel_name, survey=None):

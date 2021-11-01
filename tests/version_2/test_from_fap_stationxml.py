@@ -30,7 +30,7 @@ class TestFAPMTH5(unittest.TestCase):
     def setUp(self):
         self.translator = XMLInventoryMTExperiment()
         self.experiment = self.translator.xml_to_mt(stationxml_fn=STATIONXML_FAP)
-        self.experiment.surveys[0].id = 'test'
+        self.experiment.surveys[0].id = "test"
         self.base_path = "Experiment/Surveys/test"
         self.fn = fn_path.joinpath("from_fap_stationxml.h5")
 
@@ -54,20 +54,30 @@ class TestFAPMTH5(unittest.TestCase):
         self.assertEqual(self.m.has_group(f"{self.base_path}/Stations/FL001/b"), True)
 
     def test_has_hx_a(self):
-        self.assertEqual(self.m.has_group(f"{self.base_path}/Stations/FL001/a/hx"), True)
+        self.assertEqual(
+            self.m.has_group(f"{self.base_path}/Stations/FL001/a/hx"), True
+        )
 
     def test_has_hx_b(self):
-        self.assertEqual(self.m.has_group(f"{self.base_path}/Stations/FL001/b/hx"), True)
+        self.assertEqual(
+            self.m.has_group(f"{self.base_path}/Stations/FL001/b/hx"), True
+        )
 
     def test_has_fap_table(self):
 
         self.assertEqual(
-            self.m.has_group(f"{self.base_path}/Filters/fap/frequency response table_00"), True
+            self.m.has_group(
+                f"{self.base_path}/Filters/fap/frequency response table_00"
+            ),
+            True,
         )
 
     def test_has_coefficient_filter(self):
         self.assertEqual(
-            self.m.has_group(f"{self.base_path}/Filters/coefficient/v to counts (electric)"), True
+            self.m.has_group(
+                f"{self.base_path}/Filters/coefficient/v to counts (electric)"
+            ),
+            True,
         )
 
     def test_get_channel(self):

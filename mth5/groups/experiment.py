@@ -106,4 +106,3 @@ class ExperimentGroup(BaseGroup):
     @property
     def surveys_group(self):
         return MasterSurveyGroup(self.hdf5_group["Surveys"])
-

@@ -14,7 +14,12 @@ Created on Wed Dec 23 16:59:45 2020
 # Imports
 # =============================================================================
 from mth5.groups import (
-    BaseGroup, MasterStationGroup, FiltersGroup, ReportsGroup, StandardsGroup)
+    BaseGroup,
+    MasterStationGroup,
+    FiltersGroup,
+    ReportsGroup,
+    StandardsGroup,
+)
 from mth5.utils.exceptions import MTH5Error
 
 from mt_metadata.timeseries import Survey
@@ -173,24 +178,22 @@ class MasterSurveyGroup(BaseGroup):
     def __init__(self, group, **kwargs):
 
         super().__init__(group, **kwargs)
-        
 
     @property
     def channel_summary(self):
         """
         Summary of all channels in the file.
         """
-        
+
         for ii, survey in enumerate(self.groups_list):
             survey_group = self.get_survey(survey)
             if ii == 0:
                 channel_summary = survey_group.channel_summary
-                
+
             else:
                 channel_summary = channel_summary.append(survey_group.channel_summary)
-                
+
         return channel_summary
-            
 
     def add_survey(self, survey_name, survey_metadata=None):
         """
@@ -240,7 +243,7 @@ class MasterSurveyGroup(BaseGroup):
                     )
                     self.logger.error(msg)
                     raise MTH5Error(msg)
-                    
+
             survey_obj = SurveyGroup(
                 survey_group,
                 survey_metadata=survey_metadata,
@@ -396,7 +399,7 @@ class SurveyGroup(BaseGroup):
     def __init__(self, group, survey_metadata=None, **kwargs):
 
         super().__init__(group, group_metadata=survey_metadata, **kwargs)
-        
+
         self._default_subgroup_names = [
             "Stations",
             "Reports",
@@ -412,7 +415,7 @@ class SurveyGroup(BaseGroup):
         for key, value in kwargs.items():
             setattr(self, key, value)
         self.write_metadata()
-        
+
         for group_name in self._default_subgroup_names:
             self.hdf5_group.create_group(f"{group_name}")
             m5_grp = getattr(self, f"{group_name.lower()}_group")
@@ -443,28 +446,21 @@ class SurveyGroup(BaseGroup):
     @property
     def stations_group(self):
         return MasterStationGroup(self.hdf5_group["Stations"])
-    
+
     @property
     def filters_group(self):
         """Convenience property for /Survey/Filters group"""
-        return FiltersGroup(
-                self.hdf5_group["Filters"], **self.dataset_options
-            )
-    
+        return FiltersGroup(self.hdf5_group["Filters"], **self.dataset_options)
+
     @property
     def reports_group(self):
         """Convenience property for /Survey/Reports group"""
-        return ReportsGroup(
-                self.hdf5_group["Reports"], **self.dataset_options
-            )
-    
+        return ReportsGroup(self.hdf5_group["Reports"], **self.dataset_options)
+
     @property
     def standards_group(self):
         """Convenience property for /Survey/Standards group"""
-        return StandardsGroup(
-                self.hdf5_group["Standards"], **self.dataset_options
-            )
-
+        return StandardsGroup(self.hdf5_group["Standards"], **self.dataset_options)
 
     def update_survey_metadata(self, survey_dict=None):
         """

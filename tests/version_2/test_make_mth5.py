@@ -215,7 +215,7 @@ class TestMakeMTH5(unittest.TestCase):
                     self.assertFalse(np.all(x.hdf5_dataset == 0))
 
         self.m.close_mth5()
-        #self.m.filename.unlink()
+        # self.m.filename.unlink()
 
     def tearDown(self):
         self.csv_fn.unlink()

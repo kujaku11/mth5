@@ -32,7 +32,7 @@ class TestMTH5(unittest.TestCase):
         self.fn = fn_path.joinpath("test.mth5")
         self.mth5_obj = mth5.MTH5(file_version="0.2.0")
         self.mth5_obj.open_mth5(self.fn, mode="w")
-        self.survey_group = self.mth5_obj.add_survey('test')
+        self.survey_group = self.mth5_obj.add_survey("test")
 
     def test_initial_standards_group_size(self):
         stable = self.mth5_obj.standards_group.summary_table
@@ -100,7 +100,9 @@ class TestMTH5(unittest.TestCase):
     def test_get_channel_fail(self):
         new_station = self.mth5_obj.add_station("MT001", survey="test")
         new_station.add_run("MT001a")
-        self.assertRaises(MTH5Error, self.mth5_obj.get_channel, "MT001", "MT001a", "Ey", "test")
+        self.assertRaises(
+            MTH5Error, self.mth5_obj.get_channel, "MT001", "MT001a", "Ey", "test"
+        )
 
     def test_channel_mtts(self):
         meta_dict = {
@@ -129,8 +131,9 @@ class TestMTH5(unittest.TestCase):
         with self.subTest(name="start times"):
             self.assertEqual(channel_ts.start, new_ts.start)
         with self.subTest(name="metadata"):
-            self.assertDictEqual(channel_ts._ts.time.to_dict(),
-                            new_ts._ts.time.to_dict())
+            self.assertDictEqual(
+                channel_ts._ts.time.to_dict(), new_ts._ts.time.to_dict()
+            )
 
     def test_from_run_ts(self):
         ts_list = []
