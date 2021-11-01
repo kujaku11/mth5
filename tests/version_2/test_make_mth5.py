@@ -123,7 +123,7 @@ class TestMakeMTH5(unittest.TestCase):
         self.stations = ["CAS04", "NVR08"]
         self.channels = ["LQE", "LQN", "LFE", "LFN", "LFZ"]
 
-        self.make_mth5 = MakeMTH5(mth5_version="0.1.0")
+        self.make_mth5 = MakeMTH5(mth5_version="0.2.0")
         self.make_mth5.client = "IRIS"
         # Turn list into dataframe
         self.metadata_df = pd.DataFrame(
@@ -193,28 +193,29 @@ class TestMakeMTH5(unittest.TestCase):
             self.metadata_df, self.mth5_path, interact=True
         )
 
+        sg = self.m.get_survey("ZU")
         with self.subTest(name="stations"):
-            self.assertListEqual(self.stations, self.m.station_list)
+            self.assertListEqual(self.stations, sg.stations_group.groups_list)
 
         with self.subTest(name="CAS04_runs"):
             self.assertListEqual(
-                ["a", "b", "c", "d"], self.m.get_station("CAS04").groups_list
+                ["a", "b", "c", "d"], self.m.get_station("CAS04", "ZU").groups_list
             )
 
         for run in ["a", "b", "c", "d"]:
             for ch in ["ex", "ey", "hx", "hy", "hz"]:
                 with self.subTest(name=f"has data CAS04.{run}.{ch}"):
-                    x = self.m.get_channel("CAS04", run, ch)
+                    x = self.m.get_channel("CAS04", run, ch, "ZU")
                     self.assertFalse(np.all(x.hdf5_dataset == 0))
 
         for run in ["a", "b", "c"]:
             for ch in ["ex", "ey", "hx", "hy", "hz"]:
                 with self.subTest(name=f"has data NVR08.{run}.{ch}"):
-                    x = self.m.get_channel("NVR08", run, ch)
+                    x = self.m.get_channel("NVR08", run, ch, "ZU")
                     self.assertFalse(np.all(x.hdf5_dataset == 0))
 
         self.m.close_mth5()
-        self.m.filename.unlink()
+        #self.m.filename.unlink()
 
     def tearDown(self):
         self.csv_fn.unlink()
