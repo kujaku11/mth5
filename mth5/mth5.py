@@ -817,23 +817,46 @@ class MTH5:
 
         """
         if self.h5_is_write():
-            sg = self.survey_group
-            sg.metadata.from_dict(experiment.surveys[survey_index].to_dict())
-            sg.write_metadata()
-            for station in experiment.surveys[0].stations:
-                mt_station = self.add_station(station.id, station_metadata=station)
-                for run in station.runs:
-                    mt_run = mt_station.add_run(run.id, run_metadata=run)
-                    for channel in run.channels:
-                        mt_run.add_channel(
-                            channel.component,
-                            channel.type,
-                            None,
-                            channel_metadata=channel,
-                        )
+            if self.file_version in ["0.1.0"]:
+                sg = self.survey_group
+                sg.metadata.from_dict(experiment.surveys[survey_index].to_dict())
+                sg.write_metadata()
+                for station in experiment.surveys[0].stations:
+                    mt_station = self.add_station(station.id, station_metadata=station)
+                    for run in station.runs:
+                        mt_run = mt_station.add_run(run.id, run_metadata=run)
+                        for channel in run.channels:
+                            mt_run.add_channel(
+                                channel.component,
+                                channel.type,
+                                None,
+                                channel_metadata=channel,
+                            )
+    
+                for k, v in experiment.surveys[0].filters.items():
+                    self.filters_group.add_filter(v)
+            
+            elif self.file_version in ["0.2.0"]:
+                
+                for survey_name in experiment.survey_names:
+                    sg = self.add_survey(
+                        survey_name,
+                        survey_metadata=experiment.surveys[survey_index]) 
 
-            for k, v in experiment.surveys[0].filters.items():
-                self.filters_group.add_filter(v)
+                    for station in experiment.surveys[0].stations:
+                        mt_station = self.add_station(station.id, station_metadata=station, survey=survey_name)
+                        for run in station.runs:
+                            mt_run = mt_station.add_run(run.id, run_metadata=run)
+                            for channel in run.channels:
+                                mt_run.add_channel(
+                                    channel.component,
+                                    channel.type,
+                                    None,
+                                    channel_metadata=channel,
+                                )
+        
+                    for k, v in experiment.surveys[0].filters.items():
+                        sg.filters_group.add_filter(v)
                 
     def add_survey(self, survey_name, survey_metadata=None):
          """
