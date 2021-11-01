@@ -1,10 +1,12 @@
-=====
-Usage
-=====
+=============
+Usage v0.1.0
+=============
 
 .. contents::  :local:
 
 **MTH5** is written to make read/writing an *.mth5* file easier.
+
+.. important:: This usage describes using MTH5 version 0.2.0
 
 .. hint:: MTH5 is comprehensively logged, therefore if any problems arise you can always check the mth5_debug.log and the mth5_error.log, which will be written to your current working directory.
 
@@ -25,14 +27,14 @@ Opening and Closing Files
 To open a new *.mth5* file::
 
 >>> from mth5 import mth5
->>> mth5_obj = mth5.MTH5()
+>>> mth5_obj = mth5.MTH5(file_version='0.1.0')
 >>> mth5_obj.open(r"path/to/file.mth5", mode="w")
 	
 To open an exiting *.mth5* file::
 
 
 >>> from mth5 import mth5
->>> mth5_obj = mth5.MTH5()
+>>> mth5_obj = mth5.MTH5(file_version='0.1.0')
 >>> mth5_obj.open(r"path/to/file.mth5", mode="a")
 	
 .. note:: If 'w' is used for the mode, it will overwrite any file of the same name, so be careful you don't overwrite any files.  Using 'a' for the mode is safer as this will open  an existing file of the same name and will give you write privilages.
