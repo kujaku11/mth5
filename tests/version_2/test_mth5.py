@@ -30,8 +30,9 @@ mth5.helpers.close_open_files()
 class TestMTH5(unittest.TestCase):
     def setUp(self):
         self.fn = fn_path.joinpath("test.mth5")
-        self.mth5_obj = mth5.MTH5(file_version="0.1.0")
+        self.mth5_obj = mth5.MTH5(file_version="0.2.0")
         self.mth5_obj.open_mth5(self.fn, mode="w")
+        self.survey_group = self.mth5_obj.add_survey('test')
 
     def test_initial_standards_group_size(self):
         stable = self.mth5_obj.standards_group.summary_table
@@ -47,57 +48,59 @@ class TestMTH5(unittest.TestCase):
         self.assertListEqual(standards_keys, stable_keys)
 
     def test_default_group_names(self):
-        groups = sorted(self.mth5_obj.survey_group.groups_list)
+        groups = sorted(self.mth5_obj.experiment_group.groups_list)
         defaults = sorted(self.mth5_obj._default_subgroup_names)
 
         self.assertListEqual(defaults, groups)
 
     def test_add_station(self):
-        new_station = self.mth5_obj.add_station("MT001")
-        self.assertIn("MT001", self.mth5_obj.stations_group.groups_list)
-        self.assertIsInstance(new_station, mth5.groups.StationGroup)
+        new_station = self.mth5_obj.add_station("MT001", survey="test")
+        with self.subTest(name="station exists"):
+            self.assertIn("MT001", self.survey_group.stations_group.groups_list)
+        with self.subTest(name="is station group"):
+            self.assertIsInstance(new_station, mth5.groups.StationGroup)
 
     def test_remove_station(self):
-        self.mth5_obj.add_station("MT001")
-        self.mth5_obj.remove_station("MT001")
-        self.assertNotIn("MT001", self.mth5_obj.stations_group.groups_list)
+        self.mth5_obj.add_station("MT001", survey="test")
+        self.mth5_obj.remove_station("MT001", survey="test")
+        self.assertNotIn("MT001", self.survey_group.stations_group.groups_list)
 
     def test_get_station_fail(self):
-        self.assertRaises(MTH5Error, self.mth5_obj.get_station, "MT002")
+        self.assertRaises(MTH5Error, self.mth5_obj.get_station, "MT002", "test")
 
     def test_add_run(self):
-        new_station = self.mth5_obj.add_station("MT001")
+        new_station = self.mth5_obj.add_station("MT001", survey="test")
         new_run = new_station.add_run("MT001a")
         self.assertIn("MT001a", new_station.groups_list)
         self.assertIsInstance(new_run, mth5.groups.RunGroup)
 
     def test_remove_run(self):
-        new_station = self.mth5_obj.add_station("MT001")
+        new_station = self.mth5_obj.add_station("MT001", survey="test")
         new_station.add_run("MT001a")
         new_station.remove_run("MT001a")
         self.assertNotIn("MT001a", new_station.groups_list)
 
     def test_get_run_fail(self):
-        self.assertRaises(MTH5Error, self.mth5_obj.get_run, "MT001", "MT002a")
+        self.assertRaises(MTH5Error, self.mth5_obj.get_run, "MT001", "MT002a", "test")
 
     def test_add_channel(self):
-        new_station = self.mth5_obj.add_station("MT001")
+        new_station = self.mth5_obj.add_station("MT001", survey="test")
         new_run = new_station.add_run("MT001a")
         new_channel = new_run.add_channel("Ex", "electric", None)
         self.assertIn("ex", new_run.groups_list)
         self.assertIsInstance(new_channel, mth5.groups.ElectricDataset)
 
     def test_remove_channel(self):
-        new_station = self.mth5_obj.add_station("MT001")
+        new_station = self.mth5_obj.add_station("MT001", survey="test")
         new_run = new_station.add_run("MT001a")
         new_channel = new_run.add_channel("Ex", "electric", None)
         new_run.remove_channel("Ex")
         self.assertNotIn("ex", new_run.groups_list)
 
     def test_get_channel_fail(self):
-        new_station = self.mth5_obj.add_station("MT001")
+        new_station = self.mth5_obj.add_station("MT001", survey="test")
         new_station.add_run("MT001a")
-        self.assertRaises(MTH5Error, self.mth5_obj.get_channel, "MT001", "MT001a", "Ey")
+        self.assertRaises(MTH5Error, self.mth5_obj.get_channel, "MT001", "MT001a", "Ey", "test")
 
     def test_channel_mtts(self):
         meta_dict = {
@@ -117,14 +120,17 @@ class TestMTH5(unittest.TestCase):
             channel_metadata=meta_dict,
         )
 
-        station = self.mth5_obj.add_station("MT002")
+        station = self.mth5_obj.add_station("MT002", survey="test")
         run = station.add_run("MT002a")
         ex = run.add_channel("Ex", "electric", None)
         ex.from_channel_ts(channel_ts)
         new_ts = ex.to_channel_ts()
 
-        self.assertEqual(channel_ts.start, new_ts.start)
-        self.assertTrue(channel_ts._ts.time.to_dict() == new_ts._ts.time.to_dict())
+        with self.subTest(name="start times"):
+            self.assertEqual(channel_ts.start, new_ts.start)
+        with self.subTest(name="metadata"):
+            self.assertDictEqual(channel_ts._ts.time.to_dict(),
+                            new_ts._ts.time.to_dict())
 
     def test_from_run_ts(self):
         ts_list = []
@@ -154,7 +160,7 @@ class TestMTH5(unittest.TestCase):
 
         run_ts = RunTS(ts_list, {"id": "MT002a"})
 
-        station = self.mth5_obj.add_station("MT002")
+        station = self.mth5_obj.add_station("MT002", survey="test")
         run = station.add_run("MT002a")
         channel_groups = run.from_runts(run_ts)
 
@@ -162,9 +168,10 @@ class TestMTH5(unittest.TestCase):
 
         # check to make sure the metadata was transfered
         for cg in channel_groups:
-            self.assertEqual(MTime("2020-01-01T12:00:00"), cg.start)
-            self.assertEqual(1, cg.sample_rate)
-            self.assertEqual(4096, cg.n_samples)
+            with self.subTest(name=cg.metadata.component):
+                self.assertEqual(MTime("2020-01-01T12:00:00"), cg.start)
+                self.assertEqual(1, cg.sample_rate)
+                self.assertEqual(4096, cg.n_samples)
 
         # check the summary table
 
