@@ -35,7 +35,7 @@ class TestFAPMTH5(unittest.TestCase):
         # if self.fn.exists():
         #     self.fn.unlink()
 
-        self.m = mth5.MTH5()
+        self.m = mth5.MTH5(file_version="0.1.0")
         self.m.open_mth5(self.fn, mode="a")
         self.m.from_experiment(self.experiment, 0)
 

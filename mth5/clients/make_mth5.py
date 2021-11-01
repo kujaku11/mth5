@@ -26,11 +26,12 @@ from mth5.timeseries import RunTS
 
 class MakeMTH5:
     
-    def __init__(self):
+    def __init__(self, client="IRIS", mth5_version="0.2.0"):
         self.column_names = [
             "network", "station", "location", "channel", "start", "end"
             ]
-        self.client = "IRIS"
+        self.client = client
+        self.mth5_version = mth5_version
         
     def _validate_dataframe(self, df):
         if not isinstance(df, pd.DataFrame):
@@ -101,7 +102,7 @@ class MakeMTH5:
         file_name = path.joinpath(f"{''.join(net_list)}_{'_'.join(sta_list)}.h5")
 
         # initiate MTH5 file
-        m = MTH5()
+        m = MTH5(file_version=self.mth5_version)
         m.open_mth5(file_name, "w")
 
         # read in inventory and streams

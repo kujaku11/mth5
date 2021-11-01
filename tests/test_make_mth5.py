@@ -123,7 +123,7 @@ class TestMakeMTH5(unittest.TestCase):
         self.stations = ["CAS04", "NVR08"]
         self.channels = ["LQE", "LQN", "LFE", "LFN", "LFZ"]
 
-        self.make_mth5 = MakeMTH5()
+        self.make_mth5 = MakeMTH5(mth5_version="0.1.0")
         self.make_mth5.client = "IRIS"
         # Turn list into dataframe
         self.metadata_df = pd.DataFrame(

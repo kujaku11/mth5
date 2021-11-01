@@ -30,7 +30,7 @@ class TestFilters(unittest.TestCase):
 
     def setUp(self):
         self.fn = fn_path.joinpath("filter_test.h5")
-        self.m_obj = mth5.MTH5()
+        self.m_obj = mth5.MTH5(file_version='0.1.0')
         self.m_obj.open_mth5(self.fn, "w")
         self.filter_group = self.m_obj.filters_group
 

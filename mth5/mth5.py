@@ -798,8 +798,11 @@ class MTH5:
         """
 
         if self.h5_is_read():
-            experiment = Experiment()
-            experiment.surveys.append(self.survey_group.metadata)
+            if self.file_version in ["0.1.0"]:
+                experiment = Experiment()
+                experiment.surveys.append(self.survey_group.metadata)
+            elif self.file_version in ["0.2.0"]:
+                experiment = self.experiment_group.metadata
             return experiment
 
     def from_experiment(self, experiment, survey_index=0):
