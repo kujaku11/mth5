@@ -61,14 +61,31 @@ class MTH5:
 
     MTH5 is built with h5py and therefore numpy.  The structure follows the
     different levels of MT data collection:
-    Survey
-       |_Reports
-       |_Standards
-       |_Filters
-       |_Station
-           |_Run
-               |_Channel
-
+    
+    For version 0.1.0:
+    
+        Survey
+           |-Reports
+           |-Standards
+           |-Filters
+           |-Stations
+               |-Run
+                   |-Channel
+                   
+    For version 0.2.0:
+        
+        Experiment
+            |-Reports
+            |-Standards
+            |-Surveys
+               |-Reports
+               |-Standards
+               |-Filters
+               |-Stations
+                   |-Run
+                       |-Channel
+               
+               
     All timeseries data are stored as individual channels with the appropriate
     metadata defined for the given channel, i.e. electric, magnetic, auxiliary.
 
@@ -120,14 +137,15 @@ class MTH5:
          * 1 - Raw data with response information and full metadata
          * 2 - Derived product, raw data has been manipulated
     :type data_level: integer, defaults to 1
-
+    :param file_version: Version of the file [ '0.1.0' | '0.2.0' ], defaults to "0.2.0"
+    :type file_version: string, optional
 
     :Usage:
 
     * Open a new file and show initialized file
 
     >>> from mth5 import mth5
-    >>> mth5_obj = mth5.MTH5()
+    >>> mth5_obj = mth5.MTH5(file_version='0.1.0')
     >>> # Have a look at the dataset options
     >>> mth5.dataset_options
     {'compression': 'gzip',
@@ -230,6 +248,28 @@ class MTH5:
         data_level=1,
         file_version="0.2.0",
     ):
+        """
+        
+        :param filename: DESCRIPTION, defaults to None
+        :type filename: TYPE, optional
+        :param compression: DESCRIPTION, defaults to "gzip"
+        :type compression: TYPE, optional
+        :param compression_opts: DESCRIPTION, defaults to 9
+        :type compression_opts: TYPE, optional
+        :param shuffle: DESCRIPTION, defaults to True
+        :type shuffle: TYPE, optional
+        :param fletcher32: DESCRIPTION, defaults to True
+        :type fletcher32: TYPE, optional
+        :param data_level: DESCRIPTION, defaults to 1
+        :type data_level: TYPE, optional
+        :param file_version: DESCRIPTION, defaults to "0.2.0"
+        :type file_version: TYPE, optional
+        :param : DESCRIPTION
+        :type : TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
 
         self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
 
@@ -424,7 +464,7 @@ class MTH5:
                 "Standards",
             ]
             
-            self._root_path = ""
+            self._root_path = "/Survey"
             
         elif self.file_version in ["0.2.0"]:
             self._default_root_name = "Experiment"
@@ -456,7 +496,7 @@ class MTH5:
         if self.file_version in ["0.1.0"]:
             if self.h5_is_read():
                 return groups.SurveyGroup(
-                    self.__hdf5_obj["{self._root_path}/Survey"], **self.dataset_options
+                    self.__hdf5_obj[f"{self._root_path}"], **self.dataset_options
                 )
             self.logger.info("File is closed cannot access /Survey")
             return None
@@ -483,7 +523,7 @@ class MTH5:
         """Convenience property for /Survey/Reports group"""
         if self.h5_is_read():
             return groups.ReportsGroup(
-                self.__hdf5_obj[f"/{self._root_path}/Reports"], **self.dataset_options
+                self.__hdf5_obj[f"{self._root_path}/Reports"], **self.dataset_options
             )
         self.logger.info("File is closed cannot access /Reports")
         return None
@@ -493,7 +533,7 @@ class MTH5:
         """Convenience property for /Survey/Filters group"""
         if self.h5_is_read():
             return groups.FiltersGroup(
-                self.__hdf5_obj["/Survey/Filters"], **self.dataset_options
+                self.__hdf5_obj[f"{self._root_path}/Filters"], **self.dataset_options
             )
         self.logger.info("File is closed cannot access /Filters")
         return None
@@ -512,14 +552,14 @@ class MTH5:
     def stations_group(self):
         """Convenience property for /Survey/Stations group"""
         if self.h5_is_read():
-            if self.file_version in ["0.1.0"]:
+            if self.file_version not in ["0.1.0"]:
                 self.logger.info(
                     f"File version {self.file_version} does not have a Stations. "
                     "try surveys_group.")
                 return None
             
             return groups.MasterStationGroup(
-                self.__hdf5_obj["/Survey/Stations"], **self.dataset_options
+                self.__hdf5_obj[f"{self._root_path}/Stations"], **self.dataset_options
             )
         self.logger.info("File is closed cannot access /Stations")
         return None
@@ -604,15 +644,14 @@ class MTH5:
         :rtype: groups.SurveyGroup
 
         """
-
+        # open an hdf5 file
         self.__hdf5_obj = h5py.File(self.__filename, mode)
 
         # write general metadata
         self.__hdf5_obj.attrs.update(self.file_attributes)
 
+        # create the default group
         self.__hdf5_obj.create_group(self._default_root_name)
-        
-        # if self.file_version in ["0.1.0"]:
     
         for group_name in self._default_subgroup_names:
             self.__hdf5_obj.create_group(f"{self._default_root_name}/{group_name}")
@@ -920,6 +959,8 @@ class MTH5:
         :type station_name: string
         :param station_metadata: Station metadata container, defaults to None
         :type station_metadata: :class:`mth5.metadata.Station`, optional
+        :param survey: existing survey name, needed for file version > 0.2.0
+        :type survey: string
         :return: A convenience class for the added station
         :rtype: :class:`mth5_groups.StationGroup`
 
@@ -948,6 +989,8 @@ class MTH5:
 
         :param station_name: existing station name
         :type station_name: string
+        :param survey: existing survey name, needed for file version > 0.2.0
+        :type survey: string
         :return: convenience station class
         :rtype: :class:`mth5.mth5_groups.StationGroup`
         :raises MTH5Error:  if the station name is not found.
@@ -983,6 +1026,8 @@ class MTH5:
 
         :param station_name: existing station name
         :type station_name: string
+        :param survey: existing survey name, needed for file version > 0.2.0
+        :type survey: string
 
         :Example:
 
@@ -1010,6 +1055,8 @@ class MTH5:
 
         :param run_name: run name, should be archive_id{a-z}
         :type run_name: string
+        :param survey: existing survey name, needed for file version > 0.2.0
+        :type survey: string
         :param metadata: metadata container, defaults to None
         :type metadata: :class:`mth5.metadata.Station`, optional
 
@@ -1040,6 +1087,8 @@ class MTH5:
         :type station_name: string
         :param run_name: existing run name
         :type run_name: string
+        :param survey: existing survey name, needed for file version > 0.2.0
+        :type survey: string
         :return: Run object
         :rtype: :class:`mth5.mth5_groups.RunGroup`
 
@@ -1078,6 +1127,8 @@ class MTH5:
         :type station_name: string
         :param run_name: existing run name
         :type run_name: string
+        :param survey: existing survey name, needed for file version > 0.2.0
+        :type survey: string
 
         :Example:
 
@@ -1117,6 +1168,8 @@ class MTH5:
         :type channel_metadata: [ :class:`mth5.metadata.Electric` |
                                  :class:`mth5.metadata.Magnetic` |
                                  :class:`mth5.metadata.Auxiliary` ], optional
+        :param survey: existing survey name, needed for file version > 0.2.0
+        :type survey: string
         :return: Channel container
         :rtype: [ :class:`mth5.mth5_groups.ElectricDatset` |
                  :class:`mth5.mth5_groups.MagneticDatset` |
@@ -1169,6 +1222,8 @@ class MTH5:
         :rtype: [ :class:`mth5.mth5_groups.ElectricDatset` |
                   :class:`mth5.mth5_groups.MagneticDatset` |
                   :class:`mth5.mth5_groups.AuxiliaryDatset` ]
+        :param survey: existing survey name, needed for file version > 0.2.0
+        :type survey: string
         :raises MTH5Error:  If no channel is found
 
         :Example:
@@ -1214,6 +1269,8 @@ class MTH5:
         :type run_name: string
         :param channel_name: existing station name
         :type channel_name: string
+        :param survey: existing survey name, needed for file version > 0.2.0
+        :type survey: string
 
         :Example:
 
