@@ -13,6 +13,10 @@ Created on Wed Dec 23 16:59:45 2020
 # =============================================================================
 # Imports
 # =============================================================================
+import numpy as np
+import pandas as pd
+import h5py
+
 from mth5.groups import (
     BaseGroup,
     MasterStationGroup,
@@ -138,16 +142,63 @@ class MasterSurveyGroup(BaseGroup):
         """
         Summary of all channels in the file.
         """
-
-        for ii, survey in enumerate(self.groups_list):
+        ch_list = []
+        for survey in self.groups_list:
             survey_group = self.get_survey(survey)
-            if ii == 0:
-                channel_summary = survey_group.channel_summary
+            for station in survey_group.stations_group.groups_list:
+                station_group = survey_group.stations_group.get_station(station)
+                for run in station_group.groups_list:
+                    run_group = station_group.get_run(run)
+                    for ch in run_group.groups_list:
+                        ch_dataset = run_group.get_channel(ch)
+                        ch_list.append(ch_dataset.channel_entry)
+                        entry = np.array(
+                            [
+                                (
+                                    survey_group.metadata.id,
+                                    station_group.metadata.id,
+                                    run_group.metadata.id,
+                                    station_group.metadata.location.latitude,
+                                    station_group.metadata.location.longitude,
+                                    station_group.metadata.location.elevation,
+                                    ch_dataset.metadata.component,
+                                    ch_dataset.metadata.time_period.start,
+                                    ch_dataset.metadata.time_period.end,
+                                    ch_dataset.hdf5_dataset.size,
+                                    ch_dataset.metadata.sample_rate,
+                                    ch_dataset.metadata.type,
+                                    ch_dataset.metadata.measurement_azimuth,
+                                    ch_dataset.metadata.measurement_tilt,
+                                    ch_dataset.metadata.units,
+                                    ch_dataset.hdf5_dataset.ref,
+                                )
+                            ],
+                            dtype=np.dtype(
+                                [
+                                    ("survey", "U10"),
+                                    ("station", "U10"),
+                                    ("run", "U11"),
+                                    ("latitude", float),
+                                    ("longitude", float),
+                                    ("elevation", float),
+                                    ("component", "U20"),
+                                    ("start", "datetime64[ns]"),
+                                    ("end", "datetime64[ns]"),
+                                    ("n_samples", int),
+                                    ("sample_rate", float),
+                                    ("measurement_type", "U12"),
+                                    ("azimuth", float),
+                                    ("tilt", float),
+                                    ("units", "U25"),
+                                    ("hdf5_reference", h5py.ref_dtype),
+                                ]
+                            ),
+                        )
+                        ch_list.append(entry)
+                        
+        ch_list = np.array(ch_list)
+        return pd.DataFrame(ch_list.flatten())
 
-            else:
-                channel_summary = channel_summary.append(survey_group.channel_summary)
-
-        return channel_summary
 
     def add_survey(self, survey_name, survey_metadata=None):
         """

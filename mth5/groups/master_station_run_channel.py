@@ -1541,7 +1541,6 @@ class ChannelDataset:
 
         self.logger = setup_logger(f"{__name__}.{self._class_name}")
 
-        self._chunk_size = 2 ** 13
         # set metadata to the appropriate class.  Standards is not a
         # Base object so should be skipped. If the class name is not
         # defined yet set to Base class.
@@ -1757,17 +1756,6 @@ class ChannelDataset:
         if new_data_array.shape != self.hdf5_dataset.shape:
             self.hdf5_dataset.resize(new_data_array.shape)
 
-        # # need to do some sort of chunking here when the data is large this
-        # # can be very inefficient
-        # if new_data_array.size > self._chunk_size:
-        #     chunks = np.arange(0, new_data_array.size, self._chunk_size)
-        #     remainder = new_data_array.size - chunks[-1]
-        #     for ii, index in enumerate(chunks[:-1]):
-        #         self.hdf5_dataset[index : chunks[ii + 1]] = new_data_array[
-        #             index : chunks[ii + 1]
-        #         ]
-        #     self.hdf5_dataset[-remainder:] = new_data_array[-remainder:]
-        # else:
         self.hdf5_dataset[...] = new_data_array
 
     def extend_dataset(

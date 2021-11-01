@@ -849,6 +849,16 @@ class MTH5:
 
                     for k, v in survey.filters.items():
                         sg.filters_group.add_filter(v)
+                        
+    @property
+    def channel_summary(self):
+        """ return a dataframe of channels """
+        
+        if self.file_version in ["0.1.0"]:
+            return self.stations_group.channel_summary
+        
+        elif self.file_version in ["0.2.0"]:
+            return self.surveys_group.channel_summary
 
     def add_survey(self, survey_name, survey_metadata=None):
         """
