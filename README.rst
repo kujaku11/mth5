@@ -15,6 +15,9 @@ MTH5
 
 .. image:: https://codecov.io/gh/kujaku11/mth5/branch/master/graph/badge.svg?token=XU5QSRM1ZO
         :target: https://codecov.io/gh/kujaku11/mth5
+		
+.. image:: https://zenodo.org/badge/283883448.svg
+   :target: https://zenodo.org/badge/latestdoi/283883448
 
 
 The goal of MTH5 is to develop an archivable and exchangeable format for magnetotelluric time series data.  MTH5 provides tools to read/write MTH5 files and tools to interact with MTH5 files.  All metadata is based on the `mt_metadata <https://github.com/kujaku11/mt_metadata>`_   
