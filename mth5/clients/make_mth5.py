@@ -100,11 +100,13 @@ class MakeMTH5:
 
         df = self._validate_dataframe(df)
 
-        net_list, sta_list, loc_list, chan_list = self.unique_df_combo(df)
-        if len(net_list) != 1:
-            raise AttributeError("MTH5 supports one survey/network per container.")
+        unique_list = self.get_unique_networks_and_stations(df)
+        if self.mth5_version in ["0.1.0"]:
+            if len(unique_list) != 1:
+                raise AttributeError("MTH5 supports one survey/network per container.")
 
-        file_name = path.joinpath(f"{''.join(net_list)}_{'_'.join(sta_list)}.h5")
+        
+        file_name = path.joinpath(self.make_filename(df))
 
         # initiate MTH5 file
         m = MTH5(file_version=self.mth5_version)
@@ -119,9 +121,9 @@ class MakeMTH5:
 
         # TODO: Add survey level when structure allows.
         if self.mth5_version in ["0.1.0"]:
-            for msta_id in sta_list:
+            for station_id in unique_list[0]["stations"]:
                 # get the streams for the given station
-                msstreams = streams.select(station=msta_id)
+                msstreams = streams.select(station=station_id)
                 trace_start_times = sorted(
                     list(set([tr.stats.starttime.isoformat() for tr in msstreams]))
                 )
@@ -133,7 +135,7 @@ class MakeMTH5:
                         f"Do not have the same number of start {len(trace_start_times)}"
                         f" and end times {len(trace_end_times)} from streams"
                     )
-                run_list = m.get_station(msta_id).groups_list
+                run_list = m.get_station(station_id).groups_list
                 n_times = len(trace_start_times)
 
                 # adding logic if there are already runs filled in
@@ -143,7 +145,7 @@ class MakeMTH5:
                     ):
                         # add the group first this will get the already filled in
                         # metadata to update the run_ts_obj.
-                        run_group = m.stations_group.get_station(msta_id).add_run(
+                        run_group = m.stations_group.get_station(station_id).add_run(
                             run_id
                         )
                         # then get the streams an add existing metadata
@@ -160,7 +162,7 @@ class MakeMTH5:
                         for run_id, times in enumerate(
                             zip(trace_start_times, trace_end_times), 1
                         ):
-                            run_group = m.stations_group.get_station(msta_id).add_run(
+                            run_group = m.stations_group.get_station(station_id).add_run(
                                 f"{run_id:03}"
                             )
                             run_stream = msstreams.slice(
@@ -171,7 +173,7 @@ class MakeMTH5:
                             run_group.from_runts(run_ts_obj)
 
                     elif n_times == 1:
-                        run_group = m.stations_group.get_station(msta_id).add_run(
+                        run_group = m.stations_group.get_station(station_id).add_run(
                             run_list[0]
                         )
                         run_stream = msstreams.slice(
@@ -185,11 +187,12 @@ class MakeMTH5:
 
         # Version 0.2.0 has the ability to store multiple surveys
         elif self.mth5_version in ["0.2.0"]:
-            for survey_id in net_list:
+            for survey_dict in unique_list:
+                survey_id = survey_dict["network"]
                 survey_group = m.get_survey(survey_id)
-                for msta_id in sta_list:
+                for station_id in survey_dict["stations"]:
                     # get the streams for the given station
-                    msstreams = streams.select(station=msta_id)
+                    msstreams = streams.select(station=station_id)
                     trace_start_times = sorted(
                         list(set([tr.stats.starttime.isoformat() for tr in msstreams]))
                     )
@@ -201,7 +204,7 @@ class MakeMTH5:
                             f"Do not have the same number of start {len(trace_start_times)}"
                             f" and end times {len(trace_end_times)} from streams"
                         )
-                    run_list = m.get_station(msta_id, survey_id).groups_list
+                    run_list = m.get_station(station_id, survey_id).groups_list
                     n_times = len(trace_start_times)
 
                     # adding logic if there are already runs filled in
@@ -212,7 +215,7 @@ class MakeMTH5:
                             # add the group first this will get the already filled in
                             # metadata to update the run_ts_obj.
                             run_group = survey_group.stations_group.get_station(
-                                msta_id
+                                station_id
                             ).add_run(run_id)
                             # then get the streams an add existing metadata
                             run_stream = msstreams.slice(
@@ -229,7 +232,7 @@ class MakeMTH5:
                                 zip(trace_start_times, trace_end_times), 1
                             ):
                                 run_group = survey_group.stations_group.get_station(
-                                    msta_id
+                                    station_id
                                 ).add_run(f"{run_id:03}")
                                 run_stream = msstreams.slice(
                                     UTCDateTime(times[0]), UTCDateTime(times[1])
@@ -242,7 +245,7 @@ class MakeMTH5:
 
                         elif n_times == 1:
                             run_group = survey_group.stations_group.get_station(
-                                msta_id
+                                station_id
                             ).add_run(run_list[0])
                             run_stream = msstreams.slice(
                                 UTCDateTime(times[0]), UTCDateTime(times[1])
@@ -425,24 +428,43 @@ class MakeMTH5:
 
         return pd.DataFrame(rows, columns=self.column_names)
 
-    def unique_df_combo(self, df):
+    def get_unique_networks_and_stations(self, df):
         """
         Get unique lists of networks, stations, locations, and channels from
         a given data frame.
+        
+        [{'network': FDSN code, "stations": [list of stations for network]}]
 
-        :param df: DESCRIPTION
-        :type df: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :param df: request data frame
+        :type df: :class:`pandas.DataFrame`
+        :return: list of network dictionaries with 
+        [{'network': FDSN code, "stations": [list of stations for network]}]
+        :rtype: list
 
         """
-
+        unique_list = []
         net_list = df["network"].unique()
-        sta_list = df["station"].unique()
-        loc_list = df["location"].unique()
-        chan_list = df["channel"].unique()
+        for network in net_list:
+            network_dict = {"network": network, 
+                            "stations": df[df.network==network].station.unique().tolist()}
+            unique_list.append(network_dict)
 
-        return net_list, sta_list, loc_list, chan_list
+        return unique_list
+    
+    def make_filename(self, df):
+        """
+        Make a filename from a data frame that is networks and stations
+        
+        :param df: request data frame
+        :type df: :class:`pandas.DataFrame`
+        :return: file name as network_01+stations_network_02+stations.h5
+        :rtype: string
+
+        """
+        
+        unique_list = self.get_unique_networks_and_stations(df)
+        
+        return "_".join([f"{d['network']}_{'_'.join(d['stations'])}" for d in unique_list]) + ".h5"
 
     def get_fdsn_channel_map(self):
         FDSN_CHANNEL_MAP = {}

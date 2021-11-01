@@ -830,14 +830,12 @@ class MTH5:
 
             elif self.file_version in ["0.2.0"]:
 
-                for survey_name in experiment.survey_names:
-                    sg = self.add_survey(
-                        survey_name, survey_metadata=experiment.surveys[survey_index]
-                    )
+                for survey in experiment.surveys:
+                    sg = self.add_survey(survey.id, survey_metadata=survey)
 
-                    for station in experiment.surveys[0].stations:
+                    for station in survey.stations:
                         mt_station = self.add_station(
-                            station.id, station_metadata=station, survey=survey_name
+                            station.id, station_metadata=station, survey=survey.id
                         )
                         for run in station.runs:
                             mt_run = mt_station.add_run(run.id, run_metadata=run)
@@ -849,7 +847,7 @@ class MTH5:
                                     channel_metadata=channel,
                                 )
 
-                    for k, v in experiment.surveys[0].filters.items():
+                    for k, v in survey.filters.items():
                         sg.filters_group.add_filter(v)
 
     def add_survey(self, survey_name, survey_metadata=None):

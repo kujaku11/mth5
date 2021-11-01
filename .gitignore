@@ -6,6 +6,7 @@ __pycache__/
 *.log
 *.log.*
 *.mth5
+*.h5
 /logs
 
 # C extensions
