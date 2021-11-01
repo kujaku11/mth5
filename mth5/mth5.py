@@ -248,28 +248,6 @@ class MTH5:
         data_level=1,
         file_version="0.2.0",
     ):
-        """
-
-        :param filename: DESCRIPTION, defaults to None
-        :type filename: TYPE, optional
-        :param compression: DESCRIPTION, defaults to "gzip"
-        :type compression: TYPE, optional
-        :param compression_opts: DESCRIPTION, defaults to 9
-        :type compression_opts: TYPE, optional
-        :param shuffle: DESCRIPTION, defaults to True
-        :type shuffle: TYPE, optional
-        :param fletcher32: DESCRIPTION, defaults to True
-        :type fletcher32: TYPE, optional
-        :param data_level: DESCRIPTION, defaults to 1
-        :type data_level: TYPE, optional
-        :param file_version: DESCRIPTION, defaults to "0.2.0"
-        :type file_version: TYPE, optional
-        :param : DESCRIPTION
-        :type : TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
 
         self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
 
@@ -594,8 +572,14 @@ class MTH5:
         :Example:
 
         >>> from mth5 import mth5
+        >>> mth5_object = mth5.MTH5(file_version='0.1.0')
+        >>> survey_object = mth5_object.open_mth5('Test.mth5', 'w')
+        
+        >>> from mth5 import mth5
         >>> mth5_object = mth5.MTH5()
         >>> survey_object = mth5_object.open_mth5('Test.mth5', 'w')
+        >>> mth5_object.file_version
+        '0.2.0'
 
 
         """
@@ -871,18 +855,18 @@ class MTH5:
     def add_survey(self, survey_name, survey_metadata=None):
         """
         Add a survey with metadata if given with the path:
-            ``/Survey/surveys/survey_name``
+            ``/Experiment/Surveys/survey_name``
 
-        If the survey already exists, will return that station and nothing
+        If the survey already exists, will return that survey and nothing
         is added.
 
-        :param station_name: Name of the station, should be the same as
+        :param survey_name: Name of the survey, should be the same as
                              metadata.id
-        :type station_name: string
-        :param station_metadata: Station metadata container, defaults to None
-        :type station_metadata: :class:`mth5.metadata.Station`, optional
-        :return: A convenience class for the added station
-        :rtype: :class:`mth5_groups.StationGroup`
+        :type survey_name: string
+        :param survey_metadata: survey metadata container, defaults to None
+        :type survey_metadata: :class:`mth5.metadata.survey`, optional
+        :return: A convenience class for the added survey
+        :rtype: :class:`mth5_groups.SurveyGroup`
 
         :Example: ::
 
@@ -890,13 +874,9 @@ class MTH5:
             >>> mth5_obj = mth5.MTH5()
             >>> mth5_obj.open_mth5(r"/test.mth5", mode='a')
             >>> # one option
-            >>> stations = mth5_obj.stations_group
-            >>> new_station = stations.add_station('MT001')
+            >>> new_survey = mth5_obj.add_survey('MT001')
             >>> # another option
-            >>> new_staiton = mth5_obj.stations_group.add_station('MT001')
-
-        .. todo:: allow dictionaries, json string, xml elements as metadata
-                  input.
+            >>> new_station = mth5_obj.experiment_group.surveys_group.add_survey('MT001')
 
         """
         return self.surveys_group.add_survey(
@@ -919,11 +899,10 @@ class MTH5:
         >>> mth5_obj = mth5.MTH5()
         >>> mth5_obj.open_mth5(r"/test.mth5", mode='a')
         >>> # one option
-        >>> surveys = mth5_obj.surveys_group
-        >>> existing_survey = surveys.get_survey('MT001')
+        >>> existing_survey = mth5_obj.get_survey('MT001')
         >>> # another option
-        >>> existing_staiton = mth5_obj.surveys_group.get_survey('MT001')
-        MTH5Error: MT001 does not exist, check survey_list for existing names
+        >>> existing_staiton = mth5_obj.experiment_group.surveys_group.get_survey('MT001')
+        MTH5Error: MT001 does not exist, check groups_list for existing names
 
         """
 
@@ -958,10 +937,9 @@ class MTH5:
             >>> mth5_obj = mth5.MTH5()
             >>> mth5_obj.open_mth5(r"/test.mth5", mode='a')
             >>> # one option
-            >>> surveys = mth5_obj.surveys_group
-            >>> surveys.remove_survey('MT001')
+            >>> mth5_obj.remove_survey('MT001')
             >>> # another option
-            >>> mth5_obj.surveys_group.remove_survey('MT001')
+            >>> mth5_obj.experiment_group.surveys_group.remove_survey('MT001')
 
         """
 
@@ -987,8 +965,11 @@ class MTH5:
         ``mth5.stations_group.add_station``
 
 
-        Add a station with metadata if given with the path:
+        Add a station with metadata if given with the path [v0.1.0]:
             ``/Survey/Stations/station_name``
+            
+        Add a station with metadata if given with the path [v0.2.0]:
+            ``Experiment/Surveys/survey/Stations/station_name``
 
         If the station already exists, will return that station and nothing
         is added.
@@ -998,7 +979,7 @@ class MTH5:
         :type station_name: string
         :param station_metadata: Station metadata container, defaults to None
         :type station_metadata: :class:`mth5.metadata.Station`, optional
-        :param survey: existing survey name, needed for file version > 0.2.0
+        :param survey: existing survey name, needed for file version >= 0.2.0
         :type survey: string
         :return: A convenience class for the added station
         :rtype: :class:`mth5_groups.StationGroup`
@@ -1025,13 +1006,12 @@ class MTH5:
     def get_station(self, station_name, survey=None):
         """
         Convenience function to get a station using
-        ``mth5.stations_group.get_station``
 
         Get a station with the same name as station_name
 
         :param station_name: existing station name
         :type station_name: string
-        :param survey: existing survey name, needed for file version > 0.2.0
+        :param survey: existing survey name, needed for file version >= 0.2.0
         :type survey: string
         :return: convenience station class
         :rtype: :class:`mth5.mth5_groups.StationGroup`
@@ -1057,7 +1037,6 @@ class MTH5:
     def remove_station(self, station_name, survey=None):
         """
         Convenience function to remove a station using
-        ``mth5.stations_group.remove_station``
 
         Remove a station from the file.
 
@@ -1068,7 +1047,7 @@ class MTH5:
 
         :param station_name: existing station name
         :type station_name: string
-        :param survey: existing survey name, needed for file version > 0.2.0
+        :param survey: existing survey name, needed for file version >= 0.2.0
         :type survey: string
 
         :Example:
@@ -1091,13 +1070,12 @@ class MTH5:
     def add_run(self, station_name, run_name, run_metadata=None, survey=None):
         """
         Convenience function to add a run using
-        ``mth5.stations_group.get_station(station_name).add_run()``
 
         Add a run to a given station.
 
         :param run_name: run name, should be archive_id{a-z}
         :type run_name: string
-        :param survey: existing survey name, needed for file version > 0.2.0
+        :param survey: existing survey name, needed for file version >= 0.2.0
         :type survey: string
         :param metadata: metadata container, defaults to None
         :type metadata: :class:`mth5.metadata.Station`, optional
@@ -1129,7 +1107,7 @@ class MTH5:
         :type station_name: string
         :param run_name: existing run name
         :type run_name: string
-        :param survey: existing survey name, needed for file version > 0.2.0
+        :param survey: existing survey name, needed for file version >= 0.2.0
         :type survey: string
         :return: Run object
         :rtype: :class:`mth5.mth5_groups.RunGroup`
@@ -1157,9 +1135,6 @@ class MTH5:
 
     def remove_run(self, station_name, run_name, survey=None):
         """
-        Convenience function to add a run using
-        ``mth5.stations_group.get_station(station_name).remove_run()``
-
         Remove a run from the station.
 
         .. note:: Deleting a run is not as simple as del(run).  In HDF5
@@ -1171,7 +1146,7 @@ class MTH5:
         :type station_name: string
         :param run_name: existing run name
         :type run_name: string
-        :param survey: existing survey name, needed for file version > 0.2.0
+        :param survey: existing survey name, needed for file version >= 0.2.0
         :type survey: string
 
         :Example:
@@ -1212,7 +1187,7 @@ class MTH5:
         :type channel_metadata: [ :class:`mth5.metadata.Electric` |
                                  :class:`mth5.metadata.Magnetic` |
                                  :class:`mth5.metadata.Auxiliary` ], optional
-        :param survey: existing survey name, needed for file version > 0.2.0
+        :param survey: existing survey name, needed for file version >= 0.2.0
         :type survey: string
         :return: Channel container
         :rtype: [ :class:`mth5.mth5_groups.ElectricDatset` |
@@ -1263,7 +1238,7 @@ class MTH5:
         :rtype: [ :class:`mth5.mth5_groups.ElectricDatset` |
                   :class:`mth5.mth5_groups.MagneticDatset` |
                   :class:`mth5.mth5_groups.AuxiliaryDatset` ]
-        :param survey: existing survey name, needed for file version > 0.2.0
+        :param survey: existing survey name, needed for file version >= 0.2.0
         :type survey: string
         :raises MTH5Error:  If no channel is found
 
@@ -1310,7 +1285,7 @@ class MTH5:
         :type run_name: string
         :param channel_name: existing station name
         :type channel_name: string
-        :param survey: existing survey name, needed for file version > 0.2.0
+        :param survey: existing survey name, needed for file version >= 0.2.0
         :type survey: string
 
         :Example:

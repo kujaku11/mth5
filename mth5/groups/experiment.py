@@ -16,34 +16,34 @@ Created on Wed Dec 23 16:59:45 2020
 from mth5.groups import BaseGroup, MasterSurveyGroup
 
 # =============================================================================
-# Survey Group
+# Experiment Group
 # =============================================================================
 
 
 class ExperimentGroup(BaseGroup):
     """
-    Utility class to holds general information about the survey and
-    accompanying metadata for an MT survey.
+    Utility class to hold general information about the experiment and
+    accompanying metadata for an MT experiment.
 
-    To access the hdf5 group directly use `SurveyGroup.hdf5_group`.
+    To access the hdf5 group directly use `ExperimentGroup.hdf5_group`.
 
-    >>> survey = SurveyGroup(hdf5_group)
-    >>> survey.hdf5_group.ref
+    >>> experiment = ExperimentGroup(hdf5_group)
+    >>> experiment.hdf5_group.ref
     <HDF5 Group Reference>
 
     .. note:: All attributes should be input into the metadata object, that
              way all input will be validated against the metadata standards.
              If you change attributes in metadata object, you should run the
-             `SurveyGroup.write_metadata()` method.  This is a temporary
+             `ExperimentGroup.write_metadata()` method.  This is a temporary
              solution, working on an automatic updater if metadata is changed.
 
-    >>> survey.metadata.existing_attribute = 'update_existing_attribute'
-    >>> survey.write_metadata()
+    >>> experiment.metadata.existing_attribute = 'update_existing_attribute'
+    >>> experiment.write_metadata()
 
     If you want to add a new attribute this should be done using the
     `metadata.add_base_attribute` method.
 
-    >>> survey.metadata.add_base_attribute('new_attribute',
+    >>> experiment.metadata.add_base_attribute('new_attribute',
     >>> ...                                'new_attribute_value',
     >>> ...                                {'type':str,
     >>> ...                                 'required':True,
@@ -54,31 +54,23 @@ class ExperimentGroup(BaseGroup):
     >>> ...                                 'alias':[],
     >>> ...                                 'example':'new attribute
 
-    .. tip:: If you want ot add stations, reports, etc to the survey this
+    .. tip:: If you want ot add stations, reports, etc to the experiment this
               should be done from the MTH5 object.  This is to avoid
               duplication, at least for now.
 
-    To look at what the structure of ``/Survey`` looks like:
+    To look at what the structure of ``/Experiment`` looks like:
 
-        >>> survey
-        /Survey:
+        >>> experiment
+        /Experiment:
         ====================
-            |- Group: Filters
-            -----------------
-                --> Dataset: summary
+            |- Group: Surveys
             -----------------
             |- Group: Reports
             -----------------
-                --> Dataset: summary
-                -----------------
             |- Group: Standards
             -------------------
-                --> Dataset: summary
-                -----------------
             |- Group: Stations
             ------------------
-                --> Dataset: summary
-                -----------------
 
     """
 
