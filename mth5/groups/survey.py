@@ -151,7 +151,6 @@ class MasterSurveyGroup(BaseGroup):
                     run_group = station_group.get_run(run)
                     for ch in run_group.groups_list:
                         ch_dataset = run_group.get_channel(ch)
-                        ch_list.append(ch_dataset.channel_entry)
                         entry = np.array(
                             [
                                 (
