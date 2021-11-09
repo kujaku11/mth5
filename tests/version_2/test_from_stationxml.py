@@ -130,7 +130,7 @@ class TestFromStationXML01(unittest.TestCase):
             "dipole_length": 92.0,
             "measurement_azimuth": 103.2,
             "type": "electric",
-            "units": "millivolts per kilometer",
+            "units": "digital counts",
             "time_period.end": "2020-07-13T21:46:12+00:00",
             "time_period.start": "2020-06-02T18:41:43+00:00",
         }
@@ -145,7 +145,7 @@ class TestFromStationXML01(unittest.TestCase):
             "component": "hy",
             "measurement_azimuth": 103.2,
             "type": "magnetic",
-            "units": "nanotesla",
+            "units": "digital counts",
             "sensor.manufacturer": "Barry Narod",
             "sensor.model": "fluxgate NIMS",
             "sensor.type": "Magnetometer",
