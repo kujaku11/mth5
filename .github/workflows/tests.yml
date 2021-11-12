@@ -22,17 +22,15 @@ jobs:
     - name: Setup Conda
       uses: s-weigand/setup-conda@v1
       with:
-        update-conda: true
-        conda-channels: conda-forge
+        update-conda: false
         python-version: ${{ matrix.python-version }}
 
     - name: Install Env
       shell: bash
       run: |
         python --version
-        conda create -n mth5-test
+        conda create -n mth5-test python=${{ matrix.python-version }}
         source activate mth5-test
-        conda config --add channels conda-forge
         conda install pytest
         conda install pytest-cov
         pip install git+https://github.com/kujaku11/mt_metadata.git
