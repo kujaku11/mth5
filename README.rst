@@ -23,6 +23,7 @@ MTH5
 The goal of MTH5 is to develop an archivable and exchangeable format for magnetotelluric time series data.  MTH5 provides tools to read/write MTH5 files and tools to interact with MTH5 files.  All metadata is based on the `mt_metadata <https://github.com/kujaku11/mt_metadata>`_   
 
 
+* Version: 0.2.1
 * Free software: MIT license
 * Documentation: https://mth5.readthedocs.io.
 
