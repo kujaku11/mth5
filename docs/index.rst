@@ -5,6 +5,10 @@ Welcome to MTH5's documentation!
 
 \
 
+MTH5 provides tools for reading/writing/manipulating an MTH5 file, which is a data container for magnetotelluric time series data.  MTH5 is based on HDF5 through `h5py <https://www.h5py.org/>`_  and all metadata are from `mt_metadata <https://github.com/kujaku11/mt_metadata>`_ 
+
+\
+
 .. toctree::
     :maxdepth: 2
     :caption: Contents:
