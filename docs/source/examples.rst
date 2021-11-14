@@ -2,10 +2,10 @@ Examples
 ---------------------------------------
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
     :caption: Contents:
 
     example_make_mth5_iris
     example_interact_with_mth5
-	../../examples/notebooks
+    notebooks/make_mth5_driver_v0.2.0.ipynb
 
