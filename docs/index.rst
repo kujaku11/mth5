@@ -10,7 +10,7 @@ MTH5 provides tools for reading/writing/manipulating an MTH5 file, which is a da
 \
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 0
     :caption: Contents:
 
     readme
@@ -28,14 +28,14 @@ MTH5 provides tools for reading/writing/manipulating an MTH5 file, which is a da
     source/examples
 	
 .. toctree::
-	:maxdepth: 1
+	:maxdepth: 0
 	:caption: Metadata Standards
 	
 	source/mt_metadata_guide
 	
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 0
     :caption: Packages
 
     source/mth5
