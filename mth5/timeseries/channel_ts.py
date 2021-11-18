@@ -808,8 +808,8 @@ class ChannelTS:
 
         """
 
-        obspy_trace = Trace(self.ts.data)
-        obspy_trace.stats.channel = self.component
+        obspy_trace = Trace(self.ts)
+        obspy_trace.stats.channel = fdsn_tools.make_channel_code(self.channel_metadata)
         obspy_trace.stats.starttime = self.start.iso_str
         obspy_trace.stats.sampling_rate = self.sample_rate
         obspy_trace.stats.station = self.station_metadata.fdsn.id
