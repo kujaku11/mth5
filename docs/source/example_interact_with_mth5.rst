@@ -1,8 +1,6 @@
 Interact with an MTH5 File
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. contents:: :local:
-
 Read in an MTH5
 ~~~~~~~~~~~~~~~~~~~
 

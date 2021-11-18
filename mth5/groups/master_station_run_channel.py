@@ -1172,7 +1172,7 @@ class RunGroup(BaseGroup):
 
             if channel_metadata and channel_metadata.component is None:
                 channel_metadata.component = channel_name
-
+                
             if channel_type.lower() in ["magnetic"]:
                 channel_obj = MagneticDataset(
                     channel_group, dataset_metadata=channel_metadata
@@ -1206,6 +1206,12 @@ class RunGroup(BaseGroup):
                 channel_obj.metadata.update(channel_metadata)
                 channel_obj.write_metadata()
                 self.logger.debug("Done with %s", channel_name)
+               
+        # need to make sure the channel name is passed.
+        if channel_obj.metadata.component is None:
+            channel_obj.metadata.component = channel_name
+            channel_obj.write_metadata()
+            
         return channel_obj
 
     def get_channel(self, channel_name):

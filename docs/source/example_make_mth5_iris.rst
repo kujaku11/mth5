@@ -1,8 +1,6 @@
 Make an MTH5 from FDSN Data Management Center
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. contents:: :local:
-
 Data Availability
 ~~~~~~~~~~~~~~~~~~~
 

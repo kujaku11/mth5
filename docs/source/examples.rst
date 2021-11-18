@@ -3,7 +3,6 @@ Examples
 
 .. toctree::
     :maxdepth: 1
-    :caption: Contents:
 
     example_make_mth5_iris
     example_interact_with_mth5
