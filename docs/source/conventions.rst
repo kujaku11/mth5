@@ -45,7 +45,7 @@ Channel Names
 Channel names have not been standardized yet but will be in the future.  Direction indicators are often given as:
 
     * **x**: northing direction or strike direction
-	* **y**: easting direction or across strike direction
+    * **y**: easting direction or across strike direction
     * **z**: vertical direction	
 
 For MT we have 2 main types of channels `electric` and `magnetic`. 
@@ -53,6 +53,8 @@ For MT we have 2 main types of channels `electric` and `magnetic`.
 `Electric` channel names often start with an **e** and are followed by a directional indicator, like **ex** for an electric channel in the northing direction.  
 
 `Magnetic` channel names often start with an **h** or **b** followed by a directional indicator, like **hz** for a vertical magnetic channel.
+
+Extending this to other data types we have `Auxiliary` channels which could be any other type of geophysical measurement, like temperature or battery voltage.  Suggest using the full name at the moment, maybe in the future we will have measurment codes like seismic FDSN, but they can be cryptic.  
 
 In the future channel names will likely be standardized as:
 
