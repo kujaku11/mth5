@@ -617,7 +617,7 @@ class StationGroup(BaseGroup):
         run_list = np.array(run_list)
         return pd.DataFrame(run_list.flatten())
 
-    def make_run_name(self):
+    def make_run_name(self, alphabet=False):
         """
         Make a run name that will be the next alphabet letter extracted from
         the run list.  Expects that all runs are labled as id{a-z}.
@@ -630,19 +630,25 @@ class StationGroup(BaseGroup):
         'MT001a'
 
         """
-        if self.name is None:
-            msg = "id is not set, cannot make a run name"
-            self.logger.error(msg)
-            raise MTH5Error(msg)
 
         run_list = sorted(
             [group[-1:] for group in self.groups_list if self.name in group]
         )
 
+        next_letter = None
         if len(run_list) == 0:
-            next_letter = "a"
+            if alphabet:
+                next_letter = "a"
+            else:
+                next_letter = "001"
         else:
-            next_letter = chr(ord(run_list[-1]) + 1)
+            try:
+                next_letter = chr(ord(run_list[-1]) + 1)
+            except TypeError:
+                try: 
+                    next_letter = f"{int(run_list[-1]) + 1}"
+                except ValueError:
+                    self.logger.info("Could not create a new run name")
 
         return next_letter
 
