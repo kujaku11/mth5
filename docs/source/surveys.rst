@@ -17,40 +17,19 @@ Add/get/remove surveys can be done from the :py:attr:`mth5.MTH5.surveys_group` w
 
 .. code-block::
 
-    >>> # v0.1.0
-    >>> surveys = mth5_obj.surveys_group
+    >>> # v0.1.0 does not have a surveys_group
     >>> # v0.2.0
-    >>> surveys = mth5_obj.get_survey("example").surveys_group
+    >>> surveys = mth5_obj.surveys_group
     >>> type(surveys)
     mth5.groups.MasterSurveysGroup
-    >>> surveys
-    /Survey/Surveys:
-    ====================
-    	|- Group: MT001
-	    ---------------
-		    |- Group: MT001a
-		    ----------------
-		    	--> Dataset: Ex
-		    	.................
-		    	--> Dataset: Ey
-		    	.................
-		    	--> Dataset: Hx
-		    	.................
-		    	--> Dataset: Hy
-		    	.................
-		    	--> Dataset: Hz
-		    	.................
 
 From the *surveys_group* you can add/remove/get a survey.
 
 To add a survey::
 	
-	>>> new_survey = surveys.add_survey('MT002')
+	>>> new_survey = surveys.add_survey('survey_01')
 	>>> print(type(new_survey))
 	mth5.groups.SurveyGroup
-	>>> new_survey
-	/Survey/Surveys/MT002:
-	====================
 
 	
 To get an existing survey::
@@ -64,21 +43,29 @@ To remove an existing survey::
 	['MT001']
 
 	
-Summary Table
+Summary Table 
 """"""""""""""""""
+This table includes all channels within the Survey.  This can be quite large and can take a long time to build.  
 
 ==================== ==================================================
 Column               Description
 ==================== ==================================================
-archive_id           Survey archive name
-start                Start time of the survey (ISO format)
-end                  End time of the survey (ISO format)
-components           All components measured by the survey
-measurement_type     All measurement types collected by the survey 
-location.latitude    Survey latitude (decimal degrees)
-location.longitude   Survey longitude (decimal degrees) 
-location.elevation   Survey elevation (meters)
-hdf5_reference       Internal HDF5 reference
+survey               Survey ID for channel 
+station              Station ID for channel  
+run                  Run ID for channel
+latitude             Survey latitude (decimal degrees)
+longitude            Survey longitude (decimal degrees) 
+elevation            Survey elevation (meters)
+component            Channel component
+start                Start time for the channel (ISO format) 
+end                  End time for the channel (ISO format) 
+n_samples            Number of samples in the channel
+sample_rate          Channel sample rate
+measurement_type     Channel measurement type
+azimuth              Channel azimuth (degrees from N)
+tilt                 Channel tilt (degrees from horizontal)
+units                Channel units 
+hdf5_reference       HDF5 internal reference
 ==================== ==================================================
 	
 Survey Group
@@ -86,22 +73,6 @@ Survey Group
 
 A single survey is contained within a :class:`mth5.groups.SurveyGroup` object, which has the appropriate metadata for a single survey.  :class:`mth5.groups.SurveyGroup` contains all the runs for that survey.    
 	
-Summary Table
-""""""""""""""""""
-
-The summary table in :class:`mth5.groups.SurveyGroup` summarizes all runs for that survey.
-
-==================== ==================================================
-Column               Description
-==================== ==================================================
-id                   Run ID 
-start                Start time of the run (ISO format)
-end                  End time of the run (ISO format) 
-components           All components measured for that run
-measurement_type     Type of measurement for that run
-sample_rate          Sample rate of the run (samples/second)
-hdf5_reference       Internal HDF5 reference
-==================== ==================================================
 
 Survey Metadata
 """""""""""""""""
@@ -115,42 +86,24 @@ Metadata is accessed through the `metadata` property, which is a :class:`mt_meta
 	>>> new_survey.metadata
 	{
 		"survey": {
-			"acquired_by.author": null,
-			"acquired_by.comments": null,
-			"archive_id": "FL001",
-			"channel_layout": "X",
-			"channels_recorded": [
-				"Hx",
-				"Hy",
-				"Hz",
-				"Ex",
-				"Ey"
-			],
-			"comments": null,
-			"data_type": "BB, LP",
-			"geographic_name": "Beachy Keen, FL, USA",
-			"hdf5_reference": "<HDF5 object reference>",
-			"id": "FL001",
-			"location.declination.comments": "Declination obtained from the instrument GNSS NMEA sequence",
-			"location.declination.model": "Unknown",
-			"location.declination.value": -4.1,
-			"location.elevation": 0.0,
-			"location.latitude": 29.7203555,
-			"location.longitude": -83.4854715,
-			"mth5_type": "Survey",
-			"orientation.method": "compass",
-			"orientation.reference_frame": "geographic",
-			"provenance.comments": null,
-			"provenance.creation_time": "2020-05-29T21:08:40+00:00",
-			"provenance.log": null,
-			"provenance.software.author": "Anna Kelbert, USGS",
-			"provenance.software.name": "mth5_metadata.m",
-			"provenance.software.version": "2020-05-29",
-			"provenance.submitter.author": "Anna Kelbert, USGS",
-			"provenance.submitter.email": "akelbert@usgs.gov",
-			"provenance.submitter.organization": "USGS Geomagnetism Program",
-			"time_period.end": "2015-01-29T16:18:14+00:00",
-			"time_period.start": "2015-01-08T19:49:15+00:00"
+			"citation_dataset.doi": null,
+			"citation_journal.doi": null,
+			"country": null,
+			"datum": null,
+			"geographic_name": null,
+			"id": null,
+			"name": null,
+			"northwest_corner.latitude": 0.0,
+			"northwest_corner.longitude": 0.0,
+			"project": null,
+			"project_lead.email": null,
+			"project_lead.organization": null,
+			"release_license": "CC-0",
+			"southeast_corner.latitude": 0.0,
+			"southeast_corner.longitude": 0.0,
+			"summary": null,
+			"time_period.end_date": "1980-01-01",
+			"time_period.start_date": "1980-01-01"
 		}
 	}
 
