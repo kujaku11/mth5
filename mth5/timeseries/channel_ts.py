@@ -732,7 +732,7 @@ class ChannelTS:
 
         new_ts = self._ts.loc[
             (self._ts.indexes["time"] >= start.iso_no_tz)
-            & (self._ts.indexes["time"] <= end.iso_no_tz)
+            & (self._ts.indexes["time"] < end.iso_no_tz)
         ]
 
         new_ch_ts = ChannelTS(
