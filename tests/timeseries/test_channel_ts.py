@@ -17,7 +17,6 @@ import unittest
 
 import numpy as np
 import pandas as pd
-import xarray as xr
 
 from mth5 import timeseries
 from mth5.utils.exceptions import MTTSError

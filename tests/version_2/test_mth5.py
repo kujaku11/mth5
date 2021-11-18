@@ -61,6 +61,9 @@ class TestMTH5(unittest.TestCase):
         
     def test_is_write(self):
         self.assertEqual(self.mth5_obj.h5_is_write(), True)
+        
+    def test_validation(self):
+        self.assertEqual(self.mth5_obj.validate_file(), True)
 
     def test_add_station(self):
         new_station = self.mth5_obj.add_station("MT001", survey="test")
