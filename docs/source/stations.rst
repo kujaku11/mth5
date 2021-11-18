@@ -1,47 +1,45 @@
-Stations
-------------------------
-
-.. contents:: :local:
-
-Stations are the top level for an MT sounding.  There are 2 station containers :class:`mth5.groups.MasterStationsGroup` and :class:`mth5.groups.StationGroup`.  
+There are 2 station containers :class:`mth5.groups.MasterStationsGroup` and :class:`mth5.groups.StationGroup`.  
 
 Master Stations Group
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 :class:`mth5.groups.MasterStationsGroup` is an umbrella container that holds a collection of :class:`mth5.groups.StationGroup` objects and contains a summary table that summarizes all stations within the survey.   Use :class:`mth5.groups.MasterStationsGroup` to add/get/remove stations. 
 
-No metadata currently accompanies :class:`mth5.groups.MasterStationsGroup`. There will soon be a list of :class:`mth5.groups.StationGroup` objects for all stations.   
+No metadata currently accompanies :class:`mth5.groups.MasterStationsGroup`.   
 
 
-There are 2 ways to add/remove/get stations.  Add/get will return a :class:`mth5.groups.StationGroup`.  If adding a station that has the same name as an existing station the :class:`mth5.groups.StationGroup` returned will be of the existing station and no station will be added.  Change the name or update the existing staiton.  If getting a station that does not exist a :class:`mth5.utils.exceptions.MTH5Error` will be raised. 
+Add/get will return a :class:`mth5.groups.StationGroup`.  If adding a station that has the same name as an existing station the :class:`mth5.groups.StationGroup` returned will be of the existing station and no station will be added.  Change the name or update the existing staiton.  If getting a station that does not exist a :class:`mth5.utils.exceptions.MTH5Error` will be raised. 
 
-1) Using `stations_group`
+Add/Get/Remove Station
 """"""""""""""""""""""""""
 
-The first way to add/get/remove stations is from the :attribute:`mth5.MTH5.stations_group` which is a :class:`mth5.groups.MasterStationsGroup` object.
+Add/get/remove stations can be done from the :py:attr:`mth5.MTH5.stations_group` which is a :class:`mth5.groups.MasterStationsGroup` object.
 
-	>>> stations = mth5_obj.stations_group
-	>>> type(stations)
-	mth5.groups.MasterStationsGroup
-	>>> stations
-	/Survey/Stations:
-	====================
-		|- Group: MT001
-		---------------
-			|- Group: MT001a
-			----------------
-				--> Dataset: Ex
-				.................
-				--> Dataset: Ey
-				.................
-				--> Dataset: Hx
-				.................
-				--> Dataset: Hy
-				.................
-				--> Dataset: Hz
-				.................
-				--> Dataset: Summary
-				......................
+.. code-block::
+
+    >>> # v0.1.0
+    >>> stations = mth5_obj.stations_group
+    >>> # v0.2.0
+    >>> stations = mth5_obj.get_survey("example").stations_group
+    >>> type(stations)
+    mth5.groups.MasterStationsGroup
+    >>> stations
+    /Survey/Stations:
+    ====================
+    	|- Group: MT001
+	    ---------------
+		    |- Group: MT001a
+		    ----------------
+		    	--> Dataset: Ex
+		    	.................
+		    	--> Dataset: Ey
+		    	.................
+		    	--> Dataset: Hx
+		    	.................
+		    	--> Dataset: Hy
+		    	.................
+		    	--> Dataset: Hz
+		    	.................
 
 From the *stations_group* you can add/remove/get a station.
 
@@ -53,8 +51,7 @@ To add a station::
 	>>> new_station
 	/Survey/Stations/MT002:
 	====================
-	--> Dataset: Summary
-	......................
+
 	
 To get an existing station::
 
@@ -64,53 +61,8 @@ To remove an existing station::
 	
 	>>> stations.remove_station('MT002')
 	>>> stations.group_list
-	['Summary', 'MT001']
+	['MT001']
 
-2) Using Covnenience methods
-"""""""""""""""""""""""""""""""
-
-The second way to add/remove/get stations is from the convenience functions in :class:`mth5.MTH5`.  These use the same methods as the :class:`mth5.groups.MasterStationsGroup` but can be accessed directly.
-
-To add a station::
-
-	>>> new_station = mth5_obj.add_station('MT002')
-	>>> mth5_obj
-	/:
-	====================
-		|- Group: Survey
-		----------------
-			|- Group: Filters
-			-----------------
-				--> Dataset: Summary
-				......................
-			|- Group: Reports
-			-----------------
-				--> Dataset: Summary
-				......................
-			|- Group: Standards
-			-------------------
-				--> Dataset: Summary
-				......................
-			|- Group: Stations
-			------------------
-				|- Group: MT001
-				---------------
-					--> Dataset: Summary
-					......................
-				|- Group: MT002
-				---------------
-					--> Dataset: Summary
-					......................
-				--> Dataset: Summary
-				......................
-
-To get an existing station::
-
-	>>> existing_station = mth5_obj.get_station('MT002')
-	
-To remove an existing station::
-
-	>>> mth5_obj.remove_station('MT002')
 	
 Summary Table
 """"""""""""""""""
@@ -151,15 +103,15 @@ sample_rate          Sample rate of the run (samples/second)
 hdf5_reference       Internal HDF5 reference
 ==================== ==================================================
 
-Metadata
-"""""""""""""""
+Station Metadata
+"""""""""""""""""
 
-Metadata is accessed through the `metadata` property, which is a :class:`mth5.metadata.Station` object. 
+Metadata is accessed through the `metadata` property, which is a :class:`mt_metadata.timeseries.Station` object. 
 
 .. code-block:: python
 
 	>>> type(new_station.metadata)
-	mth5.metadata.Station
+	mt_metadata.timeseries.Station
 	>>> new_station.metadata
 	{
 		"station": {
@@ -202,4 +154,4 @@ Metadata is accessed through the `metadata` property, which is a :class:`mth5.me
 		}
 	}
 
-.. seealso:: :class:`mth5.groups.StationGroup`
+.. seealso:: :class:`mth5.groups.StationGroup` and :class:`mt_metadata.timeseries.Station`

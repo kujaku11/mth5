@@ -26,8 +26,7 @@ This project is in cooperation with the Incorporated Research Institutes of Seis
     usage
     usage_v2
     source/structure
-    source/stations
-    source/runs
+    source/ts
     source/file_readers
     source/conventions
     source/examples

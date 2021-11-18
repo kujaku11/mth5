@@ -644,7 +644,7 @@ class StationGroup(BaseGroup):
         else:
             next_letter = chr(ord(run_list[-1]) + 1)
 
-        return "{0}{1}".format(self.name, next_letter)
+        return next_letter
 
     def locate_run(self, sample_rate, start):
         """
