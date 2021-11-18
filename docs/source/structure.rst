@@ -67,6 +67,7 @@ Group Descriptions
 .. toctree::
     :maxdepth: 1
 	
+    surveys	
     stations
     runs
 
