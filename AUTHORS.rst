@@ -2,9 +2,7 @@
 Credits
 =======
 
-This project is a joint effor between IRIS-PASSCAL and USGS. 
-
-Partial funding is provided by the Community for Data Integration at the U.S. Geological Survey.   
+This project is in cooperation with the Incorporated Research Institutes of Seismology, the U.S. Geological Survey, and other collaborators.  Facilities of the IRIS Consortium are supported by the National Science Foundation’s Seismological Facilities for the Advancement of Geoscience (SAGE) Award under Cooperative Support Agreement EAR-1851048.  USGS is partially funded through the Community for Data Integration and IMAGe through the Minerals Resources Program. 
 
 Development Lead
 ----------------
@@ -18,3 +16,5 @@ Contributors
 * Lindsey Heagy 
 * Tim Ronan
 * Anna Kelbert 
+
+

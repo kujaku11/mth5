@@ -517,9 +517,15 @@ class MTH5:
     def filters_group(self):
         """Convenience property for /Survey/Filters group"""
         if self.h5_is_read():
-            return groups.FiltersGroup(
-                self.__hdf5_obj[f"{self._root_path}/Filters"], **self.dataset_options
-            )
+            if self.file_version in ["0.1.0"]:
+                return groups.FiltersGroup(
+                    self.__hdf5_obj[f"{self._root_path}/Filters"], **self.dataset_options
+                )
+            else:
+                self.logger.info(
+                    "File version 0.2.0 does not have a FiltersGroup at the experiment level"
+                    )
+                return None
         self.logger.info("File is closed cannot access /Filters")
         return None
 
