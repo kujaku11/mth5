@@ -27,6 +27,7 @@ This project is in cooperation with the Incorporated Research Institutes of Seis
     usage_v2
     source/structure
     source/ts
+    source/notebooks/filters_example.ipynb
     source/file_readers
     source/conventions
     source/examples
