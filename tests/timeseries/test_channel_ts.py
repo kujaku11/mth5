@@ -17,7 +17,6 @@ import unittest
 
 import numpy as np
 import pandas as pd
-import xarray as xr
 
 from mth5 import timeseries
 from mth5.utils.exceptions import MTTSError
@@ -244,11 +243,11 @@ class TestChannelTS(unittest.TestCase):
 
         with self.subTest(name="nsamples"):
             new_ts = self.ts.get_slice("2020-01-01T12:00:00", n_samples=48)
-            self.assertEqual(new_ts.ts.size, 49)
+            self.assertEqual(new_ts.ts.size, 48)
 
         with self.subTest(name="end time"):
             new_ts = self.ts.get_slice("2020-01-01T12:00:00", end="2020-01-01T12:00:03")
-            self.assertEqual(new_ts.ts.size, 49)
+            self.assertEqual(new_ts.ts.size, 48)
 
 
 # =============================================================================

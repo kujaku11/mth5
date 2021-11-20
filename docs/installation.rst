@@ -16,14 +16,23 @@ To install MTH5, run this command in your terminal:
 
 This is the preferred method to install MTH5, as it will always install the most recent stable release.
 
-If you don't have `pip`_ installed, this `Python installation guide`_ can guide
-you through the process.
+If you don't have `pip`_ installed, this `Python installation guide`_ can guide you through the process.
 
 .. _pip: https://pip.pypa.io
 .. _Python installation guide: http://docs.python-guide.org/en/latest/starting/installation/
 
-.. note:: This will not currently work, only a source download is available.
+Conda Forge
+-------------
 
+To install MTH5 from Conda run this command:
+
+.. code-block:: console
+
+    $ conda config --add channels conda-forge
+    $ conda config --set channel_priority strict
+    $ conda install mth5
+
+This should be the same as installing with `pip` that pulls from PyPi and should work better if you are using an Anaconda environment.
 
 From sources
 ------------
@@ -47,6 +56,12 @@ Once you have a copy of the source, you can install it with:
 .. code-block:: console
 
     $ python setup.py install
+	
+Or you can install it in editing mode and be able to adjust the code as needed:
+
+.. code-block:: console
+
+    $ python setup.py -e install
 
 
 .. _Github repo: https://github.com/kujaku11/mth5

@@ -2,8 +2,6 @@
 File Readers
 =============
 
-.. contents::  :local:
-
 Basics
 --------
 
