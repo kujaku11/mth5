@@ -31,6 +31,7 @@ from mt_metadata.timeseries.filters import ChannelResponseFilter
 from mth5.utils.exceptions import MTTSError
 from mth5.utils.mth5_logger import setup_logger
 from mth5.utils import fdsn_tools
+from mth5.timeseries import ts_filters
 
 from obspy.core import Trace
 
@@ -691,6 +692,23 @@ class ChannelTS:
             raise TypeError(msg)
 
         self._channel_response = value
+        
+    def remove_instrument_response(self, frequencies, bandpass=[.001, 1000]):
+        """
+        remove instrument response
+        :param frequencies: DESCRIPTION
+        :type frequencies: TYPE
+        :param bandpass: DESCRIPTION, defaults to [.001, 1000]
+        :type bandpass: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        
+        
+        
+        
+        
 
     def get_slice(self, start, end=None, n_samples=None):
         """
