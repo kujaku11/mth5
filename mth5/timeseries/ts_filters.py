@@ -141,7 +141,7 @@ def zero_pad(input_array, power=2, pad_fill=0):
             )
 
     pad_array = np.zeros(power ** npow)
-    if pad_fill is not 0:
+    if pad_fill != 0:
         pad_array[:] = pad_fill
 
     pad_array[0:len_array] = input_array

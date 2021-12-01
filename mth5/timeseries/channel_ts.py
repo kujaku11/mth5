@@ -705,6 +705,24 @@ class ChannelTS:
 
         """
         
+        npow_ts = ts_filters.zero_pad(self.ts)
+        
+        f = np.fft.rfftfreq(npow_ts.size, self.sample_interval)
+        
+        if self.channel_response.filters_list is []:
+            self.logger.error("There are no filters in channel_response to remove")
+            return
+        
+        cr = self.channel_response_filter.complex_response(f)
+        
+        calibrated_ts = np.fft.rifft(np.fft.rfft(npow_ts) / cr)
+        
+        return calibrated_ts
+        
+            
+            
+            
+        
         
         
         
