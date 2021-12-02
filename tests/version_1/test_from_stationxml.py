@@ -35,28 +35,40 @@ class TestFromStationXML01(unittest.TestCase):
         self.m.from_experiment(self.experiment, 0)
 
     def test_groups(self):
-        self.assertEqual(self.m.has_group("Survey"), True)
-        self.assertEqual(self.m.has_group("Survey/Stations"), True)
-        self.assertEqual(self.m.has_group("Survey/Stations/CAS04"), True)
-        self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001"), True)
-        self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001/ey"), True)
-        self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001/hy"), True)
+
+        with self.subTest("has Survey"):
+            self.assertEqual(self.m.has_group("Survey"), True)
+        with self.subTest("has SStations"):
+            self.assertEqual(self.m.has_group("Survey/Stations"), True)
+        with self.subTest("has CAS04"):
+            self.assertEqual(self.m.has_group("Survey/Stations/CAS04"), True)
+        with self.subTest("has run 001"):
+            self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001"), True)
+        with self.subTest("has channel ey"):
+            self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001/ey"), True)
+        with self.subTest("has channel hy"):
+            self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001/hy"), True)
 
     def test_survey_metadata(self):
-        self.assertEqual(self.m.survey_group.metadata.fdsn.network, "ZU")
-        self.assertEqual(
-            self.m.survey_group.metadata.time_period.start_date, "2020-06-02"
-        )
-        self.assertEqual(
-            self.m.survey_group.metadata.time_period.end_date, "2020-07-13"
-        )
-        self.assertEqual(
-            self.m.survey_group.metadata.summary,
-            "USMTArray South Magnetotelluric Time Series (USMTArray CONUS South-USGS)",
-        )
-        self.assertEqual(
-            self.m.survey_group.metadata.citation_dataset.doi, "10.7914/SN/ZU_2020"
-        )
+        with self.subTest("has network ZU"):
+            self.assertEqual(self.m.survey_group.metadata.fdsn.network, "ZU")
+        with self.subTest("test start"):
+            self.assertEqual(
+                self.m.survey_group.metadata.time_period.start_date, "2020-01-01"
+            )
+        with self.subTest("test end"):
+            self.assertEqual(
+                self.m.survey_group.metadata.time_period.end_date, "2023-12-31"
+            )
+        with self.subTest("survey summary"):
+            self.assertEqual(
+                self.m.survey_group.metadata.summary,
+                "USMTArray South Magnetotelluric Time Series (USMTArray CONUS South-USGS)",
+            )
+        with self.subTest("doi"):    
+            self.assertEqual(
+                self.m.survey_group.metadata.citation_dataset.doi, "10.7914/SN/ZU_2020"
+            )
 
     def test_station_metadata(self):
         station_dict = {
@@ -88,7 +100,8 @@ class TestFromStationXML01(unittest.TestCase):
 
         m_station = self.m.get_station(station_dict["id"]).metadata
         for key, true_value in station_dict.items():
-            self.assertEqual(true_value, m_station.get_attr_from_name(key))
+            with self.subTest(key):
+                self.assertEqual(true_value, m_station.get_attr_from_name(key))
 
     def test_run_metadata(self):
         run_dict = {
@@ -101,7 +114,8 @@ class TestFromStationXML01(unittest.TestCase):
 
         m_run = self.m.get_run("CAS04", run_dict["id"]).metadata
         for key, true_value in run_dict.items():
-            self.assertEqual(true_value, m_run.get_attr_from_name(key))
+            with self.subTest(key):
+                self.assertEqual(true_value, m_run.get_attr_from_name(key))
 
     def test_ey_metadata(self):
         ch_dict = {
@@ -124,7 +138,8 @@ class TestFromStationXML01(unittest.TestCase):
 
         m_ch = self.m.get_channel("CAS04", "001", "ey").metadata
         for key, true_value in ch_dict.items():
-            self.assertEqual(true_value, m_ch.get_attr_from_name(key))
+            with self.subTest(key):
+                self.assertEqual(true_value, m_ch.get_attr_from_name(key))
 
     def test_hy_metadata(self):
         ch_dict = {
@@ -141,7 +156,8 @@ class TestFromStationXML01(unittest.TestCase):
 
         m_ch = self.m.get_channel("CAS04", "001", "hy").metadata
         for key, true_value in ch_dict.items():
-            self.assertEqual(true_value, m_ch.get_attr_from_name(key))
+            with self.subTest(key):
+                self.assertEqual(true_value, m_ch.get_attr_from_name(key))
 
     def tearDown(self):
         self.m.close_mth5()

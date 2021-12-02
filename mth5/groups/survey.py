@@ -255,6 +255,8 @@ class MasterSurveyGroup(BaseGroup):
         """
         if survey_name is None:
             raise Exception("survey name is None, do not know what to name it")
+        
+        survey_name = survey_name.replace(" ", "_")
         try:
             survey_group = self.hdf5_group.create_group(survey_name)
             self.logger.debug("Created group %s", survey_group.name)
@@ -263,10 +265,10 @@ class MasterSurveyGroup(BaseGroup):
                 survey_metadata = Survey(id=survey_name)
 
             else:
-                if survey_metadata.id != survey_name:
+                if survey_metadata.id.replace(" ", "_") != survey_name:
                     msg = (
                         f"survey group name {survey_name} must be same as "
-                        + f"survey id {survey_metadata.id}"
+                        + f"survey id {survey_metadata.id.replace(' ', '_')}"
                     )
                     self.logger.error(msg)
                     raise MTH5Error(msg)

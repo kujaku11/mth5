@@ -405,7 +405,7 @@ def remove_periodic_noise(filename, dt, noiseperiods, save="n"):
                 m = len(bx)
         # else copy the already filtered array
         else:
-            bx = bxnf.copy()
+            bx = bx.copy()
             m = len(bx)
 
         # get length of array
