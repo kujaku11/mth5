@@ -18,9 +18,9 @@ from matplotlib import pyplot as plt
 c = ChannelTS()
 c.sample_rate = 10
 
-n_samples = 4096
+n_samples = 4000
 t = np.arange(n_samples) * c.sample_interval
-c.ts = np.sum([np.cos(2*np.pi*w*t + phi) for w, phi in zip(np.logspace(-3, 3, 20), np.random.rand(20))], axis=0)
+c.ts = np.sum([np.cos(2*np.pi*w*t + phi) for w, phi in zip(np.logspace(-4, 1, 20), np.random.rand(20))], axis=0)
 
 pz = PoleZeroFilter(units_in="volts", units_out="nanotesla", name="instrument_response")
 pz.poles = [(-6.283185+10.882477j), (-6.283185-10.882477j), (-12.566371+0j)]
@@ -39,10 +39,9 @@ cr = c.channel_response_filter.complex_response(f)
 
 ts_fft = np.fft.rfft(ts_npow) 
 
-calibrated_ts = np.fft.irfft(ts_fft / cr)
+ts_calibrated = np.fft.irfft(ts_fft / cr)
 
-bp_ts = ts_filters.low_pass(calibrated_ts, 3.75, 4.9, c.sample_rate)
-ts_bp = ts_filters.butter_bandpass_filter(ts_calibrated, .005, 126, c.sample_rate)
+ts_bp = ts_filters.butter_bandpass_filter(ts_calibrated, .001, 4.9, c.sample_rate)
 
 # bp_ts = window * calibrated_ts
 
@@ -55,16 +54,16 @@ ax2 = fig.add_subplot(3, 2, 2)
 ax2.loglog(f, np.abs(ts_fft)) 
 
 ax3 = fig.add_subplot(3, 2, 3, sharex=ax1)
-ax3.plot(t, calibrated_ts)
+ax3.plot(t, ts_calibrated[0:n_samples])
 
 ax4 = fig.add_subplot(3, 2, 4)
-ax4.loglog(f, np.abs(np.fft.rfft(calibrated_ts)))
+ax4.loglog(f, np.abs(np.fft.rfft(ts_calibrated)))
 
 ax5 = fig.add_subplot(3, 2, 5, sharex=ax1)
-ax5.plot(t, bp_ts)
+ax5.plot(t, ts_bp[0:n_samples])
 
 ax6 = fig.add_subplot(3, 2, 6)
-ax6.loglog(f, np.abs(np.fft.rfft(bp_ts)))
+ax6.loglog(f, np.abs(np.fft.rfft(ts_bp)))
 
 plt.show()
 
