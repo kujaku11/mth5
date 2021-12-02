@@ -23,38 +23,74 @@ from mth5.utils.mth5_logger import setup_logger
 logger = setup_logger(__file__)
 # =================================================================
 
+def butter_bandpass(lowcut, highcut, fs, order=5):
+        nyq = 0.5 * fs
+        
+        if lowcut is not None:
+            low = lowcut / nyq
+        
+        if highcut is not None:
+            high = highcut / nyq
+            
+        if lowcut and highcut:
+            sos = signal.butter(order, [low, high], analog=False, btype='band', output='sos')
+            
+        elif highcut is None:
+            sos = signal.butter(
+                order, 
+                low,
+                analog=False,
+                btype='low',
+                output='sos')
+            
+        elif lowcut is None:
+             sos = signal.butter(
+                 order, high, analog=False, btype='high', output='sos'
+                 )
+        return sos
 
-def butter_bandpass(lowcut, highcut, samplingrate, order=4):
-    nyq = 0.5 * samplingrate
-    low = lowcut / nyq
-    high = highcut / nyq
-
-    if high >= 1.0 and low == 0.0:
-        b = np.array([1.0])
-        a = np.array([1.0])
-
-    elif high < 0.95 and low > 0.0:
-        wp = [1.05 * low, high - 0.05]
-        ws = [0.95 * low, high + 0.05]
-
-        order, wn = signal.buttord(wp, ws, 3.0, 40.0)
-        b, a = signal.butter(order, wn, btype="band")
-
-    elif high >= 0.95:
-        order, wn = signal.buttord(15 * low, 0.05 * low, gpass=0.0, gstop=10.0)
-        b, a = signal.butter(order, wn, btype="high")
-
-    elif low <= 0.05:
-        order, wn = signal.buttord(high - 0.05, high + 0.05, gpass=0.0, gstop=10.0)
-        b, a = signal.butter(order, wn, btype="low")
-
-    return b, a
+def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
+        sos = butter_bandpass(lowcut, highcut, fs, order=order)
+        y = signal.sosfiltfilt(sos, data)
+        return y
 
 
-def butter_bandpass_filter(data, lowcut, highcut, samplingrate, order=4):
-    b, a = butter_bandpass(lowcut, highcut, samplingrate, order=order)
-    y = signal.lfilter(b, a, data)
-    return y
+# def butter_bandpass(lowcut, highcut, samplingrate, order=4):
+#     nyq = 0.5 * samplingrate
+#     low = lowcut / nyq
+#     high = highcut / nyq
+    
+#     print(low, high)
+
+#     if high >= 1.0 and low == 0.0:
+#         b = np.array([1.0])
+#         a = np.array([1.0])
+
+#     elif high < 1 and low > 0.0:
+#         wp = [1.05 * low, high * 1.05]
+#         ws = [0.95 * low, high * 0.95]
+        
+#         print(wp)
+#         print(ws)
+
+#         order, wn = signal.buttord(wp, ws, 3.0, 40.0)
+#         b, a = signal.butter(order, wn, btype="band")
+
+#     elif lowcut is None:
+#         order, wn = signal.buttord(15 * low, 0.05 * low, gpass=0.0, gstop=10.0)
+#         b, a = signal.butter(order, wn, btype="high")
+
+#     elif high is None:
+#         order, wn = signal.buttord(high - 0.05, high + 0.05, gpass=0.0, gstop=10.0)
+#         b, a = signal.butter(order, wn, btype="low")
+
+#     return b, a
+
+
+# def butter_bandpass_filter(data, lowcut, highcut, samplingrate, order=4):
+#     b, a = butter_bandpass(lowcut, highcut, samplingrate, order=order)
+#     y = signal.lfilter(b, a, data)
+#     return y
 
 
 def low_pass(f, low_pass_freq, cutoff_freq, sampling_rate):
