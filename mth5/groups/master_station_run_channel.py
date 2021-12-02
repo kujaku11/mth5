@@ -32,7 +32,7 @@ from mth5 import CHUNK_SIZE
 from mth5.groups.base import BaseGroup
 from mth5.groups import FiltersGroup
 from mth5.utils.exceptions import MTH5Error
-from mth5.helpers import to_numpy_type, inherit_doc_string
+from mth5.helpers import to_numpy_type, inherit_doc_string, validate_name
 from mth5.timeseries import ChannelTS, RunTS
 from mth5.timeseries.channel_ts import make_dt_coordinates
 from mth5.utils.mth5_logger import setup_logger
@@ -266,6 +266,8 @@ class MasterStationGroup(BaseGroup):
         """
         if station_name is None:
             raise Exception("station name is None, do not know what to name it")
+        
+        station_name = validate_name(station_name)
         try:
             station_group = self.hdf5_group.create_group(station_name)
             self.logger.debug("Created group %s", station_group.name)
@@ -321,7 +323,7 @@ class MasterStationGroup(BaseGroup):
         MTH5Error: MT001 does not exist, check station_list for existing names
 
         """
-
+        station_name = validate_name(station_name)
         try:
             return StationGroup(self.hdf5_group[station_name], **self.dataset_options)
         except KeyError:
@@ -356,7 +358,7 @@ class MasterStationGroup(BaseGroup):
             >>> mth5_obj.stations_group.remove_station('MT001')
 
         """
-
+        station_name = validate_name(station_name)
         try:
             del self.hdf5_group[station_name]
             self.logger.info(
@@ -695,7 +697,7 @@ class StationGroup(BaseGroup):
         .. todo:: add ability to add a run with data.
 
         """
-
+        run_name = validate_name(run_name)
         try:
             run_group = self.hdf5_group.create_group(run_name)
             if run_metadata is None:
@@ -729,6 +731,7 @@ class StationGroup(BaseGroup):
         >>> existing_run = station.get_run('MT001')
 
         """
+        run_name = validate_name(run_name)
         try:
             return RunGroup(self.hdf5_group[run_name], **self.dataset_options)
         except KeyError:
@@ -762,7 +765,7 @@ class StationGroup(BaseGroup):
             >>> mth5_obj.stations_group.remove_station('MT001')
 
         """
-
+        run_name = validate_name(run_name)
         try:
             del self.hdf5_group[run_name]
             self.logger.info(

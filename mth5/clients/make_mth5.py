@@ -186,8 +186,9 @@ class MakeMTH5:
 
         # Version 0.2.0 has the ability to store multiple surveys
         elif self.mth5_version in ["0.2.0"]:
+            mt_survey_names = dict([(s.fdsn.network, s.id) for s in experiment.surveys])
             for survey_dict in unique_list:
-                survey_id = survey_dict["network"]
+                survey_id = mt_survey_names[survey_dict["network"]]
                 survey_group = m.get_survey(survey_id)
                 for station_id in survey_dict["stations"]:
                     # get the streams for the given station

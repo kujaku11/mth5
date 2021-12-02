@@ -201,6 +201,20 @@ def to_numpy_type(value):
         raise TypeError("Type {0} not understood".format(type(value)))
 
 
+def validate_name(name):
+    """
+    make sure the name has no spaces or slashes
+    
+    :param name: DESCRIPTION
+    :type name: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+    
+    return name.replace(" ", "_").replace("/", "_")
+
+
 # =============================================================================
 #
 # =============================================================================

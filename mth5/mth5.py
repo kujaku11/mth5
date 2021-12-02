@@ -919,7 +919,8 @@ class MTH5:
         MTH5Error: MT001 does not exist, check groups_list for existing names
 
         """
-
+        
+        survey_name = helpers.validate_name(survey_name)
         try:
             return groups.SurveyGroup(
                 self.__hdf5_obj[f"{self._root_path}/Surveys/{survey_name}"],
@@ -956,7 +957,7 @@ class MTH5:
             >>> mth5_obj.experiment_group.surveys_group.remove_survey('MT001')
 
         """
-
+        survey_name = helpers.validate_name(survey_name)
         try:
             del self.__hdf5_obj[f"{self._root_path}/Surveys/{survey_name}"]
             self.logger.info(
@@ -1037,6 +1038,7 @@ class MTH5:
         MTH5Error: MT001 does not exist, check station_list for existing names
 
         """
+        station_name = helpers.validate_name(station_name)
         if self.file_version in ["0.1.0"]:
             return self.stations_group.get_station(station_name)
 
@@ -1045,6 +1047,7 @@ class MTH5:
                 msg = "Need to input 'survey' for file version %s"
                 self.logger.error(msg, self.file_version)
                 raise ValueError(msg % self.file_version)
+            survey = helpers.validate_name(survey)
             sg = self.get_survey(survey)
             return sg.stations_group.get_station(station_name)
 
@@ -1069,7 +1072,7 @@ class MTH5:
         >>> mth5_obj.remove_station('MT001')
 
         """
-
+        station_name = helpers.validate_name(station_name)
         if self.file_version in ["0.1.0"]:
             return self.stations_group.remove_station(station_name)
 
@@ -1078,6 +1081,7 @@ class MTH5:
                 msg = "Need to input 'survey' for file version %s"
                 self.logger.error(msg, self.file_version)
                 raise ValueError(msg % self.file_version)
+            survey = helpers.validate_name(survey)
             sg = self.get_survey(survey)
             return sg.stations_group.remove_station(station_name)
 
@@ -1131,7 +1135,8 @@ class MTH5:
         >>> existing_run = mth5_obj.get_run('MT001', 'MT001a')
 
         """
-
+        station_name = helpers.validate_name(station_name)
+        run_name = helpers.validate_name(run_name)
         if self.file_version in ["0.1.0"]:
             run_path = f"{self._root_path}/Stations/{station_name}/{run_name}"
         elif self.file_version in ["0.2.0"]:
@@ -1139,6 +1144,8 @@ class MTH5:
                 msg = "Need to input 'survey' for file version %s"
                 self.logger.error(msg, self.file_version)
                 raise ValueError(msg % self.file_version)
+                
+            survey = helpers.validate_name(survey)
             run_path = (
                 f"{self._root_path}/Surveys/{survey}/Stations/{station_name}/{run_name}"
             )
@@ -1273,6 +1280,9 @@ class MTH5:
                 sample rate:      4096
 
         """
+        station_name = helpers.validate_name(station_name)
+        run_name = helpers.validate_name(run_name)
+        channel_name = helpers.validate_name(channel_name)
         # ch = f"Survey/Stations/{station_name}/{run_name}/{channel_name}"
         # return groups.ChannelDataset(self.__hdf5_obj[ch])
         return (
@@ -1307,7 +1317,9 @@ class MTH5:
         >>> mth5_obj.remove_channel('MT001', 'MT001a', 'Ex')
 
         """
-
+        station_name = helpers.validate_name(station_name)
+        run_name = helpers.validate_name(run_name)
+        channel_name = helpers.validate_name(channel_name)
         return (
             self.get_station(station_name, survey=survey)
             .get_run(run_name)
