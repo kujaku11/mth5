@@ -58,9 +58,9 @@ class TestFromStationXML01(unittest.TestCase):
         with self.subTest(name="network"):
             self.assertEqual(sg.metadata.fdsn.network, "ZU")
         with self.subTest(name="start time"):
-            self.assertEqual(sg.metadata.time_period.start_date, "2020-06-02")
+            self.assertEqual(sg.metadata.time_period.start_date, "2020-01-01")
         with self.subTest(name="end time"):
-            self.assertEqual(sg.metadata.time_period.end_date, "2020-07-13")
+            self.assertEqual(sg.metadata.time_period.end_date, "2023-12-31")
         with self.subTest(name="summary"):
             self.assertEqual(
                 sg.metadata.summary,
