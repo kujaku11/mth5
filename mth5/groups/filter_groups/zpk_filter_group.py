@@ -68,19 +68,19 @@ class ZPKGroup(BaseGroup):
         poles_ds = zpk_filter_group.create_dataset(
             "poles",
             poles.shape,
-            dtype=np.dtype([("real", float), ("imag", float)]),
+            dtype=complex,
             **self.dataset_options,
         )
         zeros_ds = zpk_filter_group.create_dataset(
             "zeros",
             zeros.shape,
-            dtype=np.dtype([("real", float), ("imag", float)]),
+            dtype=complex,
             **self.dataset_options,
         )
 
         # when filling data need to fill the full row for what ever reason.
-        poles_ds[:] = [(pr, pi) for pr, pi in zip(poles.real, poles.imag)]
-        zeros_ds[:] = [(pr, pi) for pr, pi in zip(zeros.real, zeros.imag)]
+        poles_ds[:] = poles
+        zeros_ds[:] = zeros
 
         # fill in the metadata
         zpk_filter_group.attrs.update(zpk_metadata)
@@ -143,17 +143,13 @@ class ZPKGroup(BaseGroup):
         zpk_obj = PoleZeroFilter(**zpk_group.attrs)
 
         try:
-            zpk_obj.poles = (
-                zpk_group["poles"]["real"][:] + zpk_group["poles"]["imag"][:] * 1j
-            )
+            zpk_obj.poles = zpk_group["poles"][:]
         except TypeError:
             self.logger.debug(f"ZPK filter {name} has no poles")
             zpk_obj.poles = []
 
         try:
-            zpk_obj.zeros = (
-                zpk_group["zeros"]["real"][:] + zpk_group["zeros"]["imag"][:] * 1j
-            )
+            zpk_obj.zeros = zpk_group["zeros"][:]
         except TypeError:
             self.logger.debug(f"ZPK filter {name} has no zeros")
             zpk_obj.zeros = []
