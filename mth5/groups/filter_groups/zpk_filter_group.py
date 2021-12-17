@@ -12,8 +12,6 @@ Created on Wed Jun  9 08:55:16 2021
 # =============================================================================
 # Imports
 # =============================================================================
-import numpy as np
-
 from mt_metadata.timeseries.filters import PoleZeroFilter
 
 from mth5.groups.base import BaseGroup
