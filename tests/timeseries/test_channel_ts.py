@@ -36,7 +36,7 @@ class TestChannelTS(unittest.TestCase):
     def test_input_type_electric(self):
         self.ts = timeseries.ChannelTS("electric")
 
-        electric_meta = metadata.Electric()
+        electric_meta = metadata.Electric(type="electric")
         self.assertDictEqual(
             self.ts.channel_metadata.to_dict(), electric_meta.to_dict()
         )
@@ -44,7 +44,7 @@ class TestChannelTS(unittest.TestCase):
     def test_input_type_magnetic(self):
         self.ts = timeseries.ChannelTS("magnetic")
 
-        magnetic_meta = metadata.Magnetic()
+        magnetic_meta = metadata.Magnetic(type="magnetic")
         self.assertDictEqual(
             self.ts.channel_metadata.to_dict(), magnetic_meta.to_dict()
         )
@@ -52,7 +52,7 @@ class TestChannelTS(unittest.TestCase):
     def test_input_type_auxiliary(self):
         self.ts = timeseries.ChannelTS("auxiliary")
 
-        auxiliary_meta = metadata.Auxiliary()
+        auxiliary_meta = metadata.Auxiliary(type="auxiliary")
         self.assertDictEqual(
             self.ts.channel_metadata.to_dict(), auxiliary_meta.to_dict()
         )
