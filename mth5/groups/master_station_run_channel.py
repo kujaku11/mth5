@@ -32,7 +32,7 @@ from mth5 import CHUNK_SIZE
 from mth5.groups.base import BaseGroup
 from mth5.groups import FiltersGroup
 from mth5.utils.exceptions import MTH5Error
-from mth5.helpers import to_numpy_type, inherit_doc_string
+from mth5.helpers import to_numpy_type, inherit_doc_string, validate_name
 from mth5.timeseries import ChannelTS, RunTS
 from mth5.timeseries.channel_ts import make_dt_coordinates
 from mth5.utils.mth5_logger import setup_logger
@@ -266,6 +266,8 @@ class MasterStationGroup(BaseGroup):
         """
         if station_name is None:
             raise Exception("station name is None, do not know what to name it")
+        
+        station_name = validate_name(station_name)
         try:
             station_group = self.hdf5_group.create_group(station_name)
             self.logger.debug("Created group %s", station_group.name)
@@ -696,6 +698,7 @@ class StationGroup(BaseGroup):
 
         """
 
+        run_name = validate_name(run_name)
         try:
             run_group = self.hdf5_group.create_group(run_name)
             if run_metadata is None:
@@ -1115,7 +1118,7 @@ class RunGroup(BaseGroup):
 
 
         """
-        channel_name = channel_name.lower()
+        channel_name = validate_name(channel_name.lower())
         for key, value in kwargs.items():
             setattr(self, key, value)
 

@@ -25,6 +25,7 @@ from mth5.groups import (
     StandardsGroup,
 )
 from mth5.utils.exceptions import MTH5Error
+from mth5.helpers import validate_name
 
 from mt_metadata.timeseries import Survey
 
@@ -255,6 +256,8 @@ class MasterSurveyGroup(BaseGroup):
         """
         if survey_name is None:
             raise Exception("survey name is None, do not know what to name it")
+            
+        survey_name = validate_name(survey_name)
         try:
             survey_group = self.hdf5_group.create_group(survey_name)
             self.logger.debug("Created group %s", survey_group.name)

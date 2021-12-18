@@ -210,3 +210,18 @@ def inherit_doc_string(cls):
             cls.__doc__ = base.__doc__
             break
     return cls
+
+def validate_name(name, pattern=None):
+    """
+    Validate name 
+    
+    :param name: DESCRIPTION
+    :type name: TYPE
+    :param pattern: DESCRIPTION, defaults to None
+    :type pattern: TYPE, optional
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+    
+    return name.replace(" ", "_")
