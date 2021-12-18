@@ -266,7 +266,7 @@ class MasterSurveyGroup(BaseGroup):
                 survey_metadata = Survey(id=survey_name)
 
             else:
-                if survey_metadata.id != survey_name:
+                if validate_name(survey_metadata.id) != survey_name:
                     msg = (
                         f"survey group name {survey_name} must be same as "
                         + f"survey id {survey_metadata.id}"

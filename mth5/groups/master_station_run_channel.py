@@ -276,7 +276,7 @@ class MasterStationGroup(BaseGroup):
                 station_metadata = metadata.Station(id=station_name)
 
             else:
-                if station_metadata.id != station_name:
+                if validate_name(station_metadata.id) != station_name:
                     msg = (
                         f"Station group name {station_name} must be same as "
                         + f"station id {station_metadata.id}"
@@ -703,7 +703,7 @@ class StationGroup(BaseGroup):
             run_group = self.hdf5_group.create_group(run_name)
             if run_metadata is None:
                 run_metadata = metadata.Run(id=run_name)
-            elif run_metadata.id != run_name:
+            elif validate_name(run_metadata.id) != run_name:
                 msg = "Run name %s must be the same as run_metadata.id %s"
                 self.logger.error(msg, run_name, run_metadata.id)
                 raise MTH5Error(msg % (run_name, run_metadata.id))

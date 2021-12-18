@@ -20,6 +20,7 @@ from mt_metadata.timeseries.stationxml import XMLInventoryMTExperiment
 
 from mth5.mth5 import MTH5
 from mth5.timeseries import RunTS
+from mth5.helpers import validate_name
 
 # =============================================================================
 
@@ -186,8 +187,16 @@ class MakeMTH5:
 
         # Version 0.2.0 has the ability to store multiple surveys
         elif self.mth5_version in ["0.2.0"]:
+            # mt_metadata translates the mt survey id into the survey id
+            # if it is provided which will be different from the fdsn network
+            # id, so we need to map the fdsn networks onto the survey id.
+            survey_map = dict([(s.fdsn.network, s.id) for s in experiment.surveys])
+            
             for survey_dict in unique_list:
-                survey_id = survey_dict["network"]
+                # get the mt survey id that maps to the fdsn network
+                fdsn_network = survey_dict["network"]
+                survey_id = survey_map[fdsn_network]
+                
                 survey_group = m.get_survey(survey_id)
                 for station_id in survey_dict["stations"]:
                     # get the streams for the given station
