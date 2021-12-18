@@ -310,7 +310,7 @@ class MasterSurveyGroup(BaseGroup):
         MTH5Error: MT001 does not exist, check survey_list for existing names
 
         """
-
+        survey_name = validate_name(survey_name)
         try:
             return SurveyGroup(self.hdf5_group[survey_name], **self.dataset_options)
         except KeyError:
@@ -344,7 +344,7 @@ class MasterSurveyGroup(BaseGroup):
             >>> mth5_obj.surveys_group.remove_survey('MT001')
 
         """
-
+        survey_name = validate_name(survey_name)
         try:
             del self.hdf5_group[survey_name]
             self.logger.info(

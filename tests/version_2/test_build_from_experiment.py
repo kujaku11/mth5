@@ -16,6 +16,7 @@ import unittest
 from pathlib import Path
 
 from mth5 import mth5
+from mth5.helpers import validate_name
 from mt_metadata.timeseries import Experiment
 from mt_metadata import MT_EXPERIMENT_SINGLE_STATION
 
@@ -34,7 +35,7 @@ class TestMTH5(unittest.TestCase):
         self.mth5_obj.open_mth5(self.fn, mode="w")
         self.experiment = Experiment()
         self.experiment.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)
-        self.survey_name = self.experiment.surveys[0].id
+        self.survey_name = validate_name(self.experiment.surveys[0].id)
         self.mth5_obj.from_experiment(self.experiment)
 
     def test_surveys(self):

@@ -323,7 +323,7 @@ class MasterStationGroup(BaseGroup):
         MTH5Error: MT001 does not exist, check station_list for existing names
 
         """
-
+        station_name = validate_name(station_name)
         try:
             return StationGroup(self.hdf5_group[station_name], **self.dataset_options)
         except KeyError:
@@ -358,7 +358,8 @@ class MasterStationGroup(BaseGroup):
             >>> mth5_obj.stations_group.remove_station('MT001')
 
         """
-
+        
+        station_name = validate_name(station_name)
         try:
             del self.hdf5_group[station_name]
             self.logger.info(
@@ -732,6 +733,8 @@ class StationGroup(BaseGroup):
         >>> existing_run = station.get_run('MT001')
 
         """
+        
+        run_name = validate_name(run_name)
         try:
             return RunGroup(self.hdf5_group[run_name], **self.dataset_options)
         except KeyError:
@@ -766,6 +769,7 @@ class StationGroup(BaseGroup):
 
         """
 
+        run_name = validate_name(run_name)
         try:
             del self.hdf5_group[run_name]
             self.logger.info(
@@ -1254,6 +1258,7 @@ class RunGroup(BaseGroup):
 
         """
 
+        channel_name = validate_name(channel_name.lower())
         try:
             ch_dataset = self.hdf5_group[channel_name]
             if ch_dataset.attrs["mth5_type"].lower() in ["electric"]:
@@ -1319,7 +1324,7 @@ class RunGroup(BaseGroup):
 
         """
 
-        channel_name = channel_name.lower()
+        channel_name = validate_name(channel_name.lower())
 
         try:
             del self.hdf5_group[channel_name]
