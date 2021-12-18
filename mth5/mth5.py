@@ -841,7 +841,7 @@ class MTH5:
 
                     for station in survey.stations:
                         mt_station = self.add_station(
-                            station.id, station_metadata=station, survey=survey.id
+                            station.id, station_metadata=station, survey=sg.metadata.id
                         )
                         for run in station.runs:
                             mt_run = mt_station.add_run(run.id, run_metadata=run)
@@ -919,7 +919,8 @@ class MTH5:
         MTH5Error: MT001 does not exist, check groups_list for existing names
 
         """
-
+        
+        survey_name = helpers.validate_name(survey_name)
         try:
             return groups.SurveyGroup(
                 self.__hdf5_obj[f"{self._root_path}/Surveys/{survey_name}"],
@@ -957,6 +958,7 @@ class MTH5:
 
         """
 
+        survey_name = helpers.validate_name(survey_name)
         try:
             del self.__hdf5_obj[f"{self._root_path}/Surveys/{survey_name}"]
             self.logger.info(
