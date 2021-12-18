@@ -58,7 +58,7 @@ class TestFromStationXML01(unittest.TestCase):
             )
         with self.subTest(msg="end"):
             self.assertEqual(
-                self.m.survey_group.metadata.time_period.end_date, "2020-07-13"
+                self.m.survey_group.metadata.time_period.end_date, "2023-12-31"
             )
         with self.subTest(msg="summary"):
             self.assertEqual(
