@@ -1608,7 +1608,7 @@ class ChannelDataset:
     def _add_base_attributes(self):
         # add 2 attributes that will help with querying
         # 1) the metadata class name
-        self.metadata.add_base_attribute(
+        self._metadata.add_base_attribute(
             "mth5_type",
             self._class_name,
             {
@@ -1620,13 +1620,14 @@ class ChannelDataset:
                 "options": [],
                 "alias": [],
                 "example": "group_name",
+                "default": None,
             },
         )
 
         # 2) the HDF5 reference that can be used instead of paths
-        self.metadata.add_base_attribute(
+        self._metadata.add_base_attribute(
             "hdf5_reference",
-            self.hdf5_dataset.ref,
+            self.hdf5_group.ref,
             {
                 "type": "h5py_reference",
                 "required": True,
@@ -1636,6 +1637,7 @@ class ChannelDataset:
                 "options": [],
                 "alias": [],
                 "example": "<HDF5 Group Reference>",
+                "default": None
             },
         )
 
