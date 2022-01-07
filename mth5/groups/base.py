@@ -172,7 +172,7 @@ class BaseGroup:
                 "options": [],
                 "alias": [],
                 "example": "<HDF5 Group Reference>",
-                "default": None
+                "default": "none"
             },
         )
 
