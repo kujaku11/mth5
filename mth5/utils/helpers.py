@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from mth5.mth5 import MTH5
+from mth5.helpers import close_open_files
 
 
 def initialize_mth5(h5_path, mode="w", file_version="0.1.0"):
@@ -28,6 +29,7 @@ def initialize_mth5(h5_path, mode="w", file_version="0.1.0"):
 
         if h5_path.exists():
             print("WARN: file exists")
+            close_open_files()
             h5_path.unlink()
         mth5_obj = MTH5(file_version=file_version)
         mth5_obj.open_mth5(str(h5_path), mode)

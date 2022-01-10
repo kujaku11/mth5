@@ -96,6 +96,7 @@ class StandardsGroup(BaseGroup):
                     ("options", "S150"),
                     ("alias", "S72"),
                     ("example", "S72"),
+                    ("default", "S72"),
                 ]
             ),
         }
@@ -129,6 +130,7 @@ class StandardsGroup(BaseGroup):
                 options       : CC-0,CC-BY,CC-BY-SA,CC-BY-ND,CC-BY-NC-SA,CC-BY-NC-ND
                 alias         :
                 example       : CC-0
+                default       : CC-0
 
         """
         find = self.summary_table.locate("attribute", attribute_name)

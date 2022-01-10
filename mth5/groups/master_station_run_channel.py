@@ -1620,6 +1620,7 @@ class ChannelDataset:
                 "options": [],
                 "alias": [],
                 "example": "group_name",
+                "default": None,
             },
         )
 
@@ -1636,6 +1637,7 @@ class ChannelDataset:
                 "options": [],
                 "alias": [],
                 "example": "<HDF5 Group Reference>",
+                "default": None
             },
         )
 
@@ -2370,8 +2372,8 @@ class ChannelDataset:
             [
                 (
                     self.metadata.component,
-                    self.metadata.time_period.start,
-                    self.metadata.time_period.end,
+                    self.metadata.time_period._start_dt.iso_no_tz,
+                    self.metadata.time_period._end_dt.iso_no_tz,
                     self.hdf5_dataset.size,
                     self.metadata.type,
                     self.metadata.units,
