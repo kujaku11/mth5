@@ -189,25 +189,38 @@ class MakeMTH5:
                 elif len(run_list) != n_times:
                     print('More or less runs have been requested by the user ' +
                           'than are defined in the metadata. Runs will be ' +
-                          'defined but may not contain time series data '+
+                          'defined but only the requested run extents contain '+ 
+                          'time series data '+
                           'based on the users request.')
                     for run_id, start, end in zip(
                         run_list, trace_start_times, trace_end_times
                     ):
 
                         # add the group first this will get the already filled in
-                        # metadata to update the run_ts_obj.
-                        run_group = m.stations_group.get_station(station_id).add_run(
-                            run_id
-                        )
-                        # then get the streams an add existing metadata
-                        run_stream = msstreams.slice(
-                            UTCDateTime(start), UTCDateTime(end)
-                        )
-                        run_ts_obj = RunTS()
-                        run_ts_obj.from_obspy_stream(run_stream, run_group.metadata)
-                        run_group.from_runts(run_ts_obj)
-
+                        # metadata
+                        for run in run_list:
+                            run_group = m.stations_group.get_station(station_id).get_run(
+                                run
+                            )
+                            # Chekcs for start and end times of runs
+                            run_start = run_group.metadata.time_period.start
+                            run_end = run_group.metadata.time_period.end
+                        # Create if statment that checks for start and end
+                        # times in the run.
+                        # Compares start and end times of runs
+                        # to start and end times of traces. Packs runs based on
+                        # time spans
+                            if(UTCDateTime(start) >= UTCDateTime(run_start) and 
+                               UTCDateTime(end) <= UTCDateTime(run_end)):
+                                run_stream = msstreams.slice(
+                                    UTCDateTime(start), UTCDateTime(end)
+                                    )
+                                run_ts_obj = RunTS()
+                                run_ts_obj.from_obspy_stream(run_stream,
+                                                             run_group.metadata)
+                                run_group.from_runts(run_ts_obj)
+                            else:
+                                continue
                 else:
                     raise ValueError("Cannot add Run for some reason.")
 
@@ -251,6 +264,7 @@ class MakeMTH5:
                             run_group = survey_group.stations_group.get_station(
                                 station_id
                             ).add_run(run_id)
+                                                     
                             # then get the streams an add existing metadata
                             run_stream = msstreams.slice(
                                 UTCDateTime(start), UTCDateTime(end)
