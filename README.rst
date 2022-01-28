@@ -18,6 +18,9 @@ MTH5
 		
 .. image:: https://zenodo.org/badge/283883448.svg
    :target: https://zenodo.org/badge/latestdoi/283883448
+   
+.. image:: https://mybinder.org/badge_logo.svg
+   :target: https://mybinder.org/v2/gh/kujaku11/mth5/master
 
 
 The goal of MTH5 is to develop an archivable and exchangeable format for magnetotelluric time series data.  MTH5 provides tools to read/write MTH5 files and tools to interact with MTH5 files.  All metadata is based on the `mt_metadata <https://github.com/kujaku11/mt_metadata>`_   
