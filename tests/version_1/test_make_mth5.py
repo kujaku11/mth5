@@ -201,17 +201,20 @@ class TestMakeMTH5(unittest.TestCase):
                 ["a", "b", "c", "d"], self.m.get_station("CAS04").groups_list
             )
 
-        for run in ["a"]:
+        for run in ["a", "b"]:
             for ch in ["ex", "ey", "hx", "hy", "hz"]:
                 with self.subTest(name=f"has data CAS04.{run}.{ch}"):
                     x = self.m.get_channel("CAS04", run, ch)
-                    self.assertTrue(np.all(x.hdf5_dataset == 0))
+                    x_ts = x.to_channel_ts()
+                    self.assertTrue(np.all((x_ts._ts.values==0)==True))
 
-        for run in ["b", "c", "d"]:
+        for run in ["c", "d"]:
             for ch in ["ex", "ey", "hx", "hy", "hz"]:
                 with self.subTest(name=f"has data CAS04.{run}.{ch}"):
                     x = self.m.get_channel("CAS04", run, ch)
+                    x_ts = x.to_channel_ts()
                     self.assertFalse(np.all(x.hdf5_dataset == 0))
+                    self.assertFalse(np.all((x_ts._ts.values==0)==True))
 
         for run in ["a", "b", "c"]:
             for ch in ["ex", "ey", "hx", "hy", "hz"]:
