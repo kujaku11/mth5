@@ -40,7 +40,7 @@ Example
 .. toctree::
     :maxdepth: 1
 	
-    source/notebooks/v0.1.0_example.ipynb
+    examples/notebooks/v0.1.0_example.ipynb
 
 
 
