@@ -155,6 +155,7 @@ class BaseGroup:
                 "options": [],
                 "alias": [],
                 "example": "group_name",
+                "default": None,
             },
         )
 
@@ -171,12 +172,10 @@ class BaseGroup:
                 "options": [],
                 "alias": [],
                 "example": "<HDF5 Group Reference>",
+                "default": "none"
             },
         )
 
-        # add mth5 and hdf5 attributes
-        self._metadata.mth5_type = self._class_name
-        self._metadata.hdf5_reference = self.hdf5_group.ref
 
     @property
     def metadata(self):

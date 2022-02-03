@@ -14,6 +14,6 @@ Examples
 .. toctree::
     :maxdepth: 2
     
-    notebooks/channel_ts_example.ipynb
-    notebooks/run_ts_example.ipynb
+    ../examples/notebooks/channel_ts_example.ipynb
+    ../examples/notebooks/run_ts_example.ipynb
 	

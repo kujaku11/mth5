@@ -32,7 +32,7 @@ from mth5 import CHUNK_SIZE
 from mth5.groups.base import BaseGroup
 from mth5.groups import FiltersGroup
 from mth5.utils.exceptions import MTH5Error
-from mth5.helpers import to_numpy_type, inherit_doc_string
+from mth5.helpers import to_numpy_type, inherit_doc_string, validate_name
 from mth5.timeseries import ChannelTS, RunTS
 from mth5.timeseries.channel_ts import make_dt_coordinates
 from mth5.utils.mth5_logger import setup_logger
@@ -266,6 +266,8 @@ class MasterStationGroup(BaseGroup):
         """
         if station_name is None:
             raise Exception("station name is None, do not know what to name it")
+        
+        station_name = validate_name(station_name)
         try:
             station_group = self.hdf5_group.create_group(station_name)
             self.logger.debug("Created group %s", station_group.name)
@@ -274,7 +276,7 @@ class MasterStationGroup(BaseGroup):
                 station_metadata = metadata.Station(id=station_name)
 
             else:
-                if station_metadata.id != station_name:
+                if validate_name(station_metadata.id) != station_name:
                     msg = (
                         f"Station group name {station_name} must be same as "
                         + f"station id {station_metadata.id}"
@@ -321,7 +323,7 @@ class MasterStationGroup(BaseGroup):
         MTH5Error: MT001 does not exist, check station_list for existing names
 
         """
-
+        station_name = validate_name(station_name)
         try:
             return StationGroup(self.hdf5_group[station_name], **self.dataset_options)
         except KeyError:
@@ -356,7 +358,8 @@ class MasterStationGroup(BaseGroup):
             >>> mth5_obj.stations_group.remove_station('MT001')
 
         """
-
+        
+        station_name = validate_name(station_name)
         try:
             del self.hdf5_group[station_name]
             self.logger.info(
@@ -696,11 +699,12 @@ class StationGroup(BaseGroup):
 
         """
 
+        run_name = validate_name(run_name)
         try:
             run_group = self.hdf5_group.create_group(run_name)
             if run_metadata is None:
                 run_metadata = metadata.Run(id=run_name)
-            elif run_metadata.id != run_name:
+            elif validate_name(run_metadata.id) != run_name:
                 msg = "Run name %s must be the same as run_metadata.id %s"
                 self.logger.error(msg, run_name, run_metadata.id)
                 raise MTH5Error(msg % (run_name, run_metadata.id))
@@ -729,6 +733,8 @@ class StationGroup(BaseGroup):
         >>> existing_run = station.get_run('MT001')
 
         """
+        
+        run_name = validate_name(run_name)
         try:
             return RunGroup(self.hdf5_group[run_name], **self.dataset_options)
         except KeyError:
@@ -763,6 +769,7 @@ class StationGroup(BaseGroup):
 
         """
 
+        run_name = validate_name(run_name)
         try:
             del self.hdf5_group[run_name]
             self.logger.info(
@@ -1115,7 +1122,7 @@ class RunGroup(BaseGroup):
 
 
         """
-        channel_name = channel_name.lower()
+        channel_name = validate_name(channel_name.lower())
         for key, value in kwargs.items():
             setattr(self, key, value)
 
@@ -1251,6 +1258,7 @@ class RunGroup(BaseGroup):
 
         """
 
+        channel_name = validate_name(channel_name.lower())
         try:
             ch_dataset = self.hdf5_group[channel_name]
             if ch_dataset.attrs["mth5_type"].lower() in ["electric"]:
@@ -1316,7 +1324,7 @@ class RunGroup(BaseGroup):
 
         """
 
-        channel_name = channel_name.lower()
+        channel_name = validate_name(channel_name.lower())
 
         try:
             del self.hdf5_group[channel_name]
@@ -1612,6 +1620,7 @@ class ChannelDataset:
                 "options": [],
                 "alias": [],
                 "example": "group_name",
+                "default": None,
             },
         )
 
@@ -1628,6 +1637,7 @@ class ChannelDataset:
                 "options": [],
                 "alias": [],
                 "example": "<HDF5 Group Reference>",
+                "default": None
             },
         )
 
@@ -2362,8 +2372,8 @@ class ChannelDataset:
             [
                 (
                     self.metadata.component,
-                    self.metadata.time_period.start,
-                    self.metadata.time_period.end,
+                    self.metadata.time_period._start_dt.iso_no_tz,
+                    self.metadata.time_period._end_dt.iso_no_tz,
                     self.hdf5_dataset.size,
                     self.metadata.type,
                     self.metadata.units,

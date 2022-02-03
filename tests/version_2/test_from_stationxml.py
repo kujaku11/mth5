@@ -58,9 +58,9 @@ class TestFromStationXML01(unittest.TestCase):
         with self.subTest(name="network"):
             self.assertEqual(sg.metadata.fdsn.network, "ZU")
         with self.subTest(name="start time"):
-            self.assertEqual(sg.metadata.time_period.start_date, "2020-06-02")
+            self.assertEqual(sg.metadata.time_period.start_date, "2020-01-01")
         with self.subTest(name="end time"):
-            self.assertEqual(sg.metadata.time_period.end_date, "2020-07-13")
+            self.assertEqual(sg.metadata.time_period.end_date, "2023-12-31")
         with self.subTest(name="summary"):
             self.assertEqual(
                 sg.metadata.summary,
@@ -73,18 +73,18 @@ class TestFromStationXML01(unittest.TestCase):
         station_dict = {
             "acquired_by.author": None,
             "channels_recorded": [],
-            "data_type": None,
+            "data_type": "BBMT",
             "fdsn.id": "CAS04",
             "geographic_name": "Corral Hollow, CA, USA",
             "hdf5_reference": "<HDF5 object reference>",
             "id": "CAS04",
-            "location.declination.model": None,
-            "location.declination.value": None,
+            "location.declination.model": "WMM",
+            "location.declination.value": 0.0,
             "location.elevation": 329.3875,
             "location.latitude": 37.633351,
             "location.longitude": -121.468382,
             "mth5_type": "Station",
-            "orientation.method": None,
+            "orientation.method": "compass",
             "orientation.reference_frame": "geographic",
             "provenance.software.author": None,
             "provenance.software.name": None,
