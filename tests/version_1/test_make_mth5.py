@@ -29,7 +29,7 @@ class TestMakeMTH5(unittest.TestCase):
             "CAS04",
             "",
             "LQE",
-            "2020-06-02T19:00:00",
+            "2020-06-12T18:32:17",
             "2020-07-13T19:00:00",
         ]
         ZUCAS04LQ2 = [
@@ -37,7 +37,7 @@ class TestMakeMTH5(unittest.TestCase):
             "CAS04",
             "",
             "LQN",
-            "2020-06-02T19:00:00",
+            "2020-06-12T18:32:17",
             "2020-07-13T19:00:00",
         ]
         ZUCAS04BF1 = [
@@ -45,7 +45,7 @@ class TestMakeMTH5(unittest.TestCase):
             "CAS04",
             "",
             "LFE",
-            "2020-06-02T19:00:00",
+            "2020-06-12T18:32:17",
             "2020-07-13T19:00:00",
         ]
         ZUCAS04BF2 = [
@@ -53,7 +53,7 @@ class TestMakeMTH5(unittest.TestCase):
             "CAS04",
             "",
             "LFN",
-            "2020-06-02T19:00:00",
+            "2020-06-12T18:32:17",
             "2020-07-13T19:00:00",
         ]
         ZUCAS04BF3 = [
@@ -61,7 +61,7 @@ class TestMakeMTH5(unittest.TestCase):
             "CAS04",
             "",
             "LFZ",
-            "2020-06-02T19:00:00",
+            "2020-06-12T18:32:17",
             "2020-07-13T19:00:00",
         ]
         ZUNRV08LQ1 = [
@@ -69,7 +69,7 @@ class TestMakeMTH5(unittest.TestCase):
             "NVR08",
             "",
             "LQE",
-            "2020-06-02T19:00:00",
+            "2020-06-12T18:32:17",
             "2020-07-13T19:00:00",
         ]
         ZUNRV08LQ2 = [
@@ -77,7 +77,7 @@ class TestMakeMTH5(unittest.TestCase):
             "NVR08",
             "",
             "LQN",
-            "2020-06-02T19:00:00",
+            "2020-06-12T18:32:17",
             "2020-07-13T19:00:00",
         ]
         ZUNRV08BF1 = [
@@ -85,7 +85,7 @@ class TestMakeMTH5(unittest.TestCase):
             "NVR08",
             "",
             "LFE",
-            "2020-06-02T19:00:00",
+            "2020-06-12T18:32:17",
             "2020-07-13T19:00:00",
         ]
         ZUNRV08BF2 = [
@@ -93,7 +93,7 @@ class TestMakeMTH5(unittest.TestCase):
             "NVR08",
             "",
             "LFN",
-            "2020-06-02T19:00:00",
+            "2020-06-12T18:32:17",
             "2020-07-13T19:00:00",
         ]
         ZUNRV08BF3 = [
@@ -101,7 +101,7 @@ class TestMakeMTH5(unittest.TestCase):
             "NVR08",
             "",
             "LFZ",
-            "2020-06-02T19:00:00",
+            "2020-06-12T18:32:17",
             "2020-07-13T19:00:00",
         ]
         metadata_list = [
@@ -201,11 +201,20 @@ class TestMakeMTH5(unittest.TestCase):
                 ["a", "b", "c", "d"], self.m.get_station("CAS04").groups_list
             )
 
-        for run in ["a", "b", "c", "d"]:
+        for run in ["a", "b"]:
             for ch in ["ex", "ey", "hx", "hy", "hz"]:
                 with self.subTest(name=f"has data CAS04.{run}.{ch}"):
                     x = self.m.get_channel("CAS04", run, ch)
+                    x_ts = x.to_channel_ts()
+                    self.assertTrue(np.all((x_ts._ts.values==0)==True))
+
+        for run in ["c", "d"]:
+            for ch in ["ex", "ey", "hx", "hy", "hz"]:
+                with self.subTest(name=f"has data CAS04.{run}.{ch}"):
+                    x = self.m.get_channel("CAS04", run, ch)
+                    x_ts = x.to_channel_ts()
                     self.assertFalse(np.all(x.hdf5_dataset == 0))
+                    self.assertFalse(np.all((x_ts._ts.values==0)==True))
 
         for run in ["a", "b", "c"]:
             for ch in ["ex", "ey", "hx", "hy", "hz"]:
