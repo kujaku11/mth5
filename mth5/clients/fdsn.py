@@ -25,7 +25,6 @@ from mt_metadata.timeseries.stationxml import XMLInventoryMTExperiment
 
 from mth5.mth5 import MTH5
 from mth5.timeseries import RunTS
-from mth5.helpers import validate_name
 
 # =============================================================================
 
