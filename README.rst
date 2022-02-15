@@ -77,7 +77,7 @@ MTH5 Format
 MTH5 File Version 0.1.0
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. figure:: source/images/example_mt_file_structure.png
+.. figure:: docs/source/images/example_mt_file_structure.png
    :alt: MTH5 Format version 0.1.0
    :align: center
 
@@ -91,7 +91,7 @@ MTH5 file version **0.1.0** was the original file version where `Survey` was the
 MTH5 File Version 0.2.0
 ~~~~~~~~~~~~~~~~~~~~~~~~
    
-.. figure:: source/images/example_mt_file_structure_v2.png
+.. figure:: docs/source/images/example_mt_file_structure_v2.png
    :alt: MTH5 Format version 0.2.0
    :align: center
 
