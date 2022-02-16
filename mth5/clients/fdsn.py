@@ -29,7 +29,7 @@ from mth5.timeseries import RunTS
 # =============================================================================
 
 class FDSN:
-    def __init__(self, client="IRIS"):
+    def __init__(self, client="IRIS", mth5_version="0.2.0"):
         self.column_names = [
             "network",
             "station",
@@ -39,6 +39,7 @@ class FDSN:
             "end",
         ]
         self.client = client
+        self.mth5_version = mth5_version
         
     def _validate_dataframe(self, df):
         if not isinstance(df, pd.DataFrame):
