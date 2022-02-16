@@ -1,5 +1,16 @@
 # -*- coding: utf-8 -*-
 """
+Make MTH5
+============
+
+This module provides helper functions to make MTH5 file from various clients
+
+Supported Clients include:
+    
+    * FDSN (through Obspy)
+    * Science Base (TODO)
+    * NCI - Australia (TODO)
+
 Updated on Wed Aug  25 19:57:00 2021
 
 @author: jpeacock + tronan
@@ -15,6 +26,16 @@ from . import FDSN
 
 class MakeMTH5:
     def __init__(self, mth5_version="0.2.0", interact=False, save_path=None):
+        """
+        
+        :param mth5_version: MTH5 file version, defaults to "0.2.0"
+        :type mth5_version: string, optional
+        :param interact: keep file open (True) or close it (False), defaults to False
+        :type interact: Boolean, optional
+        :param save_path: Path to save MTH5 file to, defaults to None
+        :type save_path: string or :class:`pathlib.Path`, optional
+
+        """
     
         self.mth5_version = mth5_version
         self.interact = False
@@ -34,8 +55,7 @@ class MakeMTH5:
             - 'end'       --> End time YYYY-MM-DDThh:mm:ss
 
         :type request_df: :class:`pandas.DataFrame`
-        :param save_path: Path to save MTH5 file to, defaults to None
-        :type save_path: string or :class:`pathlib.Path`, optional
+
         :param client: FDSN client name, defaults to "IRIS"
         :type client: string, optional
         :raises AttributeError: If the input DataFrame is not properly
