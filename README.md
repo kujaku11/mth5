@@ -42,7 +42,7 @@ The goal of **MTH5** is to provide a self describing heirarchical data format fo
 
 The metadata follows the standards proposed by the [IRIS-PASSCAL MT Software working group](https://www.iris.edu/hq/about_iris/governance/mt_soft) and
 documented in [MT Metadata Standards](https://doi.org/10.5066/P9AXGKEV)
-.. note:: If you would like to comment or contribute checkout [Issues](https://github.com/kujaku11/mth5/issues) or [Slack](simpeg.slack.com).   
+**Note**: If you would like to comment or contribute checkout [Issues](https://github.com/kujaku11/mth5/issues) or [Slack](simpeg.slack.com).   
 
 MTH5 Format
 -----------
@@ -50,10 +50,9 @@ MTH5 Format
 -  The basic format of MTH5 is illustrated below, where metadata is attached at each level.
 
 MTH5 File Version 0.1.0
-~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------
 
 ![MTH5 Format version 0.1.0](docs/source/images/example_mt_file_structure.png)
-![MTH5 Format version 0.2.0](docs/source/images/example_mt_file_structure_v2.svg)
 
    
 MTH5 file version **0.1.0** was the original file version where `Survey` was the highest level of the file.  This has some limitations in that only one `Survey` could be saved in a single file, but if you have mulitple `Surveys` that you would like to store we need to add a higher level `Experiment`.  
@@ -62,7 +61,7 @@ MTH5 file version **0.1.0** was the original file version where `Survey` was the
    
    
 MTH5 File Version 0.2.0
-~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------
    
 ![MTH5 Format version 0.2.0](docs/source/images/example_mt_file_structure_v2.svg)
 
