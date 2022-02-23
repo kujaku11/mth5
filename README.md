@@ -19,7 +19,7 @@ This project is in cooperation with the Incorporated Research Institutes of Seis
 * **Free software**: MIT license
 * **Documentation**: https://mth5.readthedocs.io.
 * **Examples**: Click the `Binder` badge above and Jupyter Notebook examples are in **docs/examples/notebooks**
-* **Suggested Citation**: 
+* **Suggested Citation**: Peacock, J. R., Kappler, K., Ronan, T., Heagy, L.,  Kelbert, A., Frassetto, A. (2022) MTH5: an archive and exchangeable data format for magnetotelluric time series data, *Computers & Geoscience*, In Press
 
 
 Features
@@ -53,7 +53,7 @@ MTH5 Format
 MTH5 File Version 0.1.0
 ------------------------
 
-![MTH5 Format version 0.1.0](docs/source/images/example_mt_file_structure.png)
+![MTH5 Format version 0.1.0](docs/source/images/example_mt_file_structure.svg)
 
    
 MTH5 file version **0.1.0** was the original file version where `Survey` was the highest level of the file.  This has some limitations in that only one `Survey` could be saved in a single file, but if you have mulitple `Surveys` that you would like to store we need to add a higher level `Experiment`.  
@@ -71,11 +71,91 @@ MTH5 file version **0.2.0** has `Experiment` as the top level.  This allows for 
 
 **Hint**: MTH5 is comprehensively logged, therefore if any problems arise you can always check the mth5_debug.log (if you are in debug mode, change the mode in the mth5.__init__) and the mth5_error.log, which will be written to your current working directory.
 
+Examples
+-----------
+
+Make a simple MTH5 with one station, 2 runs, and 2 channels (version 0.2.0)
+
+```
+from mth5.mth5 import MTH5
+
+mth5_object = MTH5()
+mth5_object.open_mth5(r"/home/mt/example_mth5.h5", "a")
+
+# add a survey
+survey_group = mth5_object.add_survey("example")
+
+# add a station with metadata
+station_group = m.add_station("mt001", survey="example")
+station_group = survey_group.stations_group.add_station("mt002")
+station_group.metadata.location.latitude = "40:05:01"
+station_group.metadata.location.longitude = -122.3432
+station_group.metadata.location.elevation = 403.1
+station_group.metadata.acquired_by.author = "me"
+station_group.metadata.orientation.reference_frame = "geomagnetic"
+
+# IMPORTANT: Must always use the write_metadata method when metadata is updated.
+station_group.write_metadata()
+
+# add runs
+run_01 = m.add_run("mt002", "001", survey="example")
+run_02 = station_group.add_run("002")
+
+# add channels
+ex = m.add_channel("mt002", "001", "ex", "electric", None, survey="example")
+hy = run_01.add_channel("hy", "magnetic", None)
+
+print(mth5_object)
+
+/:
+====================
+    |- Group: Experiment
+    --------------------
+        |- Group: Reports
+        -----------------
+        |- Group: Standards
+        -------------------
+            --> Dataset: summary
+            ......................
+        |- Group: Surveys
+        -----------------
+            |- Group: example
+            -----------------
+                |- Group: Filters
+                -----------------
+                    |- Group: coefficient
+                    ---------------------
+                    |- Group: fap
+                    -------------
+                    |- Group: fir
+                    -------------
+                    |- Group: time_delay
+                    --------------------
+                    |- Group: zpk
+                    -------------
+                |- Group: Reports
+                -----------------
+                |- Group: Standards
+                -------------------
+                    --> Dataset: summary
+                    ......................
+                |- Group: Stations
+                ------------------
+                    |- Group: mt001
+                    ---------------
+                    |- Group: mt002
+                    ---------------
+                        |- Group: 001
+                        -------------
+                            --> Dataset: ex
+                            .................
+                            --> Dataset: hy
+                            .................
+                        |- Group: 002
+                        -------------
+```
 
 Credits
 -------
 
-This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
-
-.. _Cookiecutter: https://github.com/audreyr/cookiecutter
-.. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage
+This project is in cooperation with the Incorporated Research Institutes of Seismology, the U.S. Geological Survey, and other collaborators.  Facilities of the IRIS Consortium are supported by the National Science Foundation’s Seismological Facilities for the Advancement of Geoscience (SAGE) Award under Cooperative Support Agreement EAR-1851048.  USGS is partially funded through the Community for Data Integration and IMAGe through the Minerals Resources Program. 
