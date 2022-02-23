@@ -38,7 +38,7 @@ This project is in cooperation with the Incorporated Research Institutes of Seis
 
 ## From Source
 
-`git clone git://code.chs.usgs.gov/jpeacock/mth5/-/edit/master/mth5`
+`git clone https://code.chs.usgs.gov/jpeacock/mth5.git`
 
 `python setup.py install`
 
