@@ -38,18 +38,18 @@ This project is in cooperation with the Incorporated Research Institutes of Seis
 
 ## From Source
 
-`git clone git://github.com/kujaku11/mt_metadata`
+`git clone git://code.chs.usgs.gov/jpeacock/mth5/-/edit/master/mth5`
 
 `python setup.py install`
 
 You can add the flag `-e` if you want to change the code.
 
 ## PIP
-`pip install mt_metadata`
+`pip install mth5`
 
 ## Conda
 
-`conda install mt_metadata`
+`conda install mth5`
 
 # Introduction
 
