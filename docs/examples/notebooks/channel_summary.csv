@@ -1,0 +1,51 @@
+,survey,station,run,latitude,longitude,elevation,component,start,end,n_samples,sample_rate,measurement_type,azimuth,tilt,units,hdf5_reference
+0,CONUS Sout,CAS04,a,37.633351,-121.468382,329.3875,ex,2020-06-02 19:00:00,2020-06-02 22:07:46,11267,1.0,electric,13.2,0.0,digital counts,<HDF5 object reference>
+1,CONUS Sout,CAS04,a,37.633351,-121.468382,329.3875,ey,2020-06-02 19:00:00,2020-06-02 22:07:46,11267,1.0,electric,103.2,0.0,digital counts,<HDF5 object reference>
+2,CONUS Sout,CAS04,a,37.633351,-121.468382,329.3875,hx,2020-06-02 19:00:00,2020-06-02 22:07:46,11267,1.0,magnetic,13.2,0.0,digital counts,<HDF5 object reference>
+3,CONUS Sout,CAS04,a,37.633351,-121.468382,329.3875,hy,2020-06-02 19:00:00,2020-06-02 22:07:46,11267,1.0,magnetic,103.2,0.0,digital counts,<HDF5 object reference>
+4,CONUS Sout,CAS04,a,37.633351,-121.468382,329.3875,hz,2020-06-02 19:00:00,2020-06-02 22:07:46,11267,1.0,magnetic,0.0,0.0,digital counts,<HDF5 object reference>
+5,CONUS Sout,CAS04,b,37.633351,-121.468382,329.3875,ex,2020-06-02 22:24:55,2020-06-12 17:52:23,847649,1.0,electric,13.2,0.0,digital counts,<HDF5 object reference>
+6,CONUS Sout,CAS04,b,37.633351,-121.468382,329.3875,ey,2020-06-02 22:24:55,2020-06-12 17:52:23,847649,1.0,electric,103.2,0.0,digital counts,<HDF5 object reference>
+7,CONUS Sout,CAS04,b,37.633351,-121.468382,329.3875,hx,2020-06-02 22:24:55,2020-06-12 17:52:23,847649,1.0,magnetic,13.2,0.0,digital counts,<HDF5 object reference>
+8,CONUS Sout,CAS04,b,37.633351,-121.468382,329.3875,hy,2020-06-02 22:24:55,2020-06-12 17:52:23,847649,1.0,magnetic,103.2,0.0,digital counts,<HDF5 object reference>
+9,CONUS Sout,CAS04,b,37.633351,-121.468382,329.3875,hz,2020-06-02 22:24:55,2020-06-12 17:52:23,847649,1.0,magnetic,0.0,0.0,digital counts,<HDF5 object reference>
+10,CONUS Sout,CAS04,c,37.633351,-121.468382,329.3875,ex,2020-06-12 18:32:17,2020-07-01 17:32:59,1638043,1.0,electric,13.2,0.0,digital counts,<HDF5 object reference>
+11,CONUS Sout,CAS04,c,37.633351,-121.468382,329.3875,ey,2020-06-12 18:32:17,2020-07-01 17:32:59,1638043,1.0,electric,103.2,0.0,digital counts,<HDF5 object reference>
+12,CONUS Sout,CAS04,c,37.633351,-121.468382,329.3875,hx,2020-06-12 18:32:17,2020-07-01 17:32:59,1638043,1.0,magnetic,13.2,0.0,digital counts,<HDF5 object reference>
+13,CONUS Sout,CAS04,c,37.633351,-121.468382,329.3875,hy,2020-06-12 18:32:17,2020-07-01 17:32:59,1638043,1.0,magnetic,103.2,0.0,digital counts,<HDF5 object reference>
+14,CONUS Sout,CAS04,c,37.633351,-121.468382,329.3875,hz,2020-06-12 18:32:17,2020-07-01 17:32:59,1638043,1.0,magnetic,0.0,0.0,digital counts,<HDF5 object reference>
+15,CONUS Sout,CAS04,d,37.633351,-121.468382,329.3875,ex,2020-07-01 19:36:55,2020-07-13 19:00:00,1034586,1.0,electric,13.2,0.0,digital counts,<HDF5 object reference>
+16,CONUS Sout,CAS04,d,37.633351,-121.468382,329.3875,ey,2020-07-01 19:36:55,2020-07-13 19:00:00,1034586,1.0,electric,103.2,0.0,digital counts,<HDF5 object reference>
+17,CONUS Sout,CAS04,d,37.633351,-121.468382,329.3875,hx,2020-07-01 19:36:55,2020-07-13 19:00:00,1034586,1.0,magnetic,13.2,0.0,digital counts,<HDF5 object reference>
+18,CONUS Sout,CAS04,d,37.633351,-121.468382,329.3875,hy,2020-07-01 19:36:55,2020-07-13 19:00:00,1034586,1.0,magnetic,103.2,0.0,digital counts,<HDF5 object reference>
+19,CONUS Sout,CAS04,d,37.633351,-121.468382,329.3875,hz,2020-07-01 19:36:55,2020-07-13 19:00:00,1034586,1.0,magnetic,0.0,0.0,digital counts,<HDF5 object reference>
+20,CONUS Sout,NVR08,a,38.32663,-118.082382,1375.425,ex,2020-06-03 19:10:11,2020-06-03 19:57:51,2861,1.0,electric,12.6,0.0,digital counts,<HDF5 object reference>
+21,CONUS Sout,NVR08,a,38.32663,-118.082382,1375.425,ey,2020-06-03 19:10:11,2020-06-03 19:57:51,2861,1.0,electric,102.6,0.0,digital counts,<HDF5 object reference>
+22,CONUS Sout,NVR08,a,38.32663,-118.082382,1375.425,hx,2020-06-03 19:10:11,2020-06-03 19:57:51,2861,1.0,magnetic,12.6,0.0,digital counts,<HDF5 object reference>
+23,CONUS Sout,NVR08,a,38.32663,-118.082382,1375.425,hy,2020-06-03 19:10:11,2020-06-03 19:57:51,2861,1.0,magnetic,102.6,0.0,digital counts,<HDF5 object reference>
+24,CONUS Sout,NVR08,a,38.32663,-118.082382,1375.425,hz,2020-06-03 19:10:11,2020-06-03 19:57:51,2861,1.0,magnetic,0.0,0.0,digital counts,<HDF5 object reference>
+25,CONUS Sout,NVR08,b,38.32663,-118.082382,1375.425,ex,2020-06-03 20:14:13,2020-06-14 16:56:02,938510,1.0,electric,12.6,0.0,digital counts,<HDF5 object reference>
+26,CONUS Sout,NVR08,b,38.32663,-118.082382,1375.425,ey,2020-06-03 20:14:13,2020-06-14 16:56:02,938510,1.0,electric,102.6,0.0,digital counts,<HDF5 object reference>
+27,CONUS Sout,NVR08,b,38.32663,-118.082382,1375.425,hx,2020-06-03 20:14:13,2020-06-14 16:56:02,938510,1.0,magnetic,12.6,0.0,digital counts,<HDF5 object reference>
+28,CONUS Sout,NVR08,b,38.32663,-118.082382,1375.425,hy,2020-06-03 20:14:13,2020-06-14 16:56:02,938510,1.0,magnetic,102.6,0.0,digital counts,<HDF5 object reference>
+29,CONUS Sout,NVR08,b,38.32663,-118.082382,1375.425,hz,2020-06-03 20:14:13,2020-06-14 16:56:02,938510,1.0,magnetic,0.0,0.0,digital counts,<HDF5 object reference>
+30,CONUS Sout,NVR08,c,38.32663,-118.082382,1375.425,ex,2020-06-14 18:00:44,2020-06-24 15:55:46,856503,1.0,electric,12.6,0.0,digital counts,<HDF5 object reference>
+31,CONUS Sout,NVR08,c,38.32663,-118.082382,1375.425,ey,2020-06-14 18:00:44,2020-06-24 15:55:46,856503,1.0,electric,102.6,0.0,digital counts,<HDF5 object reference>
+32,CONUS Sout,NVR08,c,38.32663,-118.082382,1375.425,hx,2020-06-14 18:00:44,2020-06-24 15:55:46,856503,1.0,magnetic,12.6,0.0,digital counts,<HDF5 object reference>
+33,CONUS Sout,NVR08,c,38.32663,-118.082382,1375.425,hy,2020-06-14 18:00:44,2020-06-24 15:55:46,856503,1.0,magnetic,102.6,0.0,digital counts,<HDF5 object reference>
+34,CONUS Sout,NVR08,c,38.32663,-118.082382,1375.425,hz,2020-06-14 18:00:44,2020-06-24 15:55:46,856503,1.0,magnetic,0.0,0.0,digital counts,<HDF5 object reference>
+35,Kansas 201,CAY10,001,33.873,-116.305,281.6,ex,2019-10-11 22:12:00,2019-10-11 23:04:44,3165,1.0,electric,13.1,0.0,counts,<HDF5 object reference>
+36,Kansas 201,CAY10,001,33.873,-116.305,281.6,ey,2019-10-11 22:12:00,2019-10-11 23:04:44,3165,1.0,electric,103.1,0.0,counts,<HDF5 object reference>
+37,Kansas 201,CAY10,001,33.873,-116.305,281.6,hx,2019-10-11 22:12:00,2019-10-11 23:04:44,3165,1.0,magnetic,13.1,0.0,counts,<HDF5 object reference>
+38,Kansas 201,CAY10,001,33.873,-116.305,281.6,hy,2019-10-11 22:12:00,2019-10-11 23:04:44,3165,1.0,magnetic,103.1,0.0,counts,<HDF5 object reference>
+39,Kansas 201,CAY10,001,33.873,-116.305,281.6,hz,2019-10-11 22:12:00,2019-10-11 23:04:44,3165,1.0,magnetic,0.0,90.0,counts,<HDF5 object reference>
+40,Kansas 201,CAY10,002,33.873,-116.305,281.6,ex,2019-10-11 23:24:03,2019-10-22 17:03:03,927541,1.0,electric,0.0,0.0,counts,<HDF5 object reference>
+41,Kansas 201,CAY10,002,33.873,-116.305,281.6,ey,2019-10-11 23:24:03,2019-10-22 17:03:03,927541,1.0,electric,0.0,0.0,counts,<HDF5 object reference>
+42,Kansas 201,CAY10,002,33.873,-116.305,281.6,hx,2019-10-11 23:24:03,2019-10-22 17:03:03,927541,1.0,magnetic,0.0,0.0,counts,<HDF5 object reference>
+43,Kansas 201,CAY10,002,33.873,-116.305,281.6,hy,2019-10-11 23:24:03,2019-10-22 17:03:03,927541,1.0,magnetic,0.0,0.0,counts,<HDF5 object reference>
+44,Kansas 201,CAY10,002,33.873,-116.305,281.6,hz,2019-10-11 23:24:03,2019-10-22 17:03:03,927541,1.0,magnetic,0.0,0.0,counts,<HDF5 object reference>
+45,Kansas 201,CAY10,003,33.873,-116.305,281.6,ex,2019-10-22 18:40:48,2019-10-30 00:00:00,623953,1.0,electric,0.0,0.0,counts,<HDF5 object reference>
+46,Kansas 201,CAY10,003,33.873,-116.305,281.6,ey,2019-10-22 18:40:48,2019-10-30 00:00:00,623953,1.0,electric,0.0,0.0,counts,<HDF5 object reference>
+47,Kansas 201,CAY10,003,33.873,-116.305,281.6,hx,2019-10-22 18:40:48,2019-10-30 00:00:00,623953,1.0,magnetic,0.0,0.0,counts,<HDF5 object reference>
+48,Kansas 201,CAY10,003,33.873,-116.305,281.6,hy,2019-10-22 18:40:48,2019-10-30 00:00:00,623953,1.0,magnetic,0.0,0.0,counts,<HDF5 object reference>
+49,Kansas 201,CAY10,003,33.873,-116.305,281.6,hz,2019-10-22 18:40:48,2019-10-30 00:00:00,623953,1.0,magnetic,0.0,0.0,counts,<HDF5 object reference>
