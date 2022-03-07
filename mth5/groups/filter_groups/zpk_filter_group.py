@@ -140,15 +140,25 @@ class ZPKGroup(BaseGroup):
 
         zpk_obj = PoleZeroFilter(**zpk_group.attrs)
 
-        try:
-            zpk_obj.poles = zpk_group["poles"][:]
-        except TypeError:
+        if "poles" in zpk_group.keys():
+            if zpk_group["poles"].dtype == complex:
+                zpk_obj.poles = zpk_group["poles"][:]
+            elif "real" in zpk_group["poles"].dtype.names:
+                zpk_obj.poles = zpk_group["poles"][()]["real"] + 1j*zpk_group["poles"][()]["imag"]
+            else:
+                raise ValueError(f"Cannot convert values to complex valued poles, check filter {name}")
+        else:
             self.logger.debug(f"ZPK filter {name} has no poles")
             zpk_obj.poles = []
 
-        try:
-            zpk_obj.zeros = zpk_group["zeros"][:]
-        except TypeError:
+        if "zeros" in zpk_group.keys():
+            if zpk_group["zeros"].dtype == complex:
+                zpk_obj.zeros = zpk_group["zeros"][:]
+            elif "real" in zpk_group["zeros"].dtype.names:
+                zpk_obj.zeros = zpk_group["zeros"][()]["real"] + 1j*zpk_group["zeros"][()]["imag"]
+            else:
+                raise ValueError(f"Cannot convert values to complex valued zeros, check filter {name}")
+        else:
             self.logger.debug(f"ZPK filter {name} has no zeros")
             zpk_obj.zeros = []
 
