@@ -26,7 +26,7 @@ from mt_metadata.base import Base
 
 from mth5.helpers import get_tree
 from mth5.utils.exceptions import MTH5Error
-from mth5.helpers import to_numpy_type
+from mth5.helpers import to_numpy_type, from_numpy_type
 from mth5.utils.mth5_logger import setup_logger
 
 # make a dictionary of available metadata classes
@@ -225,7 +225,10 @@ class BaseGroup:
         read metadata from the HDF5 group into metadata object
 
         """
-        self.metadata.from_dict({self._class_name: dict(self.hdf5_group.attrs)})
+        meta_dict = dict(self.hdf5_group.attrs)
+        for key, value in meta_dict.items():
+            meta_dict[key] = from_numpy_type(value)
+        self.metadata.from_dict({self._class_name: meta_dict})
 
     def write_metadata(self):
         """

@@ -14,6 +14,7 @@ Created on Thu May 13 13:45:27 2021
 
 import unittest
 from pathlib import Path
+import numpy as np
 
 from mth5 import mth5
 from mt_metadata.timeseries import Experiment
@@ -98,12 +99,16 @@ class TestMTH5(unittest.TestCase):
             h5_sd = self.mth5_obj.filters_group.to_filter_object(key)
             h5_sd = h5_sd.to_dict(single=True, required=False)
             for k in sd.keys():
-                v1 = sd[k]
-                v2 = h5_sd[k]
-                if isinstance(v1, (float, int)):
-                    self.assertAlmostEqual(v1, float(v2), 5)
-                else:
-                    self.assertEqual(v1, v2)
+                with self.subTest(f"{key}_{k}"):
+                    v1 = sd[k]
+                    v2 = h5_sd[k]
+                    if isinstance(v1, (float, int)):
+                        self.assertAlmostEqual(v1, float(v2), 5)
+                    elif isinstance(v1, np.ndarray):
+                        self.assertEqual(v1.dtype, v2.dtype)
+                        self.assertTrue((v1==v2).all())
+                    else:
+                        self.assertEqual(v1, v2)
 
             # self.assertDictEqual(h5_sd, sd)
 
