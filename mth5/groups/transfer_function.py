@@ -17,7 +17,7 @@ from mth5.helpers import to_numpy_type, inherit_doc_string, validate_name
 from mth5.utils.exceptions import MTH5Error
 
 from mt_metadata.transfer_functions.core import TF
-from mt_metadata.transfer_functions.tf.metadata import StatisticalEstimate
+from mt_metadata.transfer_functions.tf import StatisticalEstimate
 # =============================================================================
 
 class TransferFunctionsGroup(BaseGroup):
@@ -88,7 +88,7 @@ class TransferFunction(BaseGroup):
         
         try:
             return self.hdf5_group["period"][()]
-        except (OSError, RuntimeError, ValueError):
+        except KeyError:
             return None
         
     @period.setter
@@ -105,7 +105,8 @@ class TransferFunction(BaseGroup):
                     maxshape=(None,),
                     **self.dataset_options,) 
                 
-            except (OSError, RuntimeError, ValueError):
+            except (OSError, RuntimeError, ValueError) as error:
+                self.logger.exception(error)
                 self.logger.warning("period already exists, overwriting")
                 self.hdf5_group["period"][...] = period
                 
@@ -113,7 +114,7 @@ class TransferFunction(BaseGroup):
     def add_statistical_estimate(self,
                                  estimate_metadata,
                                  estimate_data,
-                                 max_shape=(None,),
+                                 max_shape=(None, None, None),
                                  chunks=True,
                                  **kwargs,):
         """
@@ -128,11 +129,11 @@ class TransferFunction(BaseGroup):
     
         estimate_metadata.name = validate_name(estimate_metadata.name)
         
-        if estimate_data is not None:    
-            estimate_metadata.data_type = estimate_data.dtype
+        if estimate_data is not None: 
+            estimate_metadata.data_type = estimate_data.dtype.name
 
         try:
-            estimate_dataset = self.hdf5_group.create_dataset(
+            dataset = self.hdf5_group.create_dataset(
                 estimate_metadata.name,
                 data=estimate_data,
                 dtype=estimate_data.dtype,
@@ -140,7 +141,13 @@ class TransferFunction(BaseGroup):
                 maxshape=max_shape,
                 **self.dataset_options,
             )
-        except (OSError, RuntimeError, ValueError):
+            
+            estimate_dataset = EstimateDataset(dataset, 
+                                               dataset_metadata=estimate_metadata)
+            
+
+        except (OSError, RuntimeError, ValueError) as error:
+            self.logger.exception(error)
             msg = f"estimate {estimate_metadata.name} already exists, returning existing group."
             self.logger.debug(msg) 
             

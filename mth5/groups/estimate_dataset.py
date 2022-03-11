@@ -12,10 +12,9 @@ import weakref
 
 import h5py
 import numpy as np
-import pandas as pd
 import xarray as xr
 
-from mt_metadata.transfer_functions.tf.metadata import StatisticalEstimate
+from mt_metadata.transfer_functions.tf import StatisticalEstimate
 
 from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import to_numpy_type
@@ -161,7 +160,7 @@ class EstimateDataset:
 
         self.hdf5_dataset[...] = new_data_array
         
-    def to_xarray(self):
+    def to_xarray(self, period):
         """
         :return: an xarray DataArray with appropriate metadata and the
                  appropriate time index.
@@ -173,27 +172,14 @@ class EstimateDataset:
         """
 
         return xr.DataArray(
-            self.hdf5_dataset[()],
-            coords=[("time", self.time_index)],
+            data=self.hdf5_dataset[()],
+            dims=["period", "output", "input"],
+            name=self.metadata.name,
+            coords=[("period", period), 
+                    ("output", self.metadata.output_channels),
+                    ("input", self.metadata.input_channels)],
             attrs=self.metadata.to_dict(single=True),
         )
-
-    def to_dataframe(self):
-        """
-
-        :return: a dataframe where data is stored in the 'data' column and
-                 attributes are stored in the experimental attrs attribute
-        :rtype: :class:`pandas.DataFrame`
-
-        .. note:: that metadta will not be validated if changed in an xarray.
-
-        loads into RAM
-        """
-
-        df = pd.DataFrame({"data": self.hdf5_dataset[()]}, index=self.time_index)
-        df.attrs.update(self.metadata.to_dict(single=True))
-
-        return df
 
     def to_numpy(self):
         """
@@ -205,46 +191,10 @@ class EstimateDataset:
 
         """
 
-        return np.core.records.fromarrays(
-            [self.time_index.to_numpy(), self.hdf5_dataset[()]],
-            names="time,channel_data",
-        )
-    
-    def from_xarray(self):
-        """
-        :return: an xarray DataArray with appropriate metadata and the
-                 appropriate time index.
-        :rtype: :class:`xarray.DataArray`
+        return self.hdf5_dataset[()]
+        
 
-        .. note:: that metadta will not be validated if changed in an xarray.
-
-        loads from memory
-        """
-
-        return xr.DataArray(
-            self.hdf5_dataset[()],
-            coords=[("time", self.time_index)],
-            attrs=self.metadata.to_dict(single=True),
-        )
-
-    def from_dataframe(self):
-        """
-
-        :return: a dataframe where data is stored in the 'data' column and
-                 attributes are stored in the experimental attrs attribute
-        :rtype: :class:`pandas.DataFrame`
-
-        .. note:: that metadta will not be validated if changed in an xarray.
-
-        loads into RAM
-        """
-
-        df = pd.DataFrame({"data": self.hdf5_dataset[()]}, index=self.time_index)
-        df.attrs.update(self.metadata.to_dict(single=True))
-
-        return df
-
-    def from_numpy(self):
+    def from_numpy(self, new_estimate):
         """
         :return: a numpy structured array with 2 columns (time, channel_data)
         :rtype: :class:`numpy.core.records`
@@ -254,8 +204,37 @@ class EstimateDataset:
 
         """
 
-        return np.core.records.fromarrays(
-            [self.time_index.to_numpy(), self.hdf5_dataset[()]],
-            names="time,channel_data",
-        )
+        if not isinstance(new_estimate, np.ndarray):
+            try:
+                new_estimate = np.array(new_estimate)
+            except (ValueError, TypeError) as error:
+                msg = f"{error} Input must be a numpy array not {type(new_estimate)}"
+                self.logger.exception(msg)
+                raise TypeError(msg)
+
+        if new_estimate.shape != self.hdf5_dataset.shape:
+            self.hdf5_dataset.resize(new_estimate.shape)
+
+        self.hdf5_dataset[...] = new_estimate
+        
+    
+    def from_xarray(self, data):
+        """
+        :return: an xarray DataArray with appropriate metadata and the
+                 appropriate time index.
+        :rtype: :class:`xarray.DataArray`
+
+        .. note:: that metadta will not be validated if changed in an xarray.
+
+        loads from memory
+        """
+        
+        self.metadata.output_channels = data.coords["output"].values.tolist()
+        self.metadata.input_channels = data.coords["input"].values.tolist()
+        self.metadata.name = data.name
+        self.metadata.data_type = data.dtype.name
+        
+        self.write_metadata()
+        
+        self.from_numpy(data.to_numpy())
 
