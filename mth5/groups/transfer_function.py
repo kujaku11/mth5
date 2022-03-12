@@ -111,7 +111,7 @@ class TransferFunction(BaseGroup):
                 self.hdf5_group["period"][...] = period
                 
 
-    def _add_statistical_estimate(self,
+    def add_statistical_estimate(self,
                                  estimate_name,
                                  estimate_data=None,
                                  estimate_metadata=None,
@@ -130,8 +130,25 @@ class TransferFunction(BaseGroup):
     
         estimate_name = validate_name(estimate_name)
         
-        if estimate_data:
+        if estimate_metadata is None:
+            estimate_metadata = StatisticalEstimate()
+        
+        if estimate_data is not None:
+            if not isinstance(estimate_data, (np.ndarray, xr.DataArray)):
+                msg = f"Need to input a numpy or xarray.DataArray not {type(estimate_data)}" 
+                self.logger.exception(msg)
+                raise TypeError(msg)
+                
+            if isinstance(estimate_data, xr.DataArray):
+                estimate_metadata.output_channels = estimate_data.coords["output"].values.tolist()
+                estimate_metadata.input_channels = estimate_data.coords["input"].values.tolist()
+                estimate_metadata.name = validate_name(estimate_data.name)
+                estimate_metadata.data_type = estimate_data.dtype.name
+                
+                estimate_data = estimate_data.to_numpy()
+                    
             dtype = estimate_data.dtype
+        
         else:
             dtype = complex
 
