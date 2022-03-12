@@ -111,9 +111,10 @@ class TransferFunction(BaseGroup):
                 self.hdf5_group["period"][...] = period
                 
 
-    def add_statistical_estimate(self,
-                                 estimate_metadata,
-                                 estimate_data,
+    def _add_statistical_estimate(self,
+                                 estimate_name,
+                                 estimate_data=None,
+                                 estimate_metadata=None,
                                  max_shape=(None, None, None),
                                  chunks=True,
                                  **kwargs,):
@@ -127,16 +128,18 @@ class TransferFunction(BaseGroup):
 
         """
     
-        estimate_metadata.name = validate_name(estimate_metadata.name)
+        estimate_name = validate_name(estimate_name)
         
-        if estimate_data is not None: 
-            estimate_metadata.data_type = estimate_data.dtype.name
+        if estimate_data:
+            dtype = estimate_data.dtype
+        else:
+            dtype = complex
 
         try:
             dataset = self.hdf5_group.create_dataset(
-                estimate_metadata.name,
+                estimate_name,
                 data=estimate_data,
-                dtype=estimate_data.dtype,
+                dtype=dtype,
                 chunks=chunks,
                 maxshape=max_shape,
                 **self.dataset_options,
@@ -145,7 +148,6 @@ class TransferFunction(BaseGroup):
             estimate_dataset = EstimateDataset(dataset, 
                                                dataset_metadata=estimate_metadata)
             
-
         except (OSError, RuntimeError, ValueError) as error:
             self.logger.exception(error)
             msg = f"estimate {estimate_metadata.name} already exists, returning existing group."
