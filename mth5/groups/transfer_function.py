@@ -106,7 +106,7 @@ class TransferFunction(BaseGroup):
                     **self.dataset_options,) 
                 
             except (OSError, RuntimeError, ValueError) as error:
-                self.logger.exception(error)
+                self.logger.error(error)
                 self.logger.warning("period already exists, overwriting")
                 self.hdf5_group["period"][...] = period
                 
@@ -132,6 +132,7 @@ class TransferFunction(BaseGroup):
         
         if estimate_metadata is None:
             estimate_metadata = StatisticalEstimate()
+            estimate_metadata.name = estimate_name
         
         if estimate_data is not None:
             if not isinstance(estimate_data, (np.ndarray, xr.DataArray)):
@@ -151,6 +152,8 @@ class TransferFunction(BaseGroup):
         
         else:
             dtype = complex
+            chunks = True
+            estimate_data = np.zeros((1, 1, 1), dtype=dtype)
 
         try:
             dataset = self.hdf5_group.create_dataset(
@@ -182,8 +185,7 @@ class TransferFunction(BaseGroup):
         
         try:
             estimate_dataset = self.hdf5_group[estimate_name]
-            estimate_metadata = StatisticalEstimate()
-            estimate_metadata.from_dict(estimate_dataset.attrs)
+            return EstimateDataset(estimate_dataset)
             
         except KeyError:
             msg = (
@@ -221,5 +223,40 @@ class TransferFunction(BaseGroup):
             )
             self.logger.exception(msg)
             raise MTH5Error(msg)
+            
+    def to_tf_object(self):
+        """
+        Create a mt_metadata.transfer_function.core.TF object from the 
+        estimates in the group
+        
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        
+        tf_obj = TF()
+        if self.period is not None:
+            tf_obj.period = self.period
+        else:
+            msg = "Period must not be None to create a transfer function object"
+            self.logger.error(msg)
+            raise ValueError(msg)
+            
+        for estimate_name in self.groups_list:
+            if estimate_name in ["period"]:
+                continue
+            estimate = self.get_estimate(estimate_name)
+            
+            try:
+                setattr(tf_obj, estimate_name, estimate.to_numpy())
+            
+            except AttributeError as error:
+                self.logger.exception(error)
+            
+        return tf_obj
+                
+            
+            
+        
         
     

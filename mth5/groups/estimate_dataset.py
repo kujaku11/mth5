@@ -211,6 +211,11 @@ class EstimateDataset:
                 msg = f"{error} Input must be a numpy array not {type(new_estimate)}"
                 self.logger.exception(msg)
                 raise TypeError(msg)
+        
+        if new_estimate.dtype != self.hdf5_dataset.dtype:
+            msg = "Input array must be type %s not %s"
+            self.logger.error(msg, new_estimate.dtype, self.hdf5_dataset.dtype)
+            raise TypeError(msg % (new_estimate.dtype, self.hdf5_dataset.dtype))
 
         if new_estimate.shape != self.hdf5_dataset.shape:
             self.hdf5_dataset.resize(new_estimate.shape)
