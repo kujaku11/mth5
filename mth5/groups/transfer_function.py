@@ -28,6 +28,17 @@ class TransferFunctionsGroup(BaseGroup):
     def __init__(self, group, **kwargs):
         super().__init__(group, **kwargs)
         
+        self._accepted_estimates = [
+            "transfer_function",
+            "transfer_function_error",
+            "inverse_signal_power",
+            "residual_covariance",
+            "impedance",
+            "impedance_error",
+            "tipper",
+            "tipper_error",
+            ]
+        
     def add_transfer_function(self, tf_object):
         """
         Add a transfer function to the group
@@ -254,6 +265,31 @@ class TransferFunction(BaseGroup):
                 self.logger.exception(error)
             
         return tf_obj
+    
+    def from_tf_object(self, tf_obj):
+        """
+        Create data sets from a :class:`mt_metadata.transfer_function.core.TF`
+        object.
+        
+        :param tf_obj: DESCRIPTION
+        :type tf_obj: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        
+        if not isinstance(tf_obj, TF):
+            msg = "Input must be a TF object not %s"
+            self.logger.error(msg, type(tf_obj))
+            raise ValueError(msg % type(tf_obj))
+            
+        self.period = tf_obj.period
+        
+        for estimate_name in self._accepted_estimates:
+            if getattr(tf_obj, estimate_name.split("error")[0])():
+                _ = self.add_statistical_estimate(estimate_name, 
+                                                  getattr(tf_obj, estimate_name))
+                
                 
             
             
