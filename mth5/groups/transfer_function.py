@@ -19,7 +19,7 @@ from mt_metadata.transfer_functions.core import TF
 from mt_metadata.transfer_functions.tf import StatisticalEstimate
 # =============================================================================
 
-class TransferFunction(BaseGroup):
+class TransferFunctionGroup(BaseGroup):
     """
     Object to hold a single transfer function estimation
     """

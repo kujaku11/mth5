@@ -30,7 +30,7 @@ from mt_metadata.timeseries.filters import ChannelResponseFilter
 
 from mth5 import CHUNK_SIZE
 from mth5.groups.base import BaseGroup
-from mth5.groups import FiltersGroup, TransferFunction
+from mth5.groups import FiltersGroup, TransferFunctionGroup
 from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import to_numpy_type, from_numpy_type, inherit_doc_string, validate_name
 from mth5.timeseries import ChannelTS, RunTS
@@ -572,8 +572,8 @@ class StationGroup(BaseGroup):
     
     @property
     def transfer_functions_group(self):
-        """ Convinience method for /Station/TransferFunctions """
-        return TransferFunctionsGroup(self.hdf5_group["TransferFunctions"], 
+        """ Convinience method for /Station/Transfer_Functions """
+        return TransferFunctionsGroup(self.hdf5_group["Transfer_Functions"], 
                                  **self.dataset_options)
 
     @BaseGroup.metadata.getter
@@ -851,7 +851,7 @@ class TransferFunctionsGroup(BaseGroup):
         """
         name = validate_name(name)
         
-        tf_group = TransferFunction(self.hdf5_group.create_group(name), 
+        tf_group = TransferFunctionGroup(self.hdf5_group.create_group(name), 
                                     **self.dataset_options)
         
         if tf_object is not None:
@@ -872,7 +872,7 @@ class TransferFunctionsGroup(BaseGroup):
         
         tf_id = validate_name(tf_id)
         try:
-            return TransferFunction(self.hdf5_group[tf_id], **self.dataset_options)
+            return TransferFunctionGroup(self.hdf5_group[tf_id], **self.dataset_options)
         except KeyError:
             msg = (
                 f"{tf_id} does not exist, "
@@ -930,7 +930,7 @@ class TransferFunctionsGroup(BaseGroup):
             station_dict[key] = from_numpy_type(value)
         tf_obj.station_metadata.from_dict({"station": station_dict})
         
-        survey_dict = dict(self.hdf5_group.parent.attrs)
+        survey_dict = dict(self.hdf5_group.parent.parent.parent.attrs)
         for key, value in survey_dict.items():
             survey_dict[key] = from_numpy_type(value)
         tf_obj.survey_metadata.from_dict({"survey": survey_dict})
