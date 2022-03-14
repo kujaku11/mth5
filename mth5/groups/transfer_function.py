@@ -68,8 +68,7 @@ class TransferFunctionGroup(BaseGroup):
                     maxshape=(None,),
                     **self.dataset_options,) 
                 
-            except (OSError, RuntimeError, ValueError) as error:
-                self.logger.error(error)
+            except (OSError, RuntimeError, ValueError):
                 self.logger.warning("period already exists, overwriting")
                 self.hdf5_group["period"][...] = period
                 
@@ -236,6 +235,8 @@ class TransferFunctionGroup(BaseGroup):
             raise ValueError(msg % type(tf_obj))
             
         self.period = tf_obj.period
+        self.metadata.update(tf_obj.station_metadata.transfer_function)
+        self.write_metadata()
         
         for estimate_name in self._accepted_estimates:
             try:
