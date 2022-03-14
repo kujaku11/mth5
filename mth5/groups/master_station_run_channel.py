@@ -926,9 +926,11 @@ class TransferFunctionsGroup(BaseGroup):
         tf_obj = tf_group.to_tf_object()
         
         station_dict = dict(self.hdf5_group.parent.attrs)
+        ts_station_metadata = metadata.Station()
         for key, value in station_dict.items():
             station_dict[key] = from_numpy_type(value)
-        tf_obj.station_metadata.from_dict({"station": station_dict})
+        ts_station_metadata.from_dict({"station": station_dict})
+        tf_obj.from_ts_station_metadata(ts_station_metadata)
         
         survey_dict = dict(self.hdf5_group.parent.parent.parent.attrs)
         for key, value in survey_dict.items():

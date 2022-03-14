@@ -35,6 +35,7 @@ from mth5.utils.mth5_logger import setup_logger
 
 from mt_metadata.utils.mttime import get_now_utc
 from mt_metadata.timeseries import Experiment
+from mt_metadata.transfer_functions.core import TF
 
 # =============================================================================
 # Acceptable parameters
@@ -1315,3 +1316,39 @@ class MTH5:
             .get_run(run_name)
             .remove_channel(channel_name)
         )
+    
+    def add_transfer_function(self, tf_object):
+        """
+        Add a transfer function
+        :param tf_object: DESCRIPTION
+        :type tf_object: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        
+        if not isinstance(tf_object, TF):
+            msg = "Input must be a TF object not %s"
+            self.logger.error(msg, type(tf_object))
+            raise ValueError(msg % type(tf_object))
+            
+        try:
+            survey_group = self.get_survey(tf_object.survey_metadata.id)
+        except MTH5Error:
+            survey_group = self.add_survey(tf_object.survey_metadata.id,
+                                           survey_metadata=tf_object.survey_metadata)
+        
+        try:
+            station_group = survey_group.stations_group.get_station(tf_object.station_metadata.id)
+        except MTH5Error:
+            station_group = survey_group.stations_group.add_station(tf_object.station_metadata.id,
+                                                                   station_metadata=tf_object.to_ts_station_metadata())
+        
+        try:
+            tf_group = station_group.transfer_functions_group.add_transfer_function(tf_object.station, tf_object=tf_object)
+        except (OSError, RuntimeError, ValueError):
+            msg = f"TF {tf_object.station} already exists, returning existing group."
+            self.logger.debug(msg)
+            tf_group = station_group.transfer_functions_group.get_transfer_function(tf_object.station)
+            
+        return tf_group
