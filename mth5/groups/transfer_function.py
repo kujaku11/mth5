@@ -6,23 +6,22 @@ Created on Thu Mar 10 08:22:33 2022
 """
 
 # =============================================================================
-# 
+# Imports
 # =============================================================================
-
 import numpy as np
 import xarray as xr
 
 from mth5.groups import BaseGroup, EstimateDataset
-from mth5.helpers import to_numpy_type, inherit_doc_string, validate_name
+from mth5.helpers import validate_name
 from mth5.utils.exceptions import MTH5Error
 
 from mt_metadata.transfer_functions.core import TF
 from mt_metadata.transfer_functions.tf import StatisticalEstimate
 # =============================================================================
 
-class TransferFunctionsGroup(BaseGroup):
+class TransferFunction(BaseGroup):
     """
-    Object to hold transfer functions
+    Object to hold a single transfer function estimation
     """
     
     def __init__(self, group, **kwargs):
@@ -38,53 +37,6 @@ class TransferFunctionsGroup(BaseGroup):
             "tipper",
             "tipper_error",
             ]
-        
-    def add_transfer_function(self, tf_object):
-        """
-        Add a transfer function to the group
-        
-        :param tf_object: DESCRIPTION
-        :type tf_object: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-        
-        pass
-    
-    def get_transfer_function(self, tf_id):
-        """
-        Get transfer function from id
-        
-        :param tf_id: DESCRIPTION
-        :type tf_id: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-        
-        pass
-    
-    def remove_transfer_function(self, tf_id):
-        """
-        Remove a transfer function from the group
-        
-        :param tf_id: DESCRIPTION
-        :type tf_id: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-        
-        pass
-    
-class TransferFunction(BaseGroup):
-    """
-    Object to hold a single transfer function estimation
-    """
-    
-    def __init__(self, group, **kwargs):
-        super().__init__(group, **kwargs)
         
 
     @property
@@ -286,9 +238,16 @@ class TransferFunction(BaseGroup):
         self.period = tf_obj.period
         
         for estimate_name in self._accepted_estimates:
-            if getattr(tf_obj, estimate_name.split("error")[0])():
-                _ = self.add_statistical_estimate(estimate_name, 
-                                                  getattr(tf_obj, estimate_name))
+            try:
+                estimate = getattr(tf_obj, estimate_name)
+                if estimate is not None:
+                    _ = self.add_statistical_estimate(estimate_name, 
+                                                      estimate)
+                else:
+                    self.logger.warning(f"Did not find {estimate_name} in TF. Skipping")
+            except AttributeError:
+                self.logger.warning(f"Did not find {estimate_name} in TF. Skipping")
+                
                 
                 
             

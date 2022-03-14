@@ -30,9 +30,9 @@ from mt_metadata.timeseries.filters import ChannelResponseFilter
 
 from mth5 import CHUNK_SIZE
 from mth5.groups.base import BaseGroup
-from mth5.groups import FiltersGroup
+from mth5.groups import FiltersGroup, TransferFunction
 from mth5.utils.exceptions import MTH5Error
-from mth5.helpers import to_numpy_type, inherit_doc_string, validate_name
+from mth5.helpers import to_numpy_type, from_numpy_type, inherit_doc_string, validate_name
 from mth5.timeseries import ChannelTS, RunTS
 from mth5.timeseries.channel_ts import make_dt_coordinates
 from mth5.utils.mth5_logger import setup_logger
@@ -546,11 +546,35 @@ class StationGroup(BaseGroup):
             "hdf5_reference",
             "mth5_type",
         ]
+        
+        self._default_subgroup_names = [
+            "Transfer_Functions",
+        ]
+
+    def initialize_group(self, **kwargs):
+        """
+        Initialize group by making a summary table and writing metadata
+
+        """
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        self.write_metadata()
+
+        for group_name in self._default_subgroup_names:
+            self.hdf5_group.create_group(f"{group_name}")
+            m5_grp = getattr(self, f"{group_name.lower()}_group")
+            m5_grp.initialize_group()
 
     @property
     def master_station_group(self):
         """shortcut to master station group"""
         return MasterStationGroup(self.hdf5_group.parent)
+    
+    @property
+    def transfer_functions_group(self):
+        """ Convinience method for /Station/TransferFunctions """
+        return TransferFunctionsGroup(self.hdf5_group["TransferFunctions"], 
+                                 **self.dataset_options)
 
     @BaseGroup.metadata.getter
     def metadata(self):
@@ -801,6 +825,117 @@ class StationGroup(BaseGroup):
         )
 
         self.write_metadata()
+
+# =============================================================================
+# Transfer Functions Group
+# =============================================================================
+class TransferFunctionsGroup(BaseGroup):
+    """
+    Object to hold transfer functions
+    """
+    
+    def __init__(self, group, **kwargs):
+        super().__init__(group, **kwargs)
+        
+    def add_transfer_function(self, name, tf_object=None):
+        """
+        Add a transfer function to the group
+        
+        :param name: name of the transfer function
+        :type name: string
+        :param tf_object: Transfer Function object
+        :type tf_object: :class:`mt_metadata.transfer_function.core.TF`
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        name = validate_name(name)
+        
+        tf_group = TransferFunction(self.hdf5_group.create_group(name), 
+                                    **self.dataset_options)
+        
+        if tf_object is not None:
+            tf_group.from_tf_object(tf_object)
+            
+        return tf_group
+    
+    def get_transfer_function(self, tf_id):
+        """
+        Get transfer function from id
+        
+        :param tf_id: DESCRIPTION
+        :type tf_id: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        
+        tf_id = validate_name(tf_id)
+        try:
+            return TransferFunction(self.hdf5_group[tf_id], **self.dataset_options)
+        except KeyError:
+            msg = (
+                f"{tf_id} does not exist, "
+                + "check station_list for existing names"
+            )
+            self.logger.exception(msg)
+            raise MTH5Error(msg)
+    
+    def remove_transfer_function(self, tf_id):
+        """
+        Remove a transfer function from the group
+        
+        :param tf_id: DESCRIPTION
+        :type tf_id: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        
+        tf_id = validate_name(tf_id)
+        try:
+            del self.hdf5_group[tf_id]
+            self.logger.info(
+                "Deleting a station does not reduce the HDF5"
+                + "file size it simply remove the reference. If "
+                + "file size reduction is your goal, simply copy"
+                + " what you want into another file."
+            )
+        except KeyError:
+            msg = (
+                f"{tf_id} does not exist, "
+                + "check station_list for existing names"
+            )
+            self.logger.exception(msg)
+            raise MTH5Error(msg)
+            
+    def get_tf_object(self, tf_id):
+        """
+        Get a TF object with station and survey metadata.
+        
+        
+        :param tf_id: DESCRIPTION
+        :type tf_id: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        
+        tf_group = self.get_transfer_function(tf_id)
+        
+        tf_obj = tf_group.to_tf_object()
+        
+        station_dict = dict(self.hdf5_group.parent.attrs)
+        for key, value in station_dict.items():
+            station_dict[key] = from_numpy_type(value)
+        tf_obj.station_metadata.from_dict({"station": station_dict})
+        
+        survey_dict = dict(self.hdf5_group.parent.attrs)
+        for key, value in survey_dict.items():
+            survey_dict[key] = from_numpy_type(value)
+        tf_obj.survey_metadata.from_dict({"survey": survey_dict})
+        
+        return tf_obj
 
 
 # =============================================================================
