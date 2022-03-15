@@ -1344,6 +1344,21 @@ class MTH5:
             station_group = survey_group.stations_group.add_station(tf_object.station_metadata.id,
                                                                    station_metadata=tf_object.to_ts_station_metadata())
         
+        ### need to check for runs and channels
+        # CANT DO THIS UNTIL RUN AND CHANNEL ARE SAME BETWEEN TS AND TF
+        # for run in tf_object.station_metadata.runs:
+        #     try:
+        #         run_group = station_group.get_run(run.id)
+        #     except MTH5Error:
+        #         run_group = station_group.add_run(run.id, run_metadata=run)
+                
+        #         for ch in run.channels:
+        #             try:
+        #                 ch_dataset = run_group.get_channel(ch.component)
+        #             except MTH5Error:
+        #                 ch_dataset = run_group.add_channel(ch.component, ch.type, None, channel_metadata=ch)
+                
+        
         try:
             tf_group = station_group.transfer_functions_group.add_transfer_function(tf_object.station, tf_object=tf_object)
         except (OSError, RuntimeError, ValueError):
