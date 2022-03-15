@@ -331,7 +331,7 @@ class MasterStationGroup(BaseGroup):
                 f"{station_name} does not exist, "
                 + "check station_list for existing names"
             )
-            self.logger.exception(msg)
+            self.logger.error(msg)
             raise MTH5Error(msg)
 
     def remove_station(self, station_name):
@@ -373,7 +373,7 @@ class MasterStationGroup(BaseGroup):
                 f"{station_name} does not exist, "
                 + "check station_list for existing names"
             )
-            self.logger.exception(msg)
+            self.logger.error(msg)
             raise MTH5Error(msg)
 
 
@@ -582,8 +582,11 @@ class StationGroup(BaseGroup):
 
         self._metadata.runs = []
         for key in self.groups_list:
-            key_group = self.get_run(key)
-            self._metadata.runs.append(key_group.metadata)
+            try:
+                key_group = self.get_run(key)
+                self._metadata.runs.append(key_group.metadata)
+            except MTH5Error:
+                self.logger.warning(f"Could not find run {key}")
 
         return self._metadata
 
@@ -765,7 +768,7 @@ class StationGroup(BaseGroup):
             msg = (
                 f"{run_name} does not exist, " + "check groups_list for existing names"
             )
-            self.logger.exception(msg)
+            self.logger.error(msg)
             raise MTH5Error(msg)
 
     def remove_run(self, run_name):
@@ -806,7 +809,7 @@ class StationGroup(BaseGroup):
             msg = (
                 f"{run_name} does not exist, " + "check station_list for existing names"
             )
-            self.logger.exception(msg)
+            self.logger.error(msg)
             raise MTH5Error(msg)
 
     def validate_station_metadata(self):
@@ -878,7 +881,7 @@ class TransferFunctionsGroup(BaseGroup):
                 f"{tf_id} does not exist, "
                 + "check station_list for existing names"
             )
-            self.logger.exception(msg)
+            self.logger.error(msg)
             raise MTH5Error(msg)
     
     def remove_transfer_function(self, tf_id):
@@ -906,7 +909,7 @@ class TransferFunctionsGroup(BaseGroup):
                 f"{tf_id} does not exist, "
                 + "check station_list for existing names"
             )
-            self.logger.exception(msg)
+            self.logger.error(msg)
             raise MTH5Error(msg)
             
     def get_tf_object(self, tf_id):
@@ -1434,7 +1437,7 @@ class RunGroup(BaseGroup):
                 f"{channel_name} does not exist, "
                 + "check groups_list for existing names"
             )
-            self.logger.exception(msg)
+            self.logger.error(msg)
             raise MTH5Error(msg)
 
     def remove_channel(self, channel_name):
@@ -1476,7 +1479,7 @@ class RunGroup(BaseGroup):
                 f"{channel_name} does not exist, "
                 + "check groups_list for existing names"
             )
-            self.logger.exception(msg)
+            self.logger.error(msg)
             raise MTH5Error(msg)
 
     def to_runts(self, start=None, end=None, n_samples=None):

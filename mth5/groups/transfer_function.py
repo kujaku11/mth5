@@ -38,6 +38,15 @@ class TransferFunctionGroup(BaseGroup):
             "tipper_error",
             ]
         
+        self._period_metadata = StatisticalEstimate(
+            **{ 
+                "name": "period",
+                "data_type": "float",
+                "description": "Periods at which transfer function is estimated",
+                "units": "samples per second",
+            }
+            )
+        
 
     @property
     def period(self):
@@ -60,16 +69,17 @@ class TransferFunctionGroup(BaseGroup):
             period = np.array(period, dtype=float)
             
             try:
-                self.period = self.hdf5_group.create_dataset(
-                    "period",
-                    data=period,
-                    dtype=float,
+                _ = self.add_statistical_estimate(
+                    "period", 
+                    estimate_data=period,
+                    estimate_metadata=self._period_metadata,
                     chunks=True,
-                    maxshape=(None,),
-                    **self.dataset_options,) 
+                    max_shape=(None,),
+                    )
+                
                 
             except (OSError, RuntimeError, ValueError):
-                self.logger.warning("period already exists, overwriting")
+                self.logger.debug("period already exists, overwriting")
                 self.hdf5_group["period"][...] = period
                 
 
@@ -238,7 +248,14 @@ class TransferFunctionGroup(BaseGroup):
         self.metadata.update(tf_obj.station_metadata.transfer_function)
         self.write_metadata()
         
-        for estimate_name in self._accepted_estimates:
+        # if transfer function is available then impedance and tipper are
+        # redundant.
+        if tf_obj.has_transfer_function():
+            accepted_estimates = self._accepted_estimates[0:4]
+        else:
+            accepted_estimates = self._accepted_estimates
+        
+        for estimate_name in accepted_estimates:
             try:
                 estimate = getattr(tf_obj, estimate_name)
                 if estimate is not None:

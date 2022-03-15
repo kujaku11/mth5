@@ -932,7 +932,7 @@ class MTH5:
                 f"{self._root_path}/Surveys/{survey_name} does not exist, "
                 + "check survey_list for existing names"
             )
-            self.logger.exception(msg)
+            self.logger.error(msg)
             raise MTH5Error(msg)
 
     def remove_survey(self, survey_name):
@@ -973,7 +973,7 @@ class MTH5:
                 f"{self._root_path}/Surveys/{survey_name} does not exist, "
                 + "check station_list for existing names"
             )
-            self.logger.exception(msg)
+            self.logger.error(msg)
             raise MTH5Error(msg)
 
     def add_station(self, station_name, station_metadata=None, survey=None):
@@ -1352,3 +1352,24 @@ class MTH5:
             tf_group = station_group.transfer_functions_group.get_transfer_function(tf_object.station)
             
         return tf_group
+    
+    def get_transfer_function(self, station_id, tf_id, survey=None):
+        """
+        Get a transfer function 
+        
+        :param survey_id: DESCRIPTION
+        :type survey_id: TYPE
+        :param station_id: DESCRIPTION
+        :type station_id: TYPE
+        :param tf_id: DESCRIPTION
+        :type tf_id: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        
+        station_group = self.get_station(station_id, survey=survey)
+        
+        return station_group.transfer_functions_group.get_tf_object(tf_id)
+    
+        
