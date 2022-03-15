@@ -1372,4 +1372,23 @@ class MTH5:
         
         return station_group.transfer_functions_group.get_tf_object(tf_id)
     
+    def remove_transfer_function(self, station_id, tf_id, survey=None):
+        """
+        remove a transfer function 
+        
+        :param survey_id: DESCRIPTION
+        :type survey_id: TYPE
+        :param station_id: DESCRIPTION
+        :type station_id: TYPE
+        :param tf_id: DESCRIPTION
+        :type tf_id: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        
+        station_group = self.get_station(station_id, survey=survey)
+        
+        station_group.transfer_functions_group.remove_transfer_function(tf_id)
+    
         
