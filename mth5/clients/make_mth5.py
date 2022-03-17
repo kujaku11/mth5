@@ -252,6 +252,8 @@ class MakeMTH5:
                             f" and end times {len(trace_end_times)} from streams"
                         )
                     run_list = m.get_station(station_id, survey_id).groups_list
+                    run_list.remove("Transfer_Functions")
+                    
                     n_times = len(trace_start_times)
 
                     # adding logic if there are already runs filled in

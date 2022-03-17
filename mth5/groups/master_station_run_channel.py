@@ -582,6 +582,8 @@ class StationGroup(BaseGroup):
 
         self._metadata.runs = []
         for key in self.groups_list:
+            if key.lower() == "transfer_functions":
+                continue
             try:
                 key_group = self.get_run(key)
                 self._metadata.runs.append(key_group.metadata)

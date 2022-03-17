@@ -16,15 +16,16 @@ from mt_metadata.transfer_functions.tf import StatisticalEstimate
 from mt_metadata.transfer_functions.core import TF
 from mt_metadata import TF_XML
 
-from mth5.groups.transfer_function import TransferFunction
+from mth5.groups.transfer_function import TransferFunctionGroup
 # =============================================================================
+
 
 class TestTFGroup(unittest.TestCase):
     def setUp(self):
         
         self.hdf5 = h5py.File("tf_test.h5", "w")
         tf_group = self.hdf5.create_group("tf")
-        self.tf_group = TransferFunction(tf_group)
+        self.tf_group = TransferFunctionGroup(tf_group)
         
         self.st_metadata = StatisticalEstimate()
         self.st_metadata.name = "impedance"
@@ -33,10 +34,10 @@ class TestTFGroup(unittest.TestCase):
         
         self.tf_obj = TF(TF_XML)
         
-    def test_add_estimate(self):
+#     def test_add_estimate(self):
         
-        z = self.tf_group.add_statistical_estimate(
-            self.st_metadata, self.tf_obj.impedance.to_numpy())
+#         z = self.tf_group.add_statistical_estimate(
+#             self.st_metadata, self.tf_obj.impedance.to_numpy())
         
         
         

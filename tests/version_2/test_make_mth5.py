@@ -199,7 +199,7 @@ class TestMakeMTH5(unittest.TestCase):
 
         with self.subTest(name="CAS04_runs"):
             self.assertListEqual(
-                ["a", "b", "c", "d"], self.m.get_station("CAS04", "CONUS_South").groups_list
+                ["Transfer_Functions", "a", "b", "c", "d"], self.m.get_station("CAS04", "CONUS_South").groups_list
             )
 
         for run in ["a", "b", "c", "d"]:
