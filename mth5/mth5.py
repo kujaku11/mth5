@@ -1332,12 +1332,15 @@ class MTH5:
             self.logger.error(msg, type(tf_object))
             raise ValueError(msg % type(tf_object))
 
-        try:
-            survey_group = self.get_survey(tf_object.survey_metadata.id)
-        except MTH5Error:
-            survey_group = self.add_survey(
-                tf_object.survey_metadata.id, survey_metadata=tf_object.survey_metadata
-            )
+        if self.file_version == "0.2.0":
+            try:
+                survey_group = self.get_survey(tf_object.survey_metadata.id)
+            except MTH5Error:
+                survey_group = self.add_survey(
+                    tf_object.survey_metadata.id, survey_metadata=tf_object.survey_metadata
+                )
+        else:
+            survey_group = self.survey_group
 
         try:
             station_group = survey_group.stations_group.get_station(
@@ -1349,19 +1352,23 @@ class MTH5:
                 station_metadata=tf_object.to_ts_station_metadata(),
             )
 
-        ### need to check for runs and channels
+        ## need to check for runs and channels
         # CANT DO THIS UNTIL RUN AND CHANNEL ARE SAME BETWEEN TS AND TF
-        # for run in tf_object.station_metadata.runs:
-        #     try:
-        #         run_group = station_group.get_run(run.id)
-        #     except MTH5Error:
-        #         run_group = station_group.add_run(run.id, run_metadata=run)
+        for run in tf_object.station_metadata.runs:
+            try:
+                run_group = station_group.get_run(run.id)
+            except MTH5Error:
+                run_group = station_group.add_run(run.id, run_metadata=run)
 
-        #         for ch in run.channels:
-        #             try:
-        #                 ch_dataset = run_group.get_channel(ch.component)
-        #             except MTH5Error:
-        #                 ch_dataset = run_group.add_channel(ch.component, ch.type, None, channel_metadata=ch)
+                for ch in run.channels:
+                    try:
+                        ch_dataset = run_group.get_channel(ch.component)
+                    except MTH5Error:
+                        ch_dataset = run_group.add_channel(
+                            ch.component,
+                            ch.type, 
+                            None,
+                            channel_metadata=ch)
 
         try:
             tf_group = station_group.transfer_functions_group.add_transfer_function(
