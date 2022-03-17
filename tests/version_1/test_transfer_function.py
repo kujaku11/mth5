@@ -42,7 +42,32 @@ class TestTFGroup(unittest.TestCase):
         self.tf_h5 = self.mth5_obj.get_transfer_function(
             self.tf_obj.station, self.tf_obj.station)
         
-
+    def test_survey_metadata(self):
+        meta_dict = OrderedDict([('acquired_by.author', 'National Geoelectromagnetic Facility'),
+                     ('citation_dataset.doi', 'doi:10.17611/DP/EMTF/USMTARRAY/SOUTH'),
+                     ('citation_journal.doi', None),
+                     ('comments',
+                      'The USMTArray-CONUS South campaign was carried out through a cooperative agreement between\nthe U.S. Geological Survey (USGS) and Oregon State University (OSU). A subset of 40 stations\nin the SW US were funded through NASA grant 80NSSC19K0232.\nLand permitting, data acquisition, quality control and field processing were\ncarried out by Green Geophysics with project management and instrument/engineering\nsupport from OSU and Chaytus Engineering, respectively.\nProgram oversight, definitive data processing and data archiving were provided\nby the USGS Geomagnetism Program and the Geology, Geophysics and Geochemistry Science Centers.\nWe thank the U.S. Forest Service, the Bureau of Land Management, the National Park Service,\nthe Department of Defense, numerous state land offices and the many private landowners\nwho permitted land access to acquire the USMTArray data.'),
+                     ('country', 'USA'),
+                     ('datum', 'WGS84'),
+                     ('geographic_name', 'CONUS South'),
+                     ('hdf5_reference', None),
+                     ('id', 'CONUS South'),
+                     ('mth5_type', None),
+                     ('name', None),
+                     ('northwest_corner.latitude', 0.0),
+                     ('northwest_corner.longitude', 0.0),
+                     ('project', 'USMTArray'),
+                     ('project_lead.email', None),
+                     ('project_lead.organization', None),
+                     ('release_license', 'CC-0'),
+                     ('southeast_corner.latitude', 0.0),
+                     ('southeast_corner.longitude', 0.0),
+                     ('summary', 'Magnetotelluric Transfer Functions'),
+                     ('time_period.end_date', '2020-10-07'),
+                     ('time_period.start_date', '2020-09-20')])
+        
+        self.assertDictEqual(meta_dict, self.tf_h5.survey_metadata.to_dict(single=True))
 
     def test_station_metadta(self):
         
@@ -89,6 +114,19 @@ class TestTFGroup(unittest.TestCase):
         
         self.assertDictEqual(meta_dict, self.tf_h5.station_metadata.to_dict(single=True))
         
+    def test_runs(self):
+        
+        for run1, run2 in zip([self.tf_h5.station_metadata.runs, self.tf_obj.station_metadata.runs]):
+            with self.subTest(run1.id):
+                self.assertTrue(run1 == run2)
+                
+    def test_channels(self):
+        
+        for run1, run2 in zip([self.tf_h5.station_metadata.runs, self.tf_obj.station_metadata.runs]):
+            for ch1, ch2 in zip(run1.channels, run2.channels):
+                with self.subTest(f"{run1.id}_{ch1.component}"):
+                    self.assertTrue(ch1 == ch2)
+
     def tearDown(self):
         self.mth5_obj.close_mth5()
         self.fn.unlink()
