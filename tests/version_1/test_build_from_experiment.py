@@ -49,11 +49,11 @@ class TestMTH5(unittest.TestCase):
                 sd = station.to_dict(single=True)
                 sd.pop("hdf5_reference")
                 sd.pop("mth5_type")
-    
+
                 h5_sd = h5_station.metadata.to_dict(single=True)
                 h5_sd.pop("hdf5_reference")
                 h5_sd.pop("mth5_type")
-    
+
                 self.assertDictEqual(h5_sd, sd)
 
     def test_runs(self):
@@ -66,11 +66,11 @@ class TestMTH5(unittest.TestCase):
                 sd = run.to_dict(single=True)
                 sd.pop("hdf5_reference")
                 sd.pop("mth5_type")
-    
+
                 h5_sd = h5_run.metadata.to_dict(single=True)
                 h5_sd.pop("hdf5_reference")
                 h5_sd.pop("mth5_type")
-    
+
                 self.assertDictEqual(h5_sd, sd)
 
     def test_channels(self):
@@ -82,15 +82,15 @@ class TestMTH5(unittest.TestCase):
             for channel in run.channels:
                 with self.subTest(f"{run.id}/ch.component"):
                     h5_channel = h5_run.get_channel(channel.component)
-    
+
                     sd = channel.to_dict(single=True)
                     sd.pop("hdf5_reference")
                     sd.pop("mth5_type")
-    
+
                     h5_sd = h5_channel.metadata.to_dict(single=True)
                     h5_sd.pop("hdf5_reference")
                     h5_sd.pop("mth5_type")
-    
+
                     self.assertDictEqual(h5_sd, sd)
 
     def test_filters(self):
@@ -109,7 +109,7 @@ class TestMTH5(unittest.TestCase):
                         self.assertAlmostEqual(v1, float(v2), 5)
                     elif isinstance(v1, np.ndarray):
                         self.assertEqual(v1.dtype, v2.dtype)
-                        self.assertTrue((v1==v2).all())
+                        self.assertTrue((v1 == v2).all())
                     else:
                         self.assertEqual(v1, v2)
 

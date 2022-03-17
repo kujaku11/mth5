@@ -254,10 +254,9 @@ class MTH5:
 
         # make these private so the user cant accidentally change anything.
         self.__hdf5_obj = None
-        (
-            self.__compression,
-            self.__compression_opts,
-        ) = helpers.validate_compression(compression, compression_opts)
+        (self.__compression, self.__compression_opts,) = helpers.validate_compression(
+            compression, compression_opts
+        )
         self.__shuffle = shuffle
         self.__fletcher32 = fletcher32
 
@@ -520,12 +519,13 @@ class MTH5:
         if self.h5_is_read():
             if self.file_version in ["0.1.0"]:
                 return groups.FiltersGroup(
-                    self.__hdf5_obj[f"{self._root_path}/Filters"], **self.dataset_options
+                    self.__hdf5_obj[f"{self._root_path}/Filters"],
+                    **self.dataset_options,
                 )
             else:
                 self.logger.info(
                     "File version 0.2.0 does not have a FiltersGroup at the experiment level"
-                    )
+                )
                 return None
         self.logger.info("File is closed cannot access /Filters")
         return None
@@ -920,7 +920,7 @@ class MTH5:
         MTH5Error: MT001 does not exist, check groups_list for existing names
 
         """
-        
+
         survey_name = helpers.validate_name(survey_name)
         try:
             return groups.SurveyGroup(
@@ -1316,7 +1316,7 @@ class MTH5:
             .get_run(run_name)
             .remove_channel(channel_name)
         )
-    
+
     def add_transfer_function(self, tf_object):
         """
         Add a transfer function
@@ -1326,24 +1326,29 @@ class MTH5:
         :rtype: TYPE
 
         """
-        
+
         if not isinstance(tf_object, TF):
             msg = "Input must be a TF object not %s"
             self.logger.error(msg, type(tf_object))
             raise ValueError(msg % type(tf_object))
-            
+
         try:
             survey_group = self.get_survey(tf_object.survey_metadata.id)
         except MTH5Error:
-            survey_group = self.add_survey(tf_object.survey_metadata.id,
-                                           survey_metadata=tf_object.survey_metadata)
-        
+            survey_group = self.add_survey(
+                tf_object.survey_metadata.id, survey_metadata=tf_object.survey_metadata
+            )
+
         try:
-            station_group = survey_group.stations_group.get_station(tf_object.station_metadata.id)
+            station_group = survey_group.stations_group.get_station(
+                tf_object.station_metadata.id
+            )
         except MTH5Error:
-            station_group = survey_group.stations_group.add_station(tf_object.station_metadata.id,
-                                                                   station_metadata=tf_object.to_ts_station_metadata())
-        
+            station_group = survey_group.stations_group.add_station(
+                tf_object.station_metadata.id,
+                station_metadata=tf_object.to_ts_station_metadata(),
+            )
+
         ### need to check for runs and channels
         # CANT DO THIS UNTIL RUN AND CHANNEL ARE SAME BETWEEN TS AND TF
         # for run in tf_object.station_metadata.runs:
@@ -1351,23 +1356,26 @@ class MTH5:
         #         run_group = station_group.get_run(run.id)
         #     except MTH5Error:
         #         run_group = station_group.add_run(run.id, run_metadata=run)
-                
+
         #         for ch in run.channels:
         #             try:
         #                 ch_dataset = run_group.get_channel(ch.component)
         #             except MTH5Error:
         #                 ch_dataset = run_group.add_channel(ch.component, ch.type, None, channel_metadata=ch)
-                
-        
+
         try:
-            tf_group = station_group.transfer_functions_group.add_transfer_function(tf_object.station, tf_object=tf_object)
+            tf_group = station_group.transfer_functions_group.add_transfer_function(
+                tf_object.station, tf_object=tf_object
+            )
         except (OSError, RuntimeError, ValueError):
             msg = f"TF {tf_object.station} already exists, returning existing group."
             self.logger.debug(msg)
-            tf_group = station_group.transfer_functions_group.get_transfer_function(tf_object.station)
-            
+            tf_group = station_group.transfer_functions_group.get_transfer_function(
+                tf_object.station
+            )
+
         return tf_group
-    
+
     def get_transfer_function(self, station_id, tf_id, survey=None):
         """
         Get a transfer function 
@@ -1382,11 +1390,11 @@ class MTH5:
         :rtype: TYPE
 
         """
-        
+
         station_group = self.get_station(station_id, survey=survey)
-        
+
         return station_group.transfer_functions_group.get_tf_object(tf_id)
-    
+
     def remove_transfer_function(self, station_id, tf_id, survey=None):
         """
         remove a transfer function 
@@ -1401,9 +1409,7 @@ class MTH5:
         :rtype: TYPE
 
         """
-        
+
         station_group = self.get_station(station_id, survey=survey)
-        
+
         station_group.transfer_functions_group.remove_transfer_function(tf_id)
-    
-        

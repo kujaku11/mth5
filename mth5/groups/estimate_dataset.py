@@ -22,14 +22,14 @@ from mth5.utils.mth5_logger import setup_logger
 
 # =============================================================================
 
+
 class EstimateDataset:
     """
     Holds a statistical estimate
     """
-    
-    def __init__(self, dataset, dataset_metadata=None, write_metadata=True,
-                 **kwargs):
-        
+
+    def __init__(self, dataset, dataset_metadata=None, write_metadata=True, **kwargs):
+
         if dataset is not None and isinstance(dataset, (h5py.Dataset)):
             self.hdf5_dataset = weakref.ref(dataset)()
 
@@ -72,7 +72,7 @@ class EstimateDataset:
         # if the attrs don't have the proper metadata keys yet write them
         if not "mth5_type" in list(self.hdf5_dataset.attrs.keys()):
             self.write_metadata()
-            
+
     def _add_base_attributes(self):
         # add 2 attributes that will help with querying
         # 1) the metadata class name
@@ -105,7 +105,7 @@ class EstimateDataset:
                 "options": [],
                 "alias": [],
                 "example": "<HDF5 Group Reference>",
-                "default": None
+                "default": None,
             },
         )
 
@@ -118,7 +118,7 @@ class EstimateDataset:
     @property
     def _class_name(self):
         return self.__class__.__name__.split("Dataset")[0]
-    
+
     def read_metadata(self):
         """
         Read metadata from the HDF5 file into the metadata container, that
@@ -138,7 +138,7 @@ class EstimateDataset:
         for key, value in meta_dict.items():
             value = to_numpy_type(value)
             self.hdf5_dataset.attrs.create(key, value)
-            
+
     def replace_dataset(self, new_data_array):
         """
         replace the entire dataset with a new one, nothing left behind
@@ -159,7 +159,7 @@ class EstimateDataset:
             self.hdf5_dataset.resize(new_data_array.shape)
 
         self.hdf5_dataset[...] = new_data_array
-        
+
     def to_xarray(self, period):
         """
         :return: an xarray DataArray with appropriate metadata and the
@@ -175,9 +175,11 @@ class EstimateDataset:
             data=self.hdf5_dataset[()],
             dims=["period", "output", "input"],
             name=self.metadata.name,
-            coords=[("period", period), 
-                    ("output", self.metadata.output_channels),
-                    ("input", self.metadata.input_channels)],
+            coords=[
+                ("period", period),
+                ("output", self.metadata.output_channels),
+                ("input", self.metadata.input_channels),
+            ],
             attrs=self.metadata.to_dict(single=True),
         )
 
@@ -192,7 +194,6 @@ class EstimateDataset:
         """
 
         return self.hdf5_dataset[()]
-        
 
     def from_numpy(self, new_estimate):
         """
@@ -211,7 +212,7 @@ class EstimateDataset:
                 msg = f"{error} Input must be a numpy array not {type(new_estimate)}"
                 self.logger.exception(msg)
                 raise TypeError(msg)
-        
+
         if new_estimate.dtype != self.hdf5_dataset.dtype:
             msg = "Input array must be type %s not %s"
             self.logger.error(msg, new_estimate.dtype, self.hdf5_dataset.dtype)
@@ -221,8 +222,7 @@ class EstimateDataset:
             self.hdf5_dataset.resize(new_estimate.shape)
 
         self.hdf5_dataset[...] = new_estimate
-        
-    
+
     def from_xarray(self, data):
         """
         :return: an xarray DataArray with appropriate metadata and the
@@ -233,13 +233,12 @@ class EstimateDataset:
 
         loads from memory
         """
-        
+
         self.metadata.output_channels = data.coords["output"].values.tolist()
         self.metadata.input_channels = data.coords["input"].values.tolist()
         self.metadata.name = data.name
         self.metadata.data_type = data.dtype.name
-        
-        self.write_metadata()
-        
-        self.from_numpy(data.to_numpy())
 
+        self.write_metadata()
+
+        self.from_numpy(data.to_numpy())

@@ -28,5 +28,3 @@ debug_logger.debug("Starting MTH5 Debug Log File")
 # Defualt Parameters
 # =============================================================================
 CHUNK_SIZE = 8196
-
-

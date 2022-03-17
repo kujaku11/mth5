@@ -92,9 +92,7 @@ class TestMTH5(unittest.TestCase):
         for run in runs:
             with self.subTest(name=run.id):
                 h5_run = self.mth5_obj.get_run(
-                    self.experiment.surveys[0].stations[0].id,
-                    run.id,
-                    self.survey_name,
+                    self.experiment.surveys[0].stations[0].id, run.id, self.survey_name,
                 )
                 for channel in run.channels:
                     h5_channel = h5_run.get_channel(channel.component)
@@ -127,7 +125,7 @@ class TestMTH5(unittest.TestCase):
                             self.assertAlmostEqual(v1, float(v2), 5)
                         elif isinstance(v1, np.ndarray):
                             self.assertEqual(v1.dtype, v2.dtype)
-                            self.assertTrue((v1==v2).all())
+                            self.assertTrue((v1 == v2).all())
                         else:
                             self.assertEqual(v1, v2)
 

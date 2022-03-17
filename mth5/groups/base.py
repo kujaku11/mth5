@@ -174,10 +174,9 @@ class BaseGroup:
                 "options": [],
                 "alias": [],
                 "example": "<HDF5 Group Reference>",
-                "default": "none"
+                "default": "none",
             },
         )
-
 
     @property
     def metadata(self):

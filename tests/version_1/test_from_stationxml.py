@@ -46,12 +46,12 @@ class TestFromStationXML01(unittest.TestCase):
         with self.subTest(msg="ey"):
             self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001/ey"), True)
         with self.subTest(msg="ex"):
-           self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001/hy"), True)
+            self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001/hy"), True)
 
     def test_survey_metadata(self):
         with self.subTest(msg="id"):
             self.assertEqual(self.m.survey_group.metadata.fdsn.network, "ZU")
-        
+
         with self.subTest(msg="start"):
             self.assertEqual(
                 self.m.survey_group.metadata.time_period.start_date, "2020-01-01"

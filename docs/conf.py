@@ -126,6 +126,7 @@ intersphinx_mapping = {
     "mt_metadata": ("https://github.com/kujaku11/mt_metadata", None),
 }
 
+
 def setup(app):
     app.add_css_file("css/custom.css")
 

@@ -133,8 +133,7 @@ class XMLNetworkMTSurvey:
                 # is this redudant?
                 try:
                     mt_survey.set_attr_from_name(
-                        "project_lead.organization",
-                        network.operators[0].agencies[0],
+                        "project_lead.organization", network.operators[0].agencies[0],
                     )
                 except IndexError:
                     pass
@@ -977,8 +976,7 @@ def inventory_network_to_mt_survey(network_obj):
             # is this redudant?
             try:
                 mt_survey.set_attr_from_name(
-                    "project_lead.organization",
-                    network_obj.operators[0].agencies[0],
+                    "project_lead.organization", network_obj.operators[0].agencies[0],
                 )
             except IndexError:
                 pass

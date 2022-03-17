@@ -17,16 +17,18 @@ from mth5.utils.exceptions import MTH5Error
 
 from mt_metadata.transfer_functions.core import TF
 from mt_metadata.transfer_functions.tf import StatisticalEstimate
+
 # =============================================================================
+
 
 class TransferFunctionGroup(BaseGroup):
     """
     Object to hold a single transfer function estimation
     """
-    
+
     def __init__(self, group, **kwargs):
         super().__init__(group, **kwargs)
-        
+
         self._accepted_estimates = [
             "transfer_function",
             "transfer_function_error",
@@ -36,17 +38,16 @@ class TransferFunctionGroup(BaseGroup):
             "impedance_error",
             "tipper",
             "tipper_error",
-            ]
-        
+        ]
+
         self._period_metadata = StatisticalEstimate(
-            **{ 
+            **{
                 "name": "period",
                 "data_type": "float",
                 "description": "Periods at which transfer function is estimated",
                 "units": "samples per second",
             }
-            )
-        
+        )
 
     @property
     def period(self):
@@ -57,39 +58,39 @@ class TransferFunctionGroup(BaseGroup):
         :rtype: TYPE
 
         """
-        
+
         try:
             return self.hdf5_group["period"][()]
         except KeyError:
             return None
-        
+
     @period.setter
     def period(self, period):
         if period is not None:
             period = np.array(period, dtype=float)
-            
+
             try:
                 _ = self.add_statistical_estimate(
-                    "period", 
+                    "period",
                     estimate_data=period,
                     estimate_metadata=self._period_metadata,
                     chunks=True,
                     max_shape=(None,),
-                    )
-                
-                
+                )
+
             except (OSError, RuntimeError, ValueError):
                 self.logger.debug("period already exists, overwriting")
                 self.hdf5_group["period"][...] = period
-                
 
-    def add_statistical_estimate(self,
-                                 estimate_name,
-                                 estimate_data=None,
-                                 estimate_metadata=None,
-                                 max_shape=(None, None, None),
-                                 chunks=True,
-                                 **kwargs,):
+    def add_statistical_estimate(
+        self,
+        estimate_name,
+        estimate_data=None,
+        estimate_metadata=None,
+        max_shape=(None, None, None),
+        chunks=True,
+        **kwargs,
+    ):
         """
         Add a StatisticalEstimate
         
@@ -99,29 +100,33 @@ class TransferFunctionGroup(BaseGroup):
         :rtype: TYPE
 
         """
-    
+
         estimate_name = validate_name(estimate_name)
-        
+
         if estimate_metadata is None:
             estimate_metadata = StatisticalEstimate()
             estimate_metadata.name = estimate_name
-        
+
         if estimate_data is not None:
             if not isinstance(estimate_data, (np.ndarray, xr.DataArray)):
-                msg = f"Need to input a numpy or xarray.DataArray not {type(estimate_data)}" 
+                msg = f"Need to input a numpy or xarray.DataArray not {type(estimate_data)}"
                 self.logger.exception(msg)
                 raise TypeError(msg)
-                
+
             if isinstance(estimate_data, xr.DataArray):
-                estimate_metadata.output_channels = estimate_data.coords["output"].values.tolist()
-                estimate_metadata.input_channels = estimate_data.coords["input"].values.tolist()
+                estimate_metadata.output_channels = estimate_data.coords[
+                    "output"
+                ].values.tolist()
+                estimate_metadata.input_channels = estimate_data.coords[
+                    "input"
+                ].values.tolist()
                 estimate_metadata.name = validate_name(estimate_data.name)
                 estimate_metadata.data_type = estimate_data.dtype.name
-                
+
                 estimate_data = estimate_data.to_numpy()
-                    
+
             dtype = estimate_data.dtype
-        
+
         else:
             dtype = complex
             chunks = True
@@ -136,37 +141,38 @@ class TransferFunctionGroup(BaseGroup):
                 maxshape=max_shape,
                 **self.dataset_options,
             )
-            
-            estimate_dataset = EstimateDataset(dataset, 
-                                               dataset_metadata=estimate_metadata)
-            
+
+            estimate_dataset = EstimateDataset(
+                dataset, dataset_metadata=estimate_metadata
+            )
+
         except (OSError, RuntimeError, ValueError) as error:
             self.logger.exception(error)
             msg = f"estimate {estimate_metadata.name} already exists, returning existing group."
-            self.logger.debug(msg) 
-            
+            self.logger.debug(msg)
+
             estimate_dataset = self.get_estimate(estimate_metadata.name)
-            
+
         return estimate_dataset
-    
+
     def get_estimate(self, estimate_name):
         """
         Get a statistical estimate dataset
         """
         estimate_name = validate_name(estimate_name)
-        
+
         try:
             estimate_dataset = self.hdf5_group[estimate_name]
             return EstimateDataset(estimate_dataset)
-            
+
         except KeyError:
             msg = (
                 f"{estimate_name} does not exist, "
                 + "check groups_list for existing names"
             )
             self.logger.exception(msg)
-            raise MTH5Error(msg)   
-            
+            raise MTH5Error(msg)
+
     def remove_estimate(self, estimate_name):
         """
         remove a statistical estimate
@@ -177,7 +183,7 @@ class TransferFunctionGroup(BaseGroup):
         :rtype: TYPE
 
         """
-        
+
         estimate_name = validate_name(estimate_name.lower())
 
         try:
@@ -195,7 +201,7 @@ class TransferFunctionGroup(BaseGroup):
             )
             self.logger.exception(msg)
             raise MTH5Error(msg)
-            
+
     def to_tf_object(self):
         """
         Create a mt_metadata.transfer_function.core.TF object from the 
@@ -205,7 +211,7 @@ class TransferFunctionGroup(BaseGroup):
         :rtype: TYPE
 
         """
-        
+
         tf_obj = TF()
         if self.period is not None:
             tf_obj.period = self.period
@@ -213,20 +219,20 @@ class TransferFunctionGroup(BaseGroup):
             msg = "Period must not be None to create a transfer function object"
             self.logger.error(msg)
             raise ValueError(msg)
-            
+
         for estimate_name in self.groups_list:
             if estimate_name in ["period"]:
                 continue
             estimate = self.get_estimate(estimate_name)
-            
+
             try:
                 setattr(tf_obj, estimate_name, estimate.to_numpy())
-            
+
             except AttributeError as error:
                 self.logger.exception(error)
-            
+
         return tf_obj
-    
+
     def from_tf_object(self, tf_obj):
         """
         Create data sets from a :class:`mt_metadata.transfer_function.core.TF`
@@ -238,38 +244,29 @@ class TransferFunctionGroup(BaseGroup):
         :rtype: TYPE
 
         """
-        
+
         if not isinstance(tf_obj, TF):
             msg = "Input must be a TF object not %s"
             self.logger.error(msg, type(tf_obj))
             raise ValueError(msg % type(tf_obj))
-            
+
         self.period = tf_obj.period
         self.metadata.update(tf_obj.station_metadata.transfer_function)
         self.write_metadata()
-        
+
         # if transfer function is available then impedance and tipper are
         # redundant.
         if tf_obj.has_transfer_function():
             accepted_estimates = self._accepted_estimates[0:4]
         else:
             accepted_estimates = self._accepted_estimates
-        
+
         for estimate_name in accepted_estimates:
             try:
                 estimate = getattr(tf_obj, estimate_name)
                 if estimate is not None:
-                    _ = self.add_statistical_estimate(estimate_name, 
-                                                      estimate)
+                    _ = self.add_statistical_estimate(estimate_name, estimate)
                 else:
                     self.logger.warning(f"Did not find {estimate_name} in TF. Skipping")
             except AttributeError:
                 self.logger.warning(f"Did not find {estimate_name} in TF. Skipping")
-                
-                
-                
-            
-            
-        
-        
-    

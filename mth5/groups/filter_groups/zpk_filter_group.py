@@ -64,16 +64,10 @@ class ZPKGroup(BaseGroup):
 
         # create datasets for the poles and zeros
         poles_ds = zpk_filter_group.create_dataset(
-            "poles",
-            poles.shape,
-            dtype=complex,
-            **self.dataset_options,
+            "poles", poles.shape, dtype=complex, **self.dataset_options,
         )
         zeros_ds = zpk_filter_group.create_dataset(
-            "zeros",
-            zeros.shape,
-            dtype=complex,
-            **self.dataset_options,
+            "zeros", zeros.shape, dtype=complex, **self.dataset_options,
         )
 
         # when filling data need to fill the full row for what ever reason.
@@ -121,10 +115,7 @@ class ZPKGroup(BaseGroup):
                 input_dict[k] = str(v)
 
         zpk_group = self.add_filter(
-            zpk_object.name,
-            zpk_object.poles,
-            zpk_object.zeros,
-            input_dict,
+            zpk_object.name, zpk_object.poles, zpk_object.zeros, input_dict,
         )
         return zpk_group
 
@@ -144,9 +135,13 @@ class ZPKGroup(BaseGroup):
             if zpk_group["poles"].dtype == complex:
                 zpk_obj.poles = zpk_group["poles"][:]
             elif "real" in zpk_group["poles"].dtype.names:
-                zpk_obj.poles = zpk_group["poles"][()]["real"] + 1j*zpk_group["poles"][()]["imag"]
+                zpk_obj.poles = (
+                    zpk_group["poles"][()]["real"] + 1j * zpk_group["poles"][()]["imag"]
+                )
             else:
-                raise ValueError(f"Cannot convert values to complex valued poles, check filter {name}")
+                raise ValueError(
+                    f"Cannot convert values to complex valued poles, check filter {name}"
+                )
         else:
             self.logger.debug(f"ZPK filter {name} has no poles")
             zpk_obj.poles = []
@@ -155,9 +150,13 @@ class ZPKGroup(BaseGroup):
             if zpk_group["zeros"].dtype == complex:
                 zpk_obj.zeros = zpk_group["zeros"][:]
             elif "real" in zpk_group["zeros"].dtype.names:
-                zpk_obj.zeros = zpk_group["zeros"][()]["real"] + 1j*zpk_group["zeros"][()]["imag"]
+                zpk_obj.zeros = (
+                    zpk_group["zeros"][()]["real"] + 1j * zpk_group["zeros"][()]["imag"]
+                )
             else:
-                raise ValueError(f"Cannot convert values to complex valued zeros, check filter {name}")
+                raise ValueError(
+                    f"Cannot convert values to complex valued zeros, check filter {name}"
+                )
         else:
             self.logger.debug(f"ZPK filter {name} has no zeros")
             zpk_obj.zeros = []
