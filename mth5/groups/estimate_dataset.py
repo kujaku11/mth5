@@ -14,7 +14,7 @@ import h5py
 import numpy as np
 import xarray as xr
 
-from mt_metadata.transfer_functions.tf import StatisticalEstimate
+from mt_metadata.transfer_function.tf import StatisticalEstimate
 
 from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import to_numpy_type
