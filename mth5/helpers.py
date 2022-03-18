@@ -200,6 +200,7 @@ def to_numpy_type(value):
     else:
         raise TypeError("Type {0} not understood".format(type(value)))
 
+
 def from_numpy_type(value):
     """
     Need to make the attributes friendly with Numpy and HDF5.
@@ -256,6 +257,7 @@ def inherit_doc_string(cls):
             break
     return cls
 
+
 def validate_name(name, pattern=None):
     """
     Validate name 
@@ -268,5 +270,5 @@ def validate_name(name, pattern=None):
     :rtype: TYPE
 
     """
-    
+
     return name.replace(" ", "_")

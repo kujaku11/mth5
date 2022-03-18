@@ -35,6 +35,7 @@ from mth5.utils.mth5_logger import setup_logger
 
 from mt_metadata.utils.mttime import get_now_utc
 from mt_metadata.timeseries import Experiment
+from mt_metadata.transfer_functions.core import TF
 
 # =============================================================================
 # Acceptable parameters
@@ -253,10 +254,9 @@ class MTH5:
 
         # make these private so the user cant accidentally change anything.
         self.__hdf5_obj = None
-        (
-            self.__compression,
-            self.__compression_opts,
-        ) = helpers.validate_compression(compression, compression_opts)
+        (self.__compression, self.__compression_opts,) = helpers.validate_compression(
+            compression, compression_opts
+        )
         self.__shuffle = shuffle
         self.__fletcher32 = fletcher32
 
@@ -519,12 +519,13 @@ class MTH5:
         if self.h5_is_read():
             if self.file_version in ["0.1.0"]:
                 return groups.FiltersGroup(
-                    self.__hdf5_obj[f"{self._root_path}/Filters"], **self.dataset_options
+                    self.__hdf5_obj[f"{self._root_path}/Filters"],
+                    **self.dataset_options,
                 )
             else:
                 self.logger.info(
                     "File version 0.2.0 does not have a FiltersGroup at the experiment level"
-                    )
+                )
                 return None
         self.logger.info("File is closed cannot access /Filters")
         return None
@@ -919,7 +920,7 @@ class MTH5:
         MTH5Error: MT001 does not exist, check groups_list for existing names
 
         """
-        
+
         survey_name = helpers.validate_name(survey_name)
         try:
             return groups.SurveyGroup(
@@ -931,7 +932,7 @@ class MTH5:
                 f"{self._root_path}/Surveys/{survey_name} does not exist, "
                 + "check survey_list for existing names"
             )
-            self.logger.exception(msg)
+            self.logger.warning(msg)
             raise MTH5Error(msg)
 
     def remove_survey(self, survey_name):
@@ -972,7 +973,7 @@ class MTH5:
                 f"{self._root_path}/Surveys/{survey_name} does not exist, "
                 + "check station_list for existing names"
             )
-            self.logger.exception(msg)
+            self.logger.warning(msg)
             raise MTH5Error(msg)
 
     def add_station(self, station_name, station_metadata=None, survey=None):
@@ -1315,3 +1316,112 @@ class MTH5:
             .get_run(run_name)
             .remove_channel(channel_name)
         )
+
+    def add_transfer_function(self, tf_object):
+        """
+        Add a transfer function
+        :param tf_object: DESCRIPTION
+        :type tf_object: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if not isinstance(tf_object, TF):
+            msg = "Input must be a TF object not %s"
+            self.logger.error(msg, type(tf_object))
+            raise ValueError(msg % type(tf_object))
+
+        if self.file_version == "0.2.0":
+            try:
+                survey_group = self.get_survey(tf_object.survey_metadata.id)
+            except MTH5Error:
+                survey_group = self.add_survey(
+                    tf_object.survey_metadata.id, survey_metadata=tf_object.survey_metadata
+                )
+        else:
+            survey_group = self.survey_group
+            # might need a better test here
+            if survey_group.metadata.id is None:
+                survey_group.metadata.update(tf_object.survey_metadata)
+                survey_group.write_metadata()
+
+        try:
+            station_group = survey_group.stations_group.get_station(
+                tf_object.station_metadata.id
+            )
+        except MTH5Error:
+            station_group = survey_group.stations_group.add_station(
+                tf_object.station_metadata.id,
+                station_metadata=tf_object.to_ts_station_metadata(),
+            )
+
+        ## need to check for runs and channels
+        # CANT DO THIS UNTIL RUN AND CHANNEL ARE SAME BETWEEN TS AND TF
+        for run_id in tf_object.station_metadata.transfer_function.runs_processed:
+            try:
+                run_group = station_group.get_run(run_id)
+            except MTH5Error:
+                run = tf_object.station_metadata.get_run(run_id)
+                run_group = station_group.add_run(run_id, run_metadata=run)
+
+                for ch in run.channels:
+                    try:
+                        ch_dataset = run_group.get_channel(ch.component)
+                    except MTH5Error:
+                        ch_dataset = run_group.add_channel(
+                            ch.component,
+                            ch.type, 
+                            None,
+                            channel_metadata=ch)
+
+        try:
+            tf_group = station_group.transfer_functions_group.add_transfer_function(
+                tf_object.station, tf_object=tf_object
+            )
+        except (OSError, RuntimeError, ValueError):
+            msg = f"TF {tf_object.station} already exists, returning existing group."
+            self.logger.debug(msg)
+            tf_group = station_group.transfer_functions_group.get_transfer_function(
+                tf_object.station
+            )
+
+        return tf_group
+
+    def get_transfer_function(self, station_id, tf_id, survey=None):
+        """
+        Get a transfer function 
+        
+        :param survey_id: DESCRIPTION
+        :type survey_id: TYPE
+        :param station_id: DESCRIPTION
+        :type station_id: TYPE
+        :param tf_id: DESCRIPTION
+        :type tf_id: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        station_group = self.get_station(station_id, survey=survey)
+
+        return station_group.transfer_functions_group.get_tf_object(tf_id)
+
+    def remove_transfer_function(self, station_id, tf_id, survey=None):
+        """
+        remove a transfer function 
+        
+        :param survey_id: DESCRIPTION
+        :type survey_id: TYPE
+        :param station_id: DESCRIPTION
+        :type station_id: TYPE
+        :param tf_id: DESCRIPTION
+        :type tf_id: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        station_group = self.get_station(station_id, survey=survey)
+
+        station_group.transfer_functions_group.remove_transfer_function(tf_id)

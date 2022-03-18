@@ -46,12 +46,12 @@ class TestFromStationXML01(unittest.TestCase):
         with self.subTest(msg="ey"):
             self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001/ey"), True)
         with self.subTest(msg="ex"):
-           self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001/hy"), True)
+            self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001/hy"), True)
 
     def test_survey_metadata(self):
         with self.subTest(msg="id"):
             self.assertEqual(self.m.survey_group.metadata.fdsn.network, "ZU")
-        
+
         with self.subTest(msg="start"):
             self.assertEqual(
                 self.m.survey_group.metadata.time_period.start_date, "2020-01-01"
@@ -85,9 +85,9 @@ class TestFromStationXML01(unittest.TestCase):
             "location.latitude": 37.633351,
             "location.longitude": -121.468382,
             "mth5_type": "Station",
-            "orientation.method": "compass",
+            "orientation.method": None,
             "orientation.reference_frame": "geographic",
-            "provenance.software.author": None,
+            "provenance.software.author": "none",
             "provenance.software.name": None,
             "provenance.software.version": None,
             "provenance.submitter.author": None,

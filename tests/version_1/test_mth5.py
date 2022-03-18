@@ -51,16 +51,16 @@ class TestMTH5(unittest.TestCase):
         defaults = sorted(self.mth5_obj._default_subgroup_names)
 
         self.assertListEqual(defaults, groups)
-        
+
     def test_filename(self):
         self.assertIsInstance(self.mth5_obj.filename, Path)
-        
+
     def test_is_read(self):
         self.assertEqual(self.mth5_obj.h5_is_read(), True)
-        
+
     def test_is_write(self):
         self.assertEqual(self.mth5_obj.h5_is_write(), True)
-        
+
     def test_validation(self):
         self.assertEqual(self.mth5_obj.validate_file(), True)
 

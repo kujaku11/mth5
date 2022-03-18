@@ -22,6 +22,7 @@ import weakref
 import h5py
 
 from mt_metadata import timeseries as metadata
+from mt_metadata.transfer_functions.tf import TransferFunction
 from mt_metadata.base import Base
 
 from mth5.helpers import get_tree
@@ -31,6 +32,7 @@ from mth5.utils.mth5_logger import setup_logger
 
 # make a dictionary of available metadata classes
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
+meta_classes["TransferFunction"] = TransferFunction
 # =============================================================================
 #
 # =============================================================================
@@ -172,10 +174,9 @@ class BaseGroup:
                 "options": [],
                 "alias": [],
                 "example": "<HDF5 Group Reference>",
-                "default": "none"
+                "default": "none",
             },
         )
-
 
     @property
     def metadata(self):

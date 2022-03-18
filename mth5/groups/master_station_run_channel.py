@@ -30,9 +30,14 @@ from mt_metadata.timeseries.filters import ChannelResponseFilter
 
 from mth5 import CHUNK_SIZE
 from mth5.groups.base import BaseGroup
-from mth5.groups import FiltersGroup
+from mth5.groups import FiltersGroup, TransferFunctionGroup
 from mth5.utils.exceptions import MTH5Error
-from mth5.helpers import to_numpy_type, inherit_doc_string, validate_name
+from mth5.helpers import (
+    to_numpy_type,
+    from_numpy_type,
+    inherit_doc_string,
+    validate_name,
+)
 from mth5.timeseries import ChannelTS, RunTS
 from mth5.timeseries.channel_ts import make_dt_coordinates
 from mth5.utils.mth5_logger import setup_logger
@@ -266,7 +271,7 @@ class MasterStationGroup(BaseGroup):
         """
         if station_name is None:
             raise Exception("station name is None, do not know what to name it")
-        
+
         station_name = validate_name(station_name)
         try:
             station_group = self.hdf5_group.create_group(station_name)
@@ -331,7 +336,7 @@ class MasterStationGroup(BaseGroup):
                 f"{station_name} does not exist, "
                 + "check station_list for existing names"
             )
-            self.logger.exception(msg)
+            self.logger.debug("Error" + msg)
             raise MTH5Error(msg)
 
     def remove_station(self, station_name):
@@ -358,7 +363,7 @@ class MasterStationGroup(BaseGroup):
             >>> mth5_obj.stations_group.remove_station('MT001')
 
         """
-        
+
         station_name = validate_name(station_name)
         try:
             del self.hdf5_group[station_name]
@@ -373,7 +378,7 @@ class MasterStationGroup(BaseGroup):
                 f"{station_name} does not exist, "
                 + "check station_list for existing names"
             )
-            self.logger.exception(msg)
+            self.logger.debug("Error" + msg)
             raise MTH5Error(msg)
 
 
@@ -547,10 +552,35 @@ class StationGroup(BaseGroup):
             "mth5_type",
         ]
 
+        self._default_subgroup_names = [
+            "Transfer_Functions",
+        ]
+
+    def initialize_group(self, **kwargs):
+        """
+        Initialize group by making a summary table and writing metadata
+
+        """
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        self.write_metadata()
+
+        for group_name in self._default_subgroup_names:
+            self.hdf5_group.create_group(f"{group_name}")
+            m5_grp = getattr(self, f"{group_name.lower()}_group")
+            m5_grp.initialize_group()
+
     @property
     def master_station_group(self):
         """shortcut to master station group"""
         return MasterStationGroup(self.hdf5_group.parent)
+
+    @property
+    def transfer_functions_group(self):
+        """ Convinience method for /Station/Transfer_Functions """
+        return TransferFunctionsGroup(
+            self.hdf5_group["Transfer_Functions"], **self.dataset_options
+        )
 
     @BaseGroup.metadata.getter
     def metadata(self):
@@ -558,8 +588,13 @@ class StationGroup(BaseGroup):
 
         self._metadata.runs = []
         for key in self.groups_list:
-            key_group = self.get_run(key)
-            self._metadata.runs.append(key_group.metadata)
+            if key.lower() == "transfer_functions":
+                continue
+            try:
+                key_group = self.get_run(key)
+                self._metadata.runs.append(key_group.metadata)
+            except MTH5Error:
+                self.logger.warning(f"Could not find run {key}")
 
         return self._metadata
 
@@ -648,7 +683,7 @@ class StationGroup(BaseGroup):
             try:
                 next_letter = chr(ord(run_list[-1]) + 1)
             except TypeError:
-                try: 
+                try:
                     next_letter = f"{int(run_list[-1]) + 1}"
                 except ValueError:
                     self.logger.info("Could not create a new run name")
@@ -733,7 +768,7 @@ class StationGroup(BaseGroup):
         >>> existing_run = station.get_run('MT001')
 
         """
-        
+
         run_name = validate_name(run_name)
         try:
             return RunGroup(self.hdf5_group[run_name], **self.dataset_options)
@@ -741,7 +776,7 @@ class StationGroup(BaseGroup):
             msg = (
                 f"{run_name} does not exist, " + "check groups_list for existing names"
             )
-            self.logger.exception(msg)
+            self.logger.debug("Error" + msg)
             raise MTH5Error(msg)
 
     def remove_run(self, run_name):
@@ -782,7 +817,7 @@ class StationGroup(BaseGroup):
             msg = (
                 f"{run_name} does not exist, " + "check station_list for existing names"
             )
-            self.logger.exception(msg)
+            self.logger.debug("Error" + msg)
             raise MTH5Error(msg)
 
     def validate_station_metadata(self):
@@ -801,6 +836,166 @@ class StationGroup(BaseGroup):
         )
 
         self.write_metadata()
+
+
+# =============================================================================
+# Transfer Functions Group
+# =============================================================================
+class TransferFunctionsGroup(BaseGroup):
+    """
+    Object to hold transfer functions
+    
+    The is the high level group, all transfer functions for the station are
+    held here and each one will have its own TransferFunctionGroup.
+    
+    This has add, get, remove_transfer_function.
+    """
+
+    def __init__(self, group, **kwargs):
+        super().__init__(group, **kwargs)
+
+    def add_transfer_function(self, name, tf_object=None):
+        """
+        Add a transfer function to the group
+        
+        :param name: name of the transfer function
+        :type name: string
+        :param tf_object: Transfer Function object
+        :type tf_object: :class:`mt_metadata.transfer_function.core.TF`
+        :return: DESCRIPTION
+        :rtype: TYPE
+        
+        >>> from mth5.mth5 import MTH5
+        >>> m = MTH5()
+        >>> m.open_mth5("example.h5", "a")
+        >>> station_group = m.get_station("mt01", survey="test")
+        >>> tf_group = station_group.transfer_functions_group
+        >>> tf_group.add_transfer_function("mt01_4096", tf_object)
+        
+
+        """
+        name = validate_name(name)
+
+        tf_group = TransferFunctionGroup(
+            self.hdf5_group.create_group(name), **self.dataset_options
+        )
+
+        if tf_object is not None:
+            tf_group.from_tf_object(tf_object)
+
+        return tf_group
+
+    def get_transfer_function(self, tf_id):
+        """
+        Get transfer function from id
+        
+        :param tf_id: name of transfer function
+        :type tf_id: string
+        :return: Transfer function group
+        :rtype: :class:`mth5.groups.TransferFunctionGroup` 
+        
+        >>> from mth5.mth5 import MTH5
+        >>> m = MTH5()
+        >>> m.open_mth5("example.h5", "a")
+        >>> station_group = m.get_station("mt01", survey="test")
+        >>> tf_group = station_group.transfer_functions_group.get_transfer_function("mt01_4096")
+        
+
+        """
+
+        tf_id = validate_name(tf_id)
+        try:
+            return TransferFunctionGroup(self.hdf5_group[tf_id], **self.dataset_options)
+        except KeyError:
+            msg = f"{tf_id} does not exist, " + "check station_list for existing names"
+            self.logger.debug("Error" + msg)
+            raise MTH5Error(msg)
+
+    def remove_transfer_function(self, tf_id):
+        """
+        Remove a transfer function from the group
+        
+        :param tf_id: DESCRIPTION
+        :type tf_id: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+        
+        >>> from mth5.mth5 import MTH5
+        >>> m = MTH5()
+        >>> m.open_mth5("example.h5", "a")
+        >>> station_group = m.get_station("mt01", survey="test")
+        >>> tf_group = station_group.transfer_functions_group
+        >>> tf_group.remove_transfer_function("mt01_4096")
+
+        """
+
+        tf_id = validate_name(tf_id)
+        try:
+            del self.hdf5_group[tf_id]
+            self.logger.info(
+                "Deleting a station does not reduce the HDF5"
+                + "file size it simply remove the reference. If "
+                + "file size reduction is your goal, simply copy"
+                + " what you want into another file."
+            )
+        except KeyError:
+            msg = f"{tf_id} does not exist, " + "check station_list for existing names"
+            self.logger.debug("Error" + msg)
+            raise MTH5Error(msg)
+
+    def get_tf_object(self, tf_id):
+        """
+        This is the function you want to use to get a proper
+        :class:`mt_metadata.transfer_functions.core.TF` object with all the 
+        appropriate metadata.
+        
+        
+        :param tf_id: name of the transfer function to get
+        :type tf_id: string
+        :return: Full transfer function with appropriate metadata
+        :rtype: :class:`mt_metadata.transfer_functions.core.TF`
+        
+        >>> from mth5.mth5 import MTH5
+        >>> m = MTH5()
+        >>> m.open_mth5("example.h5", "a")
+        >>> station_group = m.get_station("mt01", survey="test")
+        >>> tf_group = station_group.transfer_functions_group
+        >>> tf_object = tf_group.get_tf_object("mt01_4096")
+        
+
+        """
+
+        tf_group = self.get_transfer_function(tf_id)
+
+        tf_obj = tf_group.to_tf_object()
+        
+        # get survey metadata
+        survey_dict = dict(self.hdf5_group.parent.parent.parent.attrs)
+        for key, value in survey_dict.items():
+            survey_dict[key] = from_numpy_type(value)
+        tf_obj.survey_metadata.from_dict({"survey": survey_dict})
+
+        # get station metadata
+        station_dict = dict(self.hdf5_group.parent.attrs)
+        ts_station_metadata = metadata.Station()
+        for key, value in station_dict.items():
+            station_dict[key] = from_numpy_type(value)
+        ts_station_metadata.from_dict({"station": station_dict})
+        tf_obj.from_ts_station_metadata(ts_station_metadata)
+        
+        # need to update transfer function metadata
+        tf_obj.station_metadata.transfer_function.update(tf_group.metadata)
+        
+        # add run and channel metadata
+        tf_obj.station_metadata.runs = []
+        for run_id in tf_obj.station_metadata.transfer_function.runs_processed:
+            try:
+                rg = RunGroup(self.hdf5_group.parent[run_id])
+                tf_obj.station_metadata.add_run(rg.metadata)
+            except KeyError:
+                self.logger.info(f"Could not get run {run_id} for transfer function")
+
+        return tf_obj
 
 
 # =============================================================================
@@ -1164,6 +1359,9 @@ class RunGroup(BaseGroup):
                                     * channel_metadata.sample_rate
                                 ),
                             )
+                    else:
+                        estimate_size = (1,)
+                        chunks = CHUNK_SIZE
                 else:
                     estimate_size = (1,)
                     chunks = CHUNK_SIZE
@@ -1179,7 +1377,7 @@ class RunGroup(BaseGroup):
 
             if channel_metadata and channel_metadata.component is None:
                 channel_metadata.component = channel_name
-                
+
             if channel_type.lower() in ["magnetic"]:
                 channel_obj = MagneticDataset(
                     channel_group, dataset_metadata=channel_metadata
@@ -1213,12 +1411,12 @@ class RunGroup(BaseGroup):
                 channel_obj.metadata.update(channel_metadata)
                 channel_obj.write_metadata()
                 self.logger.debug("Done with %s", channel_name)
-               
+
         # need to make sure the channel name is passed.
         if channel_obj.metadata.component is None:
             channel_obj.metadata.component = channel_name
             channel_obj.write_metadata()
-            
+
         return channel_obj
 
     def get_channel(self, channel_name):
@@ -1265,25 +1463,19 @@ class RunGroup(BaseGroup):
                 ch_metadata = meta_classes["Electric"]()
                 ch_metadata.from_dict({"Electric": ch_dataset.attrs})
                 channel = ElectricDataset(
-                    ch_dataset,
-                    dataset_metadata=ch_metadata,
-                    write_metadata=False,
+                    ch_dataset, dataset_metadata=ch_metadata, write_metadata=False,
                 )
             elif ch_dataset.attrs["mth5_type"].lower() in ["magnetic"]:
                 ch_metadata = meta_classes["Magnetic"]()
                 ch_metadata.from_dict({"Magnetic": ch_dataset.attrs})
                 channel = MagneticDataset(
-                    ch_dataset,
-                    dataset_metadata=ch_metadata,
-                    write_metadata=False,
+                    ch_dataset, dataset_metadata=ch_metadata, write_metadata=False,
                 )
             elif ch_dataset.attrs["mth5_type"].lower() in ["auxiliary"]:
                 ch_metadata = meta_classes["Auxiliary"]()
                 ch_metadata.from_dict({"Auxiliary": ch_dataset.attrs})
                 channel = AuxiliaryDataset(
-                    ch_dataset,
-                    dataset_metadata=ch_metadata,
-                    write_metadata=False,
+                    ch_dataset, dataset_metadata=ch_metadata, write_metadata=False,
                 )
             else:
                 channel = ChannelDataset(ch_dataset)
@@ -1297,7 +1489,7 @@ class RunGroup(BaseGroup):
                 f"{channel_name} does not exist, "
                 + "check groups_list for existing names"
             )
-            self.logger.exception(msg)
+            self.logger.debug("Error" + msg)
             raise MTH5Error(msg)
 
     def remove_channel(self, channel_name):
@@ -1339,7 +1531,7 @@ class RunGroup(BaseGroup):
                 f"{channel_name} does not exist, "
                 + "check groups_list for existing names"
             )
-            self.logger.exception(msg)
+            self.logger.debug("Error" + msg)
             raise MTH5Error(msg)
 
     def to_runts(self, start=None, end=None, n_samples=None):
@@ -1637,7 +1829,7 @@ class ChannelDataset:
                 "options": [],
                 "alias": [],
                 "example": "<HDF5 Group Reference>",
-                "default": None
+                "default": None,
             },
         )
 
@@ -2250,12 +2442,7 @@ class ChannelDataset:
         # TODO need to check on metadata.
 
     def from_xarray(
-        self,
-        data_array,
-        how="replace",
-        fill=None,
-        max_gap_seconds=1,
-        fill_window=10,
+        self, data_array, how="replace", fill=None, max_gap_seconds=1, fill_window=10,
     ):
         """
         fill data set from a :class:`xarray.DataArray` object.
@@ -2441,11 +2628,7 @@ class ChannelDataset:
         )
 
     def time_slice(
-        self,
-        start,
-        end=None,
-        n_samples=None,
-        return_type="channel_ts",
+        self, start, end=None, n_samples=None, return_type="channel_ts",
     ):
         """
         Get a time slice from the channel and return the appropriate type

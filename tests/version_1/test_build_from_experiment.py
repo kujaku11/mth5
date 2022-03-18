@@ -44,32 +44,34 @@ class TestMTH5(unittest.TestCase):
     def test_stations(self):
         stations = self.experiment.surveys[0].stations
         for station in stations:
-            h5_station = self.mth5_obj.get_station(station.id)
-            sd = station.to_dict(single=True)
-            sd.pop("hdf5_reference")
-            sd.pop("mth5_type")
+            with self.subTest(station.id):
+                h5_station = self.mth5_obj.get_station(station.id)
+                sd = station.to_dict(single=True)
+                sd.pop("hdf5_reference")
+                sd.pop("mth5_type")
 
-            h5_sd = h5_station.metadata.to_dict(single=True)
-            h5_sd.pop("hdf5_reference")
-            h5_sd.pop("mth5_type")
+                h5_sd = h5_station.metadata.to_dict(single=True)
+                h5_sd.pop("hdf5_reference")
+                h5_sd.pop("mth5_type")
 
-            self.assertDictEqual(h5_sd, sd)
+                self.assertDictEqual(h5_sd, sd)
 
     def test_runs(self):
         runs = self.experiment.surveys[0].stations[0].runs
         for run in runs:
-            h5_run = self.mth5_obj.get_run(
-                self.experiment.surveys[0].stations[0].id, run.id
-            )
-            sd = run.to_dict(single=True)
-            sd.pop("hdf5_reference")
-            sd.pop("mth5_type")
+            with self.subTest(run.id):
+                h5_run = self.mth5_obj.get_run(
+                    self.experiment.surveys[0].stations[0].id, run.id
+                )
+                sd = run.to_dict(single=True)
+                sd.pop("hdf5_reference")
+                sd.pop("mth5_type")
 
-            h5_sd = h5_run.metadata.to_dict(single=True)
-            h5_sd.pop("hdf5_reference")
-            h5_sd.pop("mth5_type")
+                h5_sd = h5_run.metadata.to_dict(single=True)
+                h5_sd.pop("hdf5_reference")
+                h5_sd.pop("mth5_type")
 
-            self.assertDictEqual(h5_sd, sd)
+                self.assertDictEqual(h5_sd, sd)
 
     def test_channels(self):
         runs = self.experiment.surveys[0].stations[0].runs
@@ -78,17 +80,18 @@ class TestMTH5(unittest.TestCase):
                 self.experiment.surveys[0].stations[0].id, run.id
             )
             for channel in run.channels:
-                h5_channel = h5_run.get_channel(channel.component)
+                with self.subTest(f"{run.id}/ch.component"):
+                    h5_channel = h5_run.get_channel(channel.component)
 
-                sd = channel.to_dict(single=True)
-                sd.pop("hdf5_reference")
-                sd.pop("mth5_type")
+                    sd = channel.to_dict(single=True)
+                    sd.pop("hdf5_reference")
+                    sd.pop("mth5_type")
 
-                h5_sd = h5_channel.metadata.to_dict(single=True)
-                h5_sd.pop("hdf5_reference")
-                h5_sd.pop("mth5_type")
+                    h5_sd = h5_channel.metadata.to_dict(single=True)
+                    h5_sd.pop("hdf5_reference")
+                    h5_sd.pop("mth5_type")
 
-                self.assertDictEqual(h5_sd, sd)
+                    self.assertDictEqual(h5_sd, sd)
 
     def test_filters(self):
         exp_filters = self.experiment.surveys[0].filters
@@ -106,7 +109,7 @@ class TestMTH5(unittest.TestCase):
                         self.assertAlmostEqual(v1, float(v2), 5)
                     elif isinstance(v1, np.ndarray):
                         self.assertEqual(v1.dtype, v2.dtype)
-                        self.assertTrue((v1==v2).all())
+                        self.assertTrue((v1 == v2).all())
                     else:
                         self.assertEqual(v1, v2)
 

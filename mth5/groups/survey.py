@@ -256,7 +256,7 @@ class MasterSurveyGroup(BaseGroup):
         """
         if survey_name is None:
             raise Exception("survey name is None, do not know what to name it")
-            
+
         survey_name = validate_name(survey_name)
         try:
             survey_group = self.hdf5_group.create_group(survey_name)
@@ -275,9 +275,7 @@ class MasterSurveyGroup(BaseGroup):
                     raise MTH5Error(msg)
 
             survey_obj = SurveyGroup(
-                survey_group,
-                survey_metadata=survey_metadata,
-                **self.dataset_options,
+                survey_group, survey_metadata=survey_metadata, **self.dataset_options,
             )
             survey_obj.initialize_group()
 
