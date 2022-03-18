@@ -844,6 +844,11 @@ class StationGroup(BaseGroup):
 class TransferFunctionsGroup(BaseGroup):
     """
     Object to hold transfer functions
+    
+    The is the high level group, all transfer functions for the station are
+    held here and each one will have its own TransferFunctionGroup.
+    
+    This has add, get, remove_transfer_function.
     """
 
     def __init__(self, group, **kwargs):
@@ -859,6 +864,14 @@ class TransferFunctionsGroup(BaseGroup):
         :type tf_object: :class:`mt_metadata.transfer_function.core.TF`
         :return: DESCRIPTION
         :rtype: TYPE
+        
+        >>> from mth5.mth5 import MTH5
+        >>> m = MTH5()
+        >>> m.open_mth5("example.h5", "a")
+        >>> station_group = m.get_station("mt01", survey="test")
+        >>> tf_group = station_group.transfer_functions_group
+        >>> tf_group.add_transfer_function("mt01_4096", tf_object)
+        
 
         """
         name = validate_name(name)
@@ -876,10 +889,17 @@ class TransferFunctionsGroup(BaseGroup):
         """
         Get transfer function from id
         
-        :param tf_id: DESCRIPTION
-        :type tf_id: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :param tf_id: name of transfer function
+        :type tf_id: string
+        :return: Transfer function group
+        :rtype: :class:`mth5.groups.TransferFunctionGroup` 
+        
+        >>> from mth5.mth5 import MTH5
+        >>> m = MTH5()
+        >>> m.open_mth5("example.h5", "a")
+        >>> station_group = m.get_station("mt01", survey="test")
+        >>> tf_group = station_group.transfer_functions_group.get_transfer_function("mt01_4096")
+        
 
         """
 
@@ -899,6 +919,13 @@ class TransferFunctionsGroup(BaseGroup):
         :type tf_id: TYPE
         :return: DESCRIPTION
         :rtype: TYPE
+        
+        >>> from mth5.mth5 import MTH5
+        >>> m = MTH5()
+        >>> m.open_mth5("example.h5", "a")
+        >>> station_group = m.get_station("mt01", survey="test")
+        >>> tf_group = station_group.transfer_functions_group
+        >>> tf_group.remove_transfer_function("mt01_4096")
 
         """
 
@@ -918,13 +945,23 @@ class TransferFunctionsGroup(BaseGroup):
 
     def get_tf_object(self, tf_id):
         """
-        Get a TF object with station and survey metadata.
+        This is the function you want to use to get a proper
+        :class:`mt_metadata.transfer_functions.core.TF` object with all the 
+        appropriate metadata.
         
         
-        :param tf_id: DESCRIPTION
-        :type tf_id: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :param tf_id: name of the transfer function to get
+        :type tf_id: string
+        :return: Full transfer function with appropriate metadata
+        :rtype: :class:`mt_metadata.transfer_functions.core.TF`
+        
+        >>> from mth5.mth5 import MTH5
+        >>> m = MTH5()
+        >>> m.open_mth5("example.h5", "a")
+        >>> station_group = m.get_station("mt01", survey="test")
+        >>> tf_group = station_group.transfer_functions_group
+        >>> tf_object = tf_group.get_tf_object("mt01_4096")
+        
 
         """
 
@@ -932,20 +969,25 @@ class TransferFunctionsGroup(BaseGroup):
 
         tf_obj = tf_group.to_tf_object()
         
+        # get survey metadata
         survey_dict = dict(self.hdf5_group.parent.parent.parent.attrs)
         for key, value in survey_dict.items():
             survey_dict[key] = from_numpy_type(value)
         tf_obj.survey_metadata.from_dict({"survey": survey_dict})
 
+        # get station metadata
         station_dict = dict(self.hdf5_group.parent.attrs)
         ts_station_metadata = metadata.Station()
         for key, value in station_dict.items():
             station_dict[key] = from_numpy_type(value)
         ts_station_metadata.from_dict({"station": station_dict})
         tf_obj.from_ts_station_metadata(ts_station_metadata)
-        tf_obj.station_metadata.transfer_function.update(tf_group.metadata)
-        tf_obj.station_metadata.runs = []
         
+        # need to update transfer function metadata
+        tf_obj.station_metadata.transfer_function.update(tf_group.metadata)
+        
+        # add run and channel metadata
+        tf_obj.station_metadata.runs = []
         for run_id in tf_obj.station_metadata.transfer_function.runs_processed:
             try:
                 rg = RunGroup(self.hdf5_group.parent[run_id])

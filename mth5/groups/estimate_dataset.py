@@ -26,6 +26,23 @@ from mth5.utils.mth5_logger import setup_logger
 class EstimateDataset:
     """
     Holds a statistical estimate
+    
+    This will hold multi-dimensional statistical estimates for transfer 
+    functions.
+    
+    :param dataset: hdf5 dataset
+    :type dataset: h5py.Dataset
+    :param dataset_metadata: data set metadata see 
+    :class:`mt_metadata.transfer_functions.tf.StatisticalEstimate`, defaults to None
+    :type dataset_metadata: :class:`mt_metadata.transfer_functions.tf.StatisticalEstimate`, optional
+    :param write_metadata: True to write metadata, defaults to True
+    :type write_metadata: Boolean, optional
+    :param **kwargs: DESCRIPTION
+    :type **kwargs: TYPE
+    :raises MTH5Error: When an estimate is not present, or metadata name
+    does not match the given name
+    
+    
     """
 
     def __init__(self, dataset, dataset_metadata=None, write_metadata=True, **kwargs):
@@ -143,7 +160,7 @@ class EstimateDataset:
         """
         replace the entire dataset with a new one, nothing left behind
 
-        :param new_data_array: new data array shape (npts, )
+        :param new_data_array: new data array
         :type new_data_array: :class:`numpy.ndarray`
 
         """
@@ -163,7 +180,7 @@ class EstimateDataset:
     def to_xarray(self, period):
         """
         :return: an xarray DataArray with appropriate metadata and the
-                 appropriate time index.
+                 appropriate coordinates.
         :rtype: :class:`xarray.DataArray`
 
         .. note:: that metadta will not be validated if changed in an xarray.
@@ -185,9 +202,8 @@ class EstimateDataset:
 
     def to_numpy(self):
         """
-        :return: a numpy structured array with 2 columns (time, channel_data)
-        :rtype: :class:`numpy.core.records`
-        .. data:: data is a builtin to numpy and cannot be used as a name
+        :return: a numpy structured array with 
+        :rtype: :class:`numpy.ndarray`
 
         loads into RAM
 
@@ -197,8 +213,8 @@ class EstimateDataset:
 
     def from_numpy(self, new_estimate):
         """
-        :return: a numpy structured array with 2 columns (time, channel_data)
-        :rtype: :class:`numpy.core.records`
+        :return: a numpy structured array 
+        :rtype: :class:`numpy.ndarray`
         .. data:: data is a builtin to numpy and cannot be used as a name
 
         loads into RAM
@@ -226,7 +242,7 @@ class EstimateDataset:
     def from_xarray(self, data):
         """
         :return: an xarray DataArray with appropriate metadata and the
-                 appropriate time index.
+                 appropriate coordinates base on the metadata.
         :rtype: :class:`xarray.DataArray`
 
         .. note:: that metadta will not be validated if changed in an xarray.
