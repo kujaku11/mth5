@@ -145,7 +145,7 @@ class TestTFGroup(unittest.TestCase):
     def test_estimates(self):
         
         for estimate in ["transfer_function", "transfer_function_error",
-                         "period", "inverse_signal_power", "residual_covariance"]:
+                         "inverse_signal_power", "residual_covariance"]:
             
             with self.subTest(estimate):
                 est1 = getattr(self.tf_obj, estimate)
@@ -153,7 +153,9 @@ class TestTFGroup(unittest.TestCase):
                 
                 self.assertTrue((est1.to_numpy() == est2.to_numpy()).all())
         
-
+    def test_period(self):
+        self.assertTrue((self.tf_obj.period == self.tf_h5.period).all())
+        
     def tearDown(self):
         self.mth5_obj.close_mth5()
         self.fn.unlink()
