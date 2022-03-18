@@ -25,8 +25,8 @@ Welcome to MTH5's documentation!
     examples/notebooks/filters_example.ipynb
     source/file_readers
     source/conventions
-    source/examples
     examples/notebooks/transfer_function_example.ipynb
+    source/examples
 	
 .. toctree::
 	:maxdepth: 1
