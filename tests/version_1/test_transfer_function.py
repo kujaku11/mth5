@@ -141,6 +141,18 @@ class TestTFGroup(unittest.TestCase):
                     chd2.pop("mth5_type")
                     chd2.pop("hdf5_reference")
                     self.assertDictEqual(chd1, chd2)
+                    
+    def test_estimates(self):
+        
+        for estimate in ["transfer_function", "transfer_function_error",
+                         "period", "inverse_signal_power", "residual_covariance"]:
+            
+            with self.subTest(estimate):
+                est1 = getattr(self.tf_obj, estimate)
+                est2 = getattr(self.tf_h5, estimate)
+                
+                self.assertTrue((est1.to_numpy() == est2.to_numpy()).all())
+        
 
     def tearDown(self):
         self.mth5_obj.close_mth5()
