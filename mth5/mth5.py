@@ -932,7 +932,7 @@ class MTH5:
                 f"{self._root_path}/Surveys/{survey_name} does not exist, "
                 + "check survey_list for existing names"
             )
-            self.logger.error(msg)
+            self.logger.warning(msg)
             raise MTH5Error(msg)
 
     def remove_survey(self, survey_name):
@@ -973,7 +973,7 @@ class MTH5:
                 f"{self._root_path}/Surveys/{survey_name} does not exist, "
                 + "check station_list for existing names"
             )
-            self.logger.error(msg)
+            self.logger.warning(msg)
             raise MTH5Error(msg)
 
     def add_station(self, station_name, station_metadata=None, survey=None):
@@ -1341,6 +1341,10 @@ class MTH5:
                 )
         else:
             survey_group = self.survey_group
+            # might need a better test here
+            if survey_group.metadata.id is None:
+                survey_group.metadata.update(tf_object.survey_metadata)
+                survey_group.write_metadata()
 
         try:
             station_group = survey_group.stations_group.get_station(
@@ -1354,11 +1358,12 @@ class MTH5:
 
         ## need to check for runs and channels
         # CANT DO THIS UNTIL RUN AND CHANNEL ARE SAME BETWEEN TS AND TF
-        for run in tf_object.station_metadata.runs:
+        for run_id in tf_object.station_metadata.transfer_function.runs_processed:
             try:
-                run_group = station_group.get_run(run.id)
+                run_group = station_group.get_run(run_id)
             except MTH5Error:
-                run_group = station_group.add_run(run.id, run_metadata=run)
+                run = tf_object.station_metadata.get_run(run_id)
+                run_group = station_group.add_run(run_id, run_metadata=run)
 
                 for ch in run.channels:
                     try:

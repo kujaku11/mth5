@@ -31,11 +31,6 @@ class TestTFGroup(unittest.TestCase):
         self.mth5_obj = MTH5(file_version="0.1.0")
         self.mth5_obj.open_mth5(self.fn, mode="w")
 
-        self.st_metadata = StatisticalEstimate()
-        self.st_metadata.name = "impedance"
-        self.st_metadata.input_channels = ["hx", "hy"]
-        self.st_metadata.output_channels = ["ex", "ey"]
-
         self.tf_obj = TF(TF_XML)
         
         self.tf_group = self.mth5_obj.add_transfer_function(self.tf_obj)
@@ -51,9 +46,7 @@ class TestTFGroup(unittest.TestCase):
                      ('country', 'USA'),
                      ('datum', 'WGS84'),
                      ('geographic_name', 'CONUS South'),
-                     ('hdf5_reference', None),
                      ('id', 'CONUS South'),
-                     ('mth5_type', None),
                      ('name', None),
                      ('northwest_corner.latitude', 0.0),
                      ('northwest_corner.longitude', 0.0),
@@ -67,7 +60,11 @@ class TestTFGroup(unittest.TestCase):
                      ('time_period.end_date', '2020-10-07'),
                      ('time_period.start_date', '2020-09-20')])
         
-        self.assertDictEqual(meta_dict, self.tf_h5.survey_metadata.to_dict(single=True))
+        h5_meta_dict = self.tf_h5.survey_metadata.to_dict(single=True)
+        h5_meta_dict.pop("mth5_type")
+        h5_meta_dict.pop("hdf5_reference")
+        
+        self.assertDictEqual(meta_dict, h5_meta_dict)
 
     def test_station_metadta(self):
         
@@ -116,16 +113,34 @@ class TestTFGroup(unittest.TestCase):
         
     def test_runs(self):
         
-        for run1, run2 in zip([self.tf_h5.station_metadata.runs, self.tf_obj.station_metadata.runs]):
+        for run1, run2 in zip(self.tf_h5.station_metadata.runs, self.tf_obj.station_metadata.runs):
             with self.subTest(run1.id):
-                self.assertTrue(run1 == run2)
+                run1.data_logger.firmware.author = None
+                rd1 = run1.to_dict(single=True)
+                rd1.pop("mth5_type")
+                rd1.pop("hdf5_reference")
+                
+                rd2 = run2.to_dict(single=True)
+                rd2.pop("mth5_type")
+                rd2.pop("hdf5_reference")
+                self.assertDictEqual(rd1, rd2)
                 
     def test_channels(self):
         
-        for run1, run2 in zip([self.tf_h5.station_metadata.runs, self.tf_obj.station_metadata.runs]):
-            for ch1, ch2 in zip(run1.channels, run2.channels):
+        for run1, run2 in zip(self.tf_h5.station_metadata.runs, self.tf_obj.station_metadata.runs):
+            for ch1 in run1.channels:
+                ch2 = run2.get_channel(ch1.component)
                 with self.subTest(f"{run1.id}_{ch1.component}"):
-                    self.assertTrue(ch1 == ch2)
+                    
+                    chd1 = ch1.to_dict(single=True)
+                    chd1.pop("mth5_type")
+                    chd1.pop("hdf5_reference")
+                    
+                    
+                    chd2 = ch2.to_dict(single=True)
+                    chd2.pop("mth5_type")
+                    chd2.pop("hdf5_reference")
+                    self.assertDictEqual(chd1, chd2)
 
     def tearDown(self):
         self.mth5_obj.close_mth5()
