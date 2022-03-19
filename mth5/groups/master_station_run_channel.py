@@ -2729,8 +2729,13 @@ class ChannelDataset:
             raise ValueError(msg)
 
         # create a regional reference that can be used, need +1 to be inclusive
-        regional_ref = self.hdf5_dataset.regionref[start_index : end_index + 1]
-
+        try:
+            regional_ref = self.hdf5_dataset.regionref[start_index : end_index + 1]
+        except (OSError, RuntimeError):
+            self.logger.debug(
+                "file is in read mode cannot set an internal reference, using index values")
+            regional_ref = slice(start_index, end_index)
+            
         dt_index = make_dt_coordinates(start, self.sample_rate, npts, self.logger)
 
         meta_dict = self.metadata.to_dict()[self.metadata._class_name]

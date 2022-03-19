@@ -188,7 +188,14 @@ class TestMTH5(unittest.TestCase):
                 self.assertEqual(1, cg.sample_rate)
                 self.assertEqual(4096, cg.n_samples)
 
-        # check the summary table
+        # slicing
+        
+        with self.subTest("get slice"):
+            r_slice = run.to_runts(start="2020-01-01T12:00:00", n_samples=256)
+            
+            self.assertEqual(r_slice.end, "2020-01-01T12:04:16+00:00")
+        
+        
 
     def tearDown(self):
         self.mth5_obj.close_mth5()
