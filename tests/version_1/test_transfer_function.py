@@ -14,7 +14,6 @@ from collections import OrderedDict
 
 from mth5.mth5 import MTH5
 
-from mt_metadata.transfer_functions.tf import StatisticalEstimate
 from mt_metadata.transfer_functions.core import TF
 from mt_metadata import TF_XML
 
@@ -40,6 +39,9 @@ class TestTFGroup(unittest.TestCase):
     def test_survey_metadata(self):
         meta_dict = OrderedDict([('acquired_by.author', 'National Geoelectromagnetic Facility'),
                      ('citation_dataset.doi', 'doi:10.17611/DP/EMTF/USMTARRAY/SOUTH'),
+                     ('citation_dataset.title',
+                      'USMTArray South Magnetotelluric Transfer Functions'),
+                     ('citation_dataset.year', '2020-2023'),
                      ('citation_journal.doi', None),
                      ('comments',
                       'The USMTArray-CONUS South campaign was carried out through a cooperative agreement between\nthe U.S. Geological Survey (USGS) and Oregon State University (OSU). A subset of 40 stations\nin the SW US were funded through NASA grant 80NSSC19K0232.\nLand permitting, data acquisition, quality control and field processing were\ncarried out by Green Geophysics with project management and instrument/engineering\nsupport from OSU and Chaytus Engineering, respectively.\nProgram oversight, definitive data processing and data archiving were provided\nby the USGS Geomagnetism Program and the Geology, Geophysics and Geochemistry Science Centers.\nWe thank the U.S. Forest Service, the Bureau of Land Management, the National Park Service,\nthe Department of Defense, numerous state land offices and the many private landowners\nwho permitted land access to acquire the USMTArray data.'),
