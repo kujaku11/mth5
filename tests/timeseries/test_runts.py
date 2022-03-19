@@ -107,7 +107,7 @@ class TestRunTS(unittest.TestCase):
             self.assertEqual(self.run.start, MTime(self.start))
         
         with self.subTest("end"):
-            self.assertEqual(self.run.end, MTime())
+            self.assertEqual(self.run.end, MTime(self.end))
 
     def test_sr_fail(self):
         self.hz = ChannelTS(
@@ -143,7 +143,7 @@ class TestRunTS(unittest.TestCase):
                 self.assertEqual(ch.start, MTime(self.start))
             
             with self.subTest("end"):
-                self.assertEqual(ch.end, MTime())
+                self.assertEqual(ch.end, MTime(self.end))
                 
             with self.subTest("component"):
                 self.assertEqual(ch.component, comp)
