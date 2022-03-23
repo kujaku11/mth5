@@ -657,7 +657,7 @@ class MTH5:
             m5_grp = getattr(self, f"{group_name.lower()}_group")
             m5_grp.initialize_group()
 
-        self.logger.info(f"Initialized MTH5 file {self.filename} in mode {mode}")
+        self.logger.info(f"Initialized MTH5 {self.file_version} file {self.filename} in mode {mode}")
 
     def validate_file(self):
         """
