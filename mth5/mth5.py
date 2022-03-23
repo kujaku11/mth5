@@ -30,7 +30,7 @@ import h5py
 from mth5.utils.exceptions import MTH5Error
 from mth5 import __version__ as mth5_version
 from mth5 import groups as groups
-from mth5.tables import MTH5Table
+from mth5.tables import MTH5Table, ChannelSummaryTable
 from mth5 import helpers
 from mth5.utils.mth5_logger import setup_logger
 from mth5 import CHANNEL_DTYPE, TF_DTYPE
@@ -704,12 +704,16 @@ class MTH5:
                 return False
             if self.file_version in ["0.1.0"]:
                 for gr in self.survey_group.groups_list:
+                    if "summary" in gr:
+                        continue
                     if gr not in self._default_subgroup_names:
                         msg = f"Unacceptable group {gr}"
                         self.logger.error(msg)
                         return False
             elif self.file_version in ["0.2.0"]:
                 for gr in self.experiment_group.groups_list:
+                    if "summary" in gr:
+                        continue
                     if gr not in self._default_subgroup_names:
                         msg = f"Unacceptable group {gr}"
                         self.logger.error(msg)
@@ -882,7 +886,7 @@ class MTH5:
     def channel_summary(self):
         """return a dataframe of channels"""
 
-        return MTH5Table(self.__hdf5_obj[f"{self._root_path}/channel_summary"])
+        return ChannelSummaryTable(self.__hdf5_obj[f"{self._root_path}/channel_summary"])
     
 
     @property
