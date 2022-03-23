@@ -1900,6 +1900,13 @@ class ChannelDataset:
     def master_station_group(self):
         """shortcut to master station group"""
         return MasterStationGroup(self.hdf5_dataset.parent.parent.parent)
+    
+    @property
+    def survey_id(self):
+        """shortcut to survey group"""
+        
+        return self.hdf5_dataset.parent.parent.parent.parent.attrs["id"]
+            
 
     @property
     def channel_response_filter(self):

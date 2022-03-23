@@ -391,6 +391,7 @@ class MTH5:
             raise ValueError(msg)
 
         self.__file_version = value
+        self._set_default_groups()
 
         if self.h5_is_read():
             self.__hdf5_obj.attrs["file.version"] = value
@@ -652,10 +653,16 @@ class MTH5:
         self.__hdf5_obj.attrs.update(self.file_attributes)
 
         # create the default group
-        self.__hdf5_obj.create_group(self._default_root_name)
+        root = self.__hdf5_obj.create_group(self._default_root_name)
+        if self._default_root_name == "Survey":
+            root_group = groups.SurveyGroup(root)
+            root_group.write_metadata()
 
         for group_name in self._default_subgroup_names:
-            self.__hdf5_obj.create_group(f"{self._default_root_name}/{group_name}")
+            try:
+                self.__hdf5_obj.create_group(f"{self._default_root_name}/{group_name}")
+            except ValueError:
+                pass
             m5_grp = getattr(self, f"{group_name.lower()}_group")
             m5_grp.initialize_group()
             
