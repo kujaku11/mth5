@@ -30,6 +30,7 @@ import h5py
 from mth5.utils.exceptions import MTH5Error
 from mth5 import __version__ as mth5_version
 from mth5 import groups as groups
+from mth5.tables import MTH5Table
 from mth5 import helpers
 from mth5.utils.mth5_logger import setup_logger
 from mth5 import CHANNEL_DTYPE, TF_DTYPE
@@ -663,6 +664,10 @@ class MTH5:
             "channel_summary", shape=(1,), maxshape=(None,), 
             dtype=CHANNEL_DTYPE, **self.dataset_options)
         
+        self.__hdf5_obj[self._default_root_name].create_dataset(
+            "tf_summary", shape=(1,), maxshape=(None,), 
+            dtype=TF_DTYPE, **self.dataset_options)
+        
 
         self.logger.info(f"Initialized MTH5 {self.file_version} file {self.filename} in mode {mode}")
 
@@ -870,11 +875,14 @@ class MTH5:
     def channel_summary(self):
         """return a dataframe of channels"""
 
-        if self.file_version in ["0.1.0"]:
-            return self.stations_group.channel_summary
+        return MTH5Table(self.__hdf5_obj[f"{self._root_path}/channel_summary"])
+    
 
-        elif self.file_version in ["0.2.0"]:
-            return self.surveys_group.channel_summary
+    @property
+    def tf_summary(self):
+        """return a dataframe of channels"""
+
+        return MTH5Table(self.__hdf5_obj[f"{self._root_path}/tf_summary"])
 
     def add_survey(self, survey_name, survey_metadata=None):
         """
