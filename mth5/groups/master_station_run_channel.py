@@ -28,7 +28,7 @@ from mt_metadata.utils.mttime import MTime
 from mt_metadata.base import Base
 from mt_metadata.timeseries.filters import ChannelResponseFilter
 
-from mth5 import CHUNK_SIZE
+from mth5 import CHUNK_SIZE, CHANNEL_DTYPE, TF_DTYPE
 from mth5.groups.base import BaseGroup
 from mth5.groups import FiltersGroup, TransferFunctionGroup
 from mth5.utils.exceptions import MTH5Error
@@ -2626,11 +2626,12 @@ class ChannelDataset:
         return np.array(
             [
                 (
-                    self.station_group.metadata.id,
-                    self.run_group.metadata.id,
-                    self.station_group.metadata.location.latitude,
-                    self.station_group.metadata.location.longitude,
-                    self.station_group.metadata.location.elevation,
+                    self.survey_id,
+                    self.hdf5_dataset.parent.parent.attrs["id"],
+                    self.hdf5_dataset.parent.attrs["id"],
+                    self.hdf5_dataset.parent.parent.attrs["location.latitude"],
+                    self.hdf5_dataset.parent.parent.attrs["location.longitude"],
+                    self.hdf5_dataset.parent.parent.attrs["location.elevation"],
                     self.metadata.component,
                     self.metadata.time_period.start,
                     self.metadata.time_period.end,
@@ -2641,31 +2642,11 @@ class ChannelDataset:
                     self.metadata.measurement_tilt,
                     self.metadata.units,
                     self.hdf5_dataset.ref,
-                    self.run_group.hdf5_reference.ref,
-                    self.station_group.hdf5_group.ref
+                    self.hdf5_dataset.parent.ref,
+                    self.hdf5_dataset.parent.parent.ref
                 )
             ],
-            dtype=np.dtype(
-                [
-                    ("station", "U10"),
-                    ("run", "U11"),
-                    ("latitude", float),
-                    ("longitude", float),
-                    ("elevation", float),
-                    ("component", "U20"),
-                    ("start", "datetime64[ns]"),
-                    ("end", "datetime64[ns]"),
-                    ("n_samples", int),
-                    ("sample_rate", float),
-                    ("measurement_type", "U12"),
-                    ("azimuth", float),
-                    ("tilt", float),
-                    ("units", "U25"),
-                    ("hdf5_reference", h5py.ref_dtype),
-                    ("run_hdf5_reference", h5py.ref_dtype),
-                    ("station_hdf5_reference", h5py.ref_dtype),
-                ]
-            ),
+            dtype=CHANNEL_DTYPE
         )
 
     def time_slice(

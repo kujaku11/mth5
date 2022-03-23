@@ -51,7 +51,8 @@ TF_DTYPE = np.dtype(
 
 CHANNEL_DTYPE = dtype=np.dtype(
     [
-        ("station", "S10"),
+        ("survey", "S30"),
+        ("station", "S20"),
         ("run", "S20"),
         ("latitude", float),
         ("longitude", float),
