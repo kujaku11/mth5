@@ -32,6 +32,7 @@ from mth5 import __version__ as mth5_version
 from mth5 import groups as groups
 from mth5 import helpers
 from mth5.utils.mth5_logger import setup_logger
+from mth5 import CHANNEL_DTYPE, TF_DTYPE
 
 from mt_metadata.utils.mttime import get_now_utc
 from mt_metadata.timeseries import Experiment
@@ -656,6 +657,12 @@ class MTH5:
             self.__hdf5_obj.create_group(f"{self._default_root_name}/{group_name}")
             m5_grp = getattr(self, f"{group_name.lower()}_group")
             m5_grp.initialize_group()
+            
+        # initiate channel and tf summary datasets
+        self.__hdf5_obj[self._default_root_name].create_dataset(
+            "channel_summary", shape=(1,), maxshape=(None,), 
+            dtype=CHANNEL_DTYPE, **self.dataset_options)
+        
 
         self.logger.info(f"Initialized MTH5 {self.file_version} file {self.filename} in mode {mode}")
 
