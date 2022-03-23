@@ -853,7 +853,37 @@ class TransferFunctionsGroup(BaseGroup):
 
     def __init__(self, group, **kwargs):
         super().__init__(group, **kwargs)
+        
+    def tf_summary(self, as_dataframe=True):
+        """
+        Summary of all transfer functions in this group
+        
+        :return: DESCRIPTION
+        :rtype: TYPE
 
+        """
+        
+        tf_list = []
+        for tf_id in self.groups_list:
+            tf_group = self.get_transfer_function(tf_id)
+            tf_entry = tf_group.tf_entry
+            
+            tf_entry["station_hdf5_reference"][:] = self.hdf5_group.parent.ref
+            tf_entry["station"][:] = self.hdf5_group.parent.attrs["id"]
+            tf_entry["latitude"][:] = self.hdf5_group.parent.attrs["location.latitude"]
+            tf_entry["longitude"][:] = self.hdf5_group.parent.attrs["location.longitude"]
+            tf_entry["elevation"][:] = self.hdf5_group.parent.attrs["location.elevation"]
+            
+            tf_list.append(tf_entry)
+            
+        tf_list = np.array(tf_list)
+        
+        if as_dataframe:
+            return pd.DataFrame(tf_list.flatten())
+        
+        return tf_list
+        
+    
     def add_transfer_function(self, name, tf_object=None):
         """
         Add a transfer function to the group
@@ -2604,6 +2634,8 @@ class ChannelDataset:
                     self.metadata.measurement_tilt,
                     self.metadata.units,
                     self.hdf5_dataset.ref,
+                    self.run_group.hdf5_reference.ref,
+                    self.station_group.hdf5_group.ref
                 )
             ],
             dtype=np.dtype(
@@ -2623,6 +2655,8 @@ class ChannelDataset:
                     ("tilt", float),
                     ("units", "U25"),
                     ("hdf5_reference", h5py.ref_dtype),
+                    ("run_hdf5_reference", h5py.ref_dtype),
+                    ("station_hdf5_reference", h5py.ref_dtype),
                 ]
             ),
         )

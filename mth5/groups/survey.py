@@ -26,6 +26,7 @@ from mth5.groups import (
 )
 from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import validate_name
+from mth5.tables import MTH5Table
 
 from mt_metadata.timeseries import Survey
 
