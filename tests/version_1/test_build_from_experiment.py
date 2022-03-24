@@ -125,6 +125,10 @@ class TestMTH5(unittest.TestCase):
         with self.subTest(("test dtype")):
             self.assertEqual(self.mth5_obj.channel_summary.dtype, CHANNEL_DTYPE)
             
+        with self.subTest("test station"):
+            self.assertTrue((self.mth5_obj.channel_summary.array["station"] == b"REW09").all())
+    
+            
     def tearDown(self):
         self.mth5_obj.close_mth5()
         self.fn.unlink()
