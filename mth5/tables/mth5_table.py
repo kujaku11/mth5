@@ -244,7 +244,16 @@ class MTH5Table:
         if index is None:
             index = self.nrows
             if self.nrows == 1:
-                if self.array[0] == np.zeros(1, dtype=self.dtype):
+                match = True
+                null_array = np.empty(1, dtype=self.dtype)
+                for name in self.dtype.names:
+                    if "reference" in name:
+                        continue
+                    if self.array[name][0] != null_array[name][0]:
+                        match = False
+                        break
+
+                if match:
                     index = 0
                 else:
                     new_shape = tuple([self.nrows + 1] + [ii for ii in self.shape[1:]])
