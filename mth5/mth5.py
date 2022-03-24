@@ -30,7 +30,7 @@ import h5py
 from mth5.utils.exceptions import MTH5Error
 from mth5 import __version__ as mth5_version
 from mth5 import groups as groups
-from mth5.tables import MTH5Table, ChannelSummaryTable
+from mth5.tables import ChannelSummaryTable, TFSummaryTable
 from mth5 import helpers
 from mth5.utils.mth5_logger import setup_logger
 from mth5 import CHANNEL_DTYPE, TF_DTYPE
@@ -893,7 +893,7 @@ class MTH5:
     def tf_summary(self):
         """return a dataframe of channels"""
 
-        return MTH5Table(self.__hdf5_obj[f"{self._root_path}/tf_summary"])
+        return TFSummaryTable(self.__hdf5_obj[f"{self._root_path}/tf_summary"])
 
     def add_survey(self, survey_name, survey_metadata=None):
         """
