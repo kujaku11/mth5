@@ -243,13 +243,15 @@ class MTH5Table:
 
         if index is None:
             index = self.nrows
-            if index == 1:
-                if self.array["station"][0] == b"":
+            if self.nrows == 1:
+                if self.array[0] == np.zeros(1, dtype=self.dtype):
                     index = 0
+                else:
+                    new_shape = tuple([self.nrows + 1] + [ii for ii in self.shape[1:]])
+                    self.array.resize(new_shape)
             else:
                 new_shape = tuple([self.nrows + 1] + [ii for ii in self.shape[1:]])
                 self.array.resize(new_shape)
-
         # add the row
         self.array[index] = row
         self.logger.debug("Added row as index {0} with values {1}".format(index, row))

@@ -16,7 +16,7 @@ import unittest
 from pathlib import Path
 import numpy as np
 
-from mth5 import mth5
+from mth5 import mth5, CHANNEL_DTYPE
 from mt_metadata.timeseries import Experiment
 from mt_metadata import MT_EXPERIMENT_SINGLE_STATION
 
@@ -30,7 +30,7 @@ mth5.helpers.close_open_files()
 class TestMTH5(unittest.TestCase):
     def setUp(self):
         self.maxDiff = None
-        self.fn = fn_path.joinpath("test.mth5")
+        self.fn = fn_path.joinpath("test.h5")
         self.mth5_obj = mth5.MTH5(file_version="0.1.0")
         self.mth5_obj.open_mth5(self.fn, mode="w")
         self.experiment = Experiment()
@@ -113,8 +113,18 @@ class TestMTH5(unittest.TestCase):
                     else:
                         self.assertEqual(v1, v2)
 
-            # self.assertDictEqual(h5_sd, sd)
-
+    def test_channel_summary(self):
+        self.mth5_obj.channel_summary.summarize()
+        
+        with self.subTest("test shape"):
+            self.assertEqual(self.mth5_obj.channel_summary.shape, (26,))
+            
+        with self.subTest("test nrows"):
+            self.assertEqual(self.mth5_obj.channel_summary.nrows, 26)
+            
+        with self.subTest(("test dtype")):
+            self.assertEqual(self.mth5_obj.channel_summary.dtype, CHANNEL_DTYPE)
+            
     def tearDown(self):
         self.mth5_obj.close_mth5()
         self.fn.unlink()
