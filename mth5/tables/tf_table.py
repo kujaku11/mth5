@@ -39,16 +39,11 @@ class TFSummaryTable(MTH5Table):
 
         df = pd.DataFrame(self.array[()])
         for key in [
-            "survey",
             "station",
-            "run",
-            "component",
-            "measurement_type",
+            "tf_id",
             "units",
         ]:
             setattr(df, key, getattr(df, key).str.decode("utf-8"))
-        df.start = pd.to_datetime(df.start.str.decode("utf-8"))
-        df.end = pd.to_datetime(df.end.str.decode("utf-8"))
 
         return df
     
