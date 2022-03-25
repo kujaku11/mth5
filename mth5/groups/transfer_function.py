@@ -17,7 +17,8 @@ from mth5.helpers import validate_name, from_numpy_type
 from mth5.utils.exceptions import MTH5Error
 
 from mt_metadata.transfer_functions.core import TF
-from mt_metadata.transfer_functions.tf import StatisticalEstimate, Survey, Station, Run
+from mt_metadata.transfer_functions.tf import (StatisticalEstimate, Survey, Station, Run,
+                                               Electric, Magnetic, Auxiliary)
 
 # =============================================================================
 
@@ -336,7 +337,21 @@ class TransferFunctionGroup(BaseGroup):
                 run_dict = dict(run.attrs)
                 for key, value in run_dict.items():
                     run_dict[key] = from_numpy_type(value)
-                tf_obj.station_metadata.add_run(Run(**run_dict))
+                run_obj = Run(**run_dict)
+                
+                for ch_id in run.keys():
+                    ch = run[ch_id]
+                    ch_dict = dict(ch.attrs)
+                    for key, value in ch_dict.items():
+                        ch_dict[key] = from_numpy_type(value)
+                    if ch_dict["type"] == "electric":
+                        ch_obj = Electric(**ch_dict)
+                    elif ch_dict["type"] == "magnetic":
+                        ch_obj = Magnetic(**ch_dict)
+                    run_obj.add_channel(ch_obj)
+                    
+                tf_obj.station_metadata.add_run(run_obj)
+                    
             except KeyError:
                 self.logger.info(f"Could not get run {run_id} for transfer function")
         

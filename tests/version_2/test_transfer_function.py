@@ -35,7 +35,7 @@ class TestTFGroup(unittest.TestCase):
         self.tf_group = self.mth5_obj.add_transfer_function(self.tf_obj)
         self.tf_h5 = self.mth5_obj.get_transfer_function(
             self.tf_obj.station,
-            self.tf_obj.station,
+            self.tf_obj.tf_id,
             survey=self.tf_obj.survey_metadata.id,
         )
 
