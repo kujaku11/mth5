@@ -17,17 +17,18 @@ from mth5.tables import MTH5Table
 
 # =============================================================================
 
+
 class ChannelSummaryTable(MTH5Table):
     """
     Object to hold the channel summary and provide some convenience functions
     like fill, to_dataframe ...
     
     """
-    
+
     def __init__(self, hdf5_dataset):
         super().__init__(hdf5_dataset)
         self._dtype = CHANNEL_DTYPE
-        
+
     def to_dataframe(self):
         """
         Create a pandas DataFrame from the table for easier querying.
@@ -51,7 +52,7 @@ class ChannelSummaryTable(MTH5Table):
         df.end = pd.to_datetime(df.end.str.decode("utf-8"))
 
         return df
-    
+
     def summarize(self):
         """
         
@@ -91,24 +92,16 @@ class ChannelSummaryTable(MTH5Table):
                                     group.attrs["units"],
                                     group.ref,
                                     group.parent.ref,
-                                    group.parent.parent.ref
+                                    group.parent.parent.ref,
                                 )
                             ],
-                            dtype=CHANNEL_DTYPE
+                            dtype=CHANNEL_DTYPE,
                         )
                         self.add_row(ch_entry)
-                        
+
                 except KeyError as error:
                     # self.logger.exception(error)
                     # return None
                     pass
-            
+
         recursive_get_channel_entry(self.array.parent)
-        
-                
-        
-                
-                
-                
-        
-        

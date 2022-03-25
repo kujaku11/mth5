@@ -49,26 +49,29 @@ class TransferFunctionGroup(BaseGroup):
                 "units": "samples per second",
             }
         )
-        
+
     def has_estimate(self, estimate):
         """ 
         has estimate
         """
-        
+
         if estimate in self.groups_list:
             est = self.get_estimate(estimate)
             if est.hdf5_dataset.shape == (1, 1, 1):
                 return False
             return True
-        
+
         elif estimate in ["impedance"]:
             est = self.get_estimate("transfer_function")
             if est.hdf5_dataset.shape == (1, 1, 1):
                 return False
-            elif "ex" in est.metadata.output_channels and "ey" in est.metadata.output_channels:
+            elif (
+                "ex" in est.metadata.output_channels
+                and "ey" in est.metadata.output_channels
+            ):
                 return True
             return False
-        
+
         elif estimate in ["tipper"]:
             est = self.get_estimate("transfer_function")
             if est.hdf5_dataset.shape == (1, 1, 1):
@@ -76,20 +79,24 @@ class TransferFunctionGroup(BaseGroup):
             elif "hz" in est.metadata.output_channels:
                 return True
             return False
-        
+
         elif estimate in ["covariance"]:
             try:
                 res = self.get_estimate("residual_covariance")
                 isp = self.get_estimate("inverse_signal_power")
-                
-                if res.hdf5_dataset.shape != (1, 1, 1) and isp.hdf5_dataset.shape != (1, 1, 1):
+
+                if res.hdf5_dataset.shape != (1, 1, 1) and isp.hdf5_dataset.shape != (
+                    1,
+                    1,
+                    1,
+                ):
                     return True
                 return False
             except (KeyError, MTH5Error):
                 return False
-                
+
         return False
-        
+
     @property
     def tf_entry(self):
         """
@@ -99,7 +106,7 @@ class TransferFunctionGroup(BaseGroup):
         :rtype: TYPE
 
         """
-        
+
         return np.array(
             [
                 (
@@ -115,7 +122,7 @@ class TransferFunctionGroup(BaseGroup):
                     self.period.min(),
                     self.period.max(),
                     self.hdf5_group.ref,
-                    None
+                    None,
                 )
             ],
             dtype=np.dtype(
@@ -252,8 +259,7 @@ class TransferFunctionGroup(BaseGroup):
         try:
             estimate_dataset = self.hdf5_group[estimate_name]
             estimate_metadata = StatisticalEstimate(**dict(estimate_dataset.attrs))
-            return EstimateDataset(estimate_dataset, 
-                                   dataset_metadata=estimate_metadata)
+            return EstimateDataset(estimate_dataset, dataset_metadata=estimate_metadata)
 
         except KeyError:
             msg = (

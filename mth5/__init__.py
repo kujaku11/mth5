@@ -49,7 +49,7 @@ TF_DTYPE = np.dtype(
     ]
 )
 
-CHANNEL_DTYPE = dtype=np.dtype(
+CHANNEL_DTYPE = dtype = np.dtype(
     [
         ("survey", "S30"),
         ("station", "S20"),

@@ -665,18 +665,27 @@ class MTH5:
                 pass
             m5_grp = getattr(self, f"{group_name.lower()}_group")
             m5_grp.initialize_group()
-            
+
         # initiate channel and tf summary datasets
         self.__hdf5_obj[self._default_root_name].create_dataset(
-            "channel_summary", shape=(1,), maxshape=(None,), 
-            dtype=CHANNEL_DTYPE, **self.dataset_options)
-        
-        self.__hdf5_obj[self._default_root_name].create_dataset(
-            "tf_summary", shape=(1,), maxshape=(None,), 
-            dtype=TF_DTYPE, **self.dataset_options)
-        
+            "channel_summary",
+            shape=(1,),
+            maxshape=(None,),
+            dtype=CHANNEL_DTYPE,
+            **self.dataset_options,
+        )
 
-        self.logger.info(f"Initialized MTH5 {self.file_version} file {self.filename} in mode {mode}")
+        self.__hdf5_obj[self._default_root_name].create_dataset(
+            "tf_summary",
+            shape=(1,),
+            maxshape=(None,),
+            dtype=TF_DTYPE,
+            **self.dataset_options,
+        )
+
+        self.logger.info(
+            f"Initialized MTH5 {self.file_version} file {self.filename} in mode {mode}"
+        )
 
     def validate_file(self):
         """
@@ -731,10 +740,10 @@ class MTH5:
             # update summay tables
             self.channel_summary.clear_table()
             self.channel_summary.summarize()
-            
+
             self.tf_summary.clear_table()
             self.tf_summary.summarize()
-            
+
             self.logger.info(f"Flushing and closing {str(self.filename)}")
             self.__hdf5_obj.flush()
             self.__hdf5_obj.close()
@@ -797,18 +806,20 @@ class MTH5:
         :rtype: TYPE
 
         """
-        ref_dict = {'survey': groups.SurveyGroup,
-                    'station': groups.StationGroup,
-                    'run': groups.RunGroup,
-                    "electric": groups.ElectricDataset,
-                    "magnetic": groups.MagneticDataset,
-                    "auxiliary": groups.AuxiliaryDataset,
-                    "transferfunction": groups.TransferFunctionGroup}
-        
+        ref_dict = {
+            "survey": groups.SurveyGroup,
+            "station": groups.StationGroup,
+            "run": groups.RunGroup,
+            "electric": groups.ElectricDataset,
+            "magnetic": groups.MagneticDataset,
+            "auxiliary": groups.AuxiliaryDataset,
+            "transferfunction": groups.TransferFunctionGroup,
+        }
+
         # in the future should allow this to return the proper container.
         referenced = self.__hdf5_obj[h5_reference]
         mth5_type = referenced.attrs["mth5_type"].lower()
-        
+
         try:
             return ref_dict[mth5_type](referenced)
         except KeyError:
@@ -817,7 +828,6 @@ class MTH5:
                 + "returning h5 group."
             )
             return referenced
-         
 
     def to_experiment(self):
         """
@@ -893,8 +903,9 @@ class MTH5:
     def channel_summary(self):
         """return a dataframe of channels"""
 
-        return ChannelSummaryTable(self.__hdf5_obj[f"{self._root_path}/channel_summary"])
-    
+        return ChannelSummaryTable(
+            self.__hdf5_obj[f"{self._root_path}/channel_summary"]
+        )
 
     @property
     def tf_summary(self):
@@ -1372,7 +1383,8 @@ class MTH5:
                 survey_group = self.get_survey(tf_object.survey_metadata.id)
             except MTH5Error:
                 survey_group = self.add_survey(
-                    tf_object.survey_metadata.id, survey_metadata=tf_object.survey_metadata
+                    tf_object.survey_metadata.id,
+                    survey_metadata=tf_object.survey_metadata,
                 )
         else:
             survey_group = self.survey_group
@@ -1405,10 +1417,8 @@ class MTH5:
                         ch_dataset = run_group.get_channel(ch.component)
                     except MTH5Error:
                         ch_dataset = run_group.add_channel(
-                            ch.component,
-                            ch.type, 
-                            None,
-                            channel_metadata=ch)
+                            ch.component, ch.type, None, channel_metadata=ch
+                        )
 
         try:
             tf_group = station_group.transfer_functions_group.add_transfer_function(

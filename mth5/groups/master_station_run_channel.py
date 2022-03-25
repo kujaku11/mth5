@@ -853,7 +853,7 @@ class TransferFunctionsGroup(BaseGroup):
 
     def __init__(self, group, **kwargs):
         super().__init__(group, **kwargs)
-        
+
     def tf_summary(self, as_dataframe=True):
         """
         Summary of all transfer functions in this group
@@ -862,28 +862,31 @@ class TransferFunctionsGroup(BaseGroup):
         :rtype: TYPE
 
         """
-        
+
         tf_list = []
         for tf_id in self.groups_list:
             tf_group = self.get_transfer_function(tf_id)
             tf_entry = tf_group.tf_entry
-            
+
             tf_entry["station_hdf5_reference"][:] = self.hdf5_group.parent.ref
             tf_entry["station"][:] = self.hdf5_group.parent.attrs["id"]
             tf_entry["latitude"][:] = self.hdf5_group.parent.attrs["location.latitude"]
-            tf_entry["longitude"][:] = self.hdf5_group.parent.attrs["location.longitude"]
-            tf_entry["elevation"][:] = self.hdf5_group.parent.attrs["location.elevation"]
-            
+            tf_entry["longitude"][:] = self.hdf5_group.parent.attrs[
+                "location.longitude"
+            ]
+            tf_entry["elevation"][:] = self.hdf5_group.parent.attrs[
+                "location.elevation"
+            ]
+
             tf_list.append(tf_entry)
-            
+
         tf_list = np.array(tf_list)
-        
+
         if as_dataframe:
             return pd.DataFrame(tf_list.flatten())
-        
+
         return tf_list
-        
-    
+
     def add_transfer_function(self, name, tf_object=None):
         """
         Add a transfer function to the group
@@ -998,7 +1001,7 @@ class TransferFunctionsGroup(BaseGroup):
         tf_group = self.get_transfer_function(tf_id)
 
         tf_obj = tf_group.to_tf_object()
-        
+
         # get survey metadata
         survey_dict = dict(self.hdf5_group.parent.parent.parent.attrs)
         for key, value in survey_dict.items():
@@ -1012,10 +1015,10 @@ class TransferFunctionsGroup(BaseGroup):
             station_dict[key] = from_numpy_type(value)
         ts_station_metadata.from_dict({"station": station_dict})
         tf_obj.from_ts_station_metadata(ts_station_metadata)
-        
+
         # need to update transfer function metadata
         tf_obj.station_metadata.transfer_function.update(tf_group.metadata)
-        
+
         # add run and channel metadata
         tf_obj.station_metadata.runs = []
         for run_id in tf_obj.station_metadata.transfer_function.runs_processed:
@@ -1900,13 +1903,12 @@ class ChannelDataset:
     def master_station_group(self):
         """shortcut to master station group"""
         return MasterStationGroup(self.hdf5_dataset.parent.parent.parent)
-    
+
     @property
     def survey_id(self):
         """shortcut to survey group"""
-        
+
         return self.hdf5_dataset.parent.parent.parent.parent.attrs["id"]
-            
 
     @property
     def channel_response_filter(self):
@@ -2643,10 +2645,10 @@ class ChannelDataset:
                     self.metadata.units,
                     self.hdf5_dataset.ref,
                     self.hdf5_dataset.parent.ref,
-                    self.hdf5_dataset.parent.parent.ref
+                    self.hdf5_dataset.parent.parent.ref,
                 )
             ],
-            dtype=CHANNEL_DTYPE
+            dtype=CHANNEL_DTYPE,
         )
 
     def time_slice(
@@ -2755,9 +2757,10 @@ class ChannelDataset:
             regional_ref = self.hdf5_dataset.regionref[start_index : end_index + 1]
         except (OSError, RuntimeError):
             self.logger.debug(
-                "file is in read mode cannot set an internal reference, using index values")
+                "file is in read mode cannot set an internal reference, using index values"
+            )
             regional_ref = slice(start_index, end_index)
-            
+
         dt_index = make_dt_coordinates(start, self.sample_rate, npts, self.logger)
 
         meta_dict = self.metadata.to_dict()[self.metadata._class_name]

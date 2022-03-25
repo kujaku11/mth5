@@ -341,7 +341,7 @@ class MTH5Table:
         df.end = pd.to_datetime(df.end.str.decode("utf-8"))
 
         return df
-    
+
     def clear_table(self):
         """
         clear a table, 
@@ -351,9 +351,9 @@ class MTH5Table:
         :rtype: TYPE
 
         """
-        
+
         dtype = copy.deepcopy(self.dtype)
-        
+
         root = self.array.parent
         name = self.array.name.split("/")[-1]
         ds_options = {
@@ -362,9 +362,9 @@ class MTH5Table:
             "shuffle": self.array.shuffle,
             "fletcher32": self.array.fletcher32,
         }
-        
+
         del root[name]
-        
-        self.array = root.create_dataset(name, (1, ), maxshape=(None, ),
-                                         dtype=dtype, **ds_options) 
-        
+
+        self.array = root.create_dataset(
+            name, (1,), maxshape=(None,), dtype=dtype, **ds_options
+        )
