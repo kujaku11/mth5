@@ -17,8 +17,12 @@ from mth5.helpers import validate_name, from_numpy_type
 from mth5.utils.exceptions import MTH5Error
 
 from mt_metadata.transfer_functions.core import TF
-from mt_metadata.transfer_functions.tf import (StatisticalEstimate, Survey, Station, Run,
-                                               Electric, Magnetic, Auxiliary)
+from mt_metadata.transfer_functions.tf import (
+    StatisticalEstimate,
+    Run,
+    Electric,
+    Magnetic,
+)
 
 # =============================================================================
 
@@ -310,7 +314,7 @@ class TransferFunctionGroup(BaseGroup):
         """
 
         tf_obj = TF()
-        
+
         # get survey metadata
         survey_dict = dict(self.hdf5_group.parent.parent.parent.parent.attrs)
         for key, value in survey_dict.items():
@@ -327,7 +331,9 @@ class TransferFunctionGroup(BaseGroup):
         tf_dict = dict(self.hdf5_group.attrs)
         for key, value in tf_dict.items():
             tf_dict[key] = from_numpy_type(value)
-        tf_obj.station_metadata.transfer_function.from_dict({"transfer_function": tf_dict})
+        tf_obj.station_metadata.transfer_function.from_dict(
+            {"transfer_function": tf_dict}
+        )
 
         # add run and channel metadata
         tf_obj.station_metadata.runs = []
@@ -338,7 +344,7 @@ class TransferFunctionGroup(BaseGroup):
                 for key, value in run_dict.items():
                     run_dict[key] = from_numpy_type(value)
                 run_obj = Run(**run_dict)
-                
+
                 for ch_id in run.keys():
                     ch = run[ch_id]
                     ch_dict = dict(ch.attrs)
@@ -349,12 +355,12 @@ class TransferFunctionGroup(BaseGroup):
                     elif ch_dict["type"] == "magnetic":
                         ch_obj = Magnetic(**ch_dict)
                     run_obj.add_channel(ch_obj)
-                    
+
                 tf_obj.station_metadata.add_run(run_obj)
-                    
+
             except KeyError:
                 self.logger.info(f"Could not get run {run_id} for transfer function")
-        
+
         if self.period is not None:
             tf_obj.period = self.period
         else:

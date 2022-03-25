@@ -28,7 +28,7 @@ class TestTFGroup(unittest.TestCase):
         self.maxDiff = None
         self.fn = fn_path.joinpath("test.mth5")
         self.mth5_obj = MTH5(file_version="0.2.0")
-        self.mth5_obj.open_mth5(self.fn, mode="w")
+        self.mth5_obj.open_mth5(self.fn, mode="a")
 
         self.tf_obj = TF(TF_XML)
 
