@@ -1000,35 +1000,7 @@ class TransferFunctionsGroup(BaseGroup):
 
         tf_group = self.get_transfer_function(tf_id)
 
-        tf_obj = tf_group.to_tf_object()
-
-        # get survey metadata
-        survey_dict = dict(self.hdf5_group.parent.parent.parent.attrs)
-        for key, value in survey_dict.items():
-            survey_dict[key] = from_numpy_type(value)
-        tf_obj.survey_metadata.from_dict({"survey": survey_dict})
-
-        # get station metadata
-        station_dict = dict(self.hdf5_group.parent.attrs)
-        ts_station_metadata = metadata.Station()
-        for key, value in station_dict.items():
-            station_dict[key] = from_numpy_type(value)
-        ts_station_metadata.from_dict({"station": station_dict})
-        tf_obj.from_ts_station_metadata(ts_station_metadata)
-
-        # need to update transfer function metadata
-        tf_obj.station_metadata.transfer_function.update(tf_group.metadata)
-
-        # add run and channel metadata
-        tf_obj.station_metadata.runs = []
-        for run_id in tf_obj.station_metadata.transfer_function.runs_processed:
-            try:
-                rg = RunGroup(self.hdf5_group.parent[run_id])
-                tf_obj.station_metadata.add_run(rg.metadata)
-            except KeyError:
-                self.logger.info(f"Could not get run {run_id} for transfer function")
-
-        return tf_obj
+        return tf_group.to_tf_object()
 
 
 # =============================================================================

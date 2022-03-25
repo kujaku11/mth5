@@ -13,11 +13,11 @@ import xarray as xr
 import h5py
 
 from mth5.groups import BaseGroup, EstimateDataset
-from mth5.helpers import validate_name
+from mth5.helpers import validate_name, from_numpy_type
 from mth5.utils.exceptions import MTH5Error
 
 from mt_metadata.transfer_functions.core import TF
-from mt_metadata.transfer_functions.tf import StatisticalEstimate
+from mt_metadata.transfer_functions.tf import StatisticalEstimate, Survey, Station, Run
 
 # =============================================================================
 
@@ -309,6 +309,37 @@ class TransferFunctionGroup(BaseGroup):
         """
 
         tf_obj = TF()
+        
+        # get survey metadata
+        survey_dict = dict(self.hdf5_group.parent.parent.parent.parent.attrs)
+        for key, value in survey_dict.items():
+            survey_dict[key] = from_numpy_type(value)
+        tf_obj.survey_metadata.from_dict({"survey": survey_dict})
+
+        # get station metadata
+        station_dict = dict(self.hdf5_group.parent.parent.attrs)
+        for key, value in station_dict.items():
+            station_dict[key] = from_numpy_type(value)
+        tf_obj.station_metadata.from_dict({"station": station_dict})
+
+        # need to update transfer function metadata
+        tf_dict = dict(self.hdf5_group.attrs)
+        for key, value in tf_dict.items():
+            tf_dict[key] = from_numpy_type(value)
+        tf_obj.station_metadata.transfer_function.from_dict({"transfer_function": tf_dict})
+
+        # add run and channel metadata
+        tf_obj.station_metadata.runs = []
+        for run_id in tf_obj.station_metadata.transfer_function.runs_processed:
+            try:
+                run = self.hdf5_group.parent.parent[run_id]
+                run_dict = dict(run.attrs)
+                for key, value in run_dict.items():
+                    run_dict[key] = from_numpy_type(value)
+                tf_obj.station_metadata.add_run(Run(**run_dict))
+            except KeyError:
+                self.logger.info(f"Could not get run {run_id} for transfer function")
+        
         if self.period is not None:
             tf_obj.period = self.period
         else:
