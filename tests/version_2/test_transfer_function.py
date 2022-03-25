@@ -109,7 +109,8 @@ class TestTFGroup(unittest.TestCase):
                        'NMX20',
                        'UTS18']),
                      ('transfer_function.runs_processed', ['NMX20a','NMX20b']),
-                     ('transfer_function.sign_convention', 'exp(+ i\\omega t)')])
+                     ('transfer_function.sign_convention', 'exp(+ i\\omega t)'),
+                     ('transfer_function.units', None)])
         
         self.assertDictEqual(meta_dict, self.tf_h5.station_metadata.to_dict(single=True))
         

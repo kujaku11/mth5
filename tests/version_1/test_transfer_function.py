@@ -99,6 +99,8 @@ class TestTFGroup(unittest.TestCase):
                      ('time_period.end', '2020-10-07T20:28:00+00:00'),
                      ('time_period.start', '2020-09-20T19:03:06+00:00'),
                      ('transfer_function.coordinate_system', 'geopgraphic'),
+                     ('transfer_function.id', 'NMX20'),
+                     ('transfer_function.processed_date', None),
                      ('transfer_function.processing_parameters', ['{type: None}']),
                      ('transfer_function.remote_references',
                       ['NMX20b',
@@ -109,7 +111,8 @@ class TestTFGroup(unittest.TestCase):
                        'NMX20',
                        'UTS18']),
                      ('transfer_function.runs_processed', ['NMX20a','NMX20b']),
-                     ('transfer_function.sign_convention', 'exp(+ i\\omega t)')])
+                     ('transfer_function.sign_convention', 'exp(+ i\\omega t)'),
+                     ('transfer_function.units', None)])
         
         self.assertDictEqual(meta_dict, self.tf_h5.station_metadata.to_dict(single=True))
         
@@ -158,6 +161,32 @@ class TestTFGroup(unittest.TestCase):
     def test_period(self):
         self.assertTrue((self.tf_obj.period == self.tf_h5.period).all())
         
+    def test_tf_summary(self):
+        self.mth5_obj.tf_summary.clear_table()
+        self.mth5_obj.tf_summary.summarize()
+        
+        with self.subTest("test shape"):
+            self.assertEqual(self.mth5_obj.tf_summary.shape, (1,))
+            
+        true_dict = dict([
+            ("station", b"NMX20"),
+            ("latitude", 34.470528),
+            ("longitude", -108.712288),
+            ("elevation", 1940.05),
+            ("tf_id", b"NMX20"),
+            ("units", b"none"),
+            ("has_impedance", True),
+            ("has_tipper", True),
+            ("has_covariance", True),
+            ("period_min", 4.6545500000000004),
+            ("period_max", 29127.110000000001),])
+        for name in self.mth5_obj.tf_summary.dtype.names:
+            if "reference" in name:
+                continue
+            with self.subTest(f"test {name}"):
+                self.assertEqual(self.mth5_obj.tf_summary.array[name][0], 
+                                 true_dict[name])
+                
     def tearDown(self):
         self.mth5_obj.close_mth5()
         self.fn.unlink()
