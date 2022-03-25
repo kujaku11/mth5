@@ -30,8 +30,10 @@ import h5py
 from mth5.utils.exceptions import MTH5Error
 from mth5 import __version__ as mth5_version
 from mth5 import groups as groups
+from mth5.tables import ChannelSummaryTable, TFSummaryTable
 from mth5 import helpers
 from mth5.utils.mth5_logger import setup_logger
+from mth5 import CHANNEL_DTYPE, TF_DTYPE
 
 from mt_metadata.utils.mttime import get_now_utc
 from mt_metadata.timeseries import Experiment
@@ -389,6 +391,7 @@ class MTH5:
             raise ValueError(msg)
 
         self.__file_version = value
+        self._set_default_groups()
 
         if self.h5_is_read():
             self.__hdf5_obj.attrs["file.version"] = value
@@ -650,14 +653,39 @@ class MTH5:
         self.__hdf5_obj.attrs.update(self.file_attributes)
 
         # create the default group
-        self.__hdf5_obj.create_group(self._default_root_name)
+        root = self.__hdf5_obj.create_group(self._default_root_name)
+        if self._default_root_name == "Survey":
+            root_group = groups.SurveyGroup(root)
+            root_group.write_metadata()
 
         for group_name in self._default_subgroup_names:
-            self.__hdf5_obj.create_group(f"{self._default_root_name}/{group_name}")
+            try:
+                self.__hdf5_obj.create_group(f"{self._default_root_name}/{group_name}")
+            except ValueError:
+                pass
             m5_grp = getattr(self, f"{group_name.lower()}_group")
             m5_grp.initialize_group()
 
-        self.logger.info(f"Initialized MTH5 file {self.filename} in mode {mode}")
+        # initiate channel and tf summary datasets
+        self.__hdf5_obj[self._default_root_name].create_dataset(
+            "channel_summary",
+            shape=(1,),
+            maxshape=(None,),
+            dtype=CHANNEL_DTYPE,
+            **self.dataset_options,
+        )
+
+        self.__hdf5_obj[self._default_root_name].create_dataset(
+            "tf_summary",
+            shape=(1,),
+            maxshape=(None,),
+            dtype=TF_DTYPE,
+            **self.dataset_options,
+        )
+
+        self.logger.info(
+            f"Initialized MTH5 {self.file_version} file {self.filename} in mode {mode}"
+        )
 
     def validate_file(self):
         """
@@ -685,12 +713,16 @@ class MTH5:
                 return False
             if self.file_version in ["0.1.0"]:
                 for gr in self.survey_group.groups_list:
+                    if "summary" in gr:
+                        continue
                     if gr not in self._default_subgroup_names:
                         msg = f"Unacceptable group {gr}"
                         self.logger.error(msg)
                         return False
             elif self.file_version in ["0.2.0"]:
                 for gr in self.experiment_group.groups_list:
+                    if "summary" in gr:
+                        continue
                     if gr not in self._default_subgroup_names:
                         msg = f"Unacceptable group {gr}"
                         self.logger.error(msg)
@@ -705,6 +737,13 @@ class MTH5:
         """
 
         try:
+            # update summay tables
+            self.channel_summary.clear_table()
+            self.channel_summary.summarize()
+
+            self.tf_summary.clear_table()
+            self.tf_summary.summarize()
+
             self.logger.info(f"Flushing and closing {str(self.filename)}")
             self.__hdf5_obj.flush()
             self.__hdf5_obj.close()
@@ -767,20 +806,23 @@ class MTH5:
         :rtype: TYPE
 
         """
+        ref_dict = {
+            "survey": groups.SurveyGroup,
+            "station": groups.StationGroup,
+            "run": groups.RunGroup,
+            "electric": groups.ElectricDataset,
+            "magnetic": groups.MagneticDataset,
+            "auxiliary": groups.AuxiliaryDataset,
+            "transferfunction": groups.TransferFunctionGroup,
+        }
+
         # in the future should allow this to return the proper container.
         referenced = self.__hdf5_obj[h5_reference]
-        mth5_type = referenced.attrs["mth5_type"]
-        if mth5_type.lower() in ["station"]:
-            return groups.StationGroup(referenced)
-        elif mth5_type.lower() in ["run"]:
-            return groups.RunGroup(referenced)
-        elif mth5_type.lower() in ["electric"]:
-            return groups.ElectricDataset(referenced)
-        elif mth5_type.lower() in ["magnetic"]:
-            return groups.MagneticDataset(referenced)
-        elif mth5_type.lower() in ["auxiliary"]:
-            return groups.AuxiliaryDataset(referenced)
-        else:
+        mth5_type = referenced.attrs["mth5_type"].lower()
+
+        try:
+            return ref_dict[mth5_type](referenced)
+        except KeyError:
             self.logger.info(
                 f"Could not identify the MTH5 type {mth5_type}, "
                 + "returning h5 group."
@@ -861,11 +903,15 @@ class MTH5:
     def channel_summary(self):
         """return a dataframe of channels"""
 
-        if self.file_version in ["0.1.0"]:
-            return self.stations_group.channel_summary
+        return ChannelSummaryTable(
+            self.__hdf5_obj[f"{self._root_path}/channel_summary"]
+        )
 
-        elif self.file_version in ["0.2.0"]:
-            return self.surveys_group.channel_summary
+    @property
+    def tf_summary(self):
+        """return a dataframe of channels"""
+
+        return TFSummaryTable(self.__hdf5_obj[f"{self._root_path}/tf_summary"])
 
     def add_survey(self, survey_name, survey_metadata=None):
         """
@@ -1337,7 +1383,8 @@ class MTH5:
                 survey_group = self.get_survey(tf_object.survey_metadata.id)
             except MTH5Error:
                 survey_group = self.add_survey(
-                    tf_object.survey_metadata.id, survey_metadata=tf_object.survey_metadata
+                    tf_object.survey_metadata.id,
+                    survey_metadata=tf_object.survey_metadata,
                 )
         else:
             survey_group = self.survey_group
@@ -1370,10 +1417,8 @@ class MTH5:
                         ch_dataset = run_group.get_channel(ch.component)
                     except MTH5Error:
                         ch_dataset = run_group.add_channel(
-                            ch.component,
-                            ch.type, 
-                            None,
-                            channel_metadata=ch)
+                            ch.component, ch.type, None, channel_metadata=ch
+                        )
 
         try:
             tf_group = station_group.transfer_functions_group.add_transfer_function(

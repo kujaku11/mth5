@@ -11,6 +11,7 @@ Created on Wed Dec 23 16:53:55 2020
 # Imports
 # =============================================================================
 import weakref
+import copy
 
 import h5py
 import numpy as np
@@ -242,9 +243,24 @@ class MTH5Table:
 
         if index is None:
             index = self.nrows
-            new_shape = tuple([self.nrows + 1] + [ii for ii in self.shape[1:]])
-            self.array.resize(new_shape)
+            if self.nrows == 1:
+                match = True
+                null_array = np.empty(1, dtype=self.dtype)
+                for name in self.dtype.names:
+                    if "reference" in name:
+                        continue
+                    if self.array[name][0] != null_array[name][0]:
+                        match = False
+                        break
 
+                if match:
+                    index = 0
+                else:
+                    new_shape = tuple([self.nrows + 1] + [ii for ii in self.shape[1:]])
+                    self.array.resize(new_shape)
+            else:
+                new_shape = tuple([self.nrows + 1] + [ii for ii in self.shape[1:]])
+                self.array.resize(new_shape)
         # add the row
         self.array[index] = row
         self.logger.debug("Added row as index {0} with values {1}".format(index, row))
@@ -325,3 +341,30 @@ class MTH5Table:
         df.end = pd.to_datetime(df.end.str.decode("utf-8"))
 
         return df
+
+    def clear_table(self):
+        """
+        clear a table, 
+        
+        Basically delete the table and start over
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        dtype = copy.deepcopy(self.dtype)
+
+        root = self.array.parent
+        name = self.array.name.split("/")[-1]
+        ds_options = {
+            "compression": self.array.compression,
+            "compression_opts": self.array.compression_opts,
+            "shuffle": self.array.shuffle,
+            "fletcher32": self.array.fletcher32,
+        }
+
+        del root[name]
+
+        self.array = root.create_dataset(
+            name, (1,), maxshape=(None,), dtype=dtype, **ds_options
+        )

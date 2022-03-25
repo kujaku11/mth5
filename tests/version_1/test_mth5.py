@@ -48,7 +48,9 @@ class TestMTH5(unittest.TestCase):
 
     def test_default_group_names(self):
         groups = sorted(self.mth5_obj.survey_group.groups_list)
-        defaults = sorted(self.mth5_obj._default_subgroup_names)
+        defaults = sorted(
+            self.mth5_obj._default_subgroup_names + ["channel_summary", "tf_summary"]
+        )
 
         self.assertListEqual(defaults, groups)
 

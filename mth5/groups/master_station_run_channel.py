@@ -28,7 +28,7 @@ from mt_metadata.utils.mttime import MTime
 from mt_metadata.base import Base
 from mt_metadata.timeseries.filters import ChannelResponseFilter
 
-from mth5 import CHUNK_SIZE
+from mth5 import CHUNK_SIZE, CHANNEL_DTYPE, TF_DTYPE
 from mth5.groups.base import BaseGroup
 from mth5.groups import FiltersGroup, TransferFunctionGroup
 from mth5.utils.exceptions import MTH5Error
@@ -854,6 +854,39 @@ class TransferFunctionsGroup(BaseGroup):
     def __init__(self, group, **kwargs):
         super().__init__(group, **kwargs)
 
+    def tf_summary(self, as_dataframe=True):
+        """
+        Summary of all transfer functions in this group
+        
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        tf_list = []
+        for tf_id in self.groups_list:
+            tf_group = self.get_transfer_function(tf_id)
+            tf_entry = tf_group.tf_entry
+
+            tf_entry["station_hdf5_reference"][:] = self.hdf5_group.parent.ref
+            tf_entry["station"][:] = self.hdf5_group.parent.attrs["id"]
+            tf_entry["latitude"][:] = self.hdf5_group.parent.attrs["location.latitude"]
+            tf_entry["longitude"][:] = self.hdf5_group.parent.attrs[
+                "location.longitude"
+            ]
+            tf_entry["elevation"][:] = self.hdf5_group.parent.attrs[
+                "location.elevation"
+            ]
+
+            tf_list.append(tf_entry)
+
+        tf_list = np.array(tf_list)
+
+        if as_dataframe:
+            return pd.DataFrame(tf_list.flatten())
+
+        return tf_list
+
     def add_transfer_function(self, name, tf_object=None):
         """
         Add a transfer function to the group
@@ -967,35 +1000,7 @@ class TransferFunctionsGroup(BaseGroup):
 
         tf_group = self.get_transfer_function(tf_id)
 
-        tf_obj = tf_group.to_tf_object()
-        
-        # get survey metadata
-        survey_dict = dict(self.hdf5_group.parent.parent.parent.attrs)
-        for key, value in survey_dict.items():
-            survey_dict[key] = from_numpy_type(value)
-        tf_obj.survey_metadata.from_dict({"survey": survey_dict})
-
-        # get station metadata
-        station_dict = dict(self.hdf5_group.parent.attrs)
-        ts_station_metadata = metadata.Station()
-        for key, value in station_dict.items():
-            station_dict[key] = from_numpy_type(value)
-        ts_station_metadata.from_dict({"station": station_dict})
-        tf_obj.from_ts_station_metadata(ts_station_metadata)
-        
-        # need to update transfer function metadata
-        tf_obj.station_metadata.transfer_function.update(tf_group.metadata)
-        
-        # add run and channel metadata
-        tf_obj.station_metadata.runs = []
-        for run_id in tf_obj.station_metadata.transfer_function.runs_processed:
-            try:
-                rg = RunGroup(self.hdf5_group.parent[run_id])
-                tf_obj.station_metadata.add_run(rg.metadata)
-            except KeyError:
-                self.logger.info(f"Could not get run {run_id} for transfer function")
-
-        return tf_obj
+        return tf_group.to_tf_object()
 
 
 # =============================================================================
@@ -1872,6 +1877,12 @@ class ChannelDataset:
         return MasterStationGroup(self.hdf5_dataset.parent.parent.parent)
 
     @property
+    def survey_id(self):
+        """shortcut to survey group"""
+
+        return self.hdf5_dataset.parent.parent.parent.parent.attrs["id"]
+
+    @property
     def channel_response_filter(self):
         # get the filters to make a channel response
         filters_group = FiltersGroup(
@@ -2589,11 +2600,12 @@ class ChannelDataset:
         return np.array(
             [
                 (
-                    self.station_group.metadata.id,
-                    self.run_group.metadata.id,
-                    self.station_group.metadata.location.latitude,
-                    self.station_group.metadata.location.longitude,
-                    self.station_group.metadata.location.elevation,
+                    self.survey_id,
+                    self.hdf5_dataset.parent.parent.attrs["id"],
+                    self.hdf5_dataset.parent.attrs["id"],
+                    self.hdf5_dataset.parent.parent.attrs["location.latitude"],
+                    self.hdf5_dataset.parent.parent.attrs["location.longitude"],
+                    self.hdf5_dataset.parent.parent.attrs["location.elevation"],
                     self.metadata.component,
                     self.metadata.time_period.start,
                     self.metadata.time_period.end,
@@ -2604,27 +2616,11 @@ class ChannelDataset:
                     self.metadata.measurement_tilt,
                     self.metadata.units,
                     self.hdf5_dataset.ref,
+                    self.hdf5_dataset.parent.ref,
+                    self.hdf5_dataset.parent.parent.ref,
                 )
             ],
-            dtype=np.dtype(
-                [
-                    ("station", "U10"),
-                    ("run", "U11"),
-                    ("latitude", float),
-                    ("longitude", float),
-                    ("elevation", float),
-                    ("component", "U20"),
-                    ("start", "datetime64[ns]"),
-                    ("end", "datetime64[ns]"),
-                    ("n_samples", int),
-                    ("sample_rate", float),
-                    ("measurement_type", "U12"),
-                    ("azimuth", float),
-                    ("tilt", float),
-                    ("units", "U25"),
-                    ("hdf5_reference", h5py.ref_dtype),
-                ]
-            ),
+            dtype=CHANNEL_DTYPE,
         )
 
     def time_slice(
@@ -2733,9 +2729,10 @@ class ChannelDataset:
             regional_ref = self.hdf5_dataset.regionref[start_index : end_index + 1]
         except (OSError, RuntimeError):
             self.logger.debug(
-                "file is in read mode cannot set an internal reference, using index values")
+                "file is in read mode cannot set an internal reference, using index values"
+            )
             regional_ref = slice(start_index, end_index)
-            
+
         dt_index = make_dt_coordinates(start, self.sample_rate, npts, self.logger)
 
         meta_dict = self.metadata.to_dict()[self.metadata._class_name]

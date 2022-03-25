@@ -49,7 +49,9 @@ class TestMTH5(unittest.TestCase):
 
     def test_default_group_names(self):
         groups = sorted(self.mth5_obj.experiment_group.groups_list)
-        defaults = sorted(self.mth5_obj._default_subgroup_names)
+        defaults = sorted(
+            self.mth5_obj._default_subgroup_names + ["channel_summary", "tf_summary"]
+        )
 
         self.assertListEqual(defaults, groups)
 
@@ -189,13 +191,11 @@ class TestMTH5(unittest.TestCase):
                 self.assertEqual(4096, cg.n_samples)
 
         # slicing
-        
+
         with self.subTest("get slice"):
             r_slice = run.to_runts(start="2020-01-01T12:00:00", n_samples=256)
-            
+
             self.assertEqual(r_slice.end, "2020-01-01T12:04:16+00:00")
-        
-        
 
     def tearDown(self):
         self.mth5_obj.close_mth5()

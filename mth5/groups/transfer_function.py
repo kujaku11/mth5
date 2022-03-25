@@ -10,13 +10,19 @@ Created on Thu Mar 10 08:22:33 2022
 # =============================================================================
 import numpy as np
 import xarray as xr
+import h5py
 
 from mth5.groups import BaseGroup, EstimateDataset
-from mth5.helpers import validate_name
+from mth5.helpers import validate_name, from_numpy_type
 from mth5.utils.exceptions import MTH5Error
 
 from mt_metadata.transfer_functions.core import TF
-from mt_metadata.transfer_functions.tf import StatisticalEstimate
+from mt_metadata.transfer_functions.tf import (
+    StatisticalEstimate,
+    Run,
+    Electric,
+    Magnetic,
+)
 
 # =============================================================================
 
@@ -47,6 +53,100 @@ class TransferFunctionGroup(BaseGroup):
                 "description": "Periods at which transfer function is estimated",
                 "units": "samples per second",
             }
+        )
+
+    def has_estimate(self, estimate):
+        """ 
+        has estimate
+        """
+
+        if estimate in self.groups_list:
+            est = self.get_estimate(estimate)
+            if est.hdf5_dataset.shape == (1, 1, 1):
+                return False
+            return True
+
+        elif estimate in ["impedance"]:
+            est = self.get_estimate("transfer_function")
+            if est.hdf5_dataset.shape == (1, 1, 1):
+                return False
+            elif (
+                "ex" in est.metadata.output_channels
+                and "ey" in est.metadata.output_channels
+            ):
+                return True
+            return False
+
+        elif estimate in ["tipper"]:
+            est = self.get_estimate("transfer_function")
+            if est.hdf5_dataset.shape == (1, 1, 1):
+                return False
+            elif "hz" in est.metadata.output_channels:
+                return True
+            return False
+
+        elif estimate in ["covariance"]:
+            try:
+                res = self.get_estimate("residual_covariance")
+                isp = self.get_estimate("inverse_signal_power")
+
+                if res.hdf5_dataset.shape != (1, 1, 1) and isp.hdf5_dataset.shape != (
+                    1,
+                    1,
+                    1,
+                ):
+                    return True
+                return False
+            except (KeyError, MTH5Error):
+                return False
+
+        return False
+
+    @property
+    def tf_entry(self):
+        """
+        Entry for the summary table
+        
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        return np.array(
+            [
+                (
+                    "",
+                    0,
+                    0,
+                    0,
+                    self.metadata.id,
+                    self.metadata.units,
+                    self.has_estimate("impedance"),
+                    self.has_estimate("tipper"),
+                    self.has_estimate("covariance"),
+                    self.period.min(),
+                    self.period.max(),
+                    self.hdf5_group.ref,
+                    None,
+                )
+            ],
+            dtype=np.dtype(
+                [
+                    ("station", "U10"),
+                    ("latitude", float),
+                    ("longitude", float),
+                    ("elevation", float),
+                    ("tf_id", "U20"),
+                    ("units", "U25"),
+                    ("has_impedance", bool),
+                    ("has_tipper", bool),
+                    ("has_covariance", bool),
+                    ("period_min", float),
+                    ("period_max", float),
+                    ("hdf5_reference", h5py.ref_dtype),
+                    ("station_hdf5_reference", h5py.ref_dtype),
+                ]
+            ),
         )
 
     @property
@@ -147,7 +247,7 @@ class TransferFunctionGroup(BaseGroup):
             )
 
         except (OSError, RuntimeError, ValueError) as error:
-            self.logger.exception(error)
+            self.logger.error(error)
             msg = f"estimate {estimate_metadata.name} already exists, returning existing group."
             self.logger.debug(msg)
 
@@ -163,14 +263,15 @@ class TransferFunctionGroup(BaseGroup):
 
         try:
             estimate_dataset = self.hdf5_group[estimate_name]
-            return EstimateDataset(estimate_dataset)
+            estimate_metadata = StatisticalEstimate(**dict(estimate_dataset.attrs))
+            return EstimateDataset(estimate_dataset, dataset_metadata=estimate_metadata)
 
         except KeyError:
             msg = (
                 f"{estimate_name} does not exist, "
                 + "check groups_list for existing names"
             )
-            self.logger.exception(msg)
+            self.logger.error(msg)
             raise MTH5Error(msg)
 
     def remove_estimate(self, estimate_name):
@@ -199,7 +300,7 @@ class TransferFunctionGroup(BaseGroup):
                 f"{estimate_name} does not exist, "
                 + "check groups_list for existing names"
             )
-            self.logger.exception(msg)
+            self.logger.error(msg)
             raise MTH5Error(msg)
 
     def to_tf_object(self):
@@ -213,6 +314,53 @@ class TransferFunctionGroup(BaseGroup):
         """
 
         tf_obj = TF()
+
+        # get survey metadata
+        survey_dict = dict(self.hdf5_group.parent.parent.parent.parent.attrs)
+        for key, value in survey_dict.items():
+            survey_dict[key] = from_numpy_type(value)
+        tf_obj.survey_metadata.from_dict({"survey": survey_dict})
+
+        # get station metadata
+        station_dict = dict(self.hdf5_group.parent.parent.attrs)
+        for key, value in station_dict.items():
+            station_dict[key] = from_numpy_type(value)
+        tf_obj.station_metadata.from_dict({"station": station_dict})
+
+        # need to update transfer function metadata
+        tf_dict = dict(self.hdf5_group.attrs)
+        for key, value in tf_dict.items():
+            tf_dict[key] = from_numpy_type(value)
+        tf_obj.station_metadata.transfer_function.from_dict(
+            {"transfer_function": tf_dict}
+        )
+
+        # add run and channel metadata
+        tf_obj.station_metadata.runs = []
+        for run_id in tf_obj.station_metadata.transfer_function.runs_processed:
+            try:
+                run = self.hdf5_group.parent.parent[run_id]
+                run_dict = dict(run.attrs)
+                for key, value in run_dict.items():
+                    run_dict[key] = from_numpy_type(value)
+                run_obj = Run(**run_dict)
+
+                for ch_id in run.keys():
+                    ch = run[ch_id]
+                    ch_dict = dict(ch.attrs)
+                    for key, value in ch_dict.items():
+                        ch_dict[key] = from_numpy_type(value)
+                    if ch_dict["type"] == "electric":
+                        ch_obj = Electric(**ch_dict)
+                    elif ch_dict["type"] == "magnetic":
+                        ch_obj = Magnetic(**ch_dict)
+                    run_obj.add_channel(ch_obj)
+
+                tf_obj.station_metadata.add_run(run_obj)
+
+            except KeyError:
+                self.logger.info(f"Could not get run {run_id} for transfer function")
+
         if self.period is not None:
             tf_obj.period = self.period
         else:

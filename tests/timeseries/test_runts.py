@@ -36,7 +36,6 @@ class TestRunTS(unittest.TestCase):
         self.sample_rate = 8
         self.npts = 4096
 
-
         self.ex = ChannelTS(
             "electric",
             data=np.random.rand(self.npts),
@@ -102,10 +101,10 @@ class TestRunTS(unittest.TestCase):
 
         with self.subTest("sample rate"):
             self.assertEqual(self.run.sample_rate, self.sample_rate)
-        
+
         with self.subTest("start"):
             self.assertEqual(self.run.start, MTime(self.start))
-        
+
         with self.subTest("end"):
             self.assertEqual(self.run.end, MTime(self.end))
 
@@ -129,22 +128,22 @@ class TestRunTS(unittest.TestCase):
         )
 
     def test_channels(self):
-        
+
         for comp in ["ex", "ey", "hx", "hy", "hz"]:
             ch = getattr(self, comp)
-            
+
             with self.subTest("isinstance channel"):
                 self.assertIsInstance(ch, ChannelTS)
-            
+
             with self.subTest("sample rate"):
                 self.assertEqual(ch.sample_rate, self.sample_rate)
-            
+
             with self.subTest("start"):
                 self.assertEqual(ch.start, MTime(self.start))
-            
+
             with self.subTest("end"):
                 self.assertEqual(ch.end, MTime(self.end))
-                
+
             with self.subTest("component"):
                 self.assertEqual(ch.component, comp)
 
@@ -174,30 +173,27 @@ class TestRunTS(unittest.TestCase):
             self.assertEqual(self.run.end, self.run.run_metadata.time_period.end)
 
     def test_get_slice(self):
-        
+
         start = "2015-01-08T19:49:30+00:00"
         npts = 256
-        
+
         r_slice = self.run.get_slice(start, n_samples=npts)
-        
+
         with self.subTest("isinstance runts"):
             self.assertIsInstance(r_slice, RunTS)
-        
+
         with self.subTest("sample rate"):
             self.assertEqual(r_slice.sample_rate, self.sample_rate)
-        
+
         with self.subTest("start"):
             self.assertEqual(r_slice.start, MTime(start))
-        
+
         # with self.subTest("end"):
         #     self.assertEqual(ch.end, MTime())
-            
+
         # with self.subTest("npts"):
         #     self.assertEqual(r_slice., comp)
-            
-            
-        
-        
+
 
 # =============================================================================
 # run tests

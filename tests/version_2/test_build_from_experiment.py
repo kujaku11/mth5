@@ -16,7 +16,7 @@ import unittest
 from pathlib import Path
 import numpy as np
 
-from mth5 import mth5
+from mth5 import mth5, CHANNEL_DTYPE
 from mth5.helpers import validate_name
 from mt_metadata.timeseries import Experiment
 from mt_metadata import MT_EXPERIMENT_SINGLE_STATION
@@ -130,6 +130,23 @@ class TestMTH5(unittest.TestCase):
                             self.assertEqual(v1, v2)
 
             # self.assertDictEqual(h5_sd, sd)
+
+    def test_channel_summary(self):
+        self.mth5_obj.channel_summary.summarize()
+
+        with self.subTest("test shape"):
+            self.assertEqual(self.mth5_obj.channel_summary.shape, (25,))
+
+        with self.subTest("test nrows"):
+            self.assertEqual(self.mth5_obj.channel_summary.nrows, 25)
+
+        with self.subTest(("test dtype")):
+            self.assertEqual(self.mth5_obj.channel_summary.dtype, CHANNEL_DTYPE)
+
+        with self.subTest("test station"):
+            self.assertTrue(
+                (self.mth5_obj.channel_summary.array["station"] == b"REW09").all()
+            )
 
     def tearDown(self):
         self.mth5_obj.close_mth5()
