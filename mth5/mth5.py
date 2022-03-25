@@ -728,6 +728,13 @@ class MTH5:
         """
 
         try:
+            # update summay tables
+            self.channel_summary.clear_table()
+            self.channel_summary.summarize()
+            
+            self.tf_summary.clear_table()
+            self.tf_summary.summarize()
+            
             self.logger.info(f"Flushing and closing {str(self.filename)}")
             self.__hdf5_obj.flush()
             self.__hdf5_obj.close()
