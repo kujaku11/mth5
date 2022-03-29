@@ -846,7 +846,7 @@ class MTH5:
                 experiment = self.experiment_group.metadata
             return experiment
 
-    def from_experiment(self, experiment, survey_index=0):
+    def from_experiment(self, experiment, survey_index=0, update=False):
         """
         Fill out an MTH5 from a :class:`mt_metadata.timeseries.Experiment` object
         given a survey_id
@@ -864,15 +864,24 @@ class MTH5:
                 sg.write_metadata()
                 for station in experiment.surveys[0].stations:
                     mt_station = self.add_station(station.id, station_metadata=station)
+                    if update:
+                        mt_station.metadata.update(station)
+                        mt_station.write_metadata()
                     for run in station.runs:
                         mt_run = mt_station.add_run(run.id, run_metadata=run)
+                        if update:
+                            mt_run.metadata.update(run)
+                            mt_run.write_metadata()
                         for channel in run.channels:
-                            mt_run.add_channel(
+                            mt_ch = mt_run.add_channel(
                                 channel.component,
                                 channel.type,
                                 None,
                                 channel_metadata=channel,
                             )
+                            if update:
+                                mt_ch.metadata.update(channel)
+                                mt_ch.write_metadata()
 
                 for k, v in experiment.surveys[0].filters.items():
                     self.filters_group.add_filter(v)
@@ -886,15 +895,24 @@ class MTH5:
                         mt_station = self.add_station(
                             station.id, station_metadata=station, survey=sg.metadata.id
                         )
+                        if update:
+                            mt_station.metadata.update(station)
+                            mt_station.write_metadata()
                         for run in station.runs:
                             mt_run = mt_station.add_run(run.id, run_metadata=run)
+                            if update:
+                                mt_run.metadata.update(run)
+                                mt_run.write_metadata()
                             for channel in run.channels:
-                                mt_run.add_channel(
+                                mt_ch = mt_run.add_channel(
                                     channel.component,
                                     channel.type,
                                     None,
                                     channel_metadata=channel,
                                 )
+                                if update:
+                                    mt_ch.metadata.update(channel)
+                                    mt_ch.write_metadata()
 
                     for k, v in survey.filters.items():
                         sg.filters_group.add_filter(v)

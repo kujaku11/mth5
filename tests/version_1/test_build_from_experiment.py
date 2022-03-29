@@ -133,3 +133,31 @@ class TestMTH5(unittest.TestCase):
     def tearDown(self):
         self.mth5_obj.close_mth5()
         self.fn.unlink()
+        
+class TestUpdateFromExperiment(unittest.TestCase):
+    def setUp(self):
+        self.maxDiff = None
+        self.fn = fn_path.joinpath("test.h5")
+        self.mth5_obj = mth5.MTH5(file_version="0.1.0")
+        self.mth5_obj.open_mth5(self.fn, mode="w")
+        self.experiment = Experiment()
+        self.experiment.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)
+        self.mth5_obj.from_experiment(self.experiment)
+        
+        self.experiment_02 = Experiment()
+        self.experiment_02.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)
+        self.experiment_02.surveys[0].id = "different_survey_name"
+        self.experiment_02.surveys[0].stations[0].id = "different_station_name"
+        
+    def test_update_from_new_experiment(self):
+        
+        self.mth5_obj.from_experiment(self.experiment_02, update=True)
+        
+        with self.subTest("new_survey"):
+            self.assertEqual(self.mth5_obj.survey_group.metadata.id,
+                             self.experiment_02.surveys[0].id)
+            
+        # with self.subTest("new_station"):
+        #     self.assertEqual(self.mth5_obj.survey_group.metadata.id,
+        #                      self.experiment_02.surveys[0].id)
+            
