@@ -147,7 +147,8 @@ class TestUpdateFromExperiment(unittest.TestCase):
         self.experiment_02 = Experiment()
         self.experiment_02.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)
         self.experiment_02.surveys[0].id = "different_survey_name"
-        self.experiment_02.surveys[0].stations[0].id = "different_station_name"
+        self.experiment_02.surveys[0].stations[0].location.latitude = 10
+        
         
     def test_update_from_new_experiment(self):
         
@@ -157,7 +158,13 @@ class TestUpdateFromExperiment(unittest.TestCase):
             self.assertEqual(self.mth5_obj.survey_group.metadata.id,
                              self.experiment_02.surveys[0].id)
             
-        # with self.subTest("new_station"):
-        #     self.assertEqual(self.mth5_obj.survey_group.metadata.id,
-        #                      self.experiment_02.surveys[0].id)
+        with self.subTest("new_location"):
+            st = self.mth5_obj.get_station("REW09")
+            self.assertEqual(
+                st.metadata.location.latitude,
+                self.experiment_02.surveys[0].stations[0].location.latitude)
+            
+    def tearDown(self):
+        self.mth5_obj.close_mth5()
+        self.fn.unlink()
             
