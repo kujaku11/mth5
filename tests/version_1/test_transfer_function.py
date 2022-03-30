@@ -198,7 +198,7 @@ class TestTFGroup(unittest.TestCase):
         true_dict = dict(
             [
                 ("station", b"NMX20"),
-                ("survey", b"CONUS_South"),
+                ("survey", b"CONUS South"),
                 ("latitude", 34.470528),
                 ("longitude", -108.712288),
                 ("elevation", 1940.05),
