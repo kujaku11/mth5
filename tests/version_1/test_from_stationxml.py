@@ -158,16 +158,15 @@ class TestFromStationXML01(unittest.TestCase):
         for key, true_value in ch_dict.items():
             with self.subTest(msg=key):
                 self.assertEqual(true_value, m_ch.get_attr_from_name(key))
-                
+
     def test_filters(self):
-        
+
         for f_name in self.experiment.surveys[0].filters.keys():
             with self.subTest(f_name):
                 exp_filter = self.experiment.surveys[0].filters[f_name]
                 h5_filter = self.m.survey_group.filters_group.to_filter_object(f_name)
-                
-                self.assertTrue(exp_filter, h5_filter)        
-        
+
+                self.assertTrue(exp_filter, h5_filter)
 
     def tearDown(self):
         self.m.close_mth5()

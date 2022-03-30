@@ -60,7 +60,7 @@ class ChannelSummaryTable(MTH5Table):
         :rtype: TYPE
 
         """
-        
+
         self.clear_table()
 
         def recursive_get_channel_entry(group):

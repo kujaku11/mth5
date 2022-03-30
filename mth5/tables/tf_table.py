@@ -57,6 +57,7 @@ class TFSummaryTable(MTH5Table):
 
         """
         self.clear_table()
+
         def recursive_get_tf_entry(group):
             """
             a function to get tf entry, hopefully this is faster than looping

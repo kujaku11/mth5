@@ -271,5 +271,5 @@ def validate_name(name, pattern=None):
 
     """
     if name is None:
-        return 'unknown'
+        return "unknown"
     return name.replace(" ", "_")
