@@ -270,5 +270,6 @@ def validate_name(name, pattern=None):
     :rtype: TYPE
 
     """
-
+    if name is None:
+        return 'unknown'
     return name.replace(" ", "_")

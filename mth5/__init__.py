@@ -34,6 +34,7 @@ CHUNK_SIZE = 8196
 TF_DTYPE = np.dtype(
     [
         ("station", "S10"),
+        ("survey", "S50"),
         ("latitude", float),
         ("longitude", float),
         ("elevation", float),

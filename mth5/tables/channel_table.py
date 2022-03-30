@@ -60,6 +60,8 @@ class ChannelSummaryTable(MTH5Table):
         :rtype: TYPE
 
         """
+        
+        self.clear_table()
 
         def recursive_get_channel_entry(group):
             """
@@ -99,9 +101,7 @@ class ChannelSummaryTable(MTH5Table):
                         )
                         self.add_row(ch_entry)
 
-                except KeyError as error:
-                    # self.logger.exception(error)
-                    # return None
+                except KeyError:
                     pass
 
         recursive_get_channel_entry(self.array.parent)

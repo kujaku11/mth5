@@ -41,6 +41,7 @@ class TFSummaryTable(MTH5Table):
         df = pd.DataFrame(self.array[()])
         for key in [
             "station",
+            "survey",
             "tf_id",
             "units",
         ]:
@@ -55,7 +56,7 @@ class TFSummaryTable(MTH5Table):
         :rtype: TYPE
 
         """
-
+        self.clear_table()
         def recursive_get_tf_entry(group):
             """
             a function to get tf entry, hopefully this is faster than looping
@@ -100,6 +101,7 @@ class TFSummaryTable(MTH5Table):
                                 [
                                     (
                                         node.parent.parent.attrs["id"],
+                                        node.parent.parent.parent.parent.attrs["id"],
                                         node.parent.parent.attrs["location.latitude"],
                                         node.parent.parent.attrs["location.longitude"],
                                         node.parent.parent.attrs["location.elevation"],
