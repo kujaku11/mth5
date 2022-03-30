@@ -415,6 +415,6 @@ class TransferFunctionGroup(BaseGroup):
                 if estimate is not None:
                     _ = self.add_statistical_estimate(estimate_name, estimate)
                 else:
-                    self.logger.warning(f"Did not find {estimate_name} in TF. Skipping")
+                    self.logger.debug(f"Did not find {estimate_name} in TF. Skipping")
             except AttributeError:
-                self.logger.warning(f"Did not find {estimate_name} in TF. Skipping")
+                self.logger.debug(f"Did not find {estimate_name} in TF. Skipping")

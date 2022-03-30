@@ -46,7 +46,6 @@ class TFSummaryTable(MTH5Table):
             "units",
         ]:
             setattr(df, key, getattr(df, key).str.decode("utf-8"))
-
         return df
 
     def summarize(self):
@@ -75,14 +74,12 @@ class TFSummaryTable(MTH5Table):
                             if "transfer_function" in node.keys():
                                 tf_dataset = node["transfer_function"]
                                 if tf_dataset != (1, 1, 1):
-                                    if (
-                                        b"ex" in tf_dataset.attrs["output_channels"]
-                                        and b"ey" in tf_dataset.attrs["output_channels"]
-                                    ):
+                                    nz = np.nonzero(tf_dataset)
+                                    unique_values = np.unique(nz[1])
+                                    if 0 in unique_values or 1 in unique_values:
                                         has_impedance = True
-                                    if b"hz" in tf_dataset.attrs["output_channels"]:
+                                    if 2 in unique_values:
                                         has_tipper = True
-
                             if (
                                 "residual_covariance" in node.keys()
                                 and "inverse_signal_power" in node.keys()
@@ -92,12 +89,10 @@ class TFSummaryTable(MTH5Table):
 
                                 if res.shape != (1, 1, 1) and isp.shape != (1, 1, 1):
                                     has_covariance = True
-
                             if "period" in node.keys():
                                 period = node["period"][()]
                             else:
                                 period = np.zeros(2)
-
                             tf_entry = np.array(
                                 [
                                     (
@@ -122,10 +117,8 @@ class TFSummaryTable(MTH5Table):
                             self.add_row(tf_entry)
                         else:
                             recursive_get_tf_entry(node)
-
                     except KeyError:
                         recursive_get_tf_entry(node)
-
             elif isinstance(group, h5py._hl.dataset.Dataset):
                 pass
 
