@@ -799,6 +799,9 @@ class MTH5:
         mth5_type = referenced.attrs["mth5_type"].lower()
 
         try:
+            if mth5_type == "transferfunction":
+                group = ref_dict[mth5_type](referenced)
+                return group.to_tf_object()
             return ref_dict[mth5_type](referenced)
         except KeyError:
             self.logger.info(
