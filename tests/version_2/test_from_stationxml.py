@@ -71,7 +71,7 @@ class TestFromStationXML01(unittest.TestCase):
 
     def test_station_metadata(self):
         station_dict = {
-            "acquired_by.author": None,
+            "acquired_by.author": "none",
             "channels_recorded": [],
             "data_type": "BBMT",
             "fdsn.id": "CAS04",

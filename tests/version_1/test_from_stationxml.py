@@ -29,7 +29,6 @@ class TestFromStationXML01(unittest.TestCase):
         self.fn = fn_path.joinpath("from_stationxml.h5")
         if self.fn.exists():
             self.fn.unlink()
-
         self.m = mth5.MTH5(file_version="0.1.0")
         self.m.open_mth5(self.fn)
         self.m.from_experiment(self.experiment, 0)
@@ -51,7 +50,6 @@ class TestFromStationXML01(unittest.TestCase):
     def test_survey_metadata(self):
         with self.subTest(msg="id"):
             self.assertEqual(self.m.survey_group.metadata.fdsn.network, "ZU")
-
         with self.subTest(msg="start"):
             self.assertEqual(
                 self.m.survey_group.metadata.time_period.start_date, "2020-01-01"
@@ -72,7 +70,7 @@ class TestFromStationXML01(unittest.TestCase):
 
     def test_station_metadata(self):
         station_dict = {
-            "acquired_by.author": None,
+            "acquired_by.author": "none",
             "channels_recorded": [],
             "data_type": "BBMT",
             "fdsn.id": "CAS04",
