@@ -1373,7 +1373,47 @@ class MTH5:
             raise ValueError(msg % type(tf_object))
         if self.file_version == "0.2.0":
             try:
+                # need to check survey metadata to make sure it matches,
+                # if it doesn't need to make a new survey group so that
+                # when a TF is pulled it gets the proper survey metadata.
+                # this should eventually search over each unknonw survey
+                # for matching metadata so there aren't 100 groups
                 survey_group = self.get_survey(tf_object.survey_metadata.id)
+                if tf_object.survey_metadata.id == "unknown_survey":
+                    for sg_id in self.surveys_group.groups_list:
+                        if "unknown_survey" in sg_id:
+                            match = True
+                            survey_group = self.get_survey(sg_id)
+                            sg_dict = survey_group.metadata.to_dict(
+                                single=True, required=False
+                            )
+                            for key, value in tf_object.survey_metadata.to_dict(
+                                single=True
+                            ).items():
+                                if key in ["hdf5_reference", "mth5_type", "id"]:
+                                    continue
+                                if sg_dict[key] != value:
+                                    match = False
+                                    print(
+                                        f"{key} is not equal in {sg_id}={sg_dict[key]} != {value}"
+                                    )
+                                    break
+                            if match:
+                                break
+                    # create a new survey group with a new id, this is likely
+                    # not the best way to do this, it should be strongly
+                    # encouraged that the user assigne a survey id.
+                    if not match:
+                        count = 1
+                        survey_id = f"unknown_survey_{count:03}"
+                        while survey_id in self.surveys_group.groups_list:
+                            count += 1
+                            survey_id = f"unknown_survey_{count:03}"
+                        tf_object.survey_metadata.id = survey_id
+                        survey_group = self.add_survey(
+                            tf_object.survey_metadata.id,
+                            survey_metadata=tf_object.survey_metadata,
+                        )
             except MTH5Error:
                 survey_group = self.add_survey(
                     tf_object.survey_metadata.id,
