@@ -14,6 +14,7 @@ import h5py
 
 from mth5 import TF_DTYPE
 from mth5.tables import MTH5Table
+from mth5.helpers import validate_name
 
 # =============================================================================
 
@@ -41,11 +42,11 @@ class TFSummaryTable(MTH5Table):
         df = pd.DataFrame(self.array[()])
         for key in [
             "station",
+            "survey",
             "tf_id",
             "units",
         ]:
             setattr(df, key, getattr(df, key).str.decode("utf-8"))
-
         return df
 
     def summarize(self):
@@ -55,6 +56,7 @@ class TFSummaryTable(MTH5Table):
         :rtype: TYPE
 
         """
+        self.clear_table()
 
         def recursive_get_tf_entry(group):
             """
@@ -73,14 +75,12 @@ class TFSummaryTable(MTH5Table):
                             if "transfer_function" in node.keys():
                                 tf_dataset = node["transfer_function"]
                                 if tf_dataset != (1, 1, 1):
-                                    if (
-                                        b"ex" in tf_dataset.attrs["output_channels"]
-                                        and b"ey" in tf_dataset.attrs["output_channels"]
-                                    ):
+                                    nz = np.nonzero(tf_dataset)
+                                    unique_values = np.unique(nz[1])
+                                    if 0 in unique_values or 1 in unique_values:
                                         has_impedance = True
-                                    if b"hz" in tf_dataset.attrs["output_channels"]:
+                                    if 2 in unique_values:
                                         has_tipper = True
-
                             if (
                                 "residual_covariance" in node.keys()
                                 and "inverse_signal_power" in node.keys()
@@ -90,20 +90,21 @@ class TFSummaryTable(MTH5Table):
 
                                 if res.shape != (1, 1, 1) and isp.shape != (1, 1, 1):
                                     has_covariance = True
-
                             if "period" in node.keys():
                                 period = node["period"][()]
                             else:
                                 period = np.zeros(2)
-
                             tf_entry = np.array(
                                 [
                                     (
-                                        node.parent.parent.attrs["id"],
+                                        validate_name(node.parent.parent.attrs["id"]),
+                                        validate_name(
+                                            node.parent.parent.parent.parent.attrs["id"]
+                                        ),
                                         node.parent.parent.attrs["location.latitude"],
                                         node.parent.parent.attrs["location.longitude"],
                                         node.parent.parent.attrs["location.elevation"],
-                                        node.attrs["id"],
+                                        validate_name(node.attrs["id"]),
                                         node.attrs["units"],
                                         has_impedance,
                                         has_tipper,
@@ -119,10 +120,8 @@ class TFSummaryTable(MTH5Table):
                             self.add_row(tf_entry)
                         else:
                             recursive_get_tf_entry(node)
-
                     except KeyError:
                         recursive_get_tf_entry(node)
-
             elif isinstance(group, h5py._hl.dataset.Dataset):
                 pass
 

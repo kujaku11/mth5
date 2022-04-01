@@ -65,7 +65,6 @@ class TransferFunctionGroup(BaseGroup):
             if est.hdf5_dataset.shape == (1, 1, 1):
                 return False
             return True
-
         elif estimate in ["impedance"]:
             est = self.get_estimate("transfer_function")
             if est.hdf5_dataset.shape == (1, 1, 1):
@@ -76,7 +75,6 @@ class TransferFunctionGroup(BaseGroup):
             ):
                 return True
             return False
-
         elif estimate in ["tipper"]:
             est = self.get_estimate("transfer_function")
             if est.hdf5_dataset.shape == (1, 1, 1):
@@ -84,7 +82,6 @@ class TransferFunctionGroup(BaseGroup):
             elif "hz" in est.metadata.output_channels:
                 return True
             return False
-
         elif estimate in ["covariance"]:
             try:
                 res = self.get_estimate("residual_covariance")
@@ -99,55 +96,7 @@ class TransferFunctionGroup(BaseGroup):
                 return False
             except (KeyError, MTH5Error):
                 return False
-
         return False
-
-    @property
-    def tf_entry(self):
-        """
-        Entry for the summary table
-        
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        return np.array(
-            [
-                (
-                    "",
-                    0,
-                    0,
-                    0,
-                    self.metadata.id,
-                    self.metadata.units,
-                    self.has_estimate("impedance"),
-                    self.has_estimate("tipper"),
-                    self.has_estimate("covariance"),
-                    self.period.min(),
-                    self.period.max(),
-                    self.hdf5_group.ref,
-                    None,
-                )
-            ],
-            dtype=np.dtype(
-                [
-                    ("station", "U10"),
-                    ("latitude", float),
-                    ("longitude", float),
-                    ("elevation", float),
-                    ("tf_id", "U20"),
-                    ("units", "U25"),
-                    ("has_impedance", bool),
-                    ("has_tipper", bool),
-                    ("has_covariance", bool),
-                    ("period_min", float),
-                    ("period_max", float),
-                    ("hdf5_reference", h5py.ref_dtype),
-                    ("station_hdf5_reference", h5py.ref_dtype),
-                ]
-            ),
-        )
 
     @property
     def period(self):
@@ -177,7 +126,6 @@ class TransferFunctionGroup(BaseGroup):
                     chunks=True,
                     max_shape=(None,),
                 )
-
             except (OSError, RuntimeError, ValueError):
                 self.logger.debug("period already exists, overwriting")
                 self.hdf5_group["period"][...] = period
@@ -206,13 +154,11 @@ class TransferFunctionGroup(BaseGroup):
         if estimate_metadata is None:
             estimate_metadata = StatisticalEstimate()
             estimate_metadata.name = estimate_name
-
         if estimate_data is not None:
             if not isinstance(estimate_data, (np.ndarray, xr.DataArray)):
                 msg = f"Need to input a numpy or xarray.DataArray not {type(estimate_data)}"
                 self.logger.exception(msg)
                 raise TypeError(msg)
-
             if isinstance(estimate_data, xr.DataArray):
                 estimate_metadata.output_channels = estimate_data.coords[
                     "output"
@@ -224,14 +170,11 @@ class TransferFunctionGroup(BaseGroup):
                 estimate_metadata.data_type = estimate_data.dtype.name
 
                 estimate_data = estimate_data.to_numpy()
-
             dtype = estimate_data.dtype
-
         else:
             dtype = complex
             chunks = True
             estimate_data = np.zeros((1, 1, 1), dtype=dtype)
-
         try:
             dataset = self.hdf5_group.create_dataset(
                 estimate_name,
@@ -245,14 +188,12 @@ class TransferFunctionGroup(BaseGroup):
             estimate_dataset = EstimateDataset(
                 dataset, dataset_metadata=estimate_metadata
             )
-
         except (OSError, RuntimeError, ValueError) as error:
             self.logger.error(error)
             msg = f"estimate {estimate_metadata.name} already exists, returning existing group."
             self.logger.debug(msg)
 
             estimate_dataset = self.get_estimate(estimate_metadata.name)
-
         return estimate_dataset
 
     def get_estimate(self, estimate_name):
@@ -265,7 +206,6 @@ class TransferFunctionGroup(BaseGroup):
             estimate_dataset = self.hdf5_group[estimate_name]
             estimate_metadata = StatisticalEstimate(**dict(estimate_dataset.attrs))
             return EstimateDataset(estimate_dataset, dataset_metadata=estimate_metadata)
-
         except KeyError:
             msg = (
                 f"{estimate_name} does not exist, "
@@ -339,14 +279,14 @@ class TransferFunctionGroup(BaseGroup):
         tf_obj.station_metadata.runs = []
         for run_id in tf_obj.station_metadata.transfer_function.runs_processed:
             try:
-                run = self.hdf5_group.parent.parent[run_id]
+                run = self.hdf5_group.parent.parent[validate_name(run_id)]
                 run_dict = dict(run.attrs)
                 for key, value in run_dict.items():
                     run_dict[key] = from_numpy_type(value)
                 run_obj = Run(**run_dict)
 
                 for ch_id in run.keys():
-                    ch = run[ch_id]
+                    ch = run[validate_name(ch_id)]
                     ch_dict = dict(ch.attrs)
                     for key, value in ch_dict.items():
                         ch_dict[key] = from_numpy_type(value)
@@ -355,19 +295,15 @@ class TransferFunctionGroup(BaseGroup):
                     elif ch_dict["type"] == "magnetic":
                         ch_obj = Magnetic(**ch_dict)
                     run_obj.add_channel(ch_obj)
-
                 tf_obj.station_metadata.add_run(run_obj)
-
             except KeyError:
                 self.logger.info(f"Could not get run {run_id} for transfer function")
-
         if self.period is not None:
             tf_obj.period = self.period
         else:
             msg = "Period must not be None to create a transfer function object"
             self.logger.error(msg)
             raise ValueError(msg)
-
         for estimate_name in self.groups_list:
             if estimate_name in ["period"]:
                 continue
@@ -375,10 +311,8 @@ class TransferFunctionGroup(BaseGroup):
 
             try:
                 setattr(tf_obj, estimate_name, estimate.to_numpy())
-
             except AttributeError as error:
                 self.logger.exception(error)
-
         return tf_obj
 
     def from_tf_object(self, tf_obj):
@@ -397,7 +331,6 @@ class TransferFunctionGroup(BaseGroup):
             msg = "Input must be a TF object not %s"
             self.logger.error(msg, type(tf_obj))
             raise ValueError(msg % type(tf_obj))
-
         self.period = tf_obj.period
         self.metadata.update(tf_obj.station_metadata.transfer_function)
         self.write_metadata()
@@ -408,13 +341,12 @@ class TransferFunctionGroup(BaseGroup):
             accepted_estimates = self._accepted_estimates[0:4]
         else:
             accepted_estimates = self._accepted_estimates
-
         for estimate_name in accepted_estimates:
             try:
                 estimate = getattr(tf_obj, estimate_name)
                 if estimate is not None:
                     _ = self.add_statistical_estimate(estimate_name, estimate)
                 else:
-                    self.logger.warning(f"Did not find {estimate_name} in TF. Skipping")
+                    self.logger.debug(f"Did not find {estimate_name} in TF. Skipping")
             except AttributeError:
-                self.logger.warning(f"Did not find {estimate_name} in TF. Skipping")
+                self.logger.debug(f"Did not find {estimate_name} in TF. Skipping")

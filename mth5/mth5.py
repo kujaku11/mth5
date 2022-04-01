@@ -272,14 +272,14 @@ class MTH5:
     def __str__(self):
         if self.h5_is_read():
             return helpers.get_tree(self.__hdf5_obj)
-
         return "HDF5 file is closed and cannot be accessed."
 
     def __repr__(self):
         return self.__str__()
 
-    def __exit__(self):
+    def __exit__(self, exc_type, exc_val, exc_tb):
         self.close_mth5()
+        return False
 
     @property
     def dataset_options(self):
@@ -322,7 +322,6 @@ class MTH5:
         if value is not None:
             if not isinstance(value, Path):
                 value = Path(value)
-
             if value.suffix not in acceptable_file_types:
                 msg = (
                     f"file extension {value.suffix} is not correct. "
@@ -330,7 +329,6 @@ class MTH5:
                 )
                 self.logger.info(msg)
                 self.__filename = value.with_suffix(".h5")
-
             else:
                 self.__filename = value
 
@@ -354,12 +352,10 @@ class MTH5:
             msg = f"Input file type must be a string not {type(value)}"
             self.logger.error(msg)
             raise ValueError(msg)
-
         if value not in acceptable_file_types:
             msg = f"Input file.type is not valid, must be {acceptable_file_types}"
             self.logger.error(msg)
             raise ValueError(msg)
-
         self.__file_type = value
 
         if self.h5_is_read():
@@ -384,12 +380,10 @@ class MTH5:
             msg = f"Input file version must be a string not {type(value)}"
             self.logger.error(msg)
             raise ValueError(msg)
-
         if value not in acceptable_file_versions:
             msg = f"Input file.version is not valid, must be {acceptable_file_versions}"
             self.logger.error(msg)
             raise ValueError(msg)
-
         self.__file_version = value
         self._set_default_groups()
 
@@ -421,12 +415,10 @@ class MTH5:
             msg = f"Input file type must be an integer not {type(value)}"
             self.logger.error(msg)
             raise ValueError(msg)
-
         if value not in acceptable_data_levels:
             msg = f"Input data_level is not valid, must be {acceptable_data_levels}"
             self.logger.error(msg)
             raise ValueError(msg)
-
         self.__data_level = value
 
         if self.h5_is_read():
@@ -446,7 +438,6 @@ class MTH5:
             ]
 
             self._root_path = "/Survey"
-
         elif self.file_version in ["0.2.0"]:
             self._default_root_name = "Experiment"
             self._default_subgroup_names = [
@@ -483,7 +474,6 @@ class MTH5:
                 )
             self.logger.info("File is closed cannot access /Survey")
             return None
-
         elif self.file_version in ["0.2.0"]:
             self.logger.info(
                 f"File version {self.file_version} does not have a survey_group, try surveys_group"
@@ -496,7 +486,6 @@ class MTH5:
             self.logger.info(
                 f"File version {self.file_version} does not have a survey_group, try surveys_group"
             )
-
         elif self.file_version in ["0.2.0"]:
             if self.h5_is_read():
                 return groups.MasterSurveyGroup(
@@ -553,7 +542,6 @@ class MTH5:
                     "try surveys_group."
                 )
                 return None
-
             return groups.MasterStationGroup(
                 self.__hdf5_obj[f"{self._root_path}/Stations"], **self.dataset_options
             )
@@ -597,7 +585,6 @@ class MTH5:
             self.__filename = filename
         if not isinstance(self.__filename, Path):
             self.__filename = Path(filename)
-
         if self.__filename.exists():
             if mode in ["w"]:
                 self.logger.warning(
@@ -618,12 +605,10 @@ class MTH5:
                     msg = "Input file is not a valid MTH5 file"
                     self.logger.error(msg)
                     raise MTH5Error(msg)
-
             elif mode in ["r"]:
                 self.__hdf5_obj = h5py.File(self.__filename, mode=mode)
                 self._set_default_groups()
                 self.validate_file()
-
             else:
                 msg = "mode {0} is not understood".format(mode)
                 self.logger.error(msg)
@@ -635,7 +620,6 @@ class MTH5:
                 msg = "Cannot open new file in mode {0} ".format(mode)
                 self.logger.error(msg)
                 raise MTH5Error(msg)
-
         # TODO need to add a validation step to check for version and legit file
 
     def _initialize_file(self, mode="w"):
@@ -657,7 +641,6 @@ class MTH5:
         if self._default_root_name == "Survey":
             root_group = groups.SurveyGroup(root)
             root_group.write_metadata()
-
         for group_name in self._default_subgroup_names:
             try:
                 self.__hdf5_obj.create_group(f"{self._default_root_name}/{group_name}")
@@ -665,7 +648,6 @@ class MTH5:
                 pass
             m5_grp = getattr(self, f"{group_name.lower()}_group")
             m5_grp.initialize_group()
-
         # initiate channel and tf summary datasets
         self.__hdf5_obj[self._default_root_name].create_dataset(
             "channel_summary",
@@ -738,16 +720,12 @@ class MTH5:
 
         try:
             # update summay tables
-            self.channel_summary.clear_table()
             self.channel_summary.summarize()
-
-            self.tf_summary.clear_table()
             self.tf_summary.summarize()
 
             self.logger.info(f"Flushing and closing {str(self.filename)}")
             self.__hdf5_obj.flush()
             self.__hdf5_obj.close()
-
         except AttributeError:
             helpers.close_open_files()
 
@@ -821,6 +799,9 @@ class MTH5:
         mth5_type = referenced.attrs["mth5_type"].lower()
 
         try:
+            if mth5_type == "transferfunction":
+                group = ref_dict[mth5_type](referenced)
+                return group.to_tf_object()
             return ref_dict[mth5_type](referenced)
         except KeyError:
             self.logger.info(
@@ -882,10 +863,8 @@ class MTH5:
                             if update:
                                 mt_ch.metadata.update(channel)
                                 mt_ch.write_metadata()
-
                 for k, v in experiment.surveys[0].filters.items():
                     self.filters_group.add_filter(v)
-
             elif self.file_version in ["0.2.0"]:
 
                 for survey in experiment.surveys:
@@ -913,7 +892,6 @@ class MTH5:
                                 if update:
                                     mt_ch.metadata.update(channel)
                                     mt_ch.write_metadata()
-
                     for k, v in survey.filters.items():
                         sg.filters_group.add_filter(v)
 
@@ -1106,7 +1084,6 @@ class MTH5:
         """
         if self.file_version in ["0.1.0"]:
             return self.stations_group.get_station(station_name)
-
         elif self.file_version in ["0.2.0"]:
             if survey is None:
                 msg = "Need to input 'survey' for file version %s"
@@ -1139,7 +1116,6 @@ class MTH5:
 
         if self.file_version in ["0.1.0"]:
             return self.stations_group.remove_station(station_name)
-
         elif self.file_version in ["0.2.0"]:
             if survey is None:
                 msg = "Need to input 'survey' for file version %s"
@@ -1395,10 +1371,46 @@ class MTH5:
             msg = "Input must be a TF object not %s"
             self.logger.error(msg, type(tf_object))
             raise ValueError(msg % type(tf_object))
-
         if self.file_version == "0.2.0":
             try:
+                # need to check survey metadata to make sure it matches,
+                # if it doesn't need to make a new survey group so that
+                # when a TF is pulled it gets the proper survey metadata.
+                # this should eventually search over each unknonw survey
+                # for matching metadata so there aren't 100 groups
                 survey_group = self.get_survey(tf_object.survey_metadata.id)
+                if tf_object.survey_metadata.id == "unknown_survey":
+                    for sg_id in self.surveys_group.groups_list:
+                        if "unknown_survey" in sg_id:
+                            match = True
+                            survey_group = self.get_survey(sg_id)
+                            sg_dict = survey_group.metadata.to_dict(
+                                single=True, required=False
+                            )
+                            for key, value in tf_object.survey_metadata.to_dict(
+                                single=True
+                            ).items():
+                                if key in ["hdf5_reference", "mth5_type", "id"]:
+                                    continue
+                                if sg_dict[key] != value:
+                                    match = False
+                                    break
+                            if match:
+                                break
+                    # create a new survey group with a new id, this is likely
+                    # not the best way to do this, it should be strongly
+                    # encouraged that the user assigne a survey id.
+                    if not match:
+                        count = 1
+                        survey_id = f"unknown_survey_{count:03}"
+                        while survey_id in self.surveys_group.groups_list:
+                            count += 1
+                            survey_id = f"unknown_survey_{count:03}"
+                        tf_object.survey_metadata.id = survey_id
+                        survey_group = self.add_survey(
+                            tf_object.survey_metadata.id,
+                            survey_metadata=tf_object.survey_metadata,
+                        )
             except MTH5Error:
                 survey_group = self.add_survey(
                     tf_object.survey_metadata.id,
@@ -1410,19 +1422,18 @@ class MTH5:
             if survey_group.metadata.id is None:
                 survey_group.metadata.update(tf_object.survey_metadata)
                 survey_group.write_metadata()
-
         try:
             station_group = survey_group.stations_group.get_station(
                 tf_object.station_metadata.id
             )
+            station_group.metadata.update(tf_object.to_ts_station_metadata())
+            station_group.write_metadata()
         except MTH5Error:
             station_group = survey_group.stations_group.add_station(
                 tf_object.station_metadata.id,
                 station_metadata=tf_object.to_ts_station_metadata(),
             )
-
         ## need to check for runs and channels
-        # CANT DO THIS UNTIL RUN AND CHANNEL ARE SAME BETWEEN TS AND TF
         for run_id in tf_object.station_metadata.transfer_function.runs_processed:
             try:
                 run_group = station_group.get_run(run_id)
@@ -1437,7 +1448,6 @@ class MTH5:
                         ch_dataset = run_group.add_channel(
                             ch.component, ch.type, None, channel_metadata=ch
                         )
-
         try:
             tf_group = station_group.transfer_functions_group.add_transfer_function(
                 tf_object.station, tf_object=tf_object
@@ -1448,7 +1458,6 @@ class MTH5:
             tf_group = station_group.transfer_functions_group.get_transfer_function(
                 tf_object.station
             )
-
         return tf_group
 
     def get_transfer_function(self, station_id, tf_id, survey=None):

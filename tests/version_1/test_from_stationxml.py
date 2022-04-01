@@ -29,7 +29,6 @@ class TestFromStationXML01(unittest.TestCase):
         self.fn = fn_path.joinpath("from_stationxml.h5")
         if self.fn.exists():
             self.fn.unlink()
-
         self.m = mth5.MTH5(file_version="0.1.0")
         self.m.open_mth5(self.fn)
         self.m.from_experiment(self.experiment, 0)
@@ -51,7 +50,6 @@ class TestFromStationXML01(unittest.TestCase):
     def test_survey_metadata(self):
         with self.subTest(msg="id"):
             self.assertEqual(self.m.survey_group.metadata.fdsn.network, "ZU")
-
         with self.subTest(msg="start"):
             self.assertEqual(
                 self.m.survey_group.metadata.time_period.start_date, "2020-01-01"
@@ -72,7 +70,7 @@ class TestFromStationXML01(unittest.TestCase):
 
     def test_station_metadata(self):
         station_dict = {
-            "acquired_by.author": None,
+            "acquired_by.author": "none",
             "channels_recorded": [],
             "data_type": "BBMT",
             "fdsn.id": "CAS04",
@@ -158,16 +156,15 @@ class TestFromStationXML01(unittest.TestCase):
         for key, true_value in ch_dict.items():
             with self.subTest(msg=key):
                 self.assertEqual(true_value, m_ch.get_attr_from_name(key))
-                
+
     def test_filters(self):
-        
+
         for f_name in self.experiment.surveys[0].filters.keys():
             with self.subTest(f_name):
                 exp_filter = self.experiment.surveys[0].filters[f_name]
                 h5_filter = self.m.survey_group.filters_group.to_filter_object(f_name)
-                
-                self.assertTrue(exp_filter, h5_filter)        
-        
+
+                self.assertTrue(exp_filter, h5_filter)
 
     def tearDown(self):
         self.m.close_mth5()

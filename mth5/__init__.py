@@ -33,11 +33,12 @@ CHUNK_SIZE = 8196
 
 TF_DTYPE = np.dtype(
     [
-        ("station", "S10"),
+        ("station", "S30"),
+        ("survey", "S50"),
         ("latitude", float),
         ("longitude", float),
         ("elevation", float),
-        ("tf_id", "S20"),
+        ("tf_id", "S30"),
         ("units", "S60"),
         ("has_impedance", bool),
         ("has_tipper", bool),
@@ -52,7 +53,7 @@ TF_DTYPE = np.dtype(
 CHANNEL_DTYPE = dtype = np.dtype(
     [
         ("survey", "S30"),
-        ("station", "S20"),
+        ("station", "S30"),
         ("run", "S20"),
         ("latitude", float),
         ("longitude", float),
@@ -62,7 +63,7 @@ CHANNEL_DTYPE = dtype = np.dtype(
         ("end", "S30"),
         ("n_samples", int),
         ("sample_rate", float),
-        ("measurement_type", "S12"),
+        ("measurement_type", "S30"),
         ("azimuth", float),
         ("tilt", float),
         ("units", "S60"),
