@@ -194,11 +194,10 @@ class TestTFGroup(unittest.TestCase):
 
         with self.subTest("test shape"):
             self.assertEqual(self.mth5_obj.tf_summary.shape, (1,))
-
         true_dict = dict(
             [
                 ("station", b"NMX20"),
-                ("survey", b"CONUS South"),
+                ("survey", b"CONUS_South"),
                 ("latitude", 34.470528),
                 ("longitude", -108.712288),
                 ("elevation", 1940.05),
