@@ -1394,9 +1394,6 @@ class MTH5:
                                     continue
                                 if sg_dict[key] != value:
                                     match = False
-                                    print(
-                                        f"{key} is not equal in {sg_id}={sg_dict[key]} != {value}"
-                                    )
                                     break
                             if match:
                                 break
@@ -1429,13 +1426,14 @@ class MTH5:
             station_group = survey_group.stations_group.get_station(
                 tf_object.station_metadata.id
             )
+            station_group.metadata.update(tf_object.to_ts_station_metadata())
+            station_group.write_metadata()
         except MTH5Error:
             station_group = survey_group.stations_group.add_station(
                 tf_object.station_metadata.id,
                 station_metadata=tf_object.to_ts_station_metadata(),
             )
         ## need to check for runs and channels
-        # CANT DO THIS UNTIL RUN AND CHANNEL ARE SAME BETWEEN TS AND TF
         for run_id in tf_object.station_metadata.transfer_function.runs_processed:
             try:
                 run_group = station_group.get_run(run_id)

@@ -14,6 +14,7 @@ import h5py
 
 from mth5 import TF_DTYPE
 from mth5.tables import MTH5Table
+from mth5.helpers import validate_name
 
 # =============================================================================
 
@@ -96,12 +97,14 @@ class TFSummaryTable(MTH5Table):
                             tf_entry = np.array(
                                 [
                                     (
-                                        node.parent.parent.attrs["id"],
-                                        node.parent.parent.parent.parent.attrs["id"],
+                                        validate_name(node.parent.parent.attrs["id"]),
+                                        validate_name(
+                                            node.parent.parent.parent.parent.attrs["id"]
+                                        ),
                                         node.parent.parent.attrs["location.latitude"],
                                         node.parent.parent.attrs["location.longitude"],
                                         node.parent.parent.attrs["location.elevation"],
-                                        node.attrs["id"],
+                                        validate_name(node.attrs["id"]),
                                         node.attrs["units"],
                                         has_impedance,
                                         has_tipper,
