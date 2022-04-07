@@ -25,6 +25,8 @@ from mth5.groups import (
     StandardsGroup,
 )
 from mth5.utils.exceptions import MTH5Error
+from mth5.helpers import validate_name
+from mth5.tables import MTH5Table
 
 from mt_metadata.timeseries import Survey
 
@@ -255,8 +257,8 @@ class MasterSurveyGroup(BaseGroup):
         """
         if survey_name is None:
             raise Exception("survey name is None, do not know what to name it")
-        
-        survey_name = survey_name.replace(" ", "_")
+
+        survey_name = validate_name(survey_name)
         try:
             survey_group = self.hdf5_group.create_group(survey_name)
             self.logger.debug("Created group %s", survey_group.name)
@@ -265,7 +267,7 @@ class MasterSurveyGroup(BaseGroup):
                 survey_metadata = Survey(id=survey_name)
 
             else:
-                if survey_metadata.id.replace(" ", "_") != survey_name:
+                if validate_name(survey_metadata.id) != survey_name:
                     msg = (
                         f"survey group name {survey_name} must be same as "
                         + f"survey id {survey_metadata.id.replace(' ', '_')}"
@@ -274,9 +276,7 @@ class MasterSurveyGroup(BaseGroup):
                     raise MTH5Error(msg)
 
             survey_obj = SurveyGroup(
-                survey_group,
-                survey_metadata=survey_metadata,
-                **self.dataset_options,
+                survey_group, survey_metadata=survey_metadata, **self.dataset_options,
             )
             survey_obj.initialize_group()
 
@@ -309,7 +309,9 @@ class MasterSurveyGroup(BaseGroup):
         MTH5Error: MT001 does not exist, check survey_list for existing names
 
         """
-        survey_name = survey_name.replace(" ", "_")
+
+        survey_name = validate_name(survey_name)
+
         try:
             return SurveyGroup(self.hdf5_group[survey_name], **self.dataset_options)
         except KeyError:
@@ -343,7 +345,9 @@ class MasterSurveyGroup(BaseGroup):
             >>> mth5_obj.surveys_group.remove_survey('MT001')
 
         """
-        survey_name = survey_name.replace(" ", "_")
+
+        survey_name = validate_name(survey_name)
+
         try:
             del self.hdf5_group[survey_name]
             self.logger.info(

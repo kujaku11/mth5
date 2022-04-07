@@ -22,15 +22,17 @@ import weakref
 import h5py
 
 from mt_metadata import timeseries as metadata
+from mt_metadata.transfer_functions.tf import TransferFunction
 from mt_metadata.base import Base
 
 from mth5.helpers import get_tree
 from mth5.utils.exceptions import MTH5Error
-from mth5.helpers import to_numpy_type
+from mth5.helpers import to_numpy_type, from_numpy_type
 from mth5.utils.mth5_logger import setup_logger
 
 # make a dictionary of available metadata classes
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
+meta_classes["TransferFunction"] = TransferFunction
 # =============================================================================
 #
 # =============================================================================
@@ -155,6 +157,7 @@ class BaseGroup:
                 "options": [],
                 "alias": [],
                 "example": "group_name",
+                "default": None,
             },
         )
 
@@ -171,12 +174,9 @@ class BaseGroup:
                 "options": [],
                 "alias": [],
                 "example": "<HDF5 Group Reference>",
+                "default": "none",
             },
         )
-
-        # add mth5 and hdf5 attributes
-        self._metadata.mth5_type = self._class_name
-        self._metadata.hdf5_reference = self.hdf5_group.ref
 
     @property
     def metadata(self):
@@ -226,7 +226,10 @@ class BaseGroup:
         read metadata from the HDF5 group into metadata object
 
         """
-        self.metadata.from_dict({self._class_name: dict(self.hdf5_group.attrs)})
+        meta_dict = dict(self.hdf5_group.attrs)
+        for key, value in meta_dict.items():
+            meta_dict[key] = from_numpy_type(value)
+        self.metadata.from_dict({self._class_name: meta_dict})
 
     def write_metadata(self):
         """

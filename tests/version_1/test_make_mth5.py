@@ -10,6 +10,8 @@ import pandas as pd
 import numpy as np
 
 from mth5.clients.make_mth5 import MakeMTH5
+from obspy.clients.fdsn.header import FDSNNoDataException
+from mth5.utils.mth5_logger import setup_logger
 
 # =============================================================================
 # Test various inputs for getting metadata
@@ -29,7 +31,7 @@ class TestMakeMTH5(unittest.TestCase):
             "CAS04",
             "",
             "LQE",
-            "2020-06-02T19:00:00",
+            "2020-06-12T18:32:17",
             "2020-07-13T19:00:00",
         ]
         ZUCAS04LQ2 = [
@@ -37,7 +39,7 @@ class TestMakeMTH5(unittest.TestCase):
             "CAS04",
             "",
             "LQN",
-            "2020-06-02T19:00:00",
+            "2020-06-12T18:32:17",
             "2020-07-13T19:00:00",
         ]
         ZUCAS04BF1 = [
@@ -45,7 +47,7 @@ class TestMakeMTH5(unittest.TestCase):
             "CAS04",
             "",
             "LFE",
-            "2020-06-02T19:00:00",
+            "2020-06-12T18:32:17",
             "2020-07-13T19:00:00",
         ]
         ZUCAS04BF2 = [
@@ -53,7 +55,7 @@ class TestMakeMTH5(unittest.TestCase):
             "CAS04",
             "",
             "LFN",
-            "2020-06-02T19:00:00",
+            "2020-06-12T18:32:17",
             "2020-07-13T19:00:00",
         ]
         ZUCAS04BF3 = [
@@ -61,7 +63,7 @@ class TestMakeMTH5(unittest.TestCase):
             "CAS04",
             "",
             "LFZ",
-            "2020-06-02T19:00:00",
+            "2020-06-12T18:32:17",
             "2020-07-13T19:00:00",
         ]
         ZUNRV08LQ1 = [
@@ -69,7 +71,7 @@ class TestMakeMTH5(unittest.TestCase):
             "NVR08",
             "",
             "LQE",
-            "2020-06-02T19:00:00",
+            "2020-06-12T18:32:17",
             "2020-07-13T19:00:00",
         ]
         ZUNRV08LQ2 = [
@@ -77,7 +79,7 @@ class TestMakeMTH5(unittest.TestCase):
             "NVR08",
             "",
             "LQN",
-            "2020-06-02T19:00:00",
+            "2020-06-12T18:32:17",
             "2020-07-13T19:00:00",
         ]
         ZUNRV08BF1 = [
@@ -85,7 +87,7 @@ class TestMakeMTH5(unittest.TestCase):
             "NVR08",
             "",
             "LFE",
-            "2020-06-02T19:00:00",
+            "2020-06-12T18:32:17",
             "2020-07-13T19:00:00",
         ]
         ZUNRV08BF2 = [
@@ -93,7 +95,7 @@ class TestMakeMTH5(unittest.TestCase):
             "NVR08",
             "",
             "LFN",
-            "2020-06-02T19:00:00",
+            "2020-06-12T18:32:17",
             "2020-07-13T19:00:00",
         ]
         ZUNRV08BF3 = [
@@ -101,7 +103,7 @@ class TestMakeMTH5(unittest.TestCase):
             "NVR08",
             "",
             "LFZ",
-            "2020-06-02T19:00:00",
+            "2020-06-12T18:32:17",
             "2020-07-13T19:00:00",
         ]
         metadata_list = [
@@ -117,6 +119,7 @@ class TestMakeMTH5(unittest.TestCase):
             ZUNRV08BF3,
         ]
 
+        self.logger = setup_logger("test_make_mth5_v1")
         self.csv_fn = Path().cwd().joinpath("test_inventory.csv")
         self.mth5_path = Path().cwd()
 
@@ -189,32 +192,47 @@ class TestMakeMTH5(unittest.TestCase):
         )
 
     def test_make_mth5(self):
-        self.m = self.make_mth5.make_mth5_from_fdsnclient(
-            self.metadata_df, self.mth5_path, interact=True
-        )
-
-        with self.subTest(name="stations"):
-            self.assertListEqual(self.stations, self.m.station_list)
-
-        with self.subTest(name="CAS04_runs"):
-            self.assertListEqual(
-                ["a", "b", "c", "d"], self.m.get_station("CAS04").groups_list
+        try:
+            self.m = self.make_mth5.make_mth5_from_fdsnclient(
+                self.metadata_df, self.mth5_path, interact=True
             )
 
-        for run in ["a", "b", "c", "d"]:
-            for ch in ["ex", "ey", "hx", "hy", "hz"]:
-                with self.subTest(name=f"has data CAS04.{run}.{ch}"):
-                    x = self.m.get_channel("CAS04", run, ch)
-                    self.assertFalse(np.all(x.hdf5_dataset == 0))
+            with self.subTest(name="stations"):
+                self.assertListEqual(self.stations, self.m.station_list)
+            with self.subTest(name="CAS04_runs"):
+                self.assertListEqual(
+                    ["Transfer_Functions", "a", "b", "c", "d"],
+                    self.m.get_station("CAS04").groups_list,
+                )
+            for run in ["a", "b"]:
+                for ch in ["ex", "ey", "hx", "hy", "hz"]:
+                    with self.subTest(name=f"has data CAS04.{run}.{ch}"):
+                        x = self.m.get_channel("CAS04", run, ch)
+                        x_ts = x.to_channel_ts()
+                        self.assertTrue(np.all((x_ts._ts.values == 0) == True))
+            for run in ["c", "d"]:
+                for ch in ["ex", "ey", "hx", "hy", "hz"]:
+                    with self.subTest(name=f"has data CAS04.{run}.{ch}"):
+                        x = self.m.get_channel("CAS04", run, ch)
+                        x_ts = x.to_channel_ts()
+                        self.assertFalse(np.all(x.hdf5_dataset == 0))
+                        self.assertFalse(np.all((x_ts._ts.values == 0) == True))
+            for run in ["a", "b", "c"]:
+                for ch in ["ex", "ey", "hx", "hy", "hz"]:
+                    with self.subTest(name=f"has data NVR08.{run}.{ch}"):
+                        x = self.m.get_channel("NVR08", run, ch)
+                        self.assertFalse(np.all(x.hdf5_dataset == 0))
+            self.m.close_mth5()
+            self.m.filename.unlink()
+        except FDSNNoDataException as error:
+            self.logger.warning(
+                "The requested data could not be found on the FDSN IRIS server, check data availability"
+            )
+            self.logger.error(error)
 
-        for run in ["a", "b", "c"]:
-            for ch in ["ex", "ey", "hx", "hy", "hz"]:
-                with self.subTest(name=f"has data NVR08.{run}.{ch}"):
-                    x = self.m.get_channel("NVR08", run, ch)
-                    self.assertFalse(np.all(x.hdf5_dataset == 0))
-
-        self.m.close_mth5()
-        self.m.filename.unlink()
+            raise Exception(
+                "The requested data could not be found on the FDSN IRIS server, check data availability"
+            )
 
     def tearDown(self):
         self.csv_fn.unlink()

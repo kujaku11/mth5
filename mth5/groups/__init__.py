@@ -6,6 +6,8 @@ from .base import BaseGroup
 from .reports import ReportsGroup
 from .standards import StandardsGroup
 from .filters import FiltersGroup
+from .estimate_dataset import EstimateDataset
+from .transfer_function import TransferFunctionGroup
 from .master_station_run_channel import (
     MasterStationGroup,
     StationGroup,
@@ -34,4 +36,6 @@ __all__ = [
     "ElectricDataset",
     "MagneticDataset",
     "AuxiliaryDataset",
+    "EstimateDataset",
+    "TransferFunctionGroup",
 ]

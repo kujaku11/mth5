@@ -48,19 +48,21 @@ class TestMTH5(unittest.TestCase):
 
     def test_default_group_names(self):
         groups = sorted(self.mth5_obj.survey_group.groups_list)
-        defaults = sorted(self.mth5_obj._default_subgroup_names)
+        defaults = sorted(
+            self.mth5_obj._default_subgroup_names + ["channel_summary", "tf_summary"]
+        )
 
         self.assertListEqual(defaults, groups)
-        
+
     def test_filename(self):
         self.assertIsInstance(self.mth5_obj.filename, Path)
-        
+
     def test_is_read(self):
         self.assertEqual(self.mth5_obj.h5_is_read(), True)
-        
+
     def test_is_write(self):
         self.assertEqual(self.mth5_obj.h5_is_write(), True)
-        
+
     def test_validation(self):
         self.assertEqual(self.mth5_obj.validate_file(), True)
 

@@ -66,20 +66,10 @@ class TestFilters(unittest.TestCase):
         self.assertEqual(self.zpk_group.attrs["units_out"], self.zpk.units_out)
 
     def test_zpk_poles(self):
-        self.assertTrue(
-            np.allclose(self.zpk_group["poles"]["real"][()], self.zpk.poles.real)
-        )
-        self.assertTrue(
-            np.allclose(self.zpk_group["poles"]["imag"][()], self.zpk.poles.imag)
-        )
+        self.assertTrue(np.allclose(self.zpk_group["poles"][()], self.zpk.poles))
 
     def test_zpk_zeros(self):
-        self.assertTrue(
-            np.allclose(self.zpk_group["zeros"]["real"][()], self.zpk.zeros.real)
-        )
-        self.assertTrue(
-            np.allclose(self.zpk_group["zeros"]["imag"][()], self.zpk.zeros.imag)
-        )
+        self.assertTrue(np.allclose(self.zpk_group["zeros"][()], self.zpk.zeros))
 
     def test_zpk_out(self):
         new_zpk = self.filter_group.to_filter_object(self.zpk.name)
