@@ -1,13 +1,13 @@
-mth5.tables package
-===================
+mth5.clients package
+====================
 
 Submodules
 ----------
 
-mth5.tables.mth5\_table module
+mth5.clients.make\_mth5 module
 ------------------------------
 
-.. automodule:: mth5.tables.mth5_table
+.. automodule:: mth5.clients.make_mth5
     :members:
     :undoc-members:
     :show-inheritance:
@@ -16,7 +16,7 @@ mth5.tables.mth5\_table module
 Module contents
 ---------------
 
-.. automodule:: mth5.tables
+.. automodule:: mth5.clients
     :members:
     :undoc-members:
     :show-inheritance:
