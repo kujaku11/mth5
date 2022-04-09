@@ -417,6 +417,7 @@ class Z3DMetadata:
         self.ch_number = None
         self.ch_xyz1 = None
         self.ch_xyz2 = None
+        self.ch_cres = None
         self.gdp_operator = None
         self.gdp_progver = None
         self.job_by = None
@@ -1616,5 +1617,10 @@ def read_z3d(fn, logger_file_handler=None):
     z3d_obj = Z3D(fn)
     if logger_file_handler:
         z3d_obj.logger.addHandler(logger_file_handler)
-    z3d_obj.read_z3d()
+    try:
+        z3d_obj.read_z3d()
+    except ZenGPSError as error:
+        z3d_obj.logger.exception(error)
+        z3d_obj.logger.warning(f"Skipping {fn}, check file for GPS timing.")
+        return None
     return z3d_obj.to_channelts()
