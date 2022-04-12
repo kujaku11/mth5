@@ -621,6 +621,8 @@ class MTH5:
                 self.logger.error(msg)
                 raise MTH5Error(msg)
         # TODO need to add a validation step to check for version and legit file
+        if not "channel_summary" in self.__hdf5_obj[self._root_path].keys():
+            self._initialize_summary()
 
     def _initialize_file(self, mode="w"):
         """
@@ -648,6 +650,13 @@ class MTH5:
                 pass
             m5_grp = getattr(self, f"{group_name.lower()}_group")
             m5_grp.initialize_group()
+        self._initialize_summary()
+
+        self.logger.info(
+            f"Initialized MTH5 {self.file_version} file {self.filename} in mode {mode}"
+        )
+
+    def _initialize_summary(self):
         # initiate channel and tf summary datasets
         self.__hdf5_obj[self._default_root_name].create_dataset(
             "channel_summary",
@@ -663,10 +672,6 @@ class MTH5:
             maxshape=(None,),
             dtype=TF_DTYPE,
             **self.dataset_options,
-        )
-
-        self.logger.info(
-            f"Initialized MTH5 {self.file_version} file {self.filename} in mode {mode}"
         )
 
     def validate_file(self):
