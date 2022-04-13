@@ -135,7 +135,7 @@ class TestMakeMTH5(unittest.TestCase):
                 for ch in ["ex", "ey", "hx", "hy", "hz"]:
                     with self.subTest(name=f"has data CAS04.{run}.{ch}"):
                         x = self.m.get_channel("CAS04", run, ch)
-                        self.assertTrue((x.hdf5_dataset[()] != 0).all())
+                        self.assertTrue(abs(x.hdf5_dataset[()].mean()) > 0)
             with self.subTest(name="NVR08_runs"):
                 self.assertListEqual(
                     ["Transfer_Functions", "a", "b", "c"],
@@ -145,7 +145,7 @@ class TestMakeMTH5(unittest.TestCase):
                 for ch in ["ex", "ey", "hx", "hy", "hz"]:
                     with self.subTest(name=f"has data NVR08.{run}.{ch}"):
                         x = self.m.get_channel("NVR08", run, ch)
-                        self.assertTrue((x.hdf5_dataset[()] != 0).all())
+                        self.assertTrue(abs(x.hdf5_dataset[()].mean()) > 0)
             # with self.subTest("channel summary"):
 
             self.m.close_mth5()
