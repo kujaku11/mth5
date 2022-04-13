@@ -34,36 +34,38 @@ class TestFromStationXML01(unittest.TestCase):
         self.m.from_experiment(self.experiment, 0)
 
     def test_groups(self):
-        with self.subTest(msg="Survey"):
+
+        with self.subTest("has Survey"):
             self.assertEqual(self.m.has_group("Survey"), True)
-        with self.subTest(msg="Stations"):
+        with self.subTest("has SStations"):
             self.assertEqual(self.m.has_group("Survey/Stations"), True)
-        with self.subTest(msg="cas04"):
+        with self.subTest("has CAS04"):
             self.assertEqual(self.m.has_group("Survey/Stations/CAS04"), True)
-        with self.subTest(msg="run 001"):
+        with self.subTest("has run 001"):
             self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001"), True)
-        with self.subTest(msg="ey"):
+        with self.subTest("has channel ey"):
             self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001/ey"), True)
-        with self.subTest(msg="ex"):
+        with self.subTest("has channel hy"):
             self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001/hy"), True)
 
     def test_survey_metadata(self):
-        with self.subTest(msg="id"):
+        with self.subTest("has network ZU"):
             self.assertEqual(self.m.survey_group.metadata.fdsn.network, "ZU")
-        with self.subTest(msg="start"):
+        with self.subTest("test start"):
             self.assertEqual(
                 self.m.survey_group.metadata.time_period.start_date, "2020-01-01"
             )
-        with self.subTest(msg="end"):
+        with self.subTest("test end"):
             self.assertEqual(
                 self.m.survey_group.metadata.time_period.end_date, "2023-12-31"
             )
-        with self.subTest(msg="summary"):
+        with self.subTest("survey summary"):
+
             self.assertEqual(
                 self.m.survey_group.metadata.summary,
                 "USMTArray South Magnetotelluric Time Series (USMTArray CONUS South-USGS)",
             )
-        with self.subTest(msg="doi"):
+        with self.subTest("doi"):    
             self.assertEqual(
                 self.m.survey_group.metadata.citation_dataset.doi, "10.7914/SN/ZU_2020"
             )
@@ -98,7 +100,7 @@ class TestFromStationXML01(unittest.TestCase):
 
         m_station = self.m.get_station(station_dict["id"]).metadata
         for key, true_value in station_dict.items():
-            with self.subTest(msg=key):
+            with self.subTest(key):
                 self.assertEqual(true_value, m_station.get_attr_from_name(key))
 
     def test_run_metadata(self):
@@ -112,7 +114,7 @@ class TestFromStationXML01(unittest.TestCase):
 
         m_run = self.m.get_run("CAS04", run_dict["id"]).metadata
         for key, true_value in run_dict.items():
-            with self.subTest(msg=key):
+            with self.subTest(key):
                 self.assertEqual(true_value, m_run.get_attr_from_name(key))
 
     def test_ey_metadata(self):
@@ -136,7 +138,7 @@ class TestFromStationXML01(unittest.TestCase):
 
         m_ch = self.m.get_channel("CAS04", "001", "ey").metadata
         for key, true_value in ch_dict.items():
-            with self.subTest(msg=key):
+            with self.subTest(key):
                 self.assertEqual(true_value, m_ch.get_attr_from_name(key))
 
     def test_hy_metadata(self):

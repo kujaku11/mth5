@@ -38,6 +38,7 @@ from mth5.helpers import (
     inherit_doc_string,
     validate_name,
 )
+
 from mth5.timeseries import ChannelTS, RunTS
 from mth5.timeseries.channel_ts import make_dt_coordinates
 from mth5.utils.mth5_logger import setup_logger
@@ -271,6 +272,7 @@ class MasterStationGroup(BaseGroup):
         """
         if station_name is None:
             raise Exception("station name is None, do not know what to name it")
+
         station_name = validate_name(station_name)
         try:
             station_group = self.hdf5_group.create_group(station_name)
