@@ -94,12 +94,59 @@ def zero_pad(input_array, power=2, pad_fill=0):
 
 class RemoveInstrumentResponse:
     """
-    remove instrument response
+    Remove instrument response from the given channel response filter
+    
+    The order of operations is important (if applied):
+        
+        1) detrend
+        2) zero mean
+        3) zero pad
+        4) time window
+        5) frequency window
+        6) remove response
+        7) undo time window
+        8) bandpass
+    
+    :param ts: time series data to remove response from
+    :type ts: np.ndarray((N,) , dtype=float)
+    :param time_array: time index that corresponds to the time series
+    :type time_array: np.ndarray((N,) , dtype=np.datetime[ns])
+    :param sample_interval: seconds per sample (time interval between samples)
+    :type sample_interval: float
+    :param channel_response_filter: Channel response filter with all filters
+    included to convert from counts to physical units
+    :type channel_response_filter: `class`:mt_metadata.timeseries.filters.ChannelResponseFilter`
+    
+    **kwargs**
+    
+    :param plot: to plot the calibration process [ False | True ]
+    :type plot: boolean, default True 
+    :param detrend: Remove linar trend of the time series
+    :type detrend: boolean, default True 
+    :param zero_mean: Remove the mean of the time series
+    :type zero_mean: boolean, default True 
+    :param zero_pad: pad the time series to the next power of 2 for efficiency
+    :type zero_pad: boolean, default True 
+    :param t_window: Time domain windown name see `scipy.signal.windows` for options
+    :type t_window: string, default None 
+    :param t_window_params: Time domain window parameters, parameters can be 
+    found in `scipy.signal.windows` 
+    :type t_window_params: dictionary
+    :param f_window: Frequency domain windown name see `scipy.signal.windows` for options
+    :type f_window: string, defualt None
+    :param f_window_params: Frequency window parameters, parameters can be 
+    found in `scipy.signal.windows`
+    :type f_window_params: dictionary
+    :param bandpass: bandpass freequency and order {"low":, "high":, "order":,}
+    :type bandpass: dictionary
+    
+    
     """
 
     def __init__(
         self, ts, time_array, sample_interval, channel_response_filter, **kwargs
     ):
+        self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
         self.ts = ts
         self.time_array = time_array
         self.sample_interval = sample_interval
@@ -121,6 +168,21 @@ class RemoveInstrumentResponse:
             setattr(self, key, value)
 
     def _subplots(self, x, y, color, num, label):
+        """
+        helper function to make subplots for if plotting is desired
+        
+        :param x: x array
+        :type x: np.ndarray
+        :param y: y array
+        :type y: np.ndarray
+        :param color: color of the line
+        :type color: tuple
+        :param num: subplot number
+        :type num: integer
+        :param label: legend label
+        :type label: string
+
+        """
         ax_t = self.fig.get_axes()[0]
         ax_f = self.fig.get_axes()[1]
         ax = self.fig.add_subplot(self.nrows, 2, num, sharex=ax_t)
@@ -145,11 +207,107 @@ class RemoveInstrumentResponse:
 
     @staticmethod
     def get_window(window, window_params, size):
+        """
+        Get window from scipy.signal
+        
+        :param window: name of the window
+        :type window: string
+        :param window_params: dictionary of window parameters
+        :type window_params: dictionary
+        :param size: number of points in the window
+        :type size: integer
+        :return: window function
+        :rtype: class:`scipy.signal`
+
+        """
         return getattr(signal.windows, window)(size, **window_params)
+
+    def apply_detrend(self, ts):
+        """
+        Detrend time series using scipy.detrend('linear')
+        
+        :param ts: input time series
+        :type ts: np.ndarray
+        :return: detrended time series
+        :rtype: np.ndarray
+
+        """
+        ts = signal.detrend(ts, type="linear")
+
+        if self.plot:
+            self._subplots(
+                self.time_array,
+                ts,
+                (0.45, 0.1, 0.5),
+                self.subplot_dict["detrend"],
+                "Detrended",
+            )
+        return ts
+
+    def apply_zero_mean(self, ts):
+        """
+        Remove the mean from the time series
+        
+        :param ts: input time series
+        :type ts: np.ndarray
+        :return: zero mean time series
+        :rtype: np.ndarray
+
+        """
+        ts = ts - ts.mean()
+
+        if self.plot:
+            self._subplots(
+                self.time_array,
+                ts,
+                (0.55, 0.1, 0.4),
+                self.subplot_dict["zero_mean"],
+                "Zero Mean",
+            )
+        return ts
+
+    def apply_zero_pad(self, ts):
+        """
+        zero pad to power of 2, at the end of the time series to make the 
+        FFT more efficient
+        
+        :param ts: input time series
+        :type ts: np.ndarray
+        :return: zero padded time series
+        :rtype: np.ndarray
+
+        """
+
+        pad_ts = zero_pad(ts)
+
+        if self.plot:
+            dt = int(1.0 / self.sample_interval * 1000000000)
+            diff = int(((pad_ts.size - ts.size) + 1) * dt)
+            time_array = np.arange(
+                self.time_array[0],
+                self.time_array[-1] + np.timedelta64(diff),
+                np.timedelta64(dt),
+                dtype="datetime64[ns]",
+            )
+            self._subplots(
+                time_array,
+                pad_ts,
+                (0.7, 0.1, 0.25),
+                self.subplot_dict["pad"],
+                "Zero Pad",
+            )
+        return pad_ts
 
     def apply_t_window(self, ts):
         """
-        apply a time domain window
+        Apply a window in the time domain. Get the available windows from 
+        `scipy.signal.windows`
+        
+        :param ts: input time series
+        :type ts: np.ndarray
+        :return: windowed time series
+        :rtype: np.ndarray
+
         """
         w = self.get_window(self.t_window, self.t_window_params, self.ts.size)
         ts = ts * w
@@ -166,11 +324,20 @@ class RemoveInstrumentResponse:
 
     def apply_f_window(self, data):
         """
-        apply a frequency domain window
+        Apply a frequency domain window. Get the available windows from 
+        `scipy.signal.windows`
         
-        Need to create a window twice the size of the input because we are only taking the rfft which gives just half the spectra
+        Need to create a window twice the size of the input because we are
+        only taking the rfft which gives just half the spectra
         and then take only half the window
+        
+        :param data: input spectra
+        :type data: np.ndarray
+        :return: windowed spectra
+        :rtype: np.ndarray
+
         """
+
         w = self.get_window(self.f_window, self.f_window_params, 2 * data.size)[
             data.size :
         ]
@@ -204,66 +371,16 @@ class RemoveInstrumentResponse:
             )
         return data
 
-    def apply_detrend(self, ts):
-        """
-        detrend data with scipy.detrend
-        """
-        ts = signal.detrend(ts, type="linear")
-
-        if self.plot:
-            self._subplots(
-                self.time_array,
-                ts,
-                (0.45, 0.1, 0.5),
-                self.subplot_dict["detrend"],
-                "Detrended",
-            )
-        return ts
-
-    def apply_zero_mean(self, ts):
-        """
-        remove mean
-        """
-        ts = ts - ts.mean()
-
-        if self.plot:
-            self._subplots(
-                self.time_array,
-                ts,
-                (0.55, 0.1, 0.4),
-                self.subplot_dict["zero_mean"],
-                "Zero Mean",
-            )
-        return ts
-
-    def apply_zero_pad(self, ts):
-        """
-        zero pad to power of 2, at the end of the time series
-        """
-
-        pad_ts = zero_pad(ts)
-
-        if self.plot:
-            dt = int(1.0 / self.sample_interval * 1000000000)
-            diff = int(((pad_ts.size - ts.size) + 1) * dt)
-            time_array = np.arange(
-                self.time_array[0],
-                self.time_array[-1] + np.timedelta64(diff),
-                np.timedelta64(dt),
-                dtype="datetime64[ns]",
-            )
-            self._subplots(
-                time_array,
-                pad_ts,
-                (0.7, 0.1, 0.25),
-                self.subplot_dict["pad"],
-                "Zero Pad",
-            )
-        return pad_ts
-
     def apply_bandpass(self, ts):
         """
-        apply a bandpass filter
+        apply a bandpass filter to the calibrated data
+        
+        
+        :param ts: calibrated time series
+        :type ts: np.ndarray
+        :return: bandpassed time series
+        :rtype: np.ndarray
+
         """
         ts = butter_bandpass_filter(
             ts,
@@ -283,7 +400,14 @@ class RemoveInstrumentResponse:
             )
         return ts
 
-    def get_subplot_count(self):
+    def _get_subplot_count(self):
+        """
+        helper function to get subplot information
+        
+        :return: dictionary of subplot information
+        :rtype: dictionary
+
+        """
         order = ["detrend", "zero_mean", "t_window", "pad", "f_window", "bandpass"]
         pdict = {
             "pad": self.zero_pad,
@@ -308,14 +432,17 @@ class RemoveInstrumentResponse:
 
     def remove_instrument_response(self):
         """
-        Remove instrument response
+        Remove instrument response following the recipe provided
+        
+        :return: calibrated time series
+        :rtype: np.ndarray
         
         """
         ts = np.copy(self.ts)
         f = np.fft.rfftfreq(ts.size, d=self.sample_interval)
         step = 1
         if self.plot:
-            self.subplot_dict = self.get_subplot_count()
+            self.subplot_dict = self._get_subplot_count()
             self.fig = plt.figure(figsize=[10, 12])
             self.fig.clf()
             ax = self.fig.add_subplot(self.nrows, 2, 1)
@@ -330,17 +457,17 @@ class RemoveInstrumentResponse:
         # detrend
         if self.detrend:
             ts = self.apply_detrend(ts)
-            print(f"Step {step}: Applying Linear Detrend")
+            self.logger.info(f"Step {step}: Applying Linear Detrend")
             step += 1
         # zero mean
         if self.zero_mean:
             ts = self.apply_zero_mean(ts)
-            print(f"Step {step}: Removing Mean")
+            self.logger.info(f"Step {step}: Removing Mean")
             step += 1
         # filter in time domain
         if self.t_window is not None:
             ts = self.apply_t_window(ts)
-            print(f"Step {step}: Applying {self.t_window} Time Window")
+            self.logger.info(f"Step {step}: Applying {self.t_window} Time Window")
             step += 1
             if self.plot:
                 wax = self.fig.get_axes()[self.subplot_dict["t_window"] - 1].twinx()
@@ -353,7 +480,7 @@ class RemoveInstrumentResponse:
         if self.zero_pad:
             # pad the time series to a power of 2, this may be overkill, especially for long time series
             ts = self.apply_zero_pad(ts)
-            print(f"Step {step}: Applying Zero Padding")
+            self.logger.info(f"Step {step}: Applying Zero Padding")
             step += 1
         # get the real frequencies of the FFT
         f = np.fft.rfftfreq(ts.size, d=self.sample_interval)
@@ -376,22 +503,22 @@ class RemoveInstrumentResponse:
         # here we are taking only the real part of the FFT so we cut the window in half
         if self.f_window is not None:
             data = self.apply_f_window(data)
-            print(f"Step {step}: Applying {self.f_window} Frequency Window")
+            self.logger.info(f"Step {step}: Applying {self.f_window} Frequency Window")
             step += 1
         # calibrate the time series, compute real part of fft, divide out channel response, inverse fft
         calibrated_ts = np.fft.irfft(data / cr)[0 : self.ts.size]
-        print(f"Step {step}: Removing Calibration")
+        self.logger.info(f"Step {step}: Removing Calibration")
         step += 1
 
         # If a time window was applied, need to un-apply it to reconstruct the signal.
         if self.t_window is not None:
             w = self.get_window(self.t_window, self.t_window_params, calibrated_ts.size)
             calibrated_ts = calibrated_ts / w
-            print(f"Step {step}: Un-applying Time Window")
+            self.logger.info(f"Step {step}: Un-applying Time Window")
             step += 1
         if self.bandpass:
             calibrated_ts = self.apply_bandpass(calibrated_ts)
-            print(f"Step {step}: Applying Bandpass Filter")
+            self.logger.info(f"Step {step}: Applying Bandpass Filter")
             step += 1
         if self.plot:
             self._subplots(
@@ -522,7 +649,6 @@ def adaptive_notch_filter(
     for notch in notches:
         if notch > freq.max():
             break
-            # print 'Frequency too high, skipping {0}'.format(notch)
         else:
             fspot = int(round(notch / dfn))
             nspot = np.where(
