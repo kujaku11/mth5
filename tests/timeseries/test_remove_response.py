@@ -83,13 +83,11 @@ class TestRemoveResponse(unittest.TestCase):
             self.assertEqual(self.channel.sample_rate, self.calibrated_ts.sample_rate)
 
     def test_calibration(self):
-        normalized_calibrated_ts = self.calibrated_ts.ts / self.calibrated_ts.ts.max()
 
-        normalized_original_ts = self.example_ts - self.example_ts.mean()
-        normalized_original_ts = normalized_original_ts / normalized_original_ts.max()
-        self.assertLessEqual(
-            (normalized_calibrated_ts - normalized_original_ts).std(), 0.1
-        )
+        original_ts = self.example_ts - self.example_ts.mean()
+        std = (self.calibrated_ts.ts - original_ts).std() / original_ts.max()
+        print(std)
+        self.assertLessEqual(std, 0.075)
 
 
 # =============================================================================
