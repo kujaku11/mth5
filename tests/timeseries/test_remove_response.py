@@ -4,7 +4,10 @@ Created on Wed Dec  1 12:18:08 2021
 
 @author: jpeacock
 """
-
+# =============================================================================
+# Imports
+# =============================================================================
+import unittest
 import numpy as np
 from scipy import signal as sps
 
@@ -12,60 +15,89 @@ from mt_metadata.timeseries.filters import PoleZeroFilter
 from mth5.timeseries import ChannelTS
 from mth5.timeseries import ts_filters
 from mth5.utils.exceptions import MTTSError
-
 from matplotlib import pyplot as plt
 
-c = ChannelTS()
-c.sample_rate = 10
-
-n_samples = 4000
-t = np.arange(n_samples) * c.sample_interval
-c.ts = np.sum([np.cos(2*np.pi*w*t + phi) for w, phi in zip(np.logspace(-4, 1, 20), np.random.rand(20))], axis=0)
-
-pz = PoleZeroFilter(units_in="volts", units_out="nanotesla", name="instrument_response")
-pz.poles = [(-6.283185+10.882477j), (-6.283185-10.882477j), (-12.566371+0j)]
-pz.zeros = []
-pz.normalization_factor = 2002.269 
-
-window = sps.windows.hann(n_samples)
-
-c.channel_response_filter.filters_list.append(pz)
-
-ts_npow = ts_filters.zero_pad(c.ts)
-
-f = np.fft.rfftfreq(ts_npow.size, c.sample_interval)
-
-cr = c.channel_response_filter.complex_response(f)
-
-ts_fft = np.fft.rfft(ts_npow) 
-
-ts_calibrated = np.fft.irfft(ts_fft / cr)
-
-ts_bp = ts_filters.butter_bandpass_filter(ts_calibrated, .001, 4.9, c.sample_rate)
-
-# bp_ts = window * calibrated_ts
-
-fig = plt.figure(1)
-
-ax1 = fig.add_subplot(3, 2, 1)
-ax1.plot(t, c.ts)
-
-ax2 = fig.add_subplot(3, 2, 2)
-ax2.loglog(f, np.abs(ts_fft)) 
-
-ax3 = fig.add_subplot(3, 2, 3, sharex=ax1)
-ax3.plot(t, ts_calibrated[0:n_samples])
-
-ax4 = fig.add_subplot(3, 2, 4)
-ax4.loglog(f, np.abs(np.fft.rfft(ts_calibrated)))
-
-ax5 = fig.add_subplot(3, 2, 5, sharex=ax1)
-ax5.plot(t, ts_bp[0:n_samples])
-
-ax6 = fig.add_subplot(3, 2, 6)
-ax6.loglog(f, np.abs(np.fft.rfft(ts_bp)))
-
-plt.show()
+# =============================================================================
+#
+# =============================================================================
 
 
- 
+class TestRemoveResponse(unittest.TestCase):
+    """
+    Test remove response, make a fake signal add some trends, 
+    """
+
+    def setUp(self):
+        # pole zero filter
+        pz = PoleZeroFilter(
+            units_in="volts", units_out="nanotesla", name="instrument_response"
+        )
+        pz.poles = [
+            (-6.283185 + 10.882477j),
+            (-6.283185 - 10.882477j),
+            (-12.566371 + 0j),
+        ]
+        pz.zeros = []
+        pz.normalization_factor = 18244400
+
+        # channel properties
+        self.channel = ChannelTS()
+        self.channel.channel_metadata.filter.applied = [False]
+        self.channel.channel_metadata.filter.name = ["instrument_response"]
+        self.channel.channel_metadata.component = "hx"
+        self.channel.channel_response_filter.filters_list.append(pz)
+        self.channel.sample_rate = 1
+        n_samples = 4096
+        self.t = np.arange(n_samples) * self.channel.sample_interval
+        # make a random signal
+        self.example_ts = np.sum(
+            [
+                np.cos(2 * np.pi * w * self.t + phi)
+                for w, phi in zip(
+                    np.logspace(-4, self.channel.sample_rate / 2, 20),
+                    np.random.rand(20),
+                )
+            ],
+            axis=0,
+        )
+
+        # multiply by filter response
+        f = np.fft.rfftfreq(self.t.size, self.channel.sample_interval)
+        response_ts = np.fft.irfft(
+            np.fft.rfft(self.example_ts) * pz.complex_response(f)[::-1]
+        )
+
+        # add in a linear trend
+        self.channel.ts = (0.3 * self.t) + response_ts
+
+        self.calibrated_ts = self.channel.remove_instrument_response()
+
+    def test_return_type(self):
+        self.assertIsInstance(self.calibrated_ts, ChannelTS)
+
+    def test_applied(self):
+        self.assertTrue(
+            (np.array(self.calibrated_ts.channel_metadata.filter.applied) == True).all()
+        )
+
+    def test_returned_metadata(self):
+        with self.subTest("component"):
+            self.assertEqual(self.channel.component, self.calibrated_ts.component)
+        with self.subTest("sample rate"):
+            self.assertEqual(self.channel.sample_rate, self.calibrated_ts.sample_rate)
+
+    def test_calibration(self):
+        normalized_calibrated_ts = self.calibrated_ts.ts / self.calibrated_ts.ts.max()
+
+        normalized_original_ts = self.example_ts - self.example_ts.mean()
+        normalized_original_ts = normalized_original_ts / normalized_original_ts.max()
+        self.assertLessEqual(
+            (normalized_calibrated_ts - normalized_original_ts).std(), 0.1
+        )
+
+
+# =============================================================================
+# run
+# =============================================================================
+if __name__ == "__main__":
+    unittest.main()

@@ -457,17 +457,17 @@ class RemoveInstrumentResponse:
         # detrend
         if self.detrend:
             ts = self.apply_detrend(ts)
-            self.logger.info(f"Step {step}: Applying Linear Detrend")
+            self.logger.debug(f"Step {step}: Applying Linear Detrend")
             step += 1
         # zero mean
         if self.zero_mean:
             ts = self.apply_zero_mean(ts)
-            self.logger.info(f"Step {step}: Removing Mean")
+            self.logger.debug(f"Step {step}: Removing Mean")
             step += 1
         # filter in time domain
         if self.t_window is not None:
             ts = self.apply_t_window(ts)
-            self.logger.info(f"Step {step}: Applying {self.t_window} Time Window")
+            self.logger.debug(f"Step {step}: Applying {self.t_window} Time Window")
             step += 1
             if self.plot:
                 wax = self.fig.get_axes()[self.subplot_dict["t_window"] - 1].twinx()
@@ -480,7 +480,7 @@ class RemoveInstrumentResponse:
         if self.zero_pad:
             # pad the time series to a power of 2, this may be overkill, especially for long time series
             ts = self.apply_zero_pad(ts)
-            self.logger.info(f"Step {step}: Applying Zero Padding")
+            self.logger.debug(f"Step {step}: Applying Zero Padding")
             step += 1
         # get the real frequencies of the FFT
         f = np.fft.rfftfreq(ts.size, d=self.sample_interval)
@@ -503,22 +503,22 @@ class RemoveInstrumentResponse:
         # here we are taking only the real part of the FFT so we cut the window in half
         if self.f_window is not None:
             data = self.apply_f_window(data)
-            self.logger.info(f"Step {step}: Applying {self.f_window} Frequency Window")
+            self.logger.debug(f"Step {step}: Applying {self.f_window} Frequency Window")
             step += 1
         # calibrate the time series, compute real part of fft, divide out channel response, inverse fft
         calibrated_ts = np.fft.irfft(data / cr)[0 : self.ts.size]
-        self.logger.info(f"Step {step}: Removing Calibration")
+        self.logger.debug(f"Step {step}: Removing Calibration")
         step += 1
 
         # If a time window was applied, need to un-apply it to reconstruct the signal.
         if self.t_window is not None:
             w = self.get_window(self.t_window, self.t_window_params, calibrated_ts.size)
             calibrated_ts = calibrated_ts / w
-            self.logger.info(f"Step {step}: Un-applying Time Window")
+            self.logger.debug(f"Step {step}: Un-applying Time Window")
             step += 1
         if self.bandpass:
             calibrated_ts = self.apply_bandpass(calibrated_ts)
-            self.logger.info(f"Step {step}: Applying Bandpass Filter")
+            self.logger.debug(f"Step {step}: Applying Bandpass Filter")
             step += 1
         if self.plot:
             self._subplots(

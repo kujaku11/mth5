@@ -708,7 +708,14 @@ class ChannelTS:
             **kwargs,
         )
 
-        return remover.remove_instrument_response()
+        calibrated_ts = ChannelTS()
+        calibrated_ts.__dict__.update(self.__dict__)
+        calibrated_ts.ts = remover.remove_instrument_response()
+        calibrated_ts.channel_metadata.filter.applied = [True] * len(
+            self.channel_metadata.filter.applied
+        )
+
+        return calibrated_ts
 
     def get_slice(self, start, end=None, n_samples=None):
         """
