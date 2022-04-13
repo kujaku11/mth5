@@ -9,13 +9,9 @@ Created on Wed Dec  1 12:18:08 2021
 # =============================================================================
 import unittest
 import numpy as np
-from scipy import signal as sps
 
 from mt_metadata.timeseries.filters import PoleZeroFilter
 from mth5.timeseries import ChannelTS
-from mth5.timeseries import ts_filters
-from mth5.utils.exceptions import MTTSError
-from matplotlib import pyplot as plt
 
 # =============================================================================
 #
