@@ -662,19 +662,41 @@ class ChannelTS:
 
     def remove_instrument_response(self, **kwargs):
         """
-        remnove instrument response given the channel response filter
+        Remove instrument response from the given channel response filter
         
-        kwargs include:
+        The order of operations is important (if applied):
             
-            - plot [ True | False ]
-            - detrend  [ True | False ]
-            - zero_mean [ True | False ]
-            - zero_pad [ True | False ]
-            - t_window = None (scipy.signal.windows name)
-            - t_window_params = {} (scipy.signal.windows parameters)
-            - f_window = None (scipy.signal.windows name)
-            - f_window_params = {} (scipy.signal.windows parameters)
-            - bandpass = {} {"low": , "high":, "order":, }
+            1) detrend
+            2) zero mean
+            3) zero pad
+            4) time window
+            5) frequency window
+            6) remove response
+            7) undo time window
+            8) bandpass
+        
+        **kwargs**
+        
+        :param plot: to plot the calibration process [ False | True ]
+        :type plot: boolean, default True 
+        :param detrend: Remove linar trend of the time series
+        :type detrend: boolean, default True 
+        :param zero_mean: Remove the mean of the time series
+        :type zero_mean: boolean, default True 
+        :param zero_pad: pad the time series to the next power of 2 for efficiency
+        :type zero_pad: boolean, default True 
+        :param t_window: Time domain windown name see `scipy.signal.windows` for options
+        :type t_window: string, default None 
+        :param t_window_params: Time domain window parameters, parameters can be 
+        found in `scipy.signal.windows` 
+        :type t_window_params: dictionary
+        :param f_window: Frequency domain windown name see `scipy.signal.windows` for options
+        :type f_window: string, defualt None
+        :param f_window_params: Frequency window parameters, parameters can be 
+        found in `scipy.signal.windows`
+        :type f_window_params: dictionary
+        :param bandpass: bandpass freequency and order {"low":, "high":, "order":,}
+        :type bandpass: dictionary
 
         """
 

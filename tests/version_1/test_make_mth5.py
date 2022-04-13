@@ -146,9 +146,8 @@ class TestMakeMTH5(unittest.TestCase):
                     with self.subTest(name=f"has data NVR08.{run}.{ch}"):
                         x = self.m.get_channel("NVR08", run, ch)
                         self.assertTrue((x.hdf5_dataset[()] != 0).all())
-                        
-            with self.subTest("channel summary"):
-                
+            # with self.subTest("channel summary"):
+
             self.m.close_mth5()
             self.m.filename.unlink()
         except FDSNNoDataException as error:
