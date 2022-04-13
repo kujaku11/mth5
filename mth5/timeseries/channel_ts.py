@@ -31,7 +31,7 @@ from mt_metadata.timeseries.filters import ChannelResponseFilter
 from mth5.utils.exceptions import MTTSError
 from mth5.utils.mth5_logger import setup_logger
 from mth5.utils import fdsn_tools
-from mth5.timeseries import ts_filters
+from mth5.timeseries.ts_filters import RemoveInstrumentResponse
 
 from obspy.core import Trace
 
@@ -61,7 +61,6 @@ def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
         )
         logger.warning(msg)
         sample_rate = 1
-
     if start_time is None:
         msg = (
             f"Need to input a start time. Not {start_time}, "
@@ -70,15 +69,12 @@ def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
         )
         logger.warning(msg)
         start_time = "1980-01-01T00:00:00"
-
     if n_samples < 1:
         msg = f"Need to input a valid n_samples. Not {n_samples}"
         logger.error(msg)
         raise ValueError(msg)
-
     if not isinstance(start_time, MTime):
         start_time = MTime(start_time)
-
     dt_freq = "{0:.0f}N".format(1.0e9 / (sample_rate))
 
     dt_index = pd.date_range(
@@ -181,7 +177,6 @@ class ChannelTS:
             )
             self.logger.error(msg)
             raise ValueError(msg)
-
         if channel_metadata is not None:
             if isinstance(channel_metadata, type(self.channel_metadata)):
                 self.channel_metadata.update(channel_metadata)
@@ -195,7 +190,6 @@ class ChannelTS:
                     channel_metadata = {channel_type: channel_metadata}
                 self.channel_metadata.from_dict(channel_metadata)
                 self.logger.debug("Loading from metadata dict")
-
             else:
                 msg = "input metadata must be type %s or dict, not %s"
                 self.logger.error(
@@ -204,47 +198,39 @@ class ChannelTS:
                 raise MTTSError(
                     msg % (type(self.channel_metadata), type(channel_metadata))
                 )
-
         # add station metadata, this will be important when propogating a single
         # channel such that it can stand alone.
         if station_metadata is not None:
             if isinstance(station_metadata, metadata.Station):
                 self.station_metadata.update(station_metadata)
-
             elif isinstance(station_metadata, dict):
                 if not "station" in [cc.lower() for cc in station_metadata.keys()]:
                     station_metadata = {"Station": station_metadata}
                 self.station_metadata.from_dict(station_metadata)
                 self.logger.debug("Loading from metadata dict")
-
             else:
                 msg = "input metadata must be type {0} or dict, not {1}".format(
                     type(self.station_metadata), type(station_metadata)
                 )
                 self.logger.error(msg)
                 raise MTTSError(msg)
-
         # add run metadata, this will be important when propogating a single
         # channel such that it can stand alone.
         if run_metadata is not None:
             if isinstance(run_metadata, metadata.Run):
                 self.run_metadata.update(run_metadata)
-
             elif isinstance(run_metadata, dict):
                 if not "run" in [cc.lower() for cc in run_metadata.keys()]:
                     run_metadata = {"Run": run_metadata}
                 self.run_metadata.from_dict(run_metadata)
                 self.logger.debug("Loading from metadata dict")
-
             else:
                 msg = "input metadata must be type %s or dict, not %s"
                 self.logger.error(msg, type(self.run_metadata), type(run_metadata))
                 raise MTTSError(msg % (type(self.run_metadata), type(run_metadata)))
-
         # input data
         if data is not None:
             self.ts = data
-
         self._update_xarray_metadata()
 
         for key in list(kwargs.keys()):
@@ -271,15 +257,12 @@ class ChannelTS:
 
         if not isinstance(other, ChannelTS):
             raise ValueError(f"Cannot compare ChannelTS with {type(other)}")
-
         if not other.metadata == self.channel_metadata:
             return False
-
         if self.ts.equals(other.ts) is False:
             msg = "timeseries are not equal"
             self.logger.info(msg)
             return False
-
         return True
 
     def __ne__(self, other):
@@ -288,7 +271,6 @@ class ChannelTS:
     def __lt__(self, other):
         if not isinstance(other, ChannelTS):
             raise ValueError(f"Cannot compare ChannelTS with {type(other)}")
-
         self.logger.info("Only testing start time")
         if other.start < self.start and other.sample_rate == self.sample_rate:
             return True
@@ -312,7 +294,6 @@ class ChannelTS:
         if isinstance(ts_arr, (np.ndarray, list, tuple)):
             if not isinstance(ts_arr, np.ndarray):
                 ts_arr = np.array(ts_arr)
-
             # Validate an input array to make sure its 1D
             if len(ts_arr.shape) == 2:
                 if 1 in ts_arr.shape:
@@ -321,13 +302,11 @@ class ChannelTS:
                     msg = f"Input array must be 1-D array not {ts_arr.shape}"
                     self.logger.error(msg)
                     raise ValueError(msg)
-
             dt = make_dt_coordinates(
                 self.start, self.sample_rate, ts_arr.size, self.logger
             )
             self._ts = xr.DataArray(ts_arr, coords=[("time", dt)], name="ts")
             self._update_xarray_metadata()
-
         elif isinstance(ts_arr, pd.core.frame.DataFrame):
             if isinstance(ts_arr.index[0], pd._libs.tslibs.timestamps.Timestamp):
                 dt = ts_arr.index
@@ -340,7 +319,6 @@ class ChannelTS:
                     ts_arr["data"], coords=[("time", dt)], name="ts"
                 )
                 self._update_xarray_metadata()
-
             except AttributeError:
                 msg = (
                     "Data frame needs to have a column named `data` "
@@ -348,7 +326,6 @@ class ChannelTS:
                 )
                 self.logger.error(msg)
                 raise MTTSError(msg)
-
         elif isinstance(ts_arr, pd.core.series.Series):
             if isinstance(ts_arr.index[0], pd._libs.tslibs.timestamps.Timestamp):
                 dt = ts_arr.index
@@ -356,10 +333,8 @@ class ChannelTS:
                 dt = make_dt_coordinates(
                     self.start, self.sample_rate, ts_arr["data"].size, self.logger,
                 )
-
             self._ts = xr.DataArray(ts_arr.values, coords=[("time", dt)], name="ts")
             self._update_xarray_metadata()
-
         elif isinstance(ts_arr, xr.DataArray):
             # TODO: need to validate the input xarray
             self._ts = ts_arr
@@ -375,13 +350,11 @@ class ChannelTS:
                 station_dict[key.split("station.")[-1]] = meta_dict.pop(key)
             for key in run_keys:
                 run_dict[key.split("run.")[-1]] = meta_dict.pop(key)
-
             self.channel_metadata.from_dict({meta_dict["type"]: meta_dict})
             self.station_metadata.from_dict({"station": station_dict})
             self.run_metadata.from_dict({"run": run_dict})
             # need to run this incase things are different.
             self._update_xarray_metadata()
-
         else:
             msg = (
                 "Data type {0} not supported".format(type(ts_arr))
@@ -389,6 +362,16 @@ class ChannelTS:
                 + "or xarray.DataArray."
             )
             raise MTTSError(msg)
+
+    @property
+    def time_index(self):
+        """
+        time index as a numpy array dtype np.datetime[ns]
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        return self._ts.time.to_numpy()
 
     @property
     def channel_type(self):
@@ -414,7 +397,6 @@ class ChannelTS:
                     + "[ Electrict | Magnetic | Auxiliary ]"
                 )
                 self.logger.error(msg)
-
             for key in self.channel_metadata.to_dict()[
                 self.channel_metadata._class_name
             ].keys():
@@ -467,7 +449,6 @@ class ChannelTS:
                 )
                 self.logger.error(msg)
                 raise MTTSError(msg)
-
         elif self.channel_metadata.type == "magnetic":
             if comp[0].lower() not in ["h", "b"]:
                 msg = (
@@ -476,7 +457,6 @@ class ChannelTS:
                 )
                 self.logger.error(msg)
                 raise MTTSError(msg)
-
         if self.channel_metadata.type == "auxiliary":
             if comp[0].lower() in ["e", "h", "b"]:
                 msg = (
@@ -485,7 +465,6 @@ class ChannelTS:
                 )
                 self.logger.error(msg)
                 raise MTTSError(msg)
-
         self.channel_metadata.component = comp
         self._update_xarray_metadata()
 
@@ -527,7 +506,6 @@ class ChannelTS:
                     / np.timedelta64(1, "s")
                 )
             )
-
         else:
             self.logger.debug("Data has not been set yet, sample rate is from metadata")
             sr = self.channel_metadata.sample_rate
@@ -608,7 +586,6 @@ class ChannelTS:
 
         if not isinstance(start_time, MTime):
             start_time = MTime(start_time)
-
         self.channel_metadata.time_period.start = start_time.iso_str
         if self.has_data:
             if start_time == MTime(self._ts.coords.indexes["time"][0].isoformat()):
@@ -618,11 +595,9 @@ class ChannelTS:
                     start_time, self.sample_rate, self.n_samples, self.logger
                 )
                 self._ts.coords["time"] = new_dt
-
         # make a time series that the data can be indexed by
         else:
             self.logger.debug("No data, just updating metadata start")
-
         self._update_xarray_metadata()
 
     @property
@@ -683,43 +658,35 @@ class ChannelTS:
             )
             self.logger.error(msg)
             raise TypeError(msg)
-
         self._channel_response = value
-        
-    def remove_instrument_response(self, frequencies, bandpass=[.001, 1000]):
+
+    def remove_instrument_response(self, **kwargs):
         """
-        remove instrument response
-        :param frequencies: DESCRIPTION
-        :type frequencies: TYPE
-        :param bandpass: DESCRIPTION, defaults to [.001, 1000]
-        :type bandpass: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
+        remnove instrument response given the channel response filter
+        
+        kwargs include:
+            
+            - plot [ True | False ]
+            - detrend  [ True | False ]
+            - zero_mean [ True | False ]
+            - zero_pad [ True | False ]
+            - t_window = None (scipy.signal.windows name)
+            - t_window_params = {} (scipy.signal.windows parameters)
+            - f_window = None (scipy.signal.windows name)
+            - f_window_params = {} (scipy.signal.windows parameters)
+            - bandpass = {} {"low": , "high":, "order":, }
 
         """
-        
-        npow_ts = ts_filters.zero_pad(self.ts)
-        
-        f = np.fft.rfftfreq(npow_ts.size, self.sample_interval)
-        
-        if self.channel_response.filters_list is []:
-            self.logger.error("There are no filters in channel_response to remove")
-            return
-        
-        cr = self.channel_response_filter.complex_response(f)
-        
-        calibrated_ts = np.fft.rifft(np.fft.rfft(npow_ts) / cr)
-        
-        return calibrated_ts
-        
-            
-            
-            
-        
-        
-        
-        
-        
+
+        remover = RemoveInstrumentResponse(
+            self.ts,
+            self.time_index,
+            self.sample_interval,
+            self.channel_response_filter,
+            **kwargs,
+        )
+
+        return remover.remove_instrument_response()
 
     def get_slice(self, start, end=None, n_samples=None):
         """
@@ -742,23 +709,18 @@ class ChannelTS:
             msg = "Must input either end_time or n_samples."
             self.logger.error(msg)
             raise ValueError(msg)
-
         if n_samples is not None and end is not None:
             msg = "Must input either end_time or n_samples, not both."
             self.logger.error(msg)
             raise ValueError(msg)
-
         if not isinstance(start, MTime):
             start = MTime(start)
-
         if n_samples is not None:
             n_samples = int(n_samples)
             end = start + n_samples / self.sample_rate
-
         if end is not None:
             if not isinstance(end, MTime):
                 end = MTime(end)
-
         new_ts = self._ts.loc[
             (self._ts.indexes["time"] >= start.iso_no_tz)
             & (self._ts.indexes["time"] < end.iso_no_tz)
@@ -794,7 +756,6 @@ class ChannelTS:
 
         if inplace:
             self.ts = new_ts
-
         else:
             new_ts.attrs.update(
                 self.channel_metadata.to_dict()[self.channel_metadata._class_name]
@@ -857,14 +818,12 @@ class ChannelTS:
             msg = f"Input must be obspy.core.Trace, not {type(obspy_trace)}"
             self.logger.error(msg)
             raise MTTSError(msg)
-
         if obspy_trace.stats.channel[1].lower() in ["e", "q"]:
             self.channel_metadata = metadata.Electric()
         elif obspy_trace.stats.channel[1].lower() in ["h", "b", "f"]:
             self.channel_metadata = metadata.Magnetic()
         else:
             self.channel_metadata = metadata.Auxiliary()
-
         mt_code = fdsn_tools.make_mt_channel(
             fdsn_tools.read_channel_code(obspy_trace.stats.channel)
         )
