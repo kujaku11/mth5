@@ -316,7 +316,7 @@ class RemoveInstrumentResponse:
         step = 1
         if self.plot:
             self.subplot_dict = self.get_subplot_count()
-            self.fig = plt.figure(1, figsize=[10, 12])
+            self.fig = plt.figure(figsize=[10, 12])
             self.fig.clf()
             ax = self.fig.add_subplot(self.nrows, 2, 1)
             ax2 = self.fig.add_subplot(self.nrows, 2, 2)
