@@ -28,7 +28,8 @@ class TestFilters(unittest.TestCase):
     Test filters to make sure get out what is put in
     """
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         self.fn = fn_path.joinpath("filter_test.h5")
         self.m_obj = mth5.MTH5(file_version="0.2.0")
         self.m_obj.open_mth5(self.fn, "w")

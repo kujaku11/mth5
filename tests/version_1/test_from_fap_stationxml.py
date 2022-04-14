@@ -27,7 +27,8 @@ class TestFAPMTH5(unittest.TestCase):
 
     """
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         self.translator = XMLInventoryMTExperiment()
         self.experiment = self.translator.xml_to_mt(stationxml_fn=STATIONXML_FAP)
 

@@ -4,10 +4,12 @@ Created on Tue Oct 26 12:46:55 2021
 
 @author: jpeacock
 """
+# =============================================================================
+# Imports
+# =============================================================================
 import unittest
 from pathlib import Path
 import pandas as pd
-import numpy as np
 
 from mth5.clients.make_mth5 import MakeMTH5
 from obspy.clients.fdsn.header import FDSNNoDataException
@@ -26,7 +28,8 @@ class TestMakeMTH5(unittest.TestCase):
 
     """
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
 
         self.make_mth5 = MakeMTH5(mth5_version="0.1.0")
         self.make_mth5.client = "IRIS"

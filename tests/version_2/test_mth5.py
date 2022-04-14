@@ -28,7 +28,8 @@ mth5.helpers.close_open_files()
 
 
 class TestMTH5(unittest.TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         self.fn = fn_path.joinpath("test.mth5")
         self.mth5_obj = mth5.MTH5(file_version="0.2.0")
         self.mth5_obj.open_mth5(self.fn, mode="w")
@@ -158,7 +159,6 @@ class TestMTH5(unittest.TestCase):
                 ch_type = "magnetic"
             else:
                 ch_type = "auxiliary"
-
             meta_dict = {
                 ch_type: {
                     "component": comp,
@@ -174,7 +174,6 @@ class TestMTH5(unittest.TestCase):
                 ch_type, data=np.random.rand(4096), channel_metadata=meta_dict
             )
             ts_list.append(channel_ts)
-
         run_ts = RunTS(ts_list, {"id": "MT002a"})
 
         station = self.mth5_obj.add_station("MT002", survey="test")
@@ -189,7 +188,6 @@ class TestMTH5(unittest.TestCase):
                 self.assertEqual(MTime("2020-01-01T12:00:00"), cg.start)
                 self.assertEqual(1, cg.sample_rate)
                 self.assertEqual(4096, cg.n_samples)
-
         # slicing
 
         with self.subTest("get slice"):
