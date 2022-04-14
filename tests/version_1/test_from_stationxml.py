@@ -26,8 +26,7 @@ class TestFromStationXML01(unittest.TestCase):
     test from a stationxml
     """
 
-    @classmethod
-    def setUpClass(self):
+    def setUp(self):
         self.translator = stationxml.XMLInventoryMTExperiment()
         self.experiment = self.translator.xml_to_mt(stationxml_fn=STATIONXML_01)
 

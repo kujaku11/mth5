@@ -23,8 +23,7 @@ fn_path = Path(__file__).parent
 
 
 class TestTFGroup(unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
+    def setUp(self):
 
         self.maxDiff = None
         self.fn = fn_path.joinpath("test.mth5")

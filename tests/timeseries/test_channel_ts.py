@@ -29,8 +29,7 @@ from mt_metadata import timeseries as metadata
 
 
 class TestChannelTS(unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
+    def setUp(self):
         self.ts = timeseries.ChannelTS("auxiliary")
         self.maxDiff = None
 

@@ -26,8 +26,7 @@ class TestMakeMTH5(unittest.TestCase):
 
     """
 
-    @classmethod
-    def setUpClass(self):
+    def setUp(self):
 
         self.make_mth5 = MakeMTH5(mth5_version="0.2.0")
         self.make_mth5.client = "IRIS"

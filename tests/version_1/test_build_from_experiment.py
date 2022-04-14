@@ -28,8 +28,7 @@ mth5.helpers.close_open_files()
 
 
 class TestMTH5(unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
+    def setUp(self):
         self.maxDiff = None
         self.fn = fn_path.joinpath("test.h5")
         self.mth5_obj = mth5.MTH5(file_version="0.1.0")

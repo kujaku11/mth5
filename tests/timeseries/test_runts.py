@@ -28,8 +28,7 @@ from mt_metadata.utils.mttime import MTime
 # test run
 # =============================================================================
 class TestRunTS(unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
+    def setUp(self):
         self.run = RunTS()
         self.maxDiff = None
         self.start = "2015-01-08T19:49:18+00:00"
