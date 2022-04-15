@@ -761,6 +761,7 @@ class ChannelTS:
             channel_metadata=self.channel_metadata,
             run_metadata=self.run_metadata,
             station_metadata=self.station_metadata,
+            channel_response_filter=self.channel_response_filter,
         )
 
         return new_ch_ts

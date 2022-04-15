@@ -657,22 +657,27 @@ class MTH5:
         )
 
     def _initialize_summary(self):
-        # initiate channel and tf summary datasets
-        self.__hdf5_obj[self._default_root_name].create_dataset(
-            "channel_summary",
-            shape=(1,),
-            maxshape=(None,),
-            dtype=CHANNEL_DTYPE,
-            **self.dataset_options,
-        )
-
-        self.__hdf5_obj[self._default_root_name].create_dataset(
-            "tf_summary",
-            shape=(1,),
-            maxshape=(None,),
-            dtype=TF_DTYPE,
-            **self.dataset_options,
-        )
+        try:
+            # initiate channel and tf summary datasets
+            self.__hdf5_obj[self._default_root_name].create_dataset(
+                "channel_summary",
+                shape=(1,),
+                maxshape=(None,),
+                dtype=CHANNEL_DTYPE,
+                **self.dataset_options,
+            )
+        except ValueError:
+            pass
+        try:
+            self.__hdf5_obj[self._default_root_name].create_dataset(
+                "tf_summary",
+                shape=(1,),
+                maxshape=(None,),
+                dtype=TF_DTYPE,
+                **self.dataset_options,
+            )
+        except ValueError:
+            pass
 
     def validate_file(self):
         """
@@ -1191,7 +1196,6 @@ class MTH5:
                 msg = "Need to input 'survey' for file version %s"
                 self.logger.error(msg, self.file_version)
                 raise ValueError(msg % self.file_version)
-                
             survey = helpers.validate_name(survey)
             run_path = (
                 f"{self._root_path}/Surveys/{survey}/Stations/{station_name}/{run_name}"
