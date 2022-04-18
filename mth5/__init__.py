@@ -14,7 +14,7 @@ from mth5.utils.mth5_logger import setup_logger, load_logging_config
 
 __author__ = """Jared Peacock"""
 __email__ = "jpeacock@usgs.gov"
-__version__ = "0.2.5"
+__version__ = "0.2.6"
 
 
 # =============================================================================

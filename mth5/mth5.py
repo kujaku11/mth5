@@ -621,6 +621,8 @@ class MTH5:
                 self.logger.error(msg)
                 raise MTH5Error(msg)
         # TODO need to add a validation step to check for version and legit file
+        if not "channel_summary" in self.__hdf5_obj[self._root_path].keys():
+            self._initialize_summary()
 
     def _initialize_file(self, mode="w"):
         """
@@ -648,6 +650,13 @@ class MTH5:
                 pass
             m5_grp = getattr(self, f"{group_name.lower()}_group")
             m5_grp.initialize_group()
+        self._initialize_summary()
+
+        self.logger.info(
+            f"Initialized MTH5 {self.file_version} file {self.filename} in mode {mode}"
+        )
+
+    def _initialize_summary(self):
         # initiate channel and tf summary datasets
         self.__hdf5_obj[self._default_root_name].create_dataset(
             "channel_summary",
@@ -663,10 +672,6 @@ class MTH5:
             maxshape=(None,),
             dtype=TF_DTYPE,
             **self.dataset_options,
-        )
-
-        self.logger.info(
-            f"Initialized MTH5 {self.file_version} file {self.filename} in mode {mode}"
         )
 
     def validate_file(self):
@@ -1082,6 +1087,7 @@ class MTH5:
         MTH5Error: MT001 does not exist, check station_list for existing names
 
         """
+        station_name = helpers.validate_name(station_name)
         if self.file_version in ["0.1.0"]:
             return self.stations_group.get_station(station_name)
         elif self.file_version in ["0.2.0"]:
@@ -1089,6 +1095,7 @@ class MTH5:
                 msg = "Need to input 'survey' for file version %s"
                 self.logger.error(msg, self.file_version)
                 raise ValueError(msg % self.file_version)
+            survey = helpers.validate_name(survey)
             sg = self.get_survey(survey)
             return sg.stations_group.get_station(station_name)
 
@@ -1113,7 +1120,7 @@ class MTH5:
         >>> mth5_obj.remove_station('MT001')
 
         """
-
+        station_name = helpers.validate_name(station_name)
         if self.file_version in ["0.1.0"]:
             return self.stations_group.remove_station(station_name)
         elif self.file_version in ["0.2.0"]:
@@ -1121,6 +1128,7 @@ class MTH5:
                 msg = "Need to input 'survey' for file version %s"
                 self.logger.error(msg, self.file_version)
                 raise ValueError(msg % self.file_version)
+            survey = helpers.validate_name(survey)
             sg = self.get_survey(survey)
             return sg.stations_group.remove_station(station_name)
 
@@ -1174,7 +1182,8 @@ class MTH5:
         >>> existing_run = mth5_obj.get_run('MT001', 'MT001a')
 
         """
-
+        station_name = helpers.validate_name(station_name)
+        run_name = helpers.validate_name(run_name)
         if self.file_version in ["0.1.0"]:
             run_path = f"{self._root_path}/Stations/{station_name}/{run_name}"
         elif self.file_version in ["0.2.0"]:
@@ -1182,6 +1191,8 @@ class MTH5:
                 msg = "Need to input 'survey' for file version %s"
                 self.logger.error(msg, self.file_version)
                 raise ValueError(msg % self.file_version)
+                
+            survey = helpers.validate_name(survey)
             run_path = (
                 f"{self._root_path}/Surveys/{survey}/Stations/{station_name}/{run_name}"
             )
@@ -1316,6 +1327,9 @@ class MTH5:
                 sample rate:      4096
 
         """
+        station_name = helpers.validate_name(station_name)
+        run_name = helpers.validate_name(run_name)
+        channel_name = helpers.validate_name(channel_name)
         # ch = f"Survey/Stations/{station_name}/{run_name}/{channel_name}"
         # return groups.ChannelDataset(self.__hdf5_obj[ch])
         return (
@@ -1350,7 +1364,9 @@ class MTH5:
         >>> mth5_obj.remove_channel('MT001', 'MT001a', 'Ex')
 
         """
-
+        station_name = helpers.validate_name(station_name)
+        run_name = helpers.validate_name(run_name)
+        channel_name = helpers.validate_name(channel_name)
         return (
             self.get_station(station_name, survey=survey)
             .get_run(run_name)

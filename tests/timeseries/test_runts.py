@@ -98,13 +98,10 @@ class TestRunTS(unittest.TestCase):
 
         with self.subTest("channels"):
             self.assertListEqual(["ex", "ey", "hx", "hy", "hz"], self.run.channels)
-
         with self.subTest("sample rate"):
             self.assertEqual(self.run.sample_rate, self.sample_rate)
-
         with self.subTest("start"):
             self.assertEqual(self.run.start, MTime(self.start))
-
         with self.subTest("end"):
             self.assertEqual(self.run.end, MTime(self.end))
 
@@ -134,16 +131,12 @@ class TestRunTS(unittest.TestCase):
 
             with self.subTest("isinstance channel"):
                 self.assertIsInstance(ch, ChannelTS)
-
             with self.subTest("sample rate"):
                 self.assertEqual(ch.sample_rate, self.sample_rate)
-
             with self.subTest("start"):
                 self.assertEqual(ch.start, MTime(self.start))
-
             with self.subTest("end"):
                 self.assertEqual(ch.end, MTime(self.end))
-
             with self.subTest("component"):
                 self.assertEqual(ch.component, comp)
 
@@ -161,12 +154,10 @@ class TestRunTS(unittest.TestCase):
 
         with self.subTest("sample rate"):
             self.assertEqual(self.ex.sample_rate, self.run.run_metadata.sample_rate)
-
         with self.subTest("start"):
             self.run.run_metadata.start = "2020-01-01T00:00:00"
             self.run.validate_metadata()
             self.assertEqual(self.run.start, self.run.run_metadata.time_period.start)
-
         with self.subTest("end"):
             self.run.run_metadata.end = "2020-01-01T00:00:00"
             self.run.validate_metadata()
@@ -181,13 +172,10 @@ class TestRunTS(unittest.TestCase):
 
         with self.subTest("isinstance runts"):
             self.assertIsInstance(r_slice, RunTS)
-
         with self.subTest("sample rate"):
             self.assertEqual(r_slice.sample_rate, self.sample_rate)
-
         with self.subTest("start"):
             self.assertEqual(r_slice.start, MTime(start))
-
         # with self.subTest("end"):
         #     self.assertEqual(ch.end, MTime())
 
