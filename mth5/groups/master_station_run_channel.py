@@ -28,11 +28,17 @@ from mt_metadata.utils.mttime import MTime
 from mt_metadata.base import Base
 from mt_metadata.timeseries.filters import ChannelResponseFilter
 
-from mth5 import CHUNK_SIZE
+from mth5 import CHUNK_SIZE, CHANNEL_DTYPE, TF_DTYPE
 from mth5.groups.base import BaseGroup
-from mth5.groups import FiltersGroup
+from mth5.groups import FiltersGroup, TransferFunctionGroup
 from mth5.utils.exceptions import MTH5Error
-from mth5.helpers import to_numpy_type, inherit_doc_string, validate_name
+from mth5.helpers import (
+    to_numpy_type,
+    from_numpy_type,
+    inherit_doc_string,
+    validate_name,
+)
+
 from mth5.timeseries import ChannelTS, RunTS
 from mth5.timeseries.channel_ts import make_dt_coordinates
 from mth5.utils.mth5_logger import setup_logger
@@ -266,7 +272,7 @@ class MasterStationGroup(BaseGroup):
         """
         if station_name is None:
             raise Exception("station name is None, do not know what to name it")
-        
+
         station_name = validate_name(station_name)
         try:
             station_group = self.hdf5_group.create_group(station_name)
@@ -274,7 +280,6 @@ class MasterStationGroup(BaseGroup):
 
             if station_metadata is None:
                 station_metadata = metadata.Station(id=station_name)
-
             else:
                 if validate_name(station_metadata.id) != station_name:
                     msg = (
@@ -292,12 +297,10 @@ class MasterStationGroup(BaseGroup):
 
             # be sure to add a table entry
             # self.summary_table.add_row(station_obj.table_entry)
-
         except ValueError:
             msg = "Station %s already exists, returning existing group."
             self.logger.info(msg, station_name)
             station_obj = self.get_station(station_name)
-
         return station_obj
 
     def get_station(self, station_name):
@@ -331,7 +334,7 @@ class MasterStationGroup(BaseGroup):
                 f"{station_name} does not exist, "
                 + "check station_list for existing names"
             )
-            self.logger.exception(msg)
+            self.logger.debug("Error" + msg)
             raise MTH5Error(msg)
 
     def remove_station(self, station_name):
@@ -358,7 +361,7 @@ class MasterStationGroup(BaseGroup):
             >>> mth5_obj.stations_group.remove_station('MT001')
 
         """
-        
+
         station_name = validate_name(station_name)
         try:
             del self.hdf5_group[station_name]
@@ -373,7 +376,7 @@ class MasterStationGroup(BaseGroup):
                 f"{station_name} does not exist, "
                 + "check station_list for existing names"
             )
-            self.logger.exception(msg)
+            self.logger.debug("Error" + msg)
             raise MTH5Error(msg)
 
 
@@ -547,10 +550,35 @@ class StationGroup(BaseGroup):
             "mth5_type",
         ]
 
+        self._default_subgroup_names = [
+            "Transfer_Functions",
+        ]
+
+    def initialize_group(self, **kwargs):
+        """
+        Initialize group by making a summary table and writing metadata
+
+        """
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        self.write_metadata()
+
+        for group_name in self._default_subgroup_names:
+            self.hdf5_group.create_group(f"{group_name}")
+            m5_grp = getattr(self, f"{group_name.lower()}_group")
+            m5_grp.initialize_group()
+
     @property
     def master_station_group(self):
         """shortcut to master station group"""
         return MasterStationGroup(self.hdf5_group.parent)
+
+    @property
+    def transfer_functions_group(self):
+        """ Convinience method for /Station/Transfer_Functions """
+        return TransferFunctionsGroup(
+            self.hdf5_group["Transfer_Functions"], **self.dataset_options
+        )
 
     @BaseGroup.metadata.getter
     def metadata(self):
@@ -558,9 +586,13 @@ class StationGroup(BaseGroup):
 
         self._metadata.runs = []
         for key in self.groups_list:
-            key_group = self.get_run(key)
-            self._metadata.runs.append(key_group.metadata)
-
+            if key.lower() == "transfer_functions":
+                continue
+            try:
+                key_group = self.get_run(key)
+                self._metadata.runs.append(key_group.metadata)
+            except MTH5Error:
+                self.logger.warning(f"Could not find run {key}")
         return self._metadata
 
     @property
@@ -648,11 +680,10 @@ class StationGroup(BaseGroup):
             try:
                 next_letter = chr(ord(run_list[-1]) + 1)
             except TypeError:
-                try: 
+                try:
                     next_letter = f"{int(run_list[-1]) + 1}"
                 except ValueError:
                     self.logger.info("Could not create a new run name")
-
         return next_letter
 
     def locate_run(self, sample_rate, start):
@@ -670,10 +701,8 @@ class StationGroup(BaseGroup):
 
         if not isinstance(start, MTime):
             start = MTime(start)
-
         if self.run_summary.size < 1:
             return None
-
         sr_find = self.run_summary[
             (self.run_summary.sample_rate == sample_rate)
             & (self.run_summary.start == start)
@@ -708,17 +737,14 @@ class StationGroup(BaseGroup):
                 msg = "Run name %s must be the same as run_metadata.id %s"
                 self.logger.error(msg, run_name, run_metadata.id)
                 raise MTH5Error(msg % (run_name, run_metadata.id))
-
             run_obj = RunGroup(
                 run_group, run_metadata=run_metadata, **self.dataset_options
             )
             run_obj.initialize_group()
-
         except ValueError:
             msg = "run %s already exists, returning existing group."
             self.logger.info(msg, run_name)
             run_obj = self.get_run(run_name)
-
         return run_obj
 
     def get_run(self, run_name):
@@ -733,7 +759,7 @@ class StationGroup(BaseGroup):
         >>> existing_run = station.get_run('MT001')
 
         """
-        
+
         run_name = validate_name(run_name)
         try:
             return RunGroup(self.hdf5_group[run_name], **self.dataset_options)
@@ -741,7 +767,7 @@ class StationGroup(BaseGroup):
             msg = (
                 f"{run_name} does not exist, " + "check groups_list for existing names"
             )
-            self.logger.exception(msg)
+            self.logger.debug("Error" + msg)
             raise MTH5Error(msg)
 
     def remove_run(self, run_name):
@@ -782,7 +808,7 @@ class StationGroup(BaseGroup):
             msg = (
                 f"{run_name} does not exist, " + "check station_list for existing names"
             )
-            self.logger.exception(msg)
+            self.logger.debug("Error" + msg)
             raise MTH5Error(msg)
 
     def validate_station_metadata(self):
@@ -801,6 +827,168 @@ class StationGroup(BaseGroup):
         )
 
         self.write_metadata()
+
+
+# =============================================================================
+# Transfer Functions Group
+# =============================================================================
+class TransferFunctionsGroup(BaseGroup):
+    """
+    Object to hold transfer functions
+    
+    The is the high level group, all transfer functions for the station are
+    held here and each one will have its own TransferFunctionGroup.
+    
+    This has add, get, remove_transfer_function.
+    """
+
+    def __init__(self, group, **kwargs):
+        super().__init__(group, **kwargs)
+
+    def tf_summary(self, as_dataframe=True):
+        """
+        Summary of all transfer functions in this group
+        
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        tf_list = []
+        for tf_id in self.groups_list:
+            tf_group = self.get_transfer_function(tf_id)
+            tf_entry = tf_group.tf_entry
+
+            tf_entry["station_hdf5_reference"][:] = self.hdf5_group.parent.ref
+            tf_entry["station"][:] = self.hdf5_group.parent.attrs["id"]
+            tf_entry["latitude"][:] = self.hdf5_group.parent.attrs["location.latitude"]
+            tf_entry["longitude"][:] = self.hdf5_group.parent.attrs[
+                "location.longitude"
+            ]
+            tf_entry["elevation"][:] = self.hdf5_group.parent.attrs[
+                "location.elevation"
+            ]
+
+            tf_list.append(tf_entry)
+        tf_list = np.array(tf_list)
+
+        if as_dataframe:
+            return pd.DataFrame(tf_list.flatten())
+        return tf_list
+
+    def add_transfer_function(self, name, tf_object=None):
+        """
+        Add a transfer function to the group
+        
+        :param name: name of the transfer function
+        :type name: string
+        :param tf_object: Transfer Function object
+        :type tf_object: :class:`mt_metadata.transfer_function.core.TF`
+        :return: DESCRIPTION
+        :rtype: TYPE
+        
+        >>> from mth5.mth5 import MTH5
+        >>> m = MTH5()
+        >>> m.open_mth5("example.h5", "a")
+        >>> station_group = m.get_station("mt01", survey="test")
+        >>> tf_group = station_group.transfer_functions_group
+        >>> tf_group.add_transfer_function("mt01_4096", tf_object)
+        
+
+        """
+        name = validate_name(name)
+
+        tf_group = TransferFunctionGroup(
+            self.hdf5_group.create_group(name), **self.dataset_options
+        )
+
+        if tf_object is not None:
+            tf_group.from_tf_object(tf_object)
+        return tf_group
+
+    def get_transfer_function(self, tf_id):
+        """
+        Get transfer function from id
+        
+        :param tf_id: name of transfer function
+        :type tf_id: string
+        :return: Transfer function group
+        :rtype: :class:`mth5.groups.TransferFunctionGroup` 
+        
+        >>> from mth5.mth5 import MTH5
+        >>> m = MTH5()
+        >>> m.open_mth5("example.h5", "a")
+        >>> station_group = m.get_station("mt01", survey="test")
+        >>> tf_group = station_group.transfer_functions_group.get_transfer_function("mt01_4096")
+        
+
+        """
+
+        tf_id = validate_name(tf_id)
+        try:
+            return TransferFunctionGroup(self.hdf5_group[tf_id], **self.dataset_options)
+        except KeyError:
+            msg = f"{tf_id} does not exist, " + "check station_list for existing names"
+            self.logger.debug("Error" + msg)
+            raise MTH5Error(msg)
+
+    def remove_transfer_function(self, tf_id):
+        """
+        Remove a transfer function from the group
+        
+        :param tf_id: DESCRIPTION
+        :type tf_id: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+        
+        >>> from mth5.mth5 import MTH5
+        >>> m = MTH5()
+        >>> m.open_mth5("example.h5", "a")
+        >>> station_group = m.get_station("mt01", survey="test")
+        >>> tf_group = station_group.transfer_functions_group
+        >>> tf_group.remove_transfer_function("mt01_4096")
+
+        """
+
+        tf_id = validate_name(tf_id)
+        try:
+            del self.hdf5_group[tf_id]
+            self.logger.info(
+                "Deleting a station does not reduce the HDF5"
+                + "file size it simply remove the reference. If "
+                + "file size reduction is your goal, simply copy"
+                + " what you want into another file."
+            )
+        except KeyError:
+            msg = f"{tf_id} does not exist, " + "check station_list for existing names"
+            self.logger.debug("Error" + msg)
+            raise MTH5Error(msg)
+
+    def get_tf_object(self, tf_id):
+        """
+        This is the function you want to use to get a proper
+        :class:`mt_metadata.transfer_functions.core.TF` object with all the 
+        appropriate metadata.
+        
+        
+        :param tf_id: name of the transfer function to get
+        :type tf_id: string
+        :return: Full transfer function with appropriate metadata
+        :rtype: :class:`mt_metadata.transfer_functions.core.TF`
+        
+        >>> from mth5.mth5 import MTH5
+        >>> m = MTH5()
+        >>> m.open_mth5("example.h5", "a")
+        >>> station_group = m.get_station("mt01", survey="test")
+        >>> tf_group = station_group.transfer_functions_group
+        >>> tf_object = tf_group.get_tf_object("mt01_4096")
+        
+
+        """
+
+        tf_group = self.get_transfer_function(tf_id)
+
+        return tf_group.to_tf_object()
 
 
 # =============================================================================
@@ -1003,7 +1191,6 @@ class RunGroup(BaseGroup):
             ch_group = self.get_channel(ch)
             self._metadata.channels.append(ch_group.metadata)
             self._metadata.hdf5_reference = self.hdf5_group.ref
-
         return self._metadata
 
     @property
@@ -1125,11 +1312,9 @@ class RunGroup(BaseGroup):
         channel_name = validate_name(channel_name.lower())
         for key, value in kwargs.items():
             setattr(self, key, value)
-
         if data is not None:
             if data.size < 1024:
                 chunks = None
-
         try:
             if data is not None:
                 channel_group = self.hdf5_group.create_dataset(
@@ -1140,7 +1325,6 @@ class RunGroup(BaseGroup):
                     maxshape=max_shape,
                     **self.dataset_options,
                 )
-
             # initialize an resizable data array
             # need to set the chunk size to something useful, if the chunk
             # size is 1 this causes performance issues and bloating of the
@@ -1164,10 +1348,12 @@ class RunGroup(BaseGroup):
                                     * channel_metadata.sample_rate
                                 ),
                             )
+                    else:
+                        estimate_size = (1,)
+                        chunks = CHUNK_SIZE
                 else:
                     estimate_size = (1,)
                     chunks = CHUNK_SIZE
-
                 channel_group = self.hdf5_group.create_dataset(
                     channel_name,
                     shape=estimate_size,
@@ -1176,10 +1362,8 @@ class RunGroup(BaseGroup):
                     chunks=chunks,
                     **self.dataset_options,
                 )
-
             if channel_metadata and channel_metadata.component is None:
                 channel_metadata.component = channel_name
-                
             if channel_type.lower() in ["magnetic"]:
                 channel_obj = MagneticDataset(
                     channel_group, dataset_metadata=channel_metadata
@@ -1199,7 +1383,6 @@ class RunGroup(BaseGroup):
                 )
                 self.logger.error(msg)
                 raise MTH5Error(msg)
-
         except (OSError, RuntimeError, ValueError):
             msg = f"channel {channel_name} already exists, returning existing group."
             self.logger.debug(msg)
@@ -1213,12 +1396,10 @@ class RunGroup(BaseGroup):
                 channel_obj.metadata.update(channel_metadata)
                 channel_obj.write_metadata()
                 self.logger.debug("Done with %s", channel_name)
-               
         # need to make sure the channel name is passed.
         if channel_obj.metadata.component is None:
             channel_obj.metadata.component = channel_name
             channel_obj.write_metadata()
-            
         return channel_obj
 
     def get_channel(self, channel_name):
@@ -1265,39 +1446,31 @@ class RunGroup(BaseGroup):
                 ch_metadata = meta_classes["Electric"]()
                 ch_metadata.from_dict({"Electric": ch_dataset.attrs})
                 channel = ElectricDataset(
-                    ch_dataset,
-                    dataset_metadata=ch_metadata,
-                    write_metadata=False,
+                    ch_dataset, dataset_metadata=ch_metadata, write_metadata=False,
                 )
             elif ch_dataset.attrs["mth5_type"].lower() in ["magnetic"]:
                 ch_metadata = meta_classes["Magnetic"]()
                 ch_metadata.from_dict({"Magnetic": ch_dataset.attrs})
                 channel = MagneticDataset(
-                    ch_dataset,
-                    dataset_metadata=ch_metadata,
-                    write_metadata=False,
+                    ch_dataset, dataset_metadata=ch_metadata, write_metadata=False,
                 )
             elif ch_dataset.attrs["mth5_type"].lower() in ["auxiliary"]:
                 ch_metadata = meta_classes["Auxiliary"]()
                 ch_metadata.from_dict({"Auxiliary": ch_dataset.attrs})
                 channel = AuxiliaryDataset(
-                    ch_dataset,
-                    dataset_metadata=ch_metadata,
-                    write_metadata=False,
+                    ch_dataset, dataset_metadata=ch_metadata, write_metadata=False,
                 )
             else:
                 channel = ChannelDataset(ch_dataset)
-
             channel.read_metadata()
 
             return channel
-
         except KeyError:
             msg = (
                 f"{channel_name} does not exist, "
                 + "check groups_list for existing names"
             )
-            self.logger.exception(msg)
+            self.logger.debug("Error" + msg)
             raise MTH5Error(msg)
 
     def remove_channel(self, channel_name):
@@ -1339,7 +1512,7 @@ class RunGroup(BaseGroup):
                 f"{channel_name} does not exist, "
                 + "check groups_list for existing names"
             )
-            self.logger.exception(msg)
+            self.logger.debug("Error" + msg)
             raise MTH5Error(msg)
 
     def to_runts(self, start=None, end=None, n_samples=None):
@@ -1383,7 +1556,6 @@ class RunGroup(BaseGroup):
             msg = f"Input must be a mth5.timeseries.RunTS object not {type(run_ts_obj)}"
             self.logger.error(msg)
             raise MTH5Error(msg)
-
         self.metadata.update(run_ts_obj.run_metadata)
 
         channels = []
@@ -1397,14 +1569,12 @@ class RunGroup(BaseGroup):
                         f"Channel station.id {ch.station_metadata.id} != "
                         + f" group station.id {self.station_group.metadata.id}"
                     )
-
             if ch.run_metadata.id is not None:
                 if ch.run_metadata.id != self.metadata.id:
                     self.logger.warning(
                         f"Channel run.id {ch.run_metadata.id} != "
                         + f" group run.id {self.metadata.id}"
                     )
-
             channels.append(
                 self.add_channel(
                     comp,
@@ -1414,7 +1584,6 @@ class RunGroup(BaseGroup):
                     **kwargs,
                 )
             )
-
         self.validate_run_metadata()
         return channels
 
@@ -1434,7 +1603,6 @@ class RunGroup(BaseGroup):
             msg = f"Input must be a mth5.timeseries.ChannelTS object not {type(channel_ts_obj)}"
             self.logger.error(msg)
             raise MTH5Error(msg)
-
         ch_obj = self.add_channel(
             channel_ts_obj.component,
             channel_ts_obj.channel_metadata.type,
@@ -1452,7 +1620,6 @@ class RunGroup(BaseGroup):
                 self.metadata.channels_recorded_electric.append(
                     channel_ts_obj.component
                 )
-
         elif channel_ts_obj.metadata.type == "magnetic":
             if self.metadata.channels_recorded_magnetic is None:
                 self.metadata.channels_recorded_magnetic = [channel_ts_obj.component]
@@ -1462,7 +1629,6 @@ class RunGroup(BaseGroup):
                 self.metadata.channels_recorded_magnetic.append(
                     channel_ts_obj.component
                 )
-
         elif channel_ts_obj.channel_metadata.type == "auxiliary":
             if self.metadata.channels_recorded_auxiliary is None:
                 self.metadata.channels_recorded_auxiliary = [channel_ts_obj.component]
@@ -1473,7 +1639,6 @@ class RunGroup(BaseGroup):
                 self.metadata.channels_recorded_auxiliary.append(
                     channel_ts_obj.component
                 )
-
         return ch_obj
 
     def validate_run_metadata(self):
@@ -1557,10 +1722,8 @@ class ChannelDataset:
     def __init__(self, dataset, dataset_metadata=None, write_metadata=True, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
-
         if dataset is not None and isinstance(dataset, (h5py.Dataset)):
             self.hdf5_dataset = weakref.ref(dataset)()
-
         self.logger = setup_logger(f"{__name__}.{self._class_name}")
 
         # set metadata to the appropriate class.  Standards is not a
@@ -1571,19 +1734,16 @@ class ChannelDataset:
             self.metadata = meta_classes[self._class_name]()
         except KeyError:
             self.metadata = Base()
-
         if not hasattr(self.metadata, "mth5_type"):
             self._add_base_attributes()
             self.metadata.hdf5_reference = self.hdf5_dataset.ref
             self.metadata.mth5_type = self._class_name
-
         # if the input data set already has filled attributes, namely if the
         # channel data already exists then read them in with our writing back
         if "mth5_type" in list(self.hdf5_dataset.attrs.keys()):
             self.metadata.from_dict(
                 {self.hdf5_dataset.attrs["mth5_type"]: self.hdf5_dataset.attrs}
             )
-
         # if metadata is input, make sure that its the same class type amd write
         # to the hdf5 dataset
         if dataset_metadata is not None:
@@ -1591,7 +1751,6 @@ class ChannelDataset:
                 msg = "metadata must be type metadata.%s not %s"
                 self.logger.error(msg, self._class_name, type(dataset_metadata))
                 raise MTH5Error(msg % self._class_name, type(dataset_metadata))
-
             # load from dict because of the extra attributes for MTH5
             self.metadata.from_dict(dataset_metadata.to_dict())
             self.metadata.hdf5_reference = self.hdf5_dataset.ref
@@ -1600,7 +1759,6 @@ class ChannelDataset:
             # write out metadata to make sure that its in the file.
             if write_metadata:
                 self.write_metadata()
-
         # if the attrs don't have the proper metadata keys yet write them
         if not "mth5_type" in list(self.hdf5_dataset.attrs.keys()):
             self.write_metadata()
@@ -1637,7 +1795,7 @@ class ChannelDataset:
                 "options": [],
                 "alias": [],
                 "example": "<HDF5 Group Reference>",
-                "default": None
+                "default": None,
             },
         )
 
@@ -1680,6 +1838,12 @@ class ChannelDataset:
         return MasterStationGroup(self.hdf5_dataset.parent.parent.parent)
 
     @property
+    def survey_id(self):
+        """shortcut to survey group"""
+
+        return self.hdf5_dataset.parent.parent.parent.parent.attrs["id"]
+
+    @property
     def channel_response_filter(self):
         # get the filters to make a channel response
         filters_group = FiltersGroup(
@@ -1693,7 +1857,6 @@ class ChannelDataset:
             except KeyError:
                 self.logger.warning("Could not locate filter %s", name)
                 continue
-
         return ChannelResponseFilter(filters_list=f_list)
 
     @property
@@ -1776,10 +1939,8 @@ class ChannelDataset:
                 msg = f"{error} Input must be a numpy array not {type(new_data_array)}"
                 self.logger.exception(msg)
                 raise TypeError(msg)
-
         if new_data_array.shape != self.hdf5_dataset.shape:
             self.hdf5_dataset.resize(new_data_array.shape)
-
         self.hdf5_dataset[...] = new_data_array
 
     def extend_dataset(
@@ -1869,7 +2030,6 @@ class ChannelDataset:
             )
             self.logger.error(msg)
             raise MTH5Error(msg)
-
         if not isinstance(new_data_array, np.ndarray):
             try:
                 new_data_array = np.array(new_data_array)
@@ -1877,10 +2037,8 @@ class ChannelDataset:
                 msg = f"{error} Input must be a numpy array not {type(new_data_array)}"
                 self.logger.exception(msg)
                 raise TypeError(msg)
-
         if not isinstance(start_time, MTime):
             start_time = MTime(start_time)
-
         # get end time will need later
         end_time = start_time + (new_data_array.size / sample_rate)
 
@@ -1911,7 +2069,6 @@ class ChannelDataset:
                         )
                         self.logger.error(msg)
                         raise MTH5Error(msg)
-
                     if fill is None:
                         msg = (
                             f"A time gap of {gap} seconds is found "
@@ -1921,7 +2078,6 @@ class ChannelDataset:
                         )
                         self.logger.error(msg)
                         raise MTH5Error(msg)
-
                     # set new start time
                     old_slice = self.time_slice(self.start, end_time=self.end)
                     old_start = self.start.copy()
@@ -1966,15 +2122,12 @@ class ChannelDataset:
                         )
                     elif fill == "nan":
                         fill_value = np.nan
-
                     elif isinstance(fill, (int, float)):
                         fill_value = fill
-
                     else:
                         msg = f"fill value {fill} is not understood"
                         self.logger.error(msg)
                         raise MTH5Error(msg)
-
                     self.logger.info(f"filling data gap with {fill_value}")
                     self.hdf5_dataset[
                         self.get_index_from_time(end_time) : self.get_index_from_time(
@@ -2005,7 +2158,6 @@ class ChannelDataset:
                 self.hdf5_dataset[
                     0 : self.get_index_from_time(end_time)
                 ] = new_data_array
-
         # append data
         elif start_t_diff > 0:
             old_end = self.end.copy()
@@ -2020,7 +2172,6 @@ class ChannelDataset:
                         )
                         self.logger.error(msg)
                         raise MTH5Error(msg)
-
                     if fill is None:
                         msg = (
                             f"A time gap of {gap} seconds is found "
@@ -2030,7 +2181,6 @@ class ChannelDataset:
                         )
                         self.logger.error(msg)
                         raise MTH5Error(msg)
-
                     # resize the existing data to make room for new data
                     self.hdf5_dataset.resize(
                         (
@@ -2066,22 +2216,18 @@ class ChannelDataset:
                         )
                     elif fill == "nan":
                         fill_value = np.nan
-
                     elif isinstance(fill, (int, float)):
                         fill_value = fill
-
                     else:
                         msg = f"fill value {fill} is not understood"
                         self.logger.error(msg)
                         raise MTH5Error(msg)
-
                     self.logger.info(f"filling data gap with {fill_value}")
                     self.hdf5_dataset[
                         self.get_index_from_time(old_end) : self.get_index_from_time(
                             start_time
                         )
                     ] = fill_value
-
             else:
                 # if the new data fits within the extisting time span
                 if end_t_diff < 0:
@@ -2122,13 +2268,13 @@ class ChannelDataset:
         loads from memory (nearly half the size of xarray alone, not sure why)
 
         """
-
         return ChannelTS(
             channel_type=self.metadata.type,
             data=self.hdf5_dataset[()],
             channel_metadata=self.metadata,
             run_metadata=self.run_group.metadata,
             station_metadata=self.station_group.metadata,
+            channel_response_filter=self.channel_response_filter,
         )
 
     def to_xarray(self):
@@ -2229,7 +2375,6 @@ class ChannelDataset:
             msg = f"Input must be a ChannelTS object not {type(channel_ts_obj)}"
             self.logger.error(msg)
             raise TypeError(msg)
-
         if how == "replace":
             self.metadata.from_dict(channel_ts_obj.channel_metadata.to_dict())
             self.replace_dataset(channel_ts_obj.ts)
@@ -2237,7 +2382,6 @@ class ChannelDataset:
             self.metadata.hdf5_reference = self.hdf5_dataset.ref
             self.metadata.mth5_type = self._class_name
             self.write_metadata()
-
         elif how == "extend":
             self.extend_dataset(
                 channel_ts_obj.ts,
@@ -2245,17 +2389,11 @@ class ChannelDataset:
                 channel_ts_obj.sample_rate,
                 fill=fill,
             )
-
         #
         # TODO need to check on metadata.
 
     def from_xarray(
-        self,
-        data_array,
-        how="replace",
-        fill=None,
-        max_gap_seconds=1,
-        fill_window=10,
+        self, data_array, how="replace", fill=None, max_gap_seconds=1, fill_window=10,
     ):
         """
         fill data set from a :class:`xarray.DataArray` object.
@@ -2298,12 +2436,10 @@ class ChannelDataset:
             msg = f"Input must be a xarray.DataArray object not {type(data_array)}"
             self.logger.error(msg)
             raise TypeError(msg)
-
         if how == "replace":
             self.metadata.from_dict({self.metadata._class_name: data_array.attrs})
             self.replace_dataset(data_array.values)
             self.write_metadata()
-
         elif how == "extend":
             self.extend_dataset(
                 data_array.values,
@@ -2311,7 +2447,6 @@ class ChannelDataset:
                 1e9 / data_array.coords.indexes["time"][0].freq.nanos,
                 fill=fill,
             )
-
         # TODO need to check on metadata.
 
     def _get_diff_new_array_start(self, start_time):
@@ -2331,11 +2466,9 @@ class ChannelDataset:
         """
         if not isinstance(start_time, MTime):
             start_time = MTime(start_time)
-
         t_diff = 0
         if start_time != self.start:
             t_diff = start_time - self.start
-
         return t_diff
 
     def _get_diff_new_array_end(self, end_time):
@@ -2355,11 +2488,9 @@ class ChannelDataset:
         """
         if not isinstance(end_time, MTime):
             end_time = MTime(end_time)
-
         t_diff = 0
         if end_time != self.end:
             t_diff = end_time - self.end
-
         return t_diff
 
     @property
@@ -2402,11 +2533,12 @@ class ChannelDataset:
         return np.array(
             [
                 (
-                    self.station_group.metadata.id,
-                    self.run_group.metadata.id,
-                    self.station_group.metadata.location.latitude,
-                    self.station_group.metadata.location.longitude,
-                    self.station_group.metadata.location.elevation,
+                    self.survey_id,
+                    self.hdf5_dataset.parent.parent.attrs["id"],
+                    self.hdf5_dataset.parent.attrs["id"],
+                    self.hdf5_dataset.parent.parent.attrs["location.latitude"],
+                    self.hdf5_dataset.parent.parent.attrs["location.longitude"],
+                    self.hdf5_dataset.parent.parent.attrs["location.elevation"],
                     self.metadata.component,
                     self.metadata.time_period.start,
                     self.metadata.time_period.end,
@@ -2417,35 +2549,15 @@ class ChannelDataset:
                     self.metadata.measurement_tilt,
                     self.metadata.units,
                     self.hdf5_dataset.ref,
+                    self.hdf5_dataset.parent.ref,
+                    self.hdf5_dataset.parent.parent.ref,
                 )
             ],
-            dtype=np.dtype(
-                [
-                    ("station", "U10"),
-                    ("run", "U11"),
-                    ("latitude", float),
-                    ("longitude", float),
-                    ("elevation", float),
-                    ("component", "U20"),
-                    ("start", "datetime64[ns]"),
-                    ("end", "datetime64[ns]"),
-                    ("n_samples", int),
-                    ("sample_rate", float),
-                    ("measurement_type", "U12"),
-                    ("azimuth", float),
-                    ("tilt", float),
-                    ("units", "U25"),
-                    ("hdf5_reference", h5py.ref_dtype),
-                ]
-            ),
+            dtype=CHANNEL_DTYPE,
         )
 
     def time_slice(
-        self,
-        start,
-        end=None,
-        n_samples=None,
-        return_type="channel_ts",
+        self, start, end=None, n_samples=None, return_type="channel_ts",
     ):
         """
         Get a time slice from the channel and return the appropriate type
@@ -2506,36 +2618,29 @@ class ChannelDataset:
 
         if not isinstance(start, MTime):
             start = MTime(start)
-
         if end is not None:
             if not isinstance(end, MTime):
                 end = MTime(end)
-
         if n_samples is not None:
             n_samples = int(n_samples)
-
         if n_samples is None and end is None:
             msg = "Must input either end_time or n_samples."
             self.logger.error(msg)
             raise ValueError(msg)
-
         if n_samples is not None and end is not None:
             msg = "Must input either end_time or n_samples, not both."
             self.logger.error(msg)
             raise ValueError(msg)
-
         # if end time is given
         if end is not None and n_samples is None:
             start_index = self.get_index_from_time(start)
             end_index = self.get_index_from_time(end)
             npts = int(end_index - start_index)
-
         # if n_samples are given
         elif end is None and n_samples is not None:
             start_index = self.get_index_from_time(start)
             end_index = start_index + n_samples
             npts = n_samples
-
         if npts > self.hdf5_dataset.size or end_index > self.hdf5_dataset.size:
             msg = (
                 "Requested slice is larger than data.  "
@@ -2544,10 +2649,14 @@ class ChannelDataset:
             )
             self.logger.error(msg)
             raise ValueError(msg)
-
         # create a regional reference that can be used, need +1 to be inclusive
-        regional_ref = self.hdf5_dataset.regionref[start_index : end_index + 1]
-
+        try:
+            regional_ref = self.hdf5_dataset.regionref[start_index : end_index + 1]
+        except (OSError, RuntimeError):
+            self.logger.debug(
+                "file is in read mode cannot set an internal reference, using index values"
+            )
+            regional_ref = slice(start_index, end_index)
         dt_index = make_dt_coordinates(start, self.sample_rate, npts, self.logger)
 
         meta_dict = self.metadata.to_dict()[self.metadata._class_name]
@@ -2561,16 +2670,13 @@ class ChannelDataset:
                 self.hdf5_dataset[regional_ref], coords=[("time", dt_index)]
             )
             data.attrs.update(meta_dict)
-
         elif return_type == "pandas":
             data = pd.DataFrame(
                 {"data": self.hdf5_dataset[regional_ref]}, index=dt_index
             )
             data.attrs.update(meta_dict)
-
         elif return_type == "numpy":
             data = self.hdf5_dataset[regional_ref]
-
         elif return_type == "channel_ts":
             data = ChannelTS(
                 self.metadata.type,
@@ -2581,7 +2687,6 @@ class ChannelDataset:
             msg = "return_type not understood, must be [ pandas | numpy | channel_ts ]"
             self.logger.error(msg)
             raise ValueError(msg)
-
         return data
 
     def get_index_from_time(self, given_time):
@@ -2597,7 +2702,6 @@ class ChannelDataset:
 
         if not isinstance(given_time, MTime):
             given_time = MTime(given_time)
-
         index = (
             given_time - self.metadata.time_period.start
         ) * self.metadata.sample_rate

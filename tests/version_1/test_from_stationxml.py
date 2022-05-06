@@ -8,6 +8,9 @@ Created on Wed Mar 10 13:05:54 2021
 :license: MIT
 
 """
+# =============================================================================
+#  Imports
+# =============================================================================
 import unittest
 from pathlib import Path
 from mth5 import mth5
@@ -15,6 +18,7 @@ from mt_metadata.timeseries import stationxml
 from mt_metadata import STATIONXML_01
 
 fn_path = Path(__file__).parent
+# =============================================================================
 
 
 class TestFromStationXML01(unittest.TestCase):
@@ -29,50 +33,50 @@ class TestFromStationXML01(unittest.TestCase):
         self.fn = fn_path.joinpath("from_stationxml.h5")
         if self.fn.exists():
             self.fn.unlink()
-
         self.m = mth5.MTH5(file_version="0.1.0")
         self.m.open_mth5(self.fn)
         self.m.from_experiment(self.experiment, 0)
 
     def test_groups(self):
-        with self.subTest(msg="Survey"):
+
+        with self.subTest("has Survey"):
             self.assertEqual(self.m.has_group("Survey"), True)
-        with self.subTest(msg="Stations"):
+        with self.subTest("has SStations"):
             self.assertEqual(self.m.has_group("Survey/Stations"), True)
-        with self.subTest(msg="cas04"):
+        with self.subTest("has CAS04"):
             self.assertEqual(self.m.has_group("Survey/Stations/CAS04"), True)
-        with self.subTest(msg="run 001"):
+        with self.subTest("has run 001"):
             self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001"), True)
-        with self.subTest(msg="ey"):
+        with self.subTest("has channel ey"):
             self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001/ey"), True)
-        with self.subTest(msg="ex"):
-           self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001/hy"), True)
+        with self.subTest("has channel hy"):
+            self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001/hy"), True)
 
     def test_survey_metadata(self):
-        with self.subTest(msg="id"):
+        with self.subTest("has network ZU"):
             self.assertEqual(self.m.survey_group.metadata.fdsn.network, "ZU")
-        
-        with self.subTest(msg="start"):
+        with self.subTest("test start"):
             self.assertEqual(
                 self.m.survey_group.metadata.time_period.start_date, "2020-01-01"
             )
-        with self.subTest(msg="end"):
+        with self.subTest("test end"):
             self.assertEqual(
                 self.m.survey_group.metadata.time_period.end_date, "2023-12-31"
             )
-        with self.subTest(msg="summary"):
+        with self.subTest("survey summary"):
+
             self.assertEqual(
                 self.m.survey_group.metadata.summary,
                 "USMTArray South Magnetotelluric Time Series (USMTArray CONUS South-USGS)",
             )
-        with self.subTest(msg="doi"):
+        with self.subTest("doi"):
             self.assertEqual(
                 self.m.survey_group.metadata.citation_dataset.doi, "10.7914/SN/ZU_2020"
             )
 
     def test_station_metadata(self):
         station_dict = {
-            "acquired_by.author": None,
+            "acquired_by.author": "none",
             "channels_recorded": [],
             "data_type": "BBMT",
             "fdsn.id": "CAS04",
@@ -85,9 +89,9 @@ class TestFromStationXML01(unittest.TestCase):
             "location.latitude": 37.633351,
             "location.longitude": -121.468382,
             "mth5_type": "Station",
-            "orientation.method": "compass",
+            "orientation.method": None,
             "orientation.reference_frame": "geographic",
-            "provenance.software.author": None,
+            "provenance.software.author": "none",
             "provenance.software.name": None,
             "provenance.software.version": None,
             "provenance.submitter.author": None,
@@ -100,7 +104,7 @@ class TestFromStationXML01(unittest.TestCase):
 
         m_station = self.m.get_station(station_dict["id"]).metadata
         for key, true_value in station_dict.items():
-            with self.subTest(msg=key):
+            with self.subTest(key):
                 self.assertEqual(true_value, m_station.get_attr_from_name(key))
 
     def test_run_metadata(self):
@@ -114,7 +118,7 @@ class TestFromStationXML01(unittest.TestCase):
 
         m_run = self.m.get_run("CAS04", run_dict["id"]).metadata
         for key, true_value in run_dict.items():
-            with self.subTest(msg=key):
+            with self.subTest(key):
                 self.assertEqual(true_value, m_run.get_attr_from_name(key))
 
     def test_ey_metadata(self):
@@ -138,7 +142,7 @@ class TestFromStationXML01(unittest.TestCase):
 
         m_ch = self.m.get_channel("CAS04", "001", "ey").metadata
         for key, true_value in ch_dict.items():
-            with self.subTest(msg=key):
+            with self.subTest(key):
                 self.assertEqual(true_value, m_ch.get_attr_from_name(key))
 
     def test_hy_metadata(self):
@@ -158,6 +162,15 @@ class TestFromStationXML01(unittest.TestCase):
         for key, true_value in ch_dict.items():
             with self.subTest(msg=key):
                 self.assertEqual(true_value, m_ch.get_attr_from_name(key))
+
+    def test_filters(self):
+
+        for f_name in self.experiment.surveys[0].filters.keys():
+            with self.subTest(f_name):
+                exp_filter = self.experiment.surveys[0].filters[f_name]
+                h5_filter = self.m.survey_group.filters_group.to_filter_object(f_name)
+
+                self.assertTrue(exp_filter, h5_filter)
 
     def tearDown(self):
         self.m.close_mth5()

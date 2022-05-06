@@ -66,7 +66,6 @@ class TestChannelTS(unittest.TestCase):
         )
         with self.subTest(name="component in metadata"):
             self.assertEqual(self.ts.channel_metadata.component, "ex")
-
         with self.subTest(name="compnent in attrs"):
             self.assertEqual(self.ts._ts.attrs["component"], "ex")
 
@@ -83,12 +82,10 @@ class TestChannelTS(unittest.TestCase):
                 self.ts._ts.coords.to_index()[0].isoformat(),
                 self.ts.channel_metadata.time_period._start_dt.iso_no_tz,
             )
-
         with self.subTest(name="has index"):
             self.assertEqual(
                 self.ts._ts.coords.to_index()[-1].isoformat(), end.iso_no_tz
             )
-
         with self.subTest(name="has n samples"):
             self.assertEqual(self.ts.n_samples, 4096)
 
@@ -112,12 +109,10 @@ class TestChannelTS(unittest.TestCase):
                 self.ts._ts.coords.to_index()[0].isoformat(),
                 self.ts.channel_metadata.time_period._start_dt.iso_no_tz,
             )
-
         with self.subTest(name="has index"):
             self.assertEqual(
                 self.ts._ts.coords.to_index()[-1].isoformat(), end.iso_no_tz
             )
-
         with self.subTest(name="has n samples"):
             self.assertEqual(self.ts.n_samples, 4096)
 
@@ -135,12 +130,10 @@ class TestChannelTS(unittest.TestCase):
                 self.ts._ts.coords.to_index()[0].isoformat(),
                 self.ts.channel_metadata.time_period._start_dt.iso_no_tz,
             )
-
         with self.subTest(name="has index"):
             self.assertEqual(
                 self.ts._ts.coords.to_index()[-1].isoformat(), end.iso_no_tz
             )
-
         with self.subTest(name="has n samples"):
             self.assertEqual(self.ts.n_samples, 4096)
 
@@ -159,10 +152,8 @@ class TestChannelTS(unittest.TestCase):
                 self.ts._ts.coords.to_index()[0].isoformat(),
                 self.ts.channel_metadata.time_period._start_dt.iso_no_tz,
             )
-
         with self.subTest(name="sample rate"):
             self.assertEqual(self.ts.sample_rate, 4096.0)
-
         with self.subTest(name="has n samples"):
             self.assertEqual(self.ts.n_samples, n_samples)
 
@@ -187,7 +178,6 @@ class TestChannelTS(unittest.TestCase):
 
         with self.subTest(name="sample_interval"):
             self.assertEqual(self.ts.sample_interval, 1.0 / 16.0)
-
         self.ts.sample_rate = 8
         self.assertEqual(self.ts.sample_rate, 8.0)
         self.assertEqual(self.ts.n_samples, 4096)
@@ -244,7 +234,6 @@ class TestChannelTS(unittest.TestCase):
         with self.subTest(name="nsamples"):
             new_ts = self.ts.get_slice("2020-01-01T12:00:00", n_samples=48)
             self.assertEqual(new_ts.ts.size, 48)
-
         with self.subTest(name="end time"):
             new_ts = self.ts.get_slice("2020-01-01T12:00:00", end="2020-01-01T12:00:03")
             self.assertEqual(new_ts.ts.size, 48)

@@ -48,19 +48,21 @@ class TestMTH5(unittest.TestCase):
 
     def test_default_group_names(self):
         groups = sorted(self.mth5_obj.survey_group.groups_list)
-        defaults = sorted(self.mth5_obj._default_subgroup_names)
+        defaults = sorted(
+            self.mth5_obj._default_subgroup_names + ["channel_summary", "tf_summary"]
+        )
 
         self.assertListEqual(defaults, groups)
-        
+
     def test_filename(self):
         self.assertIsInstance(self.mth5_obj.filename, Path)
-        
+
     def test_is_read(self):
         self.assertEqual(self.mth5_obj.h5_is_read(), True)
-        
+
     def test_is_write(self):
         self.assertEqual(self.mth5_obj.h5_is_write(), True)
-        
+
     def test_validation(self):
         self.assertEqual(self.mth5_obj.validate_file(), True)
 
@@ -147,7 +149,6 @@ class TestMTH5(unittest.TestCase):
                 ch_type = "magnetic"
             else:
                 ch_type = "auxiliary"
-
             meta_dict = {
                 ch_type: {
                     "component": comp,
@@ -163,7 +164,6 @@ class TestMTH5(unittest.TestCase):
                 ch_type, data=np.random.rand(4096), channel_metadata=meta_dict
             )
             ts_list.append(channel_ts)
-
         run_ts = RunTS(ts_list, {"id": "MT002a"})
 
         station = self.mth5_obj.add_station("MT002")
@@ -177,7 +177,6 @@ class TestMTH5(unittest.TestCase):
             self.assertEqual(MTime("2020-01-01T12:00:00"), cg.start)
             self.assertEqual(1, cg.sample_rate)
             self.assertEqual(4096, cg.n_samples)
-
         # check the summary table
 
     def tearDown(self):

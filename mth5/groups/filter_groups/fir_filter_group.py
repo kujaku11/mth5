@@ -66,9 +66,7 @@ class FIRGroup(BaseGroup):
 
         # create datasets for the poles and zeros
         fir_ds = fir_filter_group.create_dataset(
-            "coefficients",
-            coefficients.shape,
-            **self.dataset_options,
+            "coefficients", coefficients.shape, **self.dataset_options,
         )
 
         fir_ds[:] = coefficients
@@ -113,9 +111,7 @@ class FIRGroup(BaseGroup):
                 input_dict[k] = str(v)
 
         fir_group = self.add_filter(
-            fir_object.name,
-            fir_object.coefficients,
-            input_dict,
+            fir_object.name, fir_object.coefficients, input_dict,
         )
         return fir_group
 

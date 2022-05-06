@@ -4,12 +4,10 @@
 
 from setuptools import setup, find_packages
 
-with open("README.rst") as readme_file:
+with open("README.md") as readme_file:
     readme = readme_file.read()
-
 with open("HISTORY.rst") as history_file:
     history = history_file.read()
-
 requirements = [
     "h5py",
     "matplotlib",
@@ -50,6 +48,7 @@ setup(
     install_requires=requirements,
     license="MIT license",
     long_description=readme + "\n\n" + history,
+    long_description_content_type="text/markdown",
     include_package_data=True,
     keywords="mth5",
     name="mth5",
@@ -58,6 +57,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/kujaku11/mth5",
-    version="0.2.4",
+    version="0.2.6",
     zip_safe=False,
 )

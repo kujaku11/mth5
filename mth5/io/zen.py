@@ -417,6 +417,7 @@ class Z3DMetadata:
         self.ch_number = None
         self.ch_xyz1 = None
         self.ch_xyz2 = None
+        self.ch_cres = None
         self.gdp_operator = None
         self.gdp_progver = None
         self.job_by = None
@@ -536,9 +537,7 @@ class Z3DMetadata:
                     coil_num = test_list[1].split("|")[1]
                     coil_key, coil_value = coil_num.split("=")
                     setattr(
-                        self,
-                        coil_key.replace(".", "_").lower(),
-                        coil_value.strip(),
+                        self, coil_key.replace(".", "_").lower(), coil_value.strip(),
                     )
                     for t_str in test_list[2:]:
                         if "\x00" in t_str:
@@ -1298,10 +1297,7 @@ class Z3D:
             while True:
                 # need to make sure the last block read is a multiple of 32 bit
                 read_len = min(
-                    [
-                        self._block_len,
-                        int(32 * ((file_size - file_id.tell()) // 32)),
-                    ]
+                    [self._block_len, int(32 * ((file_size - file_id.tell()) // 32)),]
                 )
                 test_str = np.frombuffer(file_id.read(read_len), dtype=np.int32)
                 if len(test_str) == 0:
@@ -1616,5 +1612,10 @@ def read_z3d(fn, logger_file_handler=None):
     z3d_obj = Z3D(fn)
     if logger_file_handler:
         z3d_obj.logger.addHandler(logger_file_handler)
-    z3d_obj.read_z3d()
+    try:
+        z3d_obj.read_z3d()
+    except ZenGPSError as error:
+        z3d_obj.logger.exception(error)
+        z3d_obj.logger.warning(f"Skipping {fn}, check file for GPS timing.")
+        return None
     return z3d_obj.to_channelts()

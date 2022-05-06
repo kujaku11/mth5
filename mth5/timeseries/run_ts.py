@@ -235,7 +235,9 @@ class RunTS:
                     self.logger.warning(msg)
                 self.run_metadata.time_period.end = self.end.iso_str
             if self.sample_rate != self.run_metadata.sample_rate:
-                if self.run_metadata.sample_rate is not None:
+                if self.run_metadata.sample_rate == 0.0:
+                    pass
+                elif self.run_metadata.sample_rate is not None:
                     msg = (
                         f"sample rate of dataset {self.sample_rate} does not "
                         f"match metadata sample rate {self.run_metadata.sample_rate} "

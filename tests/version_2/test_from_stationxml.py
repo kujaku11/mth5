@@ -71,7 +71,7 @@ class TestFromStationXML01(unittest.TestCase):
 
     def test_station_metadata(self):
         station_dict = {
-            "acquired_by.author": None,
+            "acquired_by.author": "none",
             "channels_recorded": [],
             "data_type": "BBMT",
             "fdsn.id": "CAS04",
@@ -84,9 +84,9 @@ class TestFromStationXML01(unittest.TestCase):
             "location.latitude": 37.633351,
             "location.longitude": -121.468382,
             "mth5_type": "Station",
-            "orientation.method": "compass",
+            "orientation.method": None,
             "orientation.reference_frame": "geographic",
-            "provenance.software.author": None,
+            "provenance.software.author": "none",
             "provenance.software.name": None,
             "provenance.software.version": None,
             "provenance.submitter.author": None,

@@ -201,6 +201,65 @@ def to_numpy_type(value):
         raise TypeError("Type {0} not understood".format(type(value)))
 
 
+def validate_name(name):
+    """
+    make sure the name has no spaces or slashes
+    
+    :param name: DESCRIPTION
+    :type name: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+    
+    return name.replace(" ", "_").replace("/", "_")
+
+def from_numpy_type(value):
+    """
+    Need to make the attributes friendly with Numpy and HDF5.
+
+    For numbers and bool this is straight forward they are automatically
+    mapped in h5py to a numpy type.
+
+    But for strings this can be a challenge, especially a list of strings.
+
+    HDF5 should only deal with ASCII characters or Unicode.  No binary data
+    is allowed.
+    """
+
+    if value is None:
+        return "none"
+    # For now turn references into a generic string
+    if isinstance(value, h5py.h5r.Reference):
+        value = str(value)
+
+    if isinstance(
+        value,
+        (
+            str,
+            np.str_,
+            int,
+            float,
+            bool,
+            complex,
+            np.int_,
+            np.float_,
+            np.bool_,
+            np.complex_,
+        ),
+    ):
+        return value
+
+    if isinstance(value, Iterable):
+        if np.any([type(x) in [bytes, np.bytes_] for x in value]):
+            return np.array(value, dtype="U").tolist()
+        else:
+            return np.array(value).tolist()
+
+    else:
+        raise TypeError("Type {0} not understood".format(type(value)))
+
+
 # =============================================================================
 #
 # =============================================================================
@@ -210,6 +269,7 @@ def inherit_doc_string(cls):
             cls.__doc__ = base.__doc__
             break
     return cls
+
 
 def validate_name(name, pattern=None):
     """
@@ -223,5 +283,6 @@ def validate_name(name, pattern=None):
     :rtype: TYPE
 
     """
-    
+    if name is None:
+        return "unknown"
     return name.replace(" ", "_")
