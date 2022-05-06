@@ -4,7 +4,7 @@ from mth5.mth5 import MTH5
 from mth5.helpers import close_open_files
 
 
-def initialize_mth5(h5_path, mode="w", file_version="0.1.0"):
+def initialize_mth5(h5_path, mode="a", file_version="0.1.0"):
     """
     mth5 initializer for the case of writting files.
     Parameters
