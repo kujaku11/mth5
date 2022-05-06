@@ -4,10 +4,12 @@ Created on Tue Oct 26 12:46:55 2021
 
 @author: jpeacock
 """
+# =============================================================================
+# Imports
+# =============================================================================
 import unittest
 from pathlib import Path
 import pandas as pd
-import numpy as np
 
 from mth5.clients.make_mth5 import MakeMTH5
 from obspy.clients.fdsn.header import FDSNNoDataException

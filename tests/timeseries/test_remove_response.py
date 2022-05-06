@@ -23,7 +23,8 @@ class TestRemoveResponse(unittest.TestCase):
     Test remove response, make a fake signal add some trends, 
     """
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         # pole zero filter
         pz = PoleZeroFilter(
             units_in="volts", units_out="nanotesla", name="instrument_response"
@@ -86,7 +87,6 @@ class TestRemoveResponse(unittest.TestCase):
 
         original_ts = self.example_ts - self.example_ts.mean()
         std = (self.calibrated_ts.ts - original_ts).std() / original_ts.max()
-        print(std)
         self.assertLessEqual(std, 0.075)
 
 

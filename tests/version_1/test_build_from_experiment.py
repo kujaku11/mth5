@@ -118,13 +118,10 @@ class TestMTH5(unittest.TestCase):
 
         with self.subTest("test shape"):
             self.assertEqual(self.mth5_obj.channel_summary.shape, (25,))
-
         with self.subTest("test nrows"):
             self.assertEqual(self.mth5_obj.channel_summary.nrows, 25)
-
         with self.subTest(("test dtype")):
             self.assertEqual(self.mth5_obj.channel_summary.dtype, CHANNEL_DTYPE)
-
         with self.subTest("test station"):
             self.assertTrue(
                 (self.mth5_obj.channel_summary.array["station"] == b"REW09").all()
@@ -158,7 +155,6 @@ class TestUpdateFromExperiment(unittest.TestCase):
             self.assertEqual(
                 self.mth5_obj.survey_group.metadata.id, self.experiment_02.surveys[0].id
             )
-
         with self.subTest("new_location"):
             st = self.mth5_obj.get_station("REW09")
             self.assertEqual(

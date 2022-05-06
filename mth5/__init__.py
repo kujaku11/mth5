@@ -14,7 +14,7 @@ from mth5.utils.mth5_logger import setup_logger, load_logging_config
 
 __author__ = """Jared Peacock"""
 __email__ = "jpeacock@usgs.gov"
-__version__ = "0.2.5"
+__version__ = "0.2.6"
 
 
 # =============================================================================
@@ -59,8 +59,8 @@ CHANNEL_DTYPE = dtype = np.dtype(
         ("longitude", float),
         ("elevation", float),
         ("component", "S20"),
-        ("start", "S34"),
-        ("end", "S34"),
+        ("start", "S36"),
+        ("end", "S36"),
         ("n_samples", int),
         ("sample_rate", float),
         ("measurement_type", "S30"),

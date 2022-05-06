@@ -149,7 +149,6 @@ class TestMTH5(unittest.TestCase):
                 ch_type = "magnetic"
             else:
                 ch_type = "auxiliary"
-
             meta_dict = {
                 ch_type: {
                     "component": comp,
@@ -165,7 +164,6 @@ class TestMTH5(unittest.TestCase):
                 ch_type, data=np.random.rand(4096), channel_metadata=meta_dict
             )
             ts_list.append(channel_ts)
-
         run_ts = RunTS(ts_list, {"id": "MT002a"})
 
         station = self.mth5_obj.add_station("MT002")
@@ -179,7 +177,6 @@ class TestMTH5(unittest.TestCase):
             self.assertEqual(MTime("2020-01-01T12:00:00"), cg.start)
             self.assertEqual(1, cg.sample_rate)
             self.assertEqual(4096, cg.n_samples)
-
         # check the summary table
 
     def tearDown(self):
