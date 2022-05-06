@@ -123,23 +123,23 @@ class TestMakeMTH5(unittest.TestCase):
                 self.metadata_df, self.mth5_path, interact=True
             )
 
-            sg = self.m.get_survey("CONUS_SoCal")
+            sg = self.m.get_survey("CONUS_South")
             with self.subTest(name="stations"):
                 self.assertListEqual(self.stations, sg.stations_group.groups_list)
             with self.subTest(name="CAS04_runs"):
                 self.assertListEqual(
                     ["Transfer_Functions", "a", "b", "c", "d"],
-                    self.m.get_station("CAS04", "CONUS_SoCal").groups_list,
+                    self.m.get_station("CAS04", "CONUS_South").groups_list,
                 )
             for run in ["a", "b", "c", "d"]:
                 for ch in ["ex", "ey", "hx", "hy", "hz"]:
                     with self.subTest(name=f"has data CAS04.{run}.{ch}"):
-                        x = self.m.get_channel("CAS04", run, ch, "CONUS_SoCal")
+                        x = self.m.get_channel("CAS04", run, ch, "CONUS_South")
                         self.assertTrue(abs(x.hdf5_dataset[()].mean()) > 0)
             for run in ["a", "b", "c"]:
                 for ch in ["ex", "ey", "hx", "hy", "hz"]:
                     with self.subTest(name=f"has data NVR08.{run}.{ch}"):
-                        x = self.m.get_channel("NVR08", run, ch, "CONUS_SoCal")
+                        x = self.m.get_channel("NVR08", run, ch, "CONUS_South")
                         self.assertTrue(abs(x.hdf5_dataset[()].mean()) > 0)
             self.m.close_mth5()
             self.m.filename.unlink()
