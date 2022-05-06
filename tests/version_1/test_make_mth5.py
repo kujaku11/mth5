@@ -12,6 +12,7 @@ from pathlib import Path
 import pandas as pd
 
 from mth5.clients.make_mth5 import MakeMTH5
+from mth5.clients.fdsn import FDSN
 from obspy.clients.fdsn.header import FDSNNoDataException
 from mth5.utils.mth5_logger import setup_logger
 
@@ -30,8 +31,7 @@ class TestMakeMTH5(unittest.TestCase):
 
     def setUp(self):
 
-        self.make_mth5 = MakeMTH5(mth5_version="0.1.0")
-        self.make_mth5.client = "IRIS"
+        self.make_mth5 = FDSN(mth5_version="0.1.0")
 
         channels = ["LFE", "LFN", "LFZ", "LQE", "LQN"]
         CAS04 = ["8P", "CAS04", "2020-06-02T18:00:00", "2020-07-13T19:00:00"]
