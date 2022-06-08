@@ -10,7 +10,7 @@ __author__ = "Jorge Torres-Solis"
 # Imports
 # =============================================================================
 from pathlib import Path
-from PhoenixGeoPy.readers import Header
+from .header import Header
 
 # =============================================================================
 

@@ -9,7 +9,7 @@ Created on Fri May  6 12:39:34 2022
 # Imports
 # =============================================================================
 from pathlib import Path
-from PhoenixGeoPy.readers import (
+from .readers import (
     NativeReader,
     DecimatedContinuousReader,
     DecimatedSegmentedReader,
