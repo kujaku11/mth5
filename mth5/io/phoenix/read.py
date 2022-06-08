@@ -37,5 +37,7 @@ def open_file(file_name):
     """
     file_name = Path(file_name)
     extension = file_name.suffix[1:]
+    
+    # need to put the data into a TS object
 
     return READERS[extension](file_name)
