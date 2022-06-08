@@ -21,6 +21,8 @@ from datetime import datetime
 from struct import unpack_from
 import string
 
+from mt_metadata.timeseries import Electric, Magnetic
+
 # =============================================================================
 class Header:
     """
@@ -548,3 +550,24 @@ class Header:
             self._header = stream.read(self.header_length)
         else:
             return
+        
+    
+    def channel_metadata(self):
+        """
+        translate metadata to channel metadata
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        
+        if self.channel_type.lower() in ["h"]:
+            ch = Magnetic()
+        elif self.channel_type.lower() in ["e"]:
+            ch = Electric()
+            
+        ch.channel_number = self.channel_id
+        ch.time_period.start = self.start_time
+        
+        return ch
+            
+        

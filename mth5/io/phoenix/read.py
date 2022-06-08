@@ -41,3 +41,17 @@ def open_file(file_name):
     # need to put the data into a TS object
 
     return READERS[extension](file_name)
+
+def read_phoenix(file_name):
+    """
+    Read a Phoenix file into a ChannelTS object
+    :param file_name: DESCRIPTION
+    :type file_name: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+    
+    phnx_obj = open_file(file_name)
+    
+    

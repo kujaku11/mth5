@@ -13,7 +13,7 @@ __author__ = "Jorge Torres-Solis"
 
 import numpy as np
 
-from PhoenixGeoPy.readers import TSReaderBase
+from mth5.io.phoenix.readers import TSReaderBase
 
 # =============================================================================
 

@@ -15,7 +15,7 @@ from datetime import datetime
 import numpy as np
 
 from struct import unpack_from
-from PhoenixGeoPy.readers import TSReaderBase
+from mth5.io.phoenix.readers import TSReaderBase
 
 # =============================================================================
 class SubHeader:
