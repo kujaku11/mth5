@@ -16,6 +16,7 @@ import numpy as np
 
 from struct import unpack_from
 from mth5.io.phoenix.readers import TSReaderBase
+from mth5.timeseries import ChannelTS
 
 # =============================================================================
 class SubHeader:
@@ -236,3 +237,29 @@ class DecimatedSegmentedReader(TSReaderBase):
                     count=self.subheader["samplesInRecord"],
                 )
         return ret_array
+    
+    def to_channel_ts(self):
+        """
+        convert to a ChannelTS object
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        
+        seq_list = []
+        for seq in self.read_segments():
+            ch_metadata = self.channel_metadata()
+            ch_metadata.time_period.start = seq.gps_time_stamp_isoformat
+            
+            seq_list.append(
+                ChannelTS(
+                channel_type=ch_metadata.type,
+                data=seq.data,
+                channel_metadata=ch_metadata,
+                run_metadata=self.run_metadata(),
+                station_metadata=self.station_metadata(),
+                )
+            )
+            
+        return seq_list

@@ -39,6 +39,8 @@ class Header:
         self._header = None
         self._recording_id = None
         self._channel_id = None
+        
+        self.channel_map = {"0": "hx", "1": "hy", "3":"hz", "4":"ex", "5":"ey"}
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -564,6 +566,10 @@ class Header:
         elif self.channel_type.lower() in ["e"]:
             ch = Electric()
             
+        try:
+            ch.component = self.channel_map[self.channel_id]
+        except KeyError:
+            print(f"Could not find {self.channel_id} in channel_map")
         ch.channel_number = self.channel_id
         ch.time_period.start = self.start_time
         ch.sample_rate = self.sample_rate
