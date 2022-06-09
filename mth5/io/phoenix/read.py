@@ -55,13 +55,7 @@ def read_phoenix(file_name):
     """
     
     phnx_obj = open_file(file_name)
-    ch_metadata = phnx_obj.channel_metadata()
     
-    return ChannelTS(
-        channel_type=ch_metadata.type, 
-        channel_metadata=ch_metadata,
-        run_metadata=phnx_obj.run_metadata(),
-        station_metadata=phnx_obj.station_metadata(),
-        )
+    return phnx_obj.to_channel_ts()
     
     

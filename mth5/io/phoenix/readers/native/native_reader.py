@@ -16,6 +16,7 @@ from numpy.lib.stride_tricks import as_strided
 
 from struct import unpack_from, unpack
 from mth5.io.phoenix.readers import TSReaderBase
+from mth5.timeseries import ChannelTS
 
 AD_IN_AD_UNITS = 0
 AD_INPUT_VOLTS = 1
@@ -257,3 +258,21 @@ class NativeReader(TSReaderBase):
         # return true
         self.last_frame += num_frames
         return True
+    
+    def to_channel_ts(self):
+        """
+        convert to a ChannelTS object
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        data, footer = self.read()
+        ch_metadata = self.channel_metadata()
+        return ChannelTS(
+            channel_type=ch_metadata.type,
+            data=data,
+            channel_metadata=ch_metadata,
+            run_metadata=self.run_metadata(),
+            station_metadata=self.station_metadata(),
+            )
