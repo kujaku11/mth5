@@ -168,7 +168,7 @@ class NativeReader(TSReaderBase):
         raw_data = raw_data[self.header_length :]
 
         # trim of any extra bytes
-        extra_bytes = raw_data.size % 12
+        extra_bytes = raw_data.size % 64
         if extra_bytes != 0:
             print(f"WARNING: found {extra_bytes} extra bits in file.")
         useable_bytes = raw_data.size - extra_bytes

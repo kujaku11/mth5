@@ -1,3 +1,3 @@
-from .read import open_file
+from .read import read_phoenix, open_file
 
-__all__ = ["open_file"]
+__all__ = ["read_phoenix", "open_file"]

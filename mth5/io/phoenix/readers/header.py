@@ -21,7 +21,7 @@ from datetime import datetime
 from struct import unpack_from
 import string
 
-from mt_metadata.timeseries import Electric, Magnetic
+from mt_metadata.timeseries import Station, Run, Electric, Magnetic
 
 # =============================================================================
 class Header:
@@ -487,7 +487,7 @@ class Header:
     @property
     def timing_status(self):
         if self._has_header():
-            return self._unpack_value("timing_status")[0]
+            return self._unpack_value("timing_status")
 
     @property
     def timing_flags(self):
@@ -502,7 +502,7 @@ class Header:
     @property
     def timing_stability(self):
         if self._has_header():
-            self.timing_stability = self.timing_status[2]
+            return self.timing_status[2]
 
     @property
     def future1(self):
@@ -529,7 +529,7 @@ class Header:
             return self._unpack_value("missing_frames")[0]
 
     @property
-    def battery_voltage_mv(self):
+    def battery_voltage_v(self):
         if self._has_header():
             return self._unpack_value("battery_voltage_mv")[0] / 1000
 
@@ -551,7 +551,6 @@ class Header:
         else:
             return
         
-    
     def channel_metadata(self):
         """
         translate metadata to channel metadata
@@ -567,7 +566,40 @@ class Header:
             
         ch.channel_number = self.channel_id
         ch.time_period.start = self.start_time
+        ch.sample_rate = self.sample_rate
+        
         
         return ch
-            
+    
+    def run_metadata(self):
+        """
+        translate to run metadata
+        
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        
+        r = Run()
+        r.data_logger.type = self.instrument_type
+        r.data_logger.id = self.instrument_serial_number
+        r.data_logger.manufacturer = "Phoenix Geophysics"
+        r.data_logger.timing_system.uncertainty = self.timing_stability
+        r.sample_rate = self.sample_rate
+        r.data_logger.power_source.voltage.start = self.battery_voltage_v
+        
+        return r
+    
+    def station_metadata(self):
+        """
+        translate to station metadata
+        
+        """
+        
+        s = Station()
+        s.location.latitude = self.gps_lat
+        s.location.longitude = self.gps_long
+        s.location.elevation = self.gps_elevation
+        
+        return s
         
