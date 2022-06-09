@@ -14,6 +14,7 @@ __author__ = "Jorge Torres-Solis"
 import numpy as np
 
 from mth5.io.phoenix.readers import TSReaderBase
+from mth5.timeseries import ChannelTS
 
 # =============================================================================
 
@@ -85,3 +86,21 @@ class DecimatedContinuousReader(TSReaderBase):
                     ),
                 )
         return ret_array
+    
+    def to_channel_ts(self):
+        """
+        convert to a ChannelTS object
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        data = self.read()
+        ch_metadata = self.channel_metadata()
+        return ChannelTS(
+            channel_type=ch_metadata.type,
+            data=data,
+            channel_metadata=ch_metadata,
+            run_metadata=self.run_metadata(),
+            station_metadata=self.station_metadata(),
+            )
