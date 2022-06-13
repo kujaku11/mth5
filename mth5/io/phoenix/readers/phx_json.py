@@ -239,6 +239,8 @@ class ReceiverMetadataJSON:
             c.channel_number = self._get_ch_index(tag)
             c.dipole_length = ch.length1 + ch.length2
             c.units = "millivolts"
+            c.time_period.start = self.obj.start
+            c.time_period.end = self.obj.stop
         return c
 
     def _to_magnetic_metadata(self, tag):
@@ -254,6 +256,8 @@ class ReceiverMetadataJSON:
             c.channel_number = self._get_ch_index(tag)
             c.sensor.manufacturer = "Phoenix Geophysics"
             c.units = "millivolts"
+            c.time_period.start = self.obj.start
+            c.time_period.end = self.obj.stop
         return c
 
     @property
@@ -275,3 +279,5 @@ class ReceiverMetadataJSON:
     @property
     def h3_metadata(self):
         return self._to_magnetic_metadata("h3")
+
+    ### need to add station and run metadata objects and should be good to go.
