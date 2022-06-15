@@ -272,7 +272,6 @@ class MasterStationGroup(BaseGroup):
         """
         if station_name is None:
             raise Exception("station name is None, do not know what to name it")
-
         station_name = validate_name(station_name)
         try:
             station_group = self.hdf5_group.create_group(station_name)
@@ -575,7 +574,7 @@ class StationGroup(BaseGroup):
 
     @property
     def transfer_functions_group(self):
-        """ Convinience method for /Station/Transfer_Functions """
+        """Convinience method for /Station/Transfer_Functions"""
         return TransferFunctionsGroup(
             self.hdf5_group["Transfer_Functions"], **self.dataset_options
         )
@@ -835,10 +834,10 @@ class StationGroup(BaseGroup):
 class TransferFunctionsGroup(BaseGroup):
     """
     Object to hold transfer functions
-    
+
     The is the high level group, all transfer functions for the station are
     held here and each one will have its own TransferFunctionGroup.
-    
+
     This has add, get, remove_transfer_function.
     """
 
@@ -848,7 +847,7 @@ class TransferFunctionsGroup(BaseGroup):
     def tf_summary(self, as_dataframe=True):
         """
         Summary of all transfer functions in this group
-        
+
         :return: DESCRIPTION
         :rtype: TYPE
 
@@ -879,21 +878,21 @@ class TransferFunctionsGroup(BaseGroup):
     def add_transfer_function(self, name, tf_object=None):
         """
         Add a transfer function to the group
-        
+
         :param name: name of the transfer function
         :type name: string
         :param tf_object: Transfer Function object
         :type tf_object: :class:`mt_metadata.transfer_function.core.TF`
         :return: DESCRIPTION
         :rtype: TYPE
-        
+
         >>> from mth5.mth5 import MTH5
         >>> m = MTH5()
         >>> m.open_mth5("example.h5", "a")
         >>> station_group = m.get_station("mt01", survey="test")
         >>> tf_group = station_group.transfer_functions_group
         >>> tf_group.add_transfer_function("mt01_4096", tf_object)
-        
+
 
         """
         name = validate_name(name)
@@ -909,18 +908,18 @@ class TransferFunctionsGroup(BaseGroup):
     def get_transfer_function(self, tf_id):
         """
         Get transfer function from id
-        
+
         :param tf_id: name of transfer function
         :type tf_id: string
         :return: Transfer function group
-        :rtype: :class:`mth5.groups.TransferFunctionGroup` 
-        
+        :rtype: :class:`mth5.groups.TransferFunctionGroup`
+
         >>> from mth5.mth5 import MTH5
         >>> m = MTH5()
         >>> m.open_mth5("example.h5", "a")
         >>> station_group = m.get_station("mt01", survey="test")
         >>> tf_group = station_group.transfer_functions_group.get_transfer_function("mt01_4096")
-        
+
 
         """
 
@@ -935,12 +934,12 @@ class TransferFunctionsGroup(BaseGroup):
     def remove_transfer_function(self, tf_id):
         """
         Remove a transfer function from the group
-        
+
         :param tf_id: DESCRIPTION
         :type tf_id: TYPE
         :return: DESCRIPTION
         :rtype: TYPE
-        
+
         >>> from mth5.mth5 import MTH5
         >>> m = MTH5()
         >>> m.open_mth5("example.h5", "a")
@@ -967,22 +966,22 @@ class TransferFunctionsGroup(BaseGroup):
     def get_tf_object(self, tf_id):
         """
         This is the function you want to use to get a proper
-        :class:`mt_metadata.transfer_functions.core.TF` object with all the 
+        :class:`mt_metadata.transfer_functions.core.TF` object with all the
         appropriate metadata.
-        
-        
+
+
         :param tf_id: name of the transfer function to get
         :type tf_id: string
         :return: Full transfer function with appropriate metadata
         :rtype: :class:`mt_metadata.transfer_functions.core.TF`
-        
+
         >>> from mth5.mth5 import MTH5
         >>> m = MTH5()
         >>> m.open_mth5("example.h5", "a")
         >>> station_group = m.get_station("mt01", survey="test")
         >>> tf_group = station_group.transfer_functions_group
         >>> tf_object = tf_group.get_tf_object("mt01_4096")
-        
+
 
         """
 
@@ -1446,19 +1445,25 @@ class RunGroup(BaseGroup):
                 ch_metadata = meta_classes["Electric"]()
                 ch_metadata.from_dict({"Electric": ch_dataset.attrs})
                 channel = ElectricDataset(
-                    ch_dataset, dataset_metadata=ch_metadata, write_metadata=False,
+                    ch_dataset,
+                    dataset_metadata=ch_metadata,
+                    write_metadata=False,
                 )
             elif ch_dataset.attrs["mth5_type"].lower() in ["magnetic"]:
                 ch_metadata = meta_classes["Magnetic"]()
                 ch_metadata.from_dict({"Magnetic": ch_dataset.attrs})
                 channel = MagneticDataset(
-                    ch_dataset, dataset_metadata=ch_metadata, write_metadata=False,
+                    ch_dataset,
+                    dataset_metadata=ch_metadata,
+                    write_metadata=False,
                 )
             elif ch_dataset.attrs["mth5_type"].lower() in ["auxiliary"]:
                 ch_metadata = meta_classes["Auxiliary"]()
                 ch_metadata.from_dict({"Auxiliary": ch_dataset.attrs})
                 channel = AuxiliaryDataset(
-                    ch_dataset, dataset_metadata=ch_metadata, write_metadata=False,
+                    ch_dataset,
+                    dataset_metadata=ch_metadata,
+                    write_metadata=False,
                 )
             else:
                 channel = ChannelDataset(ch_dataset)
@@ -1620,7 +1625,7 @@ class RunGroup(BaseGroup):
                 self.metadata.channels_recorded_electric.append(
                     channel_ts_obj.component
                 )
-        elif channel_ts_obj.metadata.type == "magnetic":
+        elif channel_ts_obj.channel_metadata.type == "magnetic":
             if self.metadata.channels_recorded_magnetic is None:
                 self.metadata.channels_recorded_magnetic = [channel_ts_obj.component]
             elif (
@@ -1956,9 +1961,9 @@ class ChannelDataset:
         Append data according to how the start time aligns with existing
         data.  If the start time is before existing start time the data is
         prepended, similarly if the start time is near the end data will be
-        appended.  
+        appended.
 
-        If the start time is within the existing time range, existing data 
+        If the start time is within the existing time range, existing data
         will be replace with the new data.
 
         If there is a gap between start or end time of the new data with
@@ -1969,28 +1974,28 @@ class ChannelDataset:
         :type new_data_array: :class:`numpy.ndarray`
         :param start_time: start time of the new data array in UTC
         :type start_time: string or :class:`mth5.utils.mttime.MTime`
-        :param sample_rate: Sample rate of the new data array, must match 
+        :param sample_rate: Sample rate of the new data array, must match
                             existing sample rate
         :type sample_rate: float
         :param fill: If there is a data gap how do you want to fill the gap
             * None: will raise an  :class:`mth5.utils.exceptions.MTH5Error`
             * 'mean': will fill with the mean of each data set within
             the fill window
-            * 'median': will fill with the median of each data set 
+            * 'median': will fill with the median of each data set
             within the fill window
             * value: can be an integer or float to fill the gap
             * 'nan': will fill the gap with NaN
         :type fill: string, None, float, integer
         :param max_gap_seconds: sets a maximum number of seconds the gap can
-                                be.  Anything over this number will raise 
+                                be.  Anything over this number will raise
                                 a :class:`mth5.utils.exceptions.MTH5Error`.
         :type max_gap_seconds: float or integer
         :param fill_window: number of points from the end of each data set
                             to estimate fill value from.
         :type fill_window: integer
 
-        :raises: :class:`mth5.utils.excptions.MTH5Error` if sample rate is 
-                 not the same, or fill value is not understood, 
+        :raises: :class:`mth5.utils.excptions.MTH5Error` if sample rate is
+                 not the same, or fill value is not understood,
 
         Append Example
         ---------------
@@ -2008,8 +2013,8 @@ class ChannelDataset:
         ...                                   .01),
         ...                     channel_metadata={'electric':{
         ...                        'component': 'ex',
-        ...                        'sample_rate': 8, 
-        ...                        'time_period.start':(ex.end+(1)).iso_str}}) 
+        ...                        'sample_rate': 8,
+        ...                        'time_period.start':(ex.end+(1)).iso_str}})
         >>> ex.extend_dataset(t.ts, t.start, t.sample_rate, fill='median',
         ...                   max_gap_seconds=2)
         2020-07-02T18:02:47 - mth5.groups.Electric.extend_dataset - INFO -
@@ -2393,7 +2398,12 @@ class ChannelDataset:
         # TODO need to check on metadata.
 
     def from_xarray(
-        self, data_array, how="replace", fill=None, max_gap_seconds=1, fill_window=10,
+        self,
+        data_array,
+        how="replace",
+        fill=None,
+        max_gap_seconds=1,
+        fill_window=10,
     ):
         """
         fill data set from a :class:`xarray.DataArray` object.
@@ -2557,7 +2567,11 @@ class ChannelDataset:
         )
 
     def time_slice(
-        self, start, end=None, n_samples=None, return_type="channel_ts",
+        self,
+        start,
+        end=None,
+        n_samples=None,
+        return_type="channel_ts",
     ):
         """
         Get a time slice from the channel and return the appropriate type

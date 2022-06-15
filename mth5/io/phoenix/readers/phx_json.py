@@ -19,7 +19,7 @@ from types import SimpleNamespace
 # Parse JSON into an object with attributes corresponding to dict keys.
 import numpy as np
 
-from mt_metadata.timeseries import Station, Run, Electric, Magnetic
+from mt_metadata.timeseries import Survey, Station, Run, Electric, Magnetic
 
 # =============================================================================
 
@@ -220,23 +220,31 @@ class ReceiverMetadataJSON:
             return True
         return False
 
-    def _get_ch_index(self, tag):
+    def get_ch_index(self, tag):
         if self.has_obj():
             for item in self.obj.channel_map.mapping:
                 if item.tag.lower() == tag.lower():
                     return item.idx
+            raise ValueError(f"Could not find {tag} in channel map.")
+
+    def get_ch_tag(self, index):
+        if self.has_obj():
+            for item in self.obj.channel_map.mapping:
+                if item.idx == index:
+                    return item.tag
+            raise ValueError(f"Could not find {index} in channel map.")
 
     def _to_electric_metadata(self, tag):
         c = Electric()
 
         if self.has_obj():
-            ch = self.obj.chconfig.chans[self._get_ch_index(tag)]
+            ch = self.obj.chconfig.chans[self.get_ch_index(tag)]
 
             for p_key, m_value in self._e_map.items():
                 if p_key == "ty":
                     m_value = "electric"
                 c.set_attr_from_name(m_value, getattr(ch, p_key))
-            c.channel_number = self._get_ch_index(tag)
+            c.channel_number = self.get_ch_index(tag)
             c.dipole_length = ch.length1 + ch.length2
             c.units = "millivolts"
             c.time_period.start = self.obj.start
@@ -247,13 +255,13 @@ class ReceiverMetadataJSON:
         c = Magnetic()
 
         if self.has_obj():
-            ch = self.obj.chconfig.chans[self._get_ch_index(tag)]
+            ch = self.obj.chconfig.chans[self.get_ch_index(tag)]
 
             for p_key, m_value in self._h_map.items():
                 if p_key == "ty":
                     m_value = "magnetic"
                 c.set_attr_from_name(m_value, getattr(ch, p_key))
-            c.channel_number = self._get_ch_index(tag)
+            c.channel_number = self.get_ch_index(tag)
             c.sensor.manufacturer = "Phoenix Geophysics"
             c.units = "millivolts"
             c.time_period.start = self.obj.start
@@ -280,4 +288,42 @@ class ReceiverMetadataJSON:
     def h3_metadata(self):
         return self._to_magnetic_metadata("h3")
 
+    def get_ch_metadata(self, index):
+        """
+        get channel metadata from index
+        """
+
+        tag = self.get_ch_tag(index)
+
+        return getattr(self, f"{tag.lower()}_metadata")
+
     ### need to add station and run metadata objects and should be good to go.
+    @property
+    def run_metadata(self):
+        r = Run()
+        if self.has_obj():
+            r.data_logger.type = self.obj.receiver_model
+            r.data_logger.model = self.obj.receiver_commercial_name
+            r.data_logger.firmware.version = self.obj.motherboard.mb_fw_ver
+            r.data_logger.timing_system.drift = self.obj.timing.tm_drift
+        return r
+
+    @property
+    def station_metadata(self):
+        s = Station()
+        if self.has_obj():
+            s.id = self.obj.layout.Station_Name
+            s.comments = self.obj.layout.Notes
+            s.acquired_by.organization = self.obj.layout.Company_Name
+            s.acquired_by.name = self.obj.layout.Operator
+            s.location.latitude = self.obj.timing.gps_lat
+            s.location.longitude = self.obj.timing.gps_lon
+            s.location.elevation = self.obj.timing.gps_alt
+        return s
+
+    @property
+    def survey_metadata(self):
+        s = Survey()
+        if self.has_obj():
+            s.id = self.obj.layout.Survey_Name
+        return s

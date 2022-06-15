@@ -45,6 +45,7 @@ class DecimatedContinuousReader(TSReaderBase):
         :rtype: TYPE
 
         """
+        print(self.start_time)
         self.stream.seek(self.header_length)
         return np.fromfile(self.stream, dtype=np.float32)
 
@@ -86,7 +87,7 @@ class DecimatedContinuousReader(TSReaderBase):
                     ),
                 )
         return ret_array
-    
+
     def to_channel_ts(self):
         """
         convert to a ChannelTS object
@@ -95,7 +96,7 @@ class DecimatedContinuousReader(TSReaderBase):
         :rtype: TYPE
 
         """
-        data = self.read()
+        data = self.read_sequence()
         ch_metadata = self.channel_metadata()
         return ChannelTS(
             channel_type=ch_metadata.type,
@@ -103,4 +104,4 @@ class DecimatedContinuousReader(TSReaderBase):
             channel_metadata=ch_metadata,
             run_metadata=self.run_metadata(),
             station_metadata=self.station_metadata(),
-            )
+        )
