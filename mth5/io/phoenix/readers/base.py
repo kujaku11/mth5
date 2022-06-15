@@ -12,21 +12,27 @@ __author__ = "Jorge Torres-Solis"
 from pathlib import Path
 from .header import Header
 
+from mth5.utils.mth5_logger import setup_logger
+
 # =============================================================================
 
 
 class TSReaderBase(Header):
     """
-    
+
     Generic reader that all other readers will inherit
-    
+
     """
 
-    def __init__(self, path, num_files=1, header_length=128, report_hw_sat=False):
+    def __init__(
+        self, path, num_files=1, header_length=128, report_hw_sat=False, **kwargs
+    ):
         self._seq = None
         super().__init__(
-            **{"header_length": header_length, "report_hw_sat": report_hw_sat}
+            header_length=header_length, report_hw_sat=report_hw_sat, **kwargs
         )
+
+        self.logger = setup_logger(f"{self.__class__}.{self.__class__.__name__}")
         self.base_path = path
         self.last_seq = self.seq + num_files
         self.stream = None
@@ -40,7 +46,7 @@ class TSReaderBase(Header):
     @property
     def base_path(self):
         """
-        
+
         :return: full path of file
         :rtype: :class:`pathlib.Path`
 
@@ -50,7 +56,7 @@ class TSReaderBase(Header):
     @base_path.setter
     def base_path(self, value):
         """
-        
+
         :param value: full path to file
         :type value: string or :class:`pathlib.Path`
 
@@ -61,7 +67,7 @@ class TSReaderBase(Header):
     @property
     def base_dir(self):
         """
-        
+
         :return: parent directory of file
         :rtype: :class:`pathlib.Path`
 
@@ -71,7 +77,7 @@ class TSReaderBase(Header):
     @property
     def file_name(self):
         """
-        
+
         :return: name of the file
         :rtype: string
 
@@ -81,7 +87,7 @@ class TSReaderBase(Header):
     @property
     def file_extension(self):
         """
-        
+
         :return: file extension
         :rtype: string
 
@@ -91,7 +97,7 @@ class TSReaderBase(Header):
     @property
     def instrument_id(self):
         """
-        
+
         :return: instrument ID
         :rtype: string
 
@@ -101,7 +107,7 @@ class TSReaderBase(Header):
     @property
     def seq(self):
         """
-        
+
         :return: sequence number of the file
         :rtype: int
 
@@ -113,7 +119,7 @@ class TSReaderBase(Header):
     @seq.setter
     def seq(self, value):
         """
-        
+
         :param value: sequence number
         :type value: integer
 
@@ -124,7 +130,7 @@ class TSReaderBase(Header):
     @property
     def file_size(self):
         """
-        
+
         :return: file size in bytes
         :rtype: integer
 
@@ -135,9 +141,9 @@ class TSReaderBase(Header):
     def max_samples(self):
         """
         Max number of samples in a file which is:
-            
+
         (total number of bytes - header length) / frame size * n samples per frame
-        
+
         :return: max number of samples in a file
         :rtype: int
 
@@ -154,7 +160,7 @@ class TSReaderBase(Header):
     def _open_file(self, filename):
         """
         open a given file in 'rb' mode
-        
+
         :param filename: full path to file
         :type filename: :class:`pathlib.Path`
         :return: boolean if the file is now open [True] or not [False]
@@ -164,7 +170,7 @@ class TSReaderBase(Header):
         filename = Path(filename)
 
         if filename.exists():
-            print(f"INFO: Opening {filename}")
+            self.logger.debug(f"Opening {filename}")
             self.stream = open(filename, "rb")
             return True
         return False

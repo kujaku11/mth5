@@ -60,13 +60,22 @@ logger = logging.getLogger(__name__)
 readers = {
     "zen": {"file_types": ["z3d"], "reader": zen.read_z3d},
     "nims": {"file_types": ["bin", "bnn"], "reader": nims.read_nims},
-    "usgs_ascii": {"file_types": ["asc", "zip"], "reader": usgs_ascii.read_ascii,},
+    "usgs_ascii": {
+        "file_types": ["asc", "zip"],
+        "reader": usgs_ascii.read_ascii,
+    },
     "miniseed": {
         "file_types": ["miniseed", "ms", "mseed"],
         "reader": miniseed.read_miniseed,
     },
-    "lemi424": {"file_types": ["txt"], "reader": lemi424.read_lemi424,},
-    "phoenix": {"file_types": ["bin", "td_150", "td_24k"], "reader": phoenix.read_phoenix}
+    "lemi424": {
+        "file_types": ["txt"],
+        "reader": lemi424.read_lemi424,
+    },
+    "phoenix": {
+        "file_types": ["bin", "td_150", "td_24k"],
+        "reader": phoenix.read_phoenix,
+    },
 }
 
 
@@ -83,17 +92,15 @@ def get_reader(extension):
     """
     if extension in ["bin"]:
         logger.warning("Suggest inputing file type, bin could be nims or phoenix")
-        
     for key, vdict in readers.items():
         if extension.lower() in vdict["file_types"]:
             return key, vdict["reader"]
-
     msg = f"Could not find a reader for file type {extension}"
     logger.error(msg)
     raise ValueError(msg)
 
 
-def read_file(fn, file_type=None):
+def read_file(fn, file_type=None, **kwargs):
     """
 
     :param fn: full path to file
@@ -106,12 +113,10 @@ def read_file(fn, file_type=None):
 
     if not isinstance(fn, Path):
         fn = Path(fn)
-
     if not fn.exists():
         msg = f"Could not find file {fn}. Check path."
         logger.error(msg)
         raise IOError(msg)
-
     if file_type is not None:
         try:
             file_reader = readers[file_type]["reader"]
@@ -124,5 +129,4 @@ def read_file(fn, file_type=None):
             raise KeyError(msg)
     else:
         file_type, file_reader = get_reader(fn.suffix[1:])
-
-    return file_reader(fn)
+    return file_reader(fn, **kwargs)

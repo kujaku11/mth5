@@ -27,10 +27,14 @@ class DecimatedContinuousReader(TSReaderBase):
     These files have no sub header information.
     """
 
-    def __init__(self, path, num_files=1, report_hw_sat=False):
+    def __init__(self, path, num_files=1, report_hw_sat=False, **kwargs):
         # Init the base class
         super().__init__(
-            path, num_files=num_files, header_length=128, report_hw_sat=report_hw_sat
+            path,
+            num_files=num_files,
+            header_length=128,
+            report_hw_sat=report_hw_sat,
+            **kwargs,
         )
 
         self.unpack_header(self.stream)
@@ -45,7 +49,7 @@ class DecimatedContinuousReader(TSReaderBase):
         :rtype: TYPE
 
         """
-        print(self.start_time)
+
         self.stream.seek(self.header_length)
         return np.fromfile(self.stream, dtype=np.float32)
 

@@ -29,10 +29,10 @@ class NativeReader(TSReaderBase):
     """
     Native sampling rate 'Raw' time series reader class, these are the .bin
     files.  They are formatted with a header of 128 bytes then frames of 64.
-    
+
     Each frame is 20 x 3 byte (24-bit) data point then a 4 byte footer.
-    
-    
+
+
     """
 
     def __init__(
@@ -45,9 +45,10 @@ class NativeReader(TSReaderBase):
         ad_plus_minus_range=5.0,
         channel_type="E",
         report_hw_sat=False,
+        **kwargs,
     ):
         # Init the base class
-        super().__init__(path, num_files, header_length, report_hw_sat)
+        super().__init__(path, num_files, header_length, report_hw_sat, **kwargs)
 
         self._chunk_size = 4096
 
@@ -99,7 +100,7 @@ class NativeReader(TSReaderBase):
         :param num_frames: Number of frames to read
         :type num_frames: integer
         :return: Scaled data from the given number of frames
-        :rtype: np.ndarray(dtype=float) 
+        :rtype: np.ndarray(dtype=float)
 
         """
 
@@ -122,7 +123,7 @@ class NativeReader(TSReaderBase):
             frameCount = dataFooter[0] & self.footer_idx_samp_mask
             difCount = frameCount - self.last_frame
             if difCount != 1:
-                print(
+                self.logger.warning(
                     "Ch [%s] Missing frames at %d [%d]\n"
                     % (self.channel_id, frameCount, difCount)
                 )
@@ -138,7 +139,7 @@ class NativeReader(TSReaderBase):
             if self.report_hw_sat:
                 satCount = (dataFooter[0] & self.footer_sat_mask) >> 24
                 if satCount:
-                    print(
+                    self.logger.warning(
                         "Ch [%s] Frame %d has %d saturations"
                         % (self.ch_id, frameCount, satCount)
                     )
@@ -150,15 +151,15 @@ class NativeReader(TSReaderBase):
 
     def read(self):
         """
-        Read the full data file.  
-        
+        Read the full data file.
+
         .. note:: This uses :class:`numpy.lib.stride_tricks.as_strided` which
-        can be unstable if the bytes are not the correct length.  See notes by 
+        can be unstable if the bytes are not the correct length.  See notes by
         numpy.
-        
+
         Got this solution from:
         https://stackoverflow.com/questions/12080279/how-do-i-create-a-numpy-dtype-that-includes-24-bit-integers?msclkid=3398046ecd6511ec9a37394f28c5aaba
-        
+
         :return: scaled data and footer
         :rtype: tuple (data, footer)
 
@@ -171,7 +172,7 @@ class NativeReader(TSReaderBase):
         # trim of any extra bytes
         extra_bytes = raw_data.size % 64
         if extra_bytes != 0:
-            print(f"WARNING: found {extra_bytes} extra bits in file.")
+            self.warning(f"found {extra_bytes} extra bits in file.")
         useable_bytes = raw_data.size - extra_bytes
         raw_data = raw_data[:useable_bytes]
         # This should now be the exact number of frames after trimming off
@@ -190,7 +191,11 @@ class NativeReader(TSReaderBase):
 
         # stride over bytes making new 4 bytes for a 32bit integer and scale
         ts_data = (
-            as_strided(ts.view(np.int32), strides=(12, 3), shape=(raw_frames, 4),)
+            as_strided(
+                ts.view(np.int32),
+                strides=(12, 3),
+                shape=(raw_frames, 4),
+            )
             .flatten()
             .byteswap()
             * self.scale_factor
@@ -212,7 +217,7 @@ class NativeReader(TSReaderBase):
         :type end: integer, optional
         :return: scaled data
         :rtype: np.ndarray(dtype=float32)
-        :return: footer 
+        :return: footer
         rtype: np.ndarray(dtype=int32)
 
         """
@@ -230,7 +235,7 @@ class NativeReader(TSReaderBase):
     def skip_frames(self, num_frames):
         """
         Skip frames of the stream
-        
+
         :param num_frames: number of frames to skip
         :type num_frames: integer
         :return: end of file
@@ -258,7 +263,7 @@ class NativeReader(TSReaderBase):
         # return true
         self.last_frame += num_frames
         return True
-    
+
     def to_channel_ts(self):
         """
         convert to a ChannelTS object
@@ -275,4 +280,4 @@ class NativeReader(TSReaderBase):
             channel_metadata=ch_metadata,
             run_metadata=self.run_metadata(),
             station_metadata=self.station_metadata(),
-            )
+        )

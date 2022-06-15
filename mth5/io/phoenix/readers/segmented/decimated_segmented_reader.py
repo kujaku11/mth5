@@ -152,10 +152,14 @@ class DecimatedSegmentedReader(TSReaderBase):
 
     """
 
-    def __init__(self, path, num_files=1, report_hw_sat=False):
+    def __init__(self, path, num_files=1, report_hw_sat=False, **kwargs):
         # Init the base class
         super().__init__(
-            path, num_files=num_files, header_length=128, report_hw_sat=report_hw_sat
+            path,
+            num_files=num_files,
+            header_length=128,
+            report_hw_sat=report_hw_sat,
+            **kwargs,
         )
 
         self.unpack_header(self.stream)
@@ -194,7 +198,7 @@ class DecimatedSegmentedReader(TSReaderBase):
                 count += 1
             except:
                 break
-        print(f"INFO: Read {count - 1} segments")
+        self.logger.info(f"Read {count - 1} segments")
 
         return segments
 
@@ -237,7 +241,7 @@ class DecimatedSegmentedReader(TSReaderBase):
                     count=self.subheader["samplesInRecord"],
                 )
         return ret_array
-    
+
     def to_channel_ts(self):
         """
         convert to a ChannelTS object
@@ -246,20 +250,19 @@ class DecimatedSegmentedReader(TSReaderBase):
         :rtype: TYPE
 
         """
-        
+
         seq_list = []
         for seq in self.read_segments():
             ch_metadata = self.channel_metadata()
             ch_metadata.time_period.start = seq.gps_time_stamp_isoformat
-            
+
             seq_list.append(
                 ChannelTS(
-                channel_type=ch_metadata.type,
-                data=seq.data,
-                channel_metadata=ch_metadata,
-                run_metadata=self.run_metadata(),
-                station_metadata=self.station_metadata(),
+                    channel_type=ch_metadata.type,
+                    data=seq.data,
+                    channel_metadata=ch_metadata,
+                    run_metadata=self.run_metadata(),
+                    station_metadata=self.station_metadata(),
                 )
             )
-            
         return seq_list

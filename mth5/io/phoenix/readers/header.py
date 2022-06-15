@@ -26,12 +26,13 @@ from mt_metadata.timeseries import Station, Run, Electric, Magnetic
 # =============================================================================
 class Header:
     """
-    
-    The header is 128 bytes with a specific format.  This reads in the 128 
-    bytes and provides properties to read each attribute of the header in 
+
+    The header is 128 bytes with a specific format.  This reads in the 128
+    bytes and provides properties to read each attribute of the header in
     the correct way.
-    
+
     """
+
     def __init__(self, **kwargs):
         self.report_hw_sat = False
         self.header_length = 128
@@ -39,12 +40,11 @@ class Header:
         self._header = None
         self._recording_id = None
         self._channel_id = None
-        
-        self.channel_map = {"0": "hx", "1": "hy", "3":"hz", "4":"ex", "5":"ey"}
+
+        self.channel_map = {"0": "hx", "1": "hy", "3": "hz", "4": "ex", "5": "ey"}
 
         for key, value in kwargs.items():
             setattr(self, key, value)
-
         self._unpack_dict = {
             "file_type": {"dtype": "B", "index": 0},
             "file_version": {"dtype": "B", "index": 1},
@@ -97,7 +97,6 @@ class Header:
             "min_signal",
         ]:
             lines.append(f"\t{key:<25}: {getattr(self, key)}")
-
         return "\n".join(lines)
 
     def __repr__(self):
@@ -179,13 +178,13 @@ class Header:
     def channel_id(self):
         if self._channel_id is None:
             if self._has_header():
-                return self._unpack_value("channel_id")[0]
+                return int(self._unpack_value("channel_id")[0])
         else:
             return self._channel_id
 
     @channel_id.setter
     def channel_id(self, value):
-        self._channel_id = value
+        self._channel_id = int(value)
 
     @property
     def file_sequence(self):
@@ -383,12 +382,10 @@ class Header:
                 if self.ch_board_model[0:7] == "BCM05-A":
                     # Acount for experimental prototype BCM05-A, which also had original gain banks
                     new_attenuator = False
-
                 if new_attenuator:
                     attenuator_gain = 523.0 / 5223.0
                 else:
                     attenuator_gain = 0.1
-
         return attenuator_gain
 
     # Board-wide gains
@@ -552,7 +549,7 @@ class Header:
             self._header = stream.read(self.header_length)
         else:
             return
-        
+
     def channel_metadata(self):
         """
         translate metadata to channel metadata
@@ -560,12 +557,11 @@ class Header:
         :rtype: TYPE
 
         """
-        
+
         if self.channel_type.lower() in ["h"]:
             ch = Magnetic()
         elif self.channel_type.lower() in ["e"]:
             ch = Electric()
-            
         try:
             ch.component = self.channel_map[self.channel_id]
         except KeyError:
@@ -573,19 +569,18 @@ class Header:
         ch.channel_number = self.channel_id
         ch.time_period.start = self.start_time
         ch.sample_rate = self.sample_rate
-        
-        
+
         return ch
-    
+
     def run_metadata(self):
         """
         translate to run metadata
-        
+
         :return: DESCRIPTION
         :rtype: TYPE
 
         """
-        
+
         r = Run()
         r.data_logger.type = self.instrument_type
         r.data_logger.id = self.instrument_serial_number
@@ -593,19 +588,18 @@ class Header:
         r.data_logger.timing_system.uncertainty = self.timing_stability
         r.sample_rate = self.sample_rate
         r.data_logger.power_source.voltage.start = self.battery_voltage_v
-        
+
         return r
-    
+
     def station_metadata(self):
         """
         translate to station metadata
-        
+
         """
-        
+
         s = Station()
         s.location.latitude = self.gps_lat
         s.location.longitude = self.gps_long
         s.location.elevation = self.gps_elevation
-        
+
         return s
-        

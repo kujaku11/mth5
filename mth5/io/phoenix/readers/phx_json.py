@@ -220,6 +220,10 @@ class ReceiverMetadataJSON:
             return True
         return False
 
+    @property
+    def channel_map(self):
+        return dict([(d.idx, d.tag) for d in self.obj.channel_map.mapping])
+
     def get_ch_index(self, tag):
         if self.has_obj():
             for item in self.obj.channel_map.mapping:
