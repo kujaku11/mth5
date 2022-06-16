@@ -635,7 +635,6 @@ class StationGroup(BaseGroup):
             ),
         )
 
-    @property
     def run_summary(self):
         """
         Summary of runs in the station
@@ -644,12 +643,45 @@ class StationGroup(BaseGroup):
         :rtype: TYPE
 
         """
+
         run_list = []
-        for run in self.groups_list:
-            r_group = RunGroup(self.hdf5_group[run])
-            run_list.append(r_group.table_entry)
-        run_list = np.array(run_list)
-        return pd.DataFrame(run_list.flatten())
+        for key, group in self.hdf5_group.items():
+            if group.attrs["mth5_type"].lower() in ["run"]:
+                comps = ",".join(
+                    [
+                        ii.decode()
+                        for ii in group.attrs["channels_recorded_auxiliary"].tolist()
+                        + group.attrs["channels_recorded_electric"].tolist()
+                        + group.attrs["channels_recorded_magnetic"].tolist()
+                    ]
+                )
+                run_list.append(
+                    (
+                        group.attrs["id"],
+                        group.attrs["time_period.start"],
+                        group.attrs["time_period.end"],
+                        comps,
+                        group.attrs["data_type"],
+                        group.attrs["sample_rate"],
+                        self.hdf5_group.ref,
+                    )
+                )
+        run_summary = np.array(
+            run_list,
+            dtype=np.dtype(
+                [
+                    ("id", "U20"),
+                    ("start", "datetime64[ns]"),
+                    ("end", "datetime64[ns]"),
+                    ("components", "U100"),
+                    ("measurement_type", "U12"),
+                    ("sample_rate", float),
+                    ("hdf5_reference", h5py.ref_dtype),
+                ]
+            ),
+        )
+
+        return pd.DataFrame(run_summary)
 
     def make_run_name(self, alphabet=False):
         """
@@ -819,10 +851,11 @@ class StationGroup(BaseGroup):
 
         """
 
-        self.metadata.time_period.start = self.run_summary.start.min().isoformat()
-        self.metadata.time_period.end = self.run_summary.end.max().isoformat()
+        run_summary = self.run_summary()
+        self.metadata.time_period.start = run_summary.start.min().isoformat()
+        self.metadata.time_period.end = run_summary.end.max().isoformat()
         self.metadata.channels_recorded = ",".join(
-            list(set(",".join(self.run_summary.components.to_list()).split(",")))
+            list(set(",".join(run_summary.components.to_list()).split(",")))
         )
 
         self.write_metadata()
@@ -1195,22 +1228,47 @@ class RunGroup(BaseGroup):
     @property
     def channel_summary(self):
         """
+
          summary of channels in run
         :return: DESCRIPTION
         :rtype: TYPE
 
         """
+
         ch_list = []
-        for ch in self.groups_list:
-            if self.hdf5_group[ch].attrs["mth5_type"].lower() in ["electric"]:
-                ch_dataset = ElectricDataset(self.hdf5_group[ch])
-            elif self.hdf5_group[ch].attrs["mth5_type"].lower() in ["magnetic"]:
-                ch_dataset = MagneticDataset(self.hdf5_group[ch])
-            elif self.hdf5_group[ch].attrs["mth5_type"].lower() in ["auxiliary"]:
-                ch_dataset = AuxiliaryDataset(self.hdf5_group[ch])
-            ch_list.append(ch_dataset.table_entry)
-        ch_list = np.array(ch_list)
-        return pd.DataFrame(ch_list.flatten())
+        for key, group in self.hdf5_group.items():
+            try:
+                ch_type = group.attrs["type"]
+                if ch_type in ["electric", "magnetic", "auxiliary"]:
+                    ch_list.append(
+                        (
+                            group.attrs["component"],
+                            group.attrs["time_period.start"],
+                            group.attrs["time_period.end"],
+                            group.size,
+                            group.attrs["type"],
+                            group.attrs["units"],
+                            group.ref,
+                        )
+                    )
+            except KeyError:
+                pass
+        ch_summary = np.array(
+            ch_list,
+            dtype=np.dtype(
+                [
+                    ("component", "U20"),
+                    ("start", "datetime64[ns]"),
+                    ("end", "datetime64[ns]"),
+                    ("n_samples", int),
+                    ("measurement_type", "U12"),
+                    ("units", "U25"),
+                    ("hdf5_reference", h5py.ref_dtype),
+                ]
+            ),
+        )
+
+        return pd.DataFrame(ch_summary)
 
     @property
     def table_entry(self):
@@ -1650,12 +1708,15 @@ class RunGroup(BaseGroup):
         """
         Update metadata and table entries to ensure consistency
 
+        TODO: make this more efficient, should pull directly from attributes
+
         :return: DESCRIPTION
         :rtype: TYPE
 
         """
         channel_summary = self.channel_summary.copy()
         channels_recorded = channel_summary.component.to_list()
+
         self.metadata.channels_recorded_electric = [
             cc for cc in channels_recorded if cc[0] in ["e"]
         ]
