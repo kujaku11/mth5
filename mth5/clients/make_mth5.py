@@ -364,6 +364,42 @@ class MakeMTH5:
         # sort the values to be logically ordered
         df.sort_values(self.column_names[:-1])
 
+
+# #         ##### TESTING NEW CODE #####
+#         used_networks = dict()
+#         used_stations = dict()
+#         for row in df.itertuples():
+#             print(f"TEMP: row {row}")
+#             
+#             if not row.network in used_networks:
+#                 net_inv = client.get_stations(row.start, row.end, network=row.network, level="network")
+#                 for returned_network in net_inv.networks:
+#                     inv.networks.append(returned_network)
+# #                 returned_network = net_inv.networks[0]
+#                 used_network[row.network] = [row.start]
+#                 
+#                 
+#             if not row.station in used_stations:
+#                 sta_inv = client.get_stations(
+#                             st_row.start,
+#                             st_row.end,
+#                             network=row.network,
+#                             station=st_row.station,
+#                             level="station",
+#                         )
+#                 for returned_sta in sta_inv.networks[0].stations:
+#                     returned_sta = sta_inv.networks[0].stations[0]
+#                 used_station[st_row.station] = [st_row.start]
+#                 
+#  
+#  
+#             inv.networks.append(returned_network)
+#  
+#         quit()
+#          
+#         return inv, streams
+
+        ##### OLD CODE #####
         used_network = dict()
         used_station = dict()
         for row in df.itertuples():
@@ -430,9 +466,15 @@ class MakeMTH5:
                             channel=ch_row.channel,
                             level="response",
                         )
-                        returned_chan = cha_inv.networks[0].stations[0].channels[0]
-                        returned_sta.channels.append(returned_chan)
-
+                         
+                        print("TEMP: using new method")
+                        for returned_chan in cha_inv.networks[0].stations[0].channels:
+                            returned_sta.channels.append(returned_chan)
+                        
+#                         print("TEMP: using old method")     
+#                         returned_chan = cha_inv.networks[0].stations[0].channels[0]
+#                         returned_sta.channels.append(returned_chan)
+ 
                         # -----------------------------
                         # get data if desired
                         if data:
@@ -449,10 +491,9 @@ class MakeMTH5:
                             )
                     else:
                         continue
-
                 returned_network.stations.append(returned_sta)
             inv.networks.append(returned_network)
-
+ 
         return inv, streams
 
     def get_df_from_inventory(self, inventory):
