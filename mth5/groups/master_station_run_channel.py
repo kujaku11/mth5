@@ -28,7 +28,7 @@ from mt_metadata.utils.mttime import MTime
 from mt_metadata.base import Base
 from mt_metadata.timeseries.filters import ChannelResponseFilter
 
-from mth5 import CHUNK_SIZE, CHANNEL_DTYPE, TF_DTYPE
+from mth5 import CHUNK_SIZE, CHANNEL_DTYPE
 from mth5.groups.base import BaseGroup
 from mth5.groups import FiltersGroup, TransferFunctionGroup
 from mth5.utils.exceptions import MTH5Error
@@ -635,6 +635,7 @@ class StationGroup(BaseGroup):
             ),
         )
 
+    @property
     def run_summary(self):
         """
         Summary of runs in the station
