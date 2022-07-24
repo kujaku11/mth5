@@ -25,7 +25,7 @@ class LEMI424:
 
     """
 
-    def __init__(self, fn=None):
+    def __init__(self, fn=[]):
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.fn = fn
         self._has_data = False
@@ -62,15 +62,43 @@ class LEMI424:
             self.read()
 
     @property
+    def num_source_files(self):
+        return len(self.fn)
+
+    @property
     def fn(self):
         return self._fn
 
+    @property
+    def validate_fn(self):
+        """
+        Need to check that the filenames are sequential
+        """
+        return True
+
     @fn.setter
-    def fn(self, value):
-        if value is not None:
-            value = Path(value)
-            if not value.exists():
-                raise IOError(f"Could not find {value}")
+    def fn(self, value, sort=True):
+        """
+
+        Parameters
+        ----------
+        value:string or pathlib.Path, or list of these
+
+        """
+        if isinstance(value, list):
+            value = [Path(x) for x in value]
+            exists = [x.exists() for x in value]
+            for i_fn, cond in enumerate(exists):
+                if not cond:
+                    raise IOError(f"Could not find {value[i_fn]}")
+        elif value is not None:
+            value = [
+                Path(value),
+            ]
+            if not value[0].exists():
+                raise IOError(f"Could not find {value[0]}")
+        if sort:
+            value.sort()
         self._fn = value
 
     @property
@@ -160,7 +188,7 @@ class LEMI424:
             r.time_period.start = self.start
             r.time_period.end = self.end
 
-    def read(self, fn=None):
+    def read(self, fn=[]):
         """
         Read a LEMI424 file using pandas
 
@@ -170,16 +198,24 @@ class LEMI424:
         :rtype: TYPE
 
         """
-        if fn is not None:
+        if fn:
             self.fn = fn
 
-        if not self.fn.exists():
+        exists = [x.exists() for x in self.fn]
+        if all(x for x in exists):
+            pass
+        else:
             msg = "Could not find file %s"
-            self.logger.error(msg, self.fn)
-            raise IOError(msg % self.fn)
+            for i_fn, cond in enumerate(exists):
+                if not cond:
+                    self.logger.error(msg, self.fn[i_fn])
+                    raise IOError(msg % self.fn[i_fn])
 
-        self._df = pd.read_csv(self.fn, delimiter="\s+", names=self.column_names)
+        dfs = self.num_source_files * [None]
+        for i, fn in enumerate(self.fn):
+            dfs[i] = pd.read_csv(fn, delimiter="\s+", names=self.column_names)
 
+        self._df = pd.concat(dfs)
         self._has_data = True
 
     def to_run_ts(self, fn=None, e_channels=["e1", "e2"]):
