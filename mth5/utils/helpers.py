@@ -65,5 +65,6 @@ def read_back_data(mth5_path, station_id, run_id):
     m = initialize_mth5(config["mth5_path"], mode="r")
     local_run_obj = m.get_run(config["local_station_id"], run_id)
     local_run_ts = local_run_obj.to_runts()
-    print("success")
+    data_array = local_run_ts.dataset.to_array()
+    print(f"data shape = {data_array.shape}")
     return local_run_obj, local_run_ts
