@@ -17,7 +17,6 @@ from obspy import read as obsread
 from obspy.core.inventory import Inventory
 
 
-
 from mt_metadata.timeseries.stationxml import XMLInventoryMTExperiment
 
 from mth5.mth5 import MTH5
@@ -60,24 +59,24 @@ class MakeMTH5:
 
         return df
 
-    
     def _run_010(self, experiment, unique_list, streams, m):
         self._loop_stations(unique_list[0]["stations"], streams, m)
-        
+
     def _run_020(self, experiment, unique_list, streams, m):
         survey_map = dict([(s.fdsn.network, s.id) for s in experiment.surveys])
-        
+
         for survey_dict in unique_list:
             # get the mt survey id that maps to the fdsn network
             fdsn_network = survey_dict["network"]
             survey_id = survey_map[fdsn_network]
             survey_group = m.get_survey(survey_id)
-        
-            self._loop_stations(survey_dict["stations"], streams, m, survey_group, survey_id)
-        
-        
+
+            self._loop_stations(
+                survey_dict["stations"], streams, m, survey_group, survey_id
+            )
+
     def _loop_stations(self, stations, streams, m, survey_group=None, survey_id=None):
-        
+
         for station_id in stations:
             msstreams = streams.select(station=station_id)
             trace_start_times = sorted(
@@ -91,11 +90,11 @@ class MakeMTH5:
                     f"Do not have the same number of start {len(trace_start_times)}"
                     f" and end times {len(trace_end_times)} from streams"
                 )
-            
-            if self.mth5_version in ['0.1.0']:
+
+            if self.mth5_version in ["0.1.0"]:
                 mobj = m
                 run_list = m.get_station(station_id).groups_list
-            elif  self.mth5_version in ['0.2.0']:
+            elif self.mth5_version in ["0.2.0"]:
                 mobj = survey_group
                 run_list = m.get_station(station_id, survey_id).groups_list
             run_list.remove("Transfer_Functions")
@@ -109,103 +108,94 @@ class MakeMTH5:
                 ):
                     # add the group first this will get the already filled in
                     # metadata to update the run_ts_obj.
-                    run_group = mobj.stations_group.get_station(
-                        station_id
-                    ).add_run(run_id)
-    
-                    # then get the streams an add existing metadata
-                    run_stream = msstreams.slice(
-                        UTCDateTime(start), UTCDateTime(end)
+                    run_group = mobj.stations_group.get_station(station_id).add_run(
+                        run_id
                     )
+
+                    # then get the streams an add existing metadata
+                    run_stream = msstreams.slice(UTCDateTime(start), UTCDateTime(end))
                     run_ts_obj = RunTS()
                     run_ts_obj.from_obspy_stream(run_stream, run_group.metadata)
                     run_group.from_runts(run_ts_obj)
-    
+
             # if there is just one run
             elif len(run_list) == 1:
                 if n_times > 1:
                     for run_id, times in enumerate(
                         zip(trace_start_times, trace_end_times), 1
                     ):
-                        run_group = mobj.stations_group.get_station(
-                            station_id
-                        ).add_run(f"{run_id:03}")
+                        run_group = mobj.stations_group.get_station(station_id).add_run(
+                            f"{run_id:03}"
+                        )
                         run_stream = msstreams.slice(
                             UTCDateTime(times[0]), UTCDateTime(times[1])
                         )
                         run_ts_obj = RunTS()
-                        run_ts_obj.from_obspy_stream(
-                            run_stream, run_group.metadata
-                        )
+                        run_ts_obj.from_obspy_stream(run_stream, run_group.metadata)
                         run_group.from_runts(run_ts_obj)
-    
+
                 elif n_times == 1:
-                    run_group = mobj.stations_group.get_station(
-                        station_id
-                    ).add_run(run_list[0])
+                    run_group = mobj.stations_group.get_station(station_id).add_run(
+                        run_list[0]
+                    )
                     run_stream = msstreams.slice(
                         UTCDateTime(times[0]), UTCDateTime(times[1])
                     )
                     run_ts_obj = RunTS()
                     run_ts_obj.from_obspy_stream(run_stream, run_group.metadata)
                     run_group.from_runts(run_ts_obj)
-            
-                elif len(run_list) != n_times:
-                    # If there is more than one run and more or less than one trace per run (possibly)
-                    ### IS THIS NECESSARY? It wasn't included in the code for v0.2.0
-                    print(
-                        "More or less runs have been requested by the user "
-                        + "than are defined in the metadata. Runs will be "
-                        + "defined but only the requested run extents contain "
-                        + "time series data "
-                        + "based on the users request."
-                    )
-                    for run_id, start, end in zip(
-                        run_list, trace_start_times, trace_end_times
-                    ):
-                        # add the group first this will get the already filled in
-                        # metadata
-                        for run in run_list:
-                            run_group = mobj.stations_group.get_station(
-                                station_id
-                            ).get_run(run)
 
-                            # Chekcs for start and end times of runs
-                            run_start = run_group.metadata.time_period.start
-                            run_end = run_group.metadata.time_period.end
+            elif len(run_list) != n_times:
+                # If there is more than one run and more or less than one trace per run (possibly)
+                ### IS THIS NECESSARY? It wasn't included in the code for v0.2.0
+                print(
+                    "More or less runs have been requested by the user "
+                    + "than are defined in the metadata. Runs will be "
+                    + "defined but only the requested run extents contain "
+                    + "time series data "
+                    + "based on the users request."
+                )
+                for run_id, start, end in zip(
+                    run_list, trace_start_times, trace_end_times
+                ):
+                    # add the group first this will get the already filled in
+                    # metadata
+                    for run in run_list:
+                        run_group = mobj.stations_group.get_station(station_id).get_run(
+                            run
+                        )
 
-                            # Create if statment that checks for start and end
-                            # times in the run.
-                            # Compares start and end times of runs
-                            # to start and end times of traces. Packs runs based on
-                            # time spans
-                            if UTCDateTime(start) >= UTCDateTime(
-                                run_start
-                            ) and UTCDateTime(end) <= UTCDateTime(run_end):
-                                run_stream = msstreams.slice(
-                                    UTCDateTime(start), UTCDateTime(end)
-                                )
-                                run_ts_obj = RunTS()
-                                run_ts_obj.from_obspy_stream(
-                                    run_stream, run_group.metadata
-                                )
-                                run_group.from_runts(run_ts_obj)
-                            else:
-                                continue
-            
+                        # Chekcs for start and end times of runs
+                        run_start = run_group.metadata.time_period.start
+                        run_end = run_group.metadata.time_period.end
+
+                        # Create if statment that checks for start and end
+                        # times in the run.
+                        # Compares start and end times of runs
+                        # to start and end times of traces. Packs runs based on
+                        # time spans
+                        if UTCDateTime(start) >= UTCDateTime(run_start) and UTCDateTime(
+                            end
+                        ) <= UTCDateTime(run_end):
+                            run_stream = msstreams.slice(
+                                UTCDateTime(start), UTCDateTime(end)
+                            )
+                            run_ts_obj = RunTS()
+                            run_ts_obj.from_obspy_stream(run_stream, run_group.metadata)
+                            run_group.from_runts(run_ts_obj)
+                        else:
+                            continue
+
             else:
                 raise ValueError("Cannot add Run for some reason.")
-        
-        
+
     def _process_list(self, experiment, unique_list, streams, m):
-        
-        versionDict = {"0.1.0": self._run_010,
-                       "0.2.0": self._run_020}
-        
+
+        versionDict = {"0.1.0": self._run_010, "0.2.0": self._run_020}
+
         process_run = versionDict[self.mth5_version]
         process_run(experiment, unique_list, streams, m)
-        
-        
+
     def make_mth5_from_fdsnclient(self, df, path=None, client=None, interact=False):
         """
         Make an MTH5 file from an FDSN data center
@@ -273,9 +263,9 @@ class MakeMTH5:
         # experiment = translator.drop_runs(m, streams)
 
         m.from_experiment(experiment)
-        
+
         self._process_list(experiment, unique_list, streams, m)
-        
+
         if not interact:
             m.close_mth5()
 
@@ -396,13 +386,13 @@ class MakeMTH5:
                             channel=ch_row.channel,
                             level="response",
                         )
-                         
+
                         for returned_chan in cha_inv.networks[0].stations[0].channels:
                             returned_sta.channels.append(returned_chan)
-                        
-#                         returned_chan = cha_inv.networks[0].stations[0].channels[0]
-#                         returned_sta.channels.append(returned_chan)
- 
+
+                        #                         returned_chan = cha_inv.networks[0].stations[0].channels[0]
+                        #                         returned_sta.channels.append(returned_chan)
+
                         # -----------------------------
                         # get data if desired
                         if data:
@@ -421,7 +411,7 @@ class MakeMTH5:
                         continue
                 returned_network.stations.append(returned_sta)
             inv.networks.append(returned_network)
- 
+
         return inv, streams
 
     def get_df_from_inventory(self, inventory):
