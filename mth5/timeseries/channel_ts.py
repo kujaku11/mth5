@@ -81,7 +81,7 @@ def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
         start=start_time.iso_str.split("+", 1)[0],
         periods=n_samples,
         freq=dt_freq,
-        inclusive=None,
+        closed=None,
     )
 
     return dt_index
