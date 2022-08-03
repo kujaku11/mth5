@@ -23,7 +23,7 @@ from mth5.mth5 import MTH5
 from mth5.timeseries import RunTS
 from mth5.helpers import validate_name
 from mth5 import helpers
-
+from mth5.utils.mth5_logger import setup_logger
 
 # =============================================================================
 
@@ -40,6 +40,7 @@ class MakeMTH5:
         ]
         self.client = client
         self.mth5_version = mth5_version
+        self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
 
     def _validate_dataframe(self, df):
         if not isinstance(df, pd.DataFrame):
@@ -93,11 +94,21 @@ class MakeMTH5:
 
             if self.mth5_version in ["0.1.0"]:
                 mobj = m
-                run_list = m.get_station(station_id).groups_list
+                try:
+                    run_list = m.get_station(station_id).groups_list
+                except Exception as e:
+                    self.logger.warning(f"Unable to retrieve station {station_id} - if there is more than one survey requested, use version 0.2.0 instead of 0.1.0")
+                    run_list = []
+                    
+                    
             elif self.mth5_version in ["0.2.0"]:
                 mobj = survey_group
                 run_list = m.get_station(station_id, survey_id).groups_list
-            run_list.remove("Transfer_Functions")
+                
+            try:
+                run_list.remove("Transfer_Functions")
+            except:
+                pass
 
             n_times = len(trace_start_times)
 
@@ -147,7 +158,6 @@ class MakeMTH5:
 
             elif len(run_list) != n_times:
                 # If there is more than one run and more or less than one trace per run (possibly)
-                ### IS THIS NECESSARY? It wasn't included in the code for v0.2.0
                 print(
                     "More or less runs have been requested by the user "
                     + "than are defined in the metadata. Runs will be "
@@ -169,7 +179,7 @@ class MakeMTH5:
                         run_start = run_group.metadata.time_period.start
                         run_end = run_group.metadata.time_period.end
 
-                        # Create if statment that checks for start and end
+                        # Create if statement that checks for start and end
                         # times in the run.
                         # Compares start and end times of runs
                         # to start and end times of traces. Packs runs based on
@@ -190,11 +200,10 @@ class MakeMTH5:
                 raise ValueError("Cannot add Run for some reason.")
 
     def _process_list(self, experiment, unique_list, streams, m):
-
         versionDict = {"0.1.0": self._run_010, "0.2.0": self._run_020}
-
         process_run = versionDict[self.mth5_version]
         process_run(experiment, unique_list, streams, m)
+
 
     def make_mth5_from_fdsnclient(self, df, path=None, client=None, interact=False):
         """
@@ -254,6 +263,7 @@ class MakeMTH5:
 
         # read in inventory and streams
         inv, streams = self.get_inventory_from_df(df, self.client)
+
         # translate obspy.core.Inventory to an mt_metadata.timeseries.Experiment
         translator = XMLInventoryMTExperiment()
         experiment = translator.xml_to_mt(inv)
@@ -308,110 +318,88 @@ class MakeMTH5:
 
         df = self._validate_dataframe(df)
 
-        # get the metadata from an obspy client
+        # Use obspy to retrieve metadata
         client = fdsn.Client(self.client)
 
-        # creat an empty stream to add to
-        streams = obsread()
-        streams.clear()
-
+        # Create empty stream, inventory objects that will be populated below
+        streams = obsread().clear()
         inv = Inventory(networks=[], source="MTH5")
-
-        # sort the values to be logically ordered
+        
+        
+        # Sort the values to be logically ordered
         df.sort_values(self.column_names[:-1])
-
-        used_network = dict()
-        used_station = dict()
-        for row in df.itertuples():
-            # First for loop builds out networks and stations
-            if row.network not in used_network:
-                net_inv = client.get_stations(
-                    row.start, row.end, network=row.network, level="network"
+         
+        # Build an inventory by looping over the rows in the dataframe
+        # Use .groupby to make looping simpler 
+        
+        # First, group the dataframe by network-epoch
+        networkGroup = df.groupby(['network','start','end'])
+        for net in networkGroup.groups.keys():
+            net_code = net[0]; net_start = net[1];  net_end = net[2]
+            
+            net_inv = client.get_stations(
+                net_start, net_end, network=net_code, level="network"
+            )
+            returned_network = net_inv.networks[0]
+            
+            
+            # For this network-epoch, subset the big dataframe and group by network-station-start-end
+            # This will group all loc.chans together for the station-epochs in this network-epoch
+            staDF = df[(df['network'] == net_code) & (df['start'] == net_start) & (df['end'] == net_end)]
+            stationGroup = staDF.groupby(['network', 'station','start','end'])
+            for sta in stationGroup.groups.keys():
+                sta_net = sta[0]; sta_code = sta[1];
+                sta_start = sta[2]; sta_end = sta[3]
+                
+                sta_inv = client.get_stations(
+                    sta_start,
+                    sta_end,
+                    network=sta_net,
+                    station=sta_code,
+                    level="station",
                 )
-                returned_network = net_inv.networks[0]
-                used_network[row.network] = [row.start]
-            elif used_network.get(
-                row.network
-            ) is not None and row.start not in used_network.get(row.network):
-                net_inv = client.get_stations(
-                    row.start, row.end, network=row.network, level="network"
-                )
-                returned_network = net_inv.networks[0]
-                used_network[row.network].append(row.start)
-            else:
-                continue
-            for st_row in df.itertuples():
-                if row.network != st_row.network:
-                    continue
-                else:
-                    if st_row.station not in used_station:
-                        sta_inv = client.get_stations(
-                            st_row.start,
-                            st_row.end,
-                            network=row.network,
-                            station=st_row.station,
-                            level="station",
-                        )
-                        returned_sta = sta_inv.networks[0].stations[0]
-                        used_station[st_row.station] = [st_row.start]
-                    elif used_station.get(
-                        st_row.station
-                    ) is not None and st_row.start not in used_station.get(
-                        st_row.station
-                    ):
-                        # Checks for epoch
-                        sta_inv = client.get_stations(
-                            st_row.start,
-                            st_row.end,
-                            network=st_row.network,
-                            station=st_row.station,
-                            level="station",
-                        )
-                        returned_sta = sta_inv.networks[0].stations[0]
-                        used_station[st_row.station].append(st_row.start)
-                    else:
-                        continue
-                for ch_row in df.itertuples():
-                    if (
-                        ch_row.network == row.network
-                        and st_row.station == ch_row.station
-                        and ch_row.start == st_row.start
-                    ):
-                        cha_inv = client.get_stations(
-                            ch_row.start,
-                            ch_row.end,
-                            network=ch_row.network,
-                            station=ch_row.station,
-                            loc=ch_row.location,
-                            channel=ch_row.channel,
-                            level="response",
-                        )
+                returned_sta = sta_inv.networks[0].stations[0]
 
-                        for returned_chan in cha_inv.networks[0].stations[0].channels:
-                            returned_sta.channels.append(returned_chan)
-
-                        #                         returned_chan = cha_inv.networks[0].stations[0].channels[0]
-                        #                         returned_sta.channels.append(returned_chan)
-
-                        # -----------------------------
-                        # get data if desired
-                        if data:
-                            streams = (
-                                client.get_waveforms(
-                                    ch_row.network,
-                                    ch_row.station,
-                                    ch_row.location,
-                                    ch_row.channel,
-                                    UTCDateTime(ch_row.start),
-                                    UTCDateTime(ch_row.end),
-                                )
-                                + streams
+             
+                # No need to .groupby() for channel-level since we want to loop over each channel request for this
+                # station-epoch, and staDF is already subsetted to just that.
+                for chan in staDF.itertuples():
+                    cha_inv = client.get_stations(
+                        chan.start,
+                        chan.end,
+                        network=chan.network,
+                        station=chan.station,
+                        loc=chan.location,
+                        channel=chan.channel,
+                        level="response",
+                    )
+        
+                    # There may be multiple metadata epochs for a given channel-timespan requested
+                    # and to keep the metadata for all epochs you need to add each one to the station object
+                    for returned_chan in cha_inv.networks[0].stations[0].channels:
+                        returned_sta.channels.append(returned_chan)
+                    
+                    
+                    # Grab the data, if specified
+                    if data:
+                        streams = (
+                            client.get_waveforms(
+                                chan.network,
+                                chan.station,
+                                chan.location,
+                                chan.channel,
+                                UTCDateTime(chan.start),
+                                UTCDateTime(chan.end),
                             )
-                    else:
-                        continue
-                returned_network.stations.append(returned_sta)
+                            + streams
+                        )
+ 
+                # Add the stations to the associated network
+                returned_network.stations.append(returned_sta)   
+                
+            # Add the network (with station and channel info) to the inventory
             inv.networks.append(returned_network)
-
+                    
         return inv, streams
 
     def get_df_from_inventory(self, inventory):
