@@ -261,7 +261,7 @@ class MakeMTH5:
         m = MTH5(file_version=self.mth5_version)
         m.open_mth5(file_name, "w")
 
-        # read in inventory and streams
+        # read in inventory and streams        
         inv, streams = self.get_inventory_from_df(df, self.client)
 
         # translate obspy.core.Inventory to an mt_metadata.timeseries.Experiment
@@ -362,8 +362,9 @@ class MakeMTH5:
 
              
                 # No need to .groupby() for channel-level since we want to loop over each channel request for this
-                # station-epoch, and staDF is already subsetted to just that.
-                for chan in staDF.itertuples():
+                # station-epoch
+                chanDF = staDF[staDF['station'] == sta_code]
+                for chan in chanDF.itertuples():
                     cha_inv = client.get_stations(
                         chan.start,
                         chan.end,
@@ -399,7 +400,7 @@ class MakeMTH5:
                 
             # Add the network (with station and channel info) to the inventory
             inv.networks.append(returned_network)
-                    
+         
         return inv, streams
 
     def get_df_from_inventory(self, inventory):
