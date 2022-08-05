@@ -65,19 +65,23 @@ class DecimatedContinuousReader(TSReaderBase):
         :rtype: TYPE
 
         """
-
         data = np.array([], dtype=np.float32)
-        for fn in self.sequence_list[slice(start, end)]:
+        for ii, fn in enumerate(self.sequence_list[slice(start, end)], start):
             self._open_file(fn)
             self.unpack_header(self.stream)
             ts = self.read()
             data = np.append(data, ts)
+            self.seq = ii
+
+        self.logger.debug("Read %s sequences", self.seq + 1)
         return data
 
     def read_data(self, numSamples):
         ret_array = np.empty([0])
         if self.stream is not None:
-            ret_array = np.fromfile(self.stream, dtype=np.float32, count=numSamples)
+            ret_array = np.fromfile(
+                self.stream, dtype=np.float32, count=numSamples
+            )
             while ret_array.size < numSamples:
                 if not self.open_next():
                     return np.empty([0])

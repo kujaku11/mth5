@@ -25,14 +25,21 @@ class TSReaderBase(Header):
     """
 
     def __init__(
-        self, path, num_files=1, header_length=128, report_hw_sat=False, **kwargs
+        self,
+        path,
+        num_files=1,
+        header_length=128,
+        report_hw_sat=False,
+        **kwargs,
     ):
         self._seq = None
         super().__init__(
             header_length=header_length, report_hw_sat=report_hw_sat, **kwargs
         )
 
-        self.logger = setup_logger(f"{self.__class__}.{self.__class__.__name__}")
+        self.logger = setup_logger(
+            f"{self.__class__}.{self.__class__.__name__}"
+        )
         self.base_path = path
         self.last_seq = self.seq + num_files
         self.stream = None
@@ -148,7 +155,7 @@ class TSReaderBase(Header):
         :rtype: int
 
         """
-        return int((self.file_size - self.header_length) / 64 * 20)
+        return int((self.file_size - self.header_length) / 600)
 
     @property
     def sequence_list(self):
