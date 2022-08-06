@@ -48,6 +48,8 @@ class Header:
             "3": "hz",
             "4": "ex",
             "5": "ey",
+            "6": "ex",
+            "7": "ey",
         }
 
         for key, value in kwargs.items():
@@ -98,7 +100,7 @@ class Header:
             "gps_lat",
             "gps_long",
             "gps_elevation",
-            "start_time",
+            "recording_start_time",
             "sample_rate",
             "saturated_frames",
             "missing_frames",
