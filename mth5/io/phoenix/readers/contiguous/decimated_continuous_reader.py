@@ -40,6 +40,19 @@ class DecimatedContinuousReader(TSReaderBase):
         self.unpack_header(self.stream)
         self.subheader = {}
 
+    @property
+    def segment_start_time(self):
+        """
+        estimate the segment start time based on sequence number
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        return self.recording_start_time + (
+            self.frag_period * (self.file_sequence - 1) - 1
+        )
+
     # need a read and read sequence
     def read(self):
         """

@@ -179,7 +179,19 @@ class Header:
 
     @property
     def recording_start_time(self):
-        return MTime(datetime.fromtimestamp(self.recording_id))
+        """
+        Need a +1 second because the actual data recording starts 1 second
+        after the set start time.  This is cause by the data logger starting
+        up and initializing filter.
+
+        See https://github.com/kujaku11/PhoenixGeoPy/tree/main/Docs for more
+        information.
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        return MTime(datetime.fromtimestamp(self.recording_id)) + 1
 
     @property
     def channel_id(self):
@@ -595,7 +607,7 @@ class Header:
         except KeyError:
             print(f"Could not find {self.channel_id} in channel_map")
         ch.channel_number = self.channel_id
-        ch.time_period.start = self.start_time
+        ch.time_period.start = self.recording_start_time
         ch.sample_rate = self.sample_rate
 
         return ch
