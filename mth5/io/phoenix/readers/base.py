@@ -155,7 +155,7 @@ class TSReaderBase(Header):
         :rtype: int
 
         """
-        return int((self.file_size - self.header_length) / 600)
+        return int((self.file_size - self.header_length) / 4)
 
     @property
     def sequence_list(self):
