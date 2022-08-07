@@ -82,6 +82,16 @@ class PhoenixCollection:
     def sr96k_file_list(self):
         return self._get_files(self._file_extension_map[96000])
 
+    def get_df(self, sample_rates=[150, 24000]):
+        """
+        Get a data frame with columns of the specified
+        :param sample_rates: DESCRIPTION, defaults to [150, 24000]
+        :type sample_rates: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
 
 # =============================================================================
 # test

@@ -318,7 +318,11 @@ class ReceiverMetadataJSON:
         if self.has_obj():
             s.id = self.obj.layout.Station_Name
             s.comments = self.obj.layout.Notes
-            s.acquired_by.organization = self.obj.layout.Company_Name
+            try:
+                s.acquired_by.organization = self.obj.layout.Company_Name
+            except AttributeError:
+                pass
+
             s.acquired_by.name = self.obj.layout.Operator
             s.location.latitude = self.obj.timing.gps_lat
             s.location.longitude = self.obj.timing.gps_lon
