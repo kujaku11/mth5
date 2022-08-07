@@ -245,7 +245,7 @@ class MTH5:
         self,
         filename=None,
         compression="gzip",
-        compression_opts=9,
+        compression_opts=4,
         shuffle=True,
         fletcher32=True,
         data_level=1,
@@ -256,9 +256,10 @@ class MTH5:
 
         # make these private so the user cant accidentally change anything.
         self.__hdf5_obj = None
-        (self.__compression, self.__compression_opts,) = helpers.validate_compression(
-            compression, compression_opts
-        )
+        (
+            self.__compression,
+            self.__compression_opts,
+        ) = helpers.validate_compression(compression, compression_opts)
         self.__shuffle = shuffle
         self.__fletcher32 = fletcher32
 
@@ -454,7 +455,8 @@ class MTH5:
         if self.h5_is_read():
             if self.file_version in ["0.2.0"]:
                 return groups.ExperimentGroup(
-                    self.__hdf5_obj[f"{self._root_path}"], **self.dataset_options
+                    self.__hdf5_obj[f"{self._root_path}"],
+                    **self.dataset_options,
                 )
             else:
                 self.logger.info(
@@ -470,7 +472,8 @@ class MTH5:
         if self.file_version in ["0.1.0"]:
             if self.h5_is_read():
                 return groups.SurveyGroup(
-                    self.__hdf5_obj[f"{self._root_path}"], **self.dataset_options
+                    self.__hdf5_obj[f"{self._root_path}"],
+                    **self.dataset_options,
                 )
             self.logger.info("File is closed cannot access /Survey")
             return None
@@ -500,7 +503,8 @@ class MTH5:
         """Convenience property for /Survey/Reports group"""
         if self.h5_is_read():
             return groups.ReportsGroup(
-                self.__hdf5_obj[f"{self._root_path}/Reports"], **self.dataset_options
+                self.__hdf5_obj[f"{self._root_path}/Reports"],
+                **self.dataset_options,
             )
         self.logger.info("File is closed cannot access /Reports")
         return None
@@ -527,7 +531,8 @@ class MTH5:
         """Convenience property for /Standards group"""
         if self.h5_is_read():
             return groups.StandardsGroup(
-                self.__hdf5_obj[f"{self._root_path}/Standards"], **self.dataset_options
+                self.__hdf5_obj[f"{self._root_path}/Standards"],
+                **self.dataset_options,
             )
         self.logger.info("File is closed cannot access /Standards")
         return None
@@ -543,7 +548,8 @@ class MTH5:
                 )
                 return None
             return groups.MasterStationGroup(
-                self.__hdf5_obj[f"{self._root_path}/Stations"], **self.dataset_options
+                self.__hdf5_obj[f"{self._root_path}/Stations"],
+                **self.dataset_options,
             )
         self.logger.info("File is closed cannot access /Stations")
         return None
@@ -645,7 +651,9 @@ class MTH5:
             root_group.write_metadata()
         for group_name in self._default_subgroup_names:
             try:
-                self.__hdf5_obj.create_group(f"{self._default_root_name}/{group_name}")
+                self.__hdf5_obj.create_group(
+                    f"{self._default_root_name}/{group_name}"
+                )
             except ValueError:
                 pass
             m5_grp = getattr(self, f"{group_name.lower()}_group")
@@ -851,10 +859,14 @@ class MTH5:
         if self.h5_is_write():
             if self.file_version in ["0.1.0"]:
                 sg = self.survey_group
-                sg.metadata.from_dict(experiment.surveys[survey_index].to_dict())
+                sg.metadata.from_dict(
+                    experiment.surveys[survey_index].to_dict()
+                )
                 sg.write_metadata()
                 for station in experiment.surveys[0].stations:
-                    mt_station = self.add_station(station.id, station_metadata=station)
+                    mt_station = self.add_station(
+                        station.id, station_metadata=station
+                    )
                     if update:
                         mt_station.metadata.update(station)
                         mt_station.write_metadata()
@@ -882,13 +894,17 @@ class MTH5:
 
                     for station in survey.stations:
                         mt_station = self.add_station(
-                            station.id, station_metadata=station, survey=sg.metadata.id
+                            station.id,
+                            station_metadata=station,
+                            survey=sg.metadata.id,
                         )
                         if update:
                             mt_station.metadata.update(station)
                             mt_station.write_metadata()
                         for run in station.runs:
-                            mt_run = mt_station.add_run(run.id, run_metadata=run)
+                            mt_run = mt_station.add_run(
+                                run.id, run_metadata=run
+                            )
                             if update:
                                 mt_run.metadata.update(run)
                                 mt_run.write_metadata()
@@ -1197,9 +1213,7 @@ class MTH5:
                 self.logger.error(msg, self.file_version)
                 raise ValueError(msg % self.file_version)
             survey = helpers.validate_name(survey)
-            run_path = (
-                f"{self._root_path}/Surveys/{survey}/Stations/{station_name}/{run_name}"
-            )
+            run_path = f"{self._root_path}/Surveys/{survey}/Stations/{station_name}/{run_name}"
         try:
             return groups.RunGroup(self.__hdf5_obj[run_path])
         except KeyError:
@@ -1227,7 +1241,9 @@ class MTH5:
 
         """
 
-        return self.get_station(station_name, survey=survey).remove_run(run_name)
+        return self.get_station(station_name, survey=survey).remove_run(
+            run_name
+        )
 
     def add_channel(
         self,
@@ -1342,7 +1358,9 @@ class MTH5:
             .get_channel(channel_name)
         )
 
-    def remove_channel(self, station_name, run_name, channel_name, survey=None):
+    def remove_channel(
+        self, station_name, run_name, channel_name, survey=None
+    ):
         """
         Convenience function to remove a channel using
         ``mth5.stations_group.get_station().get_run().remove_channel()``
@@ -1407,10 +1425,17 @@ class MTH5:
                             sg_dict = survey_group.metadata.to_dict(
                                 single=True, required=False
                             )
-                            for key, value in tf_object.survey_metadata.to_dict(
+                            for (
+                                key,
+                                value,
+                            ) in tf_object.survey_metadata.to_dict(
                                 single=True
                             ).items():
-                                if key in ["hdf5_reference", "mth5_type", "id"]:
+                                if key in [
+                                    "hdf5_reference",
+                                    "mth5_type",
+                                    "id",
+                                ]:
                                     continue
                                 if sg_dict[key] != value:
                                     match = False
@@ -1454,7 +1479,9 @@ class MTH5:
                 station_metadata=tf_object.to_ts_station_metadata(),
             )
         ## need to check for runs and channels
-        for run_id in tf_object.station_metadata.transfer_function.runs_processed:
+        for (
+            run_id
+        ) in tf_object.station_metadata.transfer_function.runs_processed:
             try:
                 run_group = station_group.get_run(run_id)
             except MTH5Error:
@@ -1469,21 +1496,25 @@ class MTH5:
                             ch.component, ch.type, None, channel_metadata=ch
                         )
         try:
-            tf_group = station_group.transfer_functions_group.add_transfer_function(
-                tf_object.station, tf_object=tf_object
+            tf_group = (
+                station_group.transfer_functions_group.add_transfer_function(
+                    tf_object.station, tf_object=tf_object
+                )
             )
         except (OSError, RuntimeError, ValueError):
             msg = f"TF {tf_object.station} already exists, returning existing group."
             self.logger.debug(msg)
-            tf_group = station_group.transfer_functions_group.get_transfer_function(
-                tf_object.station
+            tf_group = (
+                station_group.transfer_functions_group.get_transfer_function(
+                    tf_object.station
+                )
             )
         return tf_group
 
     def get_transfer_function(self, station_id, tf_id, survey=None):
         """
-        Get a transfer function 
-        
+        Get a transfer function
+
         :param survey_id: DESCRIPTION
         :type survey_id: TYPE
         :param station_id: DESCRIPTION
@@ -1501,8 +1532,8 @@ class MTH5:
 
     def remove_transfer_function(self, station_id, tf_id, survey=None):
         """
-        remove a transfer function 
-        
+        remove a transfer function
+
         :param survey_id: DESCRIPTION
         :type survey_id: TYPE
         :param station_id: DESCRIPTION

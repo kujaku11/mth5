@@ -272,6 +272,7 @@ class ReceiverMetadataJSON:
             c.time_period.end = self.obj.stop
         return c
 
+    ### should think about putting this part in set_attr
     @property
     def e1_metadata(self):
         return self._to_electric_metadata("e1")
@@ -291,6 +292,18 @@ class ReceiverMetadataJSON:
     @property
     def h3_metadata(self):
         return self._to_magnetic_metadata("h3")
+
+    @property
+    def h4_metadata(self):
+        return self._to_magnetic_metadata("h4")
+
+    @property
+    def h5_metadata(self):
+        return self._to_magnetic_metadata("h5")
+
+    @property
+    def h6_metadata(self):
+        return self._to_magnetic_metadata("h6")
 
     def get_ch_metadata(self, index):
         """
