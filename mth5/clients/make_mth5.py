@@ -332,9 +332,13 @@ class MakeMTH5:
         # Build an inventory by looping over the rows in the dataframe
         # Use .groupby to make looping simpler 
         
+        # To do: Currently loop over network, station, channel/location for
+        # purpose of nesting the inventories within each other. Is there a 
+        # better way to do this without requiring 3 loops?
+        
         # First, group the dataframe by network-epoch
-        networkGroup = df.groupby(['network','start','end'])
-        for net in networkGroup.groups.keys():
+        network_group = df.groupby(['network','start','end'])
+        for net, net_DF in network_group:
             net_code = net[0]; net_start = net[1];  net_end = net[2]
             
             net_inv = client.get_stations(
@@ -343,11 +347,10 @@ class MakeMTH5:
             returned_network = net_inv.networks[0]
             
             
-            # For this network-epoch, subset the big dataframe and group by network-station-start-end
+            # For this network-epoch, group by network-station-start-end
             # This will group all loc.chans together for the station-epochs in this network-epoch
-            staDF = df[(df['network'] == net_code) & (df['start'] == net_start) & (df['end'] == net_end)]
-            stationGroup = staDF.groupby(['network', 'station','start','end'])
-            for sta in stationGroup.groups.keys():
+            station_group = net_DF.groupby(['network', 'station','start','end'])
+            for sta, sta_DF in station_group:
                 sta_net = sta[0]; sta_code = sta[1];
                 sta_start = sta[2]; sta_end = sta[3]
                 
@@ -363,8 +366,7 @@ class MakeMTH5:
              
                 # No need to .groupby() for channel-level since we want to loop over each channel request for this
                 # station-epoch
-                chanDF = staDF[staDF['station'] == sta_code]
-                for chan in chanDF.itertuples():
+                for chan in sta_DF.itertuples():
                     cha_inv = client.get_stations(
                         chan.start,
                         chan.end,
