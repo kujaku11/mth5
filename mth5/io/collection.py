@@ -39,7 +39,6 @@ class Collection:
             setattr(self, key, value)
 
     @property
-    def file_path(self):
         """
         Path object to z3d directory
         """
@@ -57,7 +56,11 @@ class Collection:
             self._file_path = None
         if not isinstance(file_path, Path):
             file_path = Path(file_path)
+
         self._file_path = file_path
+
+        if not self._file_path.exists():
+            raise IOError()
 
     def _get_files(self, extension):
         """

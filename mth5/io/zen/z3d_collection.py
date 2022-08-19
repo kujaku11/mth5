@@ -34,27 +34,6 @@ class Z3DCollection(Collection):
 
         super().__init__()
 
-    @property
-    def z3d_path(self):
-        """
-        Path object to z3d directory
-        """
-        return self._z3d_path
-
-    @z3d_path.setter
-    def z3d_path(self, z3d_path):
-        """
-        :param z3d_path: path to z3d files
-        :type z3d_path: string or Path object
-
-        sets z3d_path as a Path object
-        """
-        if z3d_path is None:
-            return
-        if not isinstance(z3d_path, Path):
-            z3d_path = Path(z3d_path)
-        self._z3d_path = z3d_path
-
     def get_z3d_fn_list(self, z3d_path=None):
         """
         Get a list of z3d files in a given directory
