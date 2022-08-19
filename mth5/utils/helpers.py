@@ -42,7 +42,7 @@ def initialize_mth5(h5_path, mode="a", file_version="0.1.0"):
     return mth5_obj
 
 
-def read_back_data(mth5_path, station_id, run_id):
+def read_back_data(mth5_path, station_id, run_id, survey=None):
     """
 
     Parameters
@@ -63,7 +63,8 @@ def read_back_data(mth5_path, station_id, run_id):
     processing_config["local_station_id"] = station_id
     config = processing_config
     m = initialize_mth5(config["mth5_path"], mode="r")
-    local_run_obj = m.get_run(config["local_station_id"], run_id)
+    local_run_obj = m.get_run(config["local_station_id"], run_id, survey=survey)
     local_run_ts = local_run_obj.to_runts()
-    print("success")
+    data_array = local_run_ts.dataset.to_array()
+    print(f"data shape = {data_array.shape}")
     return local_run_obj, local_run_ts
