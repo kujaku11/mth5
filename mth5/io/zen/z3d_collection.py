@@ -18,102 +18,21 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 
-from mtpy.usgs import zen
-from mtpy.core import ts as mtts
+from mth5.io.collection import Collection
 
 # =============================================================================
 # Collection of Z3D Files
 # =============================================================================
-class Z3DCollection(object):
+class Z3DCollection(Collection):
     """
     An object to deal with a collection of Z3D files. Metadata and information
     are contained with in Pandas DataFrames for easy searching.
 
-    The main data frame should have keys and data types as follows:
-
-        ================ ========= ===========================================
-        Key              Type      Description
-        ================ ========= ===========================================
-        'station'        string    station name
-        'start'          Timestamp start time in isoformat (converted to
-                                   pandas.Timestamp internally)
-        'stop'           Timestamp stop time in isoformat (converted to
-                                   pandas.Timestamp internally)
-        'sampling_rate'  float     samping rate in samples/second
-        'component'      string    [ ex | ey | hx | hy | hz ]
-        'fn_z3d'         string    full path to z3d file
-        'azimuth'        float     azimuth of sensor (degrees)
-        'dipole_length'  float     dipole length (meters)
-        'coil_number'    string    mag sensor serial number
-        'latitude'       float     latitude (decimal degrees)
-        'longitude'      float     longitude (decimal degrees)
-        'elevation'      float     elevation (meters)
-        'n_samples'      integer   number of samples in time series
-        'fn_ascii'       string    full path to ascii file
-        ================ ========= ===========================================
-
-    :Example:
-
-        >>> from mtpy.usgs import z3d_collections as zc
-        >>> zc_obj = zc.Z3DCollection(r"/home/z3d_files")
-        >>> z3d_fn_list = zc.get_z3d_fn_list()
-        >>> z3d_df = zc.get_z3d_info(z3d_fn_list)
-        >>> z3d_df.to_csv(r"/home/z3d_files/z3d_info.csv")
-        >>> z3d_df_final = zc.convert_to_mtts(z3d_df)
-        >>> z3d_df_final.to_csv(r"/home/z3d_files/station_info.csv")
     """
 
-    def __init__(self, z3d_path=None):
-        self._z3d_path = None
-        self.z3d_path = z3d_path
-        self.ts_path = None
-        self._tol_dict = {
-            4096: {"s_diff": 5 * 60 * 4096},
-            256: {"s_diff": 4 * 256 * 3600},
-            4: {"s_diff": 4 * 3600 * 5},
-        }
+    def __init__(self, **kwarg):
 
-        self._keys_dict = {
-            "station": "station",
-            "start": "start",
-            "stop": "stop",
-            "sampling_rate": "df",
-            "component": "component",
-            "fn_z3d": "fn",
-            "azimuth": "azimuth",
-            "dipole_length": "dipole_len",
-            "coil_number": "coil_num",
-            "latitude": "lat",
-            "longitude": "lon",
-            "elevation": "elev",
-            "n_samples": "n_samples",
-            "fn_ascii": "fn_ascii",
-            "remote": "remote",
-            "block": "block",
-            "zen_num": "zen_num",
-            "cal_fn": "cal_fn",
-        }
-
-        self._dtypes = {
-            "station": str,
-            "start": str,
-            "stop": str,
-            "sampling_rate": float,
-            "component": str,
-            "fn_z3d": str,
-            "azimuth": float,
-            "dipole_length": float,
-            "coil_number": str,
-            "latitude": float,
-            "longitude": float,
-            "elevation": float,
-            "n_samples": int,
-            "fn_ascii": str,
-            "remote": str,
-            "block": int,
-            "zen_num": str,
-            "cal_fn": str,
-        }
+        super().__init__()
 
     @property
     def z3d_path(self):
@@ -287,7 +206,9 @@ class Z3DCollection(object):
         if block_dict is None:
             block_dict = {}
             for sr in z3d_df.sampling_rate.unique():
-                block_dict[sr] = list(z3d_df[z3d_df.sampling_rate == sr].block.unique())
+                block_dict[sr] = list(
+                    z3d_df[z3d_df.sampling_rate == sr].block.unique()
+                )
         else:
             assert isinstance(block_dict, dict), "Blocks is not a dictionary."
             for key, value in block_dict.items():
@@ -358,7 +279,9 @@ class Z3DCollection(object):
                     )
                     try:
                         fn_ascii = [
-                            p for p in sv_path.glob(fn_test) if sv_ext in p.name
+                            p
+                            for p in sv_path.glob(fn_test)
+                            if sv_ext in p.name
                         ][0]
                     except IndexError:
                         fn_ascii = sv_path.joinpath(
@@ -375,7 +298,9 @@ class Z3DCollection(object):
                     print("INFO: Skipping {0}".format(fn_ascii))
                     ts_obj = mtts.MTTS()
                     ts_obj.read_ascii_header(fn_ascii)
-                    z3d_df.at[entry.Index, "stop"] = pd.Timestamp(ts_obj.stop_time_utc)
+                    z3d_df.at[entry.Index, "stop"] = pd.Timestamp(
+                        ts_obj.stop_time_utc
+                    )
                     z3d_df.at[entry.Index, "n_samples"] = ts_obj.n_samples
                     z3d_df.at[entry.Index, "start"] = pd.Timestamp(
                         ts_obj.start_time_utc
@@ -394,7 +319,9 @@ class Z3DCollection(object):
                     z3d_obj.write_ascii_mt_file(notch_dict=notch_dict)
 
                     # get information from time series and fill data frame
-                    z3d_df.at[entry.Index, "stop"] = pd.Timestamp(ts_obj.stop_time_utc)
+                    z3d_df.at[entry.Index, "stop"] = pd.Timestamp(
+                        ts_obj.stop_time_utc
+                    )
                     z3d_df.at[entry.Index, "n_samples"] = ts_obj.n_samples
                     z3d_df.at[entry.Index, "start"] = pd.Timestamp(
                         ts_obj.start_time_utc
@@ -469,7 +396,9 @@ class Z3DCollection(object):
                 continue
             cal_fn = z3d_df[z3d_df.component == comp].cal_fn.mode()[0]
             # check to see if file exists check for upper and lower case
-            suffix_list = [".{0}".format(cc) for cc in [comp.lower(), comp.upper()]]
+            suffix_list = [
+                ".{0}".format(cc) for cc in [comp.lower(), comp.upper()]
+            ]
             cfn_list = [
                 fn_path
                 for fn_path in sv_path.rglob("*_4.*")
@@ -508,7 +437,11 @@ class Z3DCollection(object):
             # sort out files for the given component
             comp_df = z3d_df[z3d_df.component == comp].copy()
             if len(comp_df) == 0:
-                print("WARNING:  Skipping {0} because no Z3D files found.".format(comp))
+                print(
+                    "WARNING:  Skipping {0} because no Z3D files found.".format(
+                        comp
+                    )
+                )
                 continue
             # sort the data frame by date
             comp_df = comp_df.sort_values("start")
@@ -579,7 +512,9 @@ class Z3DCollection(object):
                 except ValueError:
                     print("WARNING: could not set {0}".format(attr))
             ascii_fn = "{0}_combined_{1}.{2}".format(
-                new_ts.station, int(new_ts.sampling_rate), new_ts.component.upper()
+                new_ts.station,
+                int(new_ts.sampling_rate),
+                new_ts.component.upper(),
             )
 
             sv_fn_ascii = sv_path.joinpath(ascii_fn)
@@ -733,7 +668,9 @@ class Z3DCollection(object):
                 print("REASON: No Z3D files found")
                 continue
             df_list.append(
-                self.get_z3d_info(z3d_fn_list, calibration_path=calibration_path)
+                self.get_z3d_info(
+                    z3d_fn_list, calibration_path=calibration_path
+                )
             )
         survey_df = pd.concat(df_list)
 
