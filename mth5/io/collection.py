@@ -39,6 +39,7 @@ class Collection:
             setattr(self, key, value)
 
     @property
+    def file_path(self):
         """
         Path object to z3d directory
         """
@@ -74,3 +75,13 @@ class Collection:
         """
 
         return list(self.file_path.rglob(f"*.{extension}"))
+
+    def to_dataframe(self):
+        """
+        Get a data frame of the file summary
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        pass

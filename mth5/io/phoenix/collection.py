@@ -13,30 +13,20 @@ Created on Thu Aug  4 16:48:47 2022
 from pathlib import Path
 import pandas as pd
 from mth5.io.phoenix import read_phoenix, open_file
+from mth5.io import Collection
 
 # =============================================================================
 
 
-class PhoenixCollection:
+class PhoenixCollection(Collection):
     """
     A class to collect the various files in a Phoenix file system and try
     to organize them into runs.
     """
 
-    def __init__(self, station_path, **kwargs):
+    def __init__(self, file_path=None, **kwargs):
 
-        self.station_path = Path(station_path)
-        self.channel_map = None
-
-        self._columns = [
-            "station",
-            "run",
-            "start",
-            "end",
-            "channel",
-            "fn",
-            "sample_rate",
-        ]
+        super().__init__(file_path=file_path, **kwargs)
 
         self._file_extension_map = {
             30: "td_30",
@@ -45,22 +35,6 @@ class PhoenixCollection:
             24000: "td_24k",
             96000: "td_96k",
         }
-
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-
-    def _get_files(self, extension):
-        """
-        Get files with given extension
-
-        :param extension: DESCRIPTION
-        :type extension: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        return list(self.station_path.rglob(f"*.{extension}"))
 
     @property
     def sr30_file_list(self):
