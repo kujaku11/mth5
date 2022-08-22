@@ -12,6 +12,8 @@ Created on Thu Aug  4 16:48:47 2022
 # =============================================================================
 from pathlib import Path
 
+from mth5.utils.mth5_logger import setup_logger
+
 # =============================================================================
 
 
@@ -22,6 +24,7 @@ class Collection:
 
     def __init__(self, file_path=None, **kwargs):
 
+        self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
         self.file_path = file_path
 
         self._columns = [
@@ -33,6 +36,9 @@ class Collection:
             "channel",
             "fn",
             "sample_rate",
+            "file_size",
+            "n_samples",
+            "sequence_number",
         ]
 
         for key, value in kwargs.items():

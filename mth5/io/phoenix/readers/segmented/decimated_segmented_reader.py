@@ -15,6 +15,8 @@ from datetime import datetime
 import numpy as np
 
 from struct import unpack_from
+
+from mt_metadata.utils.mttime import MTime
 from mth5.io.phoenix.readers import TSReaderBase
 from mth5.timeseries import ChannelTS
 
@@ -73,13 +75,7 @@ class SubHeader:
     @property
     def gps_time_stamp(self):
         if self._has_header():
-            return self._unpack_value("gps_time_stamp")[0]
-
-    @property
-    def gps_time_stamp_isoformat(self):
-        return datetime.fromtimestamp(
-            self._unpack_value("gps_time_stamp")[0]
-        ).isoformat()
+            return MTime(self._unpack_value("gps_time_stamp")[0])
 
     @property
     def n_samples(self):
@@ -119,7 +115,7 @@ class SubHeader:
             return
 
 
-class Segment(SubHeader):
+class DecimatedSegmentReader(SubHeader):
     """
     A segment class to hold a single segment
     """
@@ -140,7 +136,32 @@ class Segment(SubHeader):
         """
 
         self.unpack_header(self.stream)
-        self.data = np.fromfile(self.stream, dtype=np.float32, count=self.n_samples)
+        self.data = np.fromfile(
+            self.stream, dtype=np.float32, count=self.n_samples
+        )
+
+    @property
+    def segment_start_time(self):
+        """
+        estimate the segment start time based on sequence number
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        return self.gps_time_stamp
+
+    @property
+    def segment_end_time(self):
+        """
+        estimate end time
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        return self.segment_start_time + ((self.n_samples) / self.sample_rate)
 
 
 class DecimatedSegmentedReader(TSReaderBase):
@@ -191,7 +212,7 @@ class DecimatedSegmentedReader(TSReaderBase):
         while True:
             try:
                 kwargs["segment"] = count
-                segment = Segment(self.stream, **kwargs)
+                segment = DecimatedSegmentReader(self.stream, **kwargs)
                 segment.read_segment()
                 segments.append(segment)
 
@@ -211,10 +232,16 @@ class DecimatedSegmentedReader(TSReaderBase):
             self.subheader["timestamp"] = 0
             self.subheader["samplesInRecord"] = 0
         else:
-            self.subheader["timestamp"] = unpack_from("I", subheaderBytes, 0)[0]
-            self.subheader["samplesInRecord"] = unpack_from("I", subheaderBytes, 4)[0]
+            self.subheader["timestamp"] = unpack_from("I", subheaderBytes, 0)[
+                0
+            ]
+            self.subheader["samplesInRecord"] = unpack_from(
+                "I", subheaderBytes, 4
+            )[0]
             self.subheader["satCount"] = unpack_from("H", subheaderBytes, 8)[0]
-            self.subheader["missCount"] = unpack_from("H", subheaderBytes, 10)[0]
+            self.subheader["missCount"] = unpack_from("H", subheaderBytes, 10)[
+                0
+            ]
             self.subheader["minVal"] = unpack_from("f", subheaderBytes, 12)[0]
             self.subheader["maxVal"] = unpack_from("f", subheaderBytes, 16)[0]
             self.subheader["avgVal"] = unpack_from("f", subheaderBytes, 20)[0]
@@ -229,7 +256,9 @@ class DecimatedSegmentedReader(TSReaderBase):
             and self.subheader["samplesInRecord"] != 0
         ):
             ret_array = np.fromfile(
-                self.stream, dtype=np.float32, count=self.subheader["samplesInRecord"]
+                self.stream,
+                dtype=np.float32,
+                count=self.subheader["samplesInRecord"],
             )
             if ret_array.size == 0:
                 if not self.open_next():
@@ -254,7 +283,7 @@ class DecimatedSegmentedReader(TSReaderBase):
         seq_list = []
         for seq in self.read_segments():
             ch_metadata = self.channel_metadata()
-            ch_metadata.time_period.start = seq.gps_time_stamp_isoformat
+            ch_metadata.time_period.start = seq.gps_time_stamp.isoformat()
 
             seq_list.append(
                 ChannelTS(
