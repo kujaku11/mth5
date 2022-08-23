@@ -16,9 +16,6 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 
-# Parse JSON into an object with attributes corresponding to dict keys.
-import numpy as np
-
 from mt_metadata.timeseries import Survey, Station, Run, Electric, Magnetic
 
 # =============================================================================

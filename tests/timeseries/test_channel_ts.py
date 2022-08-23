@@ -74,7 +74,7 @@ class TestChannelTS(unittest.TestCase):
         self.ts._update_xarray_metadata()
 
         self.ts.ts = np.random.rand(4096)
-        end = self.ts.channel_metadata.time_period._start_dt + (4096 - 1)
+        end = self.ts.channel_metadata.time_period._start_dt + (4096)
 
         # check to make sure the times align
         with self.subTest(name="is aligned"):
@@ -101,7 +101,7 @@ class TestChannelTS(unittest.TestCase):
         self.ts.channel_metadata.sample_rate = 1.0
 
         self.ts.ts = np.random.rand(4096).tolist()
-        end = self.ts.channel_metadata.time_period._start_dt + (4096 - 1)
+        end = self.ts.channel_metadata.time_period._start_dt + (4096)
 
         # check to make sure the times align
         with self.subTest(name="is aligned"):
@@ -122,7 +122,7 @@ class TestChannelTS(unittest.TestCase):
         self.ts._update_xarray_metadata()
 
         self.ts.ts = pd.DataFrame({"data": np.random.rand(4096)})
-        end = self.ts.channel_metadata.time_period._start_dt + (4096 - 1)
+        end = self.ts.channel_metadata.time_period._start_dt + (4096)
 
         # check to make sure the times align
         with self.subTest(name="is aligned"):
@@ -142,7 +142,9 @@ class TestChannelTS(unittest.TestCase):
         self.ts.ts = pd.DataFrame(
             {"data": np.random.rand(n_samples)},
             index=pd.date_range(
-                start="2020-01-02T12:00:00", periods=n_samples, freq="244140N"
+                start="2020-01-02T12:00:00",
+                periods=n_samples,
+                end="2020-01-02T12:00:01",
             ),
         )
 
@@ -151,6 +153,12 @@ class TestChannelTS(unittest.TestCase):
             self.assertEqual(
                 self.ts._ts.coords.to_index()[0].isoformat(),
                 self.ts.channel_metadata.time_period._start_dt.iso_no_tz,
+            )
+        # check to make sure the times align
+        with self.subTest(name="same end"):
+            self.assertEqual(
+                self.ts._ts.coords.to_index()[-1].isoformat(),
+                self.ts.channel_metadata.time_period._end_dt.iso_no_tz,
             )
         with self.subTest(name="sample rate"):
             self.assertEqual(self.ts.sample_rate, 4096.0)
@@ -235,7 +243,9 @@ class TestChannelTS(unittest.TestCase):
             new_ts = self.ts.get_slice("2020-01-01T12:00:00", n_samples=48)
             self.assertEqual(new_ts.ts.size, 48)
         with self.subTest(name="end time"):
-            new_ts = self.ts.get_slice("2020-01-01T12:00:00", end="2020-01-01T12:00:03")
+            new_ts = self.ts.get_slice(
+                "2020-01-01T12:00:00", end="2020-01-01T12:00:03"
+            )
             self.assertEqual(new_ts.ts.size, 48)
 
 
