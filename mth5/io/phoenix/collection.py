@@ -94,20 +94,41 @@ class PhoenixCollection(Collection):
         for sr in sample_rates:
             for fn in self._get_files(self._file_extension_map[int(sr)]):
                 phx_obj = open_file(fn)
-                entry = {
-                    "survey": survey_id,
-                    "station": station_id,
-                    "run": None,
-                    "start": phx_obj.segment_start_time.isoformat(),
-                    "end": phx_obj.segment_end_time.isoformat(),
-                    "channel": channel_map[phx_obj.channel_id],
-                    "fn": fn,
-                    "sample_rate": phx_obj.sample_rate,
-                    "file_size": phx_obj.file_size,
-                    "n_samples": phx_obj.max_samples,
-                    "sequence_number": phx_obj.seq,
-                }
-                entries.append(entry)
+                if hasattr(phx_obj, "read_segment"):
+                    segment = phx_obj.read_segment(metadata_only=True)
+                    entry = {
+                        "survey": survey_id,
+                        "station": station_id,
+                        "run": None,
+                        "start": segment.segment_start_time.isoformat(),
+                        "end": segment.segment_end_time.isoformat(),
+                        "channel_id": phx_obj.channel_id,
+                        "component": channel_map[phx_obj.channel_id],
+                        "fn": fn,
+                        "sample_rate": phx_obj.sample_rate,
+                        "file_size": phx_obj.file_size,
+                        "n_samples": segment.n_samples,
+                        "sequence_number": phx_obj.seq,
+                        "instrument_id": phx_obj.recording_id,
+                    }
+                    entries.append(entry)
+                else:
+                    entry = {
+                        "survey": survey_id,
+                        "station": station_id,
+                        "run": None,
+                        "start": phx_obj.segment_start_time.isoformat(),
+                        "end": phx_obj.segment_end_time.isoformat(),
+                        "channel_id": phx_obj.channel_id,
+                        "component": channel_map[phx_obj.channel_id],
+                        "fn": fn,
+                        "sample_rate": phx_obj.sample_rate,
+                        "file_size": phx_obj.file_size,
+                        "n_samples": phx_obj.max_samples,
+                        "sequence_number": phx_obj.seq,
+                        "instrument_id": phx_obj.recording_id,
+                    }
+                    entries.append(entry)
 
         df = pd.DataFrame(entries)
         df.start = pd.to_datetime(df.start)
@@ -117,6 +138,26 @@ class PhoenixCollection(Collection):
         df.sort_values(by=["start"], inplace=True)
 
         return df
+
+    def assign_run_names(self, df, zeros=4):
+        """
+        Assign run names by looping through start times
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        rdf = df.copy()
+        sample_rates = rdf.sample_rate.unique()
+
+        for sr in sample_rates:
+            run_stem = self._file_extension_map[int(sr)].split("_")[-1]
+            starts = rdf.loc[rdf.sample_rate == sr].start.unique()
+            for ii, s in enumerate(starts, 1):
+                rdf.loc[rdf.start == s, "run"] = f"{run_stem}_{ii:0{zeros}}"
+
+        return rdf
 
 
 # =============================================================================

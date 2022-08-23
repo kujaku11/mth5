@@ -115,7 +115,7 @@ class SubHeader:
             return
 
 
-class DecimatedSegmentReader(SubHeader):
+class Segment(SubHeader):
     """
     A segment class to hold a single segment
     """
@@ -126,7 +126,7 @@ class DecimatedSegmentReader(SubHeader):
         self.stream = stream
         self.data = None
 
-    def read_segment(self):
+    def read_segment(self, metadata_only=False):
         """
         Read the whole file in
 
@@ -136,9 +136,10 @@ class DecimatedSegmentReader(SubHeader):
         """
 
         self.unpack_header(self.stream)
-        self.data = np.fromfile(
-            self.stream, dtype=np.float32, count=self.n_samples
-        )
+        if not metadata_only:
+            self.data = np.fromfile(
+                self.stream, dtype=np.float32, count=self.n_samples
+            )
 
     @property
     def segment_start_time(self):
@@ -187,7 +188,80 @@ class DecimatedSegmentedReader(TSReaderBase):
         self.sub_header = SubHeader()
         self.subheader = {}
 
-    def read_segments(self):
+    def read_segment(self, metadata_only=False):
+        """
+        Read in a single segment
+
+        :param metadata_only: DESCRIPTION, defaults to False
+        :type metadata_only: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        kwargs = {
+            "instrument_type": self.instrument_type,
+            "instrument_serial_number": self.instrument_serial_number,
+            "latitude": self.gps_lat,
+            "longitude": self.gps_long,
+            "elevation": self.gps_elevation,
+            "sample_rate": self.sample_rate,
+            "channel_id": self.channel_id,
+            "channel_type": self.channel_type,
+            "segment": 0,
+        }
+
+        segment = Segment(self.stream, **kwargs)
+        segment.read_segment(metadata_only=metadata_only)
+
+        return segment
+
+    def to_channel_ts(self):
+        """
+        convert to a ChannelTS object
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        segment = self.read_segment()
+        ch_metadata = self.channel_metadata()
+        ch_metadata.time_period.start = segment.segment_start_time.isoformat()
+
+        return ChannelTS(
+            channel_type=ch_metadata.type,
+            data=segment.data,
+            channel_metadata=ch_metadata,
+            run_metadata=self.run_metadata(),
+            station_metadata=self.station_metadata(),
+        )
+
+
+class DecimatedSegmentCollection(TSReaderBase):
+    """
+    Class to create a streamer for segmented decimated time series,
+    i.e. *.td_24k
+
+    These files have a sub header
+
+    """
+
+    def __init__(self, path, num_files=1, report_hw_sat=False, **kwargs):
+        # Init the base class
+        super().__init__(
+            path,
+            num_files=num_files,
+            header_length=128,
+            report_hw_sat=report_hw_sat,
+            **kwargs,
+        )
+
+        self.unpack_header(self.stream)
+        self.sub_header = SubHeader()
+        self.subheader = {}
+
+    def read_segments(self, metadata_only=False):
         """
         Read the whole file in
 
@@ -212,8 +286,8 @@ class DecimatedSegmentedReader(TSReaderBase):
         while True:
             try:
                 kwargs["segment"] = count
-                segment = DecimatedSegmentReader(self.stream, **kwargs)
-                segment.read_segment()
+                segment = Segment(self.stream, **kwargs)
+                segment.read_segment(metadata_only=metadata_only)
                 segments.append(segment)
 
                 count += 1
@@ -222,54 +296,6 @@ class DecimatedSegmentedReader(TSReaderBase):
         self.logger.info(f"Read {count - 1} segments")
 
         return segments
-
-    def read_subheader(self):
-        subheaderBytes = self.stream.read(32)
-        if not subheaderBytes:
-            if self.open_next():
-                subheaderBytes = self.stream.read(32)
-        if not subheaderBytes or len(subheaderBytes) < 32:
-            self.subheader["timestamp"] = 0
-            self.subheader["samplesInRecord"] = 0
-        else:
-            self.subheader["timestamp"] = unpack_from("I", subheaderBytes, 0)[
-                0
-            ]
-            self.subheader["samplesInRecord"] = unpack_from(
-                "I", subheaderBytes, 4
-            )[0]
-            self.subheader["satCount"] = unpack_from("H", subheaderBytes, 8)[0]
-            self.subheader["missCount"] = unpack_from("H", subheaderBytes, 10)[
-                0
-            ]
-            self.subheader["minVal"] = unpack_from("f", subheaderBytes, 12)[0]
-            self.subheader["maxVal"] = unpack_from("f", subheaderBytes, 16)[0]
-            self.subheader["avgVal"] = unpack_from("f", subheaderBytes, 20)[0]
-
-    def read_record_data(self):
-        ret_array = np.empty([0])
-        self.stream.seek(self.header_length)
-        self.read_subheader()
-        if (
-            self.stream is not None
-            and self.subheader["samplesInRecord"] is not None
-            and self.subheader["samplesInRecord"] != 0
-        ):
-            ret_array = np.fromfile(
-                self.stream,
-                dtype=np.float32,
-                count=self.subheader["samplesInRecord"],
-            )
-            if ret_array.size == 0:
-                if not self.open_next():
-                    return np.empty([0])
-                # Array below will contain the data, or will be an np.empty array if end of series as desired
-                ret_array = np.fromfile(
-                    self.stream,
-                    dtype=np.float32,
-                    count=self.subheader["samplesInRecord"],
-                )
-        return ret_array
 
     def to_channel_ts(self):
         """
