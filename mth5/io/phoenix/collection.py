@@ -51,6 +51,7 @@ class PhoenixCollection(Collection):
         self.station_id = None
         self.survey_id = None
         self.channel_map = self._default_channel_map
+        self.receiver_metadata = None
 
         self._receiver_metadata_name = "recmeta.json"
 
@@ -82,11 +83,11 @@ class PhoenixCollection(Collection):
 
         """
 
-        receiver_metadata = self._read_receiver_metadata_json()
-        if receiver_metadata is not None:
-            self.station_id = receiver_metadata.station_metadata.id
-            self.survey_id = receiver_metadata.survey_metadata.id
-            self.channel_map = receiver_metadata.channel_map
+        self.receiver_metadata = self._read_receiver_metadata_json()
+        if self.receiver_metadata is not None:
+            self.station_id = self.receiver_metadata.station_metadata.id
+            self.survey_id = self.receiver_metadata.survey_metadata.id
+            self.channel_map = self.receiver_metadata.channel_map
 
         if not isinstance(sample_rates, (list, tuple)):
             sample_rates = [sample_rates]
@@ -130,6 +131,9 @@ class PhoenixCollection(Collection):
         df.sort_values(by=["start"], inplace=True)
 
         df = self.assign_run_names(df, zeros=run_name_zeros)
+
+        df.sort_values(by=["run", "start"], inplace=True)
+        df.reset_index(inplace=True, drop=True)
 
         return df
 
@@ -186,11 +190,22 @@ class PhoenixCollection(Collection):
 
         return rdf
 
+    def get_runs(self, sample_rates=[150, 24000], run_name_zeros=4):
+        """
 
-# =============================================================================
-# test
-# =============================================================================
+        :param df: DESCRIPTION
+        :type df: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
 
-pc = PhoenixCollection(
-    r"c:\Users\jpeacock\OneDrive - DOI\mt\phoenix_example_data\10291_2019-09-06-015630"
-)
+        """
+
+        df = self.to_dataframe(sample_rates, run_name_zeros)
+
+        run_list = []
+
+        for run_id in df.run.unique():
+            run_df = df[df.run == run_id]
+            run_list.append(run_df[run_df.start == run_df.start.min()])
+
+        return run_list
