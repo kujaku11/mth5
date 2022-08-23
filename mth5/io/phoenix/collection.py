@@ -57,10 +57,11 @@ class PhoenixCollection(Collection):
 
     def _read_receiver_metadata_json(self):
         """
-        read in metadata information from receiver metadata file
+        read in metadata information from receiver metadata file into
+        an `ReceiverMetadataJSON` object.
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :return: Receiver metadata
+        :rtype: :class:`ReceiverMetadataJSON`
 
         """
 
@@ -75,11 +76,15 @@ class PhoenixCollection(Collection):
 
     def to_dataframe(self, sample_rates=[150, 24000], run_name_zeros=4):
         """
-        Get a data frame with columns of the specified
-        :param sample_rates: DESCRIPTION, defaults to [150, 24000]
-        :type sample_rates: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Get a dataframe of all the files in a given directory with given
+        columns.
+
+        :param sample_rates: list of sample rates to read, defaults to [150, 24000]
+        :type sample_rates: list of integers, optional
+        :param run_name_zeros: Number of zeros in the run name, defaults to 4
+        :type run_name_zeros: integer, optional
+        :return: Dataframe with each row representing a single file
+        :rtype: :class:`pandas.DataFrame`
 
         """
 
@@ -139,10 +144,20 @@ class PhoenixCollection(Collection):
 
     def assign_run_names(self, df, zeros=4):
         """
-        Assign run names by looping through start times
+        Assign run names by looping through start times.
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        For continous data a single run is assigned as long as the start and
+        end times of each file align.  If there is a break a new run name is
+        assigned.
+
+        For segmented data a new run name is assigned to each segment
+
+        :param df: Dataframe returned by `to_dataframe` method
+        :type df: :class:`pandas.DataFrame`
+        :param zeros: Number of zeros in the run name, defaults to 4
+        :type zeros: integer, optional
+        :return: Dataframe with run names
+        :rtype: :class:`pandas.DataFrame`
 
         """
 
@@ -192,11 +207,27 @@ class PhoenixCollection(Collection):
 
     def get_runs(self, sample_rates=[150, 24000], run_name_zeros=4):
         """
+        Get a list of runs contained within the given folder.  First the
+        dataframe will be developed from which the runs are extracted.
 
-        :param df: DESCRIPTION
-        :type df: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        For continous data all you need is the first file in the sequence. The
+        reader will read in the entire sequence.
+
+        For segmented data it will only read in the given segment, which is
+        slightly different from the original reader.
+
+        :param sample_rates: list of sample rates to read, defaults to [150, 24000]
+        :type sample_rates: list of integers, optional
+        :param run_name_zeros: Number of zeros in the run name, defaults to 4
+        :type run_name_zeros: integer, optional
+        :return: List of run dataframes with only the first block of files
+        :rtype: list
+
+        :Example:
+
+            >>> from mth5.io.phoenix import PhoenixCollection
+            >>> phx_collection = PhoenixCollection(r"/path/to/station")
+            >>> run_list = phx_collection.get_runs(sample_rates=[150, 24000])
 
         """
 
