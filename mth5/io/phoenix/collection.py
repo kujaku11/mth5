@@ -26,8 +26,6 @@ class PhoenixCollection(Collection):
 
     def __init__(self, file_path=None, **kwargs):
 
-        super().__init__(file_path=file_path, **kwargs)
-
         self._file_extension_map = {
             30: "td_30",
             150: "td_150",
@@ -46,6 +44,12 @@ class PhoenixCollection(Collection):
             6: "H6",
             7: "E2",
         }
+
+        super().__init__(file_path=file_path, **kwargs)
+
+        self.station_id = None
+        self.survey_id = None
+        self.channel_map = self._default_channel_map
 
         self._receiver_metadata_name = "recmeta.json"
 
@@ -79,13 +83,9 @@ class PhoenixCollection(Collection):
 
         receiver_metadata = self._read_receiver_metadata_json()
         if receiver_metadata is not None:
-            station_id = receiver_metadata.station_metadata.id
-            survey_id = receiver_metadata.survey_metadata.id
-            channel_map = receiver_metadata.channel_map
-        else:
-            station_id = ""
-            survey_id = ""
-            channel_map = self._default_channel_map
+            self.station_id = receiver_metadata.station_metadata.id
+            self.survey_id = receiver_metadata.survey_metadata.id
+            self.channel_map = receiver_metadata.channel_map
 
         if not isinstance(sample_rates, (list, tuple)):
             sample_rates = [sample_rates]
@@ -96,39 +96,30 @@ class PhoenixCollection(Collection):
                 phx_obj = open_file(fn)
                 if hasattr(phx_obj, "read_segment"):
                     segment = phx_obj.read_segment(metadata_only=True)
-                    entry = {
-                        "survey": survey_id,
-                        "station": station_id,
-                        "run": None,
-                        "start": segment.segment_start_time.isoformat(),
-                        "end": segment.segment_end_time.isoformat(),
-                        "channel_id": phx_obj.channel_id,
-                        "component": channel_map[phx_obj.channel_id],
-                        "fn": fn,
-                        "sample_rate": phx_obj.sample_rate,
-                        "file_size": phx_obj.file_size,
-                        "n_samples": segment.n_samples,
-                        "sequence_number": phx_obj.seq,
-                        "instrument_id": phx_obj.recording_id,
-                    }
-                    entries.append(entry)
+                    start = segment.segment_start_time.isoformat()
+                    end = segment.segment_end_time.isoformat()
+                    n_samples = segment.n_samples
+
                 else:
-                    entry = {
-                        "survey": survey_id,
-                        "station": station_id,
-                        "run": None,
-                        "start": phx_obj.segment_start_time.isoformat(),
-                        "end": phx_obj.segment_end_time.isoformat(),
-                        "channel_id": phx_obj.channel_id,
-                        "component": channel_map[phx_obj.channel_id],
-                        "fn": fn,
-                        "sample_rate": phx_obj.sample_rate,
-                        "file_size": phx_obj.file_size,
-                        "n_samples": phx_obj.max_samples,
-                        "sequence_number": phx_obj.seq,
-                        "instrument_id": phx_obj.recording_id,
-                    }
-                    entries.append(entry)
+                    start = phx_obj.segment_start_time.isoformat()
+                    end = phx_obj.segment_end_time.isoformat()
+                    n_samples = phx_obj.max_samples
+                entry = {
+                    "survey": self.survey_id,
+                    "station": self.station_id,
+                    "run": None,
+                    "start": start,
+                    "end": end,
+                    "channel_id": phx_obj.channel_id,
+                    "component": self.channel_map[phx_obj.channel_id],
+                    "fn": fn,
+                    "sample_rate": phx_obj.sample_rate,
+                    "file_size": phx_obj.file_size,
+                    "n_samples": n_samples,
+                    "sequence_number": phx_obj.seq,
+                    "instrument_id": phx_obj.recording_id,
+                }
+                entries.append(entry)
 
         df = pd.DataFrame(entries)
         df.start = pd.to_datetime(df.start)
