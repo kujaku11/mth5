@@ -67,7 +67,7 @@ class PhoenixCollection(Collection):
             )
             return None
 
-    def to_dataframe(self, sample_rates=[150, 24000]):
+    def to_dataframe(self, sample_rates=[150, 24000], run_name_zeros=4):
         """
         Get a data frame with columns of the specified
         :param sample_rates: DESCRIPTION, defaults to [150, 24000]
@@ -137,7 +137,9 @@ class PhoenixCollection(Collection):
         # sort by start time
         df.sort_values(by=["start"], inplace=True)
 
-        return df
+        rdf = self.assign_run_names(df, zeros=run_name_zeros)
+
+        return rdf
 
     def assign_run_names(self, df, zeros=4):
         """
