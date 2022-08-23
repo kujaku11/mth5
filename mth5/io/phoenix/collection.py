@@ -129,7 +129,7 @@ class PhoenixCollection(Collection):
         # sort by start time
         df.sort_values(by=["start"], inplace=True)
 
-        # rdf = self.assign_run_names(df, zeros=run_name_zeros)
+        df = self.assign_run_names(df, zeros=run_name_zeros)
 
         return df
 
@@ -149,14 +149,31 @@ class PhoenixCollection(Collection):
             run_stem = self._file_extension_map[int(sr)].split("_")[-1]
             # continuous data
             if sr < 1000:
-                starts = rdf.loc[rdf.sample_rate == sr].start.unique().sort()
-                ends = rdf.loc[rdf.sample_rate == sr].end.unique().sort()
+                rdf = rdf.sort_values("sequence_number")
+                starts = rdf.loc[rdf.sample_rate == sr].start.unique()
+                ends = rdf.loc[rdf.sample_rate == sr].end.unique()
 
-                diff = np.diff(starts[1:], ends[0:-1])
+                # find any breaks in the data
+                diff = ends[0:-1] - starts[1:]
 
-                breaks = np.where(diff != 0)
+                breaks = np.where(diff != np.timedelta64(0))
+                count = 1
+                # this logic probably needs some work.
+                if len(breaks[0]) > 0:
+                    start_breaks = starts[breaks[0]]
+                    for ii in range(len(start_breaks)):
+                        count += 1
+                        rdf[
+                            (rdf.start == start_breaks[ii])
+                            & (rdf.start < start_breaks[ii + 1])
+                        ].loc[
+                            rdf.sample_rate == sr, "run"
+                        ] = f"sr{run_stem}_{count:0{zeros}}"
 
-                print(breaks)
+                else:
+                    rdf.loc[
+                        rdf.sample_rate == sr, "run"
+                    ] = f"sr{run_stem}_{count:0{zeros}}"
 
             # segmented data
             else:
@@ -165,7 +182,7 @@ class PhoenixCollection(Collection):
                 for ii, s in enumerate(starts, 1):
                     rdf.loc[
                         rdf.start == s, "run"
-                    ] = f"{run_stem}_{ii:0{zeros}}"
+                    ] = f"sr{run_stem}_{ii:0{zeros}}"
 
         return rdf
 
