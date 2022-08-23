@@ -44,20 +44,29 @@ class DecimatedContinuousReader(TSReaderBase):
     def segment_start_time(self):
         """
         estimate the segment start time based on sequence number
+
+        The first sequence starts 1 second later than the set start time due
+        to initiation within the data logger
+
         :return: DESCRIPTION
         :rtype: TYPE
 
         """
 
-        return self.recording_start_time + (
-            self.frag_period * (self.file_sequence - 1)
-            - (self.file_sequence - 1)
-        )
+        if self.file_sequence == 1:
+            return self.recording_start_time + 1
+        else:
+            return self.recording_start_time + (
+                self.frag_period * (self.file_sequence - 1)
+            )
 
     @property
     def segment_end_time(self):
         """
         estimate end time
+
+        The first sequence starts 1 second later than the set start time due
+        to initiation within the data logger
 
         :return: DESCRIPTION
         :rtype: TYPE

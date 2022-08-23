@@ -10,8 +10,9 @@ Created on Thu Aug  4 16:48:47 2022
 # =============================================================================
 # Imports
 # =============================================================================
-from pathlib import Path
+import numpy as np
 import pandas as pd
+
 from mth5.io.phoenix import open_file, ReceiverMetadataJSON
 from mth5.io import Collection
 
@@ -128,9 +129,9 @@ class PhoenixCollection(Collection):
         # sort by start time
         df.sort_values(by=["start"], inplace=True)
 
-        rdf = self.assign_run_names(df, zeros=run_name_zeros)
+        # rdf = self.assign_run_names(df, zeros=run_name_zeros)
 
-        return rdf
+        return df
 
     def assign_run_names(self, df, zeros=4):
         """
@@ -146,9 +147,25 @@ class PhoenixCollection(Collection):
 
         for sr in sample_rates:
             run_stem = self._file_extension_map[int(sr)].split("_")[-1]
-            starts = rdf.loc[rdf.sample_rate == sr].start.unique()
-            for ii, s in enumerate(starts, 1):
-                rdf.loc[rdf.start == s, "run"] = f"{run_stem}_{ii:0{zeros}}"
+            # continuous data
+            if sr < 1000:
+                starts = rdf.loc[rdf.sample_rate == sr].start.unique().sort()
+                ends = rdf.loc[rdf.sample_rate == sr].end.unique().sort()
+
+                diff = np.diff(starts[1:], ends[0:-1])
+
+                breaks = np.where(diff != 0)
+
+                print(breaks)
+
+            # segmented data
+            else:
+
+                starts = rdf.loc[rdf.sample_rate == sr].start.unique()
+                for ii, s in enumerate(starts, 1):
+                    rdf.loc[
+                        rdf.start == s, "run"
+                    ] = f"{run_stem}_{ii:0{zeros}}"
 
         return rdf
 

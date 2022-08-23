@@ -183,9 +183,9 @@ class Header:
     @property
     def recording_start_time(self):
         """
-        Need a +1 second because the actual data recording starts 1 second
-        after the set start time.  This is cause by the data logger starting
-        up and initializing filter.
+        The actual data recording starts 1 second after the set start time.
+        This is cause by the data logger starting up and initializing filter.
+        This is taken care of in the segment start time
 
         See https://github.com/kujaku11/PhoenixGeoPy/tree/main/Docs for more
         information.
@@ -194,7 +194,8 @@ class Header:
         :rtype: TYPE
 
         """
-        return MTime(datetime.fromtimestamp(self.recording_id)) + 1
+
+        return MTime(datetime.fromtimestamp(self.recording_id))
 
     @property
     def channel_id(self):

@@ -33,12 +33,14 @@ class Collection:
             "run",
             "start",
             "end",
-            "channel",
+            "channel_id",
+            "component",
             "fn",
             "sample_rate",
             "file_size",
             "n_samples",
             "sequence_number",
+            "instrument_id",
         ]
 
         for key, value in kwargs.items():
