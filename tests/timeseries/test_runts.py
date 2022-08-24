@@ -190,7 +190,9 @@ class TestRunTS(unittest.TestCase):
             # so it grabs the closest one.
             self.assertEqual(r_slice.start, MTime(start) + 0.002930)
         with self.subTest("end"):
-            self.assertEqual(r_slice.end, r_slice.start + npts / 8.0)
+            self.assertEqual(
+                r_slice.end, MTime("2015-01-08T19:50:01.885714+00:00")
+            )
 
         with self.subTest("npts"):
             self.assertEqual(r_slice.dataset.ex.data.shape[0], npts)
