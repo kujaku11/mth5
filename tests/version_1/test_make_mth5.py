@@ -68,17 +68,17 @@ class TestMakeMTH5(unittest.TestCase):
         with self.subTest(name="stations"):
             self.assertListEqual(
                 sorted(self.stations),
-                sorted([ss.code for ss in inv.networks[0].stations]),
+                sorted(list(set([ss.code for ss in inv.networks[0].stations]))),
             )
         with self.subTest(name="channels_CAS04"):
             self.assertListEqual(
                 sorted(self.channels),
-                sorted([ss.code for ss in inv.networks[0].stations[0].channels]),
+                sorted(list(set([ss.code for ss in inv.networks[0].stations[0].channels]))),
             )
         with self.subTest(name="channels_NVR08"):
             self.assertListEqual(
                 sorted(self.channels),
-                sorted([ss.code for ss in inv.networks[0].stations[1].channels]),
+                sorted(list(set([ss.code for ss in inv.networks[0].stations[1].channels]))),
             )
 
     def test_csv_input_inventory(self):
@@ -91,12 +91,12 @@ class TestMakeMTH5(unittest.TestCase):
         with self.subTest(name="channels_CAS04"):
             self.assertListEqual(
                 sorted(self.channels),
-                sorted([ss.code for ss in inv.networks[0].stations[0].channels]),
+                sorted(list(set([ss.code for ss in inv.networks[0].stations[0].channels]))),
             )
         with self.subTest(name="channels_NVR08"):
             self.assertListEqual(
                 sorted(self.channels),
-                sorted([ss.code for ss in inv.networks[0].stations[1].channels]),
+                sorted(list(set([ss.code for ss in inv.networks[0].stations[1].channels]))),
             )
 
     def test_fail_csv_inventory(self):
