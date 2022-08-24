@@ -32,7 +32,7 @@ class TestRunTS(unittest.TestCase):
         self.run = RunTS()
         self.maxDiff = None
         self.start = "2015-01-08T19:49:18+00:00"
-        self.end = "2015-01-08T19:57:49.875000"
+        self.end = "2015-01-08T19:57:50.00000"
         self.sample_rate = 8
         self.npts = 4096
 
@@ -97,7 +97,9 @@ class TestRunTS(unittest.TestCase):
     def test_initialize(self):
 
         with self.subTest("channels"):
-            self.assertListEqual(["ex", "ey", "hx", "hy", "hz"], self.run.channels)
+            self.assertListEqual(
+                ["ex", "ey", "hx", "hy", "hz"], self.run.channels
+            )
         with self.subTest("sample rate"):
             self.assertEqual(self.run.sample_rate, self.sample_rate)
         with self.subTest("start"):
@@ -106,7 +108,7 @@ class TestRunTS(unittest.TestCase):
             self.assertEqual(self.run.end, MTime(self.end))
 
     def test_sr_fail(self):
-        self.hz = ChannelTS(
+        hz = ChannelTS(
             "magnetic",
             data=np.random.rand(self.npts),
             channel_metadata={
@@ -121,7 +123,7 @@ class TestRunTS(unittest.TestCase):
         self.assertRaises(
             MTTSError,
             self.run.set_dataset,
-            [self.ex, self.ey, self.hx, self.hy, self.hz],
+            [self.ex, self.ey, self.hx, self.hy, hz],
         )
 
     def test_channels(self):
@@ -153,15 +155,21 @@ class TestRunTS(unittest.TestCase):
         self.run.validate_metadata()
 
         with self.subTest("sample rate"):
-            self.assertEqual(self.ex.sample_rate, self.run.run_metadata.sample_rate)
+            self.assertEqual(
+                self.ex.sample_rate, self.run.run_metadata.sample_rate
+            )
         with self.subTest("start"):
             self.run.run_metadata.start = "2020-01-01T00:00:00"
             self.run.validate_metadata()
-            self.assertEqual(self.run.start, self.run.run_metadata.time_period.start)
+            self.assertEqual(
+                self.run.start, self.run.run_metadata.time_period.start
+            )
         with self.subTest("end"):
             self.run.run_metadata.end = "2020-01-01T00:00:00"
             self.run.validate_metadata()
-            self.assertEqual(self.run.end, self.run.run_metadata.time_period.end)
+            self.assertEqual(
+                self.run.end, self.run.run_metadata.time_period.end
+            )
 
     def test_get_slice(self):
 
@@ -174,13 +182,18 @@ class TestRunTS(unittest.TestCase):
             self.assertIsInstance(r_slice, RunTS)
         with self.subTest("sample rate"):
             self.assertEqual(r_slice.sample_rate, self.sample_rate)
-        with self.subTest("start"):
-            self.assertEqual(r_slice.start, MTime(start))
-        # with self.subTest("end"):
-        #     self.assertEqual(ch.end, MTime())
+        with self.subTest("start not equal"):
+            self.assertNotEqual(r_slice.start, MTime(start))
 
-        # with self.subTest("npts"):
-        #     self.assertEqual(r_slice., comp)
+        with self.subTest("start equal"):
+            # the time index does not have a value at the requested location
+            # so it grabs the closest one.
+            self.assertEqual(r_slice.start, MTime(start) + 0.002930)
+        with self.subTest("end"):
+            self.assertEqual(r_slice.end, r_slice.start + npts / 8.0)
+
+        with self.subTest("npts"):
+            self.assertEqual(r_slice.dataset.ex.data.shape[0], npts)
 
 
 # =============================================================================
