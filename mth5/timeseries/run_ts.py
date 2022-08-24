@@ -540,12 +540,15 @@ class RunTS:
         else:
             raise ValueError("Must input n_samples or end")
 
+        chunk = self.dataset.indexes["time"].slice_indexer(
+            start=np.datetime64(start.iso_no_tz),
+            end=np.datetime64(end.iso_no_tz),
+        )
+
         new_runts = RunTS()
         new_runts.station_metadata = self.station_metadata
         new_runts.run_metadata = self.run_metadata
-        new_runts.dataset = self._dataset.sel(
-            time=slice(start.iso_no_tz, end.iso_no_tz)
-        )
+        new_runts.dataset = self._dataset.isel(indexers={"time": chunk})
 
         return new_runts
 
