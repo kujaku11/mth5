@@ -22,8 +22,8 @@ Updated August 2020 (JP)
 # ==============================================================================
 
 import datetime
-import os
 import struct
+from pathlib import Path
 import logging
 
 import numpy as np
@@ -165,8 +165,40 @@ class Z3D:
 
         self.units = "counts"
         self.sample_rate = None
+        self.time_series = None
 
         self.ch_dict = {"hx": 1, "hy": 2, "hz": 3, "ex": 4, "ey": 5}
+
+    @property
+    def fn(self):
+        return self._fn
+
+    @fn.setter
+    def fn(self, fn):
+        if fn is not None:
+            self._fn = Path(fn)
+        else:
+            self._fn = None
+
+    @property
+    def file_size(self):
+        if self.fn is not None:
+            return self.fn.stat().st_size
+        return 0
+
+    @property
+    def n_samples(self):
+        if self.time_series is None:
+            if self.sample_rate:
+                return int(
+                    (self.file_size - 512 * (1 + self.metadata.count)) / 4
+                    + 8 * self.sample_rate
+                )
+            else:
+                # assume just the 3 general metadata blocks
+                return int((self.file_size - 512 * 3) / 4)
+        else:
+            return self.time_series.size
 
     @property
     def station(self):
@@ -276,7 +308,7 @@ class Z3D:
             return self.get_UTC_date_time(
                 self.header.gpsweek, self.gps_stamps["time"][0]
             )
-        return None
+        return self.zen_schedule
 
     @property
     def end(self):
@@ -284,7 +316,7 @@ class Z3D:
             return self.get_UTC_date_time(
                 self.header.gpsweek, self.gps_stamps["time"][-1]
             )
-        return None
+        return self.start + (self.n_samples / self.sample_rate)
 
     @property
     def zen_schedule(self):
@@ -679,8 +711,77 @@ class Z3D:
             self._read_schedule(fid=file_id)
             self._read_metadata(fid=file_id)
 
+    def _read_raw_string(self, fid):
+        """
+        read raw sting into data
+
+        :param fid: DESCRIPTION
+        :type fid: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        # move the read value to where the end of the metadata is
+        fid.seek(self.metadata.m_tell)
+
+        # initalize a data array filled with zeros, everything goes into
+        # this array then we parse later
+        data = np.zeros(self.n_samples, dtype=np.int32)
+        # go over a while loop until the data cound exceed the file size
+        data_count = 0
+        while True:
+            # need to make sure the last block read is a multiple of 32 bit
+            read_len = min(
+                [
+                    self._block_len,
+                    int(32 * ((self.file_size - fid.tell()) // 32)),
+                ]
+            )
+            test_str = np.frombuffer(fid.read(read_len), dtype=np.int32)
+            if len(test_str) == 0:
+                break
+            data[data_count : data_count + len(test_str)] = test_str
+            data_count += test_str.size
+
+        return data
+
+    def _unpack_data(self, data, gps_stamp_index):
+        """ """
+
+        for ii, gps_find in enumerate(gps_stamp_index):
+            try:
+                data[gps_find + 1]
+            except IndexError:
+                pass
+                self.logger.warning(
+                    f"Failed gps stamp {ii+1} out of {len(gps_stamp_index)}"
+                )
+                break
+
+            if (
+                self.header.old_version is True
+                or data[gps_find + 1] == self._gps_flag_1
+            ):
+                gps_str = struct.pack(
+                    "<" + "i" * int(self._gps_bytes),
+                    *data[int(gps_find) : int(gps_find + self._gps_bytes)],
+                )
+                self.gps_stamps[ii] = np.frombuffer(
+                    gps_str, dtype=self._gps_dtype
+                )
+                if ii > 0:
+                    self.gps_stamps[ii]["block_len"] = (
+                        gps_find - gps_stamp_index[ii - 1] - self._gps_bytes
+                    )
+                elif ii == 0:
+                    self.gps_stamps[ii]["block_len"] = 0
+                data[int(gps_find) : int(gps_find + self._gps_bytes)] = 0
+
+        return data
+
     # ======================================
-    def read_z3d(self, Z3Dfn=None):
+    def read_z3d(self, z3d_fn=None):
         """
         read in z3d file and populate attributes accordingly
 
@@ -709,14 +810,11 @@ class Z3D:
 
         """
 
-        if Z3Dfn is not None:
-            self.fn = Z3Dfn
+        if z3d_fn is not None:
+            self.fn = z3d_fn
 
         self.logger.debug(f"Reading {self.fn}")
         st = datetime.datetime.now()
-
-        # get the file size to get an estimate of how many data points there are
-        file_size = os.path.getsize(self.fn)
 
         # using the with statement works in Python versions 2.7 or higher
         # the added benefit of the with statement is that it will close the
@@ -730,37 +828,10 @@ class Z3D:
             if self.header.old_version is True:
                 self._get_gps_stamp_type(True)
 
-            # move the read value to where the end of the metadata is
-            file_id.seek(self.metadata.m_tell)
-
-            # initalize a data array filled with zeros, everything goes into
-            # this array then we parse later
-            data = np.zeros(
-                int(
-                    (file_size - 512 * (1 + self.metadata.count)) / 4
-                    + 8 * self.sample_rate
-                ),
-                dtype=np.int32,
-            )
-            # go over a while loop until the data cound exceed the file size
-            data_count = 0
-            while True:
-                # need to make sure the last block read is a multiple of 32 bit
-                read_len = min(
-                    [
-                        self._block_len,
-                        int(32 * ((file_size - file_id.tell()) // 32)),
-                    ]
-                )
-                test_str = np.frombuffer(
-                    file_id.read(read_len), dtype=np.int32
-                )
-                if len(test_str) == 0:
-                    break
-                data[data_count : data_count + len(test_str)] = test_str
-                data_count += test_str.size
+            data = self._read_raw_string(file_id)
 
         self.raw_data = data.copy()
+
         # find the gps stamps
         gps_stamp_find = self.get_gps_stamp_index(
             data, self.header.old_version
@@ -779,36 +850,9 @@ class Z3D:
             data, self.header.old_version
         )
 
+        # read data chunks and GPS stamps
         self.gps_stamps = np.zeros(len(gps_stamp_find), dtype=self._gps_dtype)
-
-        for ii, gps_find in enumerate(gps_stamp_find):
-            try:
-                data[gps_find + 1]
-            except IndexError:
-                pass
-                self.logger.warning(
-                    f"Failed gps stamp {ii+1} out of {len(gps_stamp_find)}"
-                )
-                break
-
-            if (
-                self.header.old_version is True
-                or data[gps_find + 1] == self._gps_flag_1
-            ):
-                gps_str = struct.pack(
-                    "<" + "i" * int(self._gps_bytes),
-                    *data[int(gps_find) : int(gps_find + self._gps_bytes)],
-                )
-                self.gps_stamps[ii] = np.frombuffer(
-                    gps_str, dtype=self._gps_dtype
-                )
-                if ii > 0:
-                    self.gps_stamps[ii]["block_len"] = (
-                        gps_find - gps_stamp_find[ii - 1] - self._gps_bytes
-                    )
-                elif ii == 0:
-                    self.gps_stamps[ii]["block_len"] = 0
-                data[int(gps_find) : int(gps_find + self._gps_bytes)] = 0
+        data = self._unpack_data(data, gps_stamp_find)
 
         # fill the time series
         self.time_series = data[np.nonzero(data)]

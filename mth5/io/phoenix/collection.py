@@ -74,7 +74,12 @@ class PhoenixCollection(Collection):
             )
             return None
 
-    def to_dataframe(self, sample_rates=[150, 24000], run_name_zeros=4):
+    def to_dataframe(
+        self,
+        sample_rates=[150, 24000],
+        run_name_zeros=4,
+        calibration_path=None,
+    ):
         """
         Get a dataframe of all the files in a given directory with given
         columns.
@@ -99,7 +104,7 @@ class PhoenixCollection(Collection):
 
         entries = []
         for sr in sample_rates:
-            for fn in self._get_files(self._file_extension_map[int(sr)]):
+            for fn in self.get_files(self._file_extension_map[int(sr)]):
                 phx_obj = open_file(fn)
                 if hasattr(phx_obj, "read_segment"):
                     segment = phx_obj.read_segment(metadata_only=True)
@@ -128,17 +133,9 @@ class PhoenixCollection(Collection):
                 }
                 entries.append(entry)
 
-        df = pd.DataFrame(entries)
-        df.start = pd.to_datetime(df.start)
-        df.end = pd.to_datetime(df.end)
-
-        # sort by start time
-        df.sort_values(by=["start"], inplace=True)
-
-        df = self.assign_run_names(df, zeros=run_name_zeros)
-
-        df.sort_values(by=["run", "start"], inplace=True)
-        df.reset_index(inplace=True, drop=True)
+        df = self._sort_df(
+            self._set_df_dtypes(pd.DataFrame(entries)), run_name_zeros
+        )
 
         return df
 
@@ -204,39 +201,3 @@ class PhoenixCollection(Collection):
                     ] = f"sr{run_stem}_{ii:0{zeros}}"
 
         return rdf
-
-    def get_runs(self, sample_rates=[150, 24000], run_name_zeros=4):
-        """
-        Get a list of runs contained within the given folder.  First the
-        dataframe will be developed from which the runs are extracted.
-
-        For continous data all you need is the first file in the sequence. The
-        reader will read in the entire sequence.
-
-        For segmented data it will only read in the given segment, which is
-        slightly different from the original reader.
-
-        :param sample_rates: list of sample rates to read, defaults to [150, 24000]
-        :type sample_rates: list of integers, optional
-        :param run_name_zeros: Number of zeros in the run name, defaults to 4
-        :type run_name_zeros: integer, optional
-        :return: List of run dataframes with only the first block of files
-        :rtype: list
-
-        :Example:
-
-            >>> from mth5.io.phoenix import PhoenixCollection
-            >>> phx_collection = PhoenixCollection(r"/path/to/station")
-            >>> run_list = phx_collection.get_runs(sample_rates=[150, 24000])
-
-        """
-
-        df = self.to_dataframe(sample_rates, run_name_zeros)
-
-        run_list = []
-
-        for run_id in df.run.unique():
-            run_df = df[df.run == run_id]
-            run_list.append(run_df[run_df.start == run_df.start.min()])
-
-        return run_list

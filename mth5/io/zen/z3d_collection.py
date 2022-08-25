@@ -56,7 +56,9 @@ class Z3DCollection(Collection):
             calibration_dict[cal_num] = cal_fn
         return calibration_dict
 
-    def to_dataframe(self, calibration_path=None):
+    def to_dataframe(
+        self, sample_rates=[256, 4096], run_name_zeros=4, calibration_path=None
+    ):
         """
         Get general z3d information and put information in a dataframe
 
@@ -77,23 +79,28 @@ class Z3DCollection(Collection):
         """
 
         cal_dict = self.get_calibrations(calibration_path)
-        z3d_info_list = []
-        for z3d_fn in self._get_files(".z3d"):
+        entries = []
+        for z3d_fn in self.get_files(["z3d"]):
             z3d_obj = Z3D(z3d_fn)
             z3d_obj.read_all_info()
+            if not int(z3d_obj.sample_rate) in sample_rates:
+                self.logger.warning(
+                    f"{z3d_obj.sample_rate} not in {sample_rates}"
+                )
+                return
 
             entry = {}
             entry["survey"] = z3d_obj.metadata.job_name
             entry["station"] = z3d_obj.station
             entry["run"] = None
-            entry["start"] = z3d_obj.start
-            entry["end"] = z3d_obj.end
+            entry["start"] = z3d_obj.start.isoformat()
+            entry["end"] = z3d_obj.end.isoformat()
             entry["channel_id"] = z3d_obj.channel_number
             entry["component"] = z3d_obj.component
             entry["fn"] = z3d_fn
             entry["sample_rate"] = z3d_obj.sample_rate
-            entry["file_size"] = z3d_fn.stat().st_size
-            entry["n_samples"] = 0
+            entry["file_size"] = z3d_obj.file_size
+            entry["n_samples"] = z3d_obj.n_samples
             entry["sequence_number"] = 0
             entry["instrument_id"] = z3d_obj.header.box_number
             if cal_dict:
@@ -104,39 +111,23 @@ class Z3DCollection(Collection):
                         f"Could not find {z3d_obj.coil_number}"
                     )
 
-            z3d_info_list.append(entry)
+            entries.append(entry)
         # make pandas dataframe and set data types
-        z3d_df = pd.DataFrame(z3d_info_list)
-        z3d_df.start = pd.to_datetime(z3d_df.start, errors="coerce")
-        z3d_df.stop = pd.to_datetime(z3d_df.stop, errors="coerce")
+        df = self._sort_df(
+            self._set_df_dtypes(pd.DataFrame(entries)), run_name_zeros
+        )
 
-        z3d_df = self.assign_runs(z3d_df)
-
-        return z3d_df
-
-    def assign_runs(self, df, zeros=3):
-
-        # assign block numbers
-        for sr in df.sample_rate.unique():
-            starts = sorted(df[df.sampling_rate == sr].start.unique())
-            for block_num, start in enumerate(starts):
-                df.loc[(df.start == start), "block"] = block_num
         return df
 
-    def _validate_block_dict(self, z3d_df, block_dict):
-        """ """
-        if block_dict is None:
-            block_dict = {}
-            for sr in z3d_df.sampling_rate.unique():
-                block_dict[sr] = list(
-                    z3d_df[z3d_df.sampling_rate == sr].block.unique()
-                )
-        else:
-            assert isinstance(block_dict, dict), "Blocks is not a dictionary."
-            for key, value in block_dict.items():
-                if isinstance(value, str):
-                    if value == "all":
-                        block_dict[key] = list(
-                            z3d_df[z3d_df.sampling_rate == key].block.unique()
-                        )
-        return block_dict
+    def assign_run_names(self, df, zeros=3):
+
+        # assign run names
+        starts = sorted(df.start.unique())
+        for block_num, start in enumerate(starts):
+            sample_rate = df[df.start == start].sample_rate.unique()[0]
+
+            df.loc[
+                (df.start == start), "run"
+            ] = f"sr{sample_rate:.0f}_{block_num:0{zeros}}"
+            df.loc[(df.start == start), "sequence_number"] = block_num
+        return df
