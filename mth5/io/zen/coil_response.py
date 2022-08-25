@@ -28,17 +28,30 @@ variables
 # =============================================================================
 from pathlib import Path
 import numpy as np
-import pandas as pd
 
 from mt_metadata.timeseries.filters import FrequencyResponseTableFilter
+from mt_metadata.utils.mttime import MTime
 
 # =============================================================================
 # Variables
 # =============================================================================
 class CoilResponse:
-    def __init__(self):
+    def __init__(self, calibration_file=None):
         self.coil_calibrations = {}
         self._n_frequencies = 48
+        self.calibration_file = calibration_file
+
+    @property
+    def calibration_file(self):
+        return self._calibration_fn
+
+    @calibration_file.setter
+    def calibration_file(self, fn):
+        if fn is not None:
+            self._calibration_fn = Path(fn)
+
+        else:
+            self._calibration_fn = None
 
     def read_antenna_file(
         self, antenna_calibration_file, angular_frequency=False
@@ -55,9 +68,9 @@ class CoilResponse:
         ant_fn = Path(antenna_calibration_file)
 
         cal_dtype = [
-            ("frequency", np.float),
-            ("amplitude", np.float),
-            ("phase", np.float),
+            ("frequency", float),
+            ("amplitude", float),
+            ("phase", float),
         ]
 
         with open(ant_fn, "r") as fid:
@@ -119,6 +132,10 @@ class CoilResponse:
             fap.units_in = "millivolts"
             fap.units_out = "nanotesla"
             fap.name = f"coil_{coil_number}"
+            fap.instrument_type = "ANT4 induction coil"
+            fap.calibration_date = MTime(
+                self.calibration_file.stat().st_mtime
+            ).isoformat()
 
             return fap
 
