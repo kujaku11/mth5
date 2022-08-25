@@ -363,7 +363,11 @@ class Z3D:
                 except KeyError:
                     ch_num = 6
             return ch_num
-        return 0
+        else:
+            try:
+                return self.ch_dict[self.component]
+            except KeyError:
+                return 0
 
     @property
     def channel_metadata(self):
@@ -538,7 +542,7 @@ class Z3D:
             dipole = CoefficientFilter()
             dipole.units_in = "millivolts"
             dipole.units_out = "millivolts per kilometer"
-            dipole.name = f"{self.station}_{self.component}_dipole"
+            dipole.name = f"dipole_{self.dipole_length:.2f}m"
             dipole.gain = self.dipole_length / 1000.0
             dipole.comments = "convert to electric field"
 

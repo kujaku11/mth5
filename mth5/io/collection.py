@@ -10,11 +10,13 @@ Created on Thu Aug  4 16:48:47 2022
 # =============================================================================
 # Imports
 # =============================================================================
+from collections import OrderedDict
 from pathlib import Path
 
 import pandas as pd
 
 from mth5.utils.mth5_logger import setup_logger
+
 
 # =============================================================================
 
@@ -125,6 +127,7 @@ class Collection:
 
         df.start = pd.to_datetime(df.start, errors="coerce")
         df.end = pd.to_datetime(df.end, errors="coerce")
+        df.instrument_id = df.instrument_id.astype(str)
 
         return df
 
@@ -170,13 +173,13 @@ class Collection:
         :param run_name_zeros: Number of zeros in the run name, defaults to 4
         :type run_name_zeros: integer, optional
         :return: List of run dataframes with only the first block of files
-        :rtype: list
+        :rtype: OrderedDict
 
         :Example:
 
             >>> from mth5.io.phoenix import PhoenixCollection
             >>> phx_collection = PhoenixCollection(r"/path/to/station")
-            >>> run_list = phx_collection.get_runs(sample_rates=[150, 24000])
+            >>> run_dict = phx_collection.get_runs(sample_rates=[150, 24000])
 
         """
 
@@ -186,10 +189,18 @@ class Collection:
             calibration_path=calibration_path,
         )
 
-        run_list = []
+        run_dict = OrderedDict()
 
-        for run_id in df.run.unique():
-            run_df = df[df.run == run_id]
-            run_list.append(run_df[run_df.start == run_df.start.min()])
+        for station in sorted(df.station.unique()):
+            run_dict[station] = OrderedDict()
 
-        return run_list
+            for run_id in sorted(
+                df[df.station == station].run.unique(),
+                key=lambda x: x[-run_name_zeros:],
+            ):
+                run_df = df[(df.station == station) & (df.run == run_id)]
+                run_dict[station][run_id] = run_df[
+                    run_df.start == run_df.start.min()
+                ]
+
+        return run_dict

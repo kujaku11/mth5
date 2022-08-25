@@ -20,6 +20,8 @@ from pathlib import Path
 from mth5.io.collection import Collection
 from mth5.io.zen import Z3D
 
+from mt_metadata.timeseries import Station
+
 # =============================================================================
 # Collection of Z3D Files
 # =============================================================================
@@ -33,6 +35,7 @@ class Z3DCollection(Collection):
     def __init__(self, file_path=None, **kwargs):
 
         super().__init__(file_path=file_path, **kwargs)
+        self.station_metadata_dict = {}
 
     def get_calibrations(self, calibration_path):
         """
@@ -54,6 +57,35 @@ class Z3DCollection(Collection):
             cal_num = cal_fn.stem
             calibration_dict[cal_num] = cal_fn
         return calibration_dict
+
+    def _sort_station_metadata(self, station_list):
+        """
+
+        :param station_list: DESCRIPTION
+        :type station_list: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        sdf = pd.DataFrame(station_list)
+        info = {}
+        for station in sdf.id.unique():
+            station_df = sdf[sdf.id == station]
+            station_metadata = Station()
+            station_metadata.id = station
+            station_metadata.location.latitude = station_df[
+                "location.latitude"
+            ].median()
+            station_metadata.location.longitude = station_df[
+                "location.longitude"
+            ].median()
+            station_metadata.location.elevation = station_df[
+                "location.elevation"
+            ].median()
+
+            info[station] = station_metadata
+
+        return info
 
     def to_dataframe(
         self, sample_rates=[256, 4096], run_name_zeros=4, calibration_path=None
@@ -77,11 +109,13 @@ class Z3DCollection(Collection):
 
         """
 
+        station_metadata = []
         cal_dict = self.get_calibrations(calibration_path)
         entries = []
         for z3d_fn in self.get_files(["z3d"]):
             z3d_obj = Z3D(z3d_fn)
             z3d_obj.read_all_info()
+            station_metadata.append(z3d_obj.station_metadata["Station"])
             if not int(z3d_obj.sample_rate) in sample_rates:
                 self.logger.warning(
                     f"{z3d_obj.sample_rate} not in {sample_rates}"
@@ -101,7 +135,7 @@ class Z3DCollection(Collection):
             entry["file_size"] = z3d_obj.file_size
             entry["n_samples"] = z3d_obj.n_samples
             entry["sequence_number"] = 0
-            entry["instrument_id"] = z3d_obj.header.box_number
+            entry["instrument_id"] = f"ZEN_{int(z3d_obj.header.box_number):03}"
             if cal_dict:
                 try:
                     entry["calibration_fn"] = cal_dict[z3d_obj.coil_number]
@@ -116,17 +150,27 @@ class Z3DCollection(Collection):
             self._set_df_dtypes(pd.DataFrame(entries)), run_name_zeros
         )
 
+        self.station_metadata_dict = self._sort_station_metadata(
+            station_metadata
+        )
+
         return df
 
     def assign_run_names(self, df, zeros=3):
 
         # assign run names
-        starts = sorted(df.start.unique())
-        for block_num, start in enumerate(starts):
-            sample_rate = df[df.start == start].sample_rate.unique()[0]
+        for station in df.station.unique():
+            starts = sorted(df[df.station == station].start.unique())
+            for block_num, start in enumerate(starts, 1):
+                sample_rate = df[
+                    (df.station == station) & (df.start == start)
+                ].sample_rate.unique()[0]
 
-            df.loc[
-                (df.start == start), "run"
-            ] = f"sr{sample_rate:.0f}_{block_num:0{zeros}}"
-            df.loc[(df.start == start), "sequence_number"] = block_num
+                df.loc[
+                    (df.station == station) & (df.start == start), "run"
+                ] = f"sr{sample_rate:.0f}_{block_num:0{zeros}}"
+                df.loc[
+                    (df.station == station) & (df.start == start),
+                    "sequence_number",
+                ] = block_num
         return df
