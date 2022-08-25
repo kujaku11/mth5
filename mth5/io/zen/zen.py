@@ -472,13 +472,16 @@ class Z3D:
     def counts2mv_filter(self):
         """
         Create a counts2mv coefficient filter
+
+        .. note:: Needs to be 1/channel factor because we divided the
+        instrument response from the data.
         """
 
         c2mv = CoefficientFilter()
         c2mv.units_in = "digital counts"
         c2mv.units_out = "millivolts"
         c2mv.name = "zen_counts2mv"
-        c2mv.gain = self.header.ch_factor
+        c2mv.gain = 1.0 / self.header.ch_factor
         c2mv.comments = "digital counts to millivolts"
 
         return c2mv
