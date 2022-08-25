@@ -43,6 +43,7 @@ class Collection:
             "n_samples",
             "sequence_number",
             "instrument_id",
+            "calibraion_fn",
         ]
 
         for key, value in kwargs.items():

@@ -130,6 +130,7 @@ class PhoenixCollection(Collection):
                     "n_samples": n_samples,
                     "sequence_number": phx_obj.seq,
                     "instrument_id": phx_obj.recording_id,
+                    "calibration_fn": None,
                 }
                 entries.append(entry)
 
