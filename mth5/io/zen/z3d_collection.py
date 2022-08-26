@@ -18,7 +18,7 @@ import pandas as pd
 from pathlib import Path
 
 from mth5.io.collection import Collection
-from mth5.io.zen import Z3D
+from mth5.io.zen import Z3D, CoilResponse
 
 from mt_metadata.timeseries import Station
 
@@ -37,26 +37,17 @@ class Z3DCollection(Collection):
         super().__init__(file_path=file_path, **kwargs)
         self.station_metadata_dict = {}
 
-    def get_calibrations(self, calibration_path):
+    def get_calibrations(self, antenna_calibration_file):
         """
-        get coil calibrations
+        Get coil calibrations from the antenna.cal file
+
+        :param antenna_calibration_file: DESCRIPTION
+        :type antenna_calibration_file: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
         """
-        if calibration_path is None:
-            self.logger.warning("Calibration path is None")
-            return {}
-        if not isinstance(calibration_path, Path):
-            calibration_path = Path(calibration_path)
-        if not calibration_path.exists():
-            self.logger.warning(
-                "WARNING: could not find calibration path: "
-                "{0}".format(calibration_path)
-            )
-            return {}
-        calibration_dict = {}
-        for cal_fn in calibration_path.glob("*.csv"):
-            cal_num = cal_fn.stem
-            calibration_dict[cal_num] = cal_fn
-        return calibration_dict
+        coil_response = CoilResponse(antenna_calibration_file)
 
     def _sort_station_metadata(self, station_list):
         """
