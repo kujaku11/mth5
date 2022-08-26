@@ -759,6 +759,12 @@ class ChannelTS:
         calibrated_ts.channel_metadata.filter.applied = [True] * len(
             self.channel_metadata.filter.applied
         )
+        calibrated_ts._ts.attrs[
+            "units"
+        ] = self.channel_response_filter.units_out
+        calibrated_ts.channel_metadata.units = (
+            self.channel_response_filter.units_out
+        )
 
         return calibrated_ts
 

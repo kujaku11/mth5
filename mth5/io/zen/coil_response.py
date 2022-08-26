@@ -6,21 +6,6 @@ Read an amtant.cal file provided by Zonge.
 Apparently, the file includes the 6th and 8th harmonic of the given frequency, which
 is a fancy way of saying f * 6 and f * 8. 
 
-variables
------------
-
-    **ant_fn**: full path to the calibration file
-    
-    **birrp**: If the calibration files are written for BIRRP then need to add
-    a line at the beginning of the file that describes any scaling factors for 
-    the calibrations, should be 1, 1, 1
-    
-    **angular_frequency**: Puts the frequency in angular frequency (2 * pi * f)
-     
-    **quadrature**: puts the response in amplitude and phase (True) or 
-    real and imaginary (False)
-    
-    **nf**: number of expected frequencies
  
 """
 # =============================================================================
@@ -36,10 +21,13 @@ from mt_metadata.utils.mttime import MTime
 # Variables
 # =============================================================================
 class CoilResponse:
-    def __init__(self, calibration_file=None):
+    def __init__(self, calibration_file=None, angular_frequency=False):
         self.coil_calibrations = {}
         self._n_frequencies = 48
         self.calibration_file = calibration_file
+        self.angular_frequency = angular_frequency
+        if calibration_file:
+            self.read_antenna_file()
 
     @property
     def calibration_file(self):
@@ -53,10 +41,14 @@ class CoilResponse:
         else:
             self._calibration_fn = None
 
-    def read_antenna_file(
-        self, antenna_calibration_file, angular_frequency=False
-    ):
+    def read_antenna_file(self, antenna_calibration_file=None):
         """
+
+        Read in the Antenna file to frequency, amplitude, phase of the proper
+        harmonics (6, 8)
+
+        .. note:: Phase is measureed in milli-radians and will be converted
+        to radians.
 
         :param antenna_calibration_file: DESCRIPTION
         :type antenna_calibration_file: TYPE
@@ -65,7 +57,8 @@ class CoilResponse:
 
         """
 
-        ant_fn = Path(antenna_calibration_file)
+        if antenna_calibration_file is not None:
+            self.calibration_file = antenna_calibration_file
 
         cal_dtype = [
             ("frequency", float),
@@ -73,7 +66,7 @@ class CoilResponse:
             ("phase", float),
         ]
 
-        with open(ant_fn, "r") as fid:
+        with open(self.calibration_file, "r") as fid:
             lines = fid.readlines()
 
         self.coil_calibrations = {}
@@ -81,7 +74,7 @@ class CoilResponse:
         for line in lines:
             if "antenna" in line.lower():
                 f = float(line.split()[2].strip())
-                if angular_frequency:
+                if self.angular_frequency:
                     f = 2 * np.pi * f
 
                 ff += 2
@@ -105,7 +98,7 @@ class CoilResponse:
                 self.coil_calibrations[ant][ff] = (f * 6, amp6, phase6)
                 self.coil_calibrations[ant][ff + 1] = (f * 8, amp8, phase8)
 
-    def get_coil_response_fap(self, antenna_calibration_file, coil_number):
+    def get_coil_response_fap(self, coil_number):
         """
         Read an amtant.cal file provided by Zonge.
 
@@ -122,7 +115,8 @@ class CoilResponse:
 
         """
 
-        self.read_antenna_file(antenna_calibration_file)
+        if self.coil_calibrations is {}:
+            self.read_antenna_file(self.calibration_file)
         try:
             cal = self.coil_calibrations[str(int(coil_number))]
             fap = FrequencyResponseTableFilter()

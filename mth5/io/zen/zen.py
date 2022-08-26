@@ -490,6 +490,8 @@ class Z3D:
     def coil_response(self):
         """
         Make the coile response into a FAP filter
+
+        Phase must be in radians
         """
         fap = None
         if self.metadata.cal_ant is not None:
@@ -498,7 +500,7 @@ class Z3D:
             fap.units_out = "nanotesla"
             fap.frequencies = self.metadata.coil_cal.frequency
             fap.amplitudes = self.metadata.coil_cal.amplitude
-            fap.phases = np.rad2deg(self.metadata.coil_cal.phase / 1e3)
+            fap.phases = self.metadata.coil_cal.phase / 1e3
             fap.name = f"ant4_{self.coil_num}_response"
             fap.comments = "induction coil response read from z3d file"
 
@@ -520,7 +522,7 @@ class Z3D:
             fap.units_out = "millivolts"
             fap.frequencies = fap_table.frequency
             fap.amplitudes = fap_table.amplitude
-            fap.phases = np.rad2deg(fap_table.phase / 1e3)
+            fap.phases = fap_table.phase / 1e3
             fap.name = f"{self.header.data_logger.lower()}_{self.sample_rate:.0f}_response"
             fap.comments = "data logger response read from z3d file"
 
