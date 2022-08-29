@@ -16,12 +16,15 @@ import numpy as np
 
 from mt_metadata.timeseries.filters import FrequencyResponseTableFilter
 from mt_metadata.utils.mttime import MTime
+from mth5.utils.mth5_logger import setup_logger
 
 # =============================================================================
 # Variables
 # =============================================================================
 class CoilResponse:
     def __init__(self, calibration_file=None, angular_frequency=False):
+
+        self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
         self.coil_calibrations = {}
         self._n_frequencies = 48
         self.calibration_file = calibration_file
@@ -156,9 +159,13 @@ class CoilResponse:
         :rtype: TYPE
 
         """
+        if self.file_exists():
+            coil_number = str(int(coil_number))
 
-        coil_number = str(int(coil_number))
-
-        if coil_number in self.coil_calibrations.keys():
-            return True
+            if coil_number in self.coil_calibrations.keys():
+                return True
+            self.logger.error(
+                f"Could not find {coil_number} in {self.calibration_file}"
+            )
+            return False
         return False

@@ -126,14 +126,10 @@ class Z3DCollection(Collection):
             entry["n_samples"] = z3d_obj.n_samples
             entry["sequence_number"] = 0
             entry["instrument_id"] = f"ZEN_{int(z3d_obj.header.box_number):03}"
-            if cal_obj.coil_calibrations != {}:
-                try:
-
-                    entry["calibration_fn"] = cal_obj.calibration_file
-                except KeyError:
-                    self.logger.warning(
-                        f"Could not find {z3d_obj.coil_number}"
-                    )
+            if cal_obj.has_coil_number(z3d_obj.coil_number):
+                entry["calibration_fn"] = cal_obj.calibration_file
+            else:
+                entry["calibration_fn"] = None
 
             entries.append(entry)
         # make pandas dataframe and set data types
