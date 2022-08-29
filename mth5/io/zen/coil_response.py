@@ -152,7 +152,9 @@ class CoilResponse:
             self.logger.error(
                 f"Could not find {coil_number} in {self.calibration_file}"
             )
-            raise KeyError(f"Could not find {coil_number} in {self.calibration file}")
+            raise KeyError(
+                f"Could not find {coil_number} in {self.calibration_file}"
+            )
 
     def has_coil_number(self, coil_number):
         """
