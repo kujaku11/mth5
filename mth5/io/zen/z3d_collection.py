@@ -15,10 +15,9 @@ Created on Sat Apr  4 12:40:40 2020
 # Imports
 # =============================================================================
 import pandas as pd
-from pathlib import Path
 
 from mth5.io.collection import Collection
-from mth5.io.zen import Z3D, CoilResponse
+from mth5.io.zen import CoilResponse, Z3D
 
 from mt_metadata.timeseries import Station
 
@@ -47,7 +46,7 @@ class Z3DCollection(Collection):
         :rtype: TYPE
 
         """
-        coil_response = CoilResponse(antenna_calibration_file)
+        return CoilResponse(antenna_calibration_file)
 
     def _sort_station_metadata(self, station_list):
         """
@@ -101,7 +100,7 @@ class Z3DCollection(Collection):
         """
 
         station_metadata = []
-        cal_dict = self.get_calibrations(calibration_path)
+        cal_obj = self.get_calibrations(calibration_path)
         entries = []
         for z3d_fn in self.get_files(["z3d"]):
             z3d_obj = Z3D(z3d_fn)
@@ -127,9 +126,10 @@ class Z3DCollection(Collection):
             entry["n_samples"] = z3d_obj.n_samples
             entry["sequence_number"] = 0
             entry["instrument_id"] = f"ZEN_{int(z3d_obj.header.box_number):03}"
-            if cal_dict:
+            if cal_obj.coil_calibrations != {}:
                 try:
-                    entry["calibration_fn"] = cal_dict[z3d_obj.coil_number]
+
+                    entry["calibration_fn"] = cal_obj.calibration_file
                 except KeyError:
                     self.logger.warning(
                         f"Could not find {z3d_obj.coil_number}"

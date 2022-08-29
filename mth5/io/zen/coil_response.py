@@ -41,6 +41,14 @@ class CoilResponse:
         else:
             self._calibration_fn = None
 
+    def file_exists(self):
+        if self.calibration_file is None:
+            return False
+
+        if self.calibration_file.exists():
+            return True
+        return False
+
     def read_antenna_file(self, antenna_calibration_file=None):
         """
 
@@ -117,7 +125,8 @@ class CoilResponse:
 
         if self.coil_calibrations is {}:
             self.read_antenna_file(self.calibration_file)
-        try:
+
+        if self.has_coil_number(coil_number):
             cal = self.coil_calibrations[str(int(coil_number))]
             fap = FrequencyResponseTableFilter()
             fap.frequencies = cal["frequency"]
@@ -133,5 +142,23 @@ class CoilResponse:
 
             return fap
 
-        except KeyError:
+        else:
             raise KeyError(f"Could not find {coil_number} in calibration file")
+
+    def has_coil_number(self, coil_number):
+        """
+
+        Test if coil number is in the antenna file
+
+        :param coil_number: ANT4 serial number
+        :type coil_number: int or string
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        coil_number = str(int(coil_number))
+
+        if coil_number in self.coil_calibrations.keys():
+            return True
+        return False

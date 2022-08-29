@@ -51,7 +51,7 @@ Created on Wed Aug 26 10:32:45 2020
 from pathlib import Path
 import logging
 
-from mth5.io import zen, nims, usgs_ascii, miniseed, lemi424, phoenix
+from mth5.io import zen, nims, usgs_ascii, miniseed, lemi, phoenix
 
 logger = logging.getLogger(__name__)
 # =============================================================================
@@ -70,7 +70,7 @@ readers = {
     },
     "lemi424": {
         "file_types": ["txt"],
-        "reader": lemi424.read_lemi424,
+        "reader": lemi.read_lemi424,
     },
     "phoenix": {
         "file_types": ["bin", "td_150", "td_24k"],
@@ -91,7 +91,9 @@ def get_reader(extension):
 
     """
     if extension in ["bin"]:
-        logger.warning("Suggest inputing file type, bin could be nims or phoenix")
+        logger.warning(
+            "Suggest inputing file type, bin could be nims or phoenix"
+        )
     for key, vdict in readers.items():
         if extension.lower() in vdict["file_types"]:
             return key, vdict["reader"]
