@@ -12,6 +12,7 @@ Created on Tue May 11 15:31:31 2021
 # Imports
 # =============================================================================
 from pathlib import Path
+from io import StringIO
 import pandas as pd
 import numpy as np
 import logging
@@ -100,9 +101,9 @@ class LEMI424:
             f"{__name__}.{self.__class__.__name__}"
         )
         self.fn = fn
-        self._has_data = False
         self.sample_rate = 1.0
         self.chunk_size = 10000
+        self._df = None
         self.column_names = [
             "year",
             "month",
@@ -130,9 +131,6 @@ class LEMI424:
             "tdiff",
         ]
 
-        if self.fn:
-            self.read()
-
     def __str__(self):
         lines = ["LEMI 424 data", "-" * 20]
         lines.append(f"start:      {self.start.isoformat()}")
@@ -146,6 +144,11 @@ class LEMI424:
 
     def __repr__(self):
         return self.__str__()
+
+    def _has_data(self):
+        if self._df is not None:
+            return True
+        return False
 
     @property
     def fn(self):
@@ -161,17 +164,17 @@ class LEMI424:
 
     @property
     def start(self):
-        if self._has_data:
+        if self._has_data():
             return MTime(self._df.index[0])
 
     @property
     def end(self):
-        if self._has_data:
+        if self._has_data():
             return MTime(self._df.index[-1])
 
     @property
     def latitude(self):
-        if self._has_data:
+        if self._has_data():
 
             return (
                 self._df.latitude.median() * self._df.lat_hemisphere.median()
@@ -179,30 +182,30 @@ class LEMI424:
 
     @property
     def longitude(self):
-        if self._has_data:
+        if self._has_data():
             return (
                 self._df.longitude.median() * self._df.lon_hemisphere.median()
             )
 
     @property
     def elevation(self):
-        if self._has_data:
+        if self._has_data():
             return self._df.elevation.median()
 
     @property
     def n_samples(self):
-        if self._has_data:
+        if self._has_data():
             return self._df.shape[0]
 
     @property
     def gps_lock(self):
-        if self._has_data:
+        if self._has_data():
             return self._df.gps_fix.values
 
     @property
     def station_metadata(self):
         s = Station()
-        if self._has_data:
+        if self._has_data():
             s.location.latitude = self.latitude
             s.location.longitude = self.longitude
             s.location.elevation = self.elevation
@@ -216,11 +219,13 @@ class LEMI424:
         r.sample_rate = self.sample_rate
         r.data_logger.model = "LEMI424"
         r.data_logger.manufacturer = "LEMI"
-        if self._has_data:
+        if self._has_data():
             r.data_logger.power_source.voltage.start = self._df.battery.max()
             r.data_logger.power_source.voltage.end = self._df.battery.min()
             r.time_period.start = self.start
             r.time_period.end = self.end
+
+        return r
 
     def read(self, fn=None):
         """
@@ -257,7 +262,39 @@ class LEMI424:
             index_col="date",
         )
 
-        self._has_data = True
+    def read_metadata(self):
+        """
+        Read only first and last rows
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        with open(self.fn) as fid:
+            first_line = fid.readline()
+            for line in fid:
+                pass  # iterate to the end
+            last_line = line
+
+        lines = StringIO(f"{first_line}\n{last_line}")
+
+        self._df = pd.read_csv(
+            lines,
+            delimiter="\s+",
+            names=self.column_names,
+            parse_dates={
+                "date": ["year", "month", "day", "hour", "minute", "second"]
+            },
+            date_parser=lemi_date_parser,
+            converters={
+                "latitude": lemi_position_parser,
+                "longitude": lemi_position_parser,
+                "lat_hemisphere": lemi_hemisphere_parser,
+                "lon_hemisphere": lemi_hemisphere_parser,
+            },
+            index_col="date",
+        )
 
     def to_run_ts(self, fn=None, e_channels=["e1", "e2"]):
         """
