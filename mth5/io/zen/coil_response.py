@@ -45,6 +45,13 @@ class CoilResponse:
             self._calibration_fn = None
 
     def file_exists(self):
+        """
+        Check to make sure the file exists
+
+        :return: True if it does, False if it does not
+        :rtype: boolean
+
+        """
         if self.calibration_file is None:
             return False
 
@@ -63,8 +70,6 @@ class CoilResponse:
 
         :param antenna_calibration_file: DESCRIPTION
         :type antenna_calibration_file: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
 
         """
 
@@ -117,12 +122,10 @@ class CoilResponse:
         Apparently, the file includes the 6th and 8th harmonic of the given frequency, which
         is a fancy way of saying f * 6 and f * 8.
 
-        :param antenna_calibration_file: DESCRIPTION
-        :type antenna_calibration_file: TYPE
-        :param coil_num: DESCRIPTION
-        :type coil_num: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :param coil_num: ANT4 4 digit serial number
+        :type coil_num: int or string
+        :return: Frequency look up table
+        :rtype: :class:`mt_metadata.timeseries.filters.FrequencyResponseTableFilter`
 
         """
 
@@ -146,7 +149,10 @@ class CoilResponse:
             return fap
 
         else:
-            raise KeyError(f"Could not find {coil_number} in calibration file")
+            self.logger.error(
+                f"Could not find {coil_number} in {self.calibration_file}"
+            )
+            raise KeyError(f"Could not find {coil_number} in {self.calibration file}")
 
     def has_coil_number(self, coil_number):
         """
@@ -155,8 +161,8 @@ class CoilResponse:
 
         :param coil_number: ANT4 serial number
         :type coil_number: int or string
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :return: True if the coil is found, False if it is not
+        :rtype: boolean
 
         """
         if self.file_exists():
