@@ -164,7 +164,10 @@ class RunTS:
         # change to look for keys directly and use type to set channel type
         if name in self.dataset.keys():
             return ChannelTS(
-                self.dataset[name].attrs["type"], self.dataset[name]
+                self.dataset[name].attrs["type"],
+                self.dataset[name],
+                run_metadata=self.run_metadata,
+                station_metadata=self.station_metadata,
             )
         else:
             # this is a hack for now until figure out who is calling shape, size
@@ -351,8 +354,10 @@ class RunTS:
             raise MTTSError(msg)
 
         ### should probably check for other metadata like station and run?
-
-        self._dataset[c.component] = c.ts
+        if len(self.dataset.dims) == 0:
+            self.dataset = c._ts.to_dataset()
+        else:
+            self.dataset = xr.merge([self.dataset, c._ts.to_dataset()])
 
     @property
     def dataset(self):

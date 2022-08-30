@@ -13,6 +13,10 @@ Created on Tue May 11 15:31:31 2021
 # =============================================================================
 from pathlib import Path
 from io import StringIO
+import warnings
+
+warnings.simplefilter(action="ignore", category=FutureWarning)
+
 import pandas as pd
 import numpy as np
 import logging
@@ -102,6 +106,7 @@ class LEMI424:
         )
         self.fn = fn
         self.sample_rate = 1.0
+        self.chunk_size = 8640
         self.data = None
         self.file_column_names = [
             "year",
@@ -329,30 +334,72 @@ class LEMI424:
 
         # tried reading in chunks and got Nan's and was took just as long
         # maybe someone smarter can figure it out.
-        self.data = pd.read_csv(
-            self.fn,
-            delimiter="\s+",
-            names=self.file_column_names,
-            dtype=self.dtypes,
-            parse_dates={
-                "date": [
-                    "year",
-                    "month",
-                    "day",
-                    "hour",
-                    "minute",
-                    "second",
-                ]
-            },
-            date_parser=lemi_date_parser,
-            converters={
-                "latitude": lemi_position_parser,
-                "longitude": lemi_position_parser,
-                "lat_hemisphere": lemi_hemisphere_parser,
-                "lon_hemisphere": lemi_hemisphere_parser,
-            },
-            index_col="date",
-        )
+        if self.n_samples > self.chunk_size:
+            st = MTime().now()
+            dfs = list(
+                pd.read_csv(
+                    self.fn,
+                    delimiter="\s+",
+                    names=self.file_column_names,
+                    dtype=self.dtypes,
+                    parse_dates={
+                        "date": [
+                            "year",
+                            "month",
+                            "day",
+                            "hour",
+                            "minute",
+                            "second",
+                        ]
+                    },
+                    date_parser=lemi_date_parser,
+                    converters={
+                        "latitude": lemi_position_parser,
+                        "longitude": lemi_position_parser,
+                        "lat_hemisphere": lemi_hemisphere_parser,
+                        "lon_hemisphere": lemi_hemisphere_parser,
+                    },
+                    index_col="date",
+                    chunksize=self.chunk_size,
+                )
+            )
+
+            self.data = pd.concat(dfs)
+            et = MTime().now()
+            self.logger.info(
+                f"Reading {self.fn.name} took {et - st:.2f} seconds"
+            )
+
+        else:
+            st = MTime().now()
+            self.data = pd.read_csv(
+                self.fn,
+                delimiter="\s+",
+                names=self.file_column_names,
+                dtype=self.dtypes,
+                parse_dates={
+                    "date": [
+                        "year",
+                        "month",
+                        "day",
+                        "hour",
+                        "minute",
+                        "second",
+                    ]
+                },
+                date_parser=lemi_date_parser,
+                converters={
+                    "latitude": lemi_position_parser,
+                    "longitude": lemi_position_parser,
+                    "lat_hemisphere": lemi_hemisphere_parser,
+                    "lon_hemisphere": lemi_hemisphere_parser,
+                },
+                index_col="date",
+            )
+            et = MTime().now()
+            self.logger.info(
+                f"Reading {self.fn.name} took {et - st:.2f} seconds"
+            )
 
     def read_metadata(self):
         """
@@ -413,11 +460,23 @@ class LEMI424:
             + ["temperature_e", "temperature_h"]
         ):
             if comp[0] in ["h", "b"]:
-                ch = ChannelTS("magnetic")
+                ch = ChannelTS(
+                    "magnetic",
+                    station_metadata=self.station_metadata,
+                    run_metadata=self.run_metadata,
+                )
             elif comp[0] in ["e"]:
-                ch = ChannelTS("electric")
+                ch = ChannelTS(
+                    "electric",
+                    station_metadata=self.station_metadata,
+                    run_metadata=self.run_metadata,
+                )
             else:
-                ch = ChannelTS("auxiliary")
+                ch = ChannelTS(
+                    "auxiliary",
+                    station_metadata=self.station_metadata,
+                    run_metadata=self.run_metadata,
+                )
 
             ch.sample_rate = self.sample_rate
             ch.start = self.start
