@@ -102,7 +102,6 @@ class LEMI424:
         )
         self.fn = fn
         self.sample_rate = 1.0
-        self.chunk_size = 1000
         self.data = None
         self.file_column_names = [
             "year",
@@ -130,6 +129,31 @@ class LEMI424:
             "gps_fix",
             "time_diff",
         ]
+
+        self.dtypes = dict(
+            [
+                ("year", int),
+                ("month", int),
+                ("day", int),
+                ("hour", int),
+                ("minute", int),
+                ("second", int),
+                ("bx", float),
+                ("by", float),
+                ("bz", float),
+                ("temperature_e", float),
+                ("temperature_h", float),
+                ("e1", float),
+                ("e2", float),
+                ("e3", float),
+                ("e4", float),
+                ("battery", float),
+                ("elevation", float),
+                ("n_satellites", int),
+                ("gps_fix", int),
+                ("time_diff", float),
+            ]
+        )
 
         self.data_column_names = ["date"] + self.file_column_names[6:]
 
@@ -280,12 +304,22 @@ class LEMI424:
             self.logger.error(msg, self.fn)
             raise IOError(msg % self.fn)
 
+        # tried reading in chunks and got Nan's and was took just as long
+        # maybe someone smarter can figure it out.
         self.data = pd.read_csv(
             self.fn,
             delimiter="\s+",
             names=self.file_column_names,
+            dtype=self.dtypes,
             parse_dates={
-                "date": ["year", "month", "day", "hour", "minute", "second"]
+                "date": [
+                    "year",
+                    "month",
+                    "day",
+                    "hour",
+                    "minute",
+                    "second",
+                ]
             },
             date_parser=lemi_date_parser,
             converters={
@@ -318,8 +352,16 @@ class LEMI424:
             lines,
             delimiter="\s+",
             names=self.file_column_names,
+            dtype=self.dtypes,
             parse_dates={
-                "date": ["year", "month", "day", "hour", "minute", "second"]
+                "date": [
+                    "year",
+                    "month",
+                    "day",
+                    "hour",
+                    "minute",
+                    "second",
+                ]
             },
             date_parser=lemi_date_parser,
             converters={

@@ -14,6 +14,7 @@ Test reading lemi files
 # Imports
 # ==============================================================================
 import unittest
+from collections import OrderedDict
 from pathlib import Path
 import pandas as pd
 
@@ -95,6 +96,7 @@ with open(lemi_fn, "w") as fid:
 
 class TestLEMI424(unittest.TestCase):
     ClassIsSetup = False
+    maxDiff = None
 
     def setUp(self):
         # If it was not setup yet, do it
@@ -143,8 +145,116 @@ class TestLEMI424(unittest.TestCase):
             self.lemi_obj.data.columns.to_list(),
         )
 
-    # def tearDown(self):
-    #     lemi_fn.unlink()
+    def test_station_metadata(self):
+        self.assertDictEqual(
+            OrderedDict(
+                [
+                    ("acquired_by.name", None),
+                    ("channels_recorded", []),
+                    ("data_type", "BBMT"),
+                    ("geographic_name", None),
+                    ("id", None),
+                    ("location.declination.model", "WMM"),
+                    ("location.declination.value", 0.0),
+                    ("location.elevation", 2198.6),
+                    ("location.latitude", 34.080657083333335),
+                    ("location.longitude", -107.21406316666668),
+                    ("orientation.method", None),
+                    ("orientation.reference_frame", "geographic"),
+                    ("provenance.creation_time", "1980-01-01T00:00:00+00:00"),
+                    ("provenance.software.author", "none"),
+                    ("provenance.software.name", None),
+                    ("provenance.software.version", None),
+                    ("provenance.submitter.email", None),
+                    ("provenance.submitter.organization", None),
+                    ("run_list", []),
+                    ("time_period.end", "2020-10-04T00:00:59+00:00"),
+                    ("time_period.start", "2020-10-04T00:00:00+00:00"),
+                ]
+            ),
+            self.lemi_obj.station_metadata.to_dict(single=True),
+        )
+
+    def test_run_metadata(self):
+        self.assertDictEqual(
+            OrderedDict(
+                [
+                    ("channels_recorded_auxiliary", []),
+                    ("channels_recorded_electric", []),
+                    ("channels_recorded_magnetic", []),
+                    ("data_logger.firmware.author", None),
+                    ("data_logger.firmware.name", None),
+                    ("data_logger.firmware.version", None),
+                    ("data_logger.id", None),
+                    ("data_logger.manufacturer", "LEMI"),
+                    ("data_logger.model", "LEMI424"),
+                    ("data_logger.power_source.voltage.end", 12.78),
+                    ("data_logger.power_source.voltage.start", 12.78),
+                    ("data_logger.timing_system.drift", 0.0),
+                    ("data_logger.timing_system.type", "GPS"),
+                    ("data_logger.timing_system.uncertainty", 0.0),
+                    ("data_logger.type", None),
+                    ("data_type", "BBMT"),
+                    ("id", None),
+                    ("sample_rate", 1.0),
+                    ("time_period.end", "2020-10-04T00:00:59+00:00"),
+                    ("time_period.start", "2020-10-04T00:00:00+00:00"),
+                ]
+            ),
+            self.lemi_obj.run_metadata.to_dict(single=True),
+        )
+
+
+class TestLEMI424Metadata(unittest.TestCase):
+    ClassIsSetup = False
+    maxDiff = None
+
+    def setUp(self):
+        # If it was not setup yet, do it
+        if not self.ClassIsSetup:
+            # run the real setup
+            self.setupClass()
+            # remember that it was setup already
+            self.__class__.ClassIsSetup = True
+
+    def setupClass(self):
+        # Do the real setup
+        unittest.TestCase.setUp(self)
+        # you want to have persistent things to test
+        self.__class__.lemi_obj = LEMI424(lemi_fn)
+        # (you can call this later with self.myclass)
+        self.__class__.lemi_obj.read_metadata()
+
+    def test_has_data(self):
+        self.assertTrue(self.lemi_obj._has_data())
+
+    def test_start(self):
+        self.assertEqual(
+            "2020-10-04T00:00:00+00:00", self.lemi_obj.start.isoformat()
+        )
+
+    def test_end(self):
+        self.assertEqual(
+            "2020-10-04T00:00:59+00:00", self.lemi_obj.end.isoformat()
+        )
+
+    def test_n_samples(self):
+        self.assertEqual(2, self.lemi_obj.n_samples)
+
+    def test_latitude(self):
+        self.assertAlmostEqual(34.080655416666666, self.lemi_obj.latitude, 5)
+
+    def test_longitude(self):
+        self.assertAlmostEqual(-107.21407116666666, self.lemi_obj.longitude, 5)
+
+    def test_elevation(self):
+        self.assertAlmostEqual(2198.8, self.lemi_obj.elevation, 2)
+
+    def test_df_columns(self):
+        self.assertListEqual(
+            self.lemi_obj.data_column_names[1:],
+            self.lemi_obj.data.columns.to_list(),
+        )
 
 
 # =============================================================================
