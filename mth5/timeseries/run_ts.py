@@ -277,7 +277,8 @@ class RunTS:
                 else:
                     self.run_metadata.channels_recorded_auxiliary.append(ch)
 
-            self.station_metadata.runs.append(self.run_metadata)
+            if self.run_metadata.id not in self.station_metadata.run_list:
+                self.station_metadata.runs.append(self.run_metadata)
 
     def set_dataset(self, array_list, align_type="outer"):
         """
