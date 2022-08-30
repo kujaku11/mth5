@@ -102,9 +102,9 @@ class LEMI424:
         )
         self.fn = fn
         self.sample_rate = 1.0
-        self.chunk_size = 10000
-        self._df = None
-        self.column_names = [
+        self.chunk_size = 1000
+        self.data = None
+        self.file_column_names = [
             "year",
             "month",
             "day",
@@ -128,8 +128,10 @@ class LEMI424:
             "lon_hemisphere",
             "n_satellites",
             "gps_fix",
-            "tdiff",
+            "time_diff",
         ]
+
+        self.data_column_names = ["date"] + self.file_column_names[6:]
 
     def __str__(self):
         lines = ["LEMI 424 data", "-" * 20]
@@ -145,8 +147,38 @@ class LEMI424:
     def __repr__(self):
         return self.__str__()
 
+    @property
+    def data(self):
+        return self._data
+
+    @data.setter
+    def data(self, data):
+        """
+        Make sure if data is set that it is a pandas data frame with the proper
+        column names
+        """
+
+        if data is None:
+            self._data = None
+
+        elif isinstance(data, pd.DataFrame):
+            if len(data.columns) == len(self.file_column_names):
+                if data.columns != self.file_column_names:
+                    raise ValueError(
+                        "Column names are not the same. "
+                        "Check LEMI424.column_names for accepted names"
+                    )
+            elif len(data.columns) == len(self.data_column_names):
+                if not data.columns == self.data_column_names:
+                    raise ValueError(
+                        "Column names are not the same. "
+                        "Check LEMI424.column_names for accepted names"
+                    )
+            else:
+                self._data = data
+
     def _has_data(self):
-        if self._df is not None:
+        if self.data is not None:
             return True
         return False
 
@@ -165,42 +197,45 @@ class LEMI424:
     @property
     def start(self):
         if self._has_data():
-            return MTime(self._df.index[0])
+            return MTime(self.data.index[0])
 
     @property
     def end(self):
         if self._has_data():
-            return MTime(self._df.index[-1])
+            return MTime(self.data.index[-1])
 
     @property
     def latitude(self):
         if self._has_data():
 
             return (
-                self._df.latitude.median() * self._df.lat_hemisphere.median()
+                self.data.latitude.median() * self.data.lat_hemisphere.median()
             )
 
     @property
     def longitude(self):
         if self._has_data():
             return (
-                self._df.longitude.median() * self._df.lon_hemisphere.median()
+                self.data.longitude.median()
+                * self.data.lon_hemisphere.median()
             )
 
     @property
     def elevation(self):
         if self._has_data():
-            return self._df.elevation.median()
+            return self.data.elevation.median()
 
     @property
     def n_samples(self):
         if self._has_data():
-            return self._df.shape[0]
+            return self.data.shape[0]
+        elif self.fn is not None and self.fn.exists():
+            return round(self.fn.stat().st_size / 152.9667)
 
     @property
     def gps_lock(self):
         if self._has_data():
-            return self._df.gps_fix.values
+            return self.data.gps_fix.values
 
     @property
     def station_metadata(self):
@@ -220,8 +255,8 @@ class LEMI424:
         r.data_logger.model = "LEMI424"
         r.data_logger.manufacturer = "LEMI"
         if self._has_data():
-            r.data_logger.power_source.voltage.start = self._df.battery.max()
-            r.data_logger.power_source.voltage.end = self._df.battery.min()
+            r.data_logger.power_source.voltage.start = self.data.battery.max()
+            r.data_logger.power_source.voltage.end = self.data.battery.min()
             r.time_period.start = self.start
             r.time_period.end = self.end
 
@@ -245,10 +280,10 @@ class LEMI424:
             self.logger.error(msg, self.fn)
             raise IOError(msg % self.fn)
 
-        self._df = pd.read_csv(
+        self.data = pd.read_csv(
             self.fn,
             delimiter="\s+",
-            names=self.column_names,
+            names=self.file_column_names,
             parse_dates={
                 "date": ["year", "month", "day", "hour", "minute", "second"]
             },
@@ -279,10 +314,10 @@ class LEMI424:
 
         lines = StringIO(f"{first_line}\n{last_line}")
 
-        self._df = pd.read_csv(
+        self.data = pd.read_csv(
             lines,
             delimiter="\s+",
-            names=self.column_names,
+            names=self.file_column_names,
             parse_dates={
                 "date": ["year", "month", "day", "hour", "minute", "second"]
             },
@@ -321,7 +356,7 @@ class LEMI424:
 
             ch.sample_rate = self.sample_rate
             ch.start = self.start
-            ch.ts = self._df[comp].values
+            ch.ts = self.data[comp].values
             ch.component = comp
             ch_list.append(ch)
 
