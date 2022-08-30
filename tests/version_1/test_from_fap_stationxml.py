@@ -29,7 +29,9 @@ class TestFAPMTH5(unittest.TestCase):
 
     def setUp(self):
         self.translator = XMLInventoryMTExperiment()
-        self.experiment = self.translator.xml_to_mt(stationxml_fn=STATIONXML_FAP)
+        self.experiment = self.translator.xml_to_mt(
+            stationxml_fn=STATIONXML_FAP
+        )
 
         self.fn = fn_path.joinpath("from_fap_stationxml.h5")
         # if self.fn.exists():
@@ -61,12 +63,16 @@ class TestFAPMTH5(unittest.TestCase):
     def test_has_fap_table(self):
 
         self.assertEqual(
-            self.m.has_group("Survey/Filters/fap/frequency response table_00"), True
+            self.m.has_group("Survey/Filters/fap/frequency response table_00"),
+            True,
         )
 
     def test_has_coefficient_filter(self):
         self.assertEqual(
-            self.m.has_group("Survey/Filters/coefficient/v to counts (electric)"), True
+            self.m.has_group(
+                "Survey/Filters/coefficient/v to counts (electric)"
+            ),
+            True,
         )
 
     def test_get_channel(self):
@@ -79,15 +85,17 @@ class TestFAPMTH5(unittest.TestCase):
     def test_fap(self):
         self.hx = self.m.get_channel("FL001", "a", "hx")
         fap = self.hx.channel_response_filter.filters_list[0]
-        fap_exp = self.experiment.surveys[0].filters["frequency response table_00"]
+        fap_exp = self.experiment.surveys[0].filters[
+            "frequency response table_00"
+        ]
 
         self.assertTrue(np.allclose(fap.frequencies, fap_exp.frequencies, 7))
         self.assertTrue(np.allclose(fap.amplitudes, fap_exp.amplitudes, 7))
-        self.assertTrue(np.allclose(fap.phases, fap_exp.phases, 7))
+        self.assertTrue(np.allclose(fap.phases, np.deg2rad(fap_exp.phases), 7))
 
         npt.assert_almost_equal(fap.frequencies, fap_exp.frequencies, 7)
         npt.assert_almost_equal(fap.amplitudes, fap_exp.amplitudes, 7)
-        npt.assert_almost_equal(fap.phases, fap_exp.phases, 7)
+        npt.assert_almost_equal(fap.phases, np.deg2rad(fap_exp.phases), 7)
 
         for k in ["gain", "units_in", "units_out", "name", "comments"]:
             self.assertEqual(getattr(fap, k), getattr(fap_exp, k))
@@ -95,9 +103,13 @@ class TestFAPMTH5(unittest.TestCase):
     def test_coefficient(self):
         self.hx = self.m.get_channel("FL001", "a", "hx")
         coeff = self.hx.channel_response_filter.filters_list[1]
-        coeff_exp = self.experiment.surveys[0].filters["v to counts (electric)"]
+        coeff_exp = self.experiment.surveys[0].filters[
+            "v to counts (electric)"
+        ]
 
-        self.assertDictEqual(coeff.to_dict(single=True), coeff_exp.to_dict(single=True))
+        self.assertDictEqual(
+            coeff.to_dict(single=True), coeff_exp.to_dict(single=True)
+        )
 
     def tearDown(self):
         self.m.close_mth5()
