@@ -171,6 +171,29 @@ class LEMI424:
     def __repr__(self):
         return self.__str__()
 
+    def __add__(self, other):
+        if not self._has_data():
+            raise ValueError("Data is None cannot append to. Read file first")
+
+        if isinstance(other, LEMI424):
+            new = LEMI424()
+            new.__dict__.update(self.__dict__)
+            new.data = pd.concat([new.data, other.data])
+            return new
+
+        elif isinstance(other, pd.DataFrame):
+
+            if not other.columns != self.data.columns:
+                raise ValueError("DataFrame columns are not the same.")
+
+            new = LEMI424()
+            new.__dict__.update(self.__dict__)
+            new.data = pd.concat([new.data, other])
+            return new
+
+        else:
+            raise ValueError(f"Cannot add {type(other)} to pd.DataFrame.")
+
     @property
     def data(self):
         return self._data
