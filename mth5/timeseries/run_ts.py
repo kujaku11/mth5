@@ -552,6 +552,26 @@ class RunTS:
 
         return new_runts
 
+    def calibrate(self, **kwargs):
+        """
+        Calibrate the data according to the filters in each channel.
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        new_run = RunTS()
+        new_run.run_metadata.update(self.run_metadata)
+        new_run.station_metadata.update(self.station_metadata)
+
+        for channel in self.channels:
+            ch_ts = getattr(self, channel)
+            calibrated_ch_ts = ch_ts.remove_instrument_response(**kwargs)
+            new_run.add_channel(calibrated_ch_ts)
+
+        return new_run
+
     def plot(self):
         """
 
