@@ -19,6 +19,7 @@ from pathlib import Path
 import pandas as pd
 
 from mth5.io.lemi import LEMI424
+from mt_metadata.timeseries import Station, Run
 
 # ==============================================================================
 # make an example text string similar to lemi data.
@@ -114,6 +115,66 @@ class TestLEMI424(unittest.TestCase):
         # (you can call this later with self.myclass)
         self.__class__.lemi_obj.read()
 
+        self.__class__.station_metadata = Station()
+        self.__class__.station_metadata.from_dict(
+            OrderedDict(
+                [
+                    ("acquired_by.name", None),
+                    ("channels_recorded", []),
+                    ("data_type", "BBMT"),
+                    ("geographic_name", None),
+                    ("id", None),
+                    ("location.declination.model", "WMM"),
+                    ("location.declination.value", 0.0),
+                    ("location.elevation", 2198.6),
+                    ("location.latitude", 34.080657083333335),
+                    ("location.longitude", -107.21406316666668),
+                    ("orientation.method", None),
+                    ("orientation.reference_frame", "geographic"),
+                    ("provenance.creation_time", "1980-01-01T00:00:00+00:00"),
+                    ("provenance.software.author", "none"),
+                    ("provenance.software.name", None),
+                    ("provenance.software.version", None),
+                    ("provenance.submitter.email", None),
+                    ("provenance.submitter.organization", None),
+                    ("run_list", []),
+                    ("time_period.end", "2020-10-04T00:00:59+00:00"),
+                    ("time_period.start", "2020-10-04T00:00:00+00:00"),
+                ]
+            )
+        )
+
+        self.__class__.run_metadata = Run()
+        self.__class__.run_metadata.from_dict(
+            OrderedDict(
+                [
+                    (
+                        "channels_recorded_auxiliary",
+                        ["temperature_e", "temperature_h"],
+                    ),
+                    ("channels_recorded_electric", ["e1", "e2"]),
+                    ("channels_recorded_magnetic", ["bx", "by", "bz"]),
+                    ("data_logger.firmware.author", None),
+                    ("data_logger.firmware.name", None),
+                    ("data_logger.firmware.version", None),
+                    ("data_logger.id", None),
+                    ("data_logger.manufacturer", "LEMI"),
+                    ("data_logger.model", "LEMI424"),
+                    ("data_logger.power_source.voltage.end", 12.78),
+                    ("data_logger.power_source.voltage.start", 12.78),
+                    ("data_logger.timing_system.drift", 0.0),
+                    ("data_logger.timing_system.type", "GPS"),
+                    ("data_logger.timing_system.uncertainty", 0.0),
+                    ("data_logger.type", None),
+                    ("data_type", "BBMT"),
+                    ("id", None),
+                    ("sample_rate", 1.0),
+                    ("time_period.end", "2020-10-04T00:00:59+00:00"),
+                    ("time_period.start", "2020-10-04T00:00:00+00:00"),
+                ]
+            )
+        )
+
     def test_has_data(self):
         self.assertTrue(self.lemi_obj._has_data())
 
@@ -146,63 +207,21 @@ class TestLEMI424(unittest.TestCase):
         )
 
     def test_station_metadata(self):
-        self.assertDictEqual(
-            OrderedDict(
-                [
-                    ("acquired_by.name", None),
-                    ("channels_recorded", []),
-                    ("data_type", "BBMT"),
-                    ("geographic_name", None),
-                    ("id", None),
-                    ("location.declination.model", "WMM"),
-                    ("location.declination.value", 0.0),
-                    ("location.elevation", 2198.6),
-                    ("location.latitude", 34.080657083333335),
-                    ("location.longitude", -107.21406316666668),
-                    ("orientation.method", None),
-                    ("orientation.reference_frame", "geographic"),
-                    ("provenance.creation_time", "1980-01-01T00:00:00+00:00"),
-                    ("provenance.software.author", "none"),
-                    ("provenance.software.name", None),
-                    ("provenance.software.version", None),
-                    ("provenance.submitter.email", None),
-                    ("provenance.submitter.organization", None),
-                    ("run_list", []),
-                    ("time_period.end", "2020-10-04T00:00:59+00:00"),
-                    ("time_period.start", "2020-10-04T00:00:00+00:00"),
-                ]
-            ),
-            self.lemi_obj.station_metadata.to_dict(single=True),
+        self.assertTrue(
+            self.station_metadata == self.lemi_obj.station_metadata
         )
 
     def test_run_metadata(self):
-        self.assertDictEqual(
-            OrderedDict(
-                [
-                    ("channels_recorded_auxiliary", []),
-                    ("channels_recorded_electric", []),
-                    ("channels_recorded_magnetic", []),
-                    ("data_logger.firmware.author", None),
-                    ("data_logger.firmware.name", None),
-                    ("data_logger.firmware.version", None),
-                    ("data_logger.id", None),
-                    ("data_logger.manufacturer", "LEMI"),
-                    ("data_logger.model", "LEMI424"),
-                    ("data_logger.power_source.voltage.end", 12.78),
-                    ("data_logger.power_source.voltage.start", 12.78),
-                    ("data_logger.timing_system.drift", 0.0),
-                    ("data_logger.timing_system.type", "GPS"),
-                    ("data_logger.timing_system.uncertainty", 0.0),
-                    ("data_logger.type", None),
-                    ("data_type", "BBMT"),
-                    ("id", None),
-                    ("sample_rate", 1.0),
-                    ("time_period.end", "2020-10-04T00:00:59+00:00"),
-                    ("time_period.start", "2020-10-04T00:00:00+00:00"),
-                ]
-            ),
-            self.lemi_obj.run_metadata.to_dict(single=True),
-        )
+        self.assertTrue(self.run_metadata == self.lemi_obj.run_metadata)
+
+    def test_to_runts(self):
+        r = self.lemi_obj.to_run_ts()
+
+        with self.subTest("station_metadata"):
+            self.assertTrue(r.station_metadata == self.station_metadata)
+
+        with self.subTest("run_metadata"):
+            self.assertTrue(r.run_metadata == self.run_metadata)
 
 
 class TestLEMI424Metadata(unittest.TestCase):

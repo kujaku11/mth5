@@ -23,7 +23,7 @@ import logging
 from datetime import datetime
 
 from mth5.timeseries import ChannelTS, RunTS
-from mt_metadata.timeseries import Station, Run
+from mt_metadata.timeseries import Station, Run, Electric, Magnetic, Auxiliary
 from mt_metadata.utils.mttime import MTime
 
 # =============================================================================
@@ -311,6 +311,13 @@ class LEMI424:
             r.data_logger.power_source.voltage.end = self.data.battery.min()
             r.time_period.start = self.start
             r.time_period.end = self.end
+
+            for ch_aux in ["temperature_e", "temperature_h"]:
+                r.add_channel(Auxiliary(component=ch_aux))
+            for ch_e in ["e1", "e2"]:
+                r.add_channel(Electric(component=ch_e))
+            for ch_h in ["bx", "by", "bz"]:
+                r.add_channel(Magnetic(component=ch_h))
 
         return r
 
