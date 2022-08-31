@@ -10,6 +10,7 @@ Created on Thu Aug  4 16:48:47 2022
 # =============================================================================
 # Imports
 # =============================================================================
+from collections import OrderedDict
 import numpy as np
 import pandas as pd
 
@@ -202,3 +203,55 @@ class PhoenixCollection(Collection):
                     ] = f"sr{run_stem}_{ii:0{zeros}}"
 
         return rdf
+
+    def get_runs(
+        self,
+        sample_rates,
+        run_name_zeros=4,
+        calibration_path=None,
+    ):
+        """
+        Get a list of runs contained within the given folder.  First the
+        dataframe will be developed from which the runs are extracted.
+
+        For continous data all you need is the first file in the sequence. The
+        reader will read in the entire sequence.
+
+        For segmented data it will only read in the given segment, which is
+        slightly different from the original reader.
+
+        :param sample_rates: list of sample rates to read, defaults to [150, 24000]
+        :param run_name_zeros: Number of zeros in the run name, defaults to 4
+        :type run_name_zeros: integer, optional
+        :return: List of run dataframes with only the first block of files
+        :rtype: OrderedDict
+
+        :Example:
+
+            >>> from mth5.io.phoenix import PhoenixCollection
+            >>> phx_collection = PhoenixCollection(r"/path/to/station")
+            >>> run_dict = phx_collection.get_runs(sample_rates=[150, 24000])
+
+        """
+
+        df = self.to_dataframe(
+            sample_rates=sample_rates,
+            run_name_zeros=run_name_zeros,
+            calibration_path=calibration_path,
+        )
+
+        run_dict = OrderedDict()
+
+        for station in sorted(df.station.unique()):
+            run_dict[station] = OrderedDict()
+
+            for run_id in sorted(
+                df[df.station == station].run.unique(),
+                key=lambda x: x[-run_name_zeros:],
+            ):
+                run_df = df[(df.station == station) & (df.run == run_id)]
+                run_dict[station][run_id] = run_df[
+                    run_df.start == run_df.start.min()
+                ]
+
+        return run_dict
