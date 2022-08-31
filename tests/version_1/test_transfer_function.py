@@ -23,7 +23,8 @@ fn_path = Path(__file__).parent
 
 
 class TestTFGroup(unittest.TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
 
         self.maxDiff = None
         self.fn = fn_path.joinpath("test.mth5")
@@ -41,7 +42,10 @@ class TestTFGroup(unittest.TestCase):
         meta_dict = OrderedDict(
             [
                 ("acquired_by.author", "National Geoelectromagnetic Facility"),
-                ("citation_dataset.doi", "doi:10.17611/DP/EMTF/USMTARRAY/SOUTH"),
+                (
+                    "citation_dataset.doi",
+                    "doi:10.17611/DP/EMTF/USMTARRAY/SOUTH",
+                ),
                 (
                     "citation_dataset.title",
                     "USMTArray South Magnetotelluric Transfer Functions",
@@ -99,7 +103,10 @@ class TestTFGroup(unittest.TestCase):
                 ("orientation.reference_frame", "geographic"),
                 ("provenance.creation_time", "2021-03-17T14:47:44+00:00"),
                 ("provenance.software.author", "none"),
-                ("provenance.software.name", "EMTF File Conversion Utilities 4.0"),
+                (
+                    "provenance.software.name",
+                    "EMTF File Conversion Utilities 4.0",
+                ),
                 ("provenance.software.version", None),
                 ("provenance.submitter.author", "Anna Kelbert"),
                 ("provenance.submitter.email", "akelbert@usgs.gov"),
@@ -218,6 +225,7 @@ class TestTFGroup(unittest.TestCase):
                     self.mth5_obj.tf_summary.array[name][0], true_dict[name]
                 )
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(self):
         self.mth5_obj.close_mth5()
         self.fn.unlink()
