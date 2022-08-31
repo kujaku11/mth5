@@ -139,7 +139,8 @@ class TestMTH5(unittest.TestCase):
 
 
 class TestUpdateFromExperiment(unittest.TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         self.maxDiff = None
         self.fn = fn_path.joinpath("test.h5")
         self.mth5_obj = mth5.MTH5(file_version="0.1.0")
@@ -169,6 +170,7 @@ class TestUpdateFromExperiment(unittest.TestCase):
                 self.experiment_02.surveys[0].stations[0].location.latitude,
             )
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(self):
         self.mth5_obj.close_mth5()
         self.fn.unlink()
