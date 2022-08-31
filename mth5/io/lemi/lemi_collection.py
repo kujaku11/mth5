@@ -23,7 +23,24 @@ from mth5.io.lemi import LEMI424
 
 class LEMICollection(Collection):
     """
-    Collection of LEMI 424 files into runs
+    Collection of LEMI 424 files into runs.
+
+    .. note:: This class assumes that the given file path contains a single
+    LEMI station.  If you want to do multiple stations merge the returned
+    data frames.
+
+    .. note:: LEMI data comes with little metadata about the station or survey,
+    therefore you should assign `station_id` and `survey_id`.
+
+    .. code-block:: python
+
+        >>> from mth5.io.lemi import LEMICollection
+        >>> lc = LEMICollection(r"/path/to/single/lemi/station")
+        >>> lc.station_id = "mt001"
+        >>> lc.survey_id = "test_survey"
+        >>> run_dict = lc.get_runs(1)
+
+
     """
 
     def __init__(self, file_path=None, **kwargs):
@@ -37,15 +54,27 @@ class LEMICollection(Collection):
         self, sample_rates=[1], run_name_zeros=4, calibration_path=None
     ):
         """
+        Create a data frame of each TXT file in a given directory.
 
-        :param sample_rates: DESCRIPTION, defaults to [1]
-        :type sample_rates: TYPE, optional
-        :param run_name_zeros: DESCRIPTION, defaults to 4
-        :type run_name_zeros: TYPE, optional
-        :param calibration_path: DESCRIPTION, defaults to None
-        :type calibration_path: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
+        .. note:: This assumes the given directory contains a single station
+
+        :param sample_rates: sample rate to get, will always be 1 for LEMI data
+        defaults to [1]
+        :type sample_rates: int or list, optional
+        :param run_name_zeros: number of zeros to assing to the run name,
+        defaults to 4
+        :type run_name_zeros: int, optional
+        :param calibration_path: path to calibration files, defaults to None
+        :type calibration_path: string or Path, optional
+        :return: Dataframe with information of each TXT file in the given
+        directory.
+        :rtype: :class:`pandas.DataFrame`
+
+        :Example:
+
+            >>> from mth5.io.lemi import LEMICollection
+            >>> lc = LEMICollection("/path/to/single/lemi/station")
+            >>> lemi_df = lc.to_dataframe()
 
         """
 
@@ -84,14 +113,17 @@ class LEMICollection(Collection):
 
     def assign_run_names(self, df, zeros=4):
         """
-        Assign run names based on start and end times
+        Assign run names based on start and end times, checks if a file has
+        the same start time as the last end time.
 
-        :param df: DESCRIPTION
-        :type df: TYPE
-        :param zeros: DESCRIPTION, defaults to 4
-        :type zeros: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Run names are assigned as sr{sample_rate}_{run_number:0{zeros}}.
+
+        :param df: Dataframe with the appropriate columns
+        :type df: :class:`pandas.DataFrame`
+        :param zeros: number of zeros in run name, defaults to 4
+        :type zeros: int, optional
+        :return: Dataframe with run names
+        :rtype: :class:`pandas.DataFrame`
 
         """
         count = 1

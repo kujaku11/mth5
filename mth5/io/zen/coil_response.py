@@ -122,8 +122,8 @@ class CoilResponse:
         Apparently, the file includes the 6th and 8th harmonic of the given frequency, which
         is a fancy way of saying f * 6 and f * 8.
 
-        :param coil_num: ANT4 4 digit serial number
-        :type coil_num: int or string
+        :param coil_number: ANT4 4 digit serial number
+        :type coil_number: int or string
         :return: Frequency look up table
         :rtype: :class:`mt_metadata.timeseries.filters.FrequencyResponseTableFilter`
 

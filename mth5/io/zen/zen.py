@@ -342,7 +342,7 @@ class Z3D:
         self.schedule.initial_start = schedule_dt
 
     @property
-    def coil_num(self):
+    def coil_number(self):
         """
         coil number
         """
@@ -397,7 +397,7 @@ class Z3D:
             ts_type = "magnetic"
             meta_dict = {
                 "magnetic": {
-                    "sensor.id": self.coil_num,
+                    "sensor.id": self.coil_number,
                     "sensor.manufacturer": "Geotell",
                     "sensor.model": "ANT-4",
                     "sensor.type": "induction coil",
@@ -501,7 +501,7 @@ class Z3D:
             fap.frequencies = self.metadata.coil_cal.frequency
             fap.amplitudes = self.metadata.coil_cal.amplitude
             fap.phases = self.metadata.coil_cal.phase / 1e3
-            fap.name = f"ant4_{self.coil_num}_response"
+            fap.name = f"ant4_{self.coil_number}_response"
             fap.comments = "induction coil response read from z3d file"
 
         return fap
