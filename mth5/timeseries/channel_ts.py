@@ -745,6 +745,15 @@ class ChannelTS:
 
         """
 
+        calibrated_ts = ChannelTS()
+        calibrated_ts.__dict__.update(self.__dict__)
+
+        if self.channel_metadadata.filter.name is []:
+            self.logger.warning(
+                "No filters to apply to calibrate time series data"
+            )
+            return calibrated_ts
+
         remover = RemoveInstrumentResponse(
             self.ts,
             self.time_index,
@@ -753,12 +762,12 @@ class ChannelTS:
             **kwargs,
         )
 
-        calibrated_ts = ChannelTS()
-        calibrated_ts.__dict__.update(self.__dict__)
         calibrated_ts.ts = remover.remove_instrument_response()
+        # change applied booleans
         calibrated_ts.channel_metadata.filter.applied = [True] * len(
             self.channel_metadata.filter.applied
         )
+        # update units
         calibrated_ts._ts.attrs[
             "units"
         ] = self.channel_response_filter.units_out
