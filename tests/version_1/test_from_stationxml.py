@@ -26,9 +26,12 @@ class TestFromStationXML01(unittest.TestCase):
     test from a stationxml
     """
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         self.translator = stationxml.XMLInventoryMTExperiment()
-        self.experiment = self.translator.xml_to_mt(stationxml_fn=STATIONXML_01)
+        self.experiment = self.translator.xml_to_mt(
+            stationxml_fn=STATIONXML_01
+        )
 
         self.fn = fn_path.joinpath("from_stationxml.h5")
         if self.fn.exists():
@@ -46,18 +49,25 @@ class TestFromStationXML01(unittest.TestCase):
         with self.subTest("has CAS04"):
             self.assertEqual(self.m.has_group("Survey/Stations/CAS04"), True)
         with self.subTest("has run 001"):
-            self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001"), True)
+            self.assertEqual(
+                self.m.has_group("Survey/Stations/CAS04/001"), True
+            )
         with self.subTest("has channel ey"):
-            self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001/ey"), True)
+            self.assertEqual(
+                self.m.has_group("Survey/Stations/CAS04/001/ey"), True
+            )
         with self.subTest("has channel hy"):
-            self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001/hy"), True)
+            self.assertEqual(
+                self.m.has_group("Survey/Stations/CAS04/001/hy"), True
+            )
 
     def test_survey_metadata(self):
         with self.subTest("has network ZU"):
             self.assertEqual(self.m.survey_group.metadata.fdsn.network, "ZU")
         with self.subTest("test start"):
             self.assertEqual(
-                self.m.survey_group.metadata.time_period.start_date, "2020-01-01"
+                self.m.survey_group.metadata.time_period.start_date,
+                "2020-01-01",
             )
         with self.subTest("test end"):
             self.assertEqual(
@@ -71,7 +81,8 @@ class TestFromStationXML01(unittest.TestCase):
             )
         with self.subTest("doi"):
             self.assertEqual(
-                self.m.survey_group.metadata.citation_dataset.doi, "10.7914/SN/ZU_2020"
+                self.m.survey_group.metadata.citation_dataset.doi,
+                "10.7914/SN/ZU_2020",
             )
 
     def test_station_metadata(self):
@@ -168,10 +179,13 @@ class TestFromStationXML01(unittest.TestCase):
         for f_name in self.experiment.surveys[0].filters.keys():
             with self.subTest(f_name):
                 exp_filter = self.experiment.surveys[0].filters[f_name]
-                h5_filter = self.m.survey_group.filters_group.to_filter_object(f_name)
+                h5_filter = self.m.survey_group.filters_group.to_filter_object(
+                    f_name
+                )
 
                 self.assertTrue(exp_filter, h5_filter)
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(self):
         self.m.close_mth5()
         self.fn.unlink()
