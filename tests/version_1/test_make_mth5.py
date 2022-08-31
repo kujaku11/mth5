@@ -132,6 +132,10 @@ class TestMakeMTH5(unittest.TestCase):
             *("c:\bad\file\name", self.make_mth5.client, False),
         )
 
+    @unittest.skipIf(
+        "peacock" not in str(Path().cwd().as_posix()),
+        "Test is too long, have to download data from IRIS",
+    )
     def test_make_mth5(self):
         try:
             m = self.make_mth5.make_mth5_from_fdsnclient(
