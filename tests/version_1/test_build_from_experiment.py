@@ -28,7 +28,8 @@ mth5.helpers.close_open_files()
 
 
 class TestMTH5(unittest.TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         self.maxDiff = None
         self.fn = fn_path.joinpath("test.h5")
         self.mth5_obj = mth5.MTH5(file_version="0.1.0")
@@ -121,13 +122,18 @@ class TestMTH5(unittest.TestCase):
         with self.subTest("test nrows"):
             self.assertEqual(self.mth5_obj.channel_summary.nrows, 25)
         with self.subTest(("test dtype")):
-            self.assertEqual(self.mth5_obj.channel_summary.dtype, CHANNEL_DTYPE)
+            self.assertEqual(
+                self.mth5_obj.channel_summary.dtype, CHANNEL_DTYPE
+            )
         with self.subTest("test station"):
             self.assertTrue(
-                (self.mth5_obj.channel_summary.array["station"] == b"REW09").all()
+                (
+                    self.mth5_obj.channel_summary.array["station"] == b"REW09"
+                ).all()
             )
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(self):
         self.mth5_obj.close_mth5()
         self.fn.unlink()
 
@@ -153,7 +159,8 @@ class TestUpdateFromExperiment(unittest.TestCase):
 
         with self.subTest("new_survey"):
             self.assertEqual(
-                self.mth5_obj.survey_group.metadata.id, self.experiment_02.surveys[0].id
+                self.mth5_obj.survey_group.metadata.id,
+                self.experiment_02.surveys[0].id,
             )
         with self.subTest("new_location"):
             st = self.mth5_obj.get_station("REW09")
