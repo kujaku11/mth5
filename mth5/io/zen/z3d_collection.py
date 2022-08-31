@@ -35,6 +35,7 @@ class Z3DCollection(Collection):
 
         super().__init__(file_path=file_path, **kwargs)
         self.station_metadata_dict = {}
+        self.file_ext = "z3d"
 
     def get_calibrations(self, antenna_calibration_file):
         """
@@ -102,7 +103,7 @@ class Z3DCollection(Collection):
         station_metadata = []
         cal_obj = self.get_calibrations(calibration_path)
         entries = []
-        for z3d_fn in self.get_files(["z3d"]):
+        for z3d_fn in self.get_files([self.file_ext]):
             z3d_obj = Z3D(z3d_fn)
             z3d_obj.read_all_info()
             station_metadata.append(z3d_obj.station_metadata["Station"])

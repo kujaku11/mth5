@@ -248,6 +248,11 @@ class LEMI424:
         self._fn = value
 
     @property
+    def file_size(self):
+        if self.fn is not None:
+            return self.fn.stat().st_size
+
+    @property
     def start(self):
         if self._has_data():
             return MTime(self.data.index[0])

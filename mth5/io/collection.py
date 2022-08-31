@@ -30,6 +30,7 @@ class Collection:
 
         self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
         self.file_path = file_path
+        self.file_ext = "*"
 
         self._columns = [
             "survey",
@@ -50,6 +51,16 @@ class Collection:
 
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+    def __str__(self):
+        lines = [
+            f"Collection for file type {self.file_ext} in {self._file_path}"
+        ]
+
+        return "\n".join(lines)
+
+    def __repr__(self):
+        return f"Collection({self.file_path})"
 
     @property
     def file_path(self):
@@ -154,7 +165,7 @@ class Collection:
 
     def get_runs(
         self,
-        sample_rates=[150, 24000],
+        sample_rates,
         run_name_zeros=4,
         calibration_path=None,
     ):
@@ -169,7 +180,6 @@ class Collection:
         slightly different from the original reader.
 
         :param sample_rates: list of sample rates to read, defaults to [150, 24000]
-        :type sample_rates: list of integers, optional
         :param run_name_zeros: Number of zeros in the run name, defaults to 4
         :type run_name_zeros: integer, optional
         :return: List of run dataframes with only the first block of files
