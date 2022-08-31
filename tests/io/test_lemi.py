@@ -223,6 +223,23 @@ class TestLEMI424(unittest.TestCase):
         with self.subTest("run_metadata"):
             self.assertTrue(r.run_metadata == self.run_metadata)
 
+        with self.subTest("channels"):
+            self.assertListEqual(
+                [
+                    "bx",
+                    "by",
+                    "bz",
+                    "e1",
+                    "e2",
+                    "temperature_e",
+                    "temperature_h",
+                ],
+                r.channels,
+            )
+
+        with self.subTest("n samples"):
+            self.assertEqual(60, r.dataset.dims["time"])
+
 
 class TestLEMI424Metadata(unittest.TestCase):
     ClassIsSetup = False
