@@ -28,11 +28,13 @@ mth5.helpers.close_open_files()
 
 
 class TestMTH5(unittest.TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         self.fn = fn_path.joinpath("test.mth5")
         self.mth5_obj = mth5.MTH5(file_version="0.2.0")
         self.mth5_obj.open_mth5(self.fn, mode="w")
         self.survey_group = self.mth5_obj.add_survey("test")
+        self.maxDiff = None
 
     def test_initial_standards_group_size(self):
         stable = self.mth5_obj.standards_group.summary_table
@@ -41,10 +43,20 @@ class TestMTH5(unittest.TestCase):
     def test_initial_standards_keys(self):
         stable = self.mth5_obj.standards_group.summary_table
         standards_dict = summarize_metadata_standards()
-        standards_keys = sorted(list(standards_dict.keys()))
+        standards_keys = sorted(
+            [
+                ss
+                for ss in standards_dict.keys()
+                if "mth5" not in ss and "hdf5" not in ss
+            ]
+        )
 
         stable_keys = sorted(
-            [ss.decode() for ss in list(stable.array["attribute"])]
+            [
+                ss.decode()
+                for ss in list(stable.array["attribute"])
+                if "mth5" not in ss.decode() and "hdf5" not in ss.decode()
+            ]
         )
 
         self.assertListEqual(standards_keys, stable_keys)
@@ -86,7 +98,7 @@ class TestMTH5(unittest.TestCase):
 
     def test_get_station_fail(self):
         self.assertRaises(
-            MTH5Error, self.mth5_obj.get_station, "MT002", "test"
+            MTH5Error, self.mth5_obj.get_station, "MT020", "test"
         )
 
     def test_add_run(self):
@@ -208,7 +220,8 @@ class TestMTH5(unittest.TestCase):
 
             self.assertEqual(r_slice.end, "2020-01-01T12:04:17+00:00")
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(self):
         self.mth5_obj.close_mth5()
         self.fn.unlink()
 
