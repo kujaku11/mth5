@@ -26,7 +26,7 @@ READERS = {
 }
 
 
-def open_file(file_name, **kwargs):
+def open_phoenix(file_name, **kwargs):
     """
     Will put the file into the appropriate container
 
@@ -55,6 +55,6 @@ def read_phoenix(file_name, **kwargs):
 
     """
 
-    phnx_obj = open_file(file_name, **kwargs)
+    phnx_obj = open_phoenix(file_name, **kwargs)
 
     return phnx_obj.to_channel_ts()

@@ -14,7 +14,7 @@ from collections import OrderedDict
 import numpy as np
 import pandas as pd
 
-from mth5.io.phoenix import open_file, ReceiverMetadataJSON
+from mth5.io.phoenix import open_phoenix, ReceiverMetadataJSON
 from mth5.io import Collection
 
 # =============================================================================
@@ -106,7 +106,7 @@ class PhoenixCollection(Collection):
         entries = []
         for sr in sample_rates:
             for fn in self.get_files(self._file_extension_map[int(sr)]):
-                phx_obj = open_file(fn)
+                phx_obj = open_phoenix(fn)
                 if hasattr(phx_obj, "read_segment"):
                     segment = phx_obj.read_segment(metadata_only=True)
                     start = segment.segment_start_time.isoformat()

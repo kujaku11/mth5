@@ -43,14 +43,14 @@ class Header:
         self._channel_id = None
 
         self.channel_map = {
-            0: "E1",
-            1: "H3",
-            2: "H2",
-            3: "H1",
-            4: "H4",
-            5: "H5",
-            6: "H6",
-            7: "E2",
+            0: "hx",
+            1: "hy",
+            2: "hz",
+            3: "ex",
+            4: "ey",
+            5: "h1",
+            6: "h2",
+            7: "h3",
         }
 
         for key, value in kwargs.items():
