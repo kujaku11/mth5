@@ -75,28 +75,6 @@ class DecimatedContinuousReader(TSReaderBase):
 
         return self.segment_start_time + (self.max_samples / self.sample_rate)
 
-    @property
-    def table_entry(self):
-        """
-        data frame entry of important file metadata
-
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        return {
-            "recording_id": self.recording_id,
-            "start": self.segment_start_time,
-            "end": self.segment_end_time,
-            "run": None,
-            "channel_id": self.channel_id,
-            "channel": self.channel_map[str(self.channel_id)],
-            "sample_rate": self.sample_rate,
-            "file": self.file_name,
-            "max_samples": self.max_samples,
-        }
-
     # need a read and read sequence
     def read(self):
         """
