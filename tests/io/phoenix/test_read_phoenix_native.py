@@ -10,6 +10,7 @@ Created on Fri Aug 19 16:39:30 2022
 # =============================================================================
 import unittest
 from pathlib import Path
+from collections import OrderedDict
 
 import numpy as np
 from mth5.io.phoenix import open_phoenix
@@ -149,3 +150,37 @@ class TestReadPhoenixNative(unittest.TestCase):
                     self.assertAlmostEqual(original_value, new_value)
                 else:
                     self.assertEqual(original_value, new_value)
+
+    def test_to_channel_ts(self):
+        ch_ts = self.phx_obj.to_channel_ts()
+
+        with self.subTest("Channel metadata"):
+            ch_metadata = OrderedDict(
+                [
+                    ("channel_number", 0),
+                    ("component", "hx"),
+                    ("data_quality.rating.value", 0),
+                    ("filter.applied", [False]),
+                    ("filter.name", []),
+                    ("location.elevation", 0.0),
+                    ("location.latitude", 0.0),
+                    ("location.longitude", 0.0),
+                    ("measurement_azimuth", 0.0),
+                    ("measurement_tilt", 0.0),
+                    ("sample_rate", 24000.0),
+                    ("sensor.id", None),
+                    ("sensor.manufacturer", None),
+                    ("sensor.type", None),
+                    ("time_period.end", "2021-04-26T20:00:09+00:00"),
+                    ("time_period.start", "2021-04-26T19:59:09+00:00"),
+                    ("type", "magnetic"),
+                    ("units", None),
+                ]
+            )
+
+            self.assertDictEqual(
+                ch_ts.channel_metadata.to_dict(single=True), ch_metadata
+            )
+
+        with self.subTest("Channel Size"):
+            self.assertEqual(1440000, ch_ts.ts.size)
