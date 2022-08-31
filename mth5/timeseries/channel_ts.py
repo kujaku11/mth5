@@ -90,7 +90,6 @@ def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
         start=start_time.iso_no_tz,
         end=end_time.iso_no_tz,
         periods=n_samples,
-        inclusive="both",
     )
 
     return dt_index
