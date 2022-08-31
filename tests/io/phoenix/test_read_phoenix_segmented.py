@@ -30,13 +30,14 @@ class TestReadPhoenixContinuous(unittest.TestCase):
         )
 
         self.segment = self.phx_obj.read_segment()
+        self.maxDiff = None
 
     def test_subheader(self):
         true_dict = {
             "channel_id": 0,
             "channel_type": "H",
             "elevation": 140.10263061523438,
-            "gps_time_stamp": "2021-04-27T03:25:30+00:00",
+            "gps_time_stamp": "2021-04-27T03:25:00+00:00",
             "header_length": 32,
             "instrument_serial_number": "10128",
             "instrument_type": "MTU-5C",
@@ -47,16 +48,16 @@ class TestReadPhoenixContinuous(unittest.TestCase):
             "sample_rate": 24000,
             "saturation_count": 0,
             "segment": 0,
-            "segment_end_time": "2021-04-27T03:25:32+00:00",
-            "segment_start_time": "2021-04-27T03:25:30+00:00",
-            "value_max": 0.2565903961658478,
-            "value_mean": 9.212101758748759e-06,
+            "segment_end_time": "2021-04-27T03:25:02+00:00",
+            "segment_start_time": "2021-04-27T03:25:00+00:00",
+            "value_max": 0.24964138865470886,
+            "value_mean": -1.3566585039370693e-05,
             "value_min": 3.4028234663852886e38,
         }
 
         for key, original_value in true_dict.items():
-            new_value = getattr(self.phx_obj, key)
-            with self.subTest(f"test {key}"):
+            new_value = getattr(self.segment, key)
+            with self.subTest("key"):
                 if isinstance(original_value, (list)):
                     self.assertListEqual(original_value, new_value)
                 elif isinstance(original_value, float):
@@ -153,7 +154,7 @@ class TestReadPhoenixContinuous(unittest.TestCase):
 
         for key, original_value in true_dict.items():
             new_value = getattr(self.phx_obj, key)
-            with self.subTest(f"test {key}"):
+            with self.subTest("key"):
                 if isinstance(original_value, (list)):
                     self.assertListEqual(original_value, new_value)
                 elif isinstance(original_value, float):
@@ -181,8 +182,8 @@ class TestReadPhoenixContinuous(unittest.TestCase):
                     ("sensor.id", None),
                     ("sensor.manufacturer", None),
                     ("sensor.type", None),
-                    ("time_period.end", "2021-04-27T03:25:02+00:00"),
-                    ("time_period.start", "2021-04-27T03:25:00+00:00"),
+                    ("time_period.end", "2021-04-27T03:25:32+00:00"),
+                    ("time_period.start", "2021-04-27T03:25:30+00:00"),
                     ("type", "magnetic"),
                     ("units", None),
                 ]
