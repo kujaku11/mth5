@@ -8,9 +8,12 @@ Created on Fri Aug 19 16:39:30 2022
 # =============================================================================
 # Imports
 # =============================================================================
+import unittest
+
 from pathlib import Path
 from mth5.io.phoenix import read_phoenix, PhoenixCollection
 
 # =============================================================================
 
-pass
+
+@unittest.skipIf("peacock" in Path(__file__), "Only local files, cannot test in GitActions")

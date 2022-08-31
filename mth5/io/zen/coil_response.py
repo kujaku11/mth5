@@ -68,8 +68,8 @@ class CoilResponse:
         .. note:: Phase is measureed in milli-radians and will be converted
         to radians.
 
-        :param antenna_calibration_file: DESCRIPTION
-        :type antenna_calibration_file: TYPE
+        :param antenna_calibration_file: path to antenna.cal file provided by Zonge
+        :type antenna_calibration_file: string or Path
 
         """
 
