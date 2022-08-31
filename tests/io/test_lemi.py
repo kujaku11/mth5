@@ -137,7 +137,7 @@ class TestLEMI424(unittest.TestCase):
                     ("provenance.software.version", None),
                     ("provenance.submitter.email", None),
                     ("provenance.submitter.organization", None),
-                    ("run_list", []),
+                    ("run_list", ["a"]),
                     ("time_period.end", "2020-10-04T00:00:59+00:00"),
                     ("time_period.start", "2020-10-04T00:00:00+00:00"),
                 ]
@@ -167,7 +167,7 @@ class TestLEMI424(unittest.TestCase):
                     ("data_logger.timing_system.uncertainty", 0.0),
                     ("data_logger.type", None),
                     ("data_type", "BBMT"),
-                    ("id", None),
+                    ("id", "a"),
                     ("sample_rate", 1.0),
                     ("time_period.end", "2020-10-04T00:00:59+00:00"),
                     ("time_period.start", "2020-10-04T00:00:00+00:00"),

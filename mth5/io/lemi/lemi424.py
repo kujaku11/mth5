@@ -14,6 +14,7 @@ Created on Tue May 11 15:31:31 2021
 from pathlib import Path
 from io import StringIO
 import warnings
+from copy import deepcopy
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
@@ -298,11 +299,13 @@ class LEMI424:
             s.location.elevation = self.elevation
             s.time_period.start = self.start
             s.time_period.end = self.end
+            s.add_run(self.run_metadata)
         return s
 
     @property
     def run_metadata(self):
         r = Run()
+        r.id = "a"
         r.sample_rate = self.sample_rate
         r.data_logger.model = "LEMI424"
         r.data_logger.manufacturer = "LEMI"
@@ -467,23 +470,11 @@ class LEMI424:
             + ["temperature_e", "temperature_h"]
         ):
             if comp[0] in ["h", "b"]:
-                ch = ChannelTS(
-                    "magnetic",
-                    station_metadata=self.station_metadata,
-                    run_metadata=self.run_metadata,
-                )
+                ch = ChannelTS("magnetic")
             elif comp[0] in ["e"]:
-                ch = ChannelTS(
-                    "electric",
-                    station_metadata=self.station_metadata,
-                    run_metadata=self.run_metadata,
-                )
+                ch = ChannelTS("electric")
             else:
-                ch = ChannelTS(
-                    "auxiliary",
-                    station_metadata=self.station_metadata,
-                    run_metadata=self.run_metadata,
-                )
+                ch = ChannelTS("auxiliary")
 
             ch.sample_rate = self.sample_rate
             ch.start = self.start
@@ -491,10 +482,15 @@ class LEMI424:
             ch.component = comp
             ch_list.append(ch)
 
+        run_metadata = deepcopy(self.run_metadata)
+        run_metadata.channels = []
+
+        station_metadata = deepcopy(self.station_metadata)
+        station_metadata.runs = []
         return RunTS(
             array_list=ch_list,
-            station_metadata=self.station_metadata,
-            run_metadata=self.run_metadata,
+            station_metadata=station_metadata,
+            run_metadata=run_metadata,
         )
 
 
