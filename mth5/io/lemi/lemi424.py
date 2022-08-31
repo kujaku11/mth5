@@ -13,13 +13,18 @@ Created on Tue May 11 15:31:31 2021
 # =============================================================================
 from pathlib import Path
 from io import StringIO
+import warnings
+from copy import deepcopy
+
+warnings.simplefilter(action="ignore", category=FutureWarning)
+
 import pandas as pd
 import numpy as np
 import logging
 from datetime import datetime
 
 from mth5.timeseries import ChannelTS, RunTS
-from mt_metadata.timeseries import Station, Run
+from mt_metadata.timeseries import Station, Run, Electric, Magnetic, Auxiliary
 from mt_metadata.utils.mttime import MTime
 
 # =============================================================================
@@ -102,9 +107,9 @@ class LEMI424:
         )
         self.fn = fn
         self.sample_rate = 1.0
-        self.chunk_size = 1000
+        self.chunk_size = 8640
         self.data = None
-        self.column_names = [
+        self.file_column_names = [
             "year",
             "month",
             "day",
@@ -131,6 +136,33 @@ class LEMI424:
             "time_diff",
         ]
 
+        self.dtypes = dict(
+            [
+                ("year", int),
+                ("month", int),
+                ("day", int),
+                ("hour", int),
+                ("minute", int),
+                ("second", int),
+                ("bx", float),
+                ("by", float),
+                ("bz", float),
+                ("temperature_e", float),
+                ("temperature_h", float),
+                ("e1", float),
+                ("e2", float),
+                ("e3", float),
+                ("e4", float),
+                ("battery", float),
+                ("elevation", float),
+                ("n_satellites", int),
+                ("gps_fix", int),
+                ("time_diff", float),
+            ]
+        )
+
+        self.data_column_names = ["date"] + self.file_column_names[6:]
+
     def __str__(self):
         lines = ["LEMI 424 data", "-" * 20]
         lines.append(f"start:      {self.start.isoformat()}")
@@ -144,6 +176,29 @@ class LEMI424:
 
     def __repr__(self):
         return self.__str__()
+
+    def __add__(self, other):
+        if not self._has_data():
+            raise ValueError("Data is None cannot append to. Read file first")
+
+        if isinstance(other, LEMI424):
+            new = LEMI424()
+            new.__dict__.update(self.__dict__)
+            new.data = pd.concat([new.data, other.data])
+            return new
+
+        elif isinstance(other, pd.DataFrame):
+
+            if not other.columns != self.data.columns:
+                raise ValueError("DataFrame columns are not the same.")
+
+            new = LEMI424()
+            new.__dict__.update(self.__dict__)
+            new.data = pd.concat([new.data, other])
+            return new
+
+        else:
+            raise ValueError(f"Cannot add {type(other)} to pd.DataFrame.")
 
     @property
     def data(self):
@@ -160,11 +215,20 @@ class LEMI424:
             self._data = None
 
         elif isinstance(data, pd.DataFrame):
-            if not data.columns == self.column_names:
-                raise ValueError(
-                    "Column names are not the same. "
-                    "Check LEMI424.column_names for accepted names"
-                )
+            if len(data.columns) == len(self.file_column_names):
+                if data.columns != self.file_column_names:
+                    raise ValueError(
+                        "Column names are not the same. "
+                        "Check LEMI424.column_names for accepted names"
+                    )
+            elif len(data.columns) == len(self.data_column_names):
+                if not data.columns == self.data_column_names:
+                    raise ValueError(
+                        "Column names are not the same. "
+                        "Check LEMI424.column_names for accepted names"
+                    )
+            else:
+                self._data = data
 
     def _has_data(self):
         if self.data is not None:
@@ -218,6 +282,8 @@ class LEMI424:
     def n_samples(self):
         if self._has_data():
             return self.data.shape[0]
+        elif self.fn is not None and self.fn.exists():
+            return round(self.fn.stat().st_size / 152.9667)
 
     @property
     def gps_lock(self):
@@ -233,11 +299,13 @@ class LEMI424:
             s.location.elevation = self.elevation
             s.time_period.start = self.start
             s.time_period.end = self.end
+            s.add_run(self.run_metadata)
         return s
 
     @property
     def run_metadata(self):
         r = Run()
+        r.id = "a"
         r.sample_rate = self.sample_rate
         r.data_logger.model = "LEMI424"
         r.data_logger.manufacturer = "LEMI"
@@ -246,6 +314,13 @@ class LEMI424:
             r.data_logger.power_source.voltage.end = self.data.battery.min()
             r.time_period.start = self.start
             r.time_period.end = self.end
+
+            for ch_aux in ["temperature_e", "temperature_h"]:
+                r.add_channel(Auxiliary(component=ch_aux))
+            for ch_e in ["e1", "e2"]:
+                r.add_channel(Electric(component=ch_e))
+            for ch_h in ["bx", "by", "bz"]:
+                r.add_channel(Magnetic(component=ch_h))
 
         return r
 
@@ -267,22 +342,74 @@ class LEMI424:
             self.logger.error(msg, self.fn)
             raise IOError(msg % self.fn)
 
-        self.data = pd.read_csv(
-            self.fn,
-            delimiter="\s+",
-            names=self.column_names,
-            parse_dates={
-                "date": ["year", "month", "day", "hour", "minute", "second"]
-            },
-            date_parser=lemi_date_parser,
-            converters={
-                "latitude": lemi_position_parser,
-                "longitude": lemi_position_parser,
-                "lat_hemisphere": lemi_hemisphere_parser,
-                "lon_hemisphere": lemi_hemisphere_parser,
-            },
-            index_col="date",
-        )
+        # tried reading in chunks and got Nan's and was took just as long
+        # maybe someone smarter can figure it out.
+        if self.n_samples > self.chunk_size:
+            st = MTime().now()
+            dfs = list(
+                pd.read_csv(
+                    self.fn,
+                    delimiter="\s+",
+                    names=self.file_column_names,
+                    dtype=self.dtypes,
+                    parse_dates={
+                        "date": [
+                            "year",
+                            "month",
+                            "day",
+                            "hour",
+                            "minute",
+                            "second",
+                        ]
+                    },
+                    date_parser=lemi_date_parser,
+                    converters={
+                        "latitude": lemi_position_parser,
+                        "longitude": lemi_position_parser,
+                        "lat_hemisphere": lemi_hemisphere_parser,
+                        "lon_hemisphere": lemi_hemisphere_parser,
+                    },
+                    index_col="date",
+                    chunksize=self.chunk_size,
+                )
+            )
+
+            self.data = pd.concat(dfs)
+            et = MTime().now()
+            self.logger.info(
+                f"Reading {self.fn.name} took {et - st:.2f} seconds"
+            )
+
+        else:
+            st = MTime().now()
+            self.data = pd.read_csv(
+                self.fn,
+                delimiter="\s+",
+                names=self.file_column_names,
+                dtype=self.dtypes,
+                parse_dates={
+                    "date": [
+                        "year",
+                        "month",
+                        "day",
+                        "hour",
+                        "minute",
+                        "second",
+                    ]
+                },
+                date_parser=lemi_date_parser,
+                converters={
+                    "latitude": lemi_position_parser,
+                    "longitude": lemi_position_parser,
+                    "lat_hemisphere": lemi_hemisphere_parser,
+                    "lon_hemisphere": lemi_hemisphere_parser,
+                },
+                index_col="date",
+            )
+            et = MTime().now()
+            self.logger.info(
+                f"Reading {self.fn.name} took {et - st:.2f} seconds"
+            )
 
     def read_metadata(self):
         """
@@ -304,9 +431,17 @@ class LEMI424:
         self.data = pd.read_csv(
             lines,
             delimiter="\s+",
-            names=self.column_names,
+            names=self.file_column_names,
+            dtype=self.dtypes,
             parse_dates={
-                "date": ["year", "month", "day", "hour", "minute", "second"]
+                "date": [
+                    "year",
+                    "month",
+                    "day",
+                    "hour",
+                    "minute",
+                    "second",
+                ]
             },
             date_parser=lemi_date_parser,
             converters={
@@ -347,10 +482,15 @@ class LEMI424:
             ch.component = comp
             ch_list.append(ch)
 
+        run_metadata = deepcopy(self.run_metadata)
+        run_metadata.channels = []
+
+        station_metadata = deepcopy(self.station_metadata)
+        station_metadata.runs = []
         return RunTS(
             array_list=ch_list,
-            station_metadata=self.station_metadata,
-            run_metadata=self.run_metadata,
+            station_metadata=station_metadata,
+            run_metadata=run_metadata,
         )
 
 

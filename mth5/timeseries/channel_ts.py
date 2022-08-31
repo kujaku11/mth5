@@ -90,7 +90,6 @@ def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
         start=start_time.iso_no_tz,
         end=end_time.iso_no_tz,
         periods=n_samples,
-        inclusive="both",
     )
 
     return dt_index
@@ -324,7 +323,9 @@ class ChannelTS:
             dt = make_dt_coordinates(
                 self.start, self.sample_rate, ts_arr.size, self.logger
             )
-            self._ts = xr.DataArray(ts_arr, coords=[("time", dt)], name="ts")
+            self._ts = xr.DataArray(
+                ts_arr, coords=[("time", dt)], name=self.component
+            )
             self._update_xarray_metadata()
         elif isinstance(ts_arr, pd.core.frame.DataFrame):
             if isinstance(
@@ -340,7 +341,7 @@ class ChannelTS:
                 )
             try:
                 self._ts = xr.DataArray(
-                    ts_arr["data"], coords=[("time", dt)], name="ts"
+                    ts_arr["data"], coords=[("time", dt)], name=self.component
                 )
                 self._update_xarray_metadata()
             except AttributeError:
@@ -363,7 +364,7 @@ class ChannelTS:
                     self.logger,
                 )
             self._ts = xr.DataArray(
-                ts_arr.values, coords=[("time", dt)], name="ts"
+                ts_arr.values, coords=[("time", dt)], name=self.component
             )
             self._update_xarray_metadata()
         elif isinstance(ts_arr, xr.DataArray):
@@ -748,7 +749,7 @@ class ChannelTS:
         calibrated_ts = ChannelTS()
         calibrated_ts.__dict__.update(self.__dict__)
 
-        if self.channel_metadadata.filter.name is []:
+        if self.channel_metadata.filter.name is []:
             self.logger.warning(
                 "No filters to apply to calibrate time series data"
             )
