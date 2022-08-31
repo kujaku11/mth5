@@ -27,7 +27,8 @@ class TestFAPMTH5(unittest.TestCase):
 
     """
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         self.translator = XMLInventoryMTExperiment()
         self.experiment = self.translator.xml_to_mt(
             stationxml_fn=STATIONXML_FAP
@@ -126,6 +127,7 @@ class TestFAPMTH5(unittest.TestCase):
             coeff.to_dict(single=True), coeff_exp.to_dict(single=True)
         )
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(self):
         self.m.close_mth5()
         self.fn.unlink()
