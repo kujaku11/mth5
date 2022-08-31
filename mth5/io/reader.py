@@ -113,12 +113,22 @@ def read_file(fn, file_type=None, **kwargs):
 
     """
 
-    if not isinstance(fn, Path):
+    if isinstance(fn, (list, tuple)):
+        fn = [Path(ff) for ff in fn]
+        if not fn[0].exists():
+            msg = f"Could not find file {fn}. Check path."
+            logger.error(msg)
+            raise IOError(msg)
+        file_ext = fn[0].suffix[1:]
+
+    else:
         fn = Path(fn)
-    if not fn.exists():
-        msg = f"Could not find file {fn}. Check path."
-        logger.error(msg)
-        raise IOError(msg)
+        if not fn.exists():
+            msg = f"Could not find file {fn}. Check path."
+            logger.error(msg)
+            raise IOError(msg)
+        file_ext = fn.suffix[1:]
+
     if file_type is not None:
         try:
             file_reader = readers[file_type]["reader"]
@@ -130,5 +140,5 @@ def read_file(fn, file_type=None, **kwargs):
             logger.error(msg)
             raise KeyError(msg)
     else:
-        file_type, file_reader = get_reader(fn.suffix[1:])
+        file_type, file_reader = get_reader(file_ext)
     return file_reader(fn, **kwargs)

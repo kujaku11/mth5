@@ -209,8 +209,6 @@ class Collection:
                 key=lambda x: x[-run_name_zeros:],
             ):
                 run_df = df[(df.station == station) & (df.run == run_id)]
-                run_dict[station][run_id] = run_df[
-                    run_df.start == run_df.start.min()
-                ]
+                run_dict[station][run_id] = run_df
 
         return run_dict

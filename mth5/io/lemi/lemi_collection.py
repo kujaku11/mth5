@@ -30,6 +30,9 @@ class LEMICollection(Collection):
         super().__init__(file_path=file_path, **kwargs)
         self.file_ext = "txt"
 
+        self.station_id = "mt001"
+        self.survey_id = "mt"
+
     def to_dataframe(
         self, sample_rates=[1], run_name_zeros=4, calibration_path=None
     ):
@@ -49,11 +52,12 @@ class LEMICollection(Collection):
         entries = []
         for fn in self.get_files(self.file_ext):
             lemi_obj = LEMI424(fn)
+            n_samples = int(lemi_obj.n_samples)
             lemi_obj.read_metadata()
 
             entry = {}
-            entry["survey"] = ""
-            entry["station"] = ""
+            entry["survey"] = self.survey_id
+            entry["station"] = self.station_id
             entry["run"] = None
             entry["start"] = lemi_obj.start.isoformat()
             entry["end"] = lemi_obj.end.isoformat()
@@ -64,7 +68,7 @@ class LEMICollection(Collection):
             entry["fn"] = fn
             entry["sample_rate"] = lemi_obj.sample_rate
             entry["file_size"] = lemi_obj.file_size
-            entry["n_samples"] = lemi_obj.n_samples
+            entry["n_samples"] = n_samples
             entry["sequence_number"] = 0
             entry["instrument_id"] = "LEMI424"
             entry["calibration_fn"] = None

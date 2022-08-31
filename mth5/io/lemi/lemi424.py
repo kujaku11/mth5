@@ -288,7 +288,7 @@ class LEMI424:
         if self._has_data():
             return self.data.shape[0]
         elif self.fn is not None and self.fn.exists():
-            return round(self.fn.stat().st_size / 152.9667)
+            return round(self.fn.stat().st_size / 152.0)
 
     @property
     def gps_lock(self):
@@ -516,8 +516,20 @@ def read_lemi424(fn, e_channels=["e1", "e2"], logger_file_handler=None):
 
     """
 
-    txt_obj = LEMI424()
+    if not isinstance(fn, (list, tuple)):
+        fn = [fn]
+
+    txt_obj = LEMI424(fn[0])
+    txt_obj.read()
+
     if logger_file_handler:
         txt_obj.logger.addHandler(logger_file_handler)
-    txt_obj.read(fn)
+
+    # read a list of files into a single run
+    if len(fn) > 1:
+        for txt_file in fn:
+            other = LEMI424(txt_file)
+            other.read()
+            txt_obj += other
+
     return txt_obj.to_run_ts(e_channels=e_channels)
