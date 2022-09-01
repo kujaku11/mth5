@@ -30,664 +30,26 @@ NIMS
 # =============================================================================
 # Imports
 # =============================================================================
-import os
 import struct
 import datetime
-import dateutil
-import logging
 
 import numpy as np
 import pandas as pd
 
+from mth5.io.nims.gps import GPS
+from mth5.io.nims.header import NIMSHeader
 from mth5 import timeseries
+
+from mt_metadata.utils.mttime import MTime
+from mt_metadata.timeseries import Station, Run, Electric, Magnetic, Auxiliary
 
 # =============================================================================
 # Exceptions
 # =============================================================================
-class NIMSError(Exception):
-    pass
-
-
-class GPSError(Exception):
-    pass
 
 
 class ResponseError(Exception):
     pass
-
-
-# =============================================================================
-# class objects
-# =============================================================================
-class GPS(object):
-    """
-    class to parse GPS stamp from the NIMS
-
-    Depending on the type of Stamp different attributes will be filled.
-
-    GPRMC has full date and time information and declination
-    GPGGA has elevation data
-
-    .. note:: GPGGA date is set to 1980-01-01 so that the time can be estimated.
-              Should use GPRMC for accurate date/time information.
-    """
-
-    def __init__(self, gps_string, index=0):
-
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-
-        self.gps_string = gps_string
-        self.index = index
-        self._time = None
-        self._date = "010180"
-        self._latitude = None
-        self._latitude_hemisphere = None
-        self._longitude = None
-        self._longitude_hemisphere = None
-        self._declination = None
-        self._declination_hemisphere = None
-        self._elevation = None
-        self.valid = False
-        self.elevation_units = "meters"
-
-        self.type_dict = {
-            "gprmc": {
-                0: "type",
-                1: "time",
-                2: "fix",
-                3: "latitude",
-                4: "latitude_hemisphere",
-                5: "longitude",
-                6: "longitude_hemisphere",
-                7: "skip",
-                8: "skip",
-                9: "date",
-                10: "declination",
-                11: "declination_hemisphere",
-                "length": [12],
-                "type": 0,
-                "time": 1,
-                "fix": 2,
-                "latitude": 3,
-                "latitude_hemisphere": 4,
-                "longitude": 5,
-                "longitude_hemisphere": 6,
-                "date": 9,
-                "declination": 10,
-            },
-            "gpgga": {
-                0: "type",
-                1: "time",
-                2: "latitude",
-                3: "latitude_hemisphere",
-                4: "longitude",
-                5: "longitude_hemisphere",
-                6: "var_01",
-                7: "var_02",
-                8: "var_03",
-                9: "elevation",
-                10: "elevation_units",
-                11: "elevation_error",
-                12: "elevation_error_units",
-                13: "null_01",
-                14: "null_02",
-                "length": [14, 15],
-                "type": 0,
-                "time": 1,
-                "latitude": 2,
-                "latitude_hemisphere": 3,
-                "longitude": 4,
-                "longitude_hemisphere": 5,
-                "elevation": 9,
-                "elevation_units": 10,
-                "elevation_error": 11,
-                "elevation_error_units": 12,
-            },
-        }
-        self.parse_gps_string(self.gps_string)
-
-    def __str__(self):
-        """string representation"""
-        msg = [
-            f"type = {self.gps_type}",
-            f"index = {self.index}",
-            f"fix = {self.fix}",
-            f"time_stamp =  {self.time_stamp}",
-            f"latitude = {self.latitude}",
-            f"longitude = {self.longitude}",
-            f"elevation = {self.elevation}",
-            f"declination = {self.declination}",
-        ]
-
-        return "\n".join(msg)
-
-    def __repr__(self):
-        return self.__str__()
-
-    def validate_gps_string(self, gps_string):
-        """
-        make sure the string is valid, remove any binary numbers and find
-        the end of the string as '*'
-
-        :param string gps_string: raw GPS string to be validated
-
-        :returns: validated string or None if there is something wrong
-        """
-        for replace_str in [b"\xd9", b"\xc7", b"\xcc"]:
-            gps_string = gps_string.replace(replace_str, b"")
-
-        ### sometimes the end is set with a zero for some reason
-        gps_string = gps_string.replace(b"\x00", b"*")
-
-        if gps_string.find(b"*") < 0:
-            logging.debug("GPSError: No end to stamp {0}".format(gps_string))
-        else:
-            try:
-                gps_string = gps_string[0 : gps_string.find(b"*")].decode()
-                return gps_string
-            except UnicodeDecodeError:
-                logging.debug(
-                    "GPSError: stamp not correct format, {0}".format(gps_string)
-                )
-                return None
-
-    def parse_gps_string(self, gps_string):
-        """
-        Parse a raw gps string from the NIMS and set appropriate attributes.
-        GPS string will first be validated, then parsed.
-
-        :param string gps_string: raw GPS string to be parsed
-        """
-        gps_string = self.validate_gps_string(gps_string)
-        if gps_string is None:
-            self.valid = False
-            return
-
-        if isinstance(gps_string, bytes):
-            gps_list = gps_string.strip().split(b",")
-            gps_list = [value.decode() for value in gps_list]
-        else:
-            gps_list = gps_string.strip().split(",")
-
-        if len(gps_list) > 1:
-            if len(gps_list[1]) > 6:
-                self.logger.debug(
-                    "GPS time and lat missing a comma adding one, check time"
-                )
-                gps_list = (
-                    gps_list[0:1] + [gps_list[1][0:6], gps_list[1][6:]] + gps_list[2:]
-                )
-
-        ### validate the gps list to make sure it is usable
-        gps_list, error_list = self.validate_gps_list(gps_list)
-        if len(error_list) > 0:
-            for error in error_list:
-                logging.debug("GPSError: " + error)
-        if gps_list is None:
-            return
-
-        attr_dict = self.type_dict[gps_list[0].lower()]
-
-        for index, value in enumerate(gps_list):
-            setattr(self, "_" + attr_dict[index], value)
-
-        if None not in gps_list:
-            self.valid = True
-            self.gps_string = gps_string
-
-    def validate_gps_list(self, gps_list):
-        """
-        check to make sure the gps stamp is the correct format, checks each element
-        for the proper format
-
-        :param gps_list: a parsed gps string from a NIMS
-        :type gps_list: list
-        :raises: :class:`mth5.io.nims.GPSError` if anything is wrong.
-        """
-        error_list = []
-        try:
-            gps_list = self._validate_gps_type(gps_list)
-        except GPSError as error:
-            error_list.append(error.args[0])
-            return None, error_list
-
-        ### get the string type
-        g_type = gps_list[0].lower()
-
-        ### first check the length, if it is not the proper length then
-        ### return, cause you never know if everything else is correct
-        try:
-            self._validate_list_length(gps_list)
-        except GPSError as error:
-            error_list.append(error.args[0])
-            return None, error_list
-
-        try:
-            gps_list[self.type_dict[g_type]["time"]] = self._validate_time(
-                gps_list[self.type_dict[g_type]["time"]]
-            )
-        except GPSError as error:
-            error_list.append(error.args[0])
-            gps_list[self.type_dict[g_type]["time"]] = None
-
-        try:
-            gps_list[self.type_dict[g_type]["latitude"]] = self._validate_latitude(
-                gps_list[self.type_dict[g_type]["latitude"]],
-                gps_list[self.type_dict[g_type]["latitude_hemisphere"]],
-            )
-        except GPSError as error:
-            error_list.append(error.args[0])
-            gps_list[self.type_dict[g_type]["latitude"]] = None
-
-        try:
-            gps_list[self.type_dict[g_type]["longitude"]] = self._validate_longitude(
-                gps_list[self.type_dict[g_type]["longitude"]],
-                gps_list[self.type_dict[g_type]["longitude_hemisphere"]],
-            )
-        except GPSError as error:
-            error_list.append(error.args[0])
-            gps_list[self.type_dict[g_type]["longitude"]] = None
-
-        if g_type == "gprmc":
-            try:
-                gps_list[self.type_dict["gprmc"]["date"]] = self._validate_date(
-                    gps_list[self.type_dict["gprmc"]["date"]]
-                )
-            except GPSError as error:
-                error_list.append(error.args[0])
-                gps_list[self.type_dict[g_type]["date"]] = None
-
-        elif g_type == "gpgga":
-            try:
-                gps_list[
-                    self.type_dict["gpgga"]["elevation"]
-                ] = self._validate_elevation(
-                    gps_list[self.type_dict["gpgga"]["elevation"]]
-                )
-            except GPSError as error:
-                error_list.append(error.args[0])
-                gps_list[self.type_dict["gpgga"]["elevation"]] = None
-
-        return gps_list, error_list
-
-    def _validate_gps_type(self, gps_list):
-        """Validate gps type should be gpgga or gprmc"""
-        gps_type = gps_list[0].lower()
-        if "gpg" in gps_type:
-            if len(gps_type) > 5:
-                gps_list = ["GPGGA", gps_type[-6:]] + gps_list[1:]
-            elif len(gps_type) < 5:
-                gps_list[0] = "GPGGA"
-        elif "gpr" in gps_type:
-            if len(gps_type) > 5:
-                gps_list = ["GPRMC", gps_type[-6:]] + gps_list[1:]
-            elif len(gps_type) < 5:
-                gps_list[0] = "GPRMC"
-
-        gps_type = gps_list[0].lower()
-        if gps_type not in ["gpgga", "gprmc"]:
-            raise GPSError(
-                "GPS String type not correct.  "
-                + "Expect GPGGA or GPRMC, got {0}".format(gps_type.upper())
-            )
-
-        return gps_list
-
-    def _validate_list_length(self, gps_list):
-        """validate gps list length based on type of string"""
-
-        gps_list_type = gps_list[0].lower()
-        expected_len = self.type_dict[gps_list_type]["length"]
-        if len(gps_list) not in expected_len:
-            raise GPSError(
-                "GPS string not correct length for {0}.  ".format(gps_list_type.upper())
-                + "Expected {0}, got {1} \n{2}".format(
-                    expected_len, len(gps_list), ",".join(gps_list)
-                )
-            )
-
-    def _validate_time(self, time_str):
-        """validate time string, should be 6 characters long and an int"""
-        if len(time_str) != 6:
-            raise GPSError(
-                "Length of time string {0} not correct.  ".format(time_str)
-                + "Expected 6 got {0}".format(len(time_str))
-            )
-        try:
-            int(time_str)
-        except ValueError:
-            raise GPSError("Could not convert time string {0}".format(time_str))
-
-        return time_str
-
-    def _validate_date(self, date_str):
-        """validate date string, should be 6 characters long and an int"""
-        if len(date_str) != 6:
-            raise GPSError(
-                "Length of date string not correct {0}.  ".format(date_str)
-                + "Expected 6 got {0}".format(len(date_str))
-            )
-        try:
-            int(date_str)
-        except ValueError:
-            raise GPSError("Could not convert date string {0}".format(date_str))
-
-        return date_str
-
-    def _validate_latitude(self, latitude_str, hemisphere_str):
-        """validate latitude, should have hemisphere string with it"""
-
-        if len(latitude_str) < 8:
-            raise GPSError(
-                "Latitude string should be larger than 7 characters.  "
-                + "Got {0}".format(len(latitude_str))
-            )
-        if len(hemisphere_str) != 1:
-            raise GPSError(
-                "Latitude hemisphere should be 1 character.  "
-                + "Got {0}".format(len(hemisphere_str))
-            )
-        if hemisphere_str.lower() not in ["n", "s"]:
-            raise GPSError(
-                "Latitude hemisphere {0} not understood".format(hemisphere_str.upper())
-            )
-        try:
-            float(latitude_str)
-        except ValueError:
-            raise GPSError("Could not convert latitude string {0}".format(latitude_str))
-
-        return latitude_str
-
-    def _validate_longitude(self, longitude_str, hemisphere_str):
-        """validate longitude, should have hemisphere string with it"""
-
-        if len(longitude_str) < 8:
-            raise GPSError(
-                "Longitude string should be larger than 7 characters.  "
-                + "Got {0}".format(len(longitude_str))
-            )
-        if len(hemisphere_str) != 1:
-            raise GPSError(
-                "Longitude hemisphere should be 1 character.  "
-                + "Got {0}".format(len(hemisphere_str))
-            )
-        if hemisphere_str.lower() not in ["e", "w"]:
-            raise GPSError(
-                "Longitude hemisphere {0} not understood".format(hemisphere_str.upper())
-            )
-        try:
-            float(longitude_str)
-        except ValueError:
-            raise GPSError(
-                "Could not convert longitude string {0}".format(longitude_str)
-            )
-
-        return longitude_str
-
-    def _validate_elevation(self, elevation_str):
-        """validate elevation, check for converstion to float"""
-        elevation_str = elevation_str.lower().replace("m", "")
-        try:
-            elevation_str = f"{float(elevation_str):0.2f}"
-        except ValueError:
-            raise GPSError(f"Elevation could not be converted {elevation_str}")
-
-        return elevation_str
-
-    @property
-    def latitude(self):
-        """
-        Latitude in decimal degrees, WGS84
-        """
-        if self._latitude is not None and self._latitude_hemisphere is not None:
-            index = len(self._latitude) - 7
-            lat = float(self._latitude[0:index]) + float(self._latitude[index:]) / 60
-            if "s" in self._latitude_hemisphere.lower():
-                lat *= -1
-            return lat
-        return 0.0
-
-    @property
-    def longitude(self):
-        """
-        Latitude in decimal degrees, WGS84
-        """
-        if self._longitude is not None and self._longitude_hemisphere is not None:
-            index = len(self._longitude) - 7
-            lon = float(self._longitude[0:index]) + float(self._longitude[index:]) / 60
-            if "w" in self._longitude_hemisphere.lower():
-                lon *= -1
-            return lon
-        return 0.0
-
-    @property
-    def elevation(self):
-        """
-        elevation in meters
-        """
-        if self._elevation is not None:
-            try:
-                return float(self._elevation)
-            except ValueError:
-                self.logger.error(
-                    "GPSError: Could not get elevation GPS string"
-                    + f"not complete {self.gps_string}"
-                )
-        return 0.0
-
-    @property
-    def time_stamp(self):
-        """
-        return a datetime object of the time stamp
-        """
-        if self._time is None:
-            return None
-        if self._date is None:
-            self._date = "010180"
-        try:
-            return dateutil.parser.parse(
-                "{0} {1}".format(self._date, self._time), dayfirst=True
-            )
-        except ValueError:
-            self.logger.error(f"GPSError: bad date string {self.gps_string}")
-            return None
-
-    @property
-    def declination(self):
-        """
-        geomagnetic declination in degrees from north
-        """
-        if self._declination is None or self._declination_hemisphere is None:
-            return None
-
-        dec = float(self._declination)
-        if "w" in self._declination_hemisphere.lower():
-            dec *= -1
-        return dec
-
-    @property
-    def gps_type(self):
-        """GPRMC or GPGGA"""
-        return self._type
-
-    @property
-    def fix(self):
-        """
-        GPS fixed
-        """
-        if hasattr(self, "_fix"):
-            return self._fix
-        return None
-
-
-class NIMSHeader(object):
-    """
-    class to hold the NIMS header information.
-
-    A typical header looks like
-
-    .. code-block::
-
-        >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-        >>>user field>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-        SITE NAME: Budwieser Spring
-        STATE/PROVINCE: CA
-        COUNTRY: USA
-        >>> The following code in double quotes is REQUIRED to start the NIMS <<
-        >>> The next 3 lines contain values required for processing <<<<<<<<<<<<
-        >>> The lines after that are optional <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        "300b"  <-- 2CHAR EXPERIMENT CODE + 3 CHAR SITE CODE + RUN LETTER
-        1105-3; 1305-3  <-- SYSTEM BOX I.D.; MAG HEAD ID (if different)
-        106  0 <-- N-S Ex WIRE LENGTH (m); HEADING (deg E mag N)
-        109  90 <-- E-W Ey WIRE LENGTH (m); HEADING (deg E mag N)
-        1         <-- N ELECTRODE ID
-        3          <-- E ELECTRODE ID
-        2          <-- S ELECTRODE ID
-        4          <-- W ELECTRODE ID
-        Cu          <-- GROUND ELECTRODE INFO
-        GPS INFO: 01/10/19 16:16:42 1616.7000 3443.6088 115.7350 W 946.6
-        OPERATOR: KP
-        COMMENT: N/S CRS: .95/.96 DCV: 3.5 ACV:1
-        E/W CRS: .85/.86 DCV: 1.5 ACV: 1
-        Redeployed site for run b b/c possible animal disturbance
-
-    """
-
-    def __init__(self, fn=None):
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-        self.fn = fn
-        self._max_header_length = 1000
-        self.header_dict = None
-        self.site_name = None
-        self.state_province = None
-        self.country = None
-        self.box_id = None
-        self.mag_id = None
-        self.ex_length = None
-        self.ex_azimuth = None
-        self.ey_length = None
-        self.ey_azimuth = None
-        self.n_electrode_id = None
-        self.s_electrode_id = None
-        self.e_electrode_id = None
-        self.w_electrode_id = None
-        self.ground_electrode_info = None
-        self.header_gps_stamp = None
-        self.header_gps_latitude = None
-        self.header_gps_longitude = None
-        self.header_gps_elevation = None
-        self.operator = None
-        self.comments = None
-        self.run_id = None
-        self.data_start_seek = 0
-
-    def read_header(self, fn=None):
-        """
-        read header information
-
-        :param fn: full path to file to read
-        :type fn: string or :class:`pathlib.Path`
-        :raises: :class:`mth5.io.nims.NIMSError` if something is not right.
-
-        """
-        if fn is not None:
-            self.fn = fn
-
-        if not os.path.exists(self.fn):
-            msg = f"Could not find nims file {self.fn}"
-            self.logger.error(msg)
-            raise NIMSError(msg)
-
-        self.logger.info(f"Reading NIMS file {self.fn}")
-
-        ### load in the entire file, its not too big
-        with open(self.fn, "rb") as fid:
-            header_str = fid.read(self._max_header_length)
-            header_list = header_str.split(b"\r")
-
-        self.header_dict = {}
-        last_index = len(header_list)
-        last_line = header_list[-1]
-        for ii, line in enumerate(header_list[0:-1]):
-            if ii == last_index:
-                break
-            if b"comments" in line.lower():
-                last_line = header_list[ii + 1]
-                last_index = ii + 1
-
-            line = line.decode()
-            if line.find(">") == 0:
-                continue
-            elif line.find(":") > 0:
-                key, value = line.split(":", 1)
-                self.header_dict[key.strip().lower()] = value.strip()
-            elif line.find("<--") > 0:
-                value, key = line.split("<--")
-                self.header_dict[key.strip().lower()] = value.strip()
-        ### sometimes there are some spaces before the data starts
-        if last_line.count(b" ") > 0:
-            if last_line[0:1] == b" ":
-                last_line = last_line.strip()
-            else:
-                last_line = last_line.split()[1].strip()
-        data_start_byte = last_line[0:1]
-        ### sometimes there are rogue $ around
-        if data_start_byte in [b"$", b"g"]:
-            data_start_byte = last_line[1:2]
-        self.data_start_seek = header_str.find(data_start_byte)
-
-        self.parse_header_dict()
-
-    def parse_header_dict(self, header_dict=None):
-        """
-        parse the header dictionary into something useful
-        """
-        if header_dict is not None:
-            self.header_dict = header_dict
-
-        assert isinstance(self.header_dict, dict)
-
-        for key, value in self.header_dict.items():
-            if "wire" in key:
-                if key.find("n") == 0:
-                    self.ex_length = float(value.split()[0])
-                    self.ex_azimuth = float(value.split()[1])
-                elif key.find("e") == 0:
-                    self.ey_length = float(value.split()[0])
-                    self.ey_azimuth = float(value.split()[1])
-            elif "system" in key:
-                self.box_id = value.split(";")[0].strip()
-                self.mag_id = value.split(";")[1].strip()
-            elif "gps" in key:
-                gps_list = value.split()
-                self.header_gps_stamp = dateutil.parser.parse(
-                    " ".join(gps_list[0:2]), dayfirst=True
-                )
-                self.header_gps_latitude = self._get_latitude(gps_list[2], gps_list[3])
-                self.header_gps_longitude = self._get_longitude(
-                    gps_list[4], gps_list[5]
-                )
-                self.header_gps_elevation = float(gps_list[6])
-            elif "run" in key:
-                self.run_id = value.replace('"', "")
-            else:
-                setattr(self, key.replace(" ", "_").replace("/", "_"), value)
-
-    def _get_latitude(self, latitude, hemisphere):
-        if not isinstance(latitude, float):
-            latitude = float(latitude)
-        if hemisphere.lower() == "n":
-            return latitude
-        if hemisphere.lower() == "s":
-            return -1 * latitude
-
-    def _get_longitude(self, longitude, hemisphere):
-        if not isinstance(longitude, float):
-            longitude = float(longitude)
-        if hemisphere.lower() == "e":
-            return longitude
-        if hemisphere.lower() == "w":
-            return -1 * longitude
 
 
 class NIMS(NIMSHeader):
@@ -749,6 +111,41 @@ class NIMS(NIMSHeader):
         self._raw_string = None
 
         self.indices = self._make_index_values()
+
+    def __str__(self):
+        lines = [f"NIMS Station: {self.site_name}", "-" * 20]
+        lines.append(f"NIMS ID:         {self.box_id}")
+        lines.append(f"magnetometer ID: {self.mag_id}")
+        lines.append(f"operator:        {self.operator}")
+        lines.append(f"location:        {self.state_province}, {self.country}")
+        lines.append(f"latitude:        {self.latitude} (degrees)")
+        lines.append(f"longitude:       {self.longitude} (degrees)")
+        lines.append(f"elevation:       {self.elevation} m")
+        lines.append(f"gps stamp:       {self.header_gps_stamp}")
+        lines.append(
+            f"EX: length = {self.ex_length} m; azimuth = {self.ex_azimuth}"
+        )
+        lines.append(
+            f"EY: length = {self.ey_length} m; azimuth = {self.ey_azimuth}"
+        )
+        lines.append(f"comments:        {self.comments}")
+
+        if self.has_data():
+            lines.append("")
+            lines.append(f"Start:      {self.start_time.isoformat()}")
+            lines.append(f"End:        {self.end_time.isoformat()}")
+            lines.append(f"Data shape: {self.ts_data.shape}")
+            lines.append(f"Found {len(self.stamps)} GPS stamps")
+
+        return "\n".join(lines)
+
+    def __repr__(self):
+        return self.__str__()
+
+    def has_data(self):
+        if self.ts_data is not None:
+            return True
+        return False
 
     @property
     def latitude(self):
@@ -827,7 +224,7 @@ class NIMS(NIMSHeader):
         beginning of the time series.
         """
         if self.stamps is not None:
-            return self.ts_data.index[0]
+            return MTime(self.ts_data.index[0])
         return None
 
     @property
@@ -837,7 +234,7 @@ class NIMS(NIMSHeader):
         beginning of the time series.
         """
         if self.stamps is not None:
-            return self.ts_data.index[-1]
+            return MTime(self.ts_data.index[-1])
         return None
 
     @property
@@ -845,22 +242,25 @@ class NIMS(NIMSHeader):
         """data logger temperature, sampled at 1 second"""
 
         if self.ts_data is not None:
-            meta_dict = {
-                "channel_number": 6,
-                "component": "temperature",
-                "measurement_azimuth": 0,
-                "measurement_tilt": 0,
-                "sample_rate": 1,
-                "time_period.start": self.start_time.isoformat(),
-                "time_period.end": self.end_time.isoformat(),
-                "type": "auxiliary",
-                "units": "celsius",
-            }
+            auxiliary_metadata = Auxiliary()
+            auxiliary_metadata.from_dict(
+                {
+                    "channel_number": 6,
+                    "component": "temperature",
+                    "measurement_azimuth": 0,
+                    "measurement_tilt": 0,
+                    "sample_rate": 1,
+                    "time_period.start": self.start_time.isoformat(),
+                    "time_period.end": self.end_time.isoformat(),
+                    "type": "auxiliary",
+                    "units": "celsius",
+                }
+            )
 
             temp = timeseries.ChannelTS(
-                "auxiliary",
+                channel_type="auxiliary",
                 data=self.info_array["box_temp"],
-                channel_metadata={"auxiliary": meta_dict},
+                channel_metadata=auxiliary_metadata,
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
             )
@@ -876,25 +276,28 @@ class NIMS(NIMSHeader):
     def hx(self):
         """HX"""
         if self.ts_data is not None:
-            meta_dict = {
-                "channel_number": 1,
-                "component": "hx",
-                "measurement_azimuth": 0,
-                "measurement_tilt": 0,
-                "sample_rate": self.sample_rate,
-                "time_period.start": self.start_time.isoformat(),
-                "time_period.end": self.end_time.isoformat(),
-                "type": "magnetic",
-                "units": "counts",
-                "sensor.id": self.mag_id,
-                "sensor.manufacturer": "Barry Narod",
-                "sensor.type": "fluxgate triaxial magnetometer",
-            }
+            hx_metadata = Magnetic()
+            hx_metadata.from_dict(
+                {
+                    "channel_number": 1,
+                    "component": "hx",
+                    "measurement_azimuth": 0,
+                    "measurement_tilt": 0,
+                    "sample_rate": self.sample_rate,
+                    "time_period.start": self.start_time.isoformat(),
+                    "time_period.end": self.end_time.isoformat(),
+                    "type": "magnetic",
+                    "units": "counts",
+                    "sensor.id": self.mag_id,
+                    "sensor.manufacturer": "Barry Narod",
+                    "sensor.type": "fluxgate triaxial magnetometer",
+                }
+            )
 
             return timeseries.ChannelTS(
-                "magnetic",
+                channel_type="magnetic",
                 data=self.ts_data.hx.to_numpy(),
-                channel_metadata={"magnetic": meta_dict},
+                channel_metadata=hx_metadata,
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
             )
@@ -904,25 +307,28 @@ class NIMS(NIMSHeader):
     def hy(self):
         """HY"""
         if self.ts_data is not None:
-            meta_dict = {
-                "channel_number": 2,
-                "component": "hy",
-                "measurement_azimuth": 90,
-                "measurement_tilt": 0,
-                "sample_rate": self.sample_rate,
-                "time_period.start": self.start_time.isoformat(),
-                "time_period.end": self.end_time.isoformat(),
-                "type": "magnetic",
-                "units": "counts",
-                "sensor.id": self.mag_id,
-                "sensor.manufacturer": "Barry Narod",
-                "sensor.type": "fluxgate triaxial magnetometer",
-            }
+            hy_metadata = Magnetic()
+            hy_metadata.from_dict(
+                {
+                    "channel_number": 2,
+                    "component": "hy",
+                    "measurement_azimuth": 90,
+                    "measurement_tilt": 0,
+                    "sample_rate": self.sample_rate,
+                    "time_period.start": self.start_time.isoformat(),
+                    "time_period.end": self.end_time.isoformat(),
+                    "type": "magnetic",
+                    "units": "counts",
+                    "sensor.id": self.mag_id,
+                    "sensor.manufacturer": "Barry Narod",
+                    "sensor.type": "fluxgate triaxial magnetometer",
+                }
+            )
 
             return timeseries.ChannelTS(
-                "magnetic",
+                channel_type="magnetic",
                 data=self.ts_data.hy.to_numpy(),
-                channel_metadata={"magnetic": meta_dict},
+                channel_metadata=hy_metadata,
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
             )
@@ -932,25 +338,28 @@ class NIMS(NIMSHeader):
     def hz(self):
         """HZ"""
         if self.ts_data is not None:
-            meta_dict = {
-                "channel_number": 3,
-                "component": "hz",
-                "measurement_azimuth": 0,
-                "measurement_tilt": 90,
-                "sample_rate": self.sample_rate,
-                "time_period.start": self.start_time.isoformat(),
-                "time_period.end": self.end_time.isoformat(),
-                "type": "magnetic",
-                "units": "counts",
-                "sensor.id": self.mag_id,
-                "sensor.manufacturer": "Barry Narod",
-                "sensor.type": "fluxgate triaxial magnetometer",
-            }
+            hz_metadata = Magnetic()
+            hz_metadata.from_dict(
+                {
+                    "channel_number": 3,
+                    "component": "hz",
+                    "measurement_azimuth": 0,
+                    "measurement_tilt": 90,
+                    "sample_rate": self.sample_rate,
+                    "time_period.start": self.start_time.isoformat(),
+                    "time_period.end": self.end_time.isoformat(),
+                    "type": "magnetic",
+                    "units": "counts",
+                    "sensor.id": self.mag_id,
+                    "sensor.manufacturer": "Barry Narod",
+                    "sensor.type": "fluxgate triaxial magnetometer",
+                }
+            )
 
             return timeseries.ChannelTS(
-                "magnetic",
+                channel_type="magnetic",
                 data=self.ts_data.hz.to_numpy(),
-                channel_metadata={"magnetic": meta_dict},
+                channel_metadata=hz_metadata,
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
             )
@@ -960,25 +369,28 @@ class NIMS(NIMSHeader):
     def ex(self):
         """EX"""
         if self.ts_data is not None:
-            meta_dict = {
-                "channel_number": 4,
-                "component": "ex",
-                "measurement_azimuth": self.ex_azimuth,
-                "measurement_tilt": 0,
-                "sample_rate": self.sample_rate,
-                "dipole_length": self.ex_length,
-                "time_period.start": self.start_time.isoformat(),
-                "time_period.end": self.end_time.isoformat(),
-                "type": "electric",
-                "units": "counts",
-                "negative.id": self.s_electrode_id,
-                "positive.id": self.n_electrode_id,
-            }
+            ex_metadata = Electric()
+            ex_metadata.from_dict(
+                {
+                    "channel_number": 4,
+                    "component": "ex",
+                    "measurement_azimuth": self.ex_azimuth,
+                    "measurement_tilt": 0,
+                    "sample_rate": self.sample_rate,
+                    "dipole_length": self.ex_length,
+                    "time_period.start": self.start_time.isoformat(),
+                    "time_period.end": self.end_time.isoformat(),
+                    "type": "electric",
+                    "units": "counts",
+                    "negative.id": self.s_electrode_id,
+                    "positive.id": self.n_electrode_id,
+                }
+            )
 
             return timeseries.ChannelTS(
-                "electric",
+                channel_type="electric",
                 data=self.ts_data.ex.to_numpy(),
-                channel_metadata={"electric": meta_dict},
+                channel_metadata=ex_metadata,
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
             )
@@ -988,25 +400,28 @@ class NIMS(NIMSHeader):
     def ey(self):
         """EY"""
         if self.ts_data is not None:
-            meta_dict = {
-                "channel_number": 5,
-                "component": "ey",
-                "measurement_azimuth": self.ey_azimuth,
-                "measurement_tilt": 0,
-                "sample_rate": self.sample_rate,
-                "dipole_length": self.ey_length,
-                "time_period.start": self.start_time.isoformat(),
-                "time_period.end": self.end_time.isoformat(),
-                "type": "electric",
-                "units": "counts",
-                "negative.id": self.w_electrode_id,
-                "positive.id": self.e_electrode_id,
-            }
+            ey_metadata = Electric()
+            ey_metadata.from_dict(
+                {
+                    "channel_number": 5,
+                    "component": "ey",
+                    "measurement_azimuth": self.ey_azimuth,
+                    "measurement_tilt": 0,
+                    "sample_rate": self.sample_rate,
+                    "dipole_length": self.ey_length,
+                    "time_period.start": self.start_time.isoformat(),
+                    "time_period.end": self.end_time.isoformat(),
+                    "type": "electric",
+                    "units": "counts",
+                    "negative.id": self.w_electrode_id,
+                    "positive.id": self.e_electrode_id,
+                }
+            )
 
             return timeseries.ChannelTS(
-                "electric",
+                channel_type="electric",
                 data=self.ts_data.ey.to_numpy(),
-                channel_metadata={"electric": meta_dict},
+                channel_metadata=ey_metadata,
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
             )
@@ -1018,28 +433,28 @@ class NIMS(NIMSHeader):
         """Run metadata"""
 
         if self.ts_data is not None:
-            meta_dict = {
-                "Run": {
-                    "channels_recorded_electric": "ex, ey",
-                    "channels_recorded_magnetic": "hx, hy, hz",
-                    "channels_recorded_auxiliary": "temperature",
-                    "comments": self.comments,
-                    "data_logger.firmware.author": "B. Narod",
-                    "data_logger.firmware.name": "nims",
-                    "data_logger.firmware.version": "1.0",
-                    "data_logger.manufacturer": "Narod",
-                    "data_logger.model": self.box_id,
-                    "data_logger.id": self.box_id,
-                    "data_logger.type": "long period",
-                    "id": self.run_id,
-                    "data_type": "MTLP",
-                    "sample_rate": self.sample_rate,
-                    "time_period.end": self.end_time.isoformat(),
-                    "time_period.start": self.start_time.isoformat(),
+            run_metadata = Run()
+            run_metadata.from_dict(
+                {
+                    "Run": {
+                        "comments": self.comments,
+                        "data_logger.firmware.author": "B. Narod",
+                        "data_logger.firmware.name": "nims",
+                        "data_logger.firmware.version": "1.0",
+                        "data_logger.manufacturer": "Narod",
+                        "data_logger.model": self.box_id,
+                        "data_logger.id": self.box_id,
+                        "data_logger.type": "long period",
+                        "id": self.run_id,
+                        "data_type": "MTLP",
+                        "sample_rate": self.sample_rate,
+                        "time_period.end": self.end_time.isoformat(),
+                        "time_period.start": self.start_time.isoformat(),
+                    }
                 }
-            }
+            )
 
-            return meta_dict
+            return run_metadata
 
         return None
 
@@ -1047,18 +462,21 @@ class NIMS(NIMSHeader):
     def station_metadata(self):
         """Station metadata from nims file"""
         if self.ts_data is not None:
-
-            return {
-                "Station": {
-                    "geographic_name": f"{self.site_name}, {self.state_province}, {self.country}",
-                    "location.declination.value": self.declination,
-                    "location.elevation": self.elevation,
-                    "location.latitude": self.latitude,
-                    "location.longitude": self.longitude,
-                    "id": self.run_id[0:-1],
-                    "orientation.reference_frame": "geomagnetic",
+            station_metadata = Station()
+            station_metadata.from_dict(
+                {
+                    "Station": {
+                        "geographic_name": f"{self.site_name}, {self.state_province}, {self.country}",
+                        "location.declination.value": self.declination,
+                        "location.elevation": self.elevation,
+                        "location.latitude": self.latitude,
+                        "location.longitude": self.longitude,
+                        "id": self.run_id[0:-1],
+                        "orientation.reference_frame": "geomagnetic",
+                    }
                 }
-            }
+            )
+            return station_metadata
         return None
 
     def to_runts(self):
@@ -1147,7 +565,9 @@ class NIMS(NIMSHeader):
                 elif gps_obj.gps_type == "GPGGA":
                     gpgga_list.append(gps_obj)
             else:
-                self.logger.debug(f"GPS Error: file index {index}, stamp number {ii}")
+                self.logger.debug(
+                    f"GPS Error: file index {index}, stamp number {ii}"
+                )
                 max_len = min([len(raw_stamp), 15])
                 self.logger.debug(f"GPS Raw Stamp: {raw_stamp[0:max_len]}")
 
@@ -1248,7 +668,9 @@ class NIMS(NIMSHeader):
                         del gps_list[ii]
                         break
             if not stamp_find:
-                self.logger.debug(f"GPS Error: No good GPS stamp at {index} seconds")
+                self.logger.debug(
+                    f"GPS Error: No good GPS stamp at {index} seconds"
+                )
 
         return gps_stamps
 
@@ -1316,7 +738,9 @@ class NIMS(NIMSHeader):
             dup_dict["ts_index_0"] = dup * self.sample_rate
             dup_dict["ts_index_1"] = dup * self.sample_rate + self.sample_rate
             dup_dict["ts_index_2"] = (dup + 1) * self.sample_rate
-            dup_dict["ts_index_3"] = (dup + 1) * self.sample_rate + self.sample_rate
+            dup_dict["ts_index_3"] = (
+                dup + 1
+            ) * self.sample_rate + self.sample_rate
             duplicate_list.append(dup_dict)
         return duplicate_list
 
@@ -1357,7 +781,9 @@ class NIMS(NIMSHeader):
 
         """
         ### locate
-        duplicate_test_list = self._locate_duplicate_blocks(self.info_array["sequence"])
+        duplicate_test_list = self._locate_duplicate_blocks(
+            self.info_array["sequence"]
+        )
         if duplicate_test_list is None:
             return info_array, data_array, None
 
@@ -1376,14 +802,19 @@ class NIMS(NIMSHeader):
         ### block
         remove_sequence_index = [d["sequence_index"] for d in duplicate_list]
         remove_data_index = np.array(
-            [np.arange(d["ts_index_0"], d["ts_index_1"], 1) for d in duplicate_list]
+            [
+                np.arange(d["ts_index_0"], d["ts_index_1"], 1)
+                for d in duplicate_list
+            ]
         ).flatten()
         ### remove the data
         return_info_array = np.delete(info_array, remove_sequence_index)
         return_data_array = np.delete(data_array, remove_data_index)
 
         ### set sequence to be monotonic
-        return_info_array["sequence"][:] = np.arange(return_info_array.shape[0])
+        return_info_array["sequence"][:] = np.arange(
+            return_info_array.shape[0]
+        )
 
         return return_info_array, return_data_array, duplicate_list
 
@@ -1466,7 +897,9 @@ class NIMS(NIMSHeader):
             data = data[0:end_data]
 
         # resized the data into an even amount of blocks
-        data = data.reshape((int(data.size / self.block_size), self.block_size))
+        data = data.reshape(
+            (int(data.size / self.block_size), self.block_size)
+        )
 
         ### need to parse the data
         ### first get the status information
@@ -1498,7 +931,9 @@ class NIMS(NIMSHeader):
             self.info_array[key][:] = value
 
         ### unwrap sequence
-        self.info_array["sequence"] = self.unwrap_sequence(self.info_array["sequence"])
+        self.info_array["sequence"] = self.unwrap_sequence(
+            self.info_array["sequence"]
+        )
 
         ### get data
         data_array = np.zeros(
@@ -1530,9 +965,11 @@ class NIMS(NIMSHeader):
             data_array[comp] *= -1
 
         ### remove duplicates
-        (self.info_array, data_array, self.duplicate_list,) = self.remove_duplicates(
-            self.info_array, data_array
-        )
+        (
+            self.info_array,
+            data_array,
+            self.duplicate_list,
+        ) = self.remove_duplicates(self.info_array, data_array)
         ### get GPS stamps with index values
         self.stamps = self.match_status_with_gps_stamps(
             self.info_array["status"], self.gps_list
@@ -1582,7 +1019,9 @@ class NIMS(NIMSHeader):
             if stamp.gps_type == "GPGGA":
                 continue
 
-            time_diff = (stamp.time_stamp - current_stamp.time_stamp).total_seconds()
+            time_diff = (
+                stamp.time_stamp - current_stamp.time_stamp
+            ).total_seconds()
             index_diff = stamp.index - current_stamp.index
 
             time_gap = index_diff - time_diff
@@ -1594,7 +1033,8 @@ class NIMS(NIMSHeader):
                 gap_beginning.append(stamp.index)
                 self.logger.debug(
                     "GPS tamp at {0} is off from previous time by {1} seconds".format(
-                        stamp.time_stamp.isoformat(), time_gap,
+                        stamp.time_stamp.isoformat(),
+                        time_gap,
                     )
                 )
 
@@ -1671,7 +1111,9 @@ class NIMS(NIMSHeader):
         )
 
         dt_index = self.make_dt_index(
-            start_time.isoformat(), self.sample_rate, n_samples=data_array.shape[0],
+            start_time.isoformat(),
+            self.sample_rate,
+            n_samples=data_array.shape[0],
         )
 
         return pd.DataFrame(data_array, index=dt_index)
@@ -1690,7 +1132,9 @@ class NIMS(NIMSHeader):
 
         return ts
 
-    def make_dt_index(self, start_time, sample_rate, stop_time=None, n_samples=None):
+    def make_dt_index(
+        self, start_time, sample_rate, stop_time=None, n_samples=None
+    ):
         """
         make time index array
 
@@ -1710,7 +1154,11 @@ class NIMS(NIMSHeader):
         dt_freq = "{0:.0f}N".format(1.0 / (sample_rate) * 1e9)
         if stop_time is not None:
             dt_index = pd.date_range(
-                start=start_time, end=stop_time, freq=dt_freq, closed="left", tz="UTC",
+                start=start_time,
+                end=stop_time,
+                freq=dt_freq,
+                closed="left",
+                tz="UTC",
             )
         elif n_samples is not None:
             dt_index = pd.date_range(
@@ -1751,7 +1199,13 @@ class Response(object):
                 "ex": -0.2850,
                 "ey": -0.2850,
             },
-            8: {"hx": 0.2455, "hy": 0.2365, "hz": 0.2275, "ex": 0.1525, "ey": 0.1525,},
+            8: {
+                "hx": 0.2455,
+                "hy": 0.2365,
+                "hz": 0.2275,
+                "ex": 0.1525,
+                "ey": 0.1525,
+            },
         }
         self.mag_low_pass = {
             "name": "3 pole butterworth",
@@ -1823,7 +1277,9 @@ class Response(object):
         dt_filter = {
             "type": "dt",
             "name": "time_offset",
-            "parameters": {"offset": self.time_delays_dict[sample_rate][channel]},
+            "parameters": {
+                "offset": self.time_delays_dict[sample_rate][channel]
+            },
         }
         return dt_filter
 
