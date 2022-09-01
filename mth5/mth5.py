@@ -1212,6 +1212,7 @@ class MTH5:
                 msg = "Need to input 'survey' for file version %s"
                 self.logger.error(msg, self.file_version)
                 raise ValueError(msg % self.file_version)
+
             survey = helpers.validate_name(survey)
             run_path = f"{self._root_path}/Surveys/{survey}/Stations/{station_name}/{run_name}"
         try:
@@ -1252,6 +1253,9 @@ class MTH5:
         channel_name,
         channel_type,
         data,
+        channel_dtype="int32",
+        max_shape=(None,),
+        chunks=True,
         channel_metadata=None,
         survey=None,
     ):
@@ -1305,6 +1309,9 @@ class MTH5:
             channel_type,
             data,
             channel_metadata=channel_metadata,
+            channel_dtype=channel_dtype,
+            max_shape=max_shape,
+            chunks=chunks,
             **self.dataset_options,
         )
 

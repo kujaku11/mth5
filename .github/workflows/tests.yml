@@ -33,6 +33,7 @@ jobs:
         source activate mth5-test
         conda install pytest
         conda install pytest-cov
+        conda install pytest-subtests
         pip install git+https://github.com/kujaku11/mt_metadata.git
         
     - name: Install Our Package
