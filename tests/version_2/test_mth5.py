@@ -219,8 +219,7 @@ class TestMTH5(unittest.TestCase):
 
             self.assertEqual(r_slice.end, "2020-01-01T12:04:17+00:00")
 
-    @classmethod
-    def tearDownClass(self):
+    def tearDown(self):
         self.mth5_obj.close_mth5()
         self.fn.unlink()
 
