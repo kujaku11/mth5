@@ -10,6 +10,7 @@ Created on Fri Aug 19 16:39:30 2022
 # =============================================================================
 import unittest
 from pathlib import Path
+from collections import OrderedDict
 
 
 from mth5.io.nims import NIMS, read_nims
@@ -131,6 +132,289 @@ class TestReadNIMS(unittest.TestCase):
 
     def test_ground_electrodeinfo(self):
         self.assertEqual(self.nims_obj.ground_electrodeinfo, "Cu")
+
+    def test_data_shape(self):
+        self.assertEqual(self.nims_obj.ts_data.shape, (3357016, 5))
+
+    def test_stamps_size(self):
+        self.assertEqual(len(self.nims_obj.stamps), 402)
+
+    def test_start(self):
+        self.assertEqual(
+            self.nims_obj.start_time, MTime("2019-09-26T18:33:21+00:00")
+        )
+
+    def test_end(self):
+        self.assertEqual(
+            self.nims_obj.end_time, MTime("2019-10-01T15:07:07.875000+00:00")
+        )
+
+    def test_latitude(self):
+        self.assertAlmostEqual(self.nims_obj.latitude, 34.726826667)
+
+    def test_longitude(self):
+        self.assertAlmostEqual(self.nims_obj.longitude, -115.73501166)
+
+    def test_elevation(self):
+        self.assertAlmostEqual(self.nims_obj.elevation, 940.4)
+
+    def test_declination(self):
+        self.assertEqual(self.nims_obj.declination, 13.1)
+
+
+class TestNIMSToRunTS(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.runts = read_nims(
+            r"c:\Users\jpeacock\OneDrive - DOI\mt\nims\mnp300a.BIN"
+        )
+        self.maxDiff = None
+
+    def test_station_metadata(self):
+        station_metadata = OrderedDict(
+            [
+                ("acquired_by.name", None),
+                ("channels_recorded", []),
+                ("data_type", "BBMT"),
+                ("geographic_name", "Budwieser Spring, CA, USA"),
+                ("id", "Mnp300"),
+                ("location.declination.model", "WMM"),
+                ("location.declination.value", 13.1),
+                ("location.elevation", 940.4),
+                ("location.latitude", 34.72682666666667),
+                ("location.longitude", -115.73501166666667),
+                ("orientation.method", None),
+                ("orientation.reference_frame", "geomagnetic"),
+                ("provenance.creation_time", "1980-01-01T00:00:00+00:00"),
+                ("provenance.software.author", "none"),
+                ("provenance.software.name", None),
+                ("provenance.software.version", None),
+                ("provenance.submitter.email", None),
+                ("provenance.submitter.organization", None),
+                ("run_list", ["Mnp300a"]),
+                ("time_period.end", "1980-01-01T00:00:00+00:00"),
+                ("time_period.start", "1980-01-01T00:00:00+00:00"),
+            ]
+        )
+
+        self.assertDictEqual(
+            self.runts.station_metadata.to_dict(single=True), station_metadata
+        )
+
+    def test_run_metadata(self):
+        run_metadata = OrderedDict(
+            [
+                ("channels_recorded_auxiliary", ["temperature"]),
+                ("channels_recorded_electric", ["ex", "ey"]),
+                ("channels_recorded_magnetic", ["hx", "hy", "hz"]),
+                (
+                    "comments",
+                    "N/S: CRs: .764/.769 DCV: 3.5 ACV:1 \nE/W:  CRs: .930/.780 DCV: 28.2 ACV: 1\nHwy 40 800m S, X array",
+                ),
+                ("data_logger.firmware.author", "B. Narod"),
+                ("data_logger.firmware.name", "nims"),
+                ("data_logger.firmware.version", "1.0"),
+                ("data_logger.id", "1105-3"),
+                ("data_logger.manufacturer", "Narod"),
+                ("data_logger.model", "1105-3"),
+                ("data_logger.timing_system.drift", 0.0),
+                ("data_logger.timing_system.type", "GPS"),
+                ("data_logger.timing_system.uncertainty", 0.0),
+                ("data_logger.type", "long period"),
+                ("data_type", "MTLP"),
+                ("id", "Mnp300a"),
+                ("sample_rate", 8.0),
+                ("time_period.end", "2019-10-01T15:07:07.875000+00:00"),
+                ("time_period.start", "2019-09-26T18:33:21+00:00"),
+            ]
+        )
+
+        self.assertDictEqual(
+            self.runts.run_metadata.to_dict(single=True), run_metadata
+        )
+
+    def test_ex_metadata(self):
+        ex_metadata = OrderedDict(
+            [
+                ("channel_number", 4),
+                ("component", "ex"),
+                ("data_quality.rating.value", 0),
+                ("dipole_length", 109.0),
+                ("filter.applied", [False]),
+                ("filter.name", []),
+                ("measurement_azimuth", 0.0),
+                ("measurement_tilt", 0.0),
+                ("negative.elevation", 0.0),
+                ("negative.id", "2"),
+                ("negative.latitude", 0.0),
+                ("negative.longitude", 0.0),
+                ("negative.manufacturer", None),
+                ("negative.type", None),
+                ("positive.elevation", 0.0),
+                ("positive.id", "1"),
+                ("positive.latitude", 0.0),
+                ("positive.longitude", 0.0),
+                ("positive.manufacturer", None),
+                ("positive.type", None),
+                ("sample_rate", 8.0),
+                ("time_period.end", "2019-10-01T15:07:08+00:00"),
+                ("time_period.start", "2019-09-26T18:33:21+00:00"),
+                ("type", "electric"),
+                ("units", "counts"),
+            ]
+        )
+
+        self.assertDictEqual(
+            self.runts.ex.channel_metadata.to_dict(single=True), ex_metadata
+        )
+
+    def test_ey_metadata(self):
+        ey_metadata = OrderedDict(
+            [
+                ("channel_number", 5),
+                ("component", "ey"),
+                ("data_quality.rating.value", 0),
+                ("dipole_length", 101.0),
+                ("filter.applied", [False]),
+                ("filter.name", []),
+                ("measurement_azimuth", 90.0),
+                ("measurement_tilt", 0.0),
+                ("negative.elevation", 0.0),
+                ("negative.id", "4"),
+                ("negative.latitude", 0.0),
+                ("negative.longitude", 0.0),
+                ("negative.manufacturer", None),
+                ("negative.type", None),
+                ("positive.elevation", 0.0),
+                ("positive.id", "3"),
+                ("positive.latitude", 0.0),
+                ("positive.longitude", 0.0),
+                ("positive.manufacturer", None),
+                ("positive.type", None),
+                ("sample_rate", 8.0),
+                ("time_period.end", "2019-10-01T15:07:08+00:00"),
+                ("time_period.start", "2019-09-26T18:33:21+00:00"),
+                ("type", "electric"),
+                ("units", "counts"),
+            ]
+        )
+
+        self.assertDictEqual(
+            self.runts.ey.channel_metadata.to_dict(single=True), ey_metadata
+        )
+
+    def test_hx_metadata(self):
+        hx_metadata = OrderedDict(
+            [
+                ("channel_number", 1),
+                ("component", "hx"),
+                ("data_quality.rating.value", 0),
+                ("filter.applied", [False]),
+                ("filter.name", []),
+                ("location.elevation", 0.0),
+                ("location.latitude", 0.0),
+                ("location.longitude", 0.0),
+                ("measurement_azimuth", 0.0),
+                ("measurement_tilt", 0.0),
+                ("sample_rate", 8.0),
+                ("sensor.id", "1305-3"),
+                ("sensor.manufacturer", "Barry Narod"),
+                ("sensor.type", "fluxgate triaxial magnetometer"),
+                ("time_period.end", "2019-10-01T15:07:08+00:00"),
+                ("time_period.start", "2019-09-26T18:33:21+00:00"),
+                ("type", "magnetic"),
+                ("units", "counts"),
+            ]
+        )
+
+        self.assertDictEqual(
+            self.runts.hx.channel_metadata.to_dict(single=True), hx_metadata
+        )
+
+    def test_hy_metadata(self):
+        hy_metadata = OrderedDict(
+            [
+                ("channel_number", 2),
+                ("component", "hy"),
+                ("data_quality.rating.value", 0),
+                ("filter.applied", [False]),
+                ("filter.name", []),
+                ("location.elevation", 0.0),
+                ("location.latitude", 0.0),
+                ("location.longitude", 0.0),
+                ("measurement_azimuth", 90.0),
+                ("measurement_tilt", 0.0),
+                ("sample_rate", 8.0),
+                ("sensor.id", "1305-3"),
+                ("sensor.manufacturer", "Barry Narod"),
+                ("sensor.type", "fluxgate triaxial magnetometer"),
+                ("time_period.end", "2019-10-01T15:07:08+00:00"),
+                ("time_period.start", "2019-09-26T18:33:21+00:00"),
+                ("type", "magnetic"),
+                ("units", "counts"),
+            ]
+        )
+
+        self.assertDictEqual(
+            self.runts.hy.channel_metadata.to_dict(single=True), hy_metadata
+        )
+
+    def test_hz_metadata(self):
+        hz_metadata = OrderedDict(
+            [
+                ("channel_number", 3),
+                ("component", "hz"),
+                ("data_quality.rating.value", 0),
+                ("filter.applied", [False]),
+                ("filter.name", []),
+                ("location.elevation", 0.0),
+                ("location.latitude", 0.0),
+                ("location.longitude", 0.0),
+                ("measurement_azimuth", 0.0),
+                ("measurement_tilt", 90.0),
+                ("sample_rate", 8.0),
+                ("sensor.id", "1305-3"),
+                ("sensor.manufacturer", "Barry Narod"),
+                ("sensor.type", "fluxgate triaxial magnetometer"),
+                ("time_period.end", "2019-10-01T15:07:08+00:00"),
+                ("time_period.start", "2019-09-26T18:33:21+00:00"),
+                ("type", "magnetic"),
+                ("units", "counts"),
+            ]
+        )
+
+        self.assertDictEqual(
+            self.runts.hz.channel_metadata.to_dict(single=True), hz_metadata
+        )
+
+    def test_temperature_metadata(self):
+        t_metadata = OrderedDict(
+            [
+                ("channel_number", 6),
+                ("component", "temperature"),
+                ("data_quality.rating.value", 0),
+                ("filter.applied", [False]),
+                ("filter.name", []),
+                ("location.elevation", 0.0),
+                ("location.latitude", 0.0),
+                ("location.longitude", 0.0),
+                ("measurement_azimuth", 0.0),
+                ("measurement_tilt", 0.0),
+                ("sample_rate", 8.0),
+                ("sensor.id", None),
+                ("sensor.manufacturer", None),
+                ("sensor.type", None),
+                ("time_period.end", "2019-10-01T15:07:08+00:00"),
+                ("time_period.start", "2019-09-26T18:33:21+00:00"),
+                ("type", "auxiliary"),
+                ("units", "celsius"),
+            ]
+        )
+
+        self.assertDictEqual(
+            self.runts.temperature.channel_metadata.to_dict(single=True),
+            t_metadata,
+        )
 
 
 # =============================================================================
