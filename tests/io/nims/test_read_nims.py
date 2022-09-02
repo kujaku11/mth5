@@ -162,6 +162,10 @@ class TestReadNIMS(unittest.TestCase):
         self.assertEqual(self.nims_obj.declination, 13.1)
 
 
+@unittest.skipIf(
+    "peacock" not in str(Path(__file__).as_posix()),
+    "Big data on local machine",
+)
 class TestNIMSToRunTS(unittest.TestCase):
     @classmethod
     def setUpClass(self):

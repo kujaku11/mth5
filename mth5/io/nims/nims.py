@@ -38,6 +38,7 @@ import pandas as pd
 
 from mth5.io.nims.gps import GPS
 from mth5.io.nims.header import NIMSHeader
+from mth5.io.nims.response_filters import Response
 from mth5 import timeseries
 
 from mt_metadata.utils.mttime import MTime
