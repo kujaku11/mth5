@@ -10,7 +10,11 @@ Created on Fri Sep  2 13:50:51 2022
 # =============================================================================
 import numpy as np
 
-from mt_metadata.timeseries.filters import PoleZeroFilter, TimeDelayFilter
+from mt_metadata.timeseries.filters import (
+    PoleZeroFilter,
+    TimeDelayFilter,
+    CoefficientFilter,
+)
 
 # =============================================================================
 
@@ -64,6 +68,8 @@ class Response(object):
                 complex(-6.28319, 10.8825),
                 complex(-12.5664, 0),
             ],
+            units_in="volts",
+            units_out="nanotesla",
         )
 
         self.electric_low_pass = PoleZeroFilter(
@@ -76,18 +82,24 @@ class Response(object):
                 complex(-10.1662, -7.38651),
                 complex(-12.5664, 0.0),
             ],
+            units_in="volts",
+            units_out="volts",
         )
         self.electric_high_pass_pc = PoleZeroFilter(
             name="1 pole butterworth",
             zeros=[1, 1, 1],
             poles=[complex(0.0, 0.0), complex(-3.333333e-05, 0.0)],
             normalization_factor=2 * np.pi * 30000,
+            units_in="volts",
+            units_out="volts",
         )
         self.electric_high_pass_hp = PoleZeroFilter(
             name="1 pole butterworth",
             zeros=[1, 1, 1],
             poles=[complex(0.0, 0.0), complex(-1.66667e-04, 0.0)],
             normalization_factor=2 * np.pi * 6000,
+            units_in="volts",
+            units_out="volts",
         )
 
         for key, value in kwargs.items():
@@ -113,63 +125,71 @@ class Response(object):
         dt_filter = TimeDelayFilter(
             name="time_offset",
             delay=self.time_delays_dict[sample_rate][channel],
+            units_in="digital counts",
+            units_out="digitial counts",
         )
         return dt_filter
 
-    def _get_mag_filter(self, channel):
+    def dipole_filter(self, length):
+        """
+        Make a dipole filter
+
+        :param length: dipole length in meters
+        :type length: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        return CoefficientFilter(
+            name=f"dipole_{length:.2f}",
+            gain=length,
+            units_out="volts per meter",
+            units_in="volts",
+        )
+
+    def get_magnetic_filter(self, channel):
         """
         get mag filter, seems to be the same no matter what
         """
-        filter_list = [self.mag_low_pass]
-        filter_list.append(self._get_dt_filter(channel, self.sample_rate))
 
-        return_dict = {
-            "channel_id": channel,
-            "gain": 1,
-            "conversion_factor": self.h_conversion_factor,
-            "units": "nT",
-            "filters": filter_list,
-        }
-        return return_dict
+        conversion = CoefficientFilter(
+            name="h_analog_to_digital",
+            gain=self.h_conversion_factor,
+            units_out="volts",
+            units_in="digital counts",
+        )
+        return [
+            self._get_dt_filter(channel, self.sample_rate),
+            conversion,
+            self.mag_low_pass,
+        ]
 
-    def _get_electric_filter(self, channel):
+    def get_electric_filter(self, channel, dipole_length):
         """
         Get electric filter
         """
-        filter_list = []
+        conversion = CoefficientFilter(
+            name="e_analog_to_digital",
+            gain=self.e_conversion_factor,
+            units_out="volts",
+            units_in="digital counts",
+        )
+
+        physical_units = CoefficientFilter(
+            name="practical_to_si_units",
+            gain=1e-6,
+            units_out="millivolts per kilometer",
+            units_in="volts per meter",
+        )
+        filter_list = [
+            self._get_dt_filter(channel, self.sample_rate),
+            conversion,
+        ]
         if self.instrument_type in ["backbone"]:
             filter_list.append(self.get_electric_high_pass(self.hardware))
         filter_list.append(self.electric_low_pass)
-        filter_list.append(self._get_dt_filter(channel, self.sample_rate))
+        filter_list.append(self.dipole_filter(dipole_length))
+        filter_list.append(physical_units)
 
-        return_dict = {
-            "channel_id": channel,
-            "gain": 1,
-            "conversion_factor": self.e_conversion_factor,
-            "units": "nT",
-            "filters": filter_list,
-        }
-        return return_dict
-
-    @property
-    def hx_filter(self):
-        """HX filter"""
-
-        return self._get_mag_filter("hx")
-
-    @property
-    def hy_filter(self):
-        """HY Filter"""
-        return self._get_mag_filter("hy")
-
-    @property
-    def hz_filter(self):
-        return self._get_mag_filter("hz")
-
-    @property
-    def ex_filter(self):
-        return self._get_electric_filter("ex")
-
-    @property
-    def ey_filter(self):
-        return self._get_electric_filter("ey")
+        return filter_list
