@@ -12,6 +12,8 @@ from pathlib import Path
 import dateutil
 import logging
 
+from mt_metadata.utils.mttime import MTime
+
 # =============================================================================
 class NIMSError(Exception):
     pass
@@ -170,8 +172,10 @@ class NIMSHeader(object):
                 self.mag_id = value.split(";")[1].strip()
             elif "gps" in key:
                 gps_list = value.split()
-                self.header_gps_stamp = dateutil.parser.parse(
-                    " ".join(gps_list[0:2]), dayfirst=True
+                self.header_gps_stamp = MTime(
+                    dateutil.parser.parse(
+                        " ".join(gps_list[0:2]), dayfirst=True
+                    )
                 )
                 self.header_gps_latitude = self._get_latitude(
                     gps_list[2], gps_list[3]
