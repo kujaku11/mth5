@@ -416,6 +416,9 @@ class TestNIMSToRunTS(unittest.TestCase):
             t_metadata,
         )
 
+    def test_dataset_dims(self):
+        self.assertEqual(self.runts.dataset.dims["time"], 3357016)
+
 
 # =============================================================================
 # Run
