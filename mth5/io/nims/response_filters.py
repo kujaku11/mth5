@@ -53,15 +53,15 @@ class Response(object):
                 "ey": -0.2850,
             },
             8: {
-                "hx": 0.2455,
-                "hy": 0.2365,
-                "hz": 0.2275,
-                "ex": 0.1525,
-                "ey": 0.1525,
+                "hx": -0.2455,
+                "hy": -0.2365,
+                "hz": -0.2275,
+                "ex": -0.1525,
+                "ey": -0.1525,
             },
         }
         self.mag_low_pass = PoleZeroFilter(
-            name="3 pole butterworth",
+            name="nims_3_pole_butterworth",
             zeros=[0, 3, 1984.31],
             poles=[
                 complex(-6.28319, 10.8825),
@@ -70,10 +70,11 @@ class Response(object):
             ],
             units_in="volts",
             units_out="nanotesla",
+            normalization_factor=2002.26936395594,
         )
 
         self.electric_low_pass = PoleZeroFilter(
-            name="5 pole butterworth",
+            name="nims_5_pole_butterworth",
             zeros=[0, 5, 313384],
             poles=[
                 complex(-3.88301, 11.9519),
@@ -84,20 +85,21 @@ class Response(object):
             ],
             units_in="volts",
             units_out="volts",
+            normalization_frequency=313383.493219835,
         )
         self.electric_high_pass_pc = PoleZeroFilter(
-            name="1 pole butterworth",
+            name="nims_1_pole_butterworth",
             zeros=[1, 1, 1],
             poles=[complex(0.0, 0.0), complex(-3.333333e-05, 0.0)],
-            normalization_factor=2 * np.pi * 30000,
+            normalization_factor=1,
             units_in="volts",
             units_out="volts",
         )
         self.electric_high_pass_hp = PoleZeroFilter(
-            name="1 pole butterworth",
+            name="nims_1_pole_butterworth",
             zeros=[1, 1, 1],
             poles=[complex(0.0, 0.0), complex(-1.66667e-04, 0.0)],
-            normalization_factor=2 * np.pi * 6000,
+            normalization_factor=1,
             units_in="volts",
             units_out="volts",
         )
@@ -123,10 +125,10 @@ class Response(object):
         get the DT filter based on channel ans sampling rate
         """
         dt_filter = TimeDelayFilter(
-            name="time_offset",
+            name=f"{channel}_time_offset",
             delay=self.time_delays_dict[sample_rate][channel],
             units_in="digital counts",
-            units_out="digitial counts",
+            units_out="digital counts",
         )
         return dt_filter
 
@@ -177,7 +179,7 @@ class Response(object):
         )
 
         physical_units = CoefficientFilter(
-            name="practical_to_si_units",
+            name="to_mt_units",
             gain=1e-6,
             units_out="millivolts per kilometer",
             units_in="volts per meter",

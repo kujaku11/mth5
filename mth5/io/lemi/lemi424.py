@@ -349,6 +349,8 @@ class LEMI424:
 
         # tried reading in chunks and got Nan's and was took just as long
         # maybe someone smarter can figure it out.
+        # think about reading only the data after reading the metadata, then
+        # read in the data that you need.
         if self.n_samples > self.chunk_size:
             st = MTime().now()
             dfs = list(
