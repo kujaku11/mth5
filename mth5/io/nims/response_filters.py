@@ -75,11 +75,11 @@ class Response(object):
         """
         return PoleZeroFilter(
             name="nims_3_pole_butterworth",
-            zeros=[0, 3, 1984.31],
+            zeros=[],
             poles=[
-                complex(-6.28319, 10.8825),
-                complex(-6.28319, 10.8825),
-                complex(-12.5664, 0),
+                complex(-6.283185, 10.882477),
+                complex(-6.283185, -10.882477),
+                complex(-12.566371, 0),
             ],
             units_out="volts",
             units_in="nanotesla",
@@ -152,8 +152,8 @@ class Response(object):
         """
         return PoleZeroFilter(
             name="nims_1_pole_butterworth",
-            zeros=[1, 1, 1],
-            poles=[complex(0.0, 0.0), complex(-1.66667e-04, 0.0)],
+            zeros=[complex(0.0, 0.0)],
+            poles=[complex(-1.66667e-04, 0.0)],
             normalization_factor=1,
             units_in="volts",
             units_out="volts",
