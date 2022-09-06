@@ -32,7 +32,7 @@ class Response(object):
         self.system_id = system_id
         self.hardware = "PC"
         self.instrument_type = "backbone"
-        self.sample_rate = 8
+        self.sample_rate = 1
 
         self.e_conversion_factor = 409600000.0
         self.h_conversion_factor = 100
@@ -135,8 +135,8 @@ class Response(object):
         """
         return PoleZeroFilter(
             name="nims_1_pole_butterworth",
-            zeros=[1, 1, 1],
-            poles=[complex(0.0, 0.0), complex(-3.333333e-05, 0.0)],
+            zeros=[complex(0.0, 0.0)],
+            poles=[complex(-3.333333e-05, 0.0)],
             normalization_factor=1,
             units_in="volts",
             units_out="volts",

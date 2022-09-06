@@ -282,7 +282,7 @@ class NIMS(NIMSHeader):
 
         """
 
-        nims_filters = Response()
+        nims_filters = Response(sample_rate=self.sample_rate)
         return nims_filters.get_channel_response(
             channel, dipole_length=dipole_length
         )
