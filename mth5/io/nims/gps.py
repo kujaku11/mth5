@@ -37,6 +37,7 @@ class GPS(object):
 
         self.gps_string = gps_string
         self.index = index
+        self._type = None
         self._time = None
         self._date = "010180"
         self._latitude = None
@@ -132,25 +133,45 @@ class GPS(object):
 
         :returns: validated string or None if there is something wrong
         """
-        for replace_str in [b"\xd9", b"\xc7", b"\xcc"]:
-            gps_string = gps_string.replace(replace_str, b"")
 
-        ### sometimes the end is set with a zero for some reason
-        gps_string = gps_string.replace(b"\x00", b"*")
+        if isinstance(gps_string, bytes):
+            for replace_str in [b"\xd9", b"\xc7", b"\xcc"]:
+                gps_string = gps_string.replace(replace_str, b"")
 
-        if gps_string.find(b"*") < 0:
-            logging.debug("GPSError: No end to stamp {0}".format(gps_string))
-        else:
-            try:
-                gps_string = gps_string[0 : gps_string.find(b"*")].decode()
-                return gps_string
-            except UnicodeDecodeError:
-                logging.debug(
-                    "GPSError: stamp not correct format, {0}".format(
-                        gps_string
-                    )
-                )
+            ### sometimes the end is set with a zero for some reason
+            gps_string = gps_string.replace(b"\x00", b"*")
+
+            if gps_string.find(b"*") < 0:
+                logging.debug(f"GPSError: No end to stamp {gps_string}")
                 return None
+            else:
+                try:
+                    gps_string = gps_string[0 : gps_string.find(b"*")].decode()
+                    return gps_string
+                except UnicodeDecodeError:
+                    logging.debug(
+                        f"GPSError: stamp not correct format, {gps_string}"
+                    )
+                    return None
+        elif isinstance(gps_string, str):
+            if "*" not in gps_string:
+                logging.debug(f"GPSError: No end to stamp {gps_string}")
+                return None
+
+            return gps_string[0 : gps_string.find("*")]
+
+        else:
+            raise TypeError(
+                f"input must be a string or bytes object, not {type(gps_string)}"
+            )
+
+    def _split_gps_string(self, gps_string, delimiter=","):
+
+        gps_string = self.validate_gps_string(gps_string)
+        if gps_string is None:
+            self.valid = False
+            return []
+        return gps_string.strip().split(",")
 
     def parse_gps_string(self, gps_string):
         """
@@ -159,16 +180,11 @@ class GPS(object):
 
         :param string gps_string: raw GPS string to be parsed
         """
-        gps_string = self.validate_gps_string(gps_string)
-        if gps_string is None:
-            self.valid = False
-            return
 
-        if isinstance(gps_string, bytes):
-            gps_list = gps_string.strip().split(b",")
-            gps_list = [value.decode() for value in gps_list]
-        else:
-            gps_list = gps_string.strip().split(",")
+        gps_list = self._split_gps_string(gps_string)
+        if gps_list == []:
+            self.logger.debug(f"GPS string is invalid, {gps_string}")
+            return
 
         if len(gps_list) > 1:
             if len(gps_list[1]) > 6:
@@ -297,7 +313,7 @@ class GPS(object):
         if gps_type not in ["gpgga", "gprmc"]:
             raise GPSError(
                 "GPS String type not correct.  "
-                + "Expect GPGGA or GPRMC, got {0}".format(gps_type.upper())
+                f"Expect GPGGA or GPRMC, got {gps_type.upper()}"
             )
 
         return gps_list
@@ -309,27 +325,22 @@ class GPS(object):
         expected_len = self.type_dict[gps_list_type]["length"]
         if len(gps_list) not in expected_len:
             raise GPSError(
-                "GPS string not correct length for {0}.  ".format(
-                    gps_list_type.upper()
-                )
-                + "Expected {0}, got {1} \n{2}".format(
-                    expected_len, len(gps_list), ",".join(gps_list)
-                )
+                f"GPS string not correct length for {gps_list_type.upper()}.  "
+                f"Expected {expected_len}, got {len(gps_list)} "
+                f"{','.join(gps_list)}"
             )
 
     def _validate_time(self, time_str):
         """validate time string, should be 6 characters long and an int"""
         if len(time_str) != 6:
             raise GPSError(
-                "Length of time string {0} not correct.  ".format(time_str)
-                + "Expected 6 got {0}".format(len(time_str))
+                f"Length of time string {time_str} not correct.  "
+                f"Expected 6 got {len(time_str)}. string = {time_str}"
             )
         try:
             int(time_str)
         except ValueError:
-            raise GPSError(
-                "Could not convert time string {0}".format(time_str)
-            )
+            raise GPSError(f"Could not convert time string {time_str}")
 
         return time_str
 
@@ -337,15 +348,13 @@ class GPS(object):
         """validate date string, should be 6 characters long and an int"""
         if len(date_str) != 6:
             raise GPSError(
-                "Length of date string not correct {0}.  ".format(date_str)
-                + "Expected 6 got {0}".format(len(date_str))
+                f"Length of date string not correct {date_str}.  "
+                f"Expected 6 got {len(date_str)}. string = {date_str}"
             )
         try:
             int(date_str)
         except ValueError:
-            raise GPSError(
-                "Could not convert date string {0}".format(date_str)
-            )
+            raise GPSError(f"Could not convert date string {date_str}")
 
         return date_str
 
@@ -354,26 +363,22 @@ class GPS(object):
 
         if len(latitude_str) < 8:
             raise GPSError(
-                "Latitude string should be larger than 7 characters.  "
-                + "Got {0}".format(len(latitude_str))
+                f"Latitude string should be larger than 7 characters.  "
+                f"Got {len(latitude_str)}. string = {latitude_str}"
             )
         if len(hemisphere_str) != 1:
             raise GPSError(
                 "Latitude hemisphere should be 1 character.  "
-                + "Got {0}".format(len(hemisphere_str))
+                f"Got {len(hemisphere_str)}. string = {hemisphere_str}"
             )
         if hemisphere_str.lower() not in ["n", "s"]:
             raise GPSError(
-                "Latitude hemisphere {0} not understood".format(
-                    hemisphere_str.upper()
-                )
+                f"Latitude hemisphere {hemisphere_str.upper()} not understood"
             )
         try:
             float(latitude_str)
         except ValueError:
-            raise GPSError(
-                "Could not convert latitude string {0}".format(latitude_str)
-            )
+            raise GPSError(f"Could not convert latitude string {latitude_str}")
 
         return latitude_str
 
@@ -383,24 +388,22 @@ class GPS(object):
         if len(longitude_str) < 8:
             raise GPSError(
                 "Longitude string should be larger than 7 characters.  "
-                + "Got {0}".format(len(longitude_str))
+                f"Got {len(longitude_str)}. string = {longitude_str}"
             )
         if len(hemisphere_str) != 1:
             raise GPSError(
                 "Longitude hemisphere should be 1 character.  "
-                + "Got {0}".format(len(hemisphere_str))
+                f"Got {len(hemisphere_str)}. string = {hemisphere_str}"
             )
         if hemisphere_str.lower() not in ["e", "w"]:
             raise GPSError(
-                "Longitude hemisphere {0} not understood".format(
-                    hemisphere_str.upper()
-                )
+                f"Longitude hemisphere {hemisphere_str.upper()} not understood"
             )
         try:
             float(longitude_str)
         except ValueError:
             raise GPSError(
-                "Could not convert longitude string {0}".format(longitude_str)
+                f"Could not convert longitude string {longitude_str}"
             )
 
         return longitude_str
@@ -408,8 +411,10 @@ class GPS(object):
     def _validate_elevation(self, elevation_str):
         """validate elevation, check for converstion to float"""
         elevation_str = elevation_str.lower().replace("m", "")
+        if elevation_str == "":
+            elevation_str = "0"
         try:
-            elevation_str = f"{float(elevation_str):0.2f}"
+            elevation_str = f"{float(elevation_str)}"
         except ValueError:
             raise GPSError(f"Elevation could not be converted {elevation_str}")
 
