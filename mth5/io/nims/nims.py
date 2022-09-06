@@ -269,6 +269,24 @@ class NIMS(NIMSHeader):
             return temp
         return None
 
+    def get_channel_response(self, channel, dipole_length=1):
+        """
+        Get the channel response for a given channel
+
+        :param channel: DESCRIPTION
+        :type channel: TYPE
+        :param dipole_length: DESCRIPTION, defaults to 1
+        :type dipole_length: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        nims_filters = Response()
+        return nims_filters.get_channel_response(
+            channel, dipole_length=dipole_length
+        )
+
     @property
     def hx(self):
         """HX"""
@@ -297,6 +315,7 @@ class NIMS(NIMSHeader):
                 channel_metadata=hx_metadata,
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
+                channel_response_filter=self.get_channel_response("hx"),
             )
         return None
 
@@ -328,6 +347,7 @@ class NIMS(NIMSHeader):
                 channel_metadata=hy_metadata,
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
+                channel_response_filter=self.get_channel_response("hy"),
             )
         return None
 
@@ -359,6 +379,7 @@ class NIMS(NIMSHeader):
                 channel_metadata=hz_metadata,
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
+                channel_response_filter=self.get_channel_response("hz"),
             )
         return None
 
@@ -390,6 +411,9 @@ class NIMS(NIMSHeader):
                 channel_metadata=ex_metadata,
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
+                channel_response_filter=self.get_channel_response(
+                    "ex", self.ex_length
+                ),
             )
         return None
 
@@ -421,6 +445,9 @@ class NIMS(NIMSHeader):
                 channel_metadata=ey_metadata,
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
+                channel_response_filter=self.get_channel_response(
+                    "ey", self.ey_length
+                ),
             )
 
         return None
