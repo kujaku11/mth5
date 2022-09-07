@@ -112,7 +112,7 @@ class Response(object):
         """
         return PoleZeroFilter(
             name="nims_5_pole_butterworth",
-            zeros=[0, 5, 313384],
+            zeros=[],
             poles=[
                 complex(-3.88301, 11.9519),
                 complex(-3.88301, -11.9519),
