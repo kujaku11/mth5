@@ -1016,7 +1016,7 @@ class NIMS(NIMSHeader):
 
         et = datetime.datetime.now()
         read_time = (et - st).total_seconds()
-        self.logger.info(f"Reading took {read_time:.2f} seconds")
+        self.logger.debug(f"Reading took {read_time:.2f} seconds")
 
     def _get_first_gps_stamp(self, stamps):
         """

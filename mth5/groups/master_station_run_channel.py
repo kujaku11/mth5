@@ -1520,35 +1520,6 @@ class RunGroup(BaseGroup):
         channel_name = validate_name(channel_name.lower())
         try:
             ch_dataset = self.hdf5_group[channel_name]
-            if ch_dataset.attrs["mth5_type"].lower() in ["electric"]:
-                ch_metadata = meta_classes["Electric"]()
-                ch_metadata.from_dict({"Electric": ch_dataset.attrs})
-                channel = ElectricDataset(
-                    ch_dataset,
-                    dataset_metadata=ch_metadata,
-                    write_metadata=False,
-                )
-            elif ch_dataset.attrs["mth5_type"].lower() in ["magnetic"]:
-                ch_metadata = meta_classes["Magnetic"]()
-                ch_metadata.from_dict({"Magnetic": ch_dataset.attrs})
-                channel = MagneticDataset(
-                    ch_dataset,
-                    dataset_metadata=ch_metadata,
-                    write_metadata=False,
-                )
-            elif ch_dataset.attrs["mth5_type"].lower() in ["auxiliary"]:
-                ch_metadata = meta_classes["Auxiliary"]()
-                ch_metadata.from_dict({"Auxiliary": ch_dataset.attrs})
-                channel = AuxiliaryDataset(
-                    ch_dataset,
-                    dataset_metadata=ch_metadata,
-                    write_metadata=False,
-                )
-            else:
-                channel = ChannelDataset(ch_dataset)
-            channel.read_metadata()
-
-            return channel
         except KeyError:
             msg = (
                 f"{channel_name} does not exist, "
@@ -1556,6 +1527,36 @@ class RunGroup(BaseGroup):
             )
             self.logger.debug("Error" + msg)
             raise MTH5Error(msg)
+
+        if ch_dataset.attrs["mth5_type"].lower() in ["electric"]:
+            ch_metadata = meta_classes["Electric"]()
+            ch_metadata.from_dict({"Electric": ch_dataset.attrs})
+            channel = ElectricDataset(
+                ch_dataset,
+                dataset_metadata=ch_metadata,
+                write_metadata=False,
+            )
+        elif ch_dataset.attrs["mth5_type"].lower() in ["magnetic"]:
+            ch_metadata = meta_classes["Magnetic"]()
+            ch_metadata.from_dict({"Magnetic": ch_dataset.attrs})
+            channel = MagneticDataset(
+                ch_dataset,
+                dataset_metadata=ch_metadata,
+                write_metadata=False,
+            )
+        elif ch_dataset.attrs["mth5_type"].lower() in ["auxiliary"]:
+            ch_metadata = meta_classes["Auxiliary"]()
+            ch_metadata.from_dict({"Auxiliary": ch_dataset.attrs})
+            channel = AuxiliaryDataset(
+                ch_dataset,
+                dataset_metadata=ch_metadata,
+                write_metadata=False,
+            )
+        else:
+            channel = ChannelDataset(ch_dataset)
+        channel.read_metadata()
+
+        return channel
 
     def remove_channel(self, channel_name):
         """

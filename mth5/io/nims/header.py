@@ -120,7 +120,7 @@ class NIMSHeader(object):
             self.logger.error(msg)
             raise NIMSError(msg)
 
-        self.logger.info(f"Reading NIMS file {self.fn}")
+        self.logger.debug(f"Reading NIMS file {self.fn}")
 
         ### load in the entire file, its not too big
         with open(self.fn, "rb") as fid:
