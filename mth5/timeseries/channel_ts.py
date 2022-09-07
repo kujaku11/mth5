@@ -710,8 +710,8 @@ class ChannelTS:
         self.channel_metadata.filter.name = []
         self.channel_metadata.filter.applied = []
 
-        for ff in self._channel_response.filters_list:
-            self.channel_metadata.filter.name.append(ff.name)
+        for f_name in self._channel_response.names:
+            self.channel_metadata.filter.name.append(f_name)
             self.channel_metadata.filter.applied.append(False)
 
     def remove_instrument_response(self, **kwargs):

@@ -27,6 +27,7 @@ from matplotlib import pyplot as plt
 
 from mt_metadata import timeseries as metadata
 from mt_metadata.utils.mttime import MTime
+from mt_metadata.timeseries.filters import ChannelResponseFilter
 
 from mth5.utils.exceptions import MTTSError
 from .channel_ts import ChannelTS
@@ -59,6 +60,7 @@ class RunTS:
         self.run_metadata = metadata.Run()
         self.station_metadata = metadata.Station()
         self._dataset = xr.Dataset()
+        self._filters = {}
 
         # load the arrays first this will write run and station metadata
         if array_list is not None:
@@ -160,14 +162,40 @@ class RunTS:
 
         return valid_list
 
+    def _get_channel_response_filter(self, ch_name):
+        """
+        Get the channel response filter from the filter dictionary
+
+        :param ch_name: DESCRIPTION
+        :type ch_name: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        filter_list = []
+        if ch_name in self.dataset.keys():
+
+            for filter_name in self.dataset[ch_name].attrs["filter.name"]:
+                try:
+                    filter_list.append(self.filters[filter_name])
+                except KeyError:
+                    raise KeyError(f"Could not find {filter_name} in filters")
+
+        return ChannelResponseFilter(filters_list=filter_list)
+
     def __getattr__(self, name):
         # change to look for keys directly and use type to set channel type
         if name in self.dataset.keys():
+
             return ChannelTS(
                 self.dataset[name].attrs["type"],
                 self.dataset[name],
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
+                channel_response_filter=self._get_channel_response_filter(
+                    name
+                ),
             )
         else:
             # this is a hack for now until figure out who is calling shape, size
@@ -340,6 +368,9 @@ class RunTS:
         elif isinstance(channel, ChannelTS):
             c = channel
             self.run_metadata.channels.append(c.channel_metadata)
+            for ff in c.channel_response_filter.filters_list:
+                self._filters[ff.name] = ff
+
         else:
             raise ValueError(
                 "Input Channel must be type xarray.DataArray or ChannelTS"
@@ -429,6 +460,29 @@ class RunTS:
     @property
     def channels(self):
         return [cc for cc in list(self.dataset.data_vars)]
+
+    @property
+    def filters(self):
+        return self._filters
+
+    @filters.setter
+    def filters(self, value):
+        """
+        a dictionary of filters found in the channel objects.
+
+        Should use the dictionary methods to update a dictionary.
+
+        :param value: DESCRIPTION
+        :type value: TYPE
+        :raises TypeError: DESCRIPTION
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        if not isinstance(value, dict):
+            raise TypeError("input must be a dictionary")
+
+        self._filters = value
 
     def to_obspy_stream(self):
         """
