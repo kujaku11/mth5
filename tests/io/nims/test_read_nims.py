@@ -102,7 +102,7 @@ class TestReadNIMS(unittest.TestCase):
         )
 
     def test_run_id(self):
-        self.assertEqual(self.nims_obj.run_id, "Mnp300a")
+        self.assertEqual(self.nims_obj.run_id, "mnp300a")
 
     def test_data_start_seek(self):
         self.assertEqual(self.nims_obj.data_start_seek, 946)
@@ -181,7 +181,7 @@ class TestNIMSToRunTS(unittest.TestCase):
                 ("channels_recorded", []),
                 ("data_type", "BBMT"),
                 ("geographic_name", "Budwieser Spring, CA, USA"),
-                ("id", "Mnp300"),
+                ("id", "mnp300"),
                 ("location.declination.model", "WMM"),
                 ("location.declination.value", 13.1),
                 ("location.elevation", 940.4),
@@ -195,7 +195,7 @@ class TestNIMSToRunTS(unittest.TestCase):
                 ("provenance.software.version", None),
                 ("provenance.submitter.email", None),
                 ("provenance.submitter.organization", None),
-                ("run_list", ["Mnp300a"]),
+                ("run_list", ["mnp300a"]),
                 ("time_period.end", "1980-01-01T00:00:00+00:00"),
                 ("time_period.start", "1980-01-01T00:00:00+00:00"),
             ]
@@ -226,7 +226,7 @@ class TestNIMSToRunTS(unittest.TestCase):
                 ("data_logger.timing_system.uncertainty", 0.0),
                 ("data_logger.type", "long period"),
                 ("data_type", "MTLP"),
-                ("id", "Mnp300a"),
+                ("id", "mnp300a"),
                 ("sample_rate", 8.0),
                 ("time_period.end", "2019-10-01T15:07:07.875000+00:00"),
                 ("time_period.start", "2019-09-26T18:33:21+00:00"),
@@ -244,8 +244,18 @@ class TestNIMSToRunTS(unittest.TestCase):
                 ("component", "ex"),
                 ("data_quality.rating.value", 0),
                 ("dipole_length", 109.0),
-                ("filter.applied", [False]),
-                ("filter.name", []),
+                ("filter.applied", [False, False, False, False, False, False]),
+                (
+                    "filter.name",
+                    [
+                        "to_mt_units",
+                        "dipole_109.00",
+                        "nims_5_pole_butterworth",
+                        "nims_1_pole_butterworth",
+                        "e_analog_to_digital",
+                        "ex_time_offset",
+                    ],
+                ),
                 ("measurement_azimuth", 0.0),
                 ("measurement_tilt", 0.0),
                 ("negative.elevation", 0.0),
@@ -279,8 +289,18 @@ class TestNIMSToRunTS(unittest.TestCase):
                 ("component", "ey"),
                 ("data_quality.rating.value", 0),
                 ("dipole_length", 101.0),
-                ("filter.applied", [False]),
-                ("filter.name", []),
+                ("filter.applied", [False, False, False, False, False, False]),
+                (
+                    "filter.name",
+                    [
+                        "to_mt_units",
+                        "dipole_101.00",
+                        "nims_5_pole_butterworth",
+                        "nims_1_pole_butterworth",
+                        "e_analog_to_digital",
+                        "ey_time_offset",
+                    ],
+                ),
                 ("measurement_azimuth", 90.0),
                 ("measurement_tilt", 0.0),
                 ("negative.elevation", 0.0),
@@ -313,8 +333,15 @@ class TestNIMSToRunTS(unittest.TestCase):
                 ("channel_number", 1),
                 ("component", "hx"),
                 ("data_quality.rating.value", 0),
-                ("filter.applied", [False]),
-                ("filter.name", []),
+                ("filter.applied", [False, False, False]),
+                (
+                    "filter.name",
+                    [
+                        "nims_3_pole_butterworth",
+                        "h_analog_to_digital",
+                        "hx_time_offset",
+                    ],
+                ),
                 ("location.elevation", 0.0),
                 ("location.latitude", 0.0),
                 ("location.longitude", 0.0),
@@ -341,8 +368,15 @@ class TestNIMSToRunTS(unittest.TestCase):
                 ("channel_number", 2),
                 ("component", "hy"),
                 ("data_quality.rating.value", 0),
-                ("filter.applied", [False]),
-                ("filter.name", []),
+                ("filter.applied", [False, False, False]),
+                (
+                    "filter.name",
+                    [
+                        "nims_3_pole_butterworth",
+                        "h_analog_to_digital",
+                        "hy_time_offset",
+                    ],
+                ),
                 ("location.elevation", 0.0),
                 ("location.latitude", 0.0),
                 ("location.longitude", 0.0),
@@ -369,8 +403,15 @@ class TestNIMSToRunTS(unittest.TestCase):
                 ("channel_number", 3),
                 ("component", "hz"),
                 ("data_quality.rating.value", 0),
-                ("filter.applied", [False]),
-                ("filter.name", []),
+                ("filter.applied", [False, False, False]),
+                (
+                    "filter.name",
+                    [
+                        "nims_3_pole_butterworth",
+                        "h_analog_to_digital",
+                        "hz_time_offset",
+                    ],
+                ),
                 ("location.elevation", 0.0),
                 ("location.latitude", 0.0),
                 ("location.longitude", 0.0),
