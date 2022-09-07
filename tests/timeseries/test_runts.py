@@ -23,6 +23,10 @@ from mth5.timeseries import ChannelTS, RunTS
 from mth5.utils.exceptions import MTTSError
 
 from mt_metadata.utils.mttime import MTime
+from mt_metadata.timeseries.filters import (
+    PoleZeroFilter,
+    ChannelResponseFilter,
+)
 
 # =============================================================================
 # test run
@@ -36,6 +40,19 @@ class TestRunTS(unittest.TestCase):
         self.sample_rate = 8
         self.npts = 4096
 
+        pz = PoleZeroFilter(
+            units_in="volts", units_out="nanotesla", name="instrument_response"
+        )
+        pz.poles = [
+            (-6.283185 + 10.882477j),
+            (-6.283185 - 10.882477j),
+            (-12.566371 + 0j),
+        ]
+        pz.zeros = []
+        pz.normalization_factor = 18244400
+
+        self.cr = ChannelResponseFilter(filters_list=[pz])
+
         self.ex = ChannelTS(
             "electric",
             data=np.random.rand(self.npts),
@@ -46,6 +63,7 @@ class TestRunTS(unittest.TestCase):
                     "time_period.start": self.start,
                 }
             },
+            channel_response_filter=self.cr,
         )
         self.ey = ChannelTS(
             "electric",
@@ -57,6 +75,7 @@ class TestRunTS(unittest.TestCase):
                     "time_period.start": self.start,
                 }
             },
+            channel_response_filter=self.cr,
         )
         self.hx = ChannelTS(
             "magnetic",
@@ -68,6 +87,7 @@ class TestRunTS(unittest.TestCase):
                     "time_period.start": self.start,
                 }
             },
+            channel_response_filter=self.cr,
         )
         self.hy = ChannelTS(
             "magnetic",
@@ -79,6 +99,7 @@ class TestRunTS(unittest.TestCase):
                     "time_period.start": self.start,
                 }
             },
+            channel_response_filter=self.cr,
         )
         self.hz = ChannelTS(
             "magnetic",
@@ -90,6 +111,7 @@ class TestRunTS(unittest.TestCase):
                     "time_period.start": self.start,
                 }
             },
+            channel_response_filter=self.cr,
         )
 
         self.run.set_dataset([self.ex, self.ey, self.hx, self.hy, self.hz])
@@ -129,18 +151,24 @@ class TestRunTS(unittest.TestCase):
     def test_channels(self):
 
         for comp in ["ex", "ey", "hx", "hy", "hz"]:
-            ch = getattr(self, comp)
+            ch = getattr(self.run, comp)
 
-            with self.subTest("isinstance channel"):
+            with self.subTest(msg=f"{comp} isinstance channel"):
                 self.assertIsInstance(ch, ChannelTS)
-            with self.subTest("sample rate"):
+            with self.subTest(msg=f"{comp} sample rate"):
                 self.assertEqual(ch.sample_rate, self.sample_rate)
-            with self.subTest("start"):
+            with self.subTest(msg=f"{comp} start"):
                 self.assertEqual(ch.start, MTime(self.start))
-            with self.subTest("end"):
+            with self.subTest(msg=f"{comp} end"):
                 self.assertEqual(ch.end, MTime(self.end))
-            with self.subTest("component"):
+            with self.subTest(msg=f"{comp} component"):
                 self.assertEqual(ch.component, comp)
+
+            with self.subTest(msg=f"{comp} filters"):
+                self.assertListEqual(
+                    self.cr.filters_list,
+                    ch.channel_response_filter.filters_list,
+                )
 
     def test_get_channel_fail(self):
         """
@@ -196,6 +224,11 @@ class TestRunTS(unittest.TestCase):
 
         with self.subTest("npts"):
             self.assertEqual(r_slice.dataset.ex.data.shape[0], npts)
+
+    def test_filters_dict(self):
+        self.assertEqual(
+            list(self.run.filters.keys()), ["instrument_response"]
+        )
 
 
 # =============================================================================
