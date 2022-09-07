@@ -706,6 +706,14 @@ class ChannelTS:
             raise TypeError(msg)
         self._channel_response = value
 
+        # update channel metadata
+        self.channel_metadata.filter.name = []
+        self.channel_metadata.filter.applied = []
+
+        for ff in self._channel_response.filters_list:
+            self.channel_metadata.filter.name.append(ff.name)
+            self.channel_metadata.filter.applied.append(False)
+
     def remove_instrument_response(self, **kwargs):
         """
         Remove instrument response from the given channel response filter

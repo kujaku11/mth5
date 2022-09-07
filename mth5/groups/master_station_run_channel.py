@@ -1659,15 +1659,17 @@ class RunGroup(BaseGroup):
                         f"Channel run.id {ch.run_metadata.id} != "
                         + f" group run.id {self.metadata.id}"
                     )
-            channels.append(
-                self.add_channel(
-                    comp,
-                    ch.channel_metadata.type,
-                    ch.ts,
-                    channel_metadata=ch.channel_metadata,
-                    **kwargs,
-                )
-            )
+
+            channels.append(self.from_channel_ts(ch))
+            # channels.append(
+            #     self.add_channel(
+            #         comp,
+            #         ch.channel_metadata.type,
+            #         ch.ts,
+            #         channel_metadata=ch.channel_metadata,
+            #         **kwargs,
+            #     )
+            # )
         self.validate_run_metadata()
         return channels
 
@@ -1687,6 +1689,15 @@ class RunGroup(BaseGroup):
             msg = f"Input must be a mth5.timeseries.ChannelTS object not {type(channel_ts_obj)}"
             self.logger.error(msg)
             raise MTH5Error(msg)
+
+        ## Need to add in the filters
+        if channel_ts_obj.channel_response_filter.filters_list != []:
+            from mth5.groups import FiltersGroup
+
+            fg = FiltersGroup(self.hdf5_group.parent.parent.parent["Filters"])
+            for ff in channel_ts_obj.channel_response_filter.filters_list:
+                fg.add_filter(ff)
+
         ch_obj = self.add_channel(
             channel_ts_obj.component,
             channel_ts_obj.channel_metadata.type,

@@ -71,6 +71,7 @@ class NIMSCollection(Collection):
 
         """
 
+        dipole_list = []
         entries = []
         for fn in self.get_files(self.file_ext):
             nims_obj = NIMS(fn)
@@ -95,6 +96,9 @@ class NIMSCollection(Collection):
             entry["calibration_fn"] = None
 
             entries.append(entry)
+
+            dipole_list.append(nims_obj.ex_length)
+            dipole_list.append(nims_obj.ey_length)
 
         # make pandas dataframe and set data types
         df = self._sort_df(
@@ -123,9 +127,10 @@ class NIMSCollection(Collection):
             for row in (
                 df[df.station == station].sort_values("start").itertuples()
             ):
-                df.loc[
-                    row.Index, "run"
-                ] = f"sr{row.sample_rate}_{count:0{zeros}}"
+                if row.run is None:
+                    df.loc[
+                        row.Index, "run"
+                    ] = f"sr{row.sample_rate}_{count:0{zeros}}"
                 df.loc[row.Index, "sequence_number"] = count
                 count += 1
 
