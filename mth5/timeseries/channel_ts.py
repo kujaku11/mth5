@@ -399,8 +399,8 @@ class ChannelTS:
     def time_index(self):
         """
         time index as a numpy array dtype np.datetime[ns]
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :return: array of the time index
+        :rtype: np.ndarray(dtype=np.datetime[ns])
 
         """
         return self._ts.time.to_numpy()
@@ -540,12 +540,7 @@ class ChannelTS:
                 - self._ts.coords.indexes["time"][0]
             )
             sr = self._ts.size / t_diff.total_seconds()
-            # sr = 1.0 / np.float64(
-            #     (
-            #         np.mean(np.diff(self._ts.coords.indexes["time"]))
-            #         / np.timedelta64(1, "s")
-            #     )
-            # )
+
         else:
             self.logger.debug(
                 "Data has not been set yet, sample rate is from metadata"
@@ -973,8 +968,8 @@ class ChannelTS:
         """
         Simple plot of the data
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :return: figure object
+        :rtype: matplotlib.figure
 
         """
 

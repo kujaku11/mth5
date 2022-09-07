@@ -235,8 +235,8 @@ class RunTS:
 
         Get a summary of all the metadata
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :return: A summary of all channel metadata in one place
+        :rtype: dictionary
 
         """
         meta_dict = {}
@@ -253,8 +253,6 @@ class RunTS:
         updates metadata from the data.
 
         Check the start and end times, channels recorded
-        :return: DESCRIPTION
-        :rtype: TYPE
 
         """
 
@@ -399,10 +397,12 @@ class RunTS:
 
     @property
     def dataset(self):
+        """:class:`xarray.Dataset`"""
         return self._dataset
 
     @dataset.setter
     def dataset(self, array_list):
+        """Set the dataset"""
         msg = (
             "Data will be aligned using the min and max time. "
             "If that is not correct use set_dataset and change the alignment type."
@@ -412,12 +412,14 @@ class RunTS:
 
     @property
     def start(self):
+        """Start time UTC"""
         if self.has_data:
             return MTime(self.dataset.coords["time"].to_index()[0].isoformat())
         return self.run_metadata.time_period.start
 
     @property
     def end(self):
+        """End time UTC"""
         if self.has_data:
             return MTime(
                 self.dataset.coords["time"].to_index()[-1].isoformat()
@@ -426,6 +428,11 @@ class RunTS:
 
     @property
     def sample_rate(self):
+        """
+        Sample rate, this is estimated by the mdeian difference between
+        samples in time, if data is present. Otherwise return the metadata
+        sample rate.
+        """
         if self.has_data:
             try:
                 return round(
@@ -465,10 +472,12 @@ class RunTS:
 
     @property
     def channels(self):
+        """List of channel names in dataset"""
         return [cc for cc in list(self.dataset.data_vars)]
 
     @property
     def filters(self):
+        """Dictionary of filters used by the channels"""
         return self._filters
 
     @filters.setter
@@ -478,11 +487,10 @@ class RunTS:
 
         Should use the dictionary methods to update a dictionary.
 
-        :param value: DESCRIPTION
-        :type value: TYPE
-        :raises TypeError: DESCRIPTION
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :param value: dictionary of :module:`mt_metadata.timeseries.filters`
+        objects
+        :type value: dictionary
+        :raises TypeError: If input is anything other than a dictionary
 
         """
         if not isinstance(value, dict):
@@ -583,14 +591,35 @@ class RunTS:
 
     def get_slice(self, start, end=None, n_samples=None):
         """
-        Get just a chunk of data from the run
 
         :param start: DESCRIPTION
         :type start: TYPE
-        :param end: DESCRIPTION
-        :type end: TYPE
+        :param end: DESCRIPTION, defaults to None
+        :type end: TYPE, optional
+        :param n_samples: DESCRIPTION, defaults to None
+        :type n_samples: TYPE, optional
+        :raises ValueError: DESCRIPTION
         :return: DESCRIPTION
         :rtype: TYPE
+
+        """
+        """
+        Get just a chunk of data from the run, this will attempt to find the
+        closest points to the given parameters.  
+        
+        .. note:: We use pandas `slice_indexer` because xarray slice does not
+        seem to work as well, even though they should be based on the same 
+        code.
+
+        :param start: start time of the slice
+        :type start: string or :class:`mt_metadata.utils.mttime.MTime`
+        :param end: end time of the slice, defaults to None
+        :type end: string or :class:`mt_metadata.utils.mttime.MTime`, optional
+        :param n_samples: number of samples to get, defaults to None
+        :type n_samples: int, optional
+        :raises ValueError: If end and n_samples are not input
+        :return: slice of data requested
+        :rtype: :class:`mth5.timeseries.RunTS`
 
         """
         if not isinstance(start, MTime):
@@ -622,8 +651,8 @@ class RunTS:
         """
         Calibrate the data according to the filters in each channel.
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :return: calibrated run
+        :rtype: :class:`mth5.timeseries.RunTS`
 
         """
 
@@ -642,9 +671,6 @@ class RunTS:
         """
 
         plot the time series probably slow for large data sets
-
-        :return: DESCRIPTION
-        :rtype: TYPE
 
         """
 
