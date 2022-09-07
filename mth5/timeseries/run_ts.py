@@ -147,6 +147,10 @@ class RunTS:
                         item.station_metadata, match=["id"]
                     )
                     self.run_metadata.update(item.run_metadata, match=["id"])
+
+                for ff in item.channel_response_filter.filters_list:
+                    self._filters[ff.name] = ff
+
             else:
                 valid_list.append(item)
 
@@ -180,7 +184,9 @@ class RunTS:
                 try:
                     filter_list.append(self.filters[filter_name])
                 except KeyError:
-                    raise KeyError(f"Could not find {filter_name} in filters")
+                    self.logger.warning(
+                        f"Could not find {filter_name} in filters"
+                    )
 
         return ChannelResponseFilter(filters_list=filter_list)
 

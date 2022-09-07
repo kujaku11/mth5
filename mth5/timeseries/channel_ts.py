@@ -712,7 +712,9 @@ class ChannelTS:
 
         for f_name in self._channel_response.names:
             self.channel_metadata.filter.name.append(f_name)
-            self.channel_metadata.filter.applied.append(False)
+        self.channel_metadata.filter.applied = [False] * len(
+            self.channel_metadata.filter.name
+        )
 
     def remove_instrument_response(self, **kwargs):
         """
