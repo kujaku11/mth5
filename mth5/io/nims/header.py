@@ -93,6 +93,16 @@ class NIMSHeader(object):
         else:
             self._fn = None
 
+    @property
+    def station(self):
+        if self.run_id is not None:
+            return self.run_id[0:-1]
+
+    @property
+    def file_size(self):
+        if self.fn is not None:
+            return self.fn.stat().st_size
+
     def read_header(self, fn=None):
         """
         read header information

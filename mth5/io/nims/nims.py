@@ -145,6 +145,13 @@ class NIMS(NIMSHeader):
         return False
 
     @property
+    def n_samples(self):
+        if self.has_data():
+            return self.ts_data.shape[0]
+        elif self.fn is not None:
+            return int(self.file_size / 16.375)
+
+    @property
     def latitude(self):
         """
         median latitude value from all the GPS stamps in decimal degrees
@@ -222,7 +229,7 @@ class NIMS(NIMSHeader):
         """
         if self.stamps is not None:
             return MTime(self.ts_data.index[0])
-        return None
+        return self.header_gps_stamp
 
     @property
     def end_time(self):
@@ -232,7 +239,8 @@ class NIMS(NIMSHeader):
         """
         if self.stamps is not None:
             return MTime(self.ts_data.index[-1])
-        return None
+        self.logger.warning("Estimating end time from n_samples")
+        return self.start_time + int(self.n_samples / self.sample_rate)
 
     @property
     def box_temperature(self):
@@ -503,11 +511,11 @@ class NIMS(NIMSHeader):
             return station_metadata
         return None
 
-    def to_runts(self):
+    def to_runts(self, calibrate=False):
         """Get xarray for run"""
 
         if self.ts_data is not None:
-            return timeseries.RunTS(
+            run = timeseries.RunTS(
                 array_list=[
                     self.hx,
                     self.hy,
@@ -519,6 +527,11 @@ class NIMS(NIMSHeader):
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
             )
+            if calibrate:
+                return run.calibrate()
+
+            else:
+                return run
 
         return None
 
@@ -1141,20 +1154,6 @@ class NIMS(NIMSHeader):
         )
 
         return pd.DataFrame(data_array, index=dt_index)
-
-    def calibrate_data(self, ts):
-        """
-        Apply calibrations to data
-
-        .. note:: this needs work, would not use this now.
-        """
-
-        ts[["hx", "hy", "hz"]] *= self.h_conversion_factor
-        ts[["ex", "ey"]] *= self.e_conversion_factor
-        ts["ex"] /= self.ex_length / 1000.0
-        ts["ey"] /= self.ey_length / 1000.0
-
-        return ts
 
     def make_dt_index(
         self, start_time, sample_rate, stop_time=None, n_samples=None
