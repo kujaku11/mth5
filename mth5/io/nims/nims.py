@@ -540,7 +540,7 @@ class NIMS(NIMSHeader):
         Index values for the channels recorded
         """
         ### make an array of index values for magnetics and electrics
-        indices = np.zeros((8, 5), dtype=np.int)
+        indices = np.zeros((8, 5), dtype=int)
         for kk in range(8):
             ### magnetic blocks
             for ii in range(3):
@@ -943,15 +943,15 @@ class NIMS(NIMSHeader):
         self.info_array = np.zeros(
             data.shape[0],
             dtype=[
-                ("soh", np.int),
-                ("block_len", np.int),
-                ("status", np.int),
-                ("gps", np.int),
-                ("sequence", np.int),
-                ("box_temp", np.float),
-                ("head_temp", np.float),
-                ("logic", np.int),
-                ("end", np.int),
+                ("soh", int),
+                ("block_len", int),
+                ("status", int),
+                ("gps", int),
+                ("sequence", int),
+                ("box_temp", float),
+                ("head_temp", float),
+                ("logic", int),
+                ("end", int),
             ],
         )
 
@@ -976,17 +976,17 @@ class NIMS(NIMSHeader):
         data_array = np.zeros(
             data.shape[0] * self.sample_rate,
             dtype=[
-                ("hx", np.float),
-                ("hy", np.float),
-                ("hz", np.float),
-                ("ex", np.float),
-                ("ey", np.float),
+                ("hx", float),
+                ("hy", float),
+                ("hz", float),
+                ("ex", float),
+                ("ey", float),
             ],
         )
 
         ### fill the data
         for cc, comp in enumerate(["hx", "hy", "hz", "ex", "ey"]):
-            channel_arr = np.zeros((data.shape[0], 8), dtype=np.float)
+            channel_arr = np.zeros((data.shape[0], 8), dtype=float)
             for kk in range(self.sample_rate):
                 index = self.indices[kk, cc]
                 value = (data[:, index] * 256 + data[:, index + 1]) * np.array(

@@ -464,6 +464,37 @@ class TestNIMSToRunTS(unittest.TestCase):
     def test_dataset_dims(self):
         self.assertEqual(self.runts.dataset.dims["time"], 3357016)
 
+    def test_calibrate(self):
+        calibrated_run = self.runts.calibrate()
+
+        for comp in ["hx", "hy", "hz"]:
+            ch = getattr(calibrated_run, comp)
+            with self.subTest("units"):
+                self.assertEqual(ch.channel_metadata.units, "nT")
+            with self.subTest("applied"):
+                self.assertListEqual(
+                    ch.channel_metadata.filter.applied, [True, True, True]
+                )
+
+        for comp in ["ex", "ey"]:
+            ch = getattr(calibrated_run, comp)
+            with self.subTest("units"):
+                self.assertEqual(ch.channel_metadata.units, "mV/km")
+            with self.subTest("applied"):
+                self.assertListEqual(
+                    ch.channel_metadata.filter.applied,
+                    [True, True, True, True, True, True],
+                )
+
+        ch = getattr(calibrated_run, "temperature")
+        with self.subTest("units"):
+            self.assertEqual(ch.channel_metadata.units, "celsius")
+        with self.subTest("applied"):
+            self.assertListEqual(
+                ch.channel_metadata.filter.applied,
+                [True],
+            )
+
 
 # =============================================================================
 # Run

@@ -707,14 +707,15 @@ class ChannelTS:
         self._channel_response = value
 
         # update channel metadata
-        self.channel_metadata.filter.name = []
-        self.channel_metadata.filter.applied = []
+        if self.channel_metadata.filter.name != value.names:
+            self.channel_metadata.filter.name = []
+            self.channel_metadata.filter.applied = []
 
-        for f_name in self._channel_response.names:
-            self.channel_metadata.filter.name.append(f_name)
-        self.channel_metadata.filter.applied = [False] * len(
-            self.channel_metadata.filter.name
-        )
+            for f_name in self._channel_response.names:
+                self.channel_metadata.filter.name.append(f_name)
+            self.channel_metadata.filter.applied = [False] * len(
+                self.channel_metadata.filter.name
+            )
 
     def remove_instrument_response(self, **kwargs):
         """
@@ -778,13 +779,36 @@ class ChannelTS:
         calibrated_ts.channel_metadata.filter.applied = [True] * len(
             self.channel_metadata.filter.applied
         )
+
         # update units
-        calibrated_ts._ts.attrs[
-            "units"
-        ] = self.channel_response_filter.units_out
-        calibrated_ts.channel_metadata.units = (
+        # This is a hack for now until we come up with a standard for
+        # setting up the filter list.  Currently it follows the FDSN standard
+        # which has the filter stages starting with physical units to digital
+        # counts.
+        if (
             self.channel_response_filter.units_out
-        )
+            == self.channel_metadata.units
+        ):
+            calibrated_ts._ts.attrs[
+                "units"
+            ] = self.channel_response_filter.units_in
+            calibrated_ts.channel_metadata.units = (
+                self.channel_response_filter.units_in
+            )
+        elif (
+            self.channel_response_filter.units_out == None
+            and self.channel_response_filter.units_out == None
+        ):
+            calibrated_ts.channel_metadata.units = self.channel_metadata.units
+        else:
+            calibrated_ts._ts.attrs[
+                "units"
+            ] = self.channel_response_filter.units_in
+            calibrated_ts.channel_metadata.units = (
+                self.channel_response_filter.units_in
+            )
+
+        calibrated_ts._update_xarray_metadata()
 
         return calibrated_ts
 
