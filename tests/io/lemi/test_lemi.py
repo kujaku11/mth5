@@ -96,27 +96,13 @@ with open(lemi_fn, "w") as fid:
 
 
 class TestLEMI424(unittest.TestCase):
-    ClassIsSetup = False
-    maxDiff = None
+    @classmethod
+    def setUpClass(self):
+        self.lemi_obj = LEMI424(lemi_fn)
+        self.lemi_obj.read()
 
-    def setUp(self):
-        # If it was not setup yet, do it
-        if not self.ClassIsSetup:
-            # run the real setup
-            self.setupClass()
-            # remember that it was setup already
-            self.__class__.ClassIsSetup = True
-
-    def setupClass(self):
-        # Do the real setup
-        unittest.TestCase.setUp(self)
-        # you want to have persistent things to test
-        self.__class__.lemi_obj = LEMI424(lemi_fn)
-        # (you can call this later with self.myclass)
-        self.__class__.lemi_obj.read()
-
-        self.__class__.station_metadata = Station()
-        self.__class__.station_metadata.from_dict(
+        self.station_metadata = Station()
+        self.station_metadata.from_dict(
             OrderedDict(
                 [
                     ("acquired_by.name", None),
@@ -144,8 +130,8 @@ class TestLEMI424(unittest.TestCase):
             )
         )
 
-        self.__class__.run_metadata = Run()
-        self.__class__.run_metadata.from_dict(
+        self.run_metadata = Run()
+        self.run_metadata.from_dict(
             OrderedDict(
                 [
                     (
@@ -242,24 +228,10 @@ class TestLEMI424(unittest.TestCase):
 
 
 class TestLEMI424Metadata(unittest.TestCase):
-    ClassIsSetup = False
-    maxDiff = None
-
-    def setUp(self):
-        # If it was not setup yet, do it
-        if not self.ClassIsSetup:
-            # run the real setup
-            self.setupClass()
-            # remember that it was setup already
-            self.__class__.ClassIsSetup = True
-
-    def setupClass(self):
-        # Do the real setup
-        unittest.TestCase.setUp(self)
-        # you want to have persistent things to test
-        self.__class__.lemi_obj = LEMI424(lemi_fn)
-        # (you can call this later with self.myclass)
-        self.__class__.lemi_obj.read_metadata()
+    @classmethod
+    def setUpClass(self):
+        self.lemi_obj = LEMI424(lemi_fn)
+        self.lemi_obj.read_metadata()
 
     def test_has_data(self):
         self.assertTrue(self.lemi_obj._has_data())

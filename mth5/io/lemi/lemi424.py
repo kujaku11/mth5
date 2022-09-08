@@ -16,10 +16,10 @@ from io import StringIO
 import warnings
 from copy import deepcopy
 
+# supress the future warning from pandas about using datetime parser.
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
 import pandas as pd
-import numpy as np
 import logging
 from datetime import datetime
 
@@ -329,7 +329,7 @@ class LEMI424:
 
         return r
 
-    def read(self, fn=None):
+    def read(self, fn=None, fast=True):
         """
         Read a LEMI424 file using pandas
 
@@ -346,6 +346,59 @@ class LEMI424:
             msg = "Could not find file %s"
             self.logger.error(msg, self.fn)
             raise IOError(msg % self.fn)
+
+        if fast:
+            try:
+                self.read_metadata()
+                data = pd.read_csv(
+                    self.fn,
+                    delimiter="\s+",
+                    names=self.file_column_names,
+                    dtype=self.dtypes,
+                    usecols=(
+                        "bx",
+                        "by",
+                        "bz",
+                        "temperature_e",
+                        "temperature_h",
+                        "e1",
+                        "e2",
+                        "e3",
+                        "e4",
+                        "battery",
+                        "elevation",
+                        "latitude",
+                        "lat_hemisphere",
+                        "longitude",
+                        "lon_hemisphere",
+                        "n_satellites",
+                        "gps_fix",
+                        "time_diff",
+                    ),
+                    converters={
+                        "latitude": lemi_position_parser,
+                        "longitude": lemi_position_parser,
+                        "lat_hemisphere": lemi_hemisphere_parser,
+                        "lon_hemisphere": lemi_hemisphere_parser,
+                    },
+                )
+                time_index = pd.date_range(
+                    start=self.start.iso_no_tz,
+                    end=self.end.iso_no_tz,
+                    freq="1000000000N",
+                )
+                if time_index.size != data.shape[0]:
+                    raise ValueError(
+                        "Missing a time stamp use read with fast=False"
+                    )
+
+                data.index = time_index
+                self.data = data
+                return
+            except ValueError:
+                self.logger.info(
+                    "Data is missing a time stamp, reading in slow mode"
+                )
 
         # tried reading in chunks and got Nan's and was took just as long
         # maybe someone smarter can figure it out.
@@ -504,7 +557,9 @@ class LEMI424:
 # =============================================================================
 # define the reader
 # =============================================================================
-def read_lemi424(fn, e_channels=["e1", "e2"], logger_file_handler=None):
+def read_lemi424(
+    fn, e_channels=["e1", "e2"], fast=True, logger_file_handler=None
+):
     """
     Read a LEMI 424 TXT file.
 
@@ -522,7 +577,7 @@ def read_lemi424(fn, e_channels=["e1", "e2"], logger_file_handler=None):
         fn = [fn]
 
     txt_obj = LEMI424(fn[0])
-    txt_obj.read()
+    txt_obj.read(fast=fast)
 
     if logger_file_handler:
         txt_obj.logger.addHandler(logger_file_handler)
