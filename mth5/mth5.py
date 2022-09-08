@@ -11,11 +11,9 @@ large tables of data to warrant using pytables.
 
 Created on Sun Dec  9 20:50:41 2018
 
-:copyright:
-    Jared Peacock (jpeacock@usgs.gov)
+:copyright: Jared Peacock (jpeacock@usgs.gov)
     
-:license: 
-    MIT
+:license: MIT
 
 """
 
@@ -67,26 +65,33 @@ class MTH5:
 
     For version 0.1.0:
 
-        Survey
-           |-Reports
-           |-Standards
-           |-Filters
-           |-Stations
-               |-Run
-                   |-Channel
+        - Survey
+
+           - Reports
+           - Standards
+           - Filters
+           - Stations
+
+               - Run
+
+                   - Channel
 
     For version 0.2.0:
 
-        Experiment
-            |-Reports
-            |-Standards
-            |-Surveys
-               |-Reports
-               |-Standards
-               |-Filters
-               |-Stations
-                   |-Run
-                       |-Channel
+        - Experiment
+
+            - Reports
+            - Standards
+            - Surveys
+
+               - Reports
+               - Standards
+               - Filters
+               - Stations
+
+                   - Run
+
+                       -Channel
 
 
     All timeseries data are stored as individual channels with the appropriate
@@ -108,6 +113,7 @@ class MTH5:
     :param filename: name of the to be or existing file
     :type filename: string or :class:`pathlib.Path`
     :param compression: compression type.  Supported lossless compressions are
+
         * 'lzf' - Available with every installation of h5py
                  (C source code also available). Low to
                  moderate compression, very fast. No options.
@@ -121,6 +127,7 @@ class MTH5:
                    community. Not available with all
                    installations of HDF5 due to legal reasons.
                    Consult the HDF5 docs for filter options.
+
     :param compression_opts: compression options, see above
     :type compression_opts: string or int depending on compression type
     :param shuffle: Block-oriented compressors like GZIP or LZF work better
@@ -136,9 +143,11 @@ class MTH5:
     :type fletcher32: boolean
     :param data_level: level the data are stored following levels defined by
        `NASA ESDS <https://earthdata.nasa.gov/collaborate/open-data-services-and-software/data-information-policy/data-levels>`_
+
          * 0 - Raw data
          * 1 - Raw data with response information and full metadata
          * 2 - Derived product, raw data has been manipulated
+
     :type data_level: integer, defaults to 1
     :param file_version: Version of the file [ '0.1.0' | '0.2.0' ], defaults to "0.2.0"
     :type file_version: string, optional

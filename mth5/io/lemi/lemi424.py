@@ -396,7 +396,7 @@ class LEMI424:
                 self.data = data
                 return
             except ValueError:
-                self.logger.info(
+                self.logger.warning(
                     "Data is missing a time stamp, reading in slow mode"
                 )
 
@@ -436,7 +436,7 @@ class LEMI424:
 
             self.data = pd.concat(dfs)
             et = MTime().now()
-            self.logger.info(
+            self.logger.debug(
                 f"Reading {self.fn.name} took {et - st:.2f} seconds"
             )
 
@@ -467,7 +467,7 @@ class LEMI424:
                 index_col="date",
             )
             et = MTime().now()
-            self.logger.info(
+            self.logger.debug(
                 f"Reading {self.fn.name} took {et - st:.2f} seconds"
             )
 

@@ -18,6 +18,21 @@ logger = setup_logger(__file__)
 
 
 def butter_bandpass(lowcut, highcut, fs, order=5):
+    """
+    Butterworth bandpass filter using scipy.signal
+
+    :param lowcut: low cut frequency in Hz
+    :type lowcut: float
+    :param highcut: high cut frequency in Hz
+    :type highcut: float
+    :param fs: Sample rate
+    :type fs: float
+    :param order: Butterworth order, defaults to 5
+    :type order: int, optional
+    :return: SOS scipy.signal format
+    :rtype: scipy.signal.SOS?
+
+    """
     nyq = 0.5 * fs
 
     if lowcut is not None:
@@ -40,43 +55,65 @@ def butter_bandpass(lowcut, highcut, fs, order=5):
 
 
 def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
+    """
+
+    :param data: 1D time series data
+    :type data: np.ndarray
+    :param lowcut: low cut frequency in Hz
+    :type lowcut: float
+    :param highcut: high cut frequency in Hz
+    :type highcut: float
+    :param fs: Sample rate
+    :type fs: float
+    :param order: Butterworth order, defaults to 5
+    :type order: int, optional
+    :return: filtered data
+    :rtype: np.ndarray
+
+    """
     sos = butter_bandpass(lowcut, highcut, fs, order=order)
     y = signal.sosfiltfilt(sos, data)
     return y
 
 
-def low_pass(f, low_pass_freq, cutoff_freq, sampling_rate):
+def low_pass(data, low_pass_freq, cutoff_freq, sampling_rate):
+    """
+
+    :param data: 1D time series data
+    :type data: np.ndarray
+    :param low_pass_freq: low pass frequency in Hz
+    :type low_pass_freq: float
+    :param cutoff_freq: cut off frequency in Hz
+    :type cutoff_freq: float
+    :param sampling_rate: Sample rate in samples per second
+    :type sampling_rate: float
+    :return: lowpass filtered data
+    :rtype: np.ndarray
+
+    """
     nyq = 0.5 * sampling_rate
     filt_order, wn = signal.buttord(
         low_pass_freq / nyq, cutoff_freq / nyq, 3, 40
     )
 
     b, a = signal.butter(filt_order, wn, btype="low")
-    f_filt = signal.filtfilt(b, a, f)
+    data_filtered = signal.filtfilt(b, a, data)
 
-    return f_filt
+    return data_filtered
 
 
 def zero_pad(input_array, power=2, pad_fill=0):
     """
-    pad the input array with pad_fill to the next power of power.
 
-    For faster fft computation pad the array to the next power of 2 with zeros
-
-    Arguments:
-    -----------
-        **input_array** : np.ndarray (only 1-d arrays are supported at the
-                                      moment)
-
-        **power** : [ 2 | 10 ]
-                    power look for
-
-        **pad_fill** : float or int
-                       pad the array with this
-
-    Output:
-    --------
-        **pad_array** : np.ndarray padded with pad_fill
+    :param input_array: 1D array
+    :type input_array: np.ndarray
+    :param power: base power to used to pad to, defaults to 2 which is optimal
+    for the FFT
+    :type power: int, optional
+    :param pad_fill: fill value for padded values, defaults to 0
+    :type pad_fill: float, optional
+    :return: zero padded array
+    :rtype: np.ndarray
 
     """
 
@@ -599,48 +636,35 @@ def adaptive_notch_filter(
     dbstop_limit=5.0,
 ):
     """
-    adaptive_notch_filter(bx, df, notches=[50,100], notchradius=.3, freqrad=.9)
-    will apply a notch filter to the array bx by finding the nearest peak
-    around the supplied notch locations.  The filter is a zero-phase
-    Chebyshev type 1 bandstop filter with minimal ripples.
 
-    Arguments:
-    -----------
-        **bx** : np.ndarray(len_time_series)
-                 time series to filter
+    :param bx: time series to filter
+    :type bx: np.ndarray
+    :param df: sample rate in samples per second, defaults to 100
+    :type df: float, optional
+    :param notches: list of frequencies to locate notches at in Hz,
+     defaults to [50, 100]
+    :type notches: list, optional
+    :param notchradius: notch radius, defaults to 0.5
+    :type notchradius: float, optional
+    :param freqrad: radius to search for a peak at the notch frequency,
+     defaults to 0.9
+    :type freqrad: float, optional
+    :param rp: ripple of Chebyshev type 1 filter, lower numbers means less
+     ripples, defaults to 0.1
+    :type rp: float, optional
+    :param dbstop_limit: limits the difference between the peak at the
+     notch and surrounding spectra.  Any difference
+     above dbstop_limit will be filtered, anything
+     less will not, defaults to 5.0
+    :type dbstop_limit: float, optional
+    :return: notch filtered data
+    :rtype: np.ndarray
+    :return: list of notch frequencies
+    :rtype: list
 
-        **df** : float
-                 sampling frequency in Hz
 
-        **notches** : list of frequencies (Hz) to filter
-
-        **notchradius** : float
-                          radius of the notch in frequency domain (Hz)
-
-        **freqrad** : float
-                      radius to searching for peak about notch from notches
-
-        **rp** : float
-                 ripple of Chebyshev type 1 filter, lower numbers means less
-                 ripples
-
-        **dbstop_limit** : float (in decibels)
-                           limits the difference between the peak at the
-                           notch and surrounding spectra.  Any difference
-                           above dbstop_limit will be filtered, anything
-                           less will not
-
-    Outputs:
+    Example
     ---------
-
-        **bx** : np.ndarray(len_time_series)
-                 filtered array
-
-        **filtlst** : list
-                      location of notches and power difference between peak of
-                      notch and average power.
-
-    ..Example: ::
 
         >>> import RemovePeriodicNoise_Kate as rmp
         >>> # make a variable for the file to load in
@@ -658,7 +682,7 @@ def adaptive_notch_filter(
         >>> np.savetxt(r"/home/MT/Filtered/mt01_20130101_000000.BX", bx_filt)
 
     Notes:
-    -------
+
         Most of the time the default parameters work well, the only thing
         you need to change is the notches and perhaps the radius.  I would
         test it out with a few time series to find the optimum parameters.

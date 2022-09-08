@@ -1,11 +1,11 @@
 Welcome to MTH5's documentation!
 ======================================
 .. image:: source/images/mth5_logo.png
-	:align: center
+    :align: center
 
 |
 
-.. include:: ../README.rst
+.. include:: README.rst
 
 |
 
@@ -13,33 +13,35 @@ Welcome to MTH5's documentation!
     :maxdepth: 1
     :caption: Contents:
 
-    installation
+    source/installation
     contributing
     authors
     history
     source/gotchas
-    usage
-    usage_v2
+    source/conventions
+    source/usage
+    source/usage_v2
     source/structure
     source/ts
     examples/notebooks/filters_example.ipynb
+    examples/notebooks/remove_instrument_response_example.ipynb
     source/file_readers
-    source/conventions
     examples/notebooks/transfer_function_example.ipynb
+    examples/notebooks/mth5_in_parallel.ipynb
     source/examples
-	
-.. toctree::
-	:maxdepth: 1
-	:caption: Metadata Standards
-	
-	source/mt_metadata_guide
-	
-
+    
 .. toctree::
     :maxdepth: 1
+    :caption: Metadata Standards
+    
+    source/mt_metadata_guide
+    
+
+.. toctree::
+    :maxdepth: 4
     :caption: Packages
 
-    source/mth5
+    source/modules
 
 Indices and tables
 ==================
