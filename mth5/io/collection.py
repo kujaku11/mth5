@@ -46,7 +46,7 @@ class Collection:
             "n_samples",
             "sequence_number",
             "instrument_id",
-            "calibraion_fn",
+            "calibration_fn",
         ]
 
         for key, value in kwargs.items():
@@ -139,6 +139,7 @@ class Collection:
         df.start = pd.to_datetime(df.start, errors="coerce")
         df.end = pd.to_datetime(df.end, errors="coerce")
         df.instrument_id = df.instrument_id.astype(str)
+        df.calibration_fn = df.calibration_fn.astype(str)
 
         return df
 

@@ -16,7 +16,6 @@ Test reading lemi files
 import unittest
 from collections import OrderedDict
 from pathlib import Path
-import pandas as pd
 
 from mth5.io.lemi import LEMI424
 from mt_metadata.timeseries import Station, Run
