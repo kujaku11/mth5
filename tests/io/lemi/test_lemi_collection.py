@@ -81,6 +81,12 @@ class TestLEMICollection(unittest.TestCase):
         with self.subTest("instrument_id"):
             self.assertTrue(self.df.instrument_id.dtype.type == np.object_)
 
+        with self.subTest("calibration_fn"):
+            self.assertTrue(self.df.calibration_fn.dtype.type == np.object_)
+
+    def test_survey_id(self):
+        self.assertTrue((self.df.survey == self.lc.survey_id).all())
+
     def test_df_run_names(self):
         self.assertListEqual(
             [
@@ -105,6 +111,9 @@ class TestLEMICollection(unittest.TestCase):
             list(self.runs[self.lc.station_id].keys()),
             ["sr1_0001", "sr1_0002", "sr1_0003", "sr1_0004", "sr1_0005"],
         )
+
+    def test_run_dtype(self):
+        self.assertIsInstance(self.runs, OrderedDict)
 
     def test_run_elements(self):
         for key, rdf in self.runs[self.lc.station_id].items():
