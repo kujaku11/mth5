@@ -146,6 +146,10 @@ def get_orientation_code(azimuth, orientation="horizontal"):
 
     elif orientation == "vertical":
         test_keys = vertical_keys
+    else:
+        raise ValueError(
+            f"{orientation} not supported must be [ 'horizontal' | 'vertical' ]"
+        )
 
     for key in test_keys:
         angle_min = orientation_code_dict[key]["min"]
@@ -250,7 +254,10 @@ def make_mt_channel(code_dict, angle_tol=15):
 
     """
 
-    mt_comp = mt_code_dict[code_dict["component"]]
+    try:
+        mt_comp = mt_code_dict[code_dict["component"]]
+    except KeyError:
+        mt_comp = code_dict["component"]
 
     if not code_dict["vertical"]:
         if (

@@ -12,13 +12,9 @@ Created on Thu Jun 18 16:54:19 2020
 
 import unittest
 from pathlib import Path
-import numpy as np
 
 from mth5 import mth5
-from mth5.utils.exceptions import MTH5Error
-from mth5.timeseries import ChannelTS, RunTS
-from mth5.groups.standards import summarize_metadata_standards
-from mt_metadata.utils.mttime import MTime
+
 
 fn_path = Path(__file__).parent
 # =============================================================================
