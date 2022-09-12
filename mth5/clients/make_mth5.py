@@ -21,8 +21,6 @@ from mt_metadata.timeseries.stationxml import XMLInventoryMTExperiment
 
 from mth5.mth5 import MTH5
 from mth5.timeseries import RunTS
-from mth5.helpers import validate_name
-from mth5 import helpers
 from mth5.utils.mth5_logger import setup_logger
 
 # =============================================================================
@@ -51,7 +49,9 @@ class MakeMTH5:
                 df = pd.read_csv(fn)
                 df = df.fillna("")
             else:
-                raise ValueError(f"Input must be a pandas.Dataframe not {type(df)}")
+                raise ValueError(
+                    f"Input must be a pandas.Dataframe not {type(df)}"
+                )
 
         if df.columns.to_list() != self.column_names:
             raise ValueError(
@@ -76,7 +76,9 @@ class MakeMTH5:
                 survey_dict["stations"], streams, m, survey_group, survey_id
             )
 
-    def _loop_stations(self, stations, streams, m, survey_group=None, survey_id=None):
+    def _loop_stations(
+        self, stations, streams, m, survey_group=None, survey_id=None
+    ):
 
         for station_id in stations:
             msstreams = streams.select(station=station_id)
@@ -96,15 +98,16 @@ class MakeMTH5:
                 mobj = m
                 try:
                     run_list = m.get_station(station_id).groups_list
-                except Exception as e:
-                    self.logger.warning(f"Unable to retrieve station {station_id} - if there is more than one survey requested, use version 0.2.0 instead of 0.1.0")
+                except Exception:
+                    self.logger.warning(
+                        f"Unable to retrieve station {station_id} - if there is more than one survey requested, use version 0.2.0 instead of 0.1.0"
+                    )
                     run_list = []
-                    
-                    
+
             elif self.mth5_version in ["0.2.0"]:
                 mobj = survey_group
                 run_list = m.get_station(station_id, survey_id).groups_list
-                
+
             try:
                 run_list.remove("Transfer_Functions")
             except:
@@ -119,14 +122,18 @@ class MakeMTH5:
                 ):
                     # add the group first this will get the already filled in
                     # metadata to update the run_ts_obj.
-                    run_group = mobj.stations_group.get_station(station_id).add_run(
-                        run_id
-                    )
+                    run_group = mobj.stations_group.get_station(
+                        station_id
+                    ).add_run(run_id)
 
                     # then get the streams an add existing metadata
-                    run_stream = msstreams.slice(UTCDateTime(start), UTCDateTime(end))
+                    run_stream = msstreams.slice(
+                        UTCDateTime(start), UTCDateTime(end)
+                    )
                     run_ts_obj = RunTS()
-                    run_ts_obj.from_obspy_stream(run_stream, run_group.metadata)
+                    run_ts_obj.from_obspy_stream(
+                        run_stream, run_group.metadata
+                    )
                     run_group.from_runts(run_ts_obj)
 
             # if there is just one run
@@ -135,25 +142,29 @@ class MakeMTH5:
                     for run_id, times in enumerate(
                         zip(trace_start_times, trace_end_times), 1
                     ):
-                        run_group = mobj.stations_group.get_station(station_id).add_run(
-                            f"{run_id:03}"
-                        )
+                        run_group = mobj.stations_group.get_station(
+                            station_id
+                        ).add_run(f"{run_id:03}")
                         run_stream = msstreams.slice(
                             UTCDateTime(times[0]), UTCDateTime(times[1])
                         )
                         run_ts_obj = RunTS()
-                        run_ts_obj.from_obspy_stream(run_stream, run_group.metadata)
+                        run_ts_obj.from_obspy_stream(
+                            run_stream, run_group.metadata
+                        )
                         run_group.from_runts(run_ts_obj)
 
                 elif n_times == 1:
-                    run_group = mobj.stations_group.get_station(station_id).add_run(
-                        run_list[0]
-                    )
+                    run_group = mobj.stations_group.get_station(
+                        station_id
+                    ).add_run(run_list[0])
                     run_stream = msstreams.slice(
                         UTCDateTime(times[0]), UTCDateTime(times[1])
                     )
                     run_ts_obj = RunTS()
-                    run_ts_obj.from_obspy_stream(run_stream, run_group.metadata)
+                    run_ts_obj.from_obspy_stream(
+                        run_stream, run_group.metadata
+                    )
                     run_group.from_runts(run_ts_obj)
 
             elif len(run_list) != n_times:
@@ -171,9 +182,9 @@ class MakeMTH5:
                     # add the group first this will get the already filled in
                     # metadata
                     for run in run_list:
-                        run_group = mobj.stations_group.get_station(station_id).get_run(
-                            run
-                        )
+                        run_group = mobj.stations_group.get_station(
+                            station_id
+                        ).get_run(run)
 
                         # Chekcs for start and end times of runs
                         run_start = run_group.metadata.time_period.start
@@ -184,14 +195,16 @@ class MakeMTH5:
                         # Compares start and end times of runs
                         # to start and end times of traces. Packs runs based on
                         # time spans
-                        if UTCDateTime(start) >= UTCDateTime(run_start) and UTCDateTime(
-                            end
-                        ) <= UTCDateTime(run_end):
+                        if UTCDateTime(start) >= UTCDateTime(
+                            run_start
+                        ) and UTCDateTime(end) <= UTCDateTime(run_end):
                             run_stream = msstreams.slice(
                                 UTCDateTime(start), UTCDateTime(end)
                             )
                             run_ts_obj = RunTS()
-                            run_ts_obj.from_obspy_stream(run_stream, run_group.metadata)
+                            run_ts_obj.from_obspy_stream(
+                                run_stream, run_group.metadata
+                            )
                             run_group.from_runts(run_ts_obj)
                         else:
                             continue
@@ -204,8 +217,9 @@ class MakeMTH5:
         process_run = versionDict[self.mth5_version]
         process_run(experiment, unique_list, streams, m)
 
-
-    def make_mth5_from_fdsnclient(self, df, path=None, client=None, interact=False):
+    def make_mth5_from_fdsnclient(
+        self, df, path=None, client=None, interact=False
+    ):
         """
         Make an MTH5 file from an FDSN data center
 
@@ -253,7 +267,9 @@ class MakeMTH5:
 
         unique_list = self.get_unique_networks_and_stations(df)
         if self.mth5_version in ["0.1.0"] and len(unique_list) != 1:
-            raise AttributeError("MTH5 supports one survey/network per container.")
+            raise AttributeError(
+                "MTH5 supports one survey/network per container."
+            )
 
         file_name = path.joinpath(self.make_filename(df))
 
@@ -261,7 +277,7 @@ class MakeMTH5:
         m = MTH5(file_version=self.mth5_version)
         m.open_mth5(file_name, "w")
 
-        # read in inventory and streams        
+        # read in inventory and streams
         inv, streams = self.get_inventory_from_df(df, self.client)
 
         # translate obspy.core.Inventory to an mt_metadata.timeseries.Experiment
@@ -324,36 +340,40 @@ class MakeMTH5:
         # Create empty stream, inventory objects that will be populated below
         streams = obsread().clear()
         inv = Inventory(networks=[], source="MTH5")
-        
-        
+
         # Sort the values to be logically ordered
         df.sort_values(self.column_names[:-1])
-         
+
         # Build an inventory by looping over the rows in the dataframe
-        # Use .groupby to make looping simpler 
-        
+        # Use .groupby to make looping simpler
+
         # To do: Currently loop over network, station, channel/location for
-        # purpose of nesting the inventories within each other. Is there a 
+        # purpose of nesting the inventories within each other. Is there a
         # better way to do this without requiring 3 loops?
-        
+
         # First, group the dataframe by network-epoch
-        network_group = df.groupby(['network','start','end'])
+        network_group = df.groupby(["network", "start", "end"])
         for net, net_DF in network_group:
-            net_code = net[0]; net_start = net[1];  net_end = net[2]
-            
+            net_code = net[0]
+            net_start = net[1]
+            net_end = net[2]
+
             net_inv = client.get_stations(
                 net_start, net_end, network=net_code, level="network"
             )
             returned_network = net_inv.networks[0]
-            
-            
+
             # For this network-epoch, group by network-station-start-end
             # This will group all loc.chans together for the station-epochs in this network-epoch
-            station_group = net_DF.groupby(['network', 'station','start','end'])
+            station_group = net_DF.groupby(
+                ["network", "station", "start", "end"]
+            )
             for sta, sta_DF in station_group:
-                sta_net = sta[0]; sta_code = sta[1];
-                sta_start = sta[2]; sta_end = sta[3]
-                
+                sta_net = sta[0]
+                sta_code = sta[1]
+                sta_start = sta[2]
+                sta_end = sta[3]
+
                 sta_inv = client.get_stations(
                     sta_start,
                     sta_end,
@@ -363,7 +383,6 @@ class MakeMTH5:
                 )
                 returned_sta = sta_inv.networks[0].stations[0]
 
-             
                 # No need to .groupby() for channel-level since we want to loop over each channel request for this
                 # station-epoch
                 for chan in sta_DF.itertuples():
@@ -376,13 +395,14 @@ class MakeMTH5:
                         channel=chan.channel,
                         level="response",
                     )
-        
+
                     # There may be multiple metadata epochs for a given channel-timespan requested
                     # and to keep the metadata for all epochs you need to add each one to the station object
-                    for returned_chan in cha_inv.networks[0].stations[0].channels:
+                    for returned_chan in (
+                        cha_inv.networks[0].stations[0].channels
+                    ):
                         returned_sta.channels.append(returned_chan)
-                    
-                    
+
                     # Grab the data, if specified
                     if data:
                         streams = (
@@ -396,13 +416,13 @@ class MakeMTH5:
                             )
                             + streams
                         )
- 
+
                 # Add the stations to the associated network
-                returned_network.stations.append(returned_sta)   
-                
+                returned_network.stations.append(returned_sta)
+
             # Add the network (with station and channel info) to the inventory
             inv.networks.append(returned_network)
-         
+
         return inv, streams
 
     def get_df_from_inventory(self, inventory):
@@ -451,7 +471,9 @@ class MakeMTH5:
         for network in net_list:
             network_dict = {
                 "network": network,
-                "stations": df[df.network == network].station.unique().tolist(),
+                "stations": df[df.network == network]
+                .station.unique()
+                .tolist(),
             }
             unique_list.append(network_dict)
 
@@ -471,7 +493,12 @@ class MakeMTH5:
         unique_list = self.get_unique_networks_and_stations(df)
 
         return (
-            "_".join([f"{d['network']}_{'_'.join(d['stations'])}" for d in unique_list])
+            "_".join(
+                [
+                    f"{d['network']}_{'_'.join(d['stations'])}"
+                    for d in unique_list
+                ]
+            )
             + ".h5"
         )
 

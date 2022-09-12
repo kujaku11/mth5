@@ -643,6 +643,7 @@ class RunTS:
         new_runts = RunTS()
         new_runts.station_metadata = self.station_metadata
         new_runts.run_metadata = self.run_metadata
+        new_runts.filters = self.filters
         new_runts.dataset = self._dataset.isel(indexers={"time": chunk})
 
         return new_runts
@@ -667,26 +668,47 @@ class RunTS:
 
         return new_run
 
-    def plot(self):
+    def plot(
+        self,
+        color_map={
+            "ex": (1, 0.2, 0.2),
+            "ey": (1, 0.5, 0),
+            "hx": (0, 0.5, 1),
+            "hy": (0.5, 0.2, 1),
+            "hz": (0.2, 1, 1),
+        },
+        channel_order=None,
+    ):
         """
 
         plot the time series probably slow for large data sets
 
         """
 
+        if channel_order is not None:
+            ch_list = channel_order()
+        else:
+            ch_list = self.channels
+
         n_channels = len(self.channels)
 
         fig = plt.figure()
         fig.subplots_adjust(hspace=0)
-        ax1 = fig.add_subplot(n_channels, 1, 1)
-        self.dataset[self.channels[0]].plot()
-        ax_list = [ax1]
-        for ii, comp in enumerate(self.channels[1:], 2):
-            ax = plt.subplot(n_channels, 1, ii, sharex=ax1)
-            self.dataset[comp].plot()
-            ax_list.append(ax)
-
-        for ax in ax_list:
+        ax_list = []
+        for ii, comp in enumerate(ch_list, 1):
+            try:
+                color = color_map[comp]
+            except KeyError:
+                color = (0, 0.4, 0.8)
+            if ii == 1:
+                ax = plt.subplot(n_channels, 1, ii)
+            else:
+                ax = plt.subplot(n_channels, 1, ii, sharex=ax_list[0])
+            self.dataset[comp].plot.line(ax=ax, color=color)
             ax.grid(which="major", color=(0.65, 0.65, 0.65), ls="--", lw=0.75)
             ax.grid(which="minor", color=(0.85, 0.85, 0.85), ls="--", lw=0.5)
             ax.set_axisbelow(True)
+            if ii != len(ch_list):
+                plt.setp(ax.get_xticklabels(), visible=False)
+
+            ax_list.append(ax)

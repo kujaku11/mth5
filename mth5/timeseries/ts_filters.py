@@ -329,17 +329,9 @@ class RemoveInstrumentResponse:
         pad_ts = zero_pad(ts)
 
         if self.plot:
-            dt = int(1.0 / self.sample_interval * 1000000000)
-            diff = int(((pad_ts.size - ts.size) + 1) * dt)
-            time_array = np.arange(
-                self.time_array[0],
-                self.time_array[-1] + np.timedelta64(diff, "ns"),
-                np.timedelta64(dt, "ns"),
-                dtype="datetime64[ns]",
-            )
             self._subplots(
-                time_array,
-                pad_ts[0 : time_array.size - 1],
+                self.time_array,
+                pad_ts[0 : self.time_array.size],
                 (0.7, 0.1, 0.25),
                 self.subplot_dict["pad"],
                 "Zero Pad",

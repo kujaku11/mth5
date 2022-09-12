@@ -2838,6 +2838,7 @@ class ChannelDataset:
                 self.metadata.type,
                 data=self.hdf5_dataset[regional_ref],
                 channel_metadata={self.metadata.type: meta_dict},
+                channel_response_filter=self.channel_response_filter,
             )
         else:
             msg = "return_type not understood, must be [ pandas | numpy | channel_ts ]"
