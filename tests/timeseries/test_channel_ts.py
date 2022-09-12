@@ -22,6 +22,7 @@ from mth5 import timeseries
 from mth5.utils.exceptions import MTTSError
 
 from mt_metadata import timeseries as metadata
+from mt_metadata.timeseries.filters import CoefficientFilter
 
 # =============================================================================
 #
@@ -315,6 +316,30 @@ class TestChannelTS(unittest.TestCase):
                 "2020-01-01T12:00:00", end="2020-01-01T12:00:03"
             )
             self.assertEqual(new_ts.ts.size, 48)
+
+    def test_time_slice_metadata(self):
+        self.ts.sample_rate = 16
+        self.ts.start = "2020-01-01T12:00:00"
+        self.ts.ts = np.arange(4096)
+        self.ts.channel_metadata.filter.name = "example_filter"
+        self.ts.channel_response_filter.filters_list.append(
+            CoefficientFilter(name="example_filter", gain=10)
+        )
+        new_ts = self.ts.get_slice("2020-01-01T12:00:00", n_samples=48)
+
+        with self.subTest("metadata"):
+            self.assertEqual(new_ts.channel_metadata, new_ts.channel_metadata)
+
+        with self.subTest("channel_response"):
+            self.assertEqual(
+                new_ts.channel_response_filter, self.ts.channel_response_filter
+            )
+
+        with self.subTest("run metadata"):
+            self.assertEqual(new_ts.run_metadata, new_ts.run_metadata)
+
+        with self.subTest("station metadata"):
+            self.assertEqual(new_ts.station_metadata, new_ts.station_metadata)
 
 
 # =============================================================================
