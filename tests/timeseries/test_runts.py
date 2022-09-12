@@ -116,6 +116,47 @@ class TestRunTS(unittest.TestCase):
 
         self.run.set_dataset([self.ex, self.ey, self.hx, self.hy, self.hz])
 
+    def test_str(self):
+        s_list = [
+            f"Station:     {self.run.station_metadata.id}",
+            f"Run:         {self.run.run_metadata.id}",
+            f"Start:       {self.run.start}",
+            f"End:         {self.run.end}",
+            f"Sample Rate: {self.run.sample_rate}",
+            f"Components:  {self.run.channels}",
+        ]
+        test_str = "\n\t".join(["RunTS Summary:"] + s_list)
+
+        self.assertEqual(test_str, self.run.__str__())
+
+    def test_repr(self):
+        s_list = [
+            f"Station:     {self.run.station_metadata.id}",
+            f"Run:         {self.run.run_metadata.id}",
+            f"Start:       {self.run.start}",
+            f"End:         {self.run.end}",
+            f"Sample Rate: {self.run.sample_rate}",
+            f"Components:  {self.run.channels}",
+        ]
+        test_str = "\n\t".join(["RunTS Summary:"] + s_list)
+
+        self.assertEqual(test_str, self.run.__repr__())
+
+    def test_set_run_metadata_fail(self):
+        self.assertRaises(MTTSError, RunTS, [self.ex], **{"run_metadata": []})
+
+    def test_set_station_metadata_fail(self):
+        self.assertRaises(
+            MTTSError, RunTS, [self.ex], **{"station_metadata": []}
+        )
+
+    def test_validate_array_fail(self):
+        with self.subTest("bad type"):
+            self.assertRaises(TypeError, self.run._validate_array_list, 10)
+
+        with self.subTest("bad list"):
+            self.assertRaises(TypeError, self.run._validate_array_list, [10])
+
     def test_initialize(self):
 
         with self.subTest("channels"):
@@ -128,6 +169,9 @@ class TestRunTS(unittest.TestCase):
             self.assertEqual(self.run.start, MTime(self.start))
         with self.subTest("end"):
             self.assertEqual(self.run.end, MTime(self.end))
+
+    def test_sample_interval(self):
+        self.assertEqual(1.0 / self.sample_rate, self.run.sample_interval)
 
     def test_sr_fail(self):
         hz = ChannelTS(
@@ -229,6 +273,46 @@ class TestRunTS(unittest.TestCase):
         self.assertEqual(
             list(self.run.filters.keys()), ["instrument_response"]
         )
+
+    def test_filters_fail(self):
+        def set_filters(value):
+            self.run.filters = value
+
+        self.assertRaises(TypeError, set_filters, ())
+
+    def test_summarize_metadata(self):
+        meta_dict = {}
+        for comp in self.run.dataset.data_vars:
+            for mkey, mvalue in self.run.dataset[comp].attrs.items():
+                meta_dict[f"{comp}.{mkey}"] = mvalue
+        self.assertDictEqual(meta_dict, self.run.summarize_metadata)
+
+    def test_add_channel_xarray(self):
+        x = self.ex.to_xarray()
+        x.attrs["component"] = "ez"
+        x.name = "ez"
+        self.run.add_channel(x)
+
+        self.assertEquals(
+            sorted(self.run.channels),
+            sorted(["ex", "ey", "ez", "hx", "hy", "hz"]),
+        )
+
+    def test_to_obspy_stream(self):
+        stream = self.run.to_obspy_stream()
+
+        with self.subTest("count"):
+            self.assertEqual(stream.count(), 5)
+
+        for tr in stream.traces:
+            with self.subTest("sample_rate"):
+                self.assertEqual(tr.stats.sampling_rate, self.sample_rate)
+
+            with self.subTest("start time"):
+                self.assertEqual(tr.stats.starttime, self.start)
+
+            with self.subTest("npts"):
+                self.assertEqual(tr.stats.npts, self.npts)
 
 
 # =============================================================================

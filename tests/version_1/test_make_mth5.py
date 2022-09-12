@@ -67,6 +67,22 @@ class TestMakeMTH5(unittest.TestCase):
             columns=["net", "sta", "loc", "chn", "startdate", "enddate"],
         )
 
+    def test_client(self):
+        self.assertEqual(self.make_mth5.client, "IRIS")
+
+    def test_file_version(self):
+        self.assertEqual(self.make_mth5.mth5_version, "0.1.0")
+
+    def test_validate_dataframe_fail(self):
+        with self.subTest("bad value"):
+            self.assertRaises(
+                ValueError, self.mth5_path._validate_dataframe, []
+            )
+        with self.subTest("bad path"):
+            self.assertRaises(
+                IOError, self.mth5_path._validata_dataframe, "k.fail"
+            )
+
     def test_df_input_inventory(self):
         inv, streams = self.make_mth5.get_inventory_from_df(
             self.metadata_df, data=False

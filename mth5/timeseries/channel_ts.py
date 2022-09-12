@@ -382,7 +382,16 @@ class ChannelTS:
                 station_dict[key.split("station.")[-1]] = meta_dict.pop(key)
             for key in run_keys:
                 run_dict[key.split("run.")[-1]] = meta_dict.pop(key)
-            self.channel_metadata.from_dict({meta_dict["type"]: meta_dict})
+
+            if meta_dict["type"] == "electric":
+                ch_metadata = metadata.Electric()
+            elif meta_dict["type"] == "magnetic":
+                ch_metadata = metadata.Magnetic()
+            else:
+                ch_metadata = metadata.Auxiliary()
+
+            ch_metadata.from_dict({meta_dict["type"]: meta_dict})
+            self.channel_metadata = ch_metadata
             self.station_metadata.from_dict({"station": station_dict})
             self.run_metadata.from_dict({"run": run_dict})
             # need to run this incase things are different.
