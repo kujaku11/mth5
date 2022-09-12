@@ -339,7 +339,7 @@ class RemoveInstrumentResponse:
             )
             self._subplots(
                 time_array,
-                pad_ts[0 : time_array.size],
+                pad_ts[0 : time_array.size - 1],
                 (0.7, 0.1, 0.25),
                 self.subplot_dict["pad"],
                 "Zero Pad",

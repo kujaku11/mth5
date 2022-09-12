@@ -184,7 +184,7 @@ class RunTS:
                 try:
                     filter_list.append(self.filters[filter_name])
                 except KeyError:
-                    self.logger.warning(
+                    self.logger.debug(
                         f"Could not find {filter_name} in filters"
                     )
 
