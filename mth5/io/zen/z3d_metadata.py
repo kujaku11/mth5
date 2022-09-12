@@ -96,6 +96,8 @@ class Z3DMetadata:
         self.ch_cres = None
         self.gdp_operator = None
         self.gdp_progver = None
+        self.gdp_volt = None
+        self.gdp_temp = None
         self.job_by = None
         self.job_for = None
         self.job_name = None
@@ -105,6 +107,7 @@ class Z3DMetadata:
         self.rx_xazimuth = None
         self.rx_xyz0 = None
         self.rx_yazimuth = None
+        self.rx_zpositive = "down"
         self.line_name = None
         self.survey_type = None
         self.unit_length = None
@@ -248,22 +251,39 @@ class Z3DMetadata:
                             )
 
             elif "caldata" in test_str:
-                t_list = test_str.replace("|", ",").split(",")
+                self.cal_board = {}
+                sr = 256
+
+                t_list = test_str.lower().split("|")
                 for t_str in t_list:
                     if "\x00" in t_str:
                         continue
                     else:
-                        try:
-                            self.board_cal.append(
+                        if "cal.brd" in t_str:
+                            values = [
+                                float(tt)
+                                for tt in t_str.split(",")[-1].split(":")
+                            ]
+                            self.cal_board[sr] = dict(
                                 [
-                                    float(tt.strip())
-                                    for tt in t_str.strip().split(":")
+                                    (tkey, tvalue)
+                                    for tkey, tvalue in zip(
+                                        ["frequency", "amplitude", "phase"],
+                                        values,
+                                    )
                                 ]
                             )
-                        except ValueError:
-                            self.board_cal.append(
-                                [tt.strip() for tt in t_str.strip().split(":")]
-                            )
+                        elif "cal.adfreq" in t_str:
+                            sr = int(t_str.split("=")[-1])
+                        elif "caldata" in t_str:
+                            continue
+                        else:
+                            cal_key, cal_value = t_str.split("=")
+                            try:
+                                cal_value = float(cal_value)
+                            except ValueError:
+                                pass
+                            self.cal_board[cal_key] = cal_value
 
             else:
                 self.find_metadata = False
