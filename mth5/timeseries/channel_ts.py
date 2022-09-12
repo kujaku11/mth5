@@ -275,9 +275,9 @@ class ChannelTS:
 
         if not isinstance(other, ChannelTS):
             raise ValueError(f"Cannot compare ChannelTS with {type(other)}")
-        if not other.metadata == self.channel_metadata:
+        if not other.channel_metadata == self.channel_metadata:
             return False
-        if self.ts.equals(other.ts) is False:
+        if self._ts.equals(other._ts) is False:
             msg = "timeseries are not equal"
             self.logger.info(msg)
             return False

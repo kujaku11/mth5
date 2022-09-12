@@ -60,6 +60,51 @@ class TestChannelTS(unittest.TestCase):
     def test_input_type_fail(self):
         self.assertRaises(ValueError, timeseries.ChannelTS, "temperature")
 
+    def test_set_channel_fail(self):
+        self.assertRaises(
+            MTTSError, timeseries.ChannelTS, **{"channel_metadata": []}
+        )
+
+    def test_set_run_metadata_fail(self):
+        self.assertRaises(
+            MTTSError, timeseries.ChannelTS, **{"run_metadata": []}
+        )
+
+    def test_set_station_metadata_fail(self):
+        self.assertRaises(
+            MTTSError, timeseries.ChannelTS, **{"station_metadata": []}
+        )
+
+    def test_str(self):
+        lines = [
+            f"Station:      {self.ts.station_metadata.id}",
+            f"Run:          {self.ts.run_metadata.id}",
+            f"Channel Type: {self.ts.channel_type}",
+            f"Component:    {self.ts.component}",
+            f"Sample Rate:  {self.ts.sample_rate}",
+            f"Start:        {self.ts.start}",
+            f"End:          {self.ts.end}",
+            f"N Samples:    {self.ts.n_samples}",
+        ]
+
+        test_str = "\n\t".join(["Channel Summary:"] + lines)
+        self.assertEqual(test_str, self.ts.__str__())
+
+    def test_repr(self):
+        lines = [
+            f"Station:      {self.ts.station_metadata.id}",
+            f"Run:          {self.ts.run_metadata.id}",
+            f"Channel Type: {self.ts.channel_type}",
+            f"Component:    {self.ts.component}",
+            f"Sample Rate:  {self.ts.sample_rate}",
+            f"Start:        {self.ts.start}",
+            f"End:          {self.ts.end}",
+            f"N Samples:    {self.ts.n_samples}",
+        ]
+
+        test_str = "\n\t".join(["Channel Summary:"] + lines)
+        self.assertEqual(test_str, self.ts.__repr__())
+
     def test_intialize_with_metadata(self):
         self.ts = timeseries.ChannelTS(
             "electric", channel_metadata={"electric": {"component": "ex"}}
@@ -68,6 +113,23 @@ class TestChannelTS(unittest.TestCase):
             self.assertEqual(self.ts.channel_metadata.component, "ex")
         with self.subTest(name="compnent in attrs"):
             self.assertEqual(self.ts._ts.attrs["component"], "ex")
+
+    def test_equal(self):
+        self.assertTrue(self.ts == self.ts)
+
+    def test_not_equal(self):
+        x = timeseries.ChannelTS(channel_type="electric")
+        self.assertFalse(self.ts == x)
+
+    def test_less_than(self):
+        x = timeseries.ChannelTS(channel_type="electric")
+        x.start = "2020-01-01T12:00:00"
+        self.assertFalse(self.ts < x)
+
+    def test_greater_than(self):
+        x = timeseries.ChannelTS(channel_type="electric")
+        x.start = "2020-01-01T12:00:00"
+        self.assertTrue(self.ts > x)
 
     def test_numpy_input(self):
         self.ts.channel_metadata.sample_rate = 1.0
@@ -115,6 +177,12 @@ class TestChannelTS(unittest.TestCase):
             )
         with self.subTest(name="has n samples"):
             self.assertEqual(self.ts.n_samples, 4096)
+
+    def test_input_fail(self):
+        def set_ts(value):
+            self.ts.ts = value
+
+        self.assertRaises(MTTSError, set_ts, 10)
 
     def test_df_without_index_input(self):
         self.ts.channel_metadata.sample_rate = 1.0
