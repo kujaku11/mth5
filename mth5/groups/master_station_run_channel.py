@@ -1662,15 +1662,7 @@ class RunGroup(BaseGroup):
                     )
 
             channels.append(self.from_channel_ts(ch))
-            # channels.append(
-            #     self.add_channel(
-            #         comp,
-            #         ch.channel_metadata.type,
-            #         ch.ts,
-            #         channel_metadata=ch.channel_metadata,
-            #         **kwargs,
-            #     )
-            # )
+
         self.validate_run_metadata()
         return channels
 

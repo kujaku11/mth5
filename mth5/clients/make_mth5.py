@@ -27,6 +27,22 @@ from mth5.utils.mth5_logger import setup_logger
 
 
 class MakeMTH5:
+    """
+    Make an MTH5 file from data archived at IRIS.  You will need to know the
+    data you want before hand, and place that into a dataframe with columns
+
+    - 'network'   --> FDSN Network code
+    - 'station'   --> FDSN Station code
+    - 'location'  --> FDSN Location code
+    - 'channel'   --> FDSN Channel code
+    - 'start'     --> Start time YYYY-MM-DDThh:mm:ss
+    - 'end'       --> End time YYYY-MM-DDThh:mm:ss
+
+    From this data frame data will be pulled from IRIS using Obspy tools.
+
+
+    """
+
     def __init__(self, client="IRIS", mth5_version="0.2.0"):
         self.column_names = [
             "network",
@@ -41,6 +57,17 @@ class MakeMTH5:
         self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
 
     def _validate_dataframe(self, df):
+        """
+        Validate data frame to conform to the desired format
+
+        :param df: Input dataframe or file path
+        :type df: :class:`pd.DataFrame`, str, Path
+        :raises IOError: If input file path does not exist
+        :raises ValueError: If input value is not a dataframe
+        :return: validated dataframe
+        :rtype: :class:`pd.DataFrame`
+
+        """
         if not isinstance(df, pd.DataFrame):
             if isinstance(df, (str, Path)):
                 fn = Path(df)
@@ -60,24 +87,41 @@ class MakeMTH5:
 
         return df
 
-    def _run_010(self, experiment, unique_list, streams, m):
-        self._loop_stations(unique_list[0]["stations"], streams, m)
+    def _run_010(self, experiment, unique_list, streams, mth5_object):
+        """
+        Loop over stations for file version 0.1.0
 
-    def _run_020(self, experiment, unique_list, streams, m):
+        :param experiment: experiment metadata
+        :type experiment: :class:`mt_metadata.timeseries.Experiment`
+        :param unique_list: unique list of runs
+        :type unique_list: dataframe
+        :param streams: time series data
+        :type streams: obspy.Stream
+        :param mth5_object: mth5 object
+        :type mth5_object: :class:`mth5.MTH5`
+
+        """
+        self._loop_stations(unique_list[0]["stations"], streams, mth5_object)
+
+    def _run_020(self, experiment, unique_list, streams, mth5_object):
         survey_map = dict([(s.fdsn.network, s.id) for s in experiment.surveys])
 
         for survey_dict in unique_list:
             # get the mt survey id that maps to the fdsn network
             fdsn_network = survey_dict["network"]
             survey_id = survey_map[fdsn_network]
-            survey_group = m.get_survey(survey_id)
+            survey_group = mth5_object.get_survey(survey_id)
 
             self._loop_stations(
-                survey_dict["stations"], streams, m, survey_group, survey_id
+                survey_dict["stations"],
+                streams,
+                mth5_object,
+                survey_group,
+                survey_id,
             )
 
     def _loop_stations(
-        self, stations, streams, m, survey_group=None, survey_id=None
+        self, stations, streams, mth5_object, survey_group=None, survey_id=None
     ):
 
         for station_id in stations:
@@ -95,9 +139,9 @@ class MakeMTH5:
                 )
 
             if self.mth5_version in ["0.1.0"]:
-                mobj = m
+                mobj = mth5_object
                 try:
-                    run_list = m.get_station(station_id).groups_list
+                    run_list = mth5_object.get_station(station_id).groups_list
                 except Exception:
                     self.logger.warning(
                         f"Unable to retrieve station {station_id} - if there is more than one survey requested, use version 0.2.0 instead of 0.1.0"
@@ -106,7 +150,9 @@ class MakeMTH5:
 
             elif self.mth5_version in ["0.2.0"]:
                 mobj = survey_group
-                run_list = m.get_station(station_id, survey_id).groups_list
+                run_list = mth5_object.get_station(
+                    station_id, survey_id
+                ).groups_list
 
             try:
                 run_list.remove("Transfer_Functions")
@@ -169,7 +215,7 @@ class MakeMTH5:
 
             elif len(run_list) != n_times:
                 # If there is more than one run and more or less than one trace per run (possibly)
-                print(
+                self.logger.warning(
                     "More or less runs have been requested by the user "
                     + "than are defined in the metadata. Runs will be "
                     + "defined but only the requested run extents contain "
@@ -212,10 +258,10 @@ class MakeMTH5:
             else:
                 raise ValueError("Cannot add Run for some reason.")
 
-    def _process_list(self, experiment, unique_list, streams, m):
+    def _process_list(self, experiment, unique_list, streams, mth5_object):
         versionDict = {"0.1.0": self._run_010, "0.2.0": self._run_020}
         process_run = versionDict[self.mth5_version]
-        process_run(experiment, unique_list, streams, m)
+        process_run(experiment, unique_list, streams, mth5_object)
 
     def make_mth5_from_fdsnclient(
         self, df, path=None, client=None, interact=False
@@ -225,12 +271,12 @@ class MakeMTH5:
 
         :param df: DataFrame with columns
 
-            - 'network'   --> FDSN Network code
-            - 'station'   --> FDSN Station code
-            - 'location'  --> FDSN Location code
-            - 'channel'   --> FDSN Channel code
-            - 'start'     --> Start time YYYY-MM-DDThh:mm:ss
-            - 'end'       --> End time YYYY-MM-DDThh:mm:ss
+         - 'network'   --> FDSN Network code
+         - 'station'   --> FDSN Station code
+         - 'location'  --> FDSN Location code
+         - 'channel'   --> FDSN Channel code
+         - 'start'     --> Start time YYYY-MM-DDThh:mm:ss
+         - 'end'       --> End time YYYY-MM-DDThh:mm:ss
 
         :type df: :class:`pandas.DataFrame`
         :param path: Path to save MTH5 file to, defaults to None
@@ -238,9 +284,9 @@ class MakeMTH5:
         :param client: FDSN client name, defaults to "IRIS"
         :type client: string, optional
         :raises AttributeError: If the input DataFrame is not properly
-        formatted an Attribute Error will be raised.
+         formatted an Attribute Error will be raised.
         :raises ValueError: If the values of the DataFrame are not correct a
-        ValueError will be raised.
+         ValueError will be raised.
         :return: MTH5 file name
         :rtype: :class:`pathlib.Path`
 
@@ -248,8 +294,8 @@ class MakeMTH5:
         .. seealso:: https://docs.obspy.org/packages/obspy.clients.fdsn.html#id1
 
         .. note:: If any of the column values are blank, then any value will
-        searched for.  For example if you leave 'station' blank, any station
-        within the given start and end time will be returned.
+         searched for.  For example if you leave 'station' blank, any station
+         within the given start and end time will be returned.
 
 
 
@@ -274,8 +320,8 @@ class MakeMTH5:
         file_name = path.joinpath(self.make_filename(df))
 
         # initiate MTH5 file
-        m = MTH5(file_version=self.mth5_version)
-        m.open_mth5(file_name, "w")
+        mth5_object = MTH5(file_version=self.mth5_version)
+        mth5_object.open_mth5(file_name, "w")
 
         # read in inventory and streams
         inv, streams = self.get_inventory_from_df(df, self.client)
@@ -286,18 +332,18 @@ class MakeMTH5:
 
         # Updates experiment information based on time extent of streams
         # rather than time extent of inventory
-        # experiment = translator.drop_runs(m, streams)
+        # experiment = translator.drop_runs(mth5_object, streams)
 
-        m.from_experiment(experiment)
+        mth5_object.from_experiment(experiment)
 
-        self._process_list(experiment, unique_list, streams, m)
+        self._process_list(experiment, unique_list, streams, mth5_object)
 
         if not interact:
-            m.close_mth5()
+            mth5_object.close_mth5()
 
             return file_name
         if interact:
-            return m
+            return mth5_object
 
     def get_inventory_from_df(self, df, client=None, data=True):
         """
@@ -306,18 +352,18 @@ class MakeMTH5:
 
         :param df: DataFrame with columns
 
-            - 'network'   --> FDSN Network code
-            - 'station'   --> FDSN Station code
-            - 'location'  --> FDSN Location code
-            - 'channel'   --> FDSN Channel code
-            - 'start'     --> Start time YYYY-MM-DDThh:mm:ss
-            - 'end'       --> End time YYYY-MM-DDThh:mm:ss
+         - 'network'   FDSN Network code
+         - 'station'   FDSN Station code
+         - 'location'  FDSN Location code
+         - 'channel'   FDSN Channel code
+         - 'start'     Start time YYYY-MM-DDThh:mm:ss
+         - 'end'       End time YYYY-MM-DDThh:mm:ss
 
         :type df: :class:`pandas.DataFrame`
         :param client: FDSN client
         :type client: string
         :param data: True if you want data False if you want just metadata,
-        defaults to True
+         defaults to True
         :type data: boolean, optional
         :return: An inventory of metadata requested and data
         :rtype: :class:`obspy.Inventory` and :class:`obspy.Stream`
@@ -325,8 +371,8 @@ class MakeMTH5:
         .. seealso:: https://docs.obspy.org/packages/obspy.clients.fdsn.html#id1
 
         .. note:: If any of the column values are blank, then any value will
-        searched for.  For example if you leave 'station' blank, any station
-        within the given start and end time will be returned.
+         searched for.  For example if you leave 'station' blank, any station
+         within the given start and end time will be returned.
 
         """
         if client is not None:
@@ -462,7 +508,7 @@ class MakeMTH5:
         :param df: request data frame
         :type df: :class:`pandas.DataFrame`
         :return: list of network dictionaries with
-        [{'network': FDSN code, "stations": [list of stations for network]}]
+         [{'network': FDSN code, "stations": [list of stations for network]}]
         :rtype: list
 
         """
