@@ -43,7 +43,6 @@ class EstimateDataset:
     :raises MTH5Error: When an estimate is not present, or metadata name
      does not match the given name
 
-
     """
 
     def __init__(

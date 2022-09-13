@@ -26,11 +26,11 @@ class LEMICollection(Collection):
     Collection of LEMI 424 files into runs.
 
     .. note:: This class assumes that the given file path contains a single
-    LEMI station.  If you want to do multiple stations merge the returned
-    data frames.
+     LEMI station.  If you want to do multiple stations merge the returned
+     data frames.
 
     .. note:: LEMI data comes with little metadata about the station or survey,
-    therefore you should assign `station_id` and `survey_id`.
+     therefore you should assign `station_id` and `survey_id`.
 
     .. code-block:: python
 
@@ -59,15 +59,15 @@ class LEMICollection(Collection):
         .. note:: This assumes the given directory contains a single station
 
         :param sample_rates: sample rate to get, will always be 1 for LEMI data
-        defaults to [1]
+         defaults to [1]
         :type sample_rates: int or list, optional
         :param run_name_zeros: number of zeros to assing to the run name,
-        defaults to 4
+         defaults to 4
         :type run_name_zeros: int, optional
         :param calibration_path: path to calibration files, defaults to None
         :type calibration_path: string or Path, optional
         :return: Dataframe with information of each TXT file in the given
-        directory.
+         directory.
         :rtype: :class:`pandas.DataFrame`
 
         :Example:

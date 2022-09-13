@@ -52,15 +52,15 @@ class NIMSCollection(Collection):
         .. note:: This assumes the given directory contains a single station
 
         :param sample_rates: sample rate to get, will always be 1 for LEMI data
-        defaults to [1]
+         defaults to [1]
         :type sample_rates: int or list, optional
         :param run_name_zeros: number of zeros to assing to the run name,
-        defaults to 4
+         defaults to 4
         :type run_name_zeros: int, optional
         :param calibration_path: path to calibration files, defaults to None
         :type calibration_path: string or Path, optional
         :return: Dataframe with information of each TXT file in the given
-        directory.
+         directory.
         :rtype: :class:`pandas.DataFrame`
 
         :Example:

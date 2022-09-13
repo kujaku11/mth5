@@ -145,6 +145,7 @@ class Segment(SubHeader):
     def segment_start_time(self):
         """
         estimate the segment start time based on sequence number
+
         :return: DESCRIPTION
         :rtype: TYPE
 

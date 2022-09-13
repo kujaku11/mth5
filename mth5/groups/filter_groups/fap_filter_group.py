@@ -38,6 +38,7 @@ class FAPGroup(BaseGroup):
 
         :return: DESCRIPTION
         :rtype: TYPE
+
         """
         f_dict = {}
         for key in self.hdf5_group.keys():
@@ -64,7 +65,7 @@ class FAPGroup(BaseGroup):
         :type phase: list, np.ndarray
         :param fap_metadata: other metadata for the filter see
         :class:`mt_metadata.timeseries.filters.FrequencyResponseTableFilter` \
-        for details on entries
+         for details on entries
         :type fap_metadata: dictionary
         :return: DESCRIPTION
         :rtype: TYPE
@@ -139,6 +140,7 @@ class FAPGroup(BaseGroup):
     def to_object(self, name):
         """
         make a :class:`mt_metadata.timeseries.filters.pole_zeros_filter` object
+
         :return: DESCRIPTION
         :rtype: TYPE
 

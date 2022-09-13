@@ -2441,7 +2441,8 @@ class ChannelDataset:
         """
         :return: a numpy structured array with 2 columns (time, channel_data)
         :rtype: :class:`numpy.core.records`
-        .. data:: data is a builtin to numpy and cannot be used as a name
+
+        .. note:: data is a builtin to numpy and cannot be used as a name
 
         loads into RAM
 
@@ -2539,8 +2540,8 @@ class ChannelDataset:
 
             - 'replace' -> replace the entire dataset nothing is left over.
             - 'extend' -> add onto the existing dataset, any  overlapping
-            values will be rewritten, if there are gaps between data sets
-            those will be handled depending on the value of fill.
+             values will be rewritten, if there are gaps between data sets
+             those will be handled depending on the value of fill.
 
          :param fill: If there is a data gap how do you want to fill the gap:
 
@@ -2554,12 +2555,12 @@ class ChannelDataset:
 
         :type fill: string, None, float, integer
         :param max_gap_seconds: sets a maximum number of seconds the gap can
-                                be.  Anything over this number will raise
-                                a :class:`mth5.utils.exceptions.MTH5Error`.
+         be.  Anything over this number will raise a
+         :class:`mth5.utils.exceptions.MTH5Error`.
 
         :type max_gap_seconds: float or integer
         :param fill_window: number of points from the end of each data set
-                            to estimate fill value from.
+         to estimate fill value from.
 
         :type fill_window: integer
 
@@ -2592,10 +2593,12 @@ class ChannelDataset:
         :param start_time: start time of the new array
         :type start_time: string, int or :class:`mth5.utils.MTime`
         :return: time difference in seconds as new start time minus old.
+
             *  A positive number means new start time is later than old
                start time.
             * A negative number means the new start time is earlier than
               the old start time.
+
         :rtype: float
 
         """
@@ -2614,10 +2617,12 @@ class ChannelDataset:
         :param end_time: end time of the new array
         :type end_time: string, int or :class:`mth5.utils.MTime`
         :return: time difference in seconds as new end time minus old.
-            *  A positive number means new end time is later than old
+
+            * A positive number means new end time is later than old
                end time.
             * A negative number means the new end time is earlier than
               the old end time.
+
         :rtype: float
 
         """
@@ -2632,6 +2637,7 @@ class ChannelDataset:
     def table_entry(self):
         """
         Creat a table entry to put into the run summary table.
+
         """
 
         return np.array(
@@ -2841,10 +2847,10 @@ class ChannelDataset:
         """
         get the appropriate index for a given time.
 
-        :param given_time: DESCRIPTION
-        :type given_time: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :param given_time: time string
+        :type given_time: string or MTime
+        :return: index value
+        :rtype: int
 
         """
 

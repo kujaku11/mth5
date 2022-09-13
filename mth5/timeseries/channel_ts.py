@@ -128,9 +128,6 @@ class ChannelTS:
 
     :rubric:
 
-    Example
-    ---------
-
         >>> from mth5.timeseries import ChannelTS
         >>> ts_obj = ChannelTS('auxiliary')
         >>> ts_obj.sample_rate = 8
@@ -148,10 +145,6 @@ class ChannelTS:
                 Start        = 2020-01-01T12:00:00+00:00
                 End          = 2020-01-01T12:08:31.875000+00:00
                 N Samples    = 4096
-
-    Plot time series with xarray
-    ------------------------------
-
         >>> p = ts_obj.ts.plot()
 
 
@@ -307,6 +300,7 @@ class ChannelTS:
         """
         if setting ts with a pandas data frame, make sure the data is in a
         column name 'data'
+
         """
 
         if isinstance(ts_arr, (np.ndarray, list, tuple)):
@@ -408,6 +402,7 @@ class ChannelTS:
     def time_index(self):
         """
         time index as a numpy array dtype np.datetime[ns]
+
         :return: array of the time index
         :rtype: np.ndarray(dtype=np.datetime[ns])
 
@@ -592,6 +587,7 @@ class ChannelTS:
     def sample_interval(self):
         """
         Sample interval = 1 / sample_rate
+
         :return: DESCRIPTION
         :rtype: TYPE
 

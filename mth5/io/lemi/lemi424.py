@@ -65,6 +65,7 @@ def lemi_date_parser(year, month, day, hour, minute, second):
 def lemi_position_parser(position):
     """
     convenience function to parse the location strings
+
     :param position: DESCRIPTION
     :type position: TYPE
     :return: DESCRIPTION

@@ -32,7 +32,6 @@ class NativeReader(TSReaderBase):
 
     Each frame is 20 x 3 byte (24-bit) data point then a 4 byte footer.
 
-
     """
 
     def __init__(
@@ -48,7 +47,9 @@ class NativeReader(TSReaderBase):
         **kwargs,
     ):
         # Init the base class
-        super().__init__(path, num_files, header_length, report_hw_sat, **kwargs)
+        super().__init__(
+            path, num_files, header_length, report_hw_sat, **kwargs
+        )
 
         self._chunk_size = 4096
 
@@ -84,9 +85,9 @@ class NativeReader(TSReaderBase):
         if self.data_scaling == AD_IN_AD_UNITS:
             return 256
         elif self.data_scaling == AD_INPUT_VOLTS:
-            return self.ad_plus_minus_range / (2 ** 31)
+            return self.ad_plus_minus_range / (2**31)
         elif self.data_scaling == INSTRUMENT_INPUT_VOLTS:
-            return self.input_plusminus_range / (2 ** 31)
+            return self.input_plusminus_range / (2**31)
         else:
             raise LookupError("Invalid scaling requested")
 
@@ -95,7 +96,7 @@ class NativeReader(TSReaderBase):
         Read the given amount of frames from the data.
 
         .. note:: that seek is not reset so if you iterate this the stream
-        reads from the last tell.
+         reads from the last tell.
 
         :param num_frames: Number of frames to read
         :type num_frames: integer
@@ -131,7 +132,9 @@ class NativeReader(TSReaderBase):
 
             for ptrSamp in range(0, 60, 3):
                 # unpack expects 4 bytes, but the frames are only 3?
-                value = unpack(">i", dataFrame[ptrSamp : ptrSamp + 3] + b"\x00")[0]
+                value = unpack(
+                    ">i", dataFrame[ptrSamp : ptrSamp + 3] + b"\x00"
+                )[0]
                 _data_buf[_idx_buf] = value * self.scale_factor
                 _idx_buf += 1
             frames_in_buf += 1
@@ -154,8 +157,8 @@ class NativeReader(TSReaderBase):
         Read the full data file.
 
         .. note:: This uses :class:`numpy.lib.stride_tricks.as_strided` which
-        can be unstable if the bytes are not the correct length.  See notes by
-        numpy.
+         can be unstable if the bytes are not the correct length.  See notes by
+         numpy.
 
         Got this solution from:
         https://stackoverflow.com/questions/12080279/how-do-i-create-a-numpy-dtype-that-includes-24-bit-integers?msclkid=3398046ecd6511ec9a37394f28c5aaba
@@ -218,7 +221,7 @@ class NativeReader(TSReaderBase):
         :return: scaled data
         :rtype: np.ndarray(dtype=float32)
         :return: footer
-        rtype: np.ndarray(dtype=int32)
+        :rtype: np.ndarray(dtype=int32)
 
         """
 
