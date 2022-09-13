@@ -76,11 +76,11 @@ class TestMakeMTH5(unittest.TestCase):
     def test_validate_dataframe_fail(self):
         with self.subTest("bad value"):
             self.assertRaises(
-                ValueError, self.mth5_path._validate_dataframe, []
+                ValueError, self.make_mth5._validate_dataframe, []
             )
         with self.subTest("bad path"):
             self.assertRaises(
-                IOError, self.mth5_path._validata_dataframe, "k.fail"
+                IOError, self.make_mth5._validate_dataframe, "k.fail"
             )
 
     def test_df_input_inventory(self):
