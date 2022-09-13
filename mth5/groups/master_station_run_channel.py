@@ -3,7 +3,7 @@
 Created on Wed Dec 23 17:18:29 2020
 
 .. note:: Need to keep these groups together, if you split them into files you
-get a circular import.
+ get a circular import.
 
 :copyright: 
     Jared Peacock (jpeacock@usgs.gov)
@@ -1802,15 +1802,17 @@ class ChannelDataset:
     The benefit of these other objects is that they can be indexed by time,
     and they have much more buit-in funcionality.
 
-    >>> from mth5 import mth5
-    >>> mth5_obj = mth5.MTH5()
-    >>> mth5_obj.open_mth5(r"/test.mth5", mode='a')
-    >>> run = mth5_obj.stations_group.get_station('MT001').get_run('MT001a')
-    >>> channel = run.get_channel('Ex')
-    >>> channel
-    Channel Electric:
-    -------------------
-                component:        Ey
+    .. code-block:: python
+
+     >>> from mth5 import mth5
+     >>> mth5_obj = mth5.MTH5()
+     >>> mth5_obj.open_mth5(r"/test.mth5", mode='a')
+     >>> run = mth5_obj.stations_group.get_station('MT001').get_run('MT001a')
+     >>> channel = run.get_channel('Ex')
+     >>> channel
+      Channel Electric:
+      -------------------
+        component:        Ey
         data type:        electric
         data format:      float32
         data shape:       (4096,)
@@ -2109,10 +2111,7 @@ class ChannelDataset:
         :raises: :class:`mth5.utils.excptions.MTH5Error` if sample rate is
                  not the same, or fill value is not understood,
 
-        Append Example
-        ---------------
-
-        :rubric:
+        :Append Example:
 
         >>> ex = mth5_obj.get_channel('MT001', 'MT001a', 'Ex')
         >>> ex.n_samples
