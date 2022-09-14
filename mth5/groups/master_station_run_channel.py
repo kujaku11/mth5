@@ -1857,7 +1857,9 @@ class ChannelDataset:
                 self.logger.error(
                     msg, self._class_name, type(dataset_metadata)
                 )
-                raise MTH5Error(msg % self._class_name, type(dataset_metadata))
+                raise MTH5Error(
+                    msg % (self._class_name, type(dataset_metadata))
+                )
             # load from dict because of the extra attributes for MTH5
             self.metadata.from_dict(dataset_metadata.to_dict())
             self.metadata.hdf5_reference = self.hdf5_dataset.ref
