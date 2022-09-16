@@ -21,7 +21,7 @@ import gzip
 import numpy as np
 import pandas as pd
 
-from mth5 import timeseries
+from mth5.timeseries import ChannelTS, RunTS
 from mth5.io.usgs_ascii import AsciiMetadata
 
 # =============================================================================
@@ -84,7 +84,7 @@ class USGSasc(AsciiMetadata):
         """HX"""
         if self.ts is not None:
 
-            return timeseries.MTTS(
+            return ChannelTS(
                 "magnetic",
                 data=self.ts.hx.to_numpy(),
                 channel_metadata=self.hx_metadata,
@@ -96,7 +96,7 @@ class USGSasc(AsciiMetadata):
         """hy"""
         if self.ts is not None:
 
-            return timeseries.MTTS(
+            return ChannelTS(
                 "magnetic",
                 data=self.ts.hy.to_numpy(),
                 channel_metadata=self.hy_metadata,
@@ -108,7 +108,7 @@ class USGSasc(AsciiMetadata):
         """hz"""
         if self.ts is not None:
 
-            return timeseries.MTTS(
+            return ChannelTS(
                 "magnetic",
                 data=self.ts.hz.to_numpy(),
                 channel_metadata=self.hz_metadata,
@@ -120,7 +120,7 @@ class USGSasc(AsciiMetadata):
         """ex"""
         if self.ts is not None:
 
-            return timeseries.MTTS(
+            return ChannelTS(
                 "electric",
                 data=self.ts.ex.to_numpy(),
                 channel_metadata=self.ex_metadata,
@@ -132,26 +132,25 @@ class USGSasc(AsciiMetadata):
         """ey"""
         if self.ts is not None:
 
-            return timeseries.MTTS(
+            return ChannelTS(
                 "electric",
                 data=self.ts.ey.to_numpy(),
                 channel_metadata=self.ey_metadata,
             )
         return None
 
-    @property
-    def run_xarray(self):
+    def to_run_ts(self):
         """Get xarray for run"""
         if self.ts is not None:
 
-            return timeseries.RunTS(
+            return RunTS(
                 array_list=[self.hx, self.hy, self.hz, self.ex, self.ey],
                 run_metadata=self.run_metadata,
             )
 
         return None
 
-    def read_asc_file(self, fn=None):
+    def read_ascii_file(self, fn=None):
         """
         Read in a USGS ascii file and fill attributes accordingly.
 
@@ -223,7 +222,7 @@ class USGSasc(AsciiMetadata):
 
         return save_fn
 
-    def write_asc_file(
+    def write_ascii_file(
         self,
         save_fn=None,
         chunk_size=1024,
@@ -390,6 +389,6 @@ def read_ascii(fn):
     """
 
     asc_obj = USGSasc(fn)
-    asc_obj.read_asc_file()
+    asc_obj.read_ascii_file()
 
-    return asc_obj.run_xarray
+    return asc_obj.to_run_ts()

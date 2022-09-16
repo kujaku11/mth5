@@ -14,6 +14,7 @@ Created on Thu Aug 27 16:54:09 2020
 from pathlib import Path
 import urllib as url
 import xml.etree.ElementTree as ET
+from collections import OrderedDict
 
 import numpy as np
 
@@ -81,39 +82,25 @@ class AsciiMetadata:
         self.hy_metadata = Magnetic(component="hy")
         self.hz_metadata = Magnetic(component="hz")
 
-        self._key_dict = {
-            "SurveyID": "survey_id",
-            "SiteID": "site_id",
-            "RunID": "run_id",
-            "SiteLatitude": "latitude",
-            "SiteLongitude": "longitude",
-            "SiteElevation": "elevation",
-            "AcqStartTime": "start",
-            "AcqStopTime": "end",
-            "AcqSmpFreq": "sample_rate",
-            "AcqNumSmp": "n_samples",
-            "Nchan": "n_channels",
-            "MissingDataFlag": "missing_data_flag",
-            "DataSet": "data_set",
-        }
-
-        self._key_list = [
-            "survey_id",
-            "site_id",
-            "run_id",
-            "site_latitude",
-            "site_longitude",
-            "site_elevation",
-            "start",
-            "end",
-            "sample_rate",
-            "n_samples",
-            "n_channels",
-            "coordinate_system",
-            "chn_settings",
-            "missing_data_flag",
-            "data_set",
-        ]
+        self._key_dict = OrderedDict(
+            **{
+                "SurveyID": "survey_id",
+                "SiteID": "site_id",
+                "RunID": "run_id",
+                "SiteLatitude": "latitude",
+                "SiteLongitude": "longitude",
+                "SiteElevation": "elevation",
+                "AcqStartTime": "start",
+                "AcqStopTime": "end",
+                "AcqSmpFreq": "sample_rate",
+                "AcqNumSmp": "n_samples",
+                "Nchan": "n_channels",
+                "Channel coordinates relative to geographic north": "",
+                "ChnSettings": "",
+                "MissingDataFlag": "missing_data_flag",
+                "DataSet": "data_set",
+            }
+        )
 
         self._chn_settings = [
             "ChnNum",
@@ -135,6 +122,9 @@ class AsciiMetadata:
 
     def __str__(self):
         return self.write_metadata()
+
+    def __repr__(self):
+        return self.__str__()
 
     @property
     def fn(self):
