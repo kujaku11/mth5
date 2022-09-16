@@ -75,11 +75,11 @@ class AsciiMetadata:
         self._survey_metadata = Survey()
         self._station_metadata = Station()
         self._run_metadata = Run()
-        self.ex_metadata = Electric()
-        self.ey_metadata = Electric()
-        self.hx_metadata = Magnetic()
-        self.hy_metadata = Magnetic()
-        self.hz_metadata = Magnetic()
+        self.ex_metadata = Electric(component="ex")
+        self.ey_metadata = Electric(component="ey")
+        self.hx_metadata = Magnetic(component="hx")
+        self.hy_metadata = Magnetic(component="hy")
+        self.hz_metadata = Magnetic(component="hz")
 
         self._key_dict = {
             "SurveyID": "survey_id",
@@ -154,6 +154,14 @@ class AsciiMetadata:
     @survey_id.setter
     def survey_id(self, value):
         self._survey_metadata.id = value
+
+    @property
+    def run_id(self):
+        return self._run_metadata.id
+
+    @run_id.setter
+    def run_id(self, value):
+        self._run_metadata.id = value
 
     @property
     def site_id(self):
@@ -328,7 +336,7 @@ class AsciiMetadata:
                 ]
         for ii, line in enumerate(meta_lines):
             if "DataSet" in line:
-                return ii + 1
+                break
 
             if line.find(":") > 0:
                 key, value = line.strip().split(":", 1)
@@ -377,16 +385,22 @@ class AsciiMetadata:
                             self.run_metadata.data_logger.id = line_list[
                                 ch_keys["InstrumentID"]
                             ]
-                            self.run_metadata.time_period.start = self.start
-                            self.run_metadata.time_period.end = self.end
-                            self.run_metadata.sample_rate = self.sample_rate
 
                             ch.time_period.start = self.start
                             ch.time_period.end = self.end
                             ch.sample_rate = self.sample_rate
+                            self._run_metadata.add_channel(ch)
 
                         else:
                             self.logger.warning("Not sure what line this is")
+
+        self._run_metadata.time_period.start = self.start
+        self._run_metadata.time_period.end = self.end
+        self._run_metadata.sample_rate = self.sample_rate
+
+        self._station_metadata.add_run(self.run_metadata)
+
+        return ii + 1
 
     def write_metadata(self, chn_list=["Ex", "Ey", "Hx", "Hy", "Hz"]):
         """

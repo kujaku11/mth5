@@ -83,26 +83,11 @@ class USGSasc(AsciiMetadata):
     def hx(self):
         """HX"""
         if self.ts is not None:
-            comp_dict = self.get_component_info("hx")
-            if comp_dict is None:
-                return None
-            meta_dict = {
-                "channel_number": comp_dict["ChnNum"],
-                "component": "hx",
-                "measurement_azimuth": comp_dict["Azimuth"],
-                "measurement_tilt": 0,
-                "sample_rate": self.AcqSmpFreq,
-                "time_period.start": self.AcqStartTime,
-                "time_period.end": self.AcqStopTime,
-                "type": "magnetic",
-                "units": "nanotesla",
-                "sensor.id": comp_dict["InstrumentID"],
-            }
 
             return timeseries.MTTS(
                 "magnetic",
                 data=self.ts.hx.to_numpy(),
-                channel_metadata={"magnetic": meta_dict},
+                channel_metadata=self.hx_metadata,
             )
         return None
 
@@ -110,26 +95,11 @@ class USGSasc(AsciiMetadata):
     def hy(self):
         """hy"""
         if self.ts is not None:
-            comp_dict = self.get_component_info("hy")
-            if comp_dict is None:
-                return None
-            meta_dict = {
-                "channel_number": comp_dict["ChnNum"],
-                "component": "hy",
-                "measurement_azimuth": comp_dict["Azimuth"],
-                "measurement_tilt": 0,
-                "sample_rate": self.AcqSmpFreq,
-                "time_period.start": self.AcqStartTime,
-                "time_period.end": self.AcqStopTime,
-                "type": "magnetic",
-                "units": "nanotesla",
-                "sensor.id": comp_dict["InstrumentID"],
-            }
 
             return timeseries.MTTS(
                 "magnetic",
                 data=self.ts.hy.to_numpy(),
-                channel_metadata={"magnetic": meta_dict},
+                channel_metadata=self.hy_metadata,
             )
         return None
 
@@ -137,26 +107,11 @@ class USGSasc(AsciiMetadata):
     def hz(self):
         """hz"""
         if self.ts is not None:
-            comp_dict = self.get_component_info("hz")
-            if comp_dict is None:
-                return None
-            meta_dict = {
-                "channel_number": comp_dict["ChnNum"],
-                "component": "hz",
-                "measurement_azimuth": comp_dict["Azimuth"],
-                "measurement_tilt": 0,
-                "sample_rate": self.AcqSmpFreq,
-                "time_period.start": self.AcqStartTime,
-                "time_period.end": self.AcqStopTime,
-                "type": "magnetic",
-                "units": "nanotesla",
-                "sensor.id": comp_dict["InstrumentID"],
-            }
 
             return timeseries.MTTS(
                 "magnetic",
                 data=self.ts.hz.to_numpy(),
-                channel_metadata={"magnetic": meta_dict},
+                channel_metadata=self.hz_metadata,
             )
         return None
 
@@ -164,27 +119,11 @@ class USGSasc(AsciiMetadata):
     def ex(self):
         """ex"""
         if self.ts is not None:
-            comp_dict = self.get_component_info("ex")
-            if comp_dict is None:
-                return None
-            meta_dict = {
-                "channel_number": comp_dict["ChnNum"],
-                "component": "ex",
-                "measurement_azimuth": comp_dict["Azimuth"],
-                "measurement_tilt": 0,
-                "sample_rate": self.AcqSmpFreq,
-                "time_period.start": self.AcqStartTime,
-                "time_period.end": self.AcqStopTime,
-                "type": "electric",
-                "units": "millivolts per kilometer",
-                "sensor.id": comp_dict["InstrumentID"],
-                "dipole_length": comp_dict["Dipole_Length"],
-            }
 
             return timeseries.MTTS(
                 "electric",
                 data=self.ts.ex.to_numpy(),
-                channel_metadata={"electric": meta_dict},
+                channel_metadata=self.ex_metadata,
             )
         return None
 
@@ -192,130 +131,25 @@ class USGSasc(AsciiMetadata):
     def ey(self):
         """ey"""
         if self.ts is not None:
-            comp_dict = self.get_component_info("ey")
-            if comp_dict is None:
-                return None
-            meta_dict = {
-                "channel_number": comp_dict["ChnNum"],
-                "component": "ey",
-                "measurement_azimuth": comp_dict["Azimuth"],
-                "measurement_tilt": 0,
-                "sample_rate": self.AcqSmpFreq,
-                "time_period.start": self.AcqStartTime,
-                "time_period.end": self.AcqStopTime,
-                "type": "electric",
-                "units": "millivolts per kilometer",
-                "sensor.id": comp_dict["InstrumentID"],
-                "dipole_length": comp_dict["Dipole_Length"],
-            }
 
             return timeseries.MTTS(
                 "electric",
                 data=self.ts.ey.to_numpy(),
-                channel_metadata={"electric": meta_dict},
+                channel_metadata=self.ey_metadata,
             )
         return None
-
-    @property
-    def electric_channels(self):
-        electrics = []
-        for key, kdict in self.channel_dict.items():
-            if "e" in kdict["ChnID"].lower():
-                electrics.append(kdict["ChnID"].lower())
-
-        return ", ".join(electrics)
-
-    @property
-    def magnetic_channels(self):
-        magnetics = []
-        for key, kdict in self.channel_dict.items():
-            if "h" in kdict["ChnID"].lower() or "b" in kdict["ChnID"].lower():
-                magnetics.append(kdict["ChnID"].lower())
-
-        return ", ".join(magnetics)
 
     @property
     def run_xarray(self):
         """Get xarray for run"""
         if self.ts is not None:
-            meta_dict = {
-                "run": {
-                    "channels_recorded_electric": self.electric_channels,
-                    "channels_recorded_magnetic": self.magnetic_channels,
-                    "channels_recorded_auxiliary": None,
-                    "comments": self.comments,
-                    "id": self.SiteID,
-                    "sample_rate": self.sample_rate,
-                    "time_period.end": self.AcqStartTime,
-                    "time_period.start": self.AcqStopTime,
-                }
-            }
 
             return timeseries.RunTS(
                 array_list=[self.hx, self.hy, self.hz, self.ex, self.ey],
-                run_metadata=meta_dict,
+                run_metadata=self.run_metadata,
             )
 
         return None
-
-    def fill_metadata(self, meta_arr):
-        """
-        Fill in metadata from time array made by
-        Z3DCollection.check_time_series.
-
-        :param meta_arr: structured array of metadata for the Z3D files to be
-                         combined.
-        :type meta_arr: np.ndarray
-        """
-        try:
-            self.AcqNumSmp = self.ts.shape[0]
-        except AttributeError:
-            pass
-        self.AcqSmpFreq = meta_arr["df"].mean()
-        self.AcqStartTime = meta_arr["start"].max()
-        self.AcqStopTime = meta_arr["stop"].min()
-        try:
-            self.Nchan = self.ts.shape[1]
-        except AttributeError:
-            self.Nchan = meta_arr.shape[0]
-        self.RunID = 1
-        self.SiteLatitude = np.median(meta_arr["lat"])
-        self.SiteLongitude = np.median(meta_arr["lon"])
-        fn = Path((meta_arr["fn"][0]))
-        self.SiteID = fn.stem
-        self.station_dir = fn.parent
-
-        # if geographic coordinates add in declination
-        if "geographic" in self.CoordinateSystem.lower():
-            meta_arr["ch_azimuth"][
-                np.where(meta_arr["comp"] != "hz")
-            ] += self.declination
-
-        # fill channel dictionary with appropriate values
-        self.channel_dict = dict(
-            [
-                (
-                    comp.capitalize(),
-                    {
-                        "ChnNum": "{0}{1}".format(self.SiteID, ii + 1),
-                        "ChnID": meta_arr["comp"][ii].capitalize(),
-                        "InstrumentID": meta_arr["ch_box"][ii],
-                        "Azimuth": meta_arr["ch_azimuth"][ii],
-                        "Dipole_Length": meta_arr["ch_length"][ii],
-                        "n_samples": meta_arr["n_samples"][ii],
-                        "n_diff": meta_arr["t_diff"][ii],
-                        "std": meta_arr["std"][ii],
-                        "start": meta_arr["start"][ii],
-                    },
-                )
-                for ii, comp in enumerate(meta_arr["comp"])
-            ]
-        )
-        for ii, comp in enumerate(meta_arr["comp"]):
-            if "h" in comp.lower():
-                self.channel_dict[comp.capitalize()][
-                    "InstrumentID"
-                ] += "-{0}".format(meta_arr["ch_num"])
 
     def read_asc_file(self, fn=None):
         """
@@ -334,9 +168,8 @@ class USGSasc(AsciiMetadata):
             skiprows=data_line,
             dtype=np.float32,
         )
-        dt_freq = "{0:.0f}N".format(1.0 / (self.AcqSmpFreq) * 1e9)
         dt_index = pd.date_range(
-            start=self.AcqStartTime, periods=self.AcqNumSmp, freq=dt_freq
+            start=self.start, periods=self.n_samples, end=self.end
         )
         self.ts.index = dt_index
         self.ts.columns = self.ts.columns.str.lower()

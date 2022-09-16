@@ -47,7 +47,7 @@ class TestAsciiMetadata(unittest.TestCase):
             OrderedDict(
                 [
                     ("channel_number", 32),
-                    ("component", None),
+                    ("component", "ex"),
                     ("data_quality.rating.value", 0),
                     ("dipole_length", 100.0),
                     ("filter.applied", [False]),
@@ -81,7 +81,7 @@ class TestAsciiMetadata(unittest.TestCase):
             OrderedDict(
                 [
                     ("channel_number", 34),
-                    ("component", None),
+                    ("component", "ey"),
                     ("data_quality.rating.value", 0),
                     ("dipole_length", 102.0),
                     ("filter.applied", [False]),
@@ -115,7 +115,7 @@ class TestAsciiMetadata(unittest.TestCase):
             OrderedDict(
                 [
                     ("channel_number", 31),
-                    ("component", None),
+                    ("component", "hx"),
                     ("data_quality.rating.value", 0),
                     ("filter.applied", [False]),
                     ("filter.name", []),
@@ -142,7 +142,7 @@ class TestAsciiMetadata(unittest.TestCase):
             OrderedDict(
                 [
                     ("channel_number", 33),
-                    ("component", None),
+                    ("component", "hy"),
                     ("data_quality.rating.value", 0),
                     ("filter.applied", [False]),
                     ("filter.name", []),
@@ -169,7 +169,7 @@ class TestAsciiMetadata(unittest.TestCase):
             OrderedDict(
                 [
                     ("channel_number", 35),
-                    ("component", None),
+                    ("component", "hz"),
                     ("data_quality.rating.value", 0),
                     ("filter.applied", [False]),
                     ("filter.name", []),
@@ -211,8 +211,8 @@ class TestAsciiMetadata(unittest.TestCase):
             OrderedDict(
                 [
                     ("channels_recorded_auxiliary", []),
-                    ("channels_recorded_electric", []),
-                    ("channels_recorded_magnetic", []),
+                    ("channels_recorded_electric", ["ex", "ey"]),
+                    ("channels_recorded_magnetic", ["hx", "hy", "hz"]),
                     ("data_logger.firmware.author", None),
                     ("data_logger.firmware.name", None),
                     ("data_logger.firmware.version", None),
@@ -223,7 +223,7 @@ class TestAsciiMetadata(unittest.TestCase):
                     ("data_logger.timing_system.uncertainty", 0.0),
                     ("data_logger.type", None),
                     ("data_type", "BBMT"),
-                    ("id", None),
+                    ("id", "rgr003a"),
                     ("sample_rate", 4.0),
                     ("time_period.end", "2012-08-24T16:25:26+00:00"),
                     ("time_period.start", "2012-08-21T22:02:27+00:00"),
@@ -263,7 +263,7 @@ class TestAsciiMetadata(unittest.TestCase):
                     ("provenance.software.version", None),
                     ("provenance.submitter.email", None),
                     ("provenance.submitter.organization", None),
-                    ("run_list", []),
+                    ("run_list", ["rgr003a"]),
                     ("time_period.end", "2012-08-24T16:25:26+00:00"),
                     ("time_period.start", "2012-08-21T22:02:27+00:00"),
                 ]
