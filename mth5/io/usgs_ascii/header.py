@@ -18,8 +18,6 @@ import xml.etree.ElementTree as ET
 import numpy as np
 
 from mth5.utils.mth5_logger import setup_logger
-from mt_metadata.utils.mttime import MTime
-from mt_metadata.utils.validators import validate_attribute
 from mt_metadata.timeseries import Magnetic, Electric, Run, Station, Survey
 
 # =============================================================================
@@ -77,11 +75,11 @@ class AsciiMetadata:
         self._survey_metadata = Survey()
         self._station_metadata = Station()
         self._run_metadata = Run()
-        self.ex = Electric()
-        self.ey = Electric()
-        self.hx = Magnetic()
-        self.hy = Magnetic()
-        self.hz = Magnetic()
+        self.ex_metadata = Electric()
+        self.ey_metadata = Electric()
+        self.hx_metadata = Magnetic()
+        self.hy_metadata = Magnetic()
+        self.hz_metadata = Magnetic()
 
         self._key_dict = {
             "SurveyID": "survey_id",
@@ -360,7 +358,8 @@ class AsciiMetadata:
                         line_list = line.strip().split()
                         if len(line_list) == len(ch_keys.keys()):
                             ch = getattr(
-                                self, line_list[ch_keys["ChnID"]].lower()
+                                self,
+                                f"{line_list[ch_keys['ChnID']].lower()}_metadata",
                             )
 
                             ch.channel_number = line_list[ch_keys["ChnNum"]]
@@ -371,9 +370,20 @@ class AsciiMetadata:
                                 ch.dipole_length = line_list[
                                     ch_keys["Dipole_Length"]
                                 ]
+                            else:
+                                ch.sensor.id = line_list[
+                                    ch_keys["InstrumentID"]
+                                ]
                             self.run_metadata.data_logger.id = line_list[
                                 ch_keys["InstrumentID"]
                             ]
+                            self.run_metadata.time_period.start = self.start
+                            self.run_metadata.time_period.end = self.end
+                            self.run_metadata.sample_rate = self.sample_rate
+
+                            ch.time_period.start = self.start
+                            ch.time_period.end = self.end
+                            ch.sample_rate = self.sample_rate
 
                         else:
                             self.logger.warning("Not sure what line this is")

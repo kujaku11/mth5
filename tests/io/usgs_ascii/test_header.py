@@ -43,7 +43,7 @@ class TestAsciiMetadata(unittest.TestCase):
 
     def test_ex(self):
         self.assertDictEqual(
-            self.header.ex.to_dict(single=True),
+            self.header.ex_metadata.to_dict(single=True),
             OrderedDict(
                 [
                     ("channel_number", 32),
@@ -66,9 +66,9 @@ class TestAsciiMetadata(unittest.TestCase):
                     ("positive.longitude", 0.0),
                     ("positive.manufacturer", None),
                     ("positive.type", None),
-                    ("sample_rate", 0.0),
-                    ("time_period.end", "1980-01-01T00:00:00+00:00"),
-                    ("time_period.start", "1980-01-01T00:00:00+00:00"),
+                    ("sample_rate", 4.0),
+                    ("time_period.end", "2012-08-24T16:25:26+00:00"),
+                    ("time_period.start", "2012-08-21T22:02:27+00:00"),
                     ("type", "electric"),
                     ("units", None),
                 ]
@@ -77,7 +77,7 @@ class TestAsciiMetadata(unittest.TestCase):
 
     def test_ey(self):
         self.assertDictEqual(
-            self.header.ey.to_dict(single=True),
+            self.header.ey_metadata.to_dict(single=True),
             OrderedDict(
                 [
                     ("channel_number", 34),
@@ -100,9 +100,9 @@ class TestAsciiMetadata(unittest.TestCase):
                     ("positive.longitude", 0.0),
                     ("positive.manufacturer", None),
                     ("positive.type", None),
-                    ("sample_rate", 0.0),
-                    ("time_period.end", "1980-01-01T00:00:00+00:00"),
-                    ("time_period.start", "1980-01-01T00:00:00+00:00"),
+                    ("sample_rate", 4.0),
+                    ("time_period.end", "2012-08-24T16:25:26+00:00"),
+                    ("time_period.start", "2012-08-21T22:02:27+00:00"),
                     ("type", "electric"),
                     ("units", None),
                 ]
@@ -111,7 +111,7 @@ class TestAsciiMetadata(unittest.TestCase):
 
     def test_hx(self):
         self.assertDictEqual(
-            self.header.hx.to_dict(single=True),
+            self.header.hx_metadata.to_dict(single=True),
             OrderedDict(
                 [
                     ("channel_number", 31),
@@ -124,12 +124,12 @@ class TestAsciiMetadata(unittest.TestCase):
                     ("location.longitude", 0.0),
                     ("measurement_azimuth", 9.0),
                     ("measurement_tilt", 0.0),
-                    ("sample_rate", 0.0),
-                    ("sensor.id", None),
+                    ("sample_rate", 4.0),
+                    ("sensor.id", "2311-11"),
                     ("sensor.manufacturer", None),
                     ("sensor.type", None),
-                    ("time_period.end", "1980-01-01T00:00:00+00:00"),
-                    ("time_period.start", "1980-01-01T00:00:00+00:00"),
+                    ("time_period.end", "2012-08-24T16:25:26+00:00"),
+                    ("time_period.start", "2012-08-21T22:02:27+00:00"),
                     ("type", "magnetic"),
                     ("units", None),
                 ]
@@ -138,7 +138,7 @@ class TestAsciiMetadata(unittest.TestCase):
 
     def test_hy(self):
         self.assertDictEqual(
-            self.header.hy.to_dict(single=True),
+            self.header.hy_metadata.to_dict(single=True),
             OrderedDict(
                 [
                     ("channel_number", 33),
@@ -151,12 +151,12 @@ class TestAsciiMetadata(unittest.TestCase):
                     ("location.longitude", 0.0),
                     ("measurement_azimuth", 99.0),
                     ("measurement_tilt", 0.0),
-                    ("sample_rate", 0.0),
-                    ("sensor.id", None),
+                    ("sample_rate", 4.0),
+                    ("sensor.id", "2311-11"),
                     ("sensor.manufacturer", None),
                     ("sensor.type", None),
-                    ("time_period.end", "1980-01-01T00:00:00+00:00"),
-                    ("time_period.start", "1980-01-01T00:00:00+00:00"),
+                    ("time_period.end", "2012-08-24T16:25:26+00:00"),
+                    ("time_period.start", "2012-08-21T22:02:27+00:00"),
                     ("type", "magnetic"),
                     ("units", None),
                 ]
@@ -165,7 +165,7 @@ class TestAsciiMetadata(unittest.TestCase):
 
     def test_hz(self):
         self.assertDictEqual(
-            self.header.hz.to_dict(single=True),
+            self.header.hz_metadata.to_dict(single=True),
             OrderedDict(
                 [
                     ("channel_number", 35),
@@ -178,12 +178,12 @@ class TestAsciiMetadata(unittest.TestCase):
                     ("location.longitude", 0.0),
                     ("measurement_azimuth", 0.0),
                     ("measurement_tilt", 0.0),
-                    ("sample_rate", 0.0),
-                    ("sensor.id", None),
+                    ("sample_rate", 4.0),
+                    ("sensor.id", "2311-11"),
                     ("sensor.manufacturer", None),
                     ("sensor.type", None),
-                    ("time_period.end", "1980-01-01T00:00:00+00:00"),
-                    ("time_period.start", "1980-01-01T00:00:00+00:00"),
+                    ("time_period.end", "2012-08-24T16:25:26+00:00"),
+                    ("time_period.start", "2012-08-21T22:02:27+00:00"),
                     ("type", "magnetic"),
                     ("units", None),
                 ]
@@ -225,8 +225,8 @@ class TestAsciiMetadata(unittest.TestCase):
                     ("data_type", "BBMT"),
                     ("id", None),
                     ("sample_rate", 4.0),
-                    ("time_period.end", "1980-01-01T00:00:00+00:00"),
-                    ("time_period.start", "1980-01-01T00:00:00+00:00"),
+                    ("time_period.end", "2012-08-24T16:25:26+00:00"),
+                    ("time_period.start", "2012-08-21T22:02:27+00:00"),
                 ]
             ),
         )
