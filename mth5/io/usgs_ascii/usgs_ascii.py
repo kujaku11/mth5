@@ -12,332 +12,23 @@ Created on Thu Aug 27 16:54:09 2020
 # Imports
 # =============================================================================
 
-import os
+from pathlib import Path
 import time
 import datetime
 
-import logging
-
 import gzip
-import urllib as url
-import xml.etree.ElementTree as ET
 
 import numpy as np
 import pandas as pd
 
 from mth5 import timeseries
-from mt_metadata.utils.mttime import MTime
+from mth5.io.usgs_ascii import AsciiMetadata
 
 # =============================================================================
 #  Metadata for usgs ascii file
 # =============================================================================
 
 
-class AsciiMetadata:
-    """
-    Container for all the important metadata in a USGS ascii file.
-
-    ========================= =================================================
-    Attributes                Description
-    ========================= =================================================
-    SurveyID                  Survey name
-    SiteID                    Site name
-    RunID                     Run number
-    SiteLatitude              Site latitude in decimal degrees WGS84
-    SiteLongitude             Site longitude in decimal degrees WGS84
-    SiteElevation             Site elevation according to national map meters
-    AcqStartTime              Start time of station YYYY-MM-DDThh:mm:ss UTC
-    AcqStopTime               Stop time of station YYYY-MM-DDThh:mm:ss UTC
-    AcqSmpFreq                Sampling rate samples/second
-    AcqNumSmp                 Number of samples
-    Nchan                     Number of channels
-    CoordinateSystem          [ Geographic North | Geomagnetic North ]
-    ChnSettings               Channel settings, see below
-    MissingDataFlag           Missing data value
-    ========================= =================================================
-
-    :ChnSettings:
-
-    ========================= =================================================
-    Keys                      Description
-    ========================= =================================================
-    ChnNum                    SiteID+channel number
-    ChnID                     Component [ ex | ey | hx | hy | hz ]
-    InstrumentID              Data logger + sensor number
-    Azimuth                   Setup angle of componet in degrees relative to
-                              CoordinateSystem
-    Dipole_Length             Dipole length in meters
-    ========================= =================================================
-
-
-    """
-
-    def __init__(self, fn=None, **kwargs):
-
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-
-        self.fn = fn
-        self.SurveyID = None
-        self.RunID = None
-        self.MissingDataFlag = np.NaN
-        self.CoordinateSystem = None
-        self._metadata_len = 30
-        self.declination = 0.0
-        self._latitude = None
-        self._longitude = None
-        self._start = MTime()
-        self._end = MTime()
-        self._station = None
-
-        self._key_list = [
-            "SurveyID",
-            "SiteID",
-            "RunID",
-            "SiteLatitude",
-            "SiteLongitude",
-            "SiteElevation",
-            "AcqStartTime",
-            "AcqStopTime",
-            "AcqSmpFreq",
-            "AcqNumSmp",
-            "Nchan",
-            "CoordinateSystem",
-            "ChnSettings",
-            "MissingDataFlag",
-            "DataSet",
-        ]
-
-        self._chn_settings = [
-            "ChnNum",
-            "ChnID",
-            "InstrumentID",
-            "Azimuth",
-            "Dipole_Length",
-        ]
-        self._chn_fmt = {
-            "ChnNum": "<8",
-            "ChnID": "<6",
-            "InstrumentID": "<12",
-            "Azimuth": ">7.1f",
-            "Dipole_Length": ">14.1f",
-        }
-
-        self.channel_dict = dict(
-            [
-                (comp, dict([(key, None) for key in self._chn_settings]))
-                for comp in ["ex", "ey", "hx", "hy", "hz"]
-            ]
-        )
-
-        for key in kwargs.keys():
-            setattr(self, key, kwargs[key])
-
-    @property
-    def SiteID(self):
-        return self._station
-
-    @SiteID.setter
-    def SiteID(self, station):
-        self._station = station
-
-    @property
-    def SiteLatitude(self):
-        return self._latitude
-        # return gis_tools.convert_position_float2str(self._latitude)
-
-    @SiteLatitude.setter
-    def SiteLatitude(self, lat):
-        self._latitude = lat
-
-    @property
-    def SiteLongitude(self):
-        return self._longitude
-        # return gis_tools.convert_position_float2str(self._longitude)
-
-    @SiteLongitude.setter
-    def SiteLongitude(self, lon):
-        self._longitude = lon
-
-    @property
-    def SiteElevation(self):
-        """
-        get elevation from national map
-        """
-        # the url for national map elevation query
-        nm_url = r"https://nationalmap.gov/epqs/pqs.php?x={0:.5f}&y={1:.5f}&units=Meters&output=xml"
-
-        # call the url and get the response
-        try:
-            response = url.request.urlopen(
-                nm_url.format(self._longitude, self._latitude)
-            )
-        except url.error.HTTPError:
-            self.logger.error("could not connect to get elevation from national map.")
-            self.logger.debug(nm_url.format(self._longitude, self._latitude))
-            return -666
-
-        # read the xml response and convert to a float
-        info = ET.ElementTree(ET.fromstring(response.read()))
-        info = info.getroot()
-        for elev in info.iter("Elevation"):
-            nm_elev = float(elev.text)
-        return nm_elev
-
-    @property
-    def AcqStartTime(self):
-        return self._start.iso_str
-
-    @AcqStartTime.setter
-    def AcqStartTime(self, time_string):
-        self._start.from_str(time_string)
-
-    @property
-    def AcqStopTime(self):
-        return self._end.iso_str
-
-    @AcqStopTime.setter
-    def AcqStopTime(self, time_string):
-        self._end.from_str(time_string)
-
-    @property
-    def Nchan(self):
-        return self._chn_num
-
-    @Nchan.setter
-    def Nchan(self, n_channel):
-        try:
-            self._chn_num = int(n_channel)
-        except ValueError:
-            self.logger.warning(f"{n_channel} is not a number, setting Nchan to 0")
-
-    @property
-    def AcqSmpFreq(self):
-        return self._sampling_rate
-
-    @AcqSmpFreq.setter
-    def AcqSmpFreq(self, df):
-        self._sampling_rate = float(df)
-
-    @property
-    def AcqNumSmp(self):
-        return self._n_samples
-
-    @AcqNumSmp.setter
-    def AcqNumSmp(self, n_samples):
-        self._n_samples = int(n_samples)
-
-    def get_component_info(self, comp):
-        """
-
-        :param comp: DESCRIPTION
-        :type comp: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        for key, kdict in self.channel_dict.items():
-            if kdict["ChnID"].lower() == comp.lower():
-                return kdict
-
-        return None
-
-    def read_metadata(self, fn=None, meta_lines=None):
-        """
-        Read in a meta from the raw string or file.  Populate all metadata
-        as attributes.
-
-        :param fn: full path to USGS ascii file
-        :type fn: string
-
-        :param meta_lines: lines of metadata to read
-        :type meta_lines: list
-        """
-        chn_find = False
-        comp = 0
-        self.channel_dict = {}
-        if fn is not None:
-            self.fn = fn
-        if self.fn is not None:
-            with open(self.fn, "r") as fid:
-                meta_lines = [fid.readline() for ii in range(self._metadata_len)]
-        for ii, line in enumerate(meta_lines):
-            if line.find(":") > 0:
-                key, value = line.strip().split(":", 1)
-                value = value.strip()
-                if len(value) < 1 and key == "DataSet":
-                    chn_find = False
-                    # return the line that the data starts on that way can
-                    # read in as a numpy object or pandas
-                    return ii + 1
-                elif len(value) < 1:
-                    chn_find = True
-                if "elev" in key.lower():
-                    pass
-                else:
-                    setattr(self, key, value)
-            elif "coordinate" in line:
-                self.CoordinateSystem = " ".join(line.strip().split()[-2:])
-            else:
-                if chn_find is True:
-                    if "chnnum" in line.lower():
-                        ch_key = line.strip().split()
-                    else:
-                        line_list = line.strip().split()
-                        if len(line_list) == 5:
-                            comp += 1
-                            self.channel_dict[comp] = {}
-                            for key, value in zip(ch_key, line_list):
-                                if key.lower() in ["azimuth", "dipole_length"]:
-                                    value = float(value)
-                                self.channel_dict[comp][key] = value
-                        else:
-                            self.logger.warning("Not sure what line this is")
-
-    def write_metadata(self, chn_list=["Ex", "Ey", "Hx", "Hy", "Hz"]):
-        """
-
-        Write out metadata in the format of USGS ascii.
-
-        :return: list of metadate lines.
-
-        .. note:: meant to use '\n'.join(lines) to write out in a file.
-
-        """
-
-        lines = []
-        for key in self._key_list:
-            if key in ["ChnSettings"]:
-                lines.append("{0}:".format(key))
-                lines.append(" ".join(self._chn_settings))
-                for chn_key in chn_list:
-                    chn_line = []
-                    try:
-                        for comp_key in self._chn_settings:
-                            chn_line.append(
-                                "{0:{1}}".format(
-                                    self.channel_dict[chn_key][comp_key],
-                                    self._chn_fmt[comp_key],
-                                )
-                            )
-                        lines.append("".join(chn_line))
-                    except KeyError:
-                        pass
-            elif key in ["DataSet"]:
-                lines.append("{0}:".format(key))
-                return lines
-            else:
-                if key in ["SiteLatitude", "SiteLongitude"]:
-                    lines.append("{0}: {1:.5f}".format(key, getattr(self, key)))
-                else:
-                    lines.append("{0}: {1}".format(key, getattr(self, key)))
-
-        return lines
-
-
-# =============================================================================
-# Class for the asc file
-# =============================================================================
 class USGSasc(AsciiMetadata):
     """
     Read and write USGS ascii formatted time series.
@@ -381,9 +72,9 @@ class USGSasc(AsciiMetadata):
     """
 
     def __init__(self, fn=None, **kwargs):
-        super(USGSasc, self).__init__(fn)
+        super().__init__(fn, **kwargs)
         self.ts = None
-        self.station_dir = os.getcwd()
+        self.station_dir = Path().cwd()
         self.meta_notes = None
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
@@ -590,8 +281,9 @@ class USGSasc(AsciiMetadata):
         self.RunID = 1
         self.SiteLatitude = np.median(meta_arr["lat"])
         self.SiteLongitude = np.median(meta_arr["lon"])
-        self.SiteID = os.path.basename(meta_arr["fn"][0]).split("_")[0]
-        self.station_dir = os.path.dirname(meta_arr["fn"][0])
+        fn = Path((meta_arr["fn"][0]))
+        self.SiteID = fn.stem
+        self.station_dir = fn.parent
 
         # if geographic coordinates add in declination
         if "geographic" in self.CoordinateSystem.lower():
@@ -621,9 +313,9 @@ class USGSasc(AsciiMetadata):
         )
         for ii, comp in enumerate(meta_arr["comp"]):
             if "h" in comp.lower():
-                self.channel_dict[comp.capitalize()]["InstrumentID"] += "-{0}".format(
-                    meta_arr["ch_num"]
-                )
+                self.channel_dict[comp.capitalize()][
+                    "InstrumentID"
+                ] += "-{0}".format(meta_arr["ch_num"])
 
     def read_asc_file(self, fn=None):
         """
@@ -637,7 +329,10 @@ class USGSasc(AsciiMetadata):
         st = datetime.datetime.now()
         data_line = self.read_metadata()
         self.ts = pd.read_csv(
-            self.fn, delim_whitespace=True, skiprows=data_line, dtype=np.float32,
+            self.fn,
+            delim_whitespace=True,
+            skiprows=data_line,
+            dtype=np.float32,
         )
         dt_freq = "{0:.0f}N".format(1.0 / (self.AcqSmpFreq) * 1e9)
         dt_index = pd.date_range(
@@ -650,7 +345,9 @@ class USGSasc(AsciiMetadata):
         read_time = et - st
         self.logger.info("Reading took {0}".format(read_time.total_seconds()))
 
-    def _make_file_name(self, save_path=None, compression=True, compress_type="zip"):
+    def _make_file_name(
+        self, save_path=None, compression=True, compress_type="zip"
+    ):
         """
         get the file name to save to
 
@@ -666,8 +363,8 @@ class USGSasc(AsciiMetadata):
         """
         # make the file name to save to
         if save_path is not None:
-            save_fn = os.path.join(
-                save_path,
+            save_path = Path(save_path)
+            save_fn = save_path.joinpath(
                 "{0}_{1}T{2}_{3:.0f}.asc".format(
                     self.SiteID,
                     self._start_time.strftime("%Y-%m-%d"),
@@ -676,8 +373,7 @@ class USGSasc(AsciiMetadata):
                 ),
             )
         else:
-            save_fn = os.path.join(
-                self.station_dir,
+            save_fn = self.station_dir.joinpath(
                 "{0}_{1}T{2}_{3:.0f}.asc".format(
                     self.SiteID,
                     self._start_time.strftime("%Y-%m-%d"),
@@ -729,7 +425,9 @@ class USGSasc(AsciiMetadata):
         """
         # get the filename to save to
         save_fn = self._make_file_name(
-            save_path=save_dir, compression=compress, compress_type=compress_type,
+            save_path=save_dir,
+            compression=compress,
+            compress_type=compress_type,
         )
         # get the number of characters in the desired string
         s_num = int(str_fmt[1 : str_fmt.find(".")])
@@ -738,8 +436,8 @@ class USGSasc(AsciiMetadata):
         if convert_electrics:
             self.convert_electrics()
 
-        print("==> {0}".format(save_fn))
-        print("START --> {0}".format(time.ctime()))
+        self.logger.debug("==> {0}".format(save_fn))
+        self.logger.debug("START --> {0}".format(time.ctime()))
         st = datetime.datetime.now()
 
         # write meta data first
@@ -768,11 +466,13 @@ class USGSasc(AsciiMetadata):
                         ["".join(out[ii, :]) for ii in range(out.shape[0])]
                     )
                     fid.write(lines + "\n")
-                    print("END --> {0}".format(time.ctime()))
+                    self.logger.debug("END --> {0}".format(time.ctime()))
                     et = datetime.datetime.now()
                     write_time = et - st
-                    print(
-                        "Writing took: {0} seconds".format(write_time.total_seconds())
+                    self.logger.debug(
+                        "Writing took: {0} seconds".format(
+                            write_time.total_seconds()
+                        )
                     )
                     return
 
@@ -789,10 +489,10 @@ class USGSasc(AsciiMetadata):
 
         else:
             if compress == True and compress_type == "zip":
-                print("ZIPPING")
+                self.logger.debug("ZIPPING")
                 save_fn = save_fn[0:-4]
                 zip_file = True
-                print(zip_file)
+                self.logger.debug(zip_file)
             with open(save_fn, "w") as fid:
                 h_line = [
                     "".join(
@@ -813,11 +513,13 @@ class USGSasc(AsciiMetadata):
                         ["".join(out[ii, :]) for ii in range(out.shape[0])]
                     )
                     fid.write(lines + "\n")
-                    print("END --> {0}".format(time.ctime()))
+                    self.logger.debug("END --> {0}".format(time.ctime()))
                     et = datetime.datetime.now()
                     write_time = et - st
-                    print(
-                        "Writing took: {0} seconds".format(write_time.total_seconds())
+                    self.logger.debug(
+                        "Writing took: {0} seconds".format(
+                            write_time.total_seconds()
+                        )
                     )
                     return
 
@@ -835,10 +537,12 @@ class USGSasc(AsciiMetadata):
         # for some fucking reason, all interal variables don't exist anymore
         # and if you try to do the zipping nothing happens, so have to do
         # it externally.  WTF
-        print("END -->   {0}".format(time.ctime()))
+        self.logger.debug("END -->   {0}".format(time.ctime()))
         et = datetime.datetime.now()
         write_time = et - st
-        print("Writing took: {0} seconds".format(write_time.total_seconds()))
+        self.logger.debug(
+            "Writing took: {0} seconds".format(write_time.total_seconds())
+        )
 
 
 def read_ascii(fn):

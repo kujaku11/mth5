@@ -1,4 +1,5 @@
 # package file
-from .usgs_ascii import read_ascii
+from .header import AsciiMetadata
+from .usgs_ascii import USGSasc, read_ascii
 
-__all__ = ["read_ascii"]
+__all__ = ["AsciiMetadata", "USGSasc", "read_ascii"]
