@@ -34,6 +34,7 @@ from mt_metadata.timeseries.filters import (
     FrequencyResponseTableFilter,
     CoefficientFilter,
 )
+from mt_metadata.timeseries import Station, Run, Electric, Magnetic
 
 from mth5.io.zen import Z3DHeader, Z3DSchedule, Z3DMetadata
 from mth5.timeseries import ChannelTS
@@ -375,98 +376,92 @@ class Z3D:
 
         # fill the time series object
         if "e" in self.component:
-            ts_type = "electric"
-            meta_dict = {"electric": {"dipole_length": self.dipole_length}}
-            meta_dict[ts_type]["ac.start"] = (
+            ch = Electric()
+            ch.dipole_length = self.dipole_length
+            ch.ac.start = (
                 self.time_series[0 : int(self.sample_rate)].std()
                 * self.header.ch_factor
             )
-            meta_dict[ts_type]["ac.end"] = (
+            ch.ac.end = (
                 self.time_series[-int(self.sample_rate) :].std()
                 * self.header.ch_factor
             )
-            meta_dict[ts_type]["dc.start"] = (
+            ch.dc.start = (
                 self.time_series[0 : int(self.sample_rate)].mean()
                 * self.header.ch_factor
             )
-            meta_dict[ts_type]["dc.end"] = (
+            ch.dc.end = (
                 self.time_series[-int(self.sample_rate) :].mean()
                 * self.header.ch_factor
             )
         elif "h" in self.component:
-            ts_type = "magnetic"
-            meta_dict = {
-                "magnetic": {
-                    "sensor.id": self.coil_number,
-                    "sensor.manufacturer": "Geotell",
-                    "sensor.model": "ANT-4",
-                    "sensor.type": "induction coil",
-                }
-            }
-            meta_dict[ts_type]["h_field_max.start"] = (
+            ch = Magnetic()
+            ch.sensor.id = (self.coil_number,)
+            ch.sensor.manufacturer = ("Geotell",)
+            ch.sensor.model = ("ANT-4",)
+            ch.sensor.type = ("induction coil",)
+            ch.h_field_max.start = (
                 self.time_series[0 : int(self.sample_rate)].max()
                 * self.header.ch_factor
             )
-            meta_dict[ts_type]["h_field_max.end"] = (
+            ch.h_field_max.end = (
                 self.time_series[-int(self.sample_rate) :].max()
                 * self.header.ch_factor
             )
-            meta_dict[ts_type]["h_field_min.start"] = (
+            ch.h_field_min.start = (
                 self.time_series[0 : int(self.sample_rate)].min()
                 * self.header.ch_factor
             )
-            meta_dict[ts_type]["h_field_min.end"] = (
+            ch.h_field_min.end = (
                 self.time_series[-int(self.sample_rate) :].min()
                 * self.header.ch_factor
             )
 
-        meta_dict[ts_type]["time_period.start"] = self.start.isoformat()
-        meta_dict[ts_type]["time_period.end"] = self.end.isoformat()
-        meta_dict[ts_type]["component"] = self.component
-        meta_dict[ts_type]["sample_rate"] = self.sample_rate
-        meta_dict[ts_type]["measurement_azimuth"] = self.azimuth
-        meta_dict[ts_type]["units"] = "digital counts"
-        meta_dict[ts_type]["channel_number"] = self.channel_number
-        meta_dict[ts_type]["filter.name"] = self.channel_response.names
-        meta_dict[ts_type]["filter.applied"] = [False] * len(
-            self.channel_response.names
-        )
+        ch.time_period.start = self.start.isoformat()
+        ch.time_period.end = self.end.isoformat()
+        ch.component = self.component
+        ch.sample_rate = self.sample_rate
+        ch.measurement_azimuth = self.azimuth
+        ch.units = "digital counts"
+        ch.channel_number = self.channel_number
+        ch.filter.name = self.channel_response.names
+        ch.filter.applied = [False] * len(self.channel_response.names)
 
-        return meta_dict
+        return ch
 
     @property
     def station_metadata(self):
         """station metadta"""
 
-        meta_dict = {}
-        meta_dict["id"] = self.station
-        meta_dict["fdsn.id"] = self.station
-        meta_dict["location.latitude"] = self.latitude
-        meta_dict["location.longitude"] = self.longitude
-        meta_dict["location.elevation"] = self.elevation
-        meta_dict["time_period.start"] = self.start.isoformat()
-        meta_dict["time_period.end"] = self.end.isoformat()
-        meta_dict["acquired_by.author"] = self.metadata.gdp_operator
+        sm = Station()
+        sm.id = self.station
+        sm.fdsn.id = self.station
+        sm.location.latitude = self.latitude
+        sm.location.longitude = self.longitude
+        sm.location.elevation = self.elevation
+        sm.time_period.start = self.start.isoformat()
+        sm.time_period.end = self.end.isoformat()
+        sm.acquired_by.author = self.metadata.gdp_operator
 
-        return {"Station": meta_dict}
+        return sm
 
     @property
     def run_metadata(self):
         """Run metadata"""
-        meta_dict = {}
-        meta_dict["data_logger.firmware.version"] = self.header.version
-        meta_dict["data_logger.id"] = self.header.data_logger
-        meta_dict["data_logger.manufacturer"] = "Zonge International"
-        meta_dict["data_logger.model"] = "ZEN"
-        meta_dict["time_period.start"] = self.start.isoformat()
-        meta_dict["time_period.end"] = self.end.isoformat()
-        meta_dict["sample_rate"] = self.sample_rate
-        meta_dict["data_type"] = "MTBB"
-        meta_dict["time_period.start"] = self.start.isoformat()
-        meta_dict["time_period.end"] = self.end.isoformat()
-        meta_dict["acquired_by.author"] = self.metadata.gdp_operator
+        rm = Run()
+        rm.data_logger.firmware.version = self.header.version
+        rm.data_logger.id = self.header.data_logger
+        rm.data_logger.manufacturer = "Zonge International"
+        rm.data_logger.model = "ZEN"
+        rm.time_period.start = self.start.isoformat()
+        rm.time_period.end = self.end.isoformat()
+        rm.sample_rate = self.sample_rate
+        rm.data_type = "MTBB"
+        rm.time_period.start = self.start.isoformat()
+        rm.time_period.end = self.end.isoformat()
+        rm.acquired_by.author = self.metadata.gdp_operator
 
-        return {"Run": meta_dict}
+        return rm
 
     @property
     def counts2mv_filter(self):
@@ -525,6 +520,21 @@ class Z3D:
             fap.phases = fap_table.phase / 1e3
             fap.name = f"{self.header.data_logger.lower()}_{self.sample_rate:.0f}_response"
             fap.comments = "data logger response read from z3d file"
+        elif self.metadata.cal_board is not None:
+
+            try:
+                fap_dict = self.metadata.cal_board[int(self.sample_rate)]
+            except KeyError:
+                return fap
+
+            fap = FrequencyResponseTableFilter()
+            fap.units_in = "millivolts"
+            fap.units_out = "millivolts"
+            fap.frequencies = [fap_dict["frequency"]]
+            fap.amplitudes = [fap_dict["amplitude"]]
+            fap.phases = [fap_dict["phase"] / 1e3]
+            fap.name = f"{self.header.data_logger.lower()}_{self.sample_rate:.0f}_response"
+            fap.comments = "data logger response read from z3d file"
 
         return fap
 
@@ -535,7 +545,7 @@ class Z3D:
             filter_list.append(self.zen_response)
         if self.coil_response:
             filter_list.append(self.coil_response)
-        if self.dipole_filter:
+        elif self.dipole_filter:
             filter_list.append(self.dipole_filter)
 
         return ChannelResponseFilter(filters_list=filter_list)
@@ -552,18 +562,6 @@ class Z3D:
             dipole.comments = "convert to electric field"
 
         return dipole
-
-    @property
-    def filter_metadata(self):
-        """Filter metadata"""
-
-        meta_dict = {}
-        meta_dict["filters"] = {
-            "counts_to_volts": self.header.ch_factor,
-            "gain": self.header.channelgain,
-        }
-
-        return {"Filter": meta_dict}
 
     def _get_gps_stamp_type(self, old_version=False):
         """
@@ -850,7 +848,7 @@ class Z3D:
         try:
             data = data[gps_stamp_find[self.num_sec_to_skip] :]
         except IndexError:
-            msg = f"Data is bad, cannot open file {self.fn}"
+            msg = f"Data is too short, cannot open file {self.fn}"
             self.logger.error(msg)
             raise ZenGPSError(msg)
 
