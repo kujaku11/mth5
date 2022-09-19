@@ -29,7 +29,7 @@ from mth5.io.usgs_ascii import AsciiMetadata
 # =============================================================================
 
 
-class USGSasc(AsciiMetadata):
+class USGSascii(AsciiMetadata):
     """
     Read and write USGS ascii formatted time series.
 
@@ -398,7 +398,7 @@ def read_ascii(fn):
 
     """
 
-    asc_obj = USGSasc(fn)
+    asc_obj = USGSascii(fn)
     asc_obj.read_ascii_file()
 
     return asc_obj.to_run_ts()

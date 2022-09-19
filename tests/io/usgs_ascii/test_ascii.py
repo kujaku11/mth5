@@ -11,7 +11,7 @@ Created on Fri Sep 16 11:38:10 2022
 import unittest
 from pathlib import Path
 
-from mth5.io.usgs_ascii import USGSasc
+from mth5.io.usgs_ascii import USGSascii
 from mth5.timeseries import ChannelTS, RunTS
 
 # =============================================================================
@@ -21,7 +21,7 @@ from mth5.timeseries import ChannelTS, RunTS
 class TestUSGSAscii(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.asc = USGSasc(
+        self.asc = USGSascii(
             fn=r"C:\Users\jpeacock\OneDrive - DOI\mt\usgs_ascii\rgr003a_converted.asc"
         )
         self.asc.read()
