@@ -88,6 +88,8 @@ class USGSasc(AsciiMetadata):
                 "magnetic",
                 data=self.ts.hx.to_numpy(),
                 channel_metadata=self.hx_metadata,
+                run_metadata=self.run_metadata,
+                station_metadata=self.station_metadata,
             )
         return None
 
@@ -100,6 +102,8 @@ class USGSasc(AsciiMetadata):
                 "magnetic",
                 data=self.ts.hy.to_numpy(),
                 channel_metadata=self.hy_metadata,
+                run_metadata=self.run_metadata,
+                station_metadata=self.station_metadata,
             )
         return None
 
@@ -112,6 +116,8 @@ class USGSasc(AsciiMetadata):
                 "magnetic",
                 data=self.ts.hz.to_numpy(),
                 channel_metadata=self.hz_metadata,
+                run_metadata=self.run_metadata,
+                station_metadata=self.station_metadata,
             )
         return None
 
@@ -124,6 +130,8 @@ class USGSasc(AsciiMetadata):
                 "electric",
                 data=self.ts.ex.to_numpy(),
                 channel_metadata=self.ex_metadata,
+                run_metadata=self.run_metadata,
+                station_metadata=self.station_metadata,
             )
         return None
 
@@ -136,6 +144,8 @@ class USGSasc(AsciiMetadata):
                 "electric",
                 data=self.ts.ey.to_numpy(),
                 channel_metadata=self.ey_metadata,
+                run_metadata=self.run_metadata,
+                station_metadata=self.station_metadata,
             )
         return None
 
@@ -150,7 +160,7 @@ class USGSasc(AsciiMetadata):
 
         return None
 
-    def read_ascii_file(self, fn=None):
+    def read(self, fn=None):
         """
         Read in a USGS ascii file and fill attributes accordingly.
 
@@ -222,7 +232,7 @@ class USGSasc(AsciiMetadata):
 
         return save_fn
 
-    def write_ascii_file(
+    def write(
         self,
         save_fn=None,
         chunk_size=1024,

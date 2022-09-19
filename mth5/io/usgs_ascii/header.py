@@ -82,6 +82,8 @@ class AsciiMetadata:
         self.hy_metadata = Magnetic(component="hy")
         self.hz_metadata = Magnetic(component="hz")
 
+        self.channel_order = ["hx", "ex", "hy", "ey", "hz"]
+
         self._key_dict = OrderedDict(
             **{
                 "SurveyID": "survey_id",
@@ -102,13 +104,15 @@ class AsciiMetadata:
             }
         )
 
-        self._chn_settings = [
-            "ChnNum",
-            "ChnID",
-            "InstrumentID",
-            "Azimuth",
-            "Dipole_Length",
-        ]
+        self._chn_dict = OrderedDict(
+            **{
+                "ChnNum": "channel_number",
+                "ChnID": "component",
+                "InstrumentID": "sensor.id",
+                "Azimuth": "measurement_azimuth",
+                "Dipole_Length": "dipole_length",
+            }
+        )
         self._chn_fmt = {
             "ChnNum": "<8",
             "ChnID": "<6",
@@ -121,7 +125,7 @@ class AsciiMetadata:
             setattr(self, key, kwargs[key])
 
     def __str__(self):
-        return self.write_metadata()
+        return "\n".join(self.write_metadata())
 
     def __repr__(self):
         return self.__str__()
@@ -195,7 +199,7 @@ class AsciiMetadata:
                 "could not connect to get elevation from national map."
             )
             self.logger.debug(nm_url.format(self.longitude, self.latitude))
-            return -666
+            return self.station_metadata.location.elevation
 
         # read the xml response and convert to a float
         info = ET.ElementTree(ET.fromstring(response.read()))
@@ -203,6 +207,10 @@ class AsciiMetadata:
         for elev in info.iter("Elevation"):
             nm_elev = float(elev.text)
         return nm_elev
+
+    @elevation.setter
+    def elevation(self, value):
+        self.station_metadata.location.elevation = value
 
     @property
     def start(self):
@@ -336,11 +344,9 @@ class AsciiMetadata:
                     chn_find = True
                     continue
 
-                if "elev" in key.lower():
-                    pass
-                else:
-                    attr = self._key_dict[key]
-                    setattr(self, attr, value)
+                attr = self._key_dict[key]
+                setattr(self, attr, value)
+
             elif "coordinate" in line:
                 self.coordinate_system = " ".join(line.strip().split()[-2:])
             else:
@@ -404,32 +410,31 @@ class AsciiMetadata:
         """
 
         lines = []
-        for key in self._key_list:
-            if key in ["chn_settings"]:
+        for key, attr in self._key_dict.items():
+            if key in ["ChnSettings"]:
                 lines.append("{0}:".format(key))
-                lines.append(" ".join(self._chn_settings))
-                for chn_key in chn_list:
+                lines.append(" ".join(self._chn_dict.keys()))
+                for chn_key in self.channel_order:
                     chn_line = []
-                    try:
-                        for comp_key in self._chn_settings:
-                            chn_line.append(
-                                "{0:{1}}".format(
-                                    self.channel_dict[chn_key][comp_key],
-                                    self._chn_fmt[comp_key],
-                                )
-                            )
-                        lines.append("".join(chn_line))
-                    except KeyError:
-                        pass
-            elif key in ["data_set"]:
+                    ch = getattr(self, f"{chn_key}_metadata")
+                    for comp_key, comp_attr in self._chn_dict.items():
+                        try:
+                            value = ch.get_attr_from_name(comp_attr)
+                            if value is None:
+                                value = self.run_metadata.data_logger.id
+                        except AttributeError:
+                            value = 0
+                        chn_line.append(f"{value:{self._chn_fmt[comp_key]}}")
+                    lines.append("".join(chn_line))
+
+            elif key in ["DataSet"]:
                 lines.append("{0}:".format(key))
                 return lines
             else:
-                if key in ["site_latitude", "site_longitude"]:
-                    lines.append(
-                        "{0}: {1:.5f}".format(key, getattr(self, key))
-                    )
-                else:
-                    lines.append("{0}: {1}".format(key, getattr(self, key)))
+                try:
+                    value = getattr(self, attr)
+                    lines.append(f"{key}: {value}")
+                except AttributeError:
+                    lines.append(f"{key}")
 
         return lines

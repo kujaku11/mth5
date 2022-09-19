@@ -33,7 +33,7 @@ class TestAsciiMetadata(unittest.TestCase):
         self.assertEqual(self.header.coordinate_system, "geographic north")
 
     def test_elevation(self):
-        self.assertEqual(self.header.elevation, 1803.0)
+        self.assertEqual(self.header.elevation, 1803.07)
 
     def test_missing_data_flag(self):
         self.assertEqual(self.header.missing_data_flag, "1.000e+09")
@@ -252,7 +252,7 @@ class TestAsciiMetadata(unittest.TestCase):
                     ("id", "003"),
                     ("location.declination.model", "WMM"),
                     ("location.declination.value", 0.0),
-                    ("location.elevation", 0.0),
+                    ("location.elevation", 1803.07),
                     ("location.latitude", 39.282),
                     ("location.longitude", -108.1582),
                     ("orientation.method", None),
@@ -299,6 +299,35 @@ class TestAsciiMetadata(unittest.TestCase):
                 ]
             ),
         )
+
+    def test_write_header(self):
+        original = [
+            "SurveyID: RGR",
+            "SiteID: 003",
+            "RunID: rgr003a",
+            "SiteLatitude: 39.282",
+            "SiteLongitude: -108.1582",
+            "SiteElevation: 1803.07",
+            "AcqStartTime: 2012-08-21T22:02:27+00:00",
+            "AcqStopTime: 2012-08-24T16:25:26+00:00",
+            "AcqSmpFreq: 4.0",
+            "AcqNumSmp: 955916",
+            "Nchan: 5",
+            "Channel coordinates relative to geographic north",
+            "ChnSettings:",
+            "ChnNum ChnID InstrumentID Azimuth Dipole_Length",
+            "31      hx    2311-11         9.0           0.0",
+            "32      ex    2311-11         9.0         100.0",
+            "33      hy    2311-11        99.0           0.0",
+            "34      ey    2311-11        99.0         102.0",
+            "35      hz    2311-11         0.0           0.0",
+            "MissingDataFlag: 1.000e+09",
+            "DataSet:",
+        ]
+
+        lines = self.header.write_metadata()
+
+        self.assertListEqual(original, lines)
 
 
 # =============================================================================
