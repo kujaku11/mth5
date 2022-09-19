@@ -142,6 +142,12 @@ class AsciiMetadata:
             self._fn = None
 
     @property
+    def file_size(self):
+        if self.fn is not None:
+            if self.fn.exists():
+                return self.fn.stat().st_size
+
+    @property
     def survey_id(self):
         return self._survey_metadata.id
 

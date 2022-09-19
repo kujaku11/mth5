@@ -16,12 +16,12 @@ Created on Wed Aug 31 10:32:44 2022
 import pandas as pd
 
 from mth5.io.collection import Collection
-from mth5.io.usgs_ascii import USGSasc
+from mth5.io.usgs_ascii import USGSascii
 
 # =============================================================================
 
 
-class LEMICollection(Collection):
+class USGSasciiCollection(Collection):
     """
     Collection of LEMI 424 files into runs.
 
@@ -45,13 +45,10 @@ class LEMICollection(Collection):
 
     def __init__(self, file_path=None, **kwargs):
         super().__init__(file_path=file_path, **kwargs)
-        self.file_ext = "txt"
-
-        self.station_id = "mt001"
-        self.survey_id = "mt"
+        self.file_ext = "asc"
 
     def to_dataframe(
-        self, sample_rates=[1], run_name_zeros=4, calibration_path=None
+        self, sample_rates=[4], run_name_zeros=4, calibration_path=None
     ):
         """
         Create a data frame of each TXT file in a given directory.
@@ -72,34 +69,33 @@ class LEMICollection(Collection):
 
         :Example:
 
-            >>> from mth5.io.lemi import LEMICollection
-            >>> lc = LEMICollection("/path/to/single/lemi/station")
-            >>> lemi_df = lc.to_dataframe()
+            >>> from mth5.io.usgs_ascii import USGSasciiCollection
+            >>> lc = USGSasciiCollection("/path/to/ascii/files")
+            >>> ascii_df = lc.to_dataframe()
 
         """
 
         entries = []
         for fn in self.get_files(self.file_ext):
-            lemi_obj = LEMI424(fn)
-            n_samples = int(lemi_obj.n_samples)
-            lemi_obj.read_metadata()
+            asc_obj = USGSascii(fn)
+            asc_obj.read_metadata()
 
             entry = {}
-            entry["survey"] = self.survey_id
-            entry["station"] = self.station_id
-            entry["run"] = None
-            entry["start"] = lemi_obj.start.isoformat()
-            entry["end"] = lemi_obj.end.isoformat()
+            entry["survey"] = asc_obj.survey_metadata.id
+            entry["station"] = asc_obj.station_metadata.id
+            entry["run"] = asc_obj.run_metadata.id
+            entry["start"] = asc_obj.start
+            entry["end"] = asc_obj.end
             entry["channel_id"] = 1
             entry["component"] = ",".join(
-                lemi_obj.run_metadata.channels_recorded_all
+                asc_obj.run_metadata.channels_recorded_all
             )
             entry["fn"] = fn
-            entry["sample_rate"] = lemi_obj.sample_rate
-            entry["file_size"] = lemi_obj.file_size
-            entry["n_samples"] = n_samples
+            entry["sample_rate"] = asc_obj.sample_rate
+            entry["file_size"] = asc_obj.file_size
+            entry["n_samples"] = int(asc_obj.n_samples)
             entry["sequence_number"] = 0
-            entry["instrument_id"] = "LEMI424"
+            entry["instrument_id"] = asc_obj.run_metadata.data_logger.id
             entry["calibration_fn"] = None
 
             entries.append(entry)
@@ -126,19 +122,17 @@ class LEMICollection(Collection):
         :rtype: :class:`pandas.DataFrame`
 
         """
-        count = 1
-        for row in df.itertuples():
-            if row.Index == 0:
-                df.loc[row.Index, "run"] = f"sr1_{count:0{zeros}}"
-                previous_end = row.end
-            else:
-                if (
-                    row.start - previous_end
-                ).total_seconds() / row.sample_rate == row.sample_rate:
-                    df.loc[row.Index, "run"] = f"sr1_{count:0{zeros}}"
-                else:
-                    count += 1
-                    df.loc[row.Index, "run"] = f"sr1_{count:0{zeros}}"
-                previous_end = row.end
+
+        for station in df.station.unique():
+            count = 1
+            for row in (
+                df[df.station == station].sort_values("start").itertuples()
+            ):
+                if row.run is None:
+                    df.loc[
+                        row.Index, "run"
+                    ] = f"sr{row.sample_rate}_{count:0{zeros}}"
+                df.loc[row.Index, "sequence_number"] = count
+                count += 1
 
         return df
