@@ -106,7 +106,9 @@ class Z3DCollection(Collection):
         for z3d_fn in self.get_files([self.file_ext]):
             z3d_obj = Z3D(z3d_fn)
             z3d_obj.read_all_info()
-            station_metadata.append(z3d_obj.station_metadata["Station"])
+            station_metadata.append(
+                z3d_obj.station_metadata.to_dict(single=True)
+            )
             if not int(z3d_obj.sample_rate) in sample_rates:
                 self.logger.warning(
                     f"{z3d_obj.sample_rate} not in {sample_rates}"
