@@ -53,7 +53,7 @@ class TestReader(unittest.TestCase):
     def test_input_fail(self):
         self.assertRaises(IOError, reader.read_file, "y.txt")
 
-    def test_input_fail(self):
+    def test_input_fail_list(self):
         self.assertRaises(IOError, reader.read_file, ["y.txt"])
 
 
