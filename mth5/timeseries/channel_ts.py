@@ -695,7 +695,8 @@ class ChannelTS:
         :rtype: TYPE
 
         """
-
+        if value is None:
+            return
         if not isinstance(value, ChannelResponseFilter):
             msg = (
                 "channel response must be a "

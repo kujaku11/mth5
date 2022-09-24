@@ -148,8 +148,9 @@ class RunTS:
                     )
                     self.run_metadata.update(item.run_metadata, match=["id"])
 
-                for ff in item.channel_response_filter.filters_list:
-                    self._filters[ff.name] = ff
+                if item.channel_response_filter.filters_list != []:
+                    for ff in item.channel_response_filter.filters_list:
+                        self._filters[ff.name] = ff
 
             else:
                 valid_list.append(item)
@@ -194,14 +195,19 @@ class RunTS:
         # change to look for keys directly and use type to set channel type
         if name in self.dataset.keys():
 
+            ch_response_filter = self._get_channel_response_filter(name)
+            # if cannot get filters, but the filters name indicates that
+            # filters should be there don't input the channel response filter
+            # cause then an empty filters_list will set filter.name to []
+            if ch_response_filter.filters_list == []:
+                ch_response_filter = None
+
             return ChannelTS(
                 self.dataset[name].attrs["type"],
                 self.dataset[name],
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
-                channel_response_filter=self._get_channel_response_filter(
-                    name
-                ),
+                channel_response_filter=ch_response_filter,
             )
         else:
             # this is a hack for now until figure out who is calling shape, size
