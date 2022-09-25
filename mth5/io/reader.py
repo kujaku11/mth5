@@ -11,10 +11,10 @@ If you are writing your own reader you need the following structure:
     * Class object that will read the given file
     * a reader function that is read_{file_type}, for instance read_nims
     * the return value is a :class:`mth5.timeseries.MTTS` or 
-    :class:`mth5.timeseries.RunTS` object and any extra metadata in the form
-    of a dictionary with keys as {level.attribute}.
+     :class:`mth5.timeseries.RunTS` object and any extra metadata in the form
+     of a dictionary with keys as {level.attribute}.
     
-    :rubric:
+    .. code-block:: python
         
         class NewFile
             def __init__(self, fn):
@@ -35,7 +35,7 @@ If you are writing your own reader you need the following structure:
         
 Then add your reader to the reader dictionary so that those files can be read.
         
-.. seealso:: Existing readers for some guidance.
+.. seealso:: Existing readers for some guidance found in `mth5.io`
 
 Created on Wed Aug 26 10:32:45 2020
 
@@ -104,12 +104,15 @@ def get_reader(extension):
 
 def read_file(fn, file_type=None, **kwargs):
     """
+    This is the universal reader for MT time series.  This will pick out the
+    proper reader given the file type or extension.  Keyworkd arguments will
+    depend on the reader and file type.
 
     :param fn: full path to file
     :type fn: string or :class:`pathlib.Path`
     :param string file_type: a specific file time if the extension is ambiguous.
-    :return: MT time series object
-    :rtype: :class:`mth5.timeseries.MTTS`
+    :return: channel or run time series object
+    :rtype: :class:`mth5.timeseries.MTTS` or :class:`mth5.timeseries.RunTS`
 
     """
 

@@ -23,7 +23,9 @@ from mth5.utils.mth5_logger import setup_logger
 
 class Collection:
     """
-    A general collection class to keep track of files
+    A general collection class to keep track of files with methods to create
+    runs and run ids.
+
     """
 
     def __init__(self, file_path=None, **kwargs):
@@ -65,18 +67,19 @@ class Collection:
     @property
     def file_path(self):
         """
-        Path object to z3d directory
+        Path object to file directory
         """
         return self._file_path
 
     @file_path.setter
     def file_path(self, file_path):
         """
-        :param file_path: path to z3d files
+        :param file_path: path to files
         :type file_path: string or Path object
 
         sets file_path as a Path object
         """
+
         if file_path is None:
             self._file_path = None
         if not isinstance(file_path, Path):
@@ -89,14 +92,16 @@ class Collection:
 
     def get_files(self, extension):
         """
-        Get files with given extension
+        Get files with given extension. Uses Pathlib.Path.rglob, so it finds
+        all files within the `file_path` by searching all sub-directories.
 
-        :param extension: DESCRIPTION
-        :type extension: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :param extension: file extension(s)
+        :type extension: string or list
+        :return: list of files in the `file_path` with the given extensions
+        :rtype: list of Path objects
 
         """
+
         if isinstance(extension, (list, tuple)):
             fn_list = []
             for ext in extension:
@@ -109,9 +114,24 @@ class Collection:
 
     def to_dataframe(self):
         """
-        Get a data frame of the file summary
+        Get a data frame of the file summary with column names:
 
-        :return: DESCRIPTION
+            - **survey**: survey id
+            - **station**: station id
+            - **run**: run id
+            - **start**: start time UTC
+            - **end**: end time UTC
+            - **channel_id**: channel id or list of channel id's in file
+            - **component**: channel component or list of components in file
+            - **fn**: path to file
+            - **sample_rate**: sample rate in samples per second
+            - **file_size**: file size in bytes
+            - **n_samples**: number of samples in file
+            - **sequence_number**: sequence number of the file
+            - **instrument_id**: instrument id
+            - **calibration_fn**: calibration file
+
+        :return: summary table of file names,
         :rtype: TYPE
 
         """
@@ -128,11 +148,17 @@ class Collection:
 
     def _set_df_dtypes(self, df):
         """
+        Set some of the columns in the dataframe to desired types
 
-        :param df: DESCRIPTION
-        :type df: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+            - **start**: pandas.datetime
+            - **end**: pandas.datetime
+            - **instrument_id**: string
+            - **calibration_fn**: string
+
+        :param df: summary table
+        :type df: :class:`pandas.DataFrame`
+        :return: summary table with proper types
+        :rtype: :class:`pandas.DataFrame`
 
         """
 
@@ -145,12 +171,15 @@ class Collection:
 
     def _sort_df(self, df, zeros):
         """
-        sort to a logical order
+        sort to a given dataframe by start date and then by run name. The
+        index is reset.
 
-        :param df: DESCRIPTION
-        :type df: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :param df: summary table
+        :type df: :class:`pandas.DataFrame`
+        :param zeros: number of zeros in run id
+        :type zeros: integer
+        :return: summary table sorted by start time and run id
+        :rtype: :class:`pandas.DataFrame`
 
         """
 
@@ -184,7 +213,7 @@ class Collection:
         :param run_name_zeros: Number of zeros in the run name, defaults to 4
         :type run_name_zeros: integer, optional
         :return: List of run dataframes with only the first block of files
-        :rtype: OrderedDict
+        :rtype: :class:`collections.OrderedDict`
 
         :Example:
 
