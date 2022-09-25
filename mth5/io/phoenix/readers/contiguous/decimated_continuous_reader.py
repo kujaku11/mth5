@@ -26,9 +26,10 @@ from mth5.timeseries import ChannelTS
 class DecimatedContinuousReader(TSReaderBase):
     """
     Class to create a streamer for continuous decimated time series,
-    i.e. *.td_150, *.td_30
+    i.e. 'td_150', 'td_30'
 
     These files have no sub header information.
+
     """
 
     def __init__(self, path, num_files=1, report_hw_sat=False, **kwargs):
