@@ -24,7 +24,7 @@ class ResponseError(Exception):
 
 class Response(object):
     """
-    class for instrument response functions.
+    Common NIMS response filters for electric and magnetic channels
 
     """
 

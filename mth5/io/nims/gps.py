@@ -130,8 +130,8 @@ class GPS(object):
         the end of the string as '*'
 
         :param string gps_string: raw GPS string to be validated
-
         :returns: validated string or None if there is something wrong
+
         """
 
         if isinstance(gps_string, bytes):
@@ -166,6 +166,7 @@ class GPS(object):
             )
 
     def _split_gps_string(self, gps_string, delimiter=","):
+        """Split a GPS string by ',' and validate it"""
 
         gps_string = self.validate_gps_string(gps_string)
         if gps_string is None:

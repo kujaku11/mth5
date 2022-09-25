@@ -20,12 +20,13 @@ from obspy import read as obspy_read
 # =============================================================================
 def read_miniseed(fn):
     """
-    Read a miniseed file into a :class:`mth5.timeseries.RunTS` object
+    Read a miniseed file into a :class:`mth5.timeseries.RunTS` object. Uses
+    `Obspy` to read the miniseed.
 
     :param fn: full path to the miniseed file
     :type fn: string
-    :return:
-    :rtype: TYPE
+    :return: RunTS object
+    :rtype: :class:`mth5.timeseries.RunTS`
 
     """
 

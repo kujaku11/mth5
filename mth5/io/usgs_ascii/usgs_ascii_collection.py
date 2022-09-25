@@ -23,21 +23,12 @@ from mth5.io.usgs_ascii import USGSascii
 
 class USGSasciiCollection(Collection):
     """
-    Collection of LEMI 424 files into runs.
-
-    .. note:: This class assumes that the given file path contains a single
-     LEMI station.  If you want to do multiple stations merge the returned
-     data frames.
-
-    .. note:: LEMI data comes with little metadata about the station or survey,
-     therefore you should assign `station_id` and `survey_id`.
+    Collection of USGS ASCII files.
 
     .. code-block:: python
 
-        >>> from mth5.io.lemi import LEMICollection
-        >>> lc = LEMICollection(r"/path/to/single/lemi/station")
-        >>> lc.station_id = "mt001"
-        >>> lc.survey_id = "test_survey"
+        >>> from mth5.io.usgs_ascii import USGSasciiCollection
+        >>> lc = USGSasciiCollection(r"/path/to/ascii/files")
         >>> run_dict = lc.get_runs(1)
 
 
@@ -53,10 +44,9 @@ class USGSasciiCollection(Collection):
         """
         Create a data frame of each TXT file in a given directory.
 
-        .. note:: This assumes the given directory contains a single station
+        .. note:: If a run name is already present it will not be overwritten
 
-        :param sample_rates: sample rate to get, will always be 1 for LEMI data
-         defaults to [1]
+        :param sample_rates: sample rate to get, defaults to [4]
         :type sample_rates: int or list, optional
         :param run_name_zeros: number of zeros to assing to the run name,
          defaults to 4
@@ -112,7 +102,8 @@ class USGSasciiCollection(Collection):
         Assign run names based on start and end times, checks if a file has
         the same start time as the last end time.
 
-        Run names are assigned as sr{sample_rate}_{run_number:0{zeros}}.
+        Run names are assigned as sr{sample_rate}_{run_number:0{zeros}}. Only
+        if the run name is not assigned already.
 
         :param df: Dataframe with the appropriate columns
         :type df: :class:`pandas.DataFrame`

@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
-"""Module to read and parse native Phoenix Geophysics data formats of the MTU-5C Family
-
-This module implements Streamed readers for segmented-decimated continuus-decimated
-and native sampling rate time series formats of the MTU-5C family.
 """
+Module to read and parse native Phoenix Geophysics data formats of the 
+MTU-5C Family.
 
-__author__ = "Jorge Torres-Solis"
+This module implements Streamed readers for decimated continuos time series
+formats of the MTU-5C family.
+
+:author: Jorge Torres-Solis
+
+Revised 2022 by J. Peacock 
+"""
 
 # =============================================================================
 # Imports
@@ -48,8 +52,8 @@ class DecimatedContinuousReader(TSReaderBase):
         The first sequence starts 1 second later than the set start time due
         to initiation within the data logger
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :return: start time of the recording
+        :rtype: :class:`mt_metadata.utils.mttime.MTime`
 
         """
 
@@ -68,8 +72,8 @@ class DecimatedContinuousReader(TSReaderBase):
         The first sequence starts 1 second later than the set start time due
         to initiation within the data logger
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :return: estimated end time from number of samples
+        :rtype: :class:`mt_metadata.utils.mttime.MTime`
 
         """
 
@@ -78,10 +82,10 @@ class DecimatedContinuousReader(TSReaderBase):
     # need a read and read sequence
     def read(self):
         """
-        Read in the full data from the file given
+        Read in the full data from the file given.
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :return: single channel data array
+        :rtype: :class:`numpy.ndarray`
 
         """
 
@@ -92,12 +96,12 @@ class DecimatedContinuousReader(TSReaderBase):
         """
         Read a sequence of files
 
-        :param start: DESCRIPTION, defaults to 0
-        :type start: TYPE, optional
-        :param end: DESCRIPTION, defaults to None
-        :type end: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :param start: starting index in the sequence, defaults to 0
+        :type start: integer, optional
+        :param end: eneding index in the sequence to read, defaults to None
+        :type end: integer, optional
+        :return: data within the given sequence range
+        :rtype: :class:`numpy.ndarray`
 
         """
         data = np.array([], dtype=np.float32)
@@ -110,26 +114,6 @@ class DecimatedContinuousReader(TSReaderBase):
 
         self.logger.debug("Read %s sequences", self.seq + 1)
         return data
-
-    def read_data(self, numSamples):
-        ret_array = np.empty([0])
-        if self.stream is not None:
-            ret_array = np.fromfile(
-                self.stream, dtype=np.float32, count=numSamples
-            )
-            while ret_array.size < numSamples:
-                if not self.open_next():
-                    return np.empty([0])
-                # Array below will contain the data, or will be an np.empty array if end of series as desired
-                ret_array = np.append(
-                    ret_array,
-                    np.fromfile(
-                        self.stream,
-                        dtype=np.float32,
-                        count=(numSamples - ret_array.size),
-                    ),
-                )
-        return ret_array
 
     def to_channel_ts(self):
         """

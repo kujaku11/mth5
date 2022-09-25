@@ -1,10 +1,14 @@
-"""Module to read and parse native Phoenix Geophysics data formats of the MTU-5C Family
+"""
+Module to read and parse native Phoenix Geophysics data formats of the 
+MTU-5C Family.
 
 This module implements Streamed readers for segmented-decimated continuus-decimated
 and native sampling rate time series formats of the MTU-5C family.
-"""
 
-__author__ = "Jorge Torres-Solis"
+:author: Jorge Torres-Solis
+
+Revised 2022 by J. Peacock 
+"""
 
 # =============================================================================
 # Imports

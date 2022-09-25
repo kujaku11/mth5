@@ -39,14 +39,14 @@ class AsciiMetadata:
     site_latitude              Site latitude in decimal degrees WGS84
     site_longitude             Site longitude in decimal degrees WGS84
     site_elevation             Site elevation according to national map meters
-    start              Start time of station YYYY-MM-DDThh:mm:ss UTC
-    end               Stop time of station YYYY-MM-DDThh:mm:ss UTC
+    start                      Start time of station YYYY-MM-DDThh:mm:ss UTC
+    end                        Stop time of station YYYY-MM-DDThh:mm:ss UTC
     sample_rate                Sampling rate samples/second
-    n_samples                 Number of samples
-    n_channels                     Number of channels
+    n_samples                  Number of samples
+    n_channels                 Number of channels
     coordinate_system          [ Geographic North | Geomagnetic North ]
     chn_settings               Channel settings, see below
-    missing_data_flag           Missing data value
+    missing_data_flag          Missing data value
     ========================= =================================================
 
     :chn_settings:

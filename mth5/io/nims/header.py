@@ -25,30 +25,28 @@ class NIMSHeader(object):
 
     A typical header looks like
 
-    .. code-block::
-
-        >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-        >>>user field>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-        SITE NAME: Budwieser Spring
-        STATE/PROVINCE: CA
-        COUNTRY: USA
-        >>> The following code in double quotes is REQUIRED to start the NIMS <<
-        >>> The next 3 lines contain values required for processing <<<<<<<<<<<<
-        >>> The lines after that are optional <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        "300b"  <-- 2CHAR EXPERIMENT CODE + 3 CHAR SITE CODE + RUN LETTER
-        1105-3; 1305-3  <-- SYSTEM BOX I.D.; MAG HEAD ID (if different)
-        106  0 <-- N-S Ex WIRE LENGTH (m); HEADING (deg E mag N)
-        109  90 <-- E-W Ey WIRE LENGTH (m); HEADING (deg E mag N)
-        1         <-- N ELECTRODE ID
-        3          <-- E ELECTRODE ID
-        2          <-- S ELECTRODE ID
-        4          <-- W ELECTRODE ID
-        Cu          <-- GROUND ELECTRODE INFO
-        GPS INFO: 01/10/19 16:16:42 1616.7000 3443.6088 115.7350 W 946.6
-        OPERATOR: KP
-        COMMENT: N/S CRS: .95/.96 DCV: 3.5 ACV:1
-        E/W CRS: .85/.86 DCV: 1.5 ACV: 1
-        Redeployed site for run b b/c possible animal disturbance
+    >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    >>>user field>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    SITE NAME: Budwieser Spring
+    STATE/PROVINCE: CA
+    COUNTRY: USA
+    >>> The following code in double quotes is REQUIRED to start the NIMS <<
+    >>> The next 3 lines contain values required for processing <<<<<<<<<<<<
+    >>> The lines after that are optional <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    "300b"  <-- 2CHAR EXPERIMENT CODE + 3 CHAR SITE CODE + RUN LETTER
+    1105-3; 1305-3  <-- SYSTEM BOX I.D.; MAG HEAD ID (if different)
+    106  0 <-- N-S Ex WIRE LENGTH (m); HEADING (deg E mag N)
+    109  90 <-- E-W Ey WIRE LENGTH (m); HEADING (deg E mag N)
+    1         <-- N ELECTRODE ID
+    3         <-- E ELECTRODE ID
+    2         <-- S ELECTRODE ID
+    4         <-- W ELECTRODE ID
+    Cu        <-- GROUND ELECTRODE INFO
+    GPS INFO: 01/10/19 16:16:42 1616.7000 3443.6088 115.7350 W 946.6
+    OPERATOR: KP
+    COMMENT: N/S CRS: .95/.96 DCV: 3.5 ACV:1
+    E/W CRS: .85/.86 DCV: 1.5 ACV: 1
+    Redeployed site for run b b/c possible animal disturbance
 
     """
 
@@ -74,7 +72,7 @@ class NIMSHeader(object):
         self.w_electrode_id = None
         self.ground_electrode_info = None
         self.header_gps_stamp = None
-        self.header_gps_latitude = None
+        self.header_gps_longitude = None
         self.header_gps_longitude = None
         self.header_gps_elevation = None
         self.operator = None
@@ -84,6 +82,7 @@ class NIMSHeader(object):
 
     @property
     def fn(self):
+        """Full path to NIMS file"""
         return self._fn
 
     @fn.setter
@@ -95,11 +94,13 @@ class NIMSHeader(object):
 
     @property
     def station(self):
+        """Station ID"""
         if self.run_id is not None:
             return self.run_id[0:-1]
 
     @property
     def file_size(self):
+        """Size of the file"""
         if self.fn is not None:
             return self.fn.stat().st_size
 
@@ -200,6 +201,17 @@ class NIMSHeader(object):
                 setattr(self, key.replace(" ", "_").replace("/", "_"), value)
 
     def _get_latitude(self, latitude, hemisphere):
+        """
+        Get latitude as decimal degrees
+
+        :param latitude: latitude
+        :type latitude: float
+        :param hemisphere: hemisphere id [ 'N' | 'S' ]
+        :type hemisphere: string
+        :return: latitude in decimal degrees with proper sign
+        :rtype: float
+
+        """
         if not isinstance(latitude, float):
             latitude = float(latitude)
         if hemisphere.lower() == "n":
@@ -208,6 +220,16 @@ class NIMSHeader(object):
             return -1 * latitude
 
     def _get_longitude(self, longitude, hemisphere):
+        """
+        Get longitude as decimal degrees
+
+        :param longitude: longitude
+        :type longitude: float
+        :param hemisphere: hemisphere id [ 'N' | 'S' ]
+        :type hemisphere: string
+        :return: latitude in decimal degrees with proper sign
+        :rtype: float
+        """
         if not isinstance(longitude, float):
             longitude = float(longitude)
         if hemisphere.lower() == "e":

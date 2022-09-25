@@ -42,20 +42,6 @@ class USGSascii(AsciiMetadata):
     meta_notes          Notes of how the station was collected
     =================== =======================================================
 
-    ============================== ============================================
-    Methods                        Description
-    ============================== ============================================
-    get_z3d_db                     Get Pandas dataframe for schedule block
-    locate_mtft24_cfg_fn           Look for a mtft24.cfg file in station_dir
-    get_metadata_from_mtft24       Get metadata from mtft24.cfg file
-    get_metadata_from_survey_csv   Get metadata from survey csv file
-    fill_metadata                  Fill Metadata container from a meta_array
-    read_asc_file                  Read in USGS ascii file
-    convert_electrics              Convert electric channels to mV/km
-    write_asc_file                 Write an USGS ascii file
-    write_station_info_metadata    Write metadata to a .cfg file
-    ============================== ============================================
-
     :Example: ::
 
         >>> zc = Z3DCollection()
