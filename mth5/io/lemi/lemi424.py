@@ -92,7 +92,7 @@ def lemi_hemisphere_parser(hemisphere):
     """
     convert hemisphere into a value [-1, 1].  Assumes the prime meridian is 0.
 
-    :param hemisphere: hemisphere string [ 'N' | 'S' | 'E' | 'w']
+    :param hemisphere: hemisphere string [ 'N' | 'S' | 'E' | 'W']
     :type hemisphere: string
     :return: unity with a sign for the given hemisphere
     :rtype: signed integer
@@ -109,7 +109,7 @@ class LEMI424:
     their reader.
 
     :param fn: full path to LEMI424 file
-    :type fn: :class:`pahtlib.Path` or string
+    :type fn: :class:`pathlib.Path` or string
     :param sample_rate: sample rate of the file, default is 1.0
     :type sample_rate: float
     :param chunk_size: chunk size for pandas to use, does not change reading
@@ -124,7 +124,7 @@ class LEMI424:
     :type data_column_names: dictionary with keys of column names and values
      of data types
 
-    :Column Names:
+    :LEMI424 File Column Names:
 
         - **year**
         - **month**
@@ -151,7 +151,7 @@ class LEMI424:
         - **gps_fix**
         - **time_diff**
 
-    :Data Names:
+    :Data Column Names:
 
         - **date**
         - **bx**

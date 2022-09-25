@@ -33,14 +33,6 @@ mth5.io.reader module
    :undoc-members:
    :show-inheritance:
 
-mth5.io.tools module
---------------------
-
-.. automodule:: mth5.io.tools
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Module contents
 ---------------
 

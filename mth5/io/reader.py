@@ -11,27 +11,27 @@ If you are writing your own reader you need the following structure:
     * Class object that will read the given file
     * a reader function that is read_{file_type}, for instance read_nims
     * the return value is a :class:`mth5.timeseries.MTTS` or 
-     :class:`mth5.timeseries.RunTS` object and any extra metadata in the form
-     of a dictionary with keys as {level.attribute}.
+      :class:`mth5.timeseries.RunTS` object and any extra metadata in the form
+      of a dictionary with keys as {level.attribute}.
     
-    .. code-block:: python
+.. code-block:: python
+    
+    class NewFile
+        def __init__(self, fn):
+            self.fn = fn
         
-        class NewFile
-            def __init__(self, fn):
-                self.fn = fn
-            
-            def read_header(self):
-                return header_information
-            
-            def read_newfile(self):
-                ex, ey, hx, hy, hz = read_in_channels_as_MTTS
-                return RunTS([ex, ey, hx, hy, hz])
-            
-        def read_newfile(fn):
-            new_file_obj = NewFile(fn)
-            run_obj = new_file_obj.read_newfile()
-            
-            return run_obj, extra_metadata
+        def read_header(self):
+            return header_information
+        
+        def read_newfile(self):
+            ex, ey, hx, hy, hz = read_in_channels_as_MTTS
+            return RunTS([ex, ey, hx, hy, hz])
+        
+    def read_newfile(fn):
+        new_file_obj = NewFile(fn)
+        run_obj = new_file_obj.read_newfile()
+        
+        return run_obj, extra_metadata
         
 Then add your reader to the reader dictionary so that those files can be read.
         

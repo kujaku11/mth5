@@ -23,7 +23,18 @@ from mth5.io.lemi import LEMI424
 
 class LEMICollection(Collection):
     """
-    Collection of LEMI 424 files into runs.
+    Collection of LEMI 424 files into runs based on start and end times.
+    Will assign the run name as 'sr1_{index:0{zeros}}' --> 'sr1_0001' for
+    `zeros` = 4.
+
+    :param file_path: full path to single station LEMI424 directory
+    :type file_path: string or :class`pathlib.Path`
+    :param file_ext: extension of LEMI424 files, default is 'txt'
+    :type file_ext: string
+    :param station_id: station id
+    :type station_id: string
+    :param survey_id: survey id
+    :type survey_id: string
 
     .. note:: This class assumes that the given file path contains a single
      LEMI station.  If you want to do multiple stations merge the returned
