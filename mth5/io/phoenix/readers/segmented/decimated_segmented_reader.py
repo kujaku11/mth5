@@ -245,7 +245,7 @@ class DecimatedSegmentedReader(TSReaderBase):
 class DecimatedSegmentCollection(TSReaderBase):
     """
     Class to create a streamer for segmented decimated time series,
-    i.e. *.td_24k
+    i.e. 'td_24k'
 
     These files have a sub header
 

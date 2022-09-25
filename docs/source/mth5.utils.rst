@@ -36,13 +36,6 @@ mth5.utils.mth5\_logger module
    :undoc-members:
    :show-inheritance:
 
-mth5.utils.stationxml\_translator module
-----------------------------------------
-
-.. automodule:: mth5.utils.stationxml_translator
-   :members:
-   :undoc-members:
-   :show-inheritance:
 
 Module contents
 ---------------

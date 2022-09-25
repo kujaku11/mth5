@@ -469,7 +469,8 @@ class Z3D:
         Create a counts2mv coefficient filter
 
         .. note:: Needs to be 1/channel factor because we divided the
-        instrument response from the data.
+         instrument response from the data.
+
         """
 
         c2mv = CoefficientFilter()

@@ -406,7 +406,6 @@ class AsciiMetadata:
 
     def write_metadata(self, chn_list=["Ex", "Ey", "Hx", "Hy", "Hz"]):
         """
-
         Write out metadata in the format of USGS ascii.
 
         :return: list of metadate lines.

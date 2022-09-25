@@ -4,7 +4,7 @@ Read an amtant.cal file provided by Zonge.
 
 
 Apparently, the file includes the 6th and 8th harmonic of the given frequency, which
-is a fancy way of saying f * 6 and f * 8. 
+is a fancy way of saying f x 6 and f x 8. 
 
  
 """

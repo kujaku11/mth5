@@ -48,8 +48,8 @@ def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
     :param string start_time: start time in time format
     :param float sample_rate: sample rate in samples per seconds
     :param int n_samples: number of samples in time series
-    :param :class:`logging.logger` logger: logger class object
-
+    :param logger: logger class object
+    :type logger: ":class:`logging.logger`
     :return: date-time index
 
     """
@@ -104,9 +104,9 @@ class ChannelTS:
     .. note:: Assumes equally spaced samples from the start time.
 
     The time series is stored in an :class:`xarray.Dataset` that has
-    coordinates of time and is a 1-D array labeled 'data'.  The :class:`xarray.Dataset`
-    can be accessed and set from the :attribute:`ts`.  The data is stored in
-    :attribute:'ts.data' and the time index is a coordinate of :attribute:`ts`.
+    coordinates of time and is a 1-D array labeled 'data'.
+    The :class:`xarray.Dataset` can be accessed and set from the `ts`.
+    The data is stored in 'ts.data' and the time index is a coordinate of `ts`.
 
     The time coordinate is made from the start time, sample rate and
     number of samples.  Currently, End time is a derived property and
