@@ -38,4 +38,14 @@ History
 * Rebased IO module to make a module for each data logger type
 * Updated tests
 * Updated documentation
-* Factored `make_mth5` 
+* Factored `make_mth5`
+
+0.3.0 (2022-09-25)
+------------------------
+
+* change default initialize_mth5 to use append mode, issue #92 by @kkappler in #94
+* Fix issue 105 by @kkappler in PR #106
+* adding in parallel mth5 tutorial by @nre900 in #110
+* adding in new tutorial and modifications to mth5_in_parallel.ipynb by @nre900 in issue #112
+* Add phoenix reader by @kujaku11 in PR #103
+* Remove response by @kujaku11 in PR #100 
