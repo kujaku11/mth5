@@ -1,70 +1,42 @@
 mth5.io package
 ===============
 
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   mth5.io.lemi
+   mth5.io.miniseed
+   mth5.io.nims
+   mth5.io.phoenix
+   mth5.io.usgs_ascii
+   mth5.io.zen
+
 Submodules
 ----------
 
-mth5.io.lemi424 module
-----------------------
+mth5.io.collection module
+-------------------------
 
-.. automodule:: mth5.io.lemi424
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-mth5.io.miniseed module
------------------------
-
-.. automodule:: mth5.io.miniseed
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-mth5.io.nims module
--------------------
-
-.. automodule:: mth5.io.nims
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. automodule:: mth5.io.collection
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 mth5.io.reader module
 ---------------------
 
 .. automodule:: mth5.io.reader
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-mth5.io.tools module
---------------------
-
-.. automodule:: mth5.io.tools
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-mth5.io.usgs\_ascii module
---------------------------
-
-.. automodule:: mth5.io.usgs_ascii
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-mth5.io.zen module
-------------------
-
-.. automodule:: mth5.io.zen
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 Module contents
 ---------------
 
 .. automodule:: mth5.io
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
