@@ -49,14 +49,9 @@ class PhoenixCollection(Collection):
 
         super().__init__(file_path=file_path, **kwargs)
 
-        self.station_id = None
-        self.survey_id = None
-        self.channel_map = self._default_channel_map
-        self.receiver_metadata = None
-
         self._receiver_metadata_name = "recmeta.json"
 
-    def _read_receiver_metadata_json(self):
+    def _read_receiver_metadata_json(self, rec_fn):
         """
         read in metadata information from receiver metadata file into
         an `ReceiverMetadataJSON` object.
@@ -66,7 +61,6 @@ class PhoenixCollection(Collection):
 
         """
 
-        rec_fn = self.file_path.joinpath(self._receiver_metadata_name)
         if rec_fn.is_file():
             return ReceiverMetadataJSON(fn=rec_fn)
         else:
@@ -74,6 +68,24 @@ class PhoenixCollection(Collection):
                 f"Could not fine {self._receiver_metadata_name} in {self.file_path}"
             )
             return None
+
+    def _locate_station_folders(self):
+        """
+        Locate the station folder, the one that has the recmeta.json in it
+
+        :param folder: DESCRIPTION
+        :type folder: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        station_folders = []
+        for folder in self.file_path.rglob("**/"):
+            rec_fn = folder.joinpath("recmeta.json")
+            if rec_fn.exists():
+                station_folders.append(folder)
+
+        return station_folders
 
     def to_dataframe(
         self,
@@ -83,7 +95,7 @@ class PhoenixCollection(Collection):
     ):
         """
         Get a dataframe of all the files in a given directory with given
-        columns.
+        columns.  Loop over station folders.
 
         :param sample_rates: list of sample rates to read, defaults to [150, 24000]
         :type sample_rates: list of integers, optional
@@ -94,46 +106,54 @@ class PhoenixCollection(Collection):
 
         """
 
-        self.receiver_metadata = self._read_receiver_metadata_json()
-        if self.receiver_metadata is not None:
-            self.station_id = self.receiver_metadata.station_metadata.id
-            self.survey_id = self.receiver_metadata.survey_metadata.id
-            self.channel_map = self.receiver_metadata.channel_map
-
         if not isinstance(sample_rates, (list, tuple)):
             sample_rates = [sample_rates]
 
-        entries = []
-        for sr in sample_rates:
-            for fn in self.get_files(self._file_extension_map[int(sr)]):
-                phx_obj = open_phoenix(fn)
-                if hasattr(phx_obj, "read_segment"):
-                    segment = phx_obj.read_segment(metadata_only=True)
-                    start = segment.segment_start_time.isoformat()
-                    end = segment.segment_end_time.isoformat()
-                    n_samples = segment.n_samples
+        station_folders = self._locate_station_folders()
 
-                else:
-                    start = phx_obj.segment_start_time.isoformat()
-                    end = phx_obj.segment_end_time.isoformat()
-                    n_samples = phx_obj.max_samples
-                entry = {
-                    "survey": self.survey_id,
-                    "station": self.station_id,
-                    "run": None,
-                    "start": start,
-                    "end": end,
-                    "channel_id": phx_obj.channel_id,
-                    "component": self.channel_map[phx_obj.channel_id],
-                    "fn": fn,
-                    "sample_rate": phx_obj.sample_rate,
-                    "file_size": phx_obj.file_size,
-                    "n_samples": n_samples,
-                    "sequence_number": phx_obj.seq,
-                    "instrument_id": phx_obj.recording_id,
-                    "calibration_fn": None,
-                }
-                entries.append(entry)
+        entries = []
+        for folder in station_folders:
+            print(folder)
+            rec_fn = folder.joinpath(self._receiver_metadata_name)
+            receiver_metadata = self._read_receiver_metadata_json(rec_fn)
+            print(receiver_metadata.survey_metadata.id)
+            print(receiver_metadata.station_metadata.id)
+
+            for sr in sample_rates:
+                for fn in folder.rglob(
+                    f"*{self._file_extension_map[int(sr)]}"
+                ):
+                    phx_obj = open_phoenix(fn)
+                    if hasattr(phx_obj, "read_segment"):
+                        segment = phx_obj.read_segment(metadata_only=True)
+                        start = segment.segment_start_time.isoformat()
+                        end = segment.segment_end_time.isoformat()
+                        n_samples = segment.n_samples
+
+                    else:
+                        start = phx_obj.segment_start_time.isoformat()
+                        end = phx_obj.segment_end_time.isoformat()
+                        n_samples = phx_obj.max_samples
+                    entry = {
+                        "survey": receiver_metadata.survey_metadata.id,
+                        "station": receiver_metadata.station_metadata.id,
+                        "run": None,
+                        "start": start,
+                        "end": end,
+                        "channel_id": phx_obj.channel_id,
+                        "component": receiver_metadata.channel_map[
+                            phx_obj.channel_id
+                        ],
+                        "fn": fn,
+                        "sample_rate": phx_obj.sample_rate,
+                        "file_size": phx_obj.file_size,
+                        "n_samples": n_samples,
+                        "sequence_number": phx_obj.seq,
+                        "instrument_id": phx_obj.recording_id,
+                        "calibration_fn": None,
+                    }
+                    entries.append(entry)
+        # return self._set_df_dtypes(pd.DataFrame(entries))
 
         df = self._sort_df(
             self._set_df_dtypes(pd.DataFrame(entries)), run_name_zeros
@@ -163,44 +183,55 @@ class PhoenixCollection(Collection):
         rdf = df.copy()
         sample_rates = rdf.sample_rate.unique()
 
-        for sr in sample_rates:
-            run_stem = self._file_extension_map[int(sr)].split("_")[-1]
-            # continuous data
-            if sr < 1000:
-                rdf = rdf.sort_values("sequence_number")
-                starts = rdf.loc[rdf.sample_rate == sr].start.unique()
-                ends = rdf.loc[rdf.sample_rate == sr].end.unique()
+        for station in df.station.unique():
+            for sr in sample_rates:
+                run_stem = self._file_extension_map[int(sr)].split("_")[-1]
+                # continuous data
+                if sr < 1000:
+                    sdf = rdf[rdf.station == station].sort_values(
+                        "sequence_number"
+                    )
+                    starts = np.sort(
+                        sdf.loc[sdf.sample_rate == sr].start.unique()
+                    )
+                    ends = np.sort(sdf.loc[sdf.sample_rate == sr].end.unique())
 
-                # find any breaks in the data
-                diff = ends[0:-1] - starts[1:]
+                    # find any breaks in the data
+                    diff = ends[0:-1] - starts[1:]
+                    diff = diff.astype("timedelta64[s]").astype(float)
 
-                breaks = np.where(diff != np.timedelta64(0))
-                count = 1
-                # this logic probably needs some work.
-                if len(breaks[0]) > 0:
-                    start_breaks = starts[breaks[0]]
-                    for ii in range(len(start_breaks)):
-                        count += 1
-                        rdf[
-                            (rdf.start == start_breaks[ii])
-                            & (rdf.start < start_breaks[ii + 1])
-                        ].loc[
-                            rdf.sample_rate == sr, "run"
+                    breaks = np.nonzero(diff)[0]
+                    count = 1
+                    # this logic probably needs some work.  Need to figure
+                    # out how to set pandas values
+                    if len(breaks) > 0:
+                        start_breaks = starts[breaks]
+                        for ii in range(len(start_breaks)):
+                            count += 1
+                            rdf.loc[
+                                (rdf.station == station)
+                                & (rdf.start == start_breaks[ii])
+                                & (rdf.sample_rate == sr),
+                                "run",
+                            ] = f"sr{run_stem}_{count:0{zeros}}"
+
+                    else:
+                        rdf.loc[
+                            (rdf.station == station) & (rdf.sample_rate == sr),
+                            "run",
                         ] = f"sr{run_stem}_{count:0{zeros}}"
 
+                # segmented data
                 else:
-                    rdf.loc[
-                        rdf.sample_rate == sr, "run"
-                    ] = f"sr{run_stem}_{count:0{zeros}}"
 
-            # segmented data
-            else:
-
-                starts = rdf.loc[rdf.sample_rate == sr].start.unique()
-                for ii, s in enumerate(starts, 1):
-                    rdf.loc[
-                        rdf.start == s, "run"
-                    ] = f"sr{run_stem}_{ii:0{zeros}}"
+                    starts = rdf.loc[
+                        (rdf.station == station) & (rdf.sample_rate == sr),
+                        "start",
+                    ].unique()
+                    for ii, s in enumerate(starts, 1):
+                        rdf.loc[
+                            rdf.start == s, "run"
+                        ] = f"sr{run_stem}_{ii:0{zeros}}"
 
         return rdf
 
