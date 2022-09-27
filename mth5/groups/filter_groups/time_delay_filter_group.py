@@ -38,6 +38,7 @@ class TimeDelayGroup(BaseGroup):
 
         :return: DESCRIPTION
         :rtype: TYPE
+
         """
         f_dict = {}
         for key in self.hdf5_group.keys():
@@ -105,12 +106,16 @@ class TimeDelayGroup(BaseGroup):
             if v is None:
                 input_dict[k] = str(v)
 
-        time_delay_group = self.add_filter(time_delay_object.name, input_dict,)
+        time_delay_group = self.add_filter(
+            time_delay_object.name,
+            input_dict,
+        )
         return time_delay_group
 
     def to_object(self, name):
         """
         make a :class:`mt_metadata.timeseries.filters.pole_zeros_filter` object
+
         :return: DESCRIPTION
         :rtype: TYPE
 

@@ -27,6 +27,7 @@ from matplotlib import pyplot as plt
 
 from mt_metadata import timeseries as metadata
 from mt_metadata.utils.mttime import MTime
+from mt_metadata.timeseries.filters import ChannelResponseFilter
 
 from mth5.utils.exceptions import MTTSError
 from .channel_ts import ChannelTS
@@ -51,12 +52,15 @@ class RunTS:
 
     """
 
-    def __init__(self, array_list=None, run_metadata=None, station_metadata=None):
+    def __init__(
+        self, array_list=None, run_metadata=None, station_metadata=None
+    ):
 
         self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
         self.run_metadata = metadata.Run()
         self.station_metadata = metadata.Station()
         self._dataset = xr.Dataset()
+        self._filters = {}
 
         # load the arrays first this will write run and station metadata
         if array_list is not None:
@@ -134,16 +138,27 @@ class RunTS:
                 # use those first, then the user can update later.
                 self.run_metadata.channels.append(item.channel_metadata)
                 if index == 0:
-                    self.station_metadata.from_dict(item.station_metadata.to_dict())
+                    self.station_metadata.from_dict(
+                        item.station_metadata.to_dict()
+                    )
                     self.run_metadata.from_dict(item.run_metadata.to_dict())
                 else:
-                    self.station_metadata.update(item.station_metadata, match=["id"])
+                    self.station_metadata.update(
+                        item.station_metadata, match=["id"]
+                    )
                     self.run_metadata.update(item.run_metadata, match=["id"])
+
+                if item.channel_response_filter.filters_list != []:
+                    for ff in item.channel_response_filter.filters_list:
+                        self._filters[ff.name] = ff
+
             else:
                 valid_list.append(item)
 
         # probably should test for sampling rate.
-        sr_test = dict([(item.component, (item.sample_rate)) for item in valid_list])
+        sr_test = dict(
+            [(item.component, (item.sample_rate)) for item in valid_list]
+        )
 
         if len(set([v for k, v in sr_test.items()])) != 1:
             msg = f"sample rates are not all the same {sr_test}"
@@ -152,10 +167,48 @@ class RunTS:
 
         return valid_list
 
+    def _get_channel_response_filter(self, ch_name):
+        """
+        Get the channel response filter from the filter dictionary
+
+        :param ch_name: DESCRIPTION
+        :type ch_name: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        filter_list = []
+        if ch_name in self.dataset.keys():
+
+            for filter_name in self.dataset[ch_name].attrs["filter.name"]:
+                try:
+                    filter_list.append(self.filters[filter_name])
+                except KeyError:
+                    self.logger.debug(
+                        f"Could not find {filter_name} in filters"
+                    )
+
+        return ChannelResponseFilter(filters_list=filter_list)
+
     def __getattr__(self, name):
         # change to look for keys directly and use type to set channel type
         if name in self.dataset.keys():
-            return ChannelTS(self.dataset[name].attrs["type"], self.dataset[name])
+
+            ch_response_filter = self._get_channel_response_filter(name)
+            # if cannot get filters, but the filters name indicates that
+            # filters should be there don't input the channel response filter
+            # cause then an empty filters_list will set filter.name to []
+            if ch_response_filter.filters_list == []:
+                ch_response_filter = None
+
+            return ChannelTS(
+                self.dataset[name].attrs["type"],
+                self.dataset[name],
+                run_metadata=self.run_metadata,
+                station_metadata=self.station_metadata,
+                channel_response_filter=ch_response_filter,
+            )
         else:
             # this is a hack for now until figure out who is calling shape, size
             if name[0] == "_":
@@ -188,8 +241,8 @@ class RunTS:
 
         Get a summary of all the metadata
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :return: A summary of all channel metadata in one place
+        :rtype: dictionary
 
         """
         meta_dict = {}
@@ -206,8 +259,6 @@ class RunTS:
         updates metadata from the data.
 
         Check the start and end times, channels recorded
-        :return: DESCRIPTION
-        :rtype: TYPE
 
         """
 
@@ -215,7 +266,10 @@ class RunTS:
         if self.has_data:
             # check start time
             if self.start != self.run_metadata.time_period.start:
-                if self.run_metadata.time_period.start != "1980-01-01T00:00:00+00:00":
+                if (
+                    self.run_metadata.time_period.start
+                    != "1980-01-01T00:00:00+00:00"
+                ):
                     msg = (
                         f"start time of dataset {self.start} does not "
                         f"match metadata start {self.run_metadata.time_period.start} "
@@ -226,7 +280,10 @@ class RunTS:
 
             # check end time
             if self.end != self.run_metadata.time_period.end:
-                if self.run_metadata.time_period.end != "1980-01-01T00:00:00+00:00":
+                if (
+                    self.run_metadata.time_period.end
+                    != "1980-01-01T00:00:00+00:00"
+                ):
                     msg = (
                         f"end time of dataset {self.end} does not "
                         f"match metadata end {self.run_metadata.time_period.end} "
@@ -258,7 +315,8 @@ class RunTS:
                 else:
                     self.run_metadata.channels_recorded_auxiliary.append(ch)
 
-            self.station_metadata.runs.append(self.run_metadata)
+            if self.run_metadata.id not in self.station_metadata.run_list:
+                self.station_metadata.runs.append(self.run_metadata)
 
     def set_dataset(self, array_list, align_type="outer"):
         """
@@ -320,8 +378,13 @@ class RunTS:
         elif isinstance(channel, ChannelTS):
             c = channel
             self.run_metadata.channels.append(c.channel_metadata)
+            for ff in c.channel_response_filter.filters_list:
+                self._filters[ff.name] = ff
+
         else:
-            raise ValueError("Input Channel must be type xarray.DataArray or ChannelTS")
+            raise ValueError(
+                "Input Channel must be type xarray.DataArray or ChannelTS"
+            )
 
         ### need to validate the channel to make sure sample rate is the same
         if c.sample_rate != self.sample_rate:
@@ -333,15 +396,19 @@ class RunTS:
             raise MTTSError(msg)
 
         ### should probably check for other metadata like station and run?
-
-        self._dataset[c.component] = c.ts
+        if len(self.dataset.dims) == 0:
+            self.dataset = c._ts.to_dataset()
+        else:
+            self.dataset = xr.merge([self.dataset, c._ts.to_dataset()])
 
     @property
     def dataset(self):
+        """:class:`xarray.Dataset`"""
         return self._dataset
 
     @dataset.setter
     def dataset(self, array_list):
+        """Set the dataset"""
         msg = (
             "Data will be aligned using the min and max time. "
             "If that is not correct use set_dataset and change the alignment type."
@@ -351,32 +418,49 @@ class RunTS:
 
     @property
     def start(self):
+        """Start time UTC"""
         if self.has_data:
             return MTime(self.dataset.coords["time"].to_index()[0].isoformat())
         return self.run_metadata.time_period.start
 
     @property
     def end(self):
+        """End time UTC"""
         if self.has_data:
-            return MTime(self.dataset.coords["time"].to_index()[-1].isoformat())
+            return MTime(
+                self.dataset.coords["time"].to_index()[-1].isoformat()
+            )
         return self.run_metadata.time_period.end
 
     @property
     def sample_rate(self):
+        """
+        Sample rate, this is estimated by the mdeian difference between
+        samples in time, if data is present. Otherwise return the metadata
+        sample rate.
+        """
         if self.has_data:
             try:
-                return 1.0 / np.float64(
-                    (
-                        np.median(
-                            np.diff(self.dataset.coords["time"].to_index())
-                            / np.timedelta64(1, "s")
+                return round(
+                    1.0
+                    / np.float64(
+                        (
+                            np.median(
+                                np.diff(self.dataset.coords["time"].to_index())
+                                / np.timedelta64(1, "s")
+                            )
                         )
-                    )
+                    ),
+                    0,
                 )
             except AttributeError:
-                self.logger.warning("Something weird happend with xarray time indexing")
+                self.logger.warning(
+                    "Something weird happend with xarray time indexing"
+                )
 
-                raise ValueError("Something weird happend with xarray time indexing")
+                raise ValueError(
+                    "Something weird happend with xarray time indexing"
+                )
         return self.run_metadata.sample_rate
 
     @property
@@ -394,7 +478,31 @@ class RunTS:
 
     @property
     def channels(self):
+        """List of channel names in dataset"""
         return [cc for cc in list(self.dataset.data_vars)]
+
+    @property
+    def filters(self):
+        """Dictionary of filters used by the channels"""
+        return self._filters
+
+    @filters.setter
+    def filters(self, value):
+        """
+        a dictionary of filters found in the channel objects.
+
+        Should use the dictionary methods to update a dictionary.
+
+        :param value: dictionary of :module:`mt_metadata.timeseries.filters`
+        objects
+        :type value: dictionary
+        :raises TypeError: If input is anything other than a dictionary
+
+        """
+        if not isinstance(value, dict):
+            raise TypeError("input must be a dictionary")
+
+        self._filters = value
 
     def to_obspy_stream(self):
         """
@@ -459,7 +567,9 @@ class RunTS:
                     ][0]
                     channel_ts.channel_metadata.update(ch)
                 except IndexError:
-                    self.logger.warning("could not find %s" % channel_ts.component)
+                    self.logger.warning(
+                        "could not find %s" % channel_ts.component
+                    )
             station_list.append(channel_ts.station_metadata.fdsn.id)
 
             array_list.append(channel_ts)
@@ -467,7 +577,9 @@ class RunTS:
         ### need to merge metadata into something useful, station name is the only
         ### name that is preserved
         try:
-            station = list(set([ss for ss in station_list if ss is not None]))[0]
+            station = list(set([ss for ss in station_list if ss is not None]))[
+                0
+            ]
         except IndexError:
             station = None
             msg = "Could not find station name"
@@ -485,14 +597,35 @@ class RunTS:
 
     def get_slice(self, start, end=None, n_samples=None):
         """
-        Get just a chunk of data from the run
 
         :param start: DESCRIPTION
         :type start: TYPE
-        :param end: DESCRIPTION
-        :type end: TYPE
+        :param end: DESCRIPTION, defaults to None
+        :type end: TYPE, optional
+        :param n_samples: DESCRIPTION, defaults to None
+        :type n_samples: TYPE, optional
+        :raises ValueError: DESCRIPTION
         :return: DESCRIPTION
         :rtype: TYPE
+
+        """
+        """
+        Get just a chunk of data from the run, this will attempt to find the
+        closest points to the given parameters.  
+        
+        .. note:: We use pandas `slice_indexer` because xarray slice does not
+        seem to work as well, even though they should be based on the same 
+        code.
+
+        :param start: start time of the slice
+        :type start: string or :class:`mt_metadata.utils.mttime.MTime`
+        :param end: end time of the slice, defaults to None
+        :type end: string or :class:`mt_metadata.utils.mttime.MTime`, optional
+        :param n_samples: number of samples to get, defaults to None
+        :type n_samples: int, optional
+        :raises ValueError: If end and n_samples are not input
+        :return: slice of data requested
+        :rtype: :class:`mth5.timeseries.RunTS`
 
         """
         if not isinstance(start, MTime):
@@ -502,42 +635,86 @@ class RunTS:
             seconds = n_samples / self.sample_rate
             end = start + seconds
 
-        if end is not None:
+        elif end is not None:
             if not isinstance(end, MTime):
                 end = MTime(end)
+        else:
+            raise ValueError("Must input n_samples or end")
+
+        chunk = self.dataset.indexes["time"].slice_indexer(
+            start=np.datetime64(start.iso_no_tz),
+            end=np.datetime64(end.iso_no_tz),
+        )
 
         new_runts = RunTS()
         new_runts.station_metadata = self.station_metadata
         new_runts.run_metadata = self.run_metadata
-        new_runts.dataset = self._dataset.sel(
-            time=slice(start.iso_no_tz, end.iso_no_tz)
-        )
+        new_runts.filters = self.filters
+        new_runts.dataset = self._dataset.isel(indexers={"time": chunk})
 
         return new_runts
 
-    def plot(self):
+    def calibrate(self, **kwargs):
+        """
+        Calibrate the data according to the filters in each channel.
+
+        :return: calibrated run
+        :rtype: :class:`mth5.timeseries.RunTS`
+
+        """
+
+        new_run = RunTS()
+        new_run.run_metadata.update(self.run_metadata)
+        new_run.station_metadata.update(self.station_metadata)
+
+        for channel in self.channels:
+            ch_ts = getattr(self, channel)
+            calibrated_ch_ts = ch_ts.remove_instrument_response(**kwargs)
+            new_run.add_channel(calibrated_ch_ts)
+
+        return new_run
+
+    def plot(
+        self,
+        color_map={
+            "ex": (1, 0.2, 0.2),
+            "ey": (1, 0.5, 0),
+            "hx": (0, 0.5, 1),
+            "hy": (0.5, 0.2, 1),
+            "hz": (0.2, 1, 1),
+        },
+        channel_order=None,
+    ):
         """
 
         plot the time series probably slow for large data sets
 
-        :return: DESCRIPTION
-        :rtype: TYPE
-
         """
+
+        if channel_order is not None:
+            ch_list = channel_order()
+        else:
+            ch_list = self.channels
 
         n_channels = len(self.channels)
 
         fig = plt.figure()
         fig.subplots_adjust(hspace=0)
-        ax1 = fig.add_subplot(n_channels, 1, 1)
-        self.dataset[self.channels[0]].plot()
-        ax_list = [ax1]
-        for ii, comp in enumerate(self.channels[1:], 2):
-            ax = plt.subplot(n_channels, 1, ii, sharex=ax1)
-            self.dataset[comp].plot()
-            ax_list.append(ax)
-
-        for ax in ax_list:
+        ax_list = []
+        for ii, comp in enumerate(ch_list, 1):
+            try:
+                color = color_map[comp]
+            except KeyError:
+                color = (0, 0.4, 0.8)
+            if ii == 1:
+                ax = plt.subplot(n_channels, 1, ii)
+            else:
+                ax = plt.subplot(n_channels, 1, ii, sharex=ax_list[0])
+            self.dataset[comp].plot.line(ax=ax, color=color)
             ax.grid(which="major", color=(0.65, 0.65, 0.65), ls="--", lw=0.75)
             ax.grid(which="minor", color=(0.85, 0.85, 0.85), ls="--", lw=0.5)
             ax.set_axisbelow(True)
+            if ii != len(ch_list):
+                plt.setp(ax.get_xticklabels(), visible=False)
+
+            ax_list.append(ax)

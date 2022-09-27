@@ -48,8 +48,8 @@ def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
     :param string start_time: start time in time format
     :param float sample_rate: sample rate in samples per seconds
     :param int n_samples: number of samples in time series
-    :param :class:`logging.logger` logger: logger class object
-
+    :param logger: logger class object
+    :type logger: ":class:`logging.logger`
     :return: date-time index
 
     """
@@ -75,12 +75,21 @@ def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
         raise ValueError(msg)
     if not isinstance(start_time, MTime):
         start_time = MTime(start_time)
-    dt_freq = "{0:.0f}N".format(1.0e9 / (sample_rate))
+
+    # there is something screwy that happens when your sample rate is not a
+    # nice value that can easily fit into the 60 base.  For instance if you
+    # have a sample rate of 24000 the dt_freq will be '41667N', but that is
+    # not quite right since the rounding clips some samples and your
+    # end time will be incorrect (short).
+    # FIX: therefore estimate the end time based on the decimal sample rate.
+    end_time = start_time + n_samples / sample_rate
+
+    # dt_freq = "{0:.0f}N".format(1.0e9 / (sample_rate))
 
     dt_index = pd.date_range(
-        start=start_time.iso_str.split("+", 1)[0],
+        start=start_time.iso_no_tz,
+        end=end_time.iso_no_tz,
         periods=n_samples,
-        freq=dt_freq,
     )
 
     return dt_index
@@ -95,9 +104,9 @@ class ChannelTS:
     .. note:: Assumes equally spaced samples from the start time.
 
     The time series is stored in an :class:`xarray.Dataset` that has
-    coordinates of time and is a 1-D array labeled 'data'.  The :class:`xarray.Dataset`
-    can be accessed and set from the :attribute:`ts`.  The data is stored in
-    :attribute:'ts.data' and the time index is a coordinate of :attribute:`ts`.
+    coordinates of time and is a 1-D array labeled 'data'.
+    The :class:`xarray.Dataset` can be accessed and set from the `ts`.
+    The data is stored in 'ts.data' and the time index is a coordinate of `ts`.
 
     The time coordinate is made from the start time, sample rate and
     number of samples.  Currently, End time is a derived property and
@@ -119,9 +128,6 @@ class ChannelTS:
 
     :rubric:
 
-    Example
-    ---------
-
         >>> from mth5.timeseries import ChannelTS
         >>> ts_obj = ChannelTS('auxiliary')
         >>> ts_obj.sample_rate = 8
@@ -139,10 +145,6 @@ class ChannelTS:
                 Start        = 2020-01-01T12:00:00+00:00
                 End          = 2020-01-01T12:08:31.875000+00:00
                 N Samples    = 4096
-
-    Plot time series with xarray
-    ------------------------------
-
         >>> p = ts_obj.ts.plot()
 
 
@@ -208,8 +210,10 @@ class ChannelTS:
                 self.station_metadata.from_dict(station_metadata)
                 self.logger.debug("Loading from metadata dict")
             else:
-                msg = "input metadata must be type {0} or dict, not {1}".format(
-                    type(self.station_metadata), type(station_metadata)
+                msg = (
+                    "input metadata must be type {0} or dict, not {1}".format(
+                        type(self.station_metadata), type(station_metadata)
+                    )
                 )
                 self.logger.error(msg)
                 raise MTTSError(msg)
@@ -225,8 +229,12 @@ class ChannelTS:
                 self.logger.debug("Loading from metadata dict")
             else:
                 msg = "input metadata must be type %s or dict, not %s"
-                self.logger.error(msg, type(self.run_metadata), type(run_metadata))
-                raise MTTSError(msg % (type(self.run_metadata), type(run_metadata)))
+                self.logger.error(
+                    msg, type(self.run_metadata), type(run_metadata)
+                )
+                raise MTTSError(
+                    msg % (type(self.run_metadata), type(run_metadata))
+                )
         # input data
         if data is not None:
             self.ts = data
@@ -256,9 +264,9 @@ class ChannelTS:
 
         if not isinstance(other, ChannelTS):
             raise ValueError(f"Cannot compare ChannelTS with {type(other)}")
-        if not other.metadata == self.channel_metadata:
+        if not other.channel_metadata == self.channel_metadata:
             return False
-        if self.ts.equals(other.ts) is False:
+        if self._ts.equals(other._ts) is False:
             msg = "timeseries are not equal"
             self.logger.info(msg)
             return False
@@ -288,6 +296,7 @@ class ChannelTS:
         """
         if setting ts with a pandas data frame, make sure the data is in a
         column name 'data'
+
         """
 
         if isinstance(ts_arr, (np.ndarray, list, tuple)):
@@ -304,10 +313,14 @@ class ChannelTS:
             dt = make_dt_coordinates(
                 self.start, self.sample_rate, ts_arr.size, self.logger
             )
-            self._ts = xr.DataArray(ts_arr, coords=[("time", dt)], name="ts")
+            self._ts = xr.DataArray(
+                ts_arr, coords=[("time", dt)], name=self.component
+            )
             self._update_xarray_metadata()
         elif isinstance(ts_arr, pd.core.frame.DataFrame):
-            if isinstance(ts_arr.index[0], pd._libs.tslibs.timestamps.Timestamp):
+            if isinstance(
+                ts_arr.index[0], pd._libs.tslibs.timestamps.Timestamp
+            ):
                 dt = ts_arr.index
             else:
                 dt = make_dt_coordinates(
@@ -318,7 +331,7 @@ class ChannelTS:
                 )
             try:
                 self._ts = xr.DataArray(
-                    ts_arr["data"], coords=[("time", dt)], name="ts"
+                    ts_arr["data"], coords=[("time", dt)], name=self.component
                 )
                 self._update_xarray_metadata()
             except AttributeError:
@@ -329,7 +342,9 @@ class ChannelTS:
                 self.logger.error(msg)
                 raise MTTSError(msg)
         elif isinstance(ts_arr, pd.core.series.Series):
-            if isinstance(ts_arr.index[0], pd._libs.tslibs.timestamps.Timestamp):
+            if isinstance(
+                ts_arr.index[0], pd._libs.tslibs.timestamps.Timestamp
+            ):
                 dt = ts_arr.index
             else:
                 dt = make_dt_coordinates(
@@ -338,7 +353,9 @@ class ChannelTS:
                     ts_arr["data"].size,
                     self.logger,
                 )
-            self._ts = xr.DataArray(ts_arr.values, coords=[("time", dt)], name="ts")
+            self._ts = xr.DataArray(
+                ts_arr.values, coords=[("time", dt)], name=self.component
+            )
             self._update_xarray_metadata()
         elif isinstance(ts_arr, xr.DataArray):
             # TODO: need to validate the input xarray
@@ -355,7 +372,16 @@ class ChannelTS:
                 station_dict[key.split("station.")[-1]] = meta_dict.pop(key)
             for key in run_keys:
                 run_dict[key.split("run.")[-1]] = meta_dict.pop(key)
-            self.channel_metadata.from_dict({meta_dict["type"]: meta_dict})
+
+            if meta_dict["type"] == "electric":
+                ch_metadata = metadata.Electric()
+            elif meta_dict["type"] == "magnetic":
+                ch_metadata = metadata.Magnetic()
+            else:
+                ch_metadata = metadata.Auxiliary()
+
+            ch_metadata.from_dict({meta_dict["type"]: meta_dict})
+            self.channel_metadata = ch_metadata
             self.station_metadata.from_dict({"station": station_dict})
             self.run_metadata.from_dict({"run": run_dict})
             # need to run this incase things are different.
@@ -372,8 +398,9 @@ class ChannelTS:
     def time_index(self):
         """
         time index as a numpy array dtype np.datetime[ns]
-        :return: DESCRIPTION
-        :rtype: TYPE
+
+        :return: array of the time index
+        :rtype: np.ndarray(dtype=np.datetime[ns])
 
         """
         return self._ts.time.to_numpy()
@@ -388,7 +415,9 @@ class ChannelTS:
         """change channel type means changing the metadata type"""
 
         if value.lower() != self.channel_metadata._class_name.lower():
-            m_dict = self.channel_metadata.to_dict()[self.channel_metadata._class_name]
+            m_dict = self.channel_metadata.to_dict()[
+                self.channel_metadata._class_name
+            ]
             try:
                 self.channel_metadata = meta_classes[value.capitalize()]()
                 msg = (
@@ -506,14 +535,16 @@ class ChannelTS:
     def sample_rate(self):
         """sample rate in samples/second"""
         if self.has_data:
-            sr = 1.0 / np.float64(
-                (
-                    np.median(np.diff(self._ts.coords.indexes["time"]))
-                    / np.timedelta64(1, "s")
-                )
+            t_diff = (
+                self._ts.coords.indexes["time"][-1]
+                - self._ts.coords.indexes["time"][0]
             )
+            sr = self._ts.size / t_diff.total_seconds()
+
         else:
-            self.logger.debug("Data has not been set yet, sample rate is from metadata")
+            self.logger.debug(
+                "Data has not been set yet, sample rate is from metadata"
+            )
             sr = self.channel_metadata.sample_rate
             if sr is None:
                 sr = 0.0
@@ -552,6 +583,7 @@ class ChannelTS:
     def sample_interval(self):
         """
         Sample interval = 1 / sample_rate
+
         :return: DESCRIPTION
         :rtype: TYPE
 
@@ -594,7 +626,9 @@ class ChannelTS:
             start_time = MTime(start_time)
         self.channel_metadata.time_period.start = start_time.iso_str
         if self.has_data:
-            if start_time == MTime(self._ts.coords.indexes["time"][0].isoformat()):
+            if start_time == MTime(
+                self._ts.coords.indexes["time"][0].isoformat()
+            ):
                 return
             else:
                 new_dt = make_dt_coordinates(
@@ -613,7 +647,8 @@ class ChannelTS:
             return MTime(self._ts.coords.indexes["time"][-1].isoformat())
         else:
             self.logger.debug(
-                "Data not set yet, pulling end time from " + "metadata.time_period.end"
+                "Data not set yet, pulling end time from "
+                + "metadata.time_period.end"
             )
             return MTime(self.channel_metadata.time_period.end)
 
@@ -630,7 +665,8 @@ class ChannelTS:
         the new start time.
         """
         self.logger.warning(
-            "Cannot set `end`. If you want a slice, then " + "use get_slice method"
+            "Cannot set `end`. If you want a slice, then "
+            + "use get_slice method"
         )
 
     @property
@@ -655,7 +691,8 @@ class ChannelTS:
         :rtype: TYPE
 
         """
-
+        if value is None:
+            return
         if not isinstance(value, ChannelResponseFilter):
             msg = (
                 "channel response must be a "
@@ -665,6 +702,17 @@ class ChannelTS:
             self.logger.error(msg)
             raise TypeError(msg)
         self._channel_response = value
+
+        # update channel metadata
+        if self.channel_metadata.filter.name != value.names:
+            self.channel_metadata.filter.name = []
+            self.channel_metadata.filter.applied = []
+
+            for f_name in self._channel_response.names:
+                self.channel_metadata.filter.name.append(f_name)
+            self.channel_metadata.filter.applied = [False] * len(
+                self.channel_metadata.filter.name
+            )
 
     def remove_instrument_response(self, **kwargs):
         """
@@ -706,6 +754,15 @@ class ChannelTS:
 
         """
 
+        calibrated_ts = ChannelTS()
+        calibrated_ts.__dict__.update(self.__dict__)
+
+        if self.channel_metadata.filter.name is []:
+            self.logger.warning(
+                "No filters to apply to calibrate time series data"
+            )
+            return calibrated_ts
+
         remover = RemoveInstrumentResponse(
             self.ts,
             self.time_index,
@@ -714,12 +771,41 @@ class ChannelTS:
             **kwargs,
         )
 
-        calibrated_ts = ChannelTS()
-        calibrated_ts.__dict__.update(self.__dict__)
         calibrated_ts.ts = remover.remove_instrument_response()
+        # change applied booleans
         calibrated_ts.channel_metadata.filter.applied = [True] * len(
             self.channel_metadata.filter.applied
         )
+
+        # update units
+        # This is a hack for now until we come up with a standard for
+        # setting up the filter list.  Currently it follows the FDSN standard
+        # which has the filter stages starting with physical units to digital
+        # counts.
+        if (
+            self.channel_response_filter.units_out
+            == self.channel_metadata.units
+        ):
+            calibrated_ts._ts.attrs[
+                "units"
+            ] = self.channel_response_filter.units_in
+            calibrated_ts.channel_metadata.units = (
+                self.channel_response_filter.units_in
+            )
+        elif (
+            self.channel_response_filter.units_out == None
+            and self.channel_response_filter.units_out == None
+        ):
+            calibrated_ts.channel_metadata.units = self.channel_metadata.units
+        else:
+            calibrated_ts._ts.attrs[
+                "units"
+            ] = self.channel_response_filter.units_in
+            calibrated_ts.channel_metadata.units = (
+                self.channel_response_filter.units_in
+            )
+
+        calibrated_ts._update_xarray_metadata()
 
         return calibrated_ts
 
@@ -767,6 +853,7 @@ class ChannelTS:
             channel_metadata=self.channel_metadata,
             run_metadata=self.run_metadata,
             station_metadata=self.station_metadata,
+            channel_response_filter=self.channel_response_filter,
         )
 
         return new_ch_ts
@@ -785,7 +872,9 @@ class ChannelTS:
 
         new_dt_freq = "{0:.0f}N".format(1e9 / (self.sample_rate / dec_factor))
 
-        new_ts = self._ts.resample(time=new_dt_freq).nearest(tolerance=new_dt_freq)
+        new_ts = self._ts.resample(time=new_dt_freq).nearest(
+            tolerance=new_dt_freq
+        )
         new_ts.attrs["sample_rate"] = self.sample_rate / dec_factor
         self.channel_metadata.sample_rate = new_ts.attrs["sample_rate"]
 
@@ -793,11 +882,15 @@ class ChannelTS:
             self.ts = new_ts
         else:
             new_ts.attrs.update(
-                self.channel_metadata.to_dict()[self.channel_metadata._class_name]
+                self.channel_metadata.to_dict()[
+                    self.channel_metadata._class_name
+                ]
             )
             # return new_ts
             return ChannelTS(
-                self.channel_metadata.type, data=new_ts, metadata=self.channel_metadata
+                self.channel_metadata.type,
+                data=new_ts,
+                metadata=self.channel_metadata,
             )
 
     def to_xarray(self):
@@ -834,7 +927,9 @@ class ChannelTS:
         """
 
         obspy_trace = Trace(self.ts)
-        obspy_trace.stats.channel = fdsn_tools.make_channel_code(self.channel_metadata)
+        obspy_trace.stats.channel = fdsn_tools.make_channel_code(
+            self.channel_metadata
+        )
         obspy_trace.stats.starttime = self.start.iso_str
         obspy_trace.stats.sampling_rate = self.sample_rate
         obspy_trace.stats.station = self.station_metadata.fdsn.id
@@ -870,3 +965,14 @@ class ChannelTS:
         self.station_metadata.id = obspy_trace.stats.station
         self.channel_metadata.units = "counts"
         self.ts = obspy_trace.data
+
+    def plot(self):
+        """
+        Simple plot of the data
+
+        :return: figure object
+        :rtype: matplotlib.figure
+
+        """
+
+        return self._ts.plot()
