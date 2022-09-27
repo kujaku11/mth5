@@ -49,6 +49,8 @@ class PhoenixCollection(Collection):
 
         super().__init__(file_path=file_path, **kwargs)
 
+        self.metadata_dict = {}
+
         self._receiver_metadata_name = "recmeta.json"
 
     def _read_receiver_metadata_json(self, rec_fn):
@@ -113,11 +115,11 @@ class PhoenixCollection(Collection):
 
         entries = []
         for folder in station_folders:
-            print(folder)
             rec_fn = folder.joinpath(self._receiver_metadata_name)
             receiver_metadata = self._read_receiver_metadata_json(rec_fn)
-            print(receiver_metadata.survey_metadata.id)
-            print(receiver_metadata.station_metadata.id)
+            self.metadata_dict[
+                receiver_metadata.station_metadata.id
+            ] = receiver_metadata
 
             for sr in sample_rates:
                 for fn in folder.rglob(
