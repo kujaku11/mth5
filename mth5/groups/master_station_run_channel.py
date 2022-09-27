@@ -233,11 +233,21 @@ class MasterStationGroup(BaseGroup):
 
         """
         st_list = []
-        for station in self.groups_list:
-            s_group = StationGroup(self.hdf5_group[station])
-            st_list.append(s_group.table_entry)
-        st_list = np.array(st_list)
-        return pd.DataFrame(st_list.flatten())
+        for key, group in self.hdf5_group.items():
+            entry = {
+                "station": key,
+                "start": group.attrs["time_period.start"],
+                "end": group.attrs["time_period.end"],
+                "latitude": group.attrs["location.latitude"],
+                "longitude": group.attrs["location.longitude"],
+            }
+            st_list.append(entry)
+
+        df = pd.DataFrame(st_list)
+        df.start = pd.to_datetime(df.start)
+        df.end = pd.to_datetime(df.end)
+
+        return df
 
     def add_station(self, station_name, station_metadata=None):
         """
