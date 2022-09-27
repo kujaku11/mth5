@@ -1088,10 +1088,9 @@ class Z3D:
         """
         fill time series object
         """
-        ts_type = list(self.channel_metadata.keys())[0]
 
         return ChannelTS(
-            ts_type,
+            self.channel_metadata.type,
             data=self.time_series,
             channel_metadata=self.channel_metadata,
             station_metadata=self.station_metadata,
