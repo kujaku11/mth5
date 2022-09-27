@@ -206,7 +206,7 @@ class TransferFunctionGroup(BaseGroup):
             estimate_dataset = self.hdf5_group[estimate_name]
             estimate_metadata = StatisticalEstimate(**dict(estimate_dataset.attrs))
             return EstimateDataset(estimate_dataset, dataset_metadata=estimate_metadata)
-        except KeyError:
+        except (KeyError, OSError):
             msg = (
                 f"{estimate_name} does not exist, "
                 + "check groups_list for existing names"

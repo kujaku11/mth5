@@ -36,11 +36,15 @@ class ZPKGroup(BaseGroup):
 
         :return: DESCRIPTION
         :rtype: TYPE
+
         """
         f_dict = {}
         for key in self.hdf5_group.keys():
             zpk_group = self.hdf5_group[key]
-            f_dict[key] = {"type": zpk_group.attrs["type"], "hdf5_ref": zpk_group.ref}
+            f_dict[key] = {
+                "type": zpk_group.attrs["type"],
+                "hdf5_ref": zpk_group.ref,
+            }
 
         return f_dict
 
@@ -64,10 +68,16 @@ class ZPKGroup(BaseGroup):
 
         # create datasets for the poles and zeros
         poles_ds = zpk_filter_group.create_dataset(
-            "poles", poles.shape, dtype=complex, **self.dataset_options,
+            "poles",
+            poles.shape,
+            dtype=complex,
+            **self.dataset_options,
         )
         zeros_ds = zpk_filter_group.create_dataset(
-            "zeros", zeros.shape, dtype=complex, **self.dataset_options,
+            "zeros",
+            zeros.shape,
+            dtype=complex,
+            **self.dataset_options,
         )
 
         # when filling data need to fill the full row for what ever reason.
@@ -115,13 +125,17 @@ class ZPKGroup(BaseGroup):
                 input_dict[k] = str(v)
 
         zpk_group = self.add_filter(
-            zpk_object.name, zpk_object.poles, zpk_object.zeros, input_dict,
+            zpk_object.name,
+            zpk_object.poles,
+            zpk_object.zeros,
+            input_dict,
         )
         return zpk_group
 
     def to_object(self, name):
         """
         make a :class:`mt_metadata.timeseries.filters.pole_zeros_filter` object
+
         :return: DESCRIPTION
         :rtype: TYPE
 
@@ -136,7 +150,8 @@ class ZPKGroup(BaseGroup):
                 zpk_obj.poles = zpk_group["poles"][:]
             elif "real" in zpk_group["poles"].dtype.names:
                 zpk_obj.poles = (
-                    zpk_group["poles"][()]["real"] + 1j * zpk_group["poles"][()]["imag"]
+                    zpk_group["poles"][()]["real"]
+                    + 1j * zpk_group["poles"][()]["imag"]
                 )
             else:
                 raise ValueError(
@@ -151,7 +166,8 @@ class ZPKGroup(BaseGroup):
                 zpk_obj.zeros = zpk_group["zeros"][:]
             elif "real" in zpk_group["zeros"].dtype.names:
                 zpk_obj.zeros = (
-                    zpk_group["zeros"][()]["real"] + 1j * zpk_group["zeros"][()]["imag"]
+                    zpk_group["zeros"][()]["real"]
+                    + 1j * zpk_group["zeros"][()]["imag"]
                 )
             else:
                 raise ValueError(
