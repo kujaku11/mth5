@@ -214,10 +214,8 @@ class ChannelTS:
                 self.station_metadata.from_dict(station_metadata)
                 self.logger.debug("Loading from metadata dict")
             else:
-                msg = (
-                    "input metadata must be type {0} or dict, not {1}".format(
-                        type(self.station_metadata), type(station_metadata)
-                    )
+                msg = "input metadata must be type {0} or dict, not {1}".format(
+                    type(self.station_metadata), type(station_metadata)
                 )
                 self.logger.error(msg)
                 raise MTTSError(msg)
@@ -407,7 +405,11 @@ class ChannelTS:
         :rtype: np.ndarray(dtype=np.datetime[ns])
 
         """
-        return self._ts.time.to_numpy()
+
+        try:
+            return self._ts.time.to_numpy()
+        except AttributeError:
+            return self._ts.time.values
 
     @property
     def channel_type(self):
