@@ -189,9 +189,13 @@ class TestMakeMTH5(unittest.TestCase):
                         self.assertTrue(abs(x.hdf5_dataset[()].mean()) > 0)
             for run in ["a", "b", "c"]:
                 for ch in ["ex", "ey", "hx", "hy", "hz"]:
+                    x = m.get_channel("NVR08", run, ch, "CONUS_South")
                     with self.subTest(name=f"has data NVR08.{run}.{ch}"):
-                        x = m.get_channel("NVR08", run, ch, "CONUS_South")
                         self.assertTrue(abs(x.hdf5_dataset[()].mean()) > 0)
+
+                    with self.subTest(name="filters"):
+                        self.assertTrue(x.metadata.filter.name != [])
+
             m.close_mth5()
             m.filename.unlink()
         except FDSNNoDataException as error:

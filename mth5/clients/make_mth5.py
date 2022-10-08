@@ -101,7 +101,9 @@ class MakeMTH5:
         :type mth5_object: :class:`mth5.MTH5`
 
         """
-        self._loop_stations(unique_list[0]["stations"], streams, mth5_object)
+        self._loop_stations(
+            unique_list[0]["stations"], streams, mth5_object, experiment
+        )
 
     def _run_020(self, experiment, unique_list, streams, mth5_object):
         survey_map = dict([(s.fdsn.network, s.id) for s in experiment.surveys])
@@ -116,15 +118,38 @@ class MakeMTH5:
                 survey_dict["stations"],
                 streams,
                 mth5_object,
+                experiment,
                 survey_group,
                 survey_id,
             )
 
+    def _get_station_metadata(self, experiment, station_id):
+        """
+        get station metadata so we can pull the run out.  Because this appends
+        surveys in the stationxml we have to loop of similarly named surveys,
+        so this should work for version 1 or 2 files.
+        """
+
+        station_metadata = None
+        for survey in experiment.surveys:
+            station_metadata = survey.get_station(station_id)
+            if station_metadata is not None:
+                return station_metadata
+
     def _loop_stations(
-        self, stations, streams, mth5_object, survey_group=None, survey_id=None
+        self,
+        stations,
+        streams,
+        mth5_object,
+        experiment,
+        survey_group=None,
+        survey_id=None,
     ):
 
         for station_id in stations:
+            station_metadata = self._get_station_metadata(
+                experiment, station_id
+            )
             msstreams = streams.select(station=station_id)
             trace_start_times = sorted(
                 list(set([tr.stats.starttime.isoformat() for tr in msstreams]))
@@ -177,27 +202,29 @@ class MakeMTH5:
                         UTCDateTime(start), UTCDateTime(end)
                     )
                     run_ts_obj = RunTS()
-                    run_ts_obj.from_obspy_stream(
-                        run_stream, run_group.metadata
-                    )
+                    run_ts_obj.from_obspy_stream(run_stream, run_group.metadata)
                     run_group.from_runts(run_ts_obj)
 
             # if there is just one run
             elif len(run_list) == 1:
+                run_metadata = station_metadata.runs[0]
                 if n_times > 1:
                     for run_id, times in enumerate(
                         zip(trace_start_times, trace_end_times), 1
                     ):
+                        run_id = f"{run_id:03}"
+                        run_metadata.id = run_id
+
                         run_group = mobj.stations_group.get_station(
                             station_id
-                        ).add_run(f"{run_id:03}")
+                        ).add_run(run_id)
+
                         run_stream = msstreams.slice(
                             UTCDateTime(times[0]), UTCDateTime(times[1])
                         )
+
                         run_ts_obj = RunTS()
-                        run_ts_obj.from_obspy_stream(
-                            run_stream, run_group.metadata
-                        )
+                        run_ts_obj.from_obspy_stream(run_stream, run_metadata)
                         run_group.from_runts(run_ts_obj)
 
                 elif n_times == 1:
@@ -208,9 +235,7 @@ class MakeMTH5:
                         UTCDateTime(times[0]), UTCDateTime(times[1])
                     )
                     run_ts_obj = RunTS()
-                    run_ts_obj.from_obspy_stream(
-                        run_stream, run_group.metadata
-                    )
+                    run_ts_obj.from_obspy_stream(run_stream, run_metadata)
                     run_group.from_runts(run_ts_obj)
 
             elif len(run_list) != n_times:
@@ -517,9 +542,7 @@ class MakeMTH5:
         for network in net_list:
             network_dict = {
                 "network": network,
-                "stations": df[df.network == network]
-                .station.unique()
-                .tolist(),
+                "stations": df[df.network == network].station.unique().tolist(),
             }
             unique_list.append(network_dict)
 
