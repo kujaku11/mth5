@@ -90,9 +90,7 @@ class TestMakeMTH5(unittest.TestCase):
         with self.subTest(name="stations"):
             self.assertListEqual(
                 sorted(self.stations),
-                sorted(
-                    list(set([ss.code for ss in inv.networks[0].stations]))
-                ),
+                sorted(list(set([ss.code for ss in inv.networks[0].stations]))),
             )
         with self.subTest(name="channels_CAS04"):
             self.assertListEqual(
@@ -211,9 +209,13 @@ class TestMakeMTH5(unittest.TestCase):
                 )
             for run in ["a", "b", "c"]:
                 for ch in ["ex", "ey", "hx", "hy", "hz"]:
+                    x = m.get_channel("NVR08", run, ch)
                     with self.subTest(name=f"has data NVR08.{run}.{ch}"):
-                        x = m.get_channel("NVR08", run, ch)
                         self.assertTrue(abs(x.hdf5_dataset[()].mean()) > 0)
+
+                    with self.subTest(name="filters"):
+                        self.assertTrue(x.metadata.filter.name != [])
+
             # with self.subTest("channel summary"):
 
             m.close_mth5()
