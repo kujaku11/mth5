@@ -363,7 +363,9 @@ class MTH5:
             self.logger.error(msg)
             raise ValueError(msg)
         if value not in acceptable_file_types:
-            msg = f"Input file.type is not valid, must be {acceptable_file_types}"
+            msg = (
+                f"Input file.type is not valid, must be {acceptable_file_types}"
+            )
             self.logger.error(msg)
             raise ValueError(msg)
         self.__file_type = value
@@ -1374,9 +1376,7 @@ class MTH5:
             .get_channel(channel_name)
         )
 
-    def remove_channel(
-        self, station_name, run_name, channel_name, survey=None
-    ):
+    def remove_channel(self, station_name, run_name, channel_name, survey=None):
         """
         Convenience function to remove a channel using
         ``mth5.stations_group.get_station().get_run().remove_channel()``
@@ -1498,6 +1498,8 @@ class MTH5:
         for (
             run_id
         ) in tf_object.station_metadata.transfer_function.runs_processed:
+            if run_id in ["", None, "None"]:
+                continue
             try:
                 run_group = station_group.get_run(run_id)
             except MTH5Error:
