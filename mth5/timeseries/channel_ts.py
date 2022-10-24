@@ -2,16 +2,16 @@
 """
 .. module:: timeseries
    :synopsis: Deal with MT time series
-   
-.. todo:: Check the conversion to netcdf.  There are some weird serializations of 
+
+.. todo:: Check the conversion to netcdf.  There are some weird serializations of
 lists and arrays that goes on, seems easiest to convert all lists to strings and then
 convert them back if read in.
 
 
 :copyright:
     Jared Peacock (jpeacock@usgs.gov)
-    
-:license: 
+
+:license:
     MIT
 """
 
@@ -187,9 +187,7 @@ class ChannelTS:
                     )
                 )
             elif isinstance(channel_metadata, dict):
-                if not channel_type in [
-                    cc.lower() for cc in channel_metadata.keys()
-                ]:
+                if channel_type not in [cc.lower() for cc in channel_metadata.keys()]:
                     channel_metadata = {channel_type: channel_metadata}
                 self.channel_metadata.from_dict(channel_metadata)
                 self.logger.debug("Loading from metadata dict")
@@ -207,9 +205,7 @@ class ChannelTS:
             if isinstance(station_metadata, metadata.Station):
                 self.station_metadata.update(station_metadata)
             elif isinstance(station_metadata, dict):
-                if not "station" in [
-                    cc.lower() for cc in station_metadata.keys()
-                ]:
+                if "station" not in [cc.lower() for cc in station_metadata.keys()]:
                     station_metadata = {"Station": station_metadata}
                 self.station_metadata.from_dict(station_metadata)
                 self.logger.debug("Loading from metadata dict")
@@ -225,7 +221,7 @@ class ChannelTS:
             if isinstance(run_metadata, metadata.Run):
                 self.run_metadata.update(run_metadata)
             elif isinstance(run_metadata, dict):
-                if not "run" in [cc.lower() for cc in run_metadata.keys()]:
+                if "run" not in [cc.lower() for cc in run_metadata.keys()]:
                     run_metadata = {"Run": run_metadata}
                 self.run_metadata.from_dict(run_metadata)
                 self.logger.debug("Loading from metadata dict")
