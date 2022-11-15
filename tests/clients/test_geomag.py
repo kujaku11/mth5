@@ -88,7 +88,7 @@ class TestGeomagClient(unittest.TestCase):
 
         self.assertListEqual(
             [("2020-01-01T00:00:00Z", "2020-01-02T12:00:00Z")],
-            self.client.estimate_chunks(),
+            self.client.get_chunks(),
         )
 
 

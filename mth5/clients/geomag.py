@@ -10,14 +10,17 @@ Created on Mon Nov 14 13:58:44 2022
 # =============================================================================
 import requests
 import json
-
 import sys
 import platform
+
 import numpy as np
+import pandas as pd
 
 from mth5 import __version__ as mth5_version
+from mth5.timeseries import ChannelTS, RunTS
 
 from mt_metadata.utils.mttime import MTime
+from mt_metadata.timeseries import Survey, Station, Run, Magnetic
 
 # =============================================================================
 
@@ -108,7 +111,9 @@ class GeomagClient:
             "Z",
         ]
 
-        self._valid_sample_periods = [1, 60, 3600]
+        self._ch_map = {"x": "hx", "y": "hy", "z": "hz"}
+
+        self._valid_sampling_periods = [1, 60, 3600]
         self._valid_output_formats = ["json", "iaga2002"]
 
         self.type = "adjusted"
@@ -135,7 +140,7 @@ class GeomagClient:
             platform.platform().encode(encoding).decode("ascii", "ignore")
         )
 
-        return f"MTH5 v{mth5_version} ({platform_}, Python {platform.python_version})"
+        return f"MTH5 v{mth5_version} ({platform_}, Python {platform.python_version()})"
 
     @property
     def observatory(self):
@@ -198,11 +203,11 @@ class GeomagClient:
         self._elements = elements
 
     @property
-    def sample_period(self):
-        return self._sample_period
+    def sampling_period(self):
+        return self._sampling_period
 
-    @sample_period.setter
-    def sample_period(self, value):
+    @sampling_period.setter
+    def sampling_period(self, value):
         """
         validate sample period value
 
@@ -226,10 +231,10 @@ class GeomagClient:
                 f"{value} must be an integer or float not type({type(value)}"
             )
 
-        if value not in self._valid_sample_periods:
+        if value not in self._valid_sampling_periods:
             raise ValueError(f"{value} must be in [1, 60, 3600]")
 
-        self._sample_period = value
+        self._sampling_period = value
 
     @property
     def start(self):
@@ -253,7 +258,7 @@ class GeomagClient:
         else:
             self._end = MTime(value)
 
-    def estimate_chunks(self):
+    def get_chunks(self):
         """
         Get the number of chunks of allowable sized to request
 
@@ -280,18 +285,165 @@ class GeomagClient:
 
             return dt_request
 
-    @property
-    def params(self):
-        """parameters for request"""
+    def _get_request_params(self, start, end):
+        """
+        Get request parameters
+
+        :param start: DESCRIPTION
+        :type start: TYPE
+        :param end: DESCRIPTION
+        :type end: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
         return {
             "id": self.observatory,
             "type": self.type,
-            "elements": "X,Y",
-            "sampling_period": "1",
+            "elements": ",".join(self.elements),
+            "sampling_period": self.sampling_period,
             "format": "json",
-            "starttime": "2020-06-02T19:00:00Z",
-            "endtime": "2020-06-02T22:07:46Z",
+            "starttime": start,
+            "endtime": end,
         }
 
-    def get_data(self, request_dict):
-        self.requests.get(**request_dict)
+    def _get_request_dictionary(self, start, end):
+        """
+        get the request dictionary
+
+        :param start: DESCRIPTION
+        :type start: TYPE
+        :param end: DESCRIPTION
+        :type end: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        return {
+            "url": self._base_url,
+            "headers": {"User-Agent": self.user_agent},
+            "params": self._get_request_params(start, end),
+            "timeout": self._timeout,
+        }
+
+    def _request_data(self, request_dictionary):
+        """
+        request data from geomag for start and end times using
+        `request.get(**request_dictionary)
+
+        :param request_dictionary: DESCRIPTION
+        :type request_dictionary: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        return requests.get(**request_dictionary)
+
+    def _to_station_metadata(self, request_metadata):
+        """
+
+        :param request_metadata: DESCRIPTION
+        :type request_metadata: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        sm = Station()
+        sm.id = request_metadata["intermagnet"]["imo"]["name"]
+        sm.fdsn.id = request_metadata["intermagnet"]["imo"]["iaga_code"]
+
+        coords = request_metadata["intermagnet"]["imo"]["coordinates"]
+
+        if coords[0] > 180:
+            sm.location.longitude = coords[0] - 360
+        else:
+            sm.location.longitude = coords[0]
+        sm.location.latitude = coords[1]
+        sm.location.elevation = coords[2]
+        sm.provenance.creation_time = request_metadata["generated"]
+
+        return sm
+
+    def get_data(self):
+        """
+        Get data from geomag client at USGS based on the request.  This might
+        have to be done in chunks depending on the request size.  The returned
+        output is a json object, which we should turn into a ChannelTS object
+
+        For now read into a pandas dataframe and then into a ChannelTS
+
+        In the future, if the request is large, think about writing
+        directly to an MTH5 for better efficiency.
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        ch = dict([(c.lower(), []) for c in self.elements])
+
+        for interval in self.get_chunks():
+            request_obj = self._request_data(
+                self._get_request_dictionary(interval[0], interval[1])
+            )
+            if request_obj.status_code == 200:
+                request_json = json.loads(request_obj.content)
+                for element in request_json["values"]:
+                    ch[element["metadata"]["element"].lower()].append(
+                        pd.DataFrame(
+                            {
+                                "data": element["values"],
+                            },
+                            index=request_json["times"],
+                        )
+                    )
+
+        station_metadata = self._to_station_metadata(request_json["metadata"])
+        run_metadata = Run(id="001")
+
+        ch_list = []
+        for key, df_list in ch.items():
+            df = pd.concat(df_list)
+            ch_metadata = Magnetic()
+            ch_metadata.component = self._ch_map[key]
+            ch_metadata.sample_rate = 1.0 / self.sampling_period
+            ch_metadata.units = "nanotesla"
+            ch_metadata.time_period.start = df.index[0]
+            ch_metadata.time_period.end = df.index[-1]
+            run_metadata.time_period.start = df.index[0]
+            run_metadata.time_period.end = df.index[-1]
+            station_metadata.time_period.start = df.index[0]
+            station_metadata.time_period.end = df.index[-1]
+            ch_list.append(
+                ChannelTS(
+                    channel_type="magnetic",
+                    data=df,
+                    channel_metadata=ch_metadata,
+                    run_metadata=run_metadata,
+                    station_metadata=station_metadata,
+                )
+            )
+
+        return RunTS(
+            ch_list,
+            run_metadata=run_metadata,
+            station_metadata=station_metadata,
+        )
+
+    def make_mth5(self, save_path):
+        """
+        write a mth5 to the path given
+
+        todo: make observatory be a list
+
+        :param save_path: DESCRIPTION
+        :type save_path: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        pass
