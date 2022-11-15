@@ -230,6 +230,22 @@ class GeomagClient:
         self._sample_period = value
 
     @property
+    def start(self):
+        return f"{self._start.iso_no_tz}Z"
+
+    @start.setter
+    def start(self, value):
+        self._start = MTime(value)
+
+    @property
+    def end(self):
+        return f"{self._end.iso_no_tz}Z"
+
+    @end.setter
+    def end(self, value):
+        self._end = MTime(value)
+
+    @property
     def params(self):
         """parameters for request"""
         return {
