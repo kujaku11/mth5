@@ -257,3 +257,6 @@ class GeomagClient:
             "starttime": "2020-06-02T19:00:00Z",
             "endtime": "2020-06-02T22:07:46Z",
         }
+
+    def get_data(self, request_dict):
+        self.requests.get(**request_dict)
