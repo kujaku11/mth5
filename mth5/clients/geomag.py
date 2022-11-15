@@ -196,6 +196,40 @@ class GeomagClient:
         self._elements = elements
 
     @property
+    def sample_period(self):
+        return self._sample_period
+
+    @sample_period.setter
+    def sample_period(self, value):
+        """
+        validate sample period value
+
+        :param value: DESCRIPTION
+        :type value: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if isinstance(value, str):
+            try:
+                value = int(value)
+            except ValueError:
+                raise ValueError(
+                    f"{value} must be able to convert to an integer."
+                )
+
+        if not isinstance(value, (int, float)):
+            raise TypeError(
+                f"{value} must be an integer or float not type({type(value)}"
+            )
+
+        if value not in self._valid_sample_periods:
+            raise ValueError(f"{value} must be in [1, 60, 3600]")
+
+        self._sample_period = value
+
+    @property
     def params(self):
         """parameters for request"""
         return {

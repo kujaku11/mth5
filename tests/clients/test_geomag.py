@@ -57,6 +57,23 @@ class TestGeomagClient(unittest.TestCase):
         with self.subTest("TypeError_list"):
             self.assertRaises(TypeError, set_elements, ["x", 10])
 
+    def test_sample_period(self):
+        self.client.sample_period = "1"
+        self.assertEqual(1, self.client.sample_period)
+
+    def test_sample_period_fail(self):
+        def set_period(value):
+            self.client.sample_period = value
+
+        with self.subTest("ValueError_bad_number"):
+            self.assertRaises(ValueError, set_period, "p")
+
+        with self.subTest("TypeError"):
+            self.assertRaises(TypeError, set_period, [1])
+
+        with self.subTest("not in list"):
+            self.assertRaises(ValueError, set_period, 10)
+
 
 # =============================================================================
 # Run
