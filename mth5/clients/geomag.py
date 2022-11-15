@@ -118,6 +118,8 @@ class GeomagClient:
         self._timeout = 120
         self.observatory = "FRN"
         self._max_length = 172800
+        self.start = None
+        self.end = None
 
     @property
     def user_agent(self):
@@ -235,7 +237,10 @@ class GeomagClient:
 
     @start.setter
     def start(self, value):
-        self._start = MTime(value)
+        if value is None:
+            self._start = None
+        else:
+            self._start = MTime(value)
 
     @property
     def end(self):
@@ -243,7 +248,37 @@ class GeomagClient:
 
     @end.setter
     def end(self, value):
-        self._end = MTime(value)
+        if value is None:
+            self._end = None
+        else:
+            self._end = MTime(value)
+
+    def estimate_chunks(self):
+        """
+        Get the number of chunks of allowable sized to request
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if self.start is not None and self.end is not None:
+            dt = np.arange(
+                np.datetime64(self._start.iso_no_tz),
+                np.datetime64(self._end.iso_no_tz),
+                np.timedelta64(self._max_length * self.sampling_period, "s"),
+            )
+            dt = np.append(dt, np.array([np.datetime64(self._end.iso_no_tz)]))
+
+            dt_request = [
+                (
+                    f"{MTime(dt[ii]).iso_no_tz}Z",
+                    f"{MTime(dt[ii + 1]).iso_no_tz}Z",
+                )
+                for ii in range(0, len(dt), 2)
+            ]
+
+            return dt_request
 
     @property
     def params(self):

@@ -74,6 +74,23 @@ class TestGeomagClient(unittest.TestCase):
         with self.subTest("not in list"):
             self.assertRaises(ValueError, set_period, 10)
 
+    def test_start(self):
+        self.client.start = "2020-01-01T00:00:00+00:00"
+        self.assertEqual(self.client.start, "2020-01-01T00:00:00Z")
+
+    def test_end(self):
+        self.client.end = "2020-01-01T00:00:00+00:00"
+        self.assertEqual(self.client.end, "2020-01-01T00:00:00Z")
+
+    def test_estimate_chunks(self):
+        self.client.start = "2020-01-01T00:00:00+00:00"
+        self.client.end = "2020-01-02T12:00:00+00:00"
+
+        self.assertListEqual(
+            [("2020-01-01T00:00:00Z", "2020-01-02T12:00:00Z")],
+            self.client.estimate_chunks(),
+        )
+
 
 # =============================================================================
 # Run
