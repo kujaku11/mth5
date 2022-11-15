@@ -55,10 +55,11 @@ def validate_compression(compression, level):
     if compression is None:
         return None, None
     if not isinstance(compression, (str, type(None))):
-        msg = "compression type must be a string, not {0}".format(type(compression))
+        msg = "compression type must be a string, not {0}".format(
+            type(compression)
+        )
         logger.error(msg)
         raise TypeError(msg)
-
     if not compression in COMPRESSION:
         msg = (
             f"Compression type {compression} not supported. "
@@ -66,13 +67,13 @@ def validate_compression(compression, level):
         )
         logger.error(msg)
         raise ValueError(msg)
-
     if compression == "lzf":
         level = COMPRESSION_LEVELS["lzf"][0]
     elif compression == " gzip":
         if not isinstance(level, (int)):
             msg = "Level type for gzip must be an int, not {0}.".format(
-                type(level) + f" Options are {0}".format(COMPRESSION_LEVELS["gzip"])
+                type(level)
+                + f" Options are {0}".format(COMPRESSION_LEVELS["gzip"])
             )
             logger.error(msg)
             raise TypeError(msg)
@@ -83,7 +84,6 @@ def validate_compression(compression, level):
             ) + " Options are {0}".format(COMPRESSION_LEVELS["szip"])
             logger.error(msg)
             raise TypeError(msg)
-
     if not level in COMPRESSION_LEVELS[compression]:
         msg = (
             f"compression level {level} not supported for {compression}."
@@ -91,7 +91,6 @@ def validate_compression(compression, level):
         )
         logger.error(msg)
         raise ValueError(msg)
-
     return compression, level
 
 
@@ -111,18 +110,18 @@ def close_open_files():
         try:
             if isinstance(obj, h5py.File):
                 msg = "Found HDF5 File object "
-                print(msg)
+                logger.debug(msg)
                 try:
-                    msg = "{0}, ".format(obj.filename)
+                    msg = f"{obj.filename}, "
                     obj.flush()
                     obj.close()
                     msg += "Closed File"
                     logger.info(msg)
                 except:
-                    msg += "File already closed."
+                    msg += f"{obj.filename} file already closed."
                     logger.info(msg)
         except:
-            print("Object {} does not have __class__")
+            logger.info(f"Object {type(obj)} does not have __class__")
 
 
 def get_tree(parent):
@@ -136,7 +135,9 @@ def get_tree(parent):
     """
     lines = ["{0}:".format(parent.name), "=" * 20]
     if not isinstance(parent, (h5py.File, h5py.Group)):
-        raise TypeError("Provided object is not a h5py.File or h5py.Group " "object")
+        raise TypeError(
+            "Provided object is not a h5py.File or h5py.Group " "object"
+        )
 
     def fancy_print(name, obj):
         # lines.append(name)
@@ -145,10 +146,14 @@ def get_tree(parent):
 
         if isinstance(obj, h5py.Group):
             lines.append("{0}|- Group: {1}".format(spacing, group_name))
-            lines.append("{0}{1}".format(spacing, (len(group_name) + 10) * "-"))
+            lines.append(
+                "{0}{1}".format(spacing, (len(group_name) + 10) * "-")
+            )
         elif isinstance(obj, h5py.Dataset):
             lines.append("{0}--> Dataset: {1}".format(spacing, group_name))
-            lines.append("{0}{1}".format(spacing, (len(group_name) + 15) * "."))
+            lines.append(
+                "{0}{1}".format(spacing, (len(group_name) + 15) * ".")
+            )
 
     # lines.append(parent.name)
     parent.visititems(fancy_print)
@@ -173,7 +178,6 @@ def to_numpy_type(value):
     # For now turn references into a generic string
     if isinstance(value, h5py.h5r.Reference):
         value = str(value)
-
     if isinstance(
         value,
         (
@@ -190,13 +194,11 @@ def to_numpy_type(value):
         ),
     ):
         return value
-
     if isinstance(value, Iterable):
         if np.any([type(x) in [str, bytes, np.str_] for x in value]):
             return np.array(value, dtype="S")
         else:
             return np.array(value)
-
     else:
         raise TypeError("Type {0} not understood".format(type(value)))
 
@@ -204,15 +206,16 @@ def to_numpy_type(value):
 def validate_name(name):
     """
     make sure the name has no spaces or slashes
-    
+
     :param name: DESCRIPTION
     :type name: TYPE
     :return: DESCRIPTION
     :rtype: TYPE
 
     """
-    
+
     return name.replace(" ", "_").replace("/", "_")
+
 
 def from_numpy_type(value):
     """
@@ -232,7 +235,6 @@ def from_numpy_type(value):
     # For now turn references into a generic string
     if isinstance(value, h5py.h5r.Reference):
         value = str(value)
-
     if isinstance(
         value,
         (
@@ -249,13 +251,11 @@ def from_numpy_type(value):
         ),
     ):
         return value
-
     if isinstance(value, Iterable):
         if np.any([type(x) in [bytes, np.bytes_] for x in value]):
             return np.array(value, dtype="U").tolist()
         else:
             return np.array(value).tolist()
-
     else:
         raise TypeError("Type {0} not understood".format(type(value)))
 
@@ -273,8 +273,8 @@ def inherit_doc_string(cls):
 
 def validate_name(name, pattern=None):
     """
-    Validate name 
-    
+    Validate name
+
     :param name: DESCRIPTION
     :type name: TYPE
     :param pattern: DESCRIPTION, defaults to None
@@ -285,4 +285,4 @@ def validate_name(name, pattern=None):
     """
     if name is None:
         return "unknown"
-    return name.replace(" ", "_")
+    return name.replace(" ", "_").replace(",", "")

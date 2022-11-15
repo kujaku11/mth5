@@ -11,11 +11,9 @@ large tables of data to warrant using pytables.
 
 Created on Sun Dec  9 20:50:41 2018
 
-:copyright:
-    Jared Peacock (jpeacock@usgs.gov)
+:copyright: Jared Peacock (jpeacock@usgs.gov)
     
-:license: 
-    MIT
+:license: MIT
 
 """
 
@@ -67,26 +65,33 @@ class MTH5:
 
     For version 0.1.0:
 
-        Survey
-           |-Reports
-           |-Standards
-           |-Filters
-           |-Stations
-               |-Run
-                   |-Channel
+        - Survey
+
+           - Reports
+           - Standards
+           - Filters
+           - Stations
+
+               - Run
+
+                   - Channel
 
     For version 0.2.0:
 
-        Experiment
-            |-Reports
-            |-Standards
-            |-Surveys
-               |-Reports
-               |-Standards
-               |-Filters
-               |-Stations
-                   |-Run
-                       |-Channel
+        - Experiment
+
+            - Reports
+            - Standards
+            - Surveys
+
+               - Reports
+               - Standards
+               - Filters
+               - Stations
+
+                   - Run
+
+                       -Channel
 
 
     All timeseries data are stored as individual channels with the appropriate
@@ -108,6 +113,7 @@ class MTH5:
     :param filename: name of the to be or existing file
     :type filename: string or :class:`pathlib.Path`
     :param compression: compression type.  Supported lossless compressions are
+
         * 'lzf' - Available with every installation of h5py
                  (C source code also available). Low to
                  moderate compression, very fast. No options.
@@ -121,6 +127,7 @@ class MTH5:
                    community. Not available with all
                    installations of HDF5 due to legal reasons.
                    Consult the HDF5 docs for filter options.
+
     :param compression_opts: compression options, see above
     :type compression_opts: string or int depending on compression type
     :param shuffle: Block-oriented compressors like GZIP or LZF work better
@@ -136,9 +143,11 @@ class MTH5:
     :type fletcher32: boolean
     :param data_level: level the data are stored following levels defined by
        `NASA ESDS <https://earthdata.nasa.gov/collaborate/open-data-services-and-software/data-information-policy/data-levels>`_
+
          * 0 - Raw data
          * 1 - Raw data with response information and full metadata
          * 2 - Derived product, raw data has been manipulated
+
     :type data_level: integer, defaults to 1
     :param file_version: Version of the file [ '0.1.0' | '0.2.0' ], defaults to "0.2.0"
     :type file_version: string, optional
@@ -245,7 +254,7 @@ class MTH5:
         self,
         filename=None,
         compression="gzip",
-        compression_opts=9,
+        compression_opts=4,
         shuffle=True,
         fletcher32=True,
         data_level=1,
@@ -256,9 +265,10 @@ class MTH5:
 
         # make these private so the user cant accidentally change anything.
         self.__hdf5_obj = None
-        (self.__compression, self.__compression_opts,) = helpers.validate_compression(
-            compression, compression_opts
-        )
+        (
+            self.__compression,
+            self.__compression_opts,
+        ) = helpers.validate_compression(compression, compression_opts)
         self.__shuffle = shuffle
         self.__fletcher32 = fletcher32
 
@@ -353,7 +363,9 @@ class MTH5:
             self.logger.error(msg)
             raise ValueError(msg)
         if value not in acceptable_file_types:
-            msg = f"Input file.type is not valid, must be {acceptable_file_types}"
+            msg = (
+                f"Input file.type is not valid, must be {acceptable_file_types}"
+            )
             self.logger.error(msg)
             raise ValueError(msg)
         self.__file_type = value
@@ -454,7 +466,8 @@ class MTH5:
         if self.h5_is_read():
             if self.file_version in ["0.2.0"]:
                 return groups.ExperimentGroup(
-                    self.__hdf5_obj[f"{self._root_path}"], **self.dataset_options
+                    self.__hdf5_obj[f"{self._root_path}"],
+                    **self.dataset_options,
                 )
             else:
                 self.logger.info(
@@ -470,7 +483,8 @@ class MTH5:
         if self.file_version in ["0.1.0"]:
             if self.h5_is_read():
                 return groups.SurveyGroup(
-                    self.__hdf5_obj[f"{self._root_path}"], **self.dataset_options
+                    self.__hdf5_obj[f"{self._root_path}"],
+                    **self.dataset_options,
                 )
             self.logger.info("File is closed cannot access /Survey")
             return None
@@ -500,7 +514,8 @@ class MTH5:
         """Convenience property for /Survey/Reports group"""
         if self.h5_is_read():
             return groups.ReportsGroup(
-                self.__hdf5_obj[f"{self._root_path}/Reports"], **self.dataset_options
+                self.__hdf5_obj[f"{self._root_path}/Reports"],
+                **self.dataset_options,
             )
         self.logger.info("File is closed cannot access /Reports")
         return None
@@ -527,7 +542,8 @@ class MTH5:
         """Convenience property for /Standards group"""
         if self.h5_is_read():
             return groups.StandardsGroup(
-                self.__hdf5_obj[f"{self._root_path}/Standards"], **self.dataset_options
+                self.__hdf5_obj[f"{self._root_path}/Standards"],
+                **self.dataset_options,
             )
         self.logger.info("File is closed cannot access /Standards")
         return None
@@ -543,7 +559,8 @@ class MTH5:
                 )
                 return None
             return groups.MasterStationGroup(
-                self.__hdf5_obj[f"{self._root_path}/Stations"], **self.dataset_options
+                self.__hdf5_obj[f"{self._root_path}/Stations"],
+                **self.dataset_options,
             )
         self.logger.info("File is closed cannot access /Stations")
         return None
@@ -645,7 +662,9 @@ class MTH5:
             root_group.write_metadata()
         for group_name in self._default_subgroup_names:
             try:
-                self.__hdf5_obj.create_group(f"{self._default_root_name}/{group_name}")
+                self.__hdf5_obj.create_group(
+                    f"{self._default_root_name}/{group_name}"
+                )
             except ValueError:
                 pass
             m5_grp = getattr(self, f"{group_name.lower()}_group")
@@ -657,22 +676,27 @@ class MTH5:
         )
 
     def _initialize_summary(self):
-        # initiate channel and tf summary datasets
-        self.__hdf5_obj[self._default_root_name].create_dataset(
-            "channel_summary",
-            shape=(1,),
-            maxshape=(None,),
-            dtype=CHANNEL_DTYPE,
-            **self.dataset_options,
-        )
-
-        self.__hdf5_obj[self._default_root_name].create_dataset(
-            "tf_summary",
-            shape=(1,),
-            maxshape=(None,),
-            dtype=TF_DTYPE,
-            **self.dataset_options,
-        )
+        try:
+            # initiate channel and tf summary datasets
+            self.__hdf5_obj[self._default_root_name].create_dataset(
+                "channel_summary",
+                shape=(1,),
+                maxshape=(None,),
+                dtype=CHANNEL_DTYPE,
+                **self.dataset_options,
+            )
+        except ValueError:
+            pass
+        try:
+            self.__hdf5_obj[self._default_root_name].create_dataset(
+                "tf_summary",
+                shape=(1,),
+                maxshape=(None,),
+                dtype=TF_DTYPE,
+                **self.dataset_options,
+            )
+        except ValueError:
+            pass
 
     def validate_file(self):
         """
@@ -731,7 +755,7 @@ class MTH5:
             self.logger.info(f"Flushing and closing {str(self.filename)}")
             self.__hdf5_obj.flush()
             self.__hdf5_obj.close()
-        except AttributeError:
+        except (AttributeError, ValueError):
             helpers.close_open_files()
 
     def h5_is_write(self):
@@ -846,10 +870,14 @@ class MTH5:
         if self.h5_is_write():
             if self.file_version in ["0.1.0"]:
                 sg = self.survey_group
-                sg.metadata.from_dict(experiment.surveys[survey_index].to_dict())
+                sg.metadata.from_dict(
+                    experiment.surveys[survey_index].to_dict()
+                )
                 sg.write_metadata()
                 for station in experiment.surveys[0].stations:
-                    mt_station = self.add_station(station.id, station_metadata=station)
+                    mt_station = self.add_station(
+                        station.id, station_metadata=station
+                    )
                     if update:
                         mt_station.metadata.update(station)
                         mt_station.write_metadata()
@@ -877,13 +905,17 @@ class MTH5:
 
                     for station in survey.stations:
                         mt_station = self.add_station(
-                            station.id, station_metadata=station, survey=sg.metadata.id
+                            station.id,
+                            station_metadata=station,
+                            survey=sg.metadata.id,
                         )
                         if update:
                             mt_station.metadata.update(station)
                             mt_station.write_metadata()
                         for run in station.runs:
-                            mt_run = mt_station.add_run(run.id, run_metadata=run)
+                            mt_run = mt_station.add_run(
+                                run.id, run_metadata=run
+                            )
                             if update:
                                 mt_run.metadata.update(run)
                                 mt_run.write_metadata()
@@ -1191,11 +1223,9 @@ class MTH5:
                 msg = "Need to input 'survey' for file version %s"
                 self.logger.error(msg, self.file_version)
                 raise ValueError(msg % self.file_version)
-                
+
             survey = helpers.validate_name(survey)
-            run_path = (
-                f"{self._root_path}/Surveys/{survey}/Stations/{station_name}/{run_name}"
-            )
+            run_path = f"{self._root_path}/Surveys/{survey}/Stations/{station_name}/{run_name}"
         try:
             return groups.RunGroup(self.__hdf5_obj[run_path])
         except KeyError:
@@ -1223,7 +1253,9 @@ class MTH5:
 
         """
 
-        return self.get_station(station_name, survey=survey).remove_run(run_name)
+        return self.get_station(station_name, survey=survey).remove_run(
+            run_name
+        )
 
     def add_channel(
         self,
@@ -1232,6 +1264,9 @@ class MTH5:
         channel_name,
         channel_type,
         data,
+        channel_dtype="int32",
+        max_shape=(None,),
+        chunks=True,
         channel_metadata=None,
         survey=None,
     ):
@@ -1285,6 +1320,9 @@ class MTH5:
             channel_type,
             data,
             channel_metadata=channel_metadata,
+            channel_dtype=channel_dtype,
+            max_shape=max_shape,
+            chunks=chunks,
             **self.dataset_options,
         )
 
@@ -1403,10 +1441,17 @@ class MTH5:
                             sg_dict = survey_group.metadata.to_dict(
                                 single=True, required=False
                             )
-                            for key, value in tf_object.survey_metadata.to_dict(
+                            for (
+                                key,
+                                value,
+                            ) in tf_object.survey_metadata.to_dict(
                                 single=True
                             ).items():
-                                if key in ["hdf5_reference", "mth5_type", "id"]:
+                                if key in [
+                                    "hdf5_reference",
+                                    "mth5_type",
+                                    "id",
+                                ]:
                                     continue
                                 if sg_dict[key] != value:
                                     match = False
@@ -1450,7 +1495,11 @@ class MTH5:
                 station_metadata=tf_object.to_ts_station_metadata(),
             )
         ## need to check for runs and channels
-        for run_id in tf_object.station_metadata.transfer_function.runs_processed:
+        for (
+            run_id
+        ) in tf_object.station_metadata.transfer_function.runs_processed:
+            if run_id in ["", None, "None"]:
+                continue
             try:
                 run_group = station_group.get_run(run_id)
             except MTH5Error:
@@ -1465,21 +1514,25 @@ class MTH5:
                             ch.component, ch.type, None, channel_metadata=ch
                         )
         try:
-            tf_group = station_group.transfer_functions_group.add_transfer_function(
-                tf_object.station, tf_object=tf_object
+            tf_group = (
+                station_group.transfer_functions_group.add_transfer_function(
+                    tf_object.station, tf_object=tf_object
+                )
             )
         except (OSError, RuntimeError, ValueError):
             msg = f"TF {tf_object.station} already exists, returning existing group."
             self.logger.debug(msg)
-            tf_group = station_group.transfer_functions_group.get_transfer_function(
-                tf_object.station
+            tf_group = (
+                station_group.transfer_functions_group.get_transfer_function(
+                    tf_object.station
+                )
             )
         return tf_group
 
     def get_transfer_function(self, station_id, tf_id, survey=None):
         """
-        Get a transfer function 
-        
+        Get a transfer function
+
         :param survey_id: DESCRIPTION
         :type survey_id: TYPE
         :param station_id: DESCRIPTION
@@ -1497,8 +1550,8 @@ class MTH5:
 
     def remove_transfer_function(self, station_id, tf_id, survey=None):
         """
-        remove a transfer function 
-        
+        remove a transfer function
+
         :param survey_id: DESCRIPTION
         :type survey_id: TYPE
         :param station_id: DESCRIPTION

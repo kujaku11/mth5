@@ -42,7 +42,10 @@ class FIRGroup(BaseGroup):
         f_dict = {}
         for key in self.hdf5_group.keys():
             fir_group = self.hdf5_group[key]
-            f_dict[key] = {"type": fir_group.attrs["type"], "hdf5_ref": fir_group.ref}
+            f_dict[key] = {
+                "type": fir_group.attrs["type"],
+                "hdf5_ref": fir_group.ref,
+            }
 
         return f_dict
 
@@ -66,7 +69,9 @@ class FIRGroup(BaseGroup):
 
         # create datasets for the poles and zeros
         fir_ds = fir_filter_group.create_dataset(
-            "coefficients", coefficients.shape, **self.dataset_options,
+            "coefficients",
+            coefficients.shape,
+            **self.dataset_options,
         )
 
         fir_ds[:] = coefficients
@@ -111,13 +116,16 @@ class FIRGroup(BaseGroup):
                 input_dict[k] = str(v)
 
         fir_group = self.add_filter(
-            fir_object.name, fir_object.coefficients, input_dict,
+            fir_object.name,
+            fir_object.coefficients,
+            input_dict,
         )
         return fir_group
 
     def to_object(self, name):
         """
         make a :class:`mt_metadata.timeseries.filters.pole_zeros_filter` object
+
         :return: DESCRIPTION
         :rtype: TYPE
 

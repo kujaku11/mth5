@@ -56,7 +56,7 @@ class TransferFunctionGroup(BaseGroup):
         )
 
     def has_estimate(self, estimate):
-        """ 
+        """
         has estimate
         """
 
@@ -87,7 +87,11 @@ class TransferFunctionGroup(BaseGroup):
                 res = self.get_estimate("residual_covariance")
                 isp = self.get_estimate("inverse_signal_power")
 
-                if res.hdf5_dataset.shape != (1, 1, 1) and isp.hdf5_dataset.shape != (
+                if res.hdf5_dataset.shape != (
+                    1,
+                    1,
+                    1,
+                ) and isp.hdf5_dataset.shape != (
                     1,
                     1,
                     1,
@@ -102,7 +106,7 @@ class TransferFunctionGroup(BaseGroup):
     def period(self):
         """
         Get period from hdf5_group["period"]
-        
+
         :return: DESCRIPTION
         :rtype: TYPE
 
@@ -141,7 +145,7 @@ class TransferFunctionGroup(BaseGroup):
     ):
         """
         Add a StatisticalEstimate
-        
+
         :param estimate: DESCRIPTION
         :type estimate: TYPE
         :return: DESCRIPTION
@@ -204,9 +208,13 @@ class TransferFunctionGroup(BaseGroup):
 
         try:
             estimate_dataset = self.hdf5_group[estimate_name]
-            estimate_metadata = StatisticalEstimate(**dict(estimate_dataset.attrs))
-            return EstimateDataset(estimate_dataset, dataset_metadata=estimate_metadata)
-        except KeyError:
+            estimate_metadata = StatisticalEstimate(
+                **dict(estimate_dataset.attrs)
+            )
+            return EstimateDataset(
+                estimate_dataset, dataset_metadata=estimate_metadata
+            )
+        except (KeyError, OSError):
             msg = (
                 f"{estimate_name} does not exist, "
                 + "check groups_list for existing names"
@@ -217,7 +225,7 @@ class TransferFunctionGroup(BaseGroup):
     def remove_estimate(self, estimate_name):
         """
         remove a statistical estimate
-        
+
         :param estimate_name: DESCRIPTION
         :type estimate_name: TYPE
         :return: DESCRIPTION
@@ -245,9 +253,9 @@ class TransferFunctionGroup(BaseGroup):
 
     def to_tf_object(self):
         """
-        Create a mt_metadata.transfer_function.core.TF object from the 
+        Create a mt_metadata.transfer_function.core.TF object from the
         estimates in the group
-        
+
         :return: DESCRIPTION
         :rtype: TYPE
 
@@ -278,6 +286,8 @@ class TransferFunctionGroup(BaseGroup):
         # add run and channel metadata
         tf_obj.station_metadata.runs = []
         for run_id in tf_obj.station_metadata.transfer_function.runs_processed:
+            if run_id in ["", None, "None"]:
+                continue
             try:
                 run = self.hdf5_group.parent.parent[validate_name(run_id)]
                 run_dict = dict(run.attrs)
@@ -297,7 +307,9 @@ class TransferFunctionGroup(BaseGroup):
                     run_obj.add_channel(ch_obj)
                 tf_obj.station_metadata.add_run(run_obj)
             except KeyError:
-                self.logger.info(f"Could not get run {run_id} for transfer function")
+                self.logger.info(
+                    f"Could not get run {run_id} for transfer function"
+                )
         if self.period is not None:
             tf_obj.period = self.period
         else:
@@ -319,7 +331,7 @@ class TransferFunctionGroup(BaseGroup):
         """
         Create data sets from a :class:`mt_metadata.transfer_function.core.TF`
         object.
-        
+
         :param tf_obj: DESCRIPTION
         :type tf_obj: TYPE
         :return: DESCRIPTION
@@ -347,6 +359,10 @@ class TransferFunctionGroup(BaseGroup):
                 if estimate is not None:
                     _ = self.add_statistical_estimate(estimate_name, estimate)
                 else:
-                    self.logger.debug(f"Did not find {estimate_name} in TF. Skipping")
+                    self.logger.debug(
+                        f"Did not find {estimate_name} in TF. Skipping"
+                    )
             except AttributeError:
-                self.logger.debug(f"Did not find {estimate_name} in TF. Skipping")
+                self.logger.debug(
+                    f"Did not find {estimate_name} in TF. Skipping"
+                )
