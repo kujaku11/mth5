@@ -27,7 +27,7 @@ from . import FDSN
 class MakeMTH5:
     def __init__(self, mth5_version="0.2.0", interact=False, save_path=None):
         """
-        
+
         :param mth5_version: MTH5 file version, defaults to "0.2.0"
         :type mth5_version: string, optional
         :param interact: keep file open (True) or close it (False), defaults to False
@@ -36,15 +36,15 @@ class MakeMTH5:
         :type save_path: string or :class:`pathlib.Path`, optional
 
         """
-    
+
         self.mth5_version = mth5_version
         self.interact = False
         self.save_path = None
-        
+
     def from_fdsn_client(self, request_df, client="IRIS"):
         """
         Pull data from an FDSN archive like IRIS.  Uses Obspy.Clients.
-        
+
         :param request_df: DataFrame with columns
 
             - 'network'   --> FDSN Network code
@@ -59,9 +59,9 @@ class MakeMTH5:
         :param client: FDSN client name, defaults to "IRIS"
         :type client: string, optional
         :raises AttributeError: If the input DataFrame is not properly
-        formatted an Attribute Error will be raised.
+         formatted an Attribute Error will be raised.
         :raises ValueError: If the values of the DataFrame are not correct a
-        ValueError will be raised.
+         ValueError will be raised.
         :param interact: Boolean to keep the created MTH5 file open or not
         :type interact: bool
         :return: MTH5 file name
@@ -75,12 +75,10 @@ class MakeMTH5:
         within the given start and end time will be returned.
 
         """
-        
+
         fdsn_client = FDSN(client=client, mth5_version=self.mth5_version)
         mth5_object = fdsn_client.make_mth5_from_fdsnclient(
-            request_df,path=self.save_path, interact=self.interact)
-        
-        return mth5_object
-        
+            request_df, path=self.save_path, interact=self.interact
+        )
 
-   
+        return mth5_object

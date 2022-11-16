@@ -53,12 +53,17 @@ class RunTS:
     """
 
     def __init__(
-        self, array_list=None, run_metadata=None, station_metadata=None
+        self,
+        array_list=None,
+        run_metadata=None,
+        station_metadata=None,
+        survey_metadata=None,
     ):
 
         self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
         self.run_metadata = metadata.Run()
         self.station_metadata = metadata.Station()
+        self.survey_metadata = metadata.Survey()
         self._dataset = xr.Dataset()
         self._filters = {}
 
@@ -103,8 +108,28 @@ class RunTS:
                     msg % (type(self.station_metadata), type(station_metadata))
                 )
 
+        # add survey metadata, this will be important when propogating a run
+        if survey_metadata is not None:
+            if isinstance(survey_metadata, metadata.Survey):
+                self.survey_metadata.from_dict(survey_metadata.to_dict())
+
+            elif isinstance(survey_metadata, dict):
+                if "Station" not in list(survey_metadata.keys()):
+                    survey_metadata = {"Station": survey_metadata}
+                self.survey_metadata.from_dict(survey_metadata)
+
+            else:
+                msg = "input metadata must be type %s or dict, not %s"
+                self.logger.error(
+                    msg, type(self.survey_metadata), type(survey_metadata)
+                )
+                raise MTTSError(
+                    msg % (type(self.survey_metadata), type(survey_metadata))
+                )
+
     def __str__(self):
         s_list = [
+            f"Survey:      {self.survey_metadata.id}",
             f"Station:     {self.station_metadata.id}",
             f"Run:         {self.run_metadata.id}",
             f"Start:       {self.start}",
@@ -208,6 +233,7 @@ class RunTS:
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
                 channel_response_filter=ch_response_filter,
+                survey_metadata=self.survey_metadata,
             )
         else:
             # this is a hack for now until figure out who is calling shape, size

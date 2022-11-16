@@ -156,14 +156,16 @@ class ChannelTS:
         channel_type="auxiliary",
         data=None,
         channel_metadata=None,
-        station_metadata=None,
         run_metadata=None,
+        station_metadata=None,
+        survey_metadata=None,
         **kwargs,
     ):
 
         self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
-        self.station_metadata = metadata.Station()
         self.run_metadata = metadata.Run()
+        self.station_metadata = metadata.Station()
+        self.survey_metadata = metadata.Survey()
         self._ts = xr.DataArray([1], coords=[("time", [1])], name="ts")
         self._channel_response = ChannelResponseFilter()
 
@@ -187,7 +189,9 @@ class ChannelTS:
                     )
                 )
             elif isinstance(channel_metadata, dict):
-                if channel_type not in [cc.lower() for cc in channel_metadata.keys()]:
+                if channel_type not in [
+                    cc.lower() for cc in channel_metadata.keys()
+                ]:
                     channel_metadata = {channel_type: channel_metadata}
                 self.channel_metadata.from_dict(channel_metadata)
                 self.logger.debug("Loading from metadata dict")
@@ -199,22 +203,7 @@ class ChannelTS:
                 raise MTTSError(
                     msg % (type(self.channel_metadata), type(channel_metadata))
                 )
-        # add station metadata, this will be important when propogating a single
-        # channel such that it can stand alone.
-        if station_metadata is not None:
-            if isinstance(station_metadata, metadata.Station):
-                self.station_metadata.update(station_metadata)
-            elif isinstance(station_metadata, dict):
-                if "station" not in [cc.lower() for cc in station_metadata.keys()]:
-                    station_metadata = {"Station": station_metadata}
-                self.station_metadata.from_dict(station_metadata)
-                self.logger.debug("Loading from metadata dict")
-            else:
-                msg = "input metadata must be type {0} or dict, not {1}".format(
-                    type(self.station_metadata), type(station_metadata)
-                )
-                self.logger.error(msg)
-                raise MTTSError(msg)
+
         # add run metadata, this will be important when propogating a single
         # channel such that it can stand alone.
         if run_metadata is not None:
@@ -233,6 +222,27 @@ class ChannelTS:
                 raise MTTSError(
                     msg % (type(self.run_metadata), type(run_metadata))
                 )
+
+        # add station metadata, this will be important when propogating a single
+        # channel such that it can stand alone.
+        if station_metadata is not None:
+            if isinstance(station_metadata, metadata.Station):
+                self.station_metadata.update(station_metadata)
+            elif isinstance(station_metadata, dict):
+                if "station" not in [
+                    cc.lower() for cc in station_metadata.keys()
+                ]:
+                    station_metadata = {"Station": station_metadata}
+                self.station_metadata.from_dict(station_metadata)
+                self.logger.debug("Loading from metadata dict")
+            else:
+                msg = (
+                    "input metadata must be type {0} or dict, not {1}".format(
+                        type(self.station_metadata), type(station_metadata)
+                    )
+                )
+                self.logger.error(msg)
+                raise MTTSError(msg)
         # input data
         if data is not None:
             self.ts = data
@@ -283,6 +293,33 @@ class ChannelTS:
 
     def __gt__(self, other):
         return not self.__lt__(other)
+
+    def _validate_metadata(self, value, metadata_type):
+        """
+
+        :param value: DESCRIPTION
+        :type value: TYPE
+        :param metadata_type: DESCRIPTION
+        :type metadata_type: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        metadata_type = metadata_type.capitalize()
+        if isinstance(value, getattr(metadata, metadata_type)):
+            return value
+        elif isinstance(value, dict):
+            if metadata_type not in [cc.lower() for cc in value.keys()]:
+                value = {metadata_type: value}
+            obj = getattr(metadata, metadata_type)()
+            obj.from_dict(value)
+            self.logger.debug("Loading from metadata dict")
+            return obj
+        else:
+            msg = "input metadata must be type %s or dict, not %s"
+            self.logger.error(msg, metadata_type, type(value))
+            raise MTTSError(msg % (metadata_type, type(value)))
 
     ### Properties ------------------------------------------------------------
     @property
