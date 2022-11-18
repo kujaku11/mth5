@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+0  # -*- coding: utf-8 -*-
 """
 Created on Fri Aug 19 16:39:30 2022
 
@@ -34,7 +34,7 @@ class TestReadPhoenixContinuous(unittest.TestCase):
         self.original = open_phoenix(
             r"c:\Users\jpeacock\OneDrive - DOI\mt\phoenix_example_data\Sample Data\10128_2021-04-27-032436\0\10128_608783F4_0_00000001.td_150"
         )
-        self.original_data = self.original.read_data(4096)
+        self.original_data = self.original.read()
 
     def test_readers_match(self):
         self.assertTrue(
