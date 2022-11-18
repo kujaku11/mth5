@@ -18,6 +18,7 @@ import pandas as pd
 
 from mth5 import __version__ as mth5_version
 from mth5.timeseries import ChannelTS, RunTS
+from mth5.mth5 import MTH5
 
 from mt_metadata.utils.mttime import MTime
 from mt_metadata.timeseries import Survey, Station, Run, Magnetic
@@ -433,7 +434,7 @@ class GeomagClient:
             station_metadata=station_metadata,
         )
 
-    def make_mth5(self, save_path):
+    def make_mth5_from_geomag(self, save_path):
         """
         write a mth5 to the path given
 
