@@ -20,9 +20,7 @@ from mth5.io.phoenix import PhoenixCollection
 # =============================================================================
 
 
-@unittest.skipIf(
-    "peacock" not in str(Path(__file__).as_posix()), "local files"
-)
+@unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local files")
 class TestPhoenixCollection(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -64,8 +62,7 @@ class TestPhoenixCollection(unittest.TestCase):
         self.df = self.pc._set_df_dtypes(self.df)
         with self.subTest("start"):
             self.assertTrue(
-                self.df.start.dtype.type
-                == pd._libs.tslibs.timestamps.Timestamp
+                self.df.start.dtype.type == pd._libs.tslibs.timestamps.Timestamp
             )
         with self.subTest("end"):
             self.assertTrue(
@@ -79,7 +76,12 @@ class TestPhoenixCollection(unittest.TestCase):
             self.assertTrue(self.df.calibration_fn.dtype.type == np.object_)
 
     def test_survey_id(self):
-        self.assertTrue((self.df.survey == self.pc.survey_id).all())
+        self.assertTrue(
+            (
+                self.df.survey
+                == list(self.pc.metadata_dict.values())[0].survey_metadata.id
+            ).all()
+        )
 
     def test_df_run_names_150(self):
         self.assertEqual(

@@ -10,6 +10,7 @@ Created on Thu Aug  4 16:48:47 2022
 # =============================================================================
 # Imports
 # =============================================================================
+from pathlib import Path
 from collections import OrderedDict
 import numpy as np
 import pandas as pd
@@ -63,7 +64,7 @@ class PhoenixCollection(Collection):
 
         """
 
-        if rec_fn.is_file():
+        if Path(rec_fn).is_file():
             return ReceiverMetadataJSON(fn=rec_fn)
         else:
             self.logger.warning(
@@ -122,9 +123,7 @@ class PhoenixCollection(Collection):
             ] = receiver_metadata
 
             for sr in sample_rates:
-                for fn in folder.rglob(
-                    f"*{self._file_extension_map[int(sr)]}"
-                ):
+                for fn in folder.rglob(f"*{self._file_extension_map[int(sr)]}"):
                     phx_obj = open_phoenix(fn)
                     if hasattr(phx_obj, "read_segment"):
                         segment = phx_obj.read_segment(metadata_only=True)
