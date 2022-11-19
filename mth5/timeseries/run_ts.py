@@ -50,6 +50,9 @@ class RunTS:
 
     components --> {'ex': ex_xarray, 'ey': ey_xarray}
 
+    ToDo, have a single Survey object under the hood and properties to other
+    metadata objects for get/set.
+
     """
 
     def __init__(
@@ -427,9 +430,7 @@ class RunTS:
     def end(self):
         """End time UTC"""
         if self.has_data:
-            return MTime(
-                self.dataset.coords["time"].to_index()[-1].isoformat()
-            )
+            return MTime(self.dataset.coords["time"].to_index()[-1].isoformat())
         return self.run_metadata.time_period.end
 
     @property
