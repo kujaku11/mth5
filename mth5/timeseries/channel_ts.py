@@ -538,7 +538,7 @@ class ChannelTS:
             for key in [k for k in meta_dict.keys() if "run." in k]:
                 run_dict[key.split("run.")[-1]] = meta_dict.pop(key)
 
-            self.channel_type = self._validate_channel_type(meta_dict["type"])
+            self.channel_type = meta_dict["type"]
             ch_metadata = meta_classes[self.channel_type]()
 
             ch_metadata.from_dict({self.channel_type: meta_dict})
