@@ -24,7 +24,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from mt_metadata import metadata
+import mt_metadata.timeseries as metadata
 from mt_metadata.utils.mttime import MTime
 from mt_metadata.timeseries.filters import ChannelResponseFilter
 
@@ -411,7 +411,7 @@ class ChannelTS:
         station metadata
         """
 
-        return self.survey_metadata.stations[0]
+        return self.survey_metadata.stations[0].runs[0]
 
     @run_metadata.setter
     def run_metadata(self, run_metadata):
@@ -430,7 +430,7 @@ class ChannelTS:
         station metadata
         """
 
-        return self.survey_metadata.stations[0]
+        return self.survey_metadata.stations[0].runs[0].channels[0]
 
     @channel_metadata.setter
     def channel_metadata(self, channel_metadata):
