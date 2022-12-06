@@ -56,58 +56,29 @@ class RunTS:
     """
 
     def __init__(
-        self, array_list=None, run_metadata=None, station_metadata=None
+        self,
+        array_list=None,
+        run_metadata=None,
+        station_metadata=None,
+        survey_metadata=None,
     ):
 
         self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
-        self.run_metadata = metadata.Run()
-        self.station_metadata = metadata.Station()
+        self._survey_metadata = self._initialize_metadata()
         self._dataset = xr.Dataset()
         self._filters = {}
+
+        self.survey_metadata = survey_metadata
+        self.station_metadata = station_metadata
+        self.run_metadata = run_metadata
 
         # load the arrays first this will write run and station metadata
         if array_list is not None:
             self.dataset = array_list
 
-        # if the use inputs metadata, overwrite all values in the metadata element
-        if run_metadata is not None:
-            if isinstance(run_metadata, dict):
-                # make sure the input dictionary has the correct form
-                if "Run" not in list(run_metadata.keys()):
-                    run_metadata = {"Run": run_metadata}
-                self.run_metadata.from_dict(run_metadata)
-
-            elif isinstance(run_metadata, metadata.Run):
-                self.run_metadata.from_dict(run_metadata.to_dict())
-            else:
-                msg = (
-                    "Input metadata must be a dictionary or Run object, "
-                    f"not {type(run_metadata)}"
-                )
-                self.logger.error(msg)
-                raise MTTSError(msg)
-
-        # add station metadata, this will be important when propogating a run
-        if station_metadata is not None:
-            if isinstance(station_metadata, metadata.Station):
-                self.station_metadata.from_dict(station_metadata.to_dict())
-
-            elif isinstance(station_metadata, dict):
-                if "Station" not in list(station_metadata.keys()):
-                    station_metadata = {"Station": station_metadata}
-                self.station_metadata.from_dict(station_metadata)
-
-            else:
-                msg = "input metadata must be type %s or dict, not %s"
-                self.logger.error(
-                    msg, type(self.station_metadata), type(station_metadata)
-                )
-                raise MTTSError(
-                    msg % (type(self.station_metadata), type(station_metadata))
-                )
-
     def __str__(self):
         s_list = [
+            f"Survey:      {self.survey_metadata.id}",
             f"Station:     {self.station_metadata.id}",
             f"Run:         {self.run_metadata.id}",
             f"Start:       {self.start}",
@@ -119,6 +90,101 @@ class RunTS:
 
     def __repr__(self):
         return self.__str__()
+
+    def _initialize_metadata(self):
+        """
+        Create a single `Survey` object to store all metadata
+
+        :param channel_type: DESCRIPTION
+        :type channel_type: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        survey_metadata = metadata.Survey(id="0")
+        survey_metadata.stations.append(metadata.Station(id="0"))
+        survey_metadata.stations[0].runs.append(metadata.Run(id="0"))
+
+        return survey_metadata
+
+    def _validate_run_metadata(self, run_metadata):
+        """
+        validate run metadata
+
+        """
+
+        if not isinstance(run_metadata, metadata.Run):
+            if isinstance(run_metadata, dict):
+                if "run" not in [cc.lower() for cc in run_metadata.keys()]:
+                    run_metadata = {"Run": run_metadata}
+                r_metadata = metadata.Run()
+                r_metadata.from_dict(run_metadata)
+                self.logger.debug("Loading from metadata dict")
+                return r_metadata
+            else:
+                msg = "input metadata must be type %s or dict, not %s"
+                self.logger.error(
+                    msg, type(self.run_metadata), type(run_metadata)
+                )
+                raise MTTSError(
+                    msg % (type(self.run_metadata), type(run_metadata))
+                )
+        return run_metadata
+
+    def _validate_station_metadata(self, station_metadata):
+        """
+        validate station metadata
+        """
+
+        if not isinstance(station_metadata, metadata.Station):
+            if isinstance(station_metadata, dict):
+                if "station" not in [
+                    cc.lower() for cc in station_metadata.keys()
+                ]:
+                    station_metadata = {"Station": station_metadata}
+
+                st_metadata = metadata.Station()
+                st_metadata.from_dict(station_metadata)
+                self.logger.debug("Loading from metadata dict")
+                return st_metadata
+            else:
+                msg = (
+                    "input metadata must be type {0} or dict, not {1}".format(
+                        type(self.station_metadata), type(station_metadata)
+                    )
+                )
+                self.logger.error(msg)
+                raise MTTSError(msg)
+
+        return station_metadata
+
+    def _validate_survey_metadata(self, survey_metadata):
+        """
+        validate station metadata
+        """
+
+        if not isinstance(survey_metadata, metadata.Survey):
+            if isinstance(survey_metadata, dict):
+                if "station" not in [
+                    cc.lower() for cc in survey_metadata.keys()
+                ]:
+                    survey_metadata = {"Survey": survey_metadata}
+
+                sv_metadata = metadata.Station()
+                sv_metadata.from_dict(survey_metadata)
+                self.logger.debug("Loading from metadata dict")
+                return sv_metadata
+            else:
+                msg = (
+                    "input metadata must be type {0} or dict, not {1}".format(
+                        type(self.survey_metadata), type(survey_metadata)
+                    )
+                )
+                self.logger.error(msg)
+                raise MTTSError(msg)
+
+        return survey_metadata
 
     def _validate_array_list(self, array_list):
         """check to make sure all entries are a :class:`ChannelTS` object"""
@@ -231,6 +297,66 @@ class RunTS:
                     self.logger.error(msg)
                     raise NameError(msg)
 
+    ### Properties ------------------------------------------------------------
+    @property
+    def survey_metadata(self):
+        """
+        survey metadata
+        """
+        return self._survey_metadata
+
+    @survey_metadata.setter
+    def survey_metadata(self, survey_metadata):
+        """
+
+        :param survey_metadata: survey metadata object or dictionary
+        :type survey_metadata: :class:`mt_metadata.timeseries.Survey` or dict
+
+        """
+
+        if survey_metadata is not None:
+            self._survey_metadata = self._validate_survey_metadata(
+                survey_metadata
+            )
+
+    @property
+    def station_metadata(self):
+        """
+        station metadata
+        """
+
+        return self.survey_metadata.stations[0]
+
+    @station_metadata.setter
+    def station_metadata(self, station_metadata):
+        """
+        set station metadata from a valid input
+        """
+
+        if station_metadata is not None:
+            self.survey_metadata.stations[0].update(
+                self._validate_station_metadata(station_metadata)
+            )
+
+    @property
+    def run_metadata(self):
+        """
+        station metadata
+        """
+
+        return self.survey_metadata.stations[0].runs[0]
+
+    @run_metadata.setter
+    def run_metadata(self, run_metadata):
+        """
+        set run metadata from a valid input
+        """
+
+        if run_metadata is not None:
+            self.survey_metadata.stations[0].runs[0].update(
+                self._validate_run_metadata(run_metadata)
+            )
+
     @property
     def has_data(self):
         """check to see if there is data"""
@@ -320,6 +446,9 @@ class RunTS:
 
             if self.run_metadata.id not in self.station_metadata.run_list:
                 self.station_metadata.runs.append(self.run_metadata)
+
+            self.survey_metadata.stations[0].update_time_period()
+            self.survey_metadata.update_time_period()
 
     def set_dataset(self, array_list, align_type="outer"):
         """
@@ -430,7 +559,9 @@ class RunTS:
     def end(self):
         """End time UTC"""
         if self.has_data:
-            return MTime(self.dataset.coords["time"].to_index()[-1].isoformat())
+            return MTime(
+                self.dataset.coords["time"].to_index()[-1].isoformat()
+            )
         return self.run_metadata.time_period.end
 
     @property

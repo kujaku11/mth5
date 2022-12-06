@@ -170,6 +170,7 @@ class ChannelTS:
         self._ts = xr.DataArray([1], coords=[("time", [1])], name="ts")
         self._channel_response = ChannelResponseFilter()
 
+        self.survey_metadata = survey_metadata
         self.station_metadata = station_metadata
         self.run_metadata = run_metadata
         self.channel_metadata = channel_metadata
@@ -268,7 +269,10 @@ class ChannelTS:
         validate input channel metadata
         """
 
-        if not isinstance(channel_metadata, type(self.channel_metadata)):
+        if not isinstance(
+            channel_metadata,
+            (metadata.Electric, metadata.Magnetic, metadata.Auxiliary),
+        ):
             if isinstance(channel_metadata, dict):
                 if self.channel_type.lower() not in [
                     cc.lower() for cc in channel_metadata.keys()
@@ -384,7 +388,10 @@ class ChannelTS:
 
         """
 
-        self._survey_metadata = self._validate_survey_metadata(survey_metadata)
+        if survey_metadata is not None:
+            self._survey_metadata = self._validate_survey_metadata(
+                survey_metadata
+            )
 
     @property
     def station_metadata(self):
@@ -439,9 +446,9 @@ class ChannelTS:
         """
 
         if channel_metadata is not None:
-            self.survey_metadata.stations[0].runs[0].channels[0].update(
-                self._validate_channel_metadata(channel_metadata)
-            )
+            self.survey_metadata.stations[0].runs[0].channels[
+                0
+            ] = self._validate_channel_metadata(channel_metadata)
 
     @property
     def ts(self):
@@ -520,24 +527,23 @@ class ChannelTS:
             meta_dict = dict([(k, v) for k, v in ts_arr.attrs.items()])
 
             # need to get station and run metadata out
-            station_keys = [k for k in meta_dict.keys() if "station." in k]
-            run_keys = [k for k in meta_dict.keys() if "run." in k]
+            survey_dict = {}
             station_dict = {}
             run_dict = {}
-            for key in station_keys:
+
+            for key in [k for k in meta_dict.keys() if "survey." in k]:
+                survey_dict[key.split("station.")[-1]] = meta_dict.pop(key)
+            for key in [k for k in meta_dict.keys() if "station." in k]:
                 station_dict[key.split("station.")[-1]] = meta_dict.pop(key)
-            for key in run_keys:
+            for key in [k for k in meta_dict.keys() if "run." in k]:
                 run_dict[key.split("run.")[-1]] = meta_dict.pop(key)
 
-            if meta_dict["type"] == "electric":
-                ch_metadata = metadata.Electric()
-            elif meta_dict["type"] == "magnetic":
-                ch_metadata = metadata.Magnetic()
-            else:
-                ch_metadata = metadata.Auxiliary()
+            self.channel_type = self._validate_channel_type(meta_dict["type"])
+            ch_metadata = meta_classes[self.channel_type]()
 
-            ch_metadata.from_dict({meta_dict["type"]: meta_dict})
+            ch_metadata.from_dict({self.channel_type: meta_dict})
             self.channel_metadata = ch_metadata
+            self.survey_metadata.from_dict({"survey": survey_dict})
             self.station_metadata.from_dict({"station": station_dict})
             self.run_metadata.from_dict({"run": run_dict})
             # need to run this incase things are different.
@@ -576,21 +582,23 @@ class ChannelTS:
 
         value = self._validate_channel_type(value)
         if value != self._channel_type:
-            m_dict = self.channel_metadata.to_dict()[self._channel_type]
-            self.channel_metadata = meta_classes[value]()
+            m_dict = self.channel_metadata.to_dict()[
+                self._channel_type.lower()
+            ]
+
             msg = (
-                f"Changing metadata to {value.capitalize()}"
-                + "will translate any similar attributes."
+                f"Changing metadata from {self.channel_type} to {value}, "
+                "will translate any similar attributes."
             )
-            self.logger.info(msg)
-            for key in self.channel_metadata.to_dict()[
-                self.channel_metadata._class_name
-            ].keys():
+            channel_metadata = meta_classes[value]()
+            self.logger.debug(msg)
+            for key in channel_metadata.to_dict(single=True).keys():
                 try:
-                    self.channel_metadata.set_attr_from_name(key, m_dict[key])
+                    channel_metadata.set_attr_from_name(key, m_dict[key])
                 except KeyError:
                     pass
-        return
+
+            self.channel_metadata = channel_metadata
 
     def _update_xarray_metadata(self):
         """

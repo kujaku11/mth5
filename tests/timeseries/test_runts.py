@@ -23,6 +23,7 @@ from mth5.timeseries import ChannelTS, RunTS
 from mth5.utils.exceptions import MTTSError
 
 from mt_metadata.utils.mttime import MTime
+import mt_metadata.timeseries as metadata
 from mt_metadata.timeseries.filters import (
     PoleZeroFilter,
     ChannelResponseFilter,
@@ -118,6 +119,7 @@ class TestRunTS(unittest.TestCase):
 
     def test_str(self):
         s_list = [
+            f"Survey:      {self.run.survey_metadata.id}",
             f"Station:     {self.run.station_metadata.id}",
             f"Run:         {self.run.run_metadata.id}",
             f"Start:       {self.run.start}",
@@ -131,6 +133,7 @@ class TestRunTS(unittest.TestCase):
 
     def test_repr(self):
         s_list = [
+            f"Survey:      {self.run.survey_metadata.id}",
             f"Station:     {self.run.station_metadata.id}",
             f"Run:         {self.run.run_metadata.id}",
             f"Start:       {self.run.start}",
@@ -148,6 +151,42 @@ class TestRunTS(unittest.TestCase):
     def test_set_station_metadata_fail(self):
         self.assertRaises(
             MTTSError, RunTS, [self.ex], **{"station_metadata": []}
+        )
+
+    def test_validate_run_metadata(self):
+        self.assertEqual(
+            self.run.run_metadata,
+            self.run._validate_run_metadata(self.run.run_metadata),
+        )
+
+    def test_validate_run_metadata_from_dict(self):
+        self.assertEqual(
+            metadata.Run(id="0"),
+            self.run._validate_run_metadata({"id": "0"}),
+        )
+
+    def test_validate_station_metadata(self):
+        self.assertEqual(
+            self.run.station_metadata,
+            self.run._validate_station_metadata(self.run.station_metadata),
+        )
+
+    def test_validate_station_metadata_from_dict(self):
+        self.assertEqual(
+            metadata.Station(id="0"),
+            self.run._validate_station_metadata({"id": "0"}),
+        )
+
+    def test_validate_survey_metadata(self):
+        self.assertEqual(
+            self.run.survey_metadata,
+            self.run._validate_survey_metadata(self.run.survey_metadata),
+        )
+
+    def test_validate_survey_metadata_from_dict(self):
+        self.assertEqual(
+            metadata.Survey(id="0"),
+            self.run._validate_survey_metadata({"id": "0"}),
         )
 
     def test_validate_array_fail(self):
