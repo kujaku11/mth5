@@ -31,23 +31,15 @@ def initialize_mth5(h5_path, mode="a", file_version="0.1.0"):
 
 
     """
+    h5_path = Path(h5_path)
     if mode == "w":
-        if h5_path:
-            h5_path = Path(h5_path)
-        else:
-            h5_path = Path("test.h5")
-
         if h5_path.exists():
             logger.warning("File exists, removing from file system.")
             close_open_files()
             h5_path.unlink()
-        mth5_obj = MTH5(file_version=file_version)
-        mth5_obj.open_mth5(str(h5_path), mode)
 
-    elif mode in ["a", "r"]:
-        h5_path = Path(h5_path)
-        mth5_obj = MTH5(file_version=file_version)
-        mth5_obj.open_mth5(h5_path, mode=mode)
+    mth5_obj = MTH5(file_version=file_version)
+    mth5_obj.open_mth5(str(h5_path), mode=mode)
 
     return mth5_obj
 
@@ -74,9 +66,7 @@ def read_back_data(mth5_path, station_id, run_id, survey=None):
     processing_config["local_station_id"] = station_id
     config = processing_config
     m = initialize_mth5(config["mth5_path"], mode="r")
-    local_run_obj = m.get_run(
-        config["local_station_id"], run_id, survey=survey
-    )
+    local_run_obj = m.get_run(config["local_station_id"], run_id, survey=survey)
     local_run_ts = local_run_obj.to_runts()
     data_array = local_run_ts.dataset.to_array()
     logger.info(f"data shape = {data_array.shape}")
