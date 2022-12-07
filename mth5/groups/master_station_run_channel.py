@@ -1239,9 +1239,31 @@ class RunGroup(BaseGroup):
         return StationGroup(self.hdf5_group.parent)
 
     @property
+    def station_metadata(self):
+        """station metadata"""
+
+        meta_dict = dict(self.hdf5_group.parent.attrs)
+        for key, value in meta_dict.items():
+            meta_dict[key] = from_numpy_type(value)
+        station_metadata = metadata.Station()
+        station_metadata.from_dict({"station": meta_dict})
+        return station_metadata
+
+    @property
     def master_station_group(self):
         """shortcut to master station group"""
         return MasterStationGroup(self.hdf5_group.parent.parent)
+
+    @property
+    def survey_metadata(self):
+        """survey metadata"""
+
+        meta_dict = dict(self.hdf5_group.parent.parent.parent.attrs)
+        for key, value in meta_dict.items():
+            meta_dict[key] = from_numpy_type(value)
+        survey_metadata = metadata.Survey()
+        survey_metadata.from_dict({"survey": meta_dict})
+        return survey_metadata
 
     @BaseGroup.metadata.getter
     def metadata(self):
@@ -1633,7 +1655,8 @@ class RunGroup(BaseGroup):
         return RunTS(
             ch_list,
             run_metadata=self.metadata,
-            station_metadata=self.station_group.metadata,
+            station_metadata=self.station_metadata,
+            survey_metadata=self.survey_metadata,
         )
 
     def from_runts(self, run_ts_obj, **kwargs):
@@ -1959,14 +1982,49 @@ class ChannelDataset:
         return RunGroup(self.hdf5_dataset.parent)
 
     @property
+    def run_metadata(self):
+        """run metadata"""
+
+        meta_dict = dict(self.hdf5_dataset.parent.attrs)
+        for key, value in meta_dict.items():
+            meta_dict[key] = from_numpy_type(value)
+        run_metadata = metadata.Run()
+        run_metadata.from_dict({"run": meta_dict})
+        return run_metadata
+
+    @property
     def station_group(self):
         """shortcut to station group"""
+
         return StationGroup(self.hdf5_dataset.parent.parent)
+
+    @property
+    def station_metadata(self):
+        """station metadata"""
+
+        meta_dict = dict(self.hdf5_dataset.parent.parent.attrs)
+        for key, value in meta_dict.items():
+            meta_dict[key] = from_numpy_type(value)
+        station_metadata = metadata.Station()
+        station_metadata.from_dict({"station": meta_dict})
+        return station_metadata
 
     @property
     def master_station_group(self):
         """shortcut to master station group"""
+
         return MasterStationGroup(self.hdf5_dataset.parent.parent.parent)
+
+    @property
+    def survey_metadata(self):
+        """survey metadata"""
+
+        meta_dict = dict(self.hdf5_dataset.parent.parent.parent.parent.attrs)
+        for key, value in meta_dict.items():
+            meta_dict[key] = from_numpy_type(value)
+        survey_metadata = metadata.Survey()
+        survey_metadata.from_dict({"survey": meta_dict})
+        return survey_metadata
 
     @property
     def survey_id(self):
@@ -2041,8 +2099,10 @@ class ChannelDataset:
         way it can be validated.
 
         """
-
-        self.metadata.from_dict({self._class_name: self.hdf5_dataset.attrs})
+        meta_dict = dict(self.hdf5_dataset.attrs)
+        for key, value in meta_dict.items():
+            meta_dict[key] = from_numpy_type(value)
+        self.metadata.from_dict({self._class_name: meta_dict})
 
     def write_metadata(self):
         """
@@ -2408,8 +2468,9 @@ class ChannelDataset:
             channel_type=self.metadata.type,
             data=self.hdf5_dataset[()],
             channel_metadata=self.metadata,
-            run_metadata=self.run_group.metadata,
-            station_metadata=self.station_group.metadata,
+            run_metadata=self.run_metadata,
+            station_metadata=self.station_metadata,
+            survey_metadata=self.survey_metadata,
             channel_response_filter=self.channel_response_filter,
         )
 

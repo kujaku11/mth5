@@ -315,8 +315,8 @@ class RunTS:
         """
 
         if survey_metadata is not None:
-            self._survey_metadata = self._validate_survey_metadata(
-                survey_metadata
+            self._survey_metadata.update(
+                self._validate_survey_metadata(survey_metadata)
             )
 
     @property

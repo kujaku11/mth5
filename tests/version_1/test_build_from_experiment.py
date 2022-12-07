@@ -74,6 +74,34 @@ class TestMTH5(unittest.TestCase):
 
                 self.assertDictEqual(h5_sd, sd)
 
+    def test_to_run_ts(self):
+        run_group = self.mth5_obj.get_run(
+            self.experiment.surveys[0].stations[0].id,
+            self.experiment.surveys[0].stations[0].runs[0].id,
+        )
+        run_ts = run_group.to_runts()
+
+        with self.subTest("survey metadata"):
+            self.assertDictEqual(
+                self.experiment.surveys[0].to_dict(single=True),
+                run_ts.survey_metadata.to_dict(single=True),
+            )
+
+        with self.subTest("station metadata"):
+            self.assertDictEqual(
+                self.experiment.surveys[0].stations[0].to_dict(single=True),
+                run_ts.station_metadata.to_dict(single=True),
+            )
+
+        with self.subTest("run metadata"):
+            self.assertDictEqual(
+                self.experiment.surveys[0]
+                .stations[0]
+                .runs[0]
+                .to_dict(single=True),
+                run_ts.run_metadata.to_dict(single=True),
+            )
+
     def test_channels(self):
         runs = self.experiment.surveys[0].stations[0].runs
         for run in runs:
@@ -174,3 +202,10 @@ class TestUpdateFromExperiment(unittest.TestCase):
     def tearDownClass(self):
         self.mth5_obj.close_mth5()
         self.fn.unlink()
+
+
+# =============================================================================
+# Run
+# =============================================================================
+if __name__ == "__main__":
+    unittest.main()
