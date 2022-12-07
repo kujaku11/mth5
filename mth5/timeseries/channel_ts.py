@@ -593,11 +593,14 @@ class ChannelTS:
             channel_metadata = meta_classes[value]()
             self.logger.debug(msg)
             for key in channel_metadata.to_dict(single=True).keys():
+                # need to skip type otherwise it keeps the same type
+                if key in ["type"]:
+                    continue
                 try:
                     channel_metadata.set_attr_from_name(key, m_dict[key])
                 except KeyError:
                     pass
-
+            self._channel_type = value
             self.channel_metadata = channel_metadata
 
     def _update_xarray_metadata(self):
