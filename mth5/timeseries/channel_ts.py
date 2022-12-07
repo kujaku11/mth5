@@ -84,7 +84,9 @@ def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
     # not quite right since the rounding clips some samples and your
     # end time will be incorrect (short).
     # FIX: therefore estimate the end time based on the decimal sample rate.
-    end_time = start_time + n_samples / sample_rate
+    # need to account for the fact that the start time is the first sample
+    # need n_samples - 1
+    end_time = start_time + (n_samples - 1) / sample_rate
 
     # dt_freq = "{0:.0f}N".format(1.0e9 / (sample_rate))
 
