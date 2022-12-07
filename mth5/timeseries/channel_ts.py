@@ -25,8 +25,8 @@ import pandas as pd
 import xarray as xr
 
 import mt_metadata.timeseries as metadata
-from mt_metadata.utils.mttime import MTime
 from mt_metadata.timeseries.filters import ChannelResponseFilter
+from mt_metadata.utils.mttime import MTime
 from mt_metadata.utils.list_dict import ListDict
 
 from mth5.utils.exceptions import MTTSError

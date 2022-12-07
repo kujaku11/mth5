@@ -211,15 +211,12 @@ class RunTS:
                 if index == 0:
                     self.station_metadata.update(item.station_metadata)
                     self.run_metadata.update(item.run_metadata)
-                    print(self.run_metadata.id)
 
                 else:
 
                     self.station_metadata.update(
                         item.station_metadata, match=["id"]
                     )
-                    print(item.station_metadata)
-                    print(self.run_metadata.id, item.run_metadata.id)
                     self.run_metadata.update(item.run_metadata, match=["id"])
 
                 # need to do this after a run has been filled in.
@@ -362,9 +359,9 @@ class RunTS:
         """
 
         if run_metadata is not None:
-            self.survey_metadata.stations[0].runs[0].update(
-                self._validate_run_metadata(run_metadata)
-            )
+            runs = ListDict()
+            runs.append(self._validate_run_metadata(run_metadata))
+            self.survey_metadata.stations[0].runs = runs
 
     @property
     def has_data(self):

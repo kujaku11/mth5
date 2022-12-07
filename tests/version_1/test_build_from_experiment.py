@@ -81,26 +81,49 @@ class TestMTH5(unittest.TestCase):
         )
         run_ts = run_group.to_runts()
 
-        with self.subTest("survey metadata"):
-            self.assertDictEqual(
-                self.experiment.surveys[0].to_dict(single=True),
-                run_ts.survey_metadata.to_dict(single=True),
-            )
+        for key in self.experiment.surveys[0].to_dict(single=True).keys():
+            with self.subTest(f"survey.{key}"):
+                self.assertEqual(
+                    self.experiment.surveys[0].get_attr_from_name(key),
+                    run_ts.survey_metadata.get_attr_from_name(key),
+                )
 
-        with self.subTest("station metadata"):
-            self.assertDictEqual(
-                self.experiment.surveys[0].stations[0].to_dict(single=True),
-                run_ts.station_metadata.to_dict(single=True),
-            )
+        for key in (
+            self.experiment.surveys[0].stations[0].to_dict(single=True).keys()
+        ):
+            if key in ["hdf5_reference", "mth5_type"]:
+                continue
 
-        with self.subTest("run metadata"):
-            self.assertDictEqual(
-                self.experiment.surveys[0]
-                .stations[0]
-                .runs[0]
-                .to_dict(single=True),
-                run_ts.run_metadata.to_dict(single=True),
-            )
+            with self.subTest(f"station.{key}"):
+                if key in ["run_list"]:
+                    self.assertListEqual(
+                        ["a"], run_ts.station_metadata.run_list
+                    )
+                else:
+                    self.assertEqual(
+                        self.experiment.surveys[0]
+                        .stations[0]
+                        .get_attr_from_name(key),
+                        run_ts.station_metadata.get_attr_from_name(key),
+                    )
+
+        for key in (
+            self.experiment.surveys[0]
+            .stations[0]
+            .runs[0]
+            .to_dict(single=True)
+            .keys()
+        ):
+            if key in ["hdf5_reference", "mth5_type"]:
+                continue
+            with self.subTest(f"run.{key}"):
+                self.assertEqual(
+                    self.experiment.surveys[0]
+                    .stations[0]
+                    .runs[0]
+                    .get_attr_from_name(key),
+                    run_ts.run_metadata.get_attr_from_name(key),
+                )
 
     def test_channels(self):
         runs = self.experiment.surveys[0].stations[0].runs
