@@ -90,50 +90,194 @@ class TestMTH5(unittest.TestCase):
 
                 self.assertDictEqual(h5_sd, sd)
 
-    def test_channels(self):
-        runs = self.experiment.surveys[0].stations[0].runs
-        for run in runs:
-            with self.subTest(name=run.id):
-                h5_run = self.mth5_obj.get_run(
-                    self.experiment.surveys[0].stations[0].id,
-                    run.id,
-                    self.survey_name,
+    def test_to_run_ts(self):
+        run_group = self.mth5_obj.get_run(
+            self.experiment.surveys[0].stations[0].id,
+            self.experiment.surveys[0].stations[0].runs[0].id,
+            self.experiment.surveys[0].id,
+        )
+        run_ts = run_group.to_runts()
+
+        for key in self.experiment.surveys[0].to_dict(single=True).keys():
+            if key in ["hdf5_reference", "mth5_type"]:
+                continue
+            with self.subTest(f"survey.{key}"):
+                self.assertEqual(
+                    self.experiment.surveys[0].get_attr_from_name(key),
+                    run_ts.survey_metadata.get_attr_from_name(key),
                 )
-                for channel in run.channels:
-                    h5_channel = h5_run.get_channel(channel.component)
 
-                    sd = channel.to_dict(single=True)
-                    sd.pop("hdf5_reference")
-                    sd.pop("mth5_type")
+        for key in (
+            self.experiment.surveys[0].stations[0].to_dict(single=True).keys()
+        ):
+            if key in ["hdf5_reference", "mth5_type"]:
+                continue
 
-                    h5_sd = h5_channel.metadata.to_dict(single=True)
-                    h5_sd.pop("hdf5_reference")
-                    h5_sd.pop("mth5_type")
+            with self.subTest(f"station.{key}"):
+                if key in ["run_list"]:
+                    self.assertListEqual(
+                        ["a"], run_ts.station_metadata.run_list
+                    )
+                else:
+                    self.assertEqual(
+                        self.experiment.surveys[0]
+                        .stations[0]
+                        .get_attr_from_name(key),
+                        run_ts.station_metadata.get_attr_from_name(key),
+                    )
 
-                    self.assertDictEqual(h5_sd, sd)
+        for key in (
+            self.experiment.surveys[0]
+            .stations[0]
+            .runs[0]
+            .to_dict(single=True)
+            .keys()
+        ):
+            if key in ["hdf5_reference", "mth5_type"]:
+                continue
+            with self.subTest(f"run.{key}"):
+                self.assertEqual(
+                    self.experiment.surveys[0]
+                    .stations[0]
+                    .runs[0]
+                    .get_attr_from_name(key),
+                    run_ts.run_metadata.get_attr_from_name(key),
+                )
 
-    def test_filters(self):
-        exp_filters = self.experiment.surveys[0].filters
-        sg = self.mth5_obj.get_survey(self.survey_name)
+    def test_to_channel_ts(self):
+        channel_group = self.mth5_obj.get_channel(
+            self.experiment.surveys[0].stations[0].id,
+            self.experiment.surveys[0].stations[0].runs[0].id,
+            self.experiment.surveys[0]
+            .stations[0]
+            .runs[0]
+            .channels[0]
+            .component,
+            self.experiment.surveys[0].id,
+        )
+        ch_ts = channel_group.to_channel_ts()
 
-        for key, value in exp_filters.items():
-            with self.subTest(name=key):
-                key = key.replace("/", " per ").lower()
-                sd = value.to_dict(single=True, required=False)
-                h5_sd = sg.filters_group.to_filter_object(key)
-                h5_sd = h5_sd.to_dict(single=True, required=False)
-                for k in sd.keys():
-                    with self.subTest(f"{key}_{k}"):
-                        v1 = sd[k]
-                        v2 = h5_sd[k]
-                        if isinstance(v1, (float, int)):
-                            self.assertAlmostEqual(v1, float(v2), 5)
-                        elif isinstance(v1, np.ndarray):
-                            self.assertEqual(v1.dtype, v2.dtype)
-                            self.assertTrue((v1 == v2).all())
-                        else:
-                            self.assertEqual(v1, v2)
-            # self.assertDictEqual(h5_sd, sd)
+        for key in self.experiment.surveys[0].to_dict(single=True).keys():
+            if key in ["hdf5_reference", "mth5_type"]:
+                continue
+            with self.subTest(f"survey.{key}"):
+                self.assertEqual(
+                    self.experiment.surveys[0].get_attr_from_name(key),
+                    ch_ts.survey_metadata.get_attr_from_name(key),
+                )
+
+        for key in (
+            self.experiment.surveys[0].stations[0].to_dict(single=True).keys()
+        ):
+            if key in ["hdf5_reference", "mth5_type"]:
+                continue
+
+            with self.subTest(f"station.{key}"):
+                if key in ["run_list", "channels_recorded"]:
+                    self.assertListEqual(
+                        ["a"], ch_ts.station_metadata.run_list
+                    )
+                else:
+                    self.assertEqual(
+                        self.experiment.surveys[0]
+                        .stations[0]
+                        .get_attr_from_name(key),
+                        ch_ts.station_metadata.get_attr_from_name(key),
+                    )
+
+        for key in (
+            self.experiment.surveys[0]
+            .stations[0]
+            .runs[0]
+            .to_dict(single=True)
+            .keys()
+        ):
+            if key in [
+                "hdf5_reference",
+                "mth5_type",
+                "channels_recorded_magnetic",
+                "channels_recorded_electric",
+                "channels_recorded_auxiliary",
+            ]:
+                continue
+            with self.subTest(f"run.{key}"):
+                self.assertEqual(
+                    self.experiment.surveys[0]
+                    .stations[0]
+                    .runs[0]
+                    .get_attr_from_name(key),
+                    ch_ts.run_metadata.get_attr_from_name(key),
+                )
+
+        for key in (
+            self.experiment.surveys[0]
+            .stations[0]
+            .runs[0]
+            .channels[0]
+            .to_dict(single=True)
+            .keys()
+        ):
+            if key in [
+                "hdf5_reference",
+                "mth5_type",
+                "filter.name",
+                "filter.applied",
+            ]:
+                continue
+            with self.subTest(f"run.{key}"):
+                self.assertEqual(
+                    self.experiment.surveys[0]
+                    .stations[0]
+                    .runs[0]
+                    .channels[0]
+                    .get_attr_from_name(key),
+                    ch_ts.channel_metadata.get_attr_from_name(key),
+                )
+
+        def test_channels(self):
+            runs = self.experiment.surveys[0].stations[0].runs
+            for run in runs:
+                with self.subTest(name=run.id):
+                    h5_run = self.mth5_obj.get_run(
+                        self.experiment.surveys[0].stations[0].id,
+                        run.id,
+                        self.survey_name,
+                    )
+                    for channel in run.channels:
+                        h5_channel = h5_run.get_channel(channel.component)
+
+                        sd = channel.to_dict(single=True)
+                        sd.pop("hdf5_reference")
+                        sd.pop("mth5_type")
+
+                        h5_sd = h5_channel.metadata.to_dict(single=True)
+                        h5_sd.pop("hdf5_reference")
+                        h5_sd.pop("mth5_type")
+
+                        self.assertDictEqual(h5_sd, sd)
+
+        def test_filters(self):
+            exp_filters = self.experiment.surveys[0].filters
+            sg = self.mth5_obj.get_survey(self.survey_name)
+
+            for key, value in exp_filters.items():
+                with self.subTest(name=key):
+                    key = key.replace("/", " per ").lower()
+                    sd = value.to_dict(single=True, required=False)
+                    h5_sd = sg.filters_group.to_filter_object(key)
+                    h5_sd = h5_sd.to_dict(single=True, required=False)
+                    for k in sd.keys():
+                        with self.subTest(f"{key}_{k}"):
+                            v1 = sd[k]
+                            v2 = h5_sd[k]
+                            if isinstance(v1, (float, int)):
+                                self.assertAlmostEqual(v1, float(v2), 5)
+                            elif isinstance(v1, np.ndarray):
+                                self.assertEqual(v1.dtype, v2.dtype)
+                                self.assertTrue((v1 == v2).all())
+                            else:
+                                self.assertEqual(v1, v2)
+                # self.assertDictEqual(h5_sd, sd)
 
     def test_channel_summary(self):
         self.mth5_obj.channel_summary.summarize()
