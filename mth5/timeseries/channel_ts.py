@@ -27,6 +27,7 @@ import xarray as xr
 import mt_metadata.timeseries as metadata
 from mt_metadata.utils.mttime import MTime
 from mt_metadata.timeseries.filters import ChannelResponseFilter
+from mt_metadata.utils.list_dict import ListDict
 
 from mth5.utils.exceptions import MTTSError
 from mth5.utils.mth5_logger import setup_logger
@@ -408,9 +409,9 @@ class ChannelTS:
         """
 
         if station_metadata is not None:
-            self.survey_metadata.stations[0].update(
-                self._validate_station_metadata(station_metadata)
-            )
+            stations = ListDict()
+            stations.append(self._validate_station_metadata(station_metadata))
+            self.survey_metadata.stations = stations
 
     @property
     def run_metadata(self):
@@ -427,9 +428,9 @@ class ChannelTS:
         """
 
         if run_metadata is not None:
-            self.survey_metadata.stations[0].runs[0].update(
-                self._validate_run_metadata(run_metadata)
-            )
+            runs = ListDict()
+            runs.append(self._validate_run_metadata(run_metadata))
+            self.survey_metadata.stations[0].runs = runs
 
     @property
     def channel_metadata(self):
@@ -446,9 +447,9 @@ class ChannelTS:
         """
 
         if channel_metadata is not None:
-            self.survey_metadata.stations[0].runs[0].channels[
-                0
-            ] = self._validate_channel_metadata(channel_metadata)
+            channels = ListDict()
+            channels.append(self._validate_channel_metadata(channel_metadata))
+            self.survey_metadata.stations[0].runs[0].channels = channels
 
     @property
     def ts(self):

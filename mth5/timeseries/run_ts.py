@@ -27,6 +27,7 @@ from matplotlib import pyplot as plt
 
 from mt_metadata import timeseries as metadata
 from mt_metadata.utils.mttime import MTime
+from mt_metadata.utils.list_dict import ListDict
 from mt_metadata.timeseries.filters import ChannelResponseFilter
 
 from mth5.utils.exceptions import MTTSError
@@ -195,6 +196,7 @@ class RunTS:
             raise TypeError(msg)
 
         valid_list = []
+
         for index, item in enumerate(array_list):
             if not isinstance(item, (ChannelTS, xr.DataArray)):
                 msg = f"array entry {index} must be ChannelTS object not {type(item)}"
@@ -205,18 +207,25 @@ class RunTS:
 
                 # if a channelTS is input then it comes with run and station metadata
                 # use those first, then the user can update later.
-                self.run_metadata.channels.append(item.channel_metadata)
+
                 if index == 0:
-                    self.station_metadata.from_dict(
-                        item.station_metadata.to_dict()
-                    )
-                    self.run_metadata.from_dict(item.run_metadata.to_dict())
+                    self.station_metadata.update(item.station_metadata)
+                    self.run_metadata.update(item.run_metadata)
+                    print(self.run_metadata.id)
+
                 else:
+
                     self.station_metadata.update(
                         item.station_metadata, match=["id"]
                     )
+                    print(item.station_metadata)
+                    print(self.run_metadata.id, item.run_metadata.id)
                     self.run_metadata.update(item.run_metadata, match=["id"])
 
+                # need to do this after a run has been filled in.
+                self.run_metadata.channels.append(item.channel_metadata)
+
+                # get the filters from the channel
                 if item.channel_response_filter.filters_list != []:
                     for ff in item.channel_response_filter.filters_list:
                         self._filters[ff.name] = ff
@@ -334,9 +343,9 @@ class RunTS:
         """
 
         if station_metadata is not None:
-            self.survey_metadata.stations[0].update(
-                self._validate_station_metadata(station_metadata)
-            )
+            stations = ListDict()
+            stations.append(self._validate_station_metadata(station_metadata))
+            self.survey_metadata.stations = stations
 
     @property
     def run_metadata(self):
