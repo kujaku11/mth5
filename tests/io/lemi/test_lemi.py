@@ -120,7 +120,7 @@ class TestLEMI424(unittest.TestCase):
                     ),
                     ("data_type", "BBMT"),
                     ("geographic_name", None),
-                    ("id", None),
+                    ("id", "0"),
                     ("location.declination.model", "WMM"),
                     ("location.declination.value", 0.0),
                     ("location.elevation", 2198.6),

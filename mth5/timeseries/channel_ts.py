@@ -19,6 +19,7 @@ convert them back if read in.
 # Imports
 # ==============================================================================
 import inspect
+from copy import deepcopy
 
 import numpy as np
 import pandas as pd
@@ -409,8 +410,19 @@ class ChannelTS:
         """
 
         if station_metadata is not None:
+            r = deepcopy(self.run_metadata)
+            runs = ListDict()
+            runs.append(r)
+            # be sure there is a level below
+            if len(runs[0].channels) == 0:
+                ch_metadata = meta_classes[self.channel_type]()
+                ch_metadata.type = self.channel_type.lower()
+                runs[0].channels.append(ch_metadata)
+
             stations = ListDict()
             stations.append(self._validate_station_metadata(station_metadata))
+            stations[0].runs = runs
+
             self.survey_metadata.stations = stations
 
     @property
@@ -428,8 +440,12 @@ class ChannelTS:
         """
 
         if run_metadata is not None:
+            ch = deepcopy(self.channel_metadata)
+            channels = ListDict()
+            channels.append(ch)
             runs = ListDict()
             runs.append(self._validate_run_metadata(run_metadata))
+            runs[0].channels = channels
             self.survey_metadata.stations[0].runs = runs
 
     @property

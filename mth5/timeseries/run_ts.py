@@ -19,6 +19,7 @@ convert them back if read in.
 # Imports
 # ==============================================================================
 import inspect
+from copy import deepcopy
 
 import xarray as xr
 import numpy as np
@@ -204,24 +205,29 @@ class RunTS:
                 raise TypeError(msg)
             if isinstance(item, ChannelTS):
                 valid_list.append(item.to_xarray())
+                print(item.channel_metadata.component)
 
                 # if a channelTS is input then it comes with run and station metadata
                 # use those first, then the user can update later.
 
                 if index == 0:
-                    self.station_metadata.update(item.station_metadata)
-                    self.run_metadata.update(item.run_metadata)
+                    if item.station_metadata.id not in ["0"]:
+                        self.station_metadata.update(item.station_metadata)
+                    if item.run_metadata.id not in ["0"]:
+                        self.run_metadata.update(item.run_metadata)
 
                 else:
-
-                    self.station_metadata.update(
-                        item.station_metadata, match=["id"]
-                    )
-                    self.run_metadata.update(item.run_metadata, match=["id"])
+                    if item.station_metadata.id not in ["0"]:
+                        self.station_metadata.update(
+                            item.station_metadata, match=["id"]
+                        )
+                    if item.run_metadata.id not in ["0"]:
+                        self.run_metadata.update(
+                            item.run_metadata, match=["id"]
+                        )
 
                 # need to do this after a run has been filled in.
                 self.run_metadata.channels.append(item.channel_metadata)
-
                 # get the filters from the channel
                 if item.channel_response_filter.filters_list != []:
                     for ff in item.channel_response_filter.filters_list:
