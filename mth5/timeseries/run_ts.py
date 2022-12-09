@@ -205,7 +205,6 @@ class RunTS:
                 raise TypeError(msg)
             if isinstance(item, ChannelTS):
                 valid_list.append(item.to_xarray())
-                print(item.channel_metadata.component)
 
                 # if a channelTS is input then it comes with run and station metadata
                 # use those first, then the user can update later.

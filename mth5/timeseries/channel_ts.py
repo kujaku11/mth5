@@ -441,13 +441,32 @@ class ChannelTS:
         set run metadata from a valid input
         """
 
+        # need to make sure the first index is the desired channel
         if run_metadata is not None:
-            ch = deepcopy(self.channel_metadata)
-            channels = ListDict()
-            channels.append(ch)
             runs = ListDict()
             runs.append(self._validate_run_metadata(run_metadata))
-            runs[0].channels = channels
+
+            if self.channel_metadata.component is not None:
+                index = (
+                    self._survey_metadata.stations[0]
+                    .runs[0]
+                    .channels._get_index_from_key(
+                        self.channel_metadata.component
+                    )
+                )
+
+                channels = ListDict()
+                channels.append(self.station_metadata.runs[0].channels[index])
+                # add existing channels
+                for ii, ch in self.station_metadata.runs[0].channels.items():
+                    if ii != index:
+                        channels.append(ch)
+
+                # add channels from input metadata
+                channels.extend(run_metadata.channels)
+
+                runs[0].channels = channels
+
             self.survey_metadata.stations[0].runs = runs
 
     @property
@@ -682,6 +701,15 @@ class ChannelTS:
                 self.logger.error(msg)
                 raise MTTSError(msg)
         self.channel_metadata.component = comp
+
+        # need to update the keys in the list dict
+        channels = ListDict()
+        channels.append(self.channel_metadata)
+        if len(self.run_metadata.channels) > 1:
+            for ch in self.run_metadata.channels[1:]:
+                channels.append(ch)
+        self.run_metadata.channels = channels
+
         self._update_xarray_metadata()
 
     # --> number of samples just to make sure there is consistency
