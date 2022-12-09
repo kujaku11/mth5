@@ -178,7 +178,10 @@ class TestNIMSToRunTS(unittest.TestCase):
         station_metadata = OrderedDict(
             [
                 ("acquired_by.name", None),
-                ("channels_recorded", []),
+                (
+                    "channels_recorded",
+                    ["ex", "ey", "hx", "hy", "hz", "temperature"],
+                ),
                 ("data_type", "BBMT"),
                 ("geographic_name", "Budwieser Spring, CA, USA"),
                 ("id", "mnp300"),
@@ -190,14 +193,15 @@ class TestNIMSToRunTS(unittest.TestCase):
                 ("orientation.method", None),
                 ("orientation.reference_frame", "geomagnetic"),
                 ("provenance.creation_time", "1980-01-01T00:00:00+00:00"),
-                ("provenance.software.author", "none"),
+                ("provenance.software.author", None),
                 ("provenance.software.name", None),
                 ("provenance.software.version", None),
                 ("provenance.submitter.email", None),
                 ("provenance.submitter.organization", None),
+                ("release_license", "CC0-1.0"),
                 ("run_list", ["mnp300a"]),
-                ("time_period.end", "1980-01-01T00:00:00+00:00"),
-                ("time_period.start", "1980-01-01T00:00:00+00:00"),
+                ("time_period.end", "2019-10-01T15:07:07.875000+00:00"),
+                ("time_period.start", "2019-09-26T18:33:21+00:00"),
             ]
         )
 
@@ -416,7 +420,7 @@ class TestNIMSToRunTS(unittest.TestCase):
                 ("location.latitude", 0.0),
                 ("location.longitude", 0.0),
                 ("measurement_azimuth", 0.0),
-                ("measurement_tilt", 90.0),
+                ("measurement_tilt", 0.0),
                 ("sample_rate", 8.0),
                 ("sensor.id", "1305-3"),
                 ("sensor.manufacturer", "Barry Narod"),

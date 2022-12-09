@@ -151,10 +151,8 @@ class RunTS:
                 self.logger.debug("Loading from metadata dict")
                 return st_metadata
             else:
-                msg = (
-                    "input metadata must be type {0} or dict, not {1}".format(
-                        type(self.station_metadata), type(station_metadata)
-                    )
+                msg = "input metadata must be type {0} or dict, not {1}".format(
+                    type(self.station_metadata), type(station_metadata)
                 )
                 self.logger.error(msg)
                 raise MTTSError(msg)
@@ -178,10 +176,8 @@ class RunTS:
                 self.logger.debug("Loading from metadata dict")
                 return sv_metadata
             else:
-                msg = (
-                    "input metadata must be type {0} or dict, not {1}".format(
-                        type(self.survey_metadata), type(survey_metadata)
-                    )
+                msg = "input metadata must be type {0} or dict, not {1}".format(
+                    type(self.survey_metadata), type(survey_metadata)
                 )
                 self.logger.error(msg)
                 raise MTTSError(msg)
@@ -570,9 +566,7 @@ class RunTS:
     def end(self):
         """End time UTC"""
         if self.has_data:
-            return MTime(
-                self.dataset.coords["time"].to_index()[-1].isoformat()
-            )
+            return MTime(self.dataset.coords["time"].to_index()[-1].isoformat())
         return self.run_metadata.time_period.end
 
     @property
@@ -807,8 +801,8 @@ class RunTS:
         """
 
         new_run = RunTS()
-        new_run.run_metadata.update(self.run_metadata)
-        new_run.station_metadata.update(self.station_metadata)
+        new_run.run_metadata = self.run_metadata
+        new_run.station_metadata = self.station_metadata
 
         for channel in self.channels:
             ch_ts = getattr(self, channel)

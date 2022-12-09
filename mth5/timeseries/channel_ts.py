@@ -338,10 +338,8 @@ class ChannelTS:
                 self.logger.debug("Loading from metadata dict")
                 return st_metadata
             else:
-                msg = (
-                    "input metadata must be type {0} or dict, not {1}".format(
-                        type(self.station_metadata), type(station_metadata)
-                    )
+                msg = "input metadata must be type {0} or dict, not {1}".format(
+                    type(self.station_metadata), type(station_metadata)
                 )
                 self.logger.error(msg)
                 raise MTTSError(msg)
@@ -365,10 +363,8 @@ class ChannelTS:
                 self.logger.debug("Loading from metadata dict")
                 return sv_metadata
             else:
-                msg = (
-                    "input metadata must be type {0} or dict, not {1}".format(
-                        type(self.survey_metadata), type(survey_metadata)
-                    )
+                msg = "input metadata must be type {0} or dict, not {1}".format(
+                    type(self.survey_metadata), type(survey_metadata)
                 )
                 self.logger.error(msg)
                 raise MTTSError(msg)
@@ -412,9 +408,11 @@ class ChannelTS:
         """
 
         if station_metadata is not None:
-            r = deepcopy(self.run_metadata)
             runs = ListDict()
-            runs.append(r)
+            if self.run_metadata.id not in ["0", 0]:
+                runs.append(deepcopy(self.run_metadata))
+            runs.extend(station_metadata.runs)
+
             # be sure there is a level below
             if len(runs[0].channels) == 0:
                 ch_metadata = meta_classes[self.channel_type]()
@@ -445,29 +443,21 @@ class ChannelTS:
         if run_metadata is not None:
             runs = ListDict()
             runs.append(self._validate_run_metadata(run_metadata))
+            channels = ListDict()
+            if self.component is not None:
+                key = str(self.component)
 
-            if self.channel_metadata.component is not None:
-                index = (
-                    self._survey_metadata.stations[0]
-                    .runs[0]
-                    .channels._get_index_from_key(
-                        self.channel_metadata.component
-                    )
-                )
-
-                channels = ListDict()
-                channels.append(self.station_metadata.runs[0].channels[index])
+                channels.append(self.station_metadata.runs[0].channels[key])
                 # add existing channels
-                for ii, ch in self.station_metadata.runs[0].channels.items():
-                    if ii != index:
-                        channels.append(ch)
+                channels.extend(self.run_metadata.channels, skip_keys=[key])
 
-                # add channels from input metadata
-                channels.extend(run_metadata.channels)
+            # add channels from input metadata
+            channels.extend(run_metadata.channels)
 
-                runs[0].channels = channels
+            runs[0].channels = channels
+            runs.extend(self.station_metadata.runs, skip_keys=[run_metadata.id])
 
-            self.survey_metadata.stations[0].runs = runs
+            self._survey_metadata.stations[0].runs = runs
 
     @property
     def channel_metadata(self):
@@ -475,7 +465,7 @@ class ChannelTS:
         station metadata
         """
 
-        return self.survey_metadata.stations[0].runs[0].channels[0]
+        return self._survey_metadata.stations[0].runs[0].channels[0]
 
     @channel_metadata.setter
     def channel_metadata(self, channel_metadata):
@@ -484,9 +474,26 @@ class ChannelTS:
         """
 
         if channel_metadata is not None:
-            channels = ListDict()
-            channels.append(self._validate_channel_metadata(channel_metadata))
-            self.survey_metadata.stations[0].runs[0].channels = channels
+            if channel_metadata.component is not None:
+                channels = ListDict()
+                if (
+                    channel_metadata.component
+                    in self.run_metadata.channels.keys()
+                ):
+                    channels.append(
+                        self.run_metadata.channels[channel_metadata.component]
+                    )
+                    channels[0].update(channel_metadata)
+                else:
+                    channels.append(channel_metadata)
+                channels.extend(
+                    self.run_metadata.channels,
+                    skip_keys=[channel_metadata.component, None],
+                )
+
+                self.run_metadata.channels = channels
+            else:
+                raise ValueError("Channel ID cannot be None")
 
     @property
     def ts(self):
@@ -620,9 +627,7 @@ class ChannelTS:
 
         value = self._validate_channel_type(value)
         if value != self._channel_type:
-            m_dict = self.channel_metadata.to_dict()[
-                self._channel_type.lower()
-            ]
+            m_dict = self.channel_metadata.to_dict()[self._channel_type.lower()]
 
             msg = (
                 f"Changing metadata from {self.channel_type} to {value}, "
