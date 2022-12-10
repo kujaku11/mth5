@@ -19,7 +19,6 @@ convert them back if read in.
 # Imports
 # ==============================================================================
 import inspect
-from copy import deepcopy
 
 import xarray as xr
 import numpy as np
