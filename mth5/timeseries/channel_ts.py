@@ -19,7 +19,6 @@ convert them back if read in.
 # Imports
 # ==============================================================================
 import inspect
-from copy import deepcopy
 from collections import OrderedDict
 
 import numpy as np
@@ -433,7 +432,7 @@ class ChannelTS:
 
             runs = ListDict()
             if self.run_metadata.id not in ["0", 0]:
-                runs.append(deepcopy(self.run_metadata))
+                runs.append(self.run_metadata.copy())
             runs.extend(station_metadata.runs)
             if len(runs) == 0:
                 runs[0] = metadata.Run(id="0")
@@ -634,12 +633,12 @@ class ChannelTS:
 
             self.channel_type = meta_dict["type"]
             ch_metadata = meta_classes[self.channel_type]()
-
             ch_metadata.from_dict({self.channel_type: meta_dict})
-            self.channel_metadata = ch_metadata
+
             self.survey_metadata.from_dict({"survey": survey_dict})
             self.station_metadata.from_dict({"station": station_dict})
             self.run_metadata.from_dict({"run": run_dict})
+            self.channel_metadata = ch_metadata
             # need to run this incase things are different.
             self._update_xarray_metadata()
         else:

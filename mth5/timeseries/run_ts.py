@@ -19,6 +19,7 @@ convert them back if read in.
 # Imports
 # ==============================================================================
 import inspect
+from collections import OrderedDict
 
 import xarray as xr
 import numpy as np
@@ -321,6 +322,15 @@ class RunTS:
         """
 
         if survey_metadata is not None:
+            if isinstance(survey_metadata, (dict, OrderedDict)):
+                s_metadata = metadata.Survey()
+                s_metadata.from_dict(survey_metadata)
+                survey_metadata = s_metadata.copy()
+
+            if not isinstance(survey_metadata, metadata.Survey):
+                raise TypeError(
+                    "Survey metadata must be mt_metadata.timeseries.Survey object"
+                )
             self._survey_metadata.update(
                 self._validate_survey_metadata(survey_metadata)
             )
@@ -340,8 +350,33 @@ class RunTS:
         """
 
         if station_metadata is not None:
+            if isinstance(station_metadata, (dict, OrderedDict)):
+                st_metadata = metadata.Station()
+                st_metadata.from_dict(station_metadata)
+                station_metadata = st_metadata.copy()
+
+            if not isinstance(station_metadata, metadata.Station):
+                raise TypeError(
+                    "Station metadata must be mt_metadata.timeseries.Station object"
+                )
+
+            runs = ListDict()
+            if self.run_metadata.id not in ["0", 0]:
+                runs.append(self.run_metadata.copy())
+            runs.extend(station_metadata.runs)
+            if len(runs) == 0:
+                runs[0] = metadata.Run(id="0")
+
+            # be sure there is a level below
+            if len(runs[0].channels) == 0:
+                ch_metadata = meta_classes[self.channel_type]()
+                ch_metadata.type = self.channel_type.lower()
+                runs[0].channels.append(ch_metadata)
+
             stations = ListDict()
             stations.append(self._validate_station_metadata(station_metadata))
+            stations[0].runs = runs
+
             self.survey_metadata.stations = stations
 
     @property
@@ -359,9 +394,19 @@ class RunTS:
         """
 
         if run_metadata is not None:
+            if isinstance(run_metadata, (dict, OrderedDict)):
+                r_metadata = metadata.Run()
+                r_metadata.from_dict(run_metadata)
+                run_metadata = r_metadata.copy()
+
+            if not isinstance(run_metadata, metadata.Run):
+                raise TypeError(
+                    "Run metadata must be mt_metadata.timeseries.Run object"
+                )
             runs = ListDict()
             runs.append(self._validate_run_metadata(run_metadata))
-            self.survey_metadata.stations[0].runs = runs
+            runs.extend(self.station_metadata.runs, skip_keys=[run_metadata.id])
+            self._survey_metadata.stations[0].runs = runs
 
     @property
     def has_data(self):
@@ -768,7 +813,7 @@ class RunTS:
             start = MTime(start)
 
         if n_samples is not None:
-            seconds = n_samples / self.sample_rate
+            seconds = (n_samples - 1) / self.sample_rate
             end = start + seconds
 
         elif end is not None:
