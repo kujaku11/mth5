@@ -692,7 +692,7 @@ class ChannelTS:
                 except KeyError:
                     pass
             self._channel_type = value
-            self.channel_metadata = channel_metadata
+            self.run_metadata.channels[0] = channel_metadata
 
     def _update_xarray_metadata(self):
         """
