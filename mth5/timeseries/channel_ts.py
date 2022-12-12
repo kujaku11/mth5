@@ -750,11 +750,26 @@ class ChannelTS:
     def sample_rate(self):
         """sample rate in samples/second"""
         if self.has_data:
-            t_diff = (
-                self._ts.coords.indexes["time"][-1]
+            # this is more accurate for high sample rates, the way
+            # pandas.date_range rounds nanoseconds is not consistent between
+            # samples, therefore taking the median provides better results
+            # if the time series is long this can be inefficient so test first
+            if (
+                self._ts.coords.indexes["time"][1]
                 - self._ts.coords.indexes["time"][0]
-            )
-            sr = self._ts.size / t_diff.total_seconds()
+            ).total_seconds() < 1e-4:
+
+                sr = 1 / (
+                    float(np.median(np.diff(self._ts.coords.indexes["time"])))
+                    / 1e9
+                )
+
+            else:
+                t_diff = (
+                    self._ts.coords.indexes["time"][-1]
+                    - self._ts.coords.indexes["time"][0]
+                )
+                sr = self._ts.size / t_diff.total_seconds()
 
         else:
             self.logger.debug(

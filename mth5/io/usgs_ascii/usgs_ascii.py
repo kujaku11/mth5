@@ -76,6 +76,7 @@ class USGSascii(AsciiMetadata):
                 channel_metadata=self.hx_metadata,
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
+                survey_metadata=self.survey_metadata,
             )
         return None
 
@@ -90,6 +91,7 @@ class USGSascii(AsciiMetadata):
                 channel_metadata=self.hy_metadata,
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
+                survey_metadata=self.survey_metadata,
             )
         return None
 
@@ -104,6 +106,7 @@ class USGSascii(AsciiMetadata):
                 channel_metadata=self.hz_metadata,
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
+                survey_metadata=self.survey_metadata,
             )
         return None
 
@@ -118,6 +121,7 @@ class USGSascii(AsciiMetadata):
                 channel_metadata=self.ex_metadata,
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
+                survey_metadata=self.survey_metadata,
             )
         return None
 
@@ -132,6 +136,7 @@ class USGSascii(AsciiMetadata):
                 channel_metadata=self.ey_metadata,
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
+                survey_metadata=self.survey_metadata,
             )
         return None
 
@@ -142,6 +147,8 @@ class USGSascii(AsciiMetadata):
             return RunTS(
                 array_list=[self.hx, self.hy, self.hz, self.ex, self.ey],
                 run_metadata=self.run_metadata,
+                station_metadata=self.station_metadata,
+                survey_metadata=self.survey_metadata,
             )
 
         return None
