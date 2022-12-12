@@ -20,6 +20,7 @@ convert them back if read in.
 # ==============================================================================
 import inspect
 from copy import deepcopy
+from collections import OrderedDict
 
 import numpy as np
 import pandas as pd
@@ -258,6 +259,9 @@ class ChannelTS:
 
         """
 
+        if channel_type is None:
+            channel_type = "auxiliary"
+
         if not channel_type.capitalize() in meta_classes.keys():
             msg = (
                 "Channel type is undefined, must be [ electric | "
@@ -389,6 +393,15 @@ class ChannelTS:
         """
 
         if survey_metadata is not None:
+            if isinstance(survey_metadata, (dict, OrderedDict)):
+                s_metadata = metadata.Survey()
+                s_metadata.from_dict(survey_metadata)
+                survey_metadata = s_metadata.copy()
+
+            if not isinstance(survey_metadata, metadata.Survey):
+                raise TypeError(
+                    "Survey metadata must be mt_metadata.timeseries.Survey object"
+                )
             self._survey_metadata.update(
                 self._validate_survey_metadata(survey_metadata)
             )
@@ -408,10 +421,22 @@ class ChannelTS:
         """
 
         if station_metadata is not None:
+            if isinstance(station_metadata, (dict, OrderedDict)):
+                st_metadata = metadata.Station()
+                st_metadata.from_dict(station_metadata)
+                station_metadata = st_metadata.copy()
+
+            if not isinstance(station_metadata, metadata.Station):
+                raise TypeError(
+                    "Station metadata must be mt_metadata.timeseries.Station object"
+                )
+
             runs = ListDict()
             if self.run_metadata.id not in ["0", 0]:
                 runs.append(deepcopy(self.run_metadata))
             runs.extend(station_metadata.runs)
+            if len(runs) == 0:
+                runs[0] = metadata.Run(id="0")
 
             # be sure there is a level below
             if len(runs[0].channels) == 0:
@@ -441,6 +466,16 @@ class ChannelTS:
 
         # need to make sure the first index is the desired channel
         if run_metadata is not None:
+            if isinstance(run_metadata, (dict, OrderedDict)):
+                r_metadata = metadata.Run()
+                r_metadata.from_dict(run_metadata)
+                run_metadata = r_metadata.copy()
+
+            if not isinstance(run_metadata, metadata.Run):
+                raise TypeError(
+                    "Run metadata must be mt_metadata.timeseries.Run object"
+                )
+
             runs = ListDict()
             runs.append(self._validate_run_metadata(run_metadata))
             channels = ListDict()
@@ -474,6 +509,19 @@ class ChannelTS:
         """
 
         if channel_metadata is not None:
+            if isinstance(channel_metadata, (dict, OrderedDict)):
+                self.channel_type = list(channel_metadata.keys())[0]
+                ch_metadata = meta_classes[self.channel_type]()
+                ch_metadata.from_dict(channel_metadata)
+                channel_metadata = ch_metadata.copy()
+
+            if not isinstance(
+                channel_metadata,
+                (metadata.Electric, metadata.Magnetic, metadata.Auxiliary),
+            ):
+                raise TypeError(
+                    "Channel metadata must be mt_metadata.timeseries.Channel object"
+                )
             if channel_metadata.component is not None:
                 channels = ListDict()
                 if (
