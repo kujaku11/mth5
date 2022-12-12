@@ -492,6 +492,7 @@ class ChannelTS:
                 )
 
                 self.run_metadata.channels = channels
+                self.channel_type = self.run_metadata.channels[0].type
             else:
                 raise ValueError("Channel ID cannot be None")
 
@@ -627,7 +628,7 @@ class ChannelTS:
 
         value = self._validate_channel_type(value)
         if value != self._channel_type:
-            m_dict = self.channel_metadata.to_dict()[self._channel_type.lower()]
+            m_dict = self.channel_metadata.to_dict(single=True)
 
             msg = (
                 f"Changing metadata from {self.channel_type} to {value}, "
