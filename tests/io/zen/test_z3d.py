@@ -25,9 +25,7 @@ from mt_metadata.timeseries.filters import (
 # =============================================================================
 
 
-@unittest.skipIf(
-    "peacock" not in str(Path(__file__).as_posix()), "local files"
-)
+@unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local files")
 class TestZ3DEY(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -134,9 +132,7 @@ class TestZ3DEY(unittest.TestCase):
         self.assertEqual(self.z3d._block_len, 65536)
 
     def test_gps_flag(self):
-        self.assertEqual(
-            self.z3d.gps_flag, b"\xff\xff\xff\x7f\x00\x00\x00\x80"
-        )
+        self.assertEqual(self.z3d.gps_flag, b"\xff\xff\xff\x7f\x00\x00\x00\x80")
 
     def test_get_gps_time(self):
         self.assertTupleEqual(
@@ -187,9 +183,7 @@ class TestZ3DEY(unittest.TestCase):
             ]
         )
 
-        self.assertDictEqual(
-            self.z3d.channel_metadata.to_dict(single=True), ey
-        )
+        self.assertDictEqual(self.z3d.channel_metadata.to_dict(single=True), ey)
 
     def test_run_metadata(self):
         rm = OrderedDict(
@@ -237,20 +231,19 @@ class TestZ3DEY(unittest.TestCase):
                 ("orientation.method", None),
                 ("orientation.reference_frame", "geographic"),
                 ("provenance.creation_time", "1980-01-01T00:00:00+00:00"),
-                ("provenance.software.author", "none"),
+                ("provenance.software.author", None),
                 ("provenance.software.name", None),
                 ("provenance.software.version", None),
                 ("provenance.submitter.email", None),
                 ("provenance.submitter.organization", None),
+                ("release_license", "CC0-1.0"),
                 ("run_list", []),
                 ("time_period.end", "2022-05-17T15:54:42+00:00"),
                 ("time_period.start", "2022-05-17T13:09:58+00:00"),
             ]
         )
 
-        self.assertDictEqual(
-            self.z3d.station_metadata.to_dict(single=True), sm
-        )
+        self.assertDictEqual(self.z3d.station_metadata.to_dict(single=True), sm)
 
     def test_filters(self):
         zr = FrequencyResponseTableFilter(
@@ -326,9 +319,7 @@ class TestZ3DEY(unittest.TestCase):
             )
 
 
-@unittest.skipIf(
-    "peacock" not in str(Path(__file__).as_posix()), "local files"
-)
+@unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local files")
 class TestZ3DHY(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -588,9 +579,7 @@ class TestZ3DHY(unittest.TestCase):
             ]
         )
 
-        self.assertDictEqual(
-            self.z3d.channel_metadata.to_dict(single=True), ey
-        )
+        self.assertDictEqual(self.z3d.channel_metadata.to_dict(single=True), ey)
 
     def test_run_metadata(self):
         rm = OrderedDict(
@@ -638,20 +627,19 @@ class TestZ3DHY(unittest.TestCase):
                 ("orientation.method", None),
                 ("orientation.reference_frame", "geographic"),
                 ("provenance.creation_time", "1980-01-01T00:00:00+00:00"),
-                ("provenance.software.author", "none"),
+                ("provenance.software.author", None),
                 ("provenance.software.name", None),
                 ("provenance.software.version", None),
                 ("provenance.submitter.email", None),
                 ("provenance.submitter.organization", None),
+                ("release_license", "CC0-1.0"),
                 ("run_list", []),
                 ("time_period.end", "2022-05-17T15:54:42+00:00"),
                 ("time_period.start", "2022-05-17T13:09:58+00:00"),
             ]
         )
 
-        self.assertDictEqual(
-            self.z3d.station_metadata.to_dict(single=True), sm
-        )
+        self.assertDictEqual(self.z3d.station_metadata.to_dict(single=True), sm)
 
     def test_zen_esponse(self):
         self.assertDictEqual(
