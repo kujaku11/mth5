@@ -1121,14 +1121,16 @@ class ChannelTS:
             start = MTime(start)
         if n_samples is not None:
             n_samples = int(n_samples)
-            end = start + n_samples / self.sample_rate
+            end = start + ((n_samples - 1) / self.sample_rate)
         if end is not None:
             if not isinstance(end, MTime):
                 end = MTime(end)
-        new_ts = self._ts.loc[
-            (self._ts.indexes["time"] >= start.iso_no_tz)
-            & (self._ts.indexes["time"] < end.iso_no_tz)
-        ]
+
+        chunk = self._ts.indexes["time"].slice_indexer(
+            start=np.datetime64(start.iso_no_tz),
+            end=np.datetime64(end.iso_no_tz),
+        )
+        new_ts = self._ts.isel(indexers={"time": chunk})
 
         new_ch_ts = ChannelTS(
             channel_type=self.channel_type,

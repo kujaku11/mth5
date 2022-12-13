@@ -2761,7 +2761,7 @@ class ChannelDataset:
         # if n_samples are given
         elif end is None and n_samples is not None:
             start_index = self.get_index_from_time(start)
-            end_index = start_index + n_samples
+            end_index = start_index + (n_samples - 1)
             npts = n_samples
         if npts > self.hdf5_dataset.size or end_index > self.hdf5_dataset.size:
             msg = (
