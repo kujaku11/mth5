@@ -281,8 +281,8 @@ class RunTS:
             return ChannelTS(
                 self.dataset[name].attrs["type"],
                 self.dataset[name],
-                run_metadata=self.run_metadata,
-                station_metadata=self.station_metadata,
+                run_metadata=self.run_metadata.copy(),
+                station_metadata=self.station_metadata.copy(),
                 channel_response_filter=ch_response_filter,
             )
         else:
@@ -293,13 +293,6 @@ class RunTS:
                 try:
                     return super().__getattribute__(name)
                 except AttributeError:
-                    # elif name not in self.__dict__.keys() and name not in [
-                    #     "shape",
-                    #     "size",
-                    #     "sample_rate",
-                    #     "start",
-                    #     "end",
-                    # ]:
                     msg = f"RunTS has no attribute {name}"
                     self.logger.error(msg)
                     raise NameError(msg)
@@ -384,8 +377,14 @@ class RunTS:
         """
         station metadata
         """
+        run_metadata = self.survey_metadata.stations[0].runs[0]
+        # if self.has_data():
+        #     run_metadata.channels = []
+        #     for ch in self.channels:
+        #         ch = getattr(self, ch)
+        #         run_metadata.add_channel(ch.channel_metadata)
 
-        return self.survey_metadata.stations[0].runs[0]
+        return run_metadata
 
     @run_metadata.setter
     def run_metadata(self, run_metadata):
@@ -408,7 +407,6 @@ class RunTS:
             runs.extend(self.station_metadata.runs, skip_keys=[run_metadata.id])
             self._survey_metadata.stations[0].runs = runs
 
-    @property
     def has_data(self):
         """check to see if there is data"""
         if len(self.channels) > 0:
@@ -443,7 +441,7 @@ class RunTS:
         """
 
         # check sampling rate
-        if self.has_data:
+        if self.has_data():
             # check start time
             if self.start != self.run_metadata.time_period.start:
                 if (
@@ -590,14 +588,14 @@ class RunTS:
     @property
     def start(self):
         """Start time UTC"""
-        if self.has_data:
+        if self.has_data():
             return MTime(self.dataset.coords["time"].to_index()[0].isoformat())
         return self.run_metadata.time_period.start
 
     @property
     def end(self):
         """End time UTC"""
-        if self.has_data:
+        if self.has_data():
             return MTime(self.dataset.coords["time"].to_index()[-1].isoformat())
         return self.run_metadata.time_period.end
 
@@ -608,7 +606,7 @@ class RunTS:
         samples in time, if data is present. Otherwise return the metadata
         sample rate.
         """
-        if self.has_data:
+        if self.has_data():
             try:
                 return round(
                     1.0

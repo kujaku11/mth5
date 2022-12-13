@@ -2373,7 +2373,7 @@ class ChannelDataset:
         return ChannelTS(
             channel_type=self.metadata.type,
             data=self.hdf5_dataset[()],
-            channel_metadata=self.metadata.copy(),
+            channel_metadata=self.metadata,
             run_metadata=self.run_metadata.copy(),
             station_metadata=self.station_metadata.copy(),
             survey_metadata=self.survey_metadata.copy(),
