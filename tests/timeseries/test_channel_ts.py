@@ -389,7 +389,7 @@ class TestChannelTS(unittest.TestCase):
             self.assertEqual(new_ts.ts.size, 48)
         with self.subTest(name="end time"):
             new_ts = self.ts.get_slice(
-                "2020-01-01T12:00:00", end="2020-01-01T12:00:03"
+                "2020-01-01T12:00:00", end="2020-01-01T12:00:02.937500"
             )
             self.assertEqual(new_ts.ts.size, 48)
 
