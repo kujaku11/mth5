@@ -28,8 +28,7 @@ mth5.helpers.close_open_files()
 
 
 class TestMTH5(unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
+    def setUp(self):
         self.fn = fn_path.joinpath("test.mth5")
         self.mth5_obj = mth5.MTH5(file_version="0.2.0")
         self.mth5_obj.open_mth5(self.fn, mode="w")
@@ -226,8 +225,7 @@ class TestMTH5(unittest.TestCase):
         with self.subTest("number of samples"):
             self.assertEqual(256, r_slice.dataset.coords.indexes["time"].size)
 
-    @classmethod
-    def tearDownClass(self):
+    def tearDown(self):
         self.mth5_obj.close_mth5()
         self.fn.unlink()
 
