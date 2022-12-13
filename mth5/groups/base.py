@@ -96,7 +96,6 @@ class BaseGroup:
 
             # write out metadata to make sure that its in the file.
             self.write_metadata()
-            print("writing metadata")
         else:
             self.read_metadata()
 

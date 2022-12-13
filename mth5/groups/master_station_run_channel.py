@@ -615,39 +615,6 @@ class StationGroup(BaseGroup):
         self.metadata.id = name
 
     @property
-    def table_entry(self):
-        """make table entry"""
-
-        return np.array(
-            [
-                (
-                    self.metadata.id,
-                    self.metadata.time_period.start,
-                    self.metadata.time_period.end,
-                    ",".join(self.metadata.channels_recorded),
-                    self.metadata.data_type,
-                    self.metadata.location.latitude,
-                    self.metadata.location.longitude,
-                    self.metadata.location.elevation,
-                    self.hdf5_group.ref,
-                )
-            ],
-            dtype=np.dtype(
-                [
-                    ("id", "U5"),
-                    ("start", "datetime64[ns]"),
-                    ("end", "datetime64[ns]"),
-                    ("components", "U100"),
-                    ("measurement_type", "U12"),
-                    ("latitude", float),
-                    ("longitude", float),
-                    ("elevation", float),
-                    ("hdf5_reference", h5py.ref_dtype),
-                ]
-            ),
-        )
-
-    @property
     def run_summary(self):
         """
         Summary of runs in the station
@@ -869,10 +836,10 @@ class StationGroup(BaseGroup):
         """
 
         run_summary = self.run_summary.copy()
-        self.metadata.time_period.start = run_summary.start.min().isoformat()
-        self.metadata.time_period.end = run_summary.end.max().isoformat()
-        self.metadata.channels_recorded = ",".join(
-            list(set(",".join(run_summary.components.to_list()).split(",")))
+        self._metadata.time_period.start = run_summary.start.min().isoformat()
+        self._metadata.time_period.end = run_summary.end.max().isoformat()
+        self._metadata.channels_recorded = list(
+            set(",".join(run_summary.components.to_list()).split(","))
         )
 
         self.write_metadata()
@@ -1319,48 +1286,6 @@ class RunGroup(BaseGroup):
 
         return pd.DataFrame(ch_summary)
 
-    @property
-    def table_entry(self):
-        """
-        Get a run table entry
-
-        :return: a properly formatted run table entry
-        :rtype: :class:`numpy.ndarray` with dtype:
-
-        >>> dtype([('id', 'S20'),
-                 ('start', 'S32'),
-                 ('end', 'S32'),
-                 ('components', 'S100'),
-                 ('measurement_type', 'S12'),
-                 ('sample_rate', float),
-                 ('hdf5_reference', h5py.ref_dtype)])
-
-        """
-        return np.array(
-            [
-                (
-                    self.metadata.id,
-                    self.metadata.time_period.start,
-                    self.metadata.time_period.end,
-                    ",".join(self.metadata.channels_recorded_all),
-                    self.metadata.data_type,
-                    self.metadata.sample_rate,
-                    self.hdf5_group.ref,
-                )
-            ],
-            dtype=np.dtype(
-                [
-                    ("id", "U20"),
-                    ("start", "datetime64[ns]"),
-                    ("end", "datetime64[ns]"),
-                    ("components", "U100"),
-                    ("measurement_type", "U12"),
-                    ("sample_rate", float),
-                    ("hdf5_reference", h5py.ref_dtype),
-                ]
-            ),
-        )
-
     def write_metadata(self):
         """
         Overwrite Base.write_metadata to include updating table entry
@@ -1370,7 +1295,6 @@ class RunGroup(BaseGroup):
 
         for key, value in self.metadata.to_dict(single=True).items():
             value = to_numpy_type(value)
-            print(f"{key} = {value}")
             self.hdf5_group.attrs.create(key, value)
 
     def add_channel(
@@ -1780,22 +1704,11 @@ class RunGroup(BaseGroup):
 
         """
         channel_summary = self.channel_summary.copy()
-        channels_recorded = channel_summary.component.to_list()
 
-        self.metadata.channels_recorded_electric = [
-            cc for cc in channels_recorded if cc[0] in ["e"]
-        ]
-        self.metadata.channels_recorded_magnetic = [
-            cc for cc in channels_recorded if cc[0] in ["h", "b"]
-        ]
-        self.metadata.channels_recorded_auxiliary = [
-            cc for cc in channels_recorded if cc[0] not in ["e", "h", "b"]
-        ]
-
-        self.metadata.time_period.start = (
+        self._metadata.time_period.start = (
             channel_summary.start.min().isoformat()
         )
-        self.metadata.time_period.end = channel_summary.end.max().isoformat()
+        self._metadata.time_period.end = channel_summary.end.max().isoformat()
         self.write_metadata()
 
     def plot(self, start=None, end=None, n_samples=None):

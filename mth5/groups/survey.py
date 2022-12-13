@@ -26,7 +26,6 @@ from mth5.groups import (
 )
 from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import validate_name
-from mth5.tables import MTH5Table
 
 from mt_metadata.timeseries import Survey
 
@@ -276,7 +275,9 @@ class MasterSurveyGroup(BaseGroup):
                     raise MTH5Error(msg)
 
             survey_obj = SurveyGroup(
-                survey_group, survey_metadata=survey_metadata, **self.dataset_options,
+                survey_group,
+                survey_metadata=survey_metadata,
+                **self.dataset_options,
             )
             survey_obj.initialize_group()
 
@@ -313,7 +314,9 @@ class MasterSurveyGroup(BaseGroup):
         survey_name = validate_name(survey_name)
 
         try:
-            return SurveyGroup(self.hdf5_group[survey_name], **self.dataset_options)
+            return SurveyGroup(
+                self.hdf5_group[survey_name], **self.dataset_options
+            )
         except KeyError:
             msg = (
                 f"{survey_name} does not exist, "
@@ -469,7 +472,9 @@ class SurveyGroup(BaseGroup):
     @property
     def standards_group(self):
         """Convenience property for /Survey/Standards group"""
-        return StandardsGroup(self.hdf5_group["Standards"], **self.dataset_options)
+        return StandardsGroup(
+            self.hdf5_group["Standards"], **self.dataset_options
+        )
 
     def update_survey_metadata(self, survey_dict=None):
         """
@@ -478,20 +483,30 @@ class SurveyGroup(BaseGroup):
         """
 
         station_summary = self.stations_group.station_summary.copy()
-        self.logger.debug("Updating survey metadata from stations summary table")
+        self.logger.debug(
+            "Updating survey metadata from stations summary table"
+        )
 
         if survey_dict:
             self.metadata.from_dict(survey_dict, skip_none=True)
 
-        self.metadata.time_period.start_date = (
+        self._metadata.time_period.start_date = (
             station_summary.start.min().isoformat().split("T")[0]
         )
-        self.metadata.time_period.end_date = (
+        self._metadata.time_period.end_date = (
             station_summary.end.max().isoformat().split("T")[0]
         )
-        self.metadata.northwest_corner.latitude = station_summary.latitude.max()
-        self.metadata.northwest_corner.longitude = station_summary.longitude.min()
-        self.metadata.southeast_corner.latitude = station_summary.latitude.min()
-        self.metadata.southeast_corner.longitude = station_summary.longitude.max()
+        self._metadata.northwest_corner.latitude = (
+            station_summary.latitude.max()
+        )
+        self._metadata.northwest_corner.longitude = (
+            station_summary.longitude.min()
+        )
+        self._metadata.southeast_corner.latitude = (
+            station_summary.latitude.min()
+        )
+        self._metadata.southeast_corner.longitude = (
+            station_summary.longitude.max()
+        )
 
         self.write_metadata()

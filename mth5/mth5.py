@@ -896,6 +896,8 @@ class MTH5:
                             if update:
                                 mt_ch.metadata.update(channel)
                                 mt_ch.write_metadata()
+                        ### need to update from input metadata for time period
+                        ### and channels, runs, stations.
                         mt_run.update_run_metadata()
                     mt_station.update_station_metadata()
                 sg.update_survey_metadata()
