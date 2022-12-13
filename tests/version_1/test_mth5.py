@@ -183,7 +183,7 @@ class TestMTH5(unittest.TestCase):
                 ch_type, data=np.random.rand(4096), channel_metadata=meta_dict
             )
             ts_list.append(channel_ts)
-        run_ts = RunTS(ts_list, {"id": "MT002a"})
+        run_ts = RunTS(ts_list, run_metadata={"run": {"id": "MT002a"}})
 
         station = self.mth5_obj.add_station("MT002")
         run = station.add_run("MT002a")

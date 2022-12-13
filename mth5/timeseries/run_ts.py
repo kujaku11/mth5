@@ -369,8 +369,8 @@ class RunTS:
 
             # be sure there is a level below
             if len(runs[0].channels) == 0:
-                ch_metadata = meta_classes[self.channel_type]()
-                ch_metadata.type = self.channel_type.lower()
+                ch_metadata = metadata.Auxiliary()
+                ch_metadata.type = "auxiliary"
                 runs[0].channels.append(ch_metadata)
 
             stations = ListDict()
