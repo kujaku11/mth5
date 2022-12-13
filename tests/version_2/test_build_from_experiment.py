@@ -116,7 +116,8 @@ class TestMTH5(unittest.TestCase):
             with self.subTest(f"station.{key}"):
                 if key in ["run_list"]:
                     self.assertListEqual(
-                        ["a"], run_ts.station_metadata.run_list
+                        ["a", "b", "c", "d", "e"],
+                        run_ts.station_metadata.run_list,
                     )
                 else:
                     self.assertEqual(
@@ -136,13 +137,22 @@ class TestMTH5(unittest.TestCase):
             if key in ["hdf5_reference", "mth5_type"]:
                 continue
             with self.subTest(f"run.{key}"):
-                self.assertEqual(
-                    self.experiment.surveys[0]
-                    .stations[0]
-                    .runs[0]
-                    .get_attr_from_name(key),
-                    run_ts.run_metadata.get_attr_from_name(key),
-                )
+                if key in ["time_period.end"]:
+                    self.assertNotEqual(
+                        self.experiment.surveys[0]
+                        .stations[0]
+                        .runs[0]
+                        .get_attr_from_name(key),
+                        run_ts.run_metadata.get_attr_from_name(key),
+                    )
+                else:
+                    self.assertEqual(
+                        self.experiment.surveys[0]
+                        .stations[0]
+                        .runs[0]
+                        .get_attr_from_name(key),
+                        run_ts.run_metadata.get_attr_from_name(key),
+                    )
 
     def test_to_channel_ts(self):
         channel_group = self.mth5_obj.get_channel(
@@ -175,7 +185,8 @@ class TestMTH5(unittest.TestCase):
             with self.subTest(f"station.{key}"):
                 if key in ["run_list", "channels_recorded"]:
                     self.assertListEqual(
-                        ["a"], ch_ts.station_metadata.run_list
+                        ["a", "b", "c", "d", "e"],
+                        ch_ts.station_metadata.run_list,
                     )
                 else:
                     self.assertEqual(
@@ -224,15 +235,25 @@ class TestMTH5(unittest.TestCase):
                 "filter.applied",
             ]:
                 continue
-            with self.subTest(f"run.{key}"):
-                self.assertEqual(
-                    self.experiment.surveys[0]
-                    .stations[0]
-                    .runs[0]
-                    .channels[0]
-                    .get_attr_from_name(key),
-                    ch_ts.channel_metadata.get_attr_from_name(key),
-                )
+            with self.subTest(f"channel.{key}"):
+                if key in ["time_period.end"]:
+                    self.assertNotEqual(
+                        self.experiment.surveys[0]
+                        .stations[0]
+                        .runs[0]
+                        .channels[0]
+                        .get_attr_from_name(key),
+                        ch_ts.station_metadata.get_attr_from_name(key),
+                    )
+                else:
+                    self.assertEqual(
+                        self.experiment.surveys[0]
+                        .stations[0]
+                        .runs[0]
+                        .channels[0]
+                        .get_attr_from_name(key),
+                        ch_ts.channel_metadata.get_attr_from_name(key),
+                    )
 
         def test_channels(self):
             runs = self.experiment.surveys[0].stations[0].runs
@@ -287,9 +308,7 @@ class TestMTH5(unittest.TestCase):
         with self.subTest("test nrows"):
             self.assertEqual(self.mth5_obj.channel_summary.nrows, 25)
         with self.subTest(("test dtype")):
-            self.assertEqual(
-                self.mth5_obj.channel_summary.dtype, CHANNEL_DTYPE
-            )
+            self.assertEqual(self.mth5_obj.channel_summary.dtype, CHANNEL_DTYPE)
         with self.subTest("test station"):
             self.assertTrue(
                 (

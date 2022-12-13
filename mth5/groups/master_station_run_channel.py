@@ -640,8 +640,8 @@ class StationGroup(BaseGroup):
                 run_list.append(
                     (
                         group.attrs["id"],
-                        group.attrs["time_period.start"],
-                        group.attrs["time_period.end"],
+                        group.attrs["time_period.start"].split("+")[0],
+                        group.attrs["time_period.end"].split("+")[0],
                         comps,
                         group.attrs["data_type"],
                         group.attrs["sample_rate"],
@@ -1259,8 +1259,8 @@ class RunGroup(BaseGroup):
                     ch_list.append(
                         (
                             group.attrs["component"],
-                            group.attrs["time_period.start"],
-                            group.attrs["time_period.end"],
+                            group.attrs["time_period.start"].split("+")[0],
+                            group.attrs["time_period.end"].split("+")[0],
                             group.size,
                             group.attrs["type"],
                             group.attrs["units"],
