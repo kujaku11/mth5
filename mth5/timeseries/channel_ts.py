@@ -1230,11 +1230,11 @@ class ChannelTS:
             self.logger.error(msg)
             raise MTTSError(msg)
         if obspy_trace.stats.channel[1].lower() in ["e", "q"]:
-            self.channel_metadata = metadata.Electric()
+            self.channel_type = "electric"
         elif obspy_trace.stats.channel[1].lower() in ["h", "b", "f"]:
-            self.channel_metadata = metadata.Magnetic()
+            self.channel_type = "magnetic"
         else:
-            self.channel_metadata = metadata.Auxiliary()
+            self.channel_type = "auxiliary"
         mt_code = fdsn_tools.make_mt_channel(
             fdsn_tools.read_channel_code(obspy_trace.stats.channel)
         )
