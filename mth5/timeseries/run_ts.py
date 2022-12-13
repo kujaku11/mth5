@@ -483,22 +483,10 @@ class RunTS:
                     self.logger.warning(msg)
                 self.run_metadata.sample_rate = self.sample_rate
 
-            # update channels recorded
-            self.run_metadata.channels_recorded_auxiliary = []
-            self.run_metadata.channels_recorded_electric = []
-            self.run_metadata.channels_recorded_magnetic = []
-            for ch in self.channels:
-                if ch[0] in ["e"]:
-                    self.run_metadata.channels_recorded_electric.append(ch)
-                elif ch[0] in ["h", "b"]:
-                    self.run_metadata.channels_recorded_magnetic.append(ch)
-                else:
-                    self.run_metadata.channels_recorded_auxiliary.append(ch)
+            if self.run_metadata.id not in self.station_metadata.runs.keys():
+                self.station_metadata.runs[0].update(self.run_metadata)
 
-            if self.run_metadata.id not in self.station_metadata.run_list:
-                self.station_metadata.runs.append(self.run_metadata)
-
-            self.survey_metadata.stations[0].update_time_period()
+            self.station_metadata.update_time_period()
             self.survey_metadata.update_time_period()
 
     def set_dataset(self, array_list, align_type="outer"):
