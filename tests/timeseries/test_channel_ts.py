@@ -102,9 +102,11 @@ class TestChannelTS(unittest.TestCase):
         )
 
     def test_validate_run_metadata(self):
-        self.assertEqual(
-            self.ts.run_metadata,
-            self.ts._validate_run_metadata(self.ts.run_metadata),
+        self.assertDictEqual(
+            self.ts.run_metadata.to_dict(single=True),
+            self.ts._validate_run_metadata(self.ts.run_metadata).to_dict(
+                single=True
+            ),
         )
 
     def test_validate_run_metadata_from_dict(self):

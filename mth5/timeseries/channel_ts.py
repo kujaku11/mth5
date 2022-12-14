@@ -483,7 +483,9 @@ class ChannelTS:
 
                 channels.append(self.station_metadata.runs[0].channels[key])
                 # add existing channels
-                channels.extend(self.run_metadata.channels, skip_keys=[key])
+                channels.extend(
+                    self.run_metadata.channels, skip_keys=[key, "0"]
+                )
 
             # add channels from input metadata
             channels.extend(run_metadata.channels)
