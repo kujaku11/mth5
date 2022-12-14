@@ -102,6 +102,25 @@ class TestMakeRunTS(unittest.TestCase):
                 ["hx", "hy", "hz", "ex", "ey", "temperature"],
             )
 
+    def test_channels(self):
+        for comp in self.run_ts.channels:
+            ch = getattr(self.run_ts, comp)
+            with self.subTest("start"):
+                self.assertEqual(
+                    ch.channel_metadata.time_period.start,
+                    self.common_start,
+                )
+            with self.subTest("sample rate"):
+                self.assertEqual(
+                    ch.sample_rate,
+                    self.sample_rate,
+                )
+            with self.subTest("n samples"):
+                self.assertEqual(
+                    ch.n_samples,
+                    4096,
+                )
+
 
 # =============================================================================
 # run
