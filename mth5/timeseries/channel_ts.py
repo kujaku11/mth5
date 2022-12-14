@@ -298,7 +298,7 @@ class ChannelTS:
                     msg % (type(self.channel_metadata), type(channel_metadata))
                 )
 
-        return channel_metadata
+        return channel_metadata.copy()
 
     def _validate_run_metadata(self, run_metadata):
         """
@@ -322,7 +322,7 @@ class ChannelTS:
                 raise MTTSError(
                     msg % (type(self.run_metadata), type(run_metadata))
                 )
-        return run_metadata
+        return run_metadata.copy()
 
     def _validate_station_metadata(self, station_metadata):
         """
@@ -347,7 +347,7 @@ class ChannelTS:
                 self.logger.error(msg)
                 raise MTTSError(msg)
 
-        return station_metadata
+        return station_metadata.copy()
 
     def _validate_survey_metadata(self, survey_metadata):
         """
@@ -372,7 +372,7 @@ class ChannelTS:
                 self.logger.error(msg)
                 raise MTTSError(msg)
 
-        return survey_metadata
+        return survey_metadata.copy()
 
     ### Properties ------------------------------------------------------------
     @property
@@ -431,7 +431,7 @@ class ChannelTS:
                 )
 
             runs = ListDict()
-            if self.run_metadata.id not in ["0", 0]:
+            if self.run_metadata.id not in ["0", 0, None]:
                 runs.append(self.run_metadata.copy())
             runs.extend(station_metadata.runs)
             if len(runs) == 0:
@@ -489,7 +489,9 @@ class ChannelTS:
             channels.extend(run_metadata.channels)
 
             runs[0].channels = channels
-            runs.extend(self.station_metadata.runs, skip_keys=[run_metadata.id])
+            runs.extend(
+                self.station_metadata.runs, skip_keys=[run_metadata.id, "0"]
+            )
 
             self._survey_metadata.stations[0].runs = runs
 

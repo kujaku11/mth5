@@ -132,7 +132,7 @@ class RunTS:
                 raise MTTSError(
                     msg % (type(self.run_metadata), type(run_metadata))
                 )
-        return run_metadata
+        return run_metadata.copy()
 
     def _validate_station_metadata(self, station_metadata):
         """
@@ -157,7 +157,7 @@ class RunTS:
                 self.logger.error(msg)
                 raise MTTSError(msg)
 
-        return station_metadata
+        return station_metadata.copy()
 
     def _validate_survey_metadata(self, survey_metadata):
         """
@@ -182,7 +182,7 @@ class RunTS:
                 self.logger.error(msg)
                 raise MTTSError(msg)
 
-        return survey_metadata
+        return survey_metadata.copy()
 
     def _validate_array_list(self, array_list):
         """check to make sure all entries are a :class:`ChannelTS` object"""
@@ -204,19 +204,24 @@ class RunTS:
 
                 # if a channelTS is input then it comes with run and station metadata
                 # use those first, then the user can update later.
-
                 if index == 0:
-                    if item.station_metadata.id not in ["0"]:
-                        self.station_metadata.update(item.station_metadata)
-                    if item.run_metadata.id not in ["0"]:
+                    if item.station_metadata.id not in ["0", None]:
+                        if self.station_metadata.run_list == ["0"]:
+                            self.station_metadata = item.station_metadata
+                        else:
+                            self.station_metadata.update(item.station_metadata)
+                    if item.run_metadata.id not in ["0", None]:
                         self.run_metadata.update(item.run_metadata)
 
                 else:
-                    if item.station_metadata.id not in ["0"]:
-                        self.station_metadata.update(
-                            item.station_metadata, match=["id"]
-                        )
-                    if item.run_metadata.id not in ["0"]:
+                    if item.station_metadata.id not in ["0", None]:
+                        if self.station_metadata.run_list == ["0"]:
+                            self.station_metadata = item.station_metadata
+                        else:
+                            self.station_metadata.update(
+                                item.station_metadata, match=["id"]
+                            )
+                    if item.run_metadata.id not in ["0", None]:
                         self.run_metadata.update(
                             item.run_metadata, match=["id"]
                         )
@@ -378,11 +383,6 @@ class RunTS:
         station metadata
         """
         run_metadata = self.survey_metadata.stations[0].runs[0]
-        # if self.has_data():
-        #     run_metadata.channels = []
-        #     for ch in self.channels:
-        #         ch = getattr(self, ch)
-        #         run_metadata.add_channel(ch.channel_metadata)
 
         return run_metadata
 
@@ -404,7 +404,9 @@ class RunTS:
                 )
             runs = ListDict()
             runs.append(self._validate_run_metadata(run_metadata))
-            runs.extend(self.station_metadata.runs, skip_keys=[run_metadata.id])
+            runs.extend(
+                self.station_metadata.runs, skip_keys=[run_metadata.id, "0"]
+            )
             self._survey_metadata.stations[0].runs = runs
 
     def has_data(self):

@@ -26,7 +26,8 @@ fn_path = Path(__file__).parent
 # =============================================================================
 mth5.helpers.close_open_files()
 
-
+# for some reason this dosen't work when using @classmethod def setUpClass
+# keep getting an attribute error in Channel, at least on Git Actions.
 class TestMTH5(unittest.TestCase):
     def setUp(self):
         self.fn = fn_path.joinpath("test.mth5")
