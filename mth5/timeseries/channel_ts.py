@@ -19,7 +19,6 @@ convert them back if read in.
 # Imports
 # ==============================================================================
 import inspect
-from collections import OrderedDict
 
 import numpy as np
 import pandas as pd
@@ -30,7 +29,6 @@ from mt_metadata.timeseries.filters import ChannelResponseFilter
 from mt_metadata.utils.mttime import MTime
 from mt_metadata.utils.list_dict import ListDict
 
-from mth5.utils.exceptions import MTTSError
 from mth5.utils.mth5_logger import setup_logger
 from mth5.utils import fdsn_tools
 from mth5.timeseries.ts_filters import RemoveInstrumentResponse
@@ -284,17 +282,24 @@ class ChannelTS:
                 if self.channel_type.lower() not in [
                     cc.lower() for cc in channel_metadata.keys()
                 ]:
+                    try:
+                        self.channel_type = channel_metadata["type"]
+                    except KeyError:
+                        pass
                     channel_metadata = {self.channel_type: channel_metadata}
-                ch = meta_classes[self.channel_type]()
-                ch.from_dict(channel_metadata)
+
+                self.channel_type = list(channel_metadata.keys())[0]
+                ch_metadata = meta_classes[self.channel_type]()
+                ch_metadata.from_dict(channel_metadata)
+                channel_metadata = ch_metadata.copy()
                 self.logger.debug("Loading from metadata dict")
-                return ch
+                return channel_metadata
             else:
                 msg = "input metadata must be type %s or dict, not %s"
                 self.logger.error(
                     msg, type(self.channel_metadata), type(channel_metadata)
                 )
-                raise MTTSError(
+                raise TypeError(
                     msg % (type(self.channel_metadata), type(channel_metadata))
                 )
 
@@ -319,7 +324,7 @@ class ChannelTS:
                 self.logger.error(
                     msg, type(self.run_metadata), type(run_metadata)
                 )
-                raise MTTSError(
+                raise TypeError(
                     msg % (type(self.run_metadata), type(run_metadata))
                 )
         return run_metadata.copy()
@@ -345,7 +350,7 @@ class ChannelTS:
                     type(self.station_metadata), type(station_metadata)
                 )
                 self.logger.error(msg)
-                raise MTTSError(msg)
+                raise TypeError(msg)
 
         return station_metadata.copy()
 
@@ -370,7 +375,7 @@ class ChannelTS:
                     type(self.survey_metadata), type(survey_metadata)
                 )
                 self.logger.error(msg)
-                raise MTTSError(msg)
+                raise TypeError(msg)
 
         return survey_metadata.copy()
 
@@ -392,18 +397,8 @@ class ChannelTS:
         """
 
         if survey_metadata is not None:
-            if isinstance(survey_metadata, (dict, OrderedDict)):
-                s_metadata = metadata.Survey()
-                s_metadata.from_dict(survey_metadata)
-                survey_metadata = s_metadata.copy()
-
-            if not isinstance(survey_metadata, metadata.Survey):
-                raise TypeError(
-                    "Survey metadata must be mt_metadata.timeseries.Survey object"
-                )
-            self._survey_metadata.update(
-                self._validate_survey_metadata(survey_metadata)
-            )
+            survey_metadata = self._validate_survey_metadata(survey_metadata)
+            self._survey_metadata.update(survey_metadata)
 
     @property
     def station_metadata(self):
@@ -420,15 +415,7 @@ class ChannelTS:
         """
 
         if station_metadata is not None:
-            if isinstance(station_metadata, (dict, OrderedDict)):
-                st_metadata = metadata.Station()
-                st_metadata.from_dict(station_metadata)
-                station_metadata = st_metadata.copy()
-
-            if not isinstance(station_metadata, metadata.Station):
-                raise TypeError(
-                    "Station metadata must be mt_metadata.timeseries.Station object"
-                )
+            station_metadata = self._validate_station_metadata(station_metadata)
 
             runs = ListDict()
             if self.run_metadata.id not in ["0", 0, None]:
@@ -444,7 +431,7 @@ class ChannelTS:
                 runs[0].channels.append(ch_metadata)
 
             stations = ListDict()
-            stations.append(self._validate_station_metadata(station_metadata))
+            stations.append(station_metadata)
             stations[0].runs = runs
 
             self.survey_metadata.stations = stations
@@ -465,18 +452,10 @@ class ChannelTS:
 
         # need to make sure the first index is the desired channel
         if run_metadata is not None:
-            if isinstance(run_metadata, (dict, OrderedDict)):
-                r_metadata = metadata.Run()
-                r_metadata.from_dict(run_metadata)
-                run_metadata = r_metadata.copy()
-
-            if not isinstance(run_metadata, metadata.Run):
-                raise TypeError(
-                    "Run metadata must be mt_metadata.timeseries.Run object"
-                )
+            run_metadata = self._validate_run_metadata(run_metadata)
 
             runs = ListDict()
-            runs.append(self._validate_run_metadata(run_metadata))
+            runs.append(run_metadata)
             channels = ListDict()
             if self.component is not None:
                 key = str(self.component)
@@ -512,19 +491,7 @@ class ChannelTS:
         """
 
         if channel_metadata is not None:
-            if isinstance(channel_metadata, (dict, OrderedDict)):
-                self.channel_type = list(channel_metadata.keys())[0]
-                ch_metadata = meta_classes[self.channel_type]()
-                ch_metadata.from_dict(channel_metadata)
-                channel_metadata = ch_metadata.copy()
-
-            if not isinstance(
-                channel_metadata,
-                (metadata.Electric, metadata.Magnetic, metadata.Auxiliary),
-            ):
-                raise TypeError(
-                    "Channel metadata must be mt_metadata.timeseries.Channel object"
-                )
+            channel_metadata = self._validate_channel_metadata(channel_metadata)
             if channel_metadata.component is not None:
                 channels = ListDict()
                 if (
@@ -600,7 +567,7 @@ class ChannelTS:
                     + "where the time series data is stored"
                 )
                 self.logger.error(msg)
-                raise MTTSError(msg)
+                raise ValueError(msg)
         elif isinstance(ts_arr, pd.core.series.Series):
             if isinstance(
                 ts_arr.index[0], pd._libs.tslibs.timestamps.Timestamp
@@ -651,7 +618,7 @@ class ChannelTS:
                 + ", ts needs to be a numpy.ndarray, pandas DataFrame, "
                 + "or xarray.DataArray."
             )
-            raise MTTSError(msg)
+            raise TypeError(msg)
 
     @property
     def time_index(self):
@@ -740,7 +707,7 @@ class ChannelTS:
                     "Cannot change channel type, create a new ChannelTS object."
                 )
                 self.logger.error(msg)
-                raise MTTSError(msg)
+                raise ValueError(msg)
         elif self.channel_metadata.type == "magnetic":
             if comp[0].lower() not in ["h", "b"]:
                 msg = (
@@ -748,7 +715,7 @@ class ChannelTS:
                     "Cannot change channel type, create a new ChannelTS object."
                 )
                 self.logger.error(msg)
-                raise MTTSError(msg)
+                raise ValueError(msg)
         if self.channel_metadata.type == "auxiliary":
             if comp[0].lower() in ["e", "h", "b"]:
                 msg = (
@@ -756,7 +723,7 @@ class ChannelTS:
                     "Cannot change channel type, create a new ChannelTS object."
                 )
                 self.logger.error(msg)
-                raise MTTSError(msg)
+                raise ValueError(msg)
         self.channel_metadata.component = comp
 
         # need to update the keys in the list dict
@@ -1234,7 +1201,7 @@ class ChannelTS:
         if not isinstance(obspy_trace, Trace):
             msg = f"Input must be obspy.core.Trace, not {type(obspy_trace)}"
             self.logger.error(msg)
-            raise MTTSError(msg)
+            raise TypeError(msg)
         if obspy_trace.stats.channel[1].lower() in ["e", "q"]:
             self.channel_type = "electric"
         elif obspy_trace.stats.channel[1].lower() in ["h", "b", "f"]:
