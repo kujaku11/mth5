@@ -19,7 +19,6 @@ convert them back if read in.
 # Imports
 # ==============================================================================
 import inspect
-from collections import OrderedDict
 
 import xarray as xr
 import numpy as np
@@ -31,7 +30,6 @@ from mt_metadata.utils.mttime import MTime
 from mt_metadata.utils.list_dict import ListDict
 from mt_metadata.timeseries.filters import ChannelResponseFilter
 
-from mth5.utils.exceptions import MTTSError
 from .channel_ts import ChannelTS
 from mth5.utils.mth5_logger import setup_logger
 
@@ -129,7 +127,7 @@ class RunTS:
                 self.logger.error(
                     msg, type(self.run_metadata), type(run_metadata)
                 )
-                raise MTTSError(
+                raise TypeError(
                     msg % (type(self.run_metadata), type(run_metadata))
                 )
         return run_metadata.copy()
@@ -155,7 +153,7 @@ class RunTS:
                     type(self.station_metadata), type(station_metadata)
                 )
                 self.logger.error(msg)
-                raise MTTSError(msg)
+                raise TypeError(msg)
 
         return station_metadata.copy()
 
@@ -180,7 +178,7 @@ class RunTS:
                     type(self.survey_metadata), type(survey_metadata)
                 )
                 self.logger.error(msg)
-                raise MTTSError(msg)
+                raise TypeError(msg)
 
         return survey_metadata.copy()
 
@@ -244,7 +242,7 @@ class RunTS:
         if len(set([v for k, v in sr_test.items()])) != 1:
             msg = f"sample rates are not all the same {sr_test}"
             self.logger.error(msg)
-            raise MTTSError(msg)
+            raise ValueError(msg)
 
         return valid_list
 
@@ -320,15 +318,7 @@ class RunTS:
         """
 
         if survey_metadata is not None:
-            if isinstance(survey_metadata, (dict, OrderedDict)):
-                s_metadata = metadata.Survey()
-                s_metadata.from_dict(survey_metadata)
-                survey_metadata = s_metadata.copy()
-
-            if not isinstance(survey_metadata, metadata.Survey):
-                raise TypeError(
-                    "Survey metadata must be mt_metadata.timeseries.Survey object"
-                )
+            survey_metadata = self._validate_survey_metadata(survey_metadata)
             self._survey_metadata.update(
                 self._validate_survey_metadata(survey_metadata)
             )
@@ -348,15 +338,7 @@ class RunTS:
         """
 
         if station_metadata is not None:
-            if isinstance(station_metadata, (dict, OrderedDict)):
-                st_metadata = metadata.Station()
-                st_metadata.from_dict(station_metadata)
-                station_metadata = st_metadata.copy()
-
-            if not isinstance(station_metadata, metadata.Station):
-                raise TypeError(
-                    "Station metadata must be mt_metadata.timeseries.Station object"
-                )
+            station_metadata = self._validate_station_metadata(station_metadata)
 
             runs = ListDict()
             if self.run_metadata.id not in ["0", 0]:
@@ -372,7 +354,7 @@ class RunTS:
                 runs[0].channels.append(ch_metadata)
 
             stations = ListDict()
-            stations.append(self._validate_station_metadata(station_metadata))
+            stations.append(station_metadata)
             stations[0].runs = runs
 
             self.survey_metadata.stations = stations
@@ -393,17 +375,9 @@ class RunTS:
         """
 
         if run_metadata is not None:
-            if isinstance(run_metadata, (dict, OrderedDict)):
-                r_metadata = metadata.Run()
-                r_metadata.from_dict(run_metadata)
-                run_metadata = r_metadata.copy()
-
-            if not isinstance(run_metadata, metadata.Run):
-                raise TypeError(
-                    "Run metadata must be mt_metadata.timeseries.Run object"
-                )
+            run_metadata = self._validate_run_metadata(run_metadata)
             runs = ListDict()
-            runs.append(self._validate_run_metadata(run_metadata))
+            runs.append(run_metadata)
             runs.extend(
                 self.station_metadata.runs, skip_keys=[run_metadata.id, "0"]
             )
@@ -564,7 +538,7 @@ class RunTS:
                 + f"input {c.sample_rate}"
             )
             self.logger.error(msg)
-            raise MTTSError(msg)
+            raise ValueError(msg)
 
         ### should probably check for other metadata like station and run?
         if len(self.dataset.dims) == 0:
@@ -710,7 +684,7 @@ class RunTS:
         if not isinstance(obspy_stream, Stream):
             msg = f"Input must be obspy.core.Stream not {type(obspy_stream)}"
             self.logger.error(msg)
-            raise MTTSError(msg)
+            raise TypeError(msg)
 
         array_list = []
         station_list = []

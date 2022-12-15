@@ -226,7 +226,7 @@ class TestRunTS(unittest.TestCase):
         )
 
         self.assertRaises(
-            MTTSError,
+            ValueError,
             self.run.set_dataset,
             [self.ex, self.ey, self.hx, self.hy, hz],
         )
