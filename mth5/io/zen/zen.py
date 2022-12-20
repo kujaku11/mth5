@@ -502,6 +502,15 @@ class Z3D:
 
     @property
     def zen_response(self):
+        """
+        Zen response, not sure the full calibration comes directly from the
+        Z3D file, so skipping for now.  Will have to read a Zen##.cal file
+        to get the full calibration.  This shouldn't be a big issue cause it
+        should roughly be the same for all channels and since the TF is
+        computing the ratio they will cancel out.  Though we should look
+        more into this if just looking at calibrate time series.
+
+        """
         fap = None
         find = False
         if self.metadata.board_cal not in [None, []]:
@@ -541,23 +550,24 @@ class Z3D:
 
         if find:
             freq = np.logspace(np.log10(6.00000e-04), np.log10(8.19200e03), 48)
+            freq[np.where(freq >= frequency)[0][0]] = frequency
             amp = np.ones(48)
-            phs = np.zeros(48)
+            phases = np.zeros(48)
 
-            index = np.where(freq >= frequency)[0][0]
+            index = np.where(freq == frequency)[0][0]
             amp[index] = amplitude
-            phs[index] = phase
+            phases[index] = phase
 
             fap = FrequencyResponseTableFilter()
             fap.units_in = "millivolts"
             fap.units_out = "millivolts"
             fap.frequencies = freq
             fap.amplitudes = amp
-            fap.phases = phs
+            fap.phases = phases
             fap.name = f"{self.header.data_logger.lower()}_{self.sample_rate:.0f}_response"
             fap.comments = "data logger response read from z3d file"
 
-        return fap
+        return None
 
     @property
     def channel_response(self):
