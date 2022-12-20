@@ -116,9 +116,7 @@ class Z3D:
     """
 
     def __init__(self, fn=None, **kwargs):
-        self.logger = logging.getLogger(
-            f"{__name__}.{self.__class__.__name__}"
-        )
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.fn = fn
 
         self.header = Z3DHeader(fn)
@@ -505,6 +503,7 @@ class Z3D:
     @property
     def zen_response(self):
         fap = None
+        find = False
         if self.metadata.board_cal not in [None, []]:
             if self.metadata.board_cal[0][0] == "":
                 return fap
@@ -513,27 +512,48 @@ class Z3D:
             fap_table = self.metadata.board_cal[
                 np.where(self.metadata.board_cal.rate == sr_int)
             ]
-            fap = FrequencyResponseTableFilter()
-            fap.units_in = "millivolts"
-            fap.units_out = "millivolts"
-            fap.frequencies = fap_table.frequency
-            fap.amplitudes = fap_table.amplitude
-            fap.phases = fap_table.phase / 1e3
-            fap.name = f"{self.header.data_logger.lower()}_{self.sample_rate:.0f}_response"
-            fap.comments = "data logger response read from z3d file"
+            frequency = fap_table.frequency
+            amplitude = fap_table.amplitude
+            phase = fap_table.phase / 1e3
+            find = True
+
         elif self.metadata.cal_board is not None:
 
             try:
                 fap_dict = self.metadata.cal_board[int(self.sample_rate)]
+                frequency = fap_dict["frequency"]
+                amplitude = fap_dict["amplitude"]
+                phase = fap_dict["phase"]
+                find = True
             except KeyError:
-                return fap
+                try:
+                    fap_str = self.metadata.cal_board["cal.ch"]
+                    for ss in fap_str.split(";"):
+                        freq, _, resp = ss.split(",")
+                        ff, amp, phs = [float(item) for item in resp.split(":")]
+                        if float(freq) == self.sample_rate:
+                            frequency = ff
+                            amplitude = amp
+                            phase = phs / 1e3
+                    find = True
+                except KeyError:
+                    return fap
+
+        if find:
+            freq = np.logspace(np.log10(6.00000e-04), np.log10(8.19200e03), 48)
+            amp = np.ones(48)
+            phs = np.zeros(48)
+
+            index = np.where(freq >= frequency)[0][0]
+            amp[index] = amplitude
+            phs[index] = phase
 
             fap = FrequencyResponseTableFilter()
             fap.units_in = "millivolts"
             fap.units_out = "millivolts"
-            fap.frequencies = [fap_dict["frequency"]]
-            fap.amplitudes = [fap_dict["amplitude"]]
-            fap.phases = [fap_dict["phase"] / 1e3]
+            fap.frequencies = freq
+            fap.amplitudes = amp
+            fap.phases = phs
             fap.name = f"{self.header.data_logger.lower()}_{self.sample_rate:.0f}_response"
             fap.comments = "data logger response read from z3d file"
 
@@ -586,9 +606,7 @@ class Z3D:
             self._gps_stamp_length = 36
             self._gps_bytes = self._gps_stamp_length / 4
             self._gps_flag_0 = -1
-            self._block_len = int(
-                self._gps_stamp_length + self.sample_rate * 4
-            )
+            self._block_len = int(self._gps_stamp_length + self.sample_rate * 4)
             self.gps_flag = self._gps_f0
 
         else:
@@ -841,9 +859,7 @@ class Z3D:
         self.raw_data = data.copy()
 
         # find the gps stamps
-        gps_stamp_find = self.get_gps_stamp_index(
-            data, self.header.old_version
-        )
+        gps_stamp_find = self.get_gps_stamp_index(data, self.header.old_version)
 
         # skip the first two stamps and trim data
         try:
@@ -854,9 +870,7 @@ class Z3D:
             raise ZenGPSError(msg)
 
         # find gps stamps of the trimmed data
-        gps_stamp_find = self.get_gps_stamp_index(
-            data, self.header.old_version
-        )
+        gps_stamp_find = self.get_gps_stamp_index(data, self.header.old_version)
 
         # read data chunks and GPS stamps
         self.gps_stamps = np.zeros(len(gps_stamp_find), dtype=self._gps_dtype)

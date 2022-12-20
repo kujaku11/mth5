@@ -2768,11 +2768,11 @@ class ChannelDataset:
         if npts > self.hdf5_dataset.size or end_index > self.hdf5_dataset.size:
             msg = (
                 "Requested slice is larger than data.  "
-                + f"Slice length = {npts}, data length = {self.hdf5_dataset.shape}"
-                + " Check start and end times."
+                f"Slice length = {npts}, data length = {self.hdf5_dataset.shape}. "
+                f"Setting end_index to {self.hdf5_dataset.shape}"
             )
-            self.logger.error(msg)
-            raise ValueError(msg)
+            end_index = self.hdf5_dataset.size - 1
+            self.logger.warning(msg)
         # create a regional reference that can be used, need +1 to be inclusive
         try:
             regional_ref = self.hdf5_dataset.regionref[
