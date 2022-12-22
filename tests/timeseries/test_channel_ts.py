@@ -248,7 +248,7 @@ class TestChannelTS(unittest.TestCase):
         def set_ts(value):
             self.ts.ts = value
 
-        self.assertRaises(TypeError, set_ts, 10)
+        self.assertRaises(MTTSError, set_ts, 10)
 
     def test_df_without_index_input(self):
         self.ts.channel_metadata.sample_rate = 1.0
