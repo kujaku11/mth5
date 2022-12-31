@@ -74,11 +74,9 @@ def read_back_data(mth5_path, station_id, run_id, survey=None):
     processing_config["local_station_id"] = station_id
     config = processing_config
     m = initialize_mth5(config["mth5_path"], mode="r")
-    local_run_obj = m.get_run(
-        config["local_station_id"], run_id, survey=survey
-    )
+    local_run_obj = m.get_run(config["local_station_id"], run_id, survey=survey)
     local_run_ts = local_run_obj.to_runts()
     data_array = local_run_ts.dataset.to_array()
     logger.info(f"data shape = {data_array.shape}")
-
+    m.close_mth5()
     return local_run_obj, local_run_ts
