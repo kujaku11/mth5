@@ -214,13 +214,18 @@ class TransferFunctionGroup(BaseGroup):
             return EstimateDataset(
                 estimate_dataset, dataset_metadata=estimate_metadata
             )
-        except (KeyError, OSError):
+
+        except (KeyError):
             msg = (
                 f"{estimate_name} does not exist, "
                 + "check groups_list for existing names"
             )
             self.logger.error(msg)
             raise MTH5Error(msg)
+
+        except (OSError) as error:
+            self.logger.error(error)
+            raise MTH5Error(error)
 
     def remove_estimate(self, estimate_name):
         """
