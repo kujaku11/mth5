@@ -83,8 +83,10 @@ class TestMTH5(unittest.TestCase):
 
     def test_add_station(self):
         new_station = self.mth5_obj.add_station("MT001")
-        self.assertIn("MT001", self.mth5_obj.stations_group.groups_list)
-        self.assertIsInstance(new_station, mth5.groups.StationGroup)
+        with self.subTest("groups list"):
+            self.assertIn("MT001", self.mth5_obj.stations_group.groups_list)
+        with self.subTest("isinstance StationGroup"):
+            self.assertIsInstance(new_station, mth5.groups.StationGroup)
 
     def test_remove_station(self):
         self.mth5_obj.add_station("MT001")
@@ -97,8 +99,10 @@ class TestMTH5(unittest.TestCase):
     def test_add_run(self):
         new_station = self.mth5_obj.add_station("MT001")
         new_run = new_station.add_run("MT001a")
-        self.assertIn("MT001a", new_station.groups_list)
-        self.assertIsInstance(new_run, mth5.groups.RunGroup)
+        with self.subTest("groups list"):
+            self.assertIn("MT001a", new_station.groups_list)
+        with self.subTest("isinstance RunGroup"):
+            self.assertIsInstance(new_run, mth5.groups.RunGroup)
 
     def test_remove_run(self):
         new_station = self.mth5_obj.add_station("MT001")
@@ -113,8 +117,10 @@ class TestMTH5(unittest.TestCase):
         new_station = self.mth5_obj.add_station("MT001")
         new_run = new_station.add_run("MT001a")
         new_channel = new_run.add_channel("Ex", "electric", None)
-        self.assertIn("ex", new_run.groups_list)
-        self.assertIsInstance(new_channel, mth5.groups.ElectricDataset)
+        with self.subTest("groups list"):
+            self.assertIn("ex", new_run.groups_list)
+        with self.subTest("isinstance ElectricDataset"):
+            self.assertIsInstance(new_channel, mth5.groups.ElectricDataset)
 
     def test_remove_channel(self):
         new_station = self.mth5_obj.add_station("MT001")
@@ -154,10 +160,12 @@ class TestMTH5(unittest.TestCase):
         ex.from_channel_ts(channel_ts)
         new_ts = ex.to_channel_ts()
 
-        self.assertEqual(channel_ts.start, new_ts.start)
-        self.assertTrue(
-            channel_ts._ts.time.to_dict() == new_ts._ts.time.to_dict()
-        )
+        with self.subTest("start"):
+            self.assertEqual(channel_ts.start, new_ts.start)
+        with self.subTest("time"):
+            self.assertTrue(
+                channel_ts._ts.time.to_dict() == new_ts._ts.time.to_dict()
+            )
 
     def test_from_run_ts(self):
         ts_list = []
@@ -183,19 +191,25 @@ class TestMTH5(unittest.TestCase):
                 ch_type, data=np.random.rand(4096), channel_metadata=meta_dict
             )
             ts_list.append(channel_ts)
-        run_ts = RunTS(ts_list, {"id": "MT002a"})
+        run_ts = RunTS(ts_list, run_metadata={"run": {"id": "MT002a"}})
 
         station = self.mth5_obj.add_station("MT002")
         run = station.add_run("MT002a")
         channel_groups = run.from_runts(run_ts)
 
-        self.assertListEqual(["ex", "ey", "hx", "hy", "hz"], run.groups_list)
+        with self.subTest("channels"):
+            self.assertListEqual(
+                ["ex", "ey", "hx", "hy", "hz"], run.groups_list
+            )
 
         # check to make sure the metadata was transfered
         for cg in channel_groups:
-            self.assertEqual(MTime("2020-01-01T12:00:00"), cg.start)
-            self.assertEqual(1, cg.sample_rate)
-            self.assertEqual(4096, cg.n_samples)
+            with self.subTest(f"{cg.metadata.component}.start"):
+                self.assertEqual(MTime("2020-01-01T12:00:00"), cg.start)
+            with self.subTest(f"{cg.metadata.component}.sample_rate"):
+                self.assertEqual(1, cg.sample_rate)
+            with self.subTest(f"{cg.metadata.component}.n_samples"):
+                self.assertEqual(4096, cg.n_samples)
         # check the summary table
 
     @classmethod

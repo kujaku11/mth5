@@ -65,6 +65,9 @@ class USGSascii(AsciiMetadata):
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
 
+    ### need copy in the metadata otherwise the order in the channels
+    ### gets messed up.
+
     @property
     def hx(self):
         """HX"""
@@ -73,9 +76,10 @@ class USGSascii(AsciiMetadata):
             return ChannelTS(
                 "magnetic",
                 data=self.ts.hx.to_numpy(),
-                channel_metadata=self.hx_metadata,
-                run_metadata=self.run_metadata,
-                station_metadata=self.station_metadata,
+                channel_metadata=self.hx_metadata.copy(),
+                run_metadata=self.run_metadata.copy(),
+                station_metadata=self.station_metadata.copy(),
+                survey_metadata=self.survey_metadata.copy(),
             )
         return None
 
@@ -87,9 +91,10 @@ class USGSascii(AsciiMetadata):
             return ChannelTS(
                 "magnetic",
                 data=self.ts.hy.to_numpy(),
-                channel_metadata=self.hy_metadata,
-                run_metadata=self.run_metadata,
-                station_metadata=self.station_metadata,
+                channel_metadata=self.hy_metadata.copy(),
+                run_metadata=self.run_metadata.copy(),
+                station_metadata=self.station_metadata.copy(),
+                survey_metadata=self.survey_metadata.copy(),
             )
         return None
 
@@ -101,9 +106,10 @@ class USGSascii(AsciiMetadata):
             return ChannelTS(
                 "magnetic",
                 data=self.ts.hz.to_numpy(),
-                channel_metadata=self.hz_metadata,
-                run_metadata=self.run_metadata,
-                station_metadata=self.station_metadata,
+                channel_metadata=self.hz_metadata.copy(),
+                run_metadata=self.run_metadata.copy(),
+                station_metadata=self.station_metadata.copy(),
+                survey_metadata=self.survey_metadata.copy(),
             )
         return None
 
@@ -115,9 +121,10 @@ class USGSascii(AsciiMetadata):
             return ChannelTS(
                 "electric",
                 data=self.ts.ex.to_numpy(),
-                channel_metadata=self.ex_metadata,
-                run_metadata=self.run_metadata,
-                station_metadata=self.station_metadata,
+                channel_metadata=self.ex_metadata.copy(),
+                run_metadata=self.run_metadata.copy(),
+                station_metadata=self.station_metadata.copy(),
+                survey_metadata=self.survey_metadata.copy(),
             )
         return None
 
@@ -129,9 +136,10 @@ class USGSascii(AsciiMetadata):
             return ChannelTS(
                 "electric",
                 data=self.ts.ey.to_numpy(),
-                channel_metadata=self.ey_metadata,
-                run_metadata=self.run_metadata,
-                station_metadata=self.station_metadata,
+                channel_metadata=self.ey_metadata.copy(),
+                run_metadata=self.run_metadata.copy(),
+                station_metadata=self.station_metadata.copy(),
+                survey_metadata=self.survey_metadata.copy(),
             )
         return None
 
@@ -141,7 +149,9 @@ class USGSascii(AsciiMetadata):
 
             return RunTS(
                 array_list=[self.hx, self.hy, self.hz, self.ex, self.ey],
-                run_metadata=self.run_metadata,
+                run_metadata=self.run_metadata.copy(),
+                station_metadata=self.station_metadata.copy(),
+                survey_metadata=self.survey_metadata.copy(),
             )
 
         return None

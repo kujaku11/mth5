@@ -896,6 +896,11 @@ class MTH5:
                             if update:
                                 mt_ch.metadata.update(channel)
                                 mt_ch.write_metadata()
+                        ### need to update from input metadata for time period
+                        ### and channels, runs, stations.
+                        mt_run.update_run_metadata()
+                    mt_station.update_station_metadata()
+                sg.update_survey_metadata()
                 for k, v in experiment.surveys[0].filters.items():
                     self.filters_group.add_filter(v)
             elif self.file_version in ["0.2.0"]:
@@ -929,6 +934,10 @@ class MTH5:
                                 if update:
                                     mt_ch.metadata.update(channel)
                                     mt_ch.write_metadata()
+
+                            mt_run.update_run_metadata()
+                        mt_station.update_station_metadata()
+                    sg.update_survey_metadata()
                     for k, v in survey.filters.items():
                         sg.filters_group.add_filter(v)
 

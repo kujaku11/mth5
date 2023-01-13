@@ -435,9 +435,7 @@ class Header:
         # Total of the gain that is selectable by the user (i.e. att * pre * gain)
         if self._has_header():
             return (
-                self.channel_main_gain
-                * self.preamp_gain
-                * self.attenuator_gain
+                self.channel_main_gain * self.preamp_gain * self.attenuator_gain
             )
         return 1.0
 
@@ -633,6 +631,7 @@ class Header:
         r.data_logger.timing_system.uncertainty = self.timing_stability
         r.sample_rate = self.sample_rate
         r.data_logger.power_source.voltage.start = self.battery_voltage_v
+        r.channels.append(self.channel_metadata())
 
         return r
 
@@ -646,5 +645,6 @@ class Header:
         s.location.latitude = self.gps_lat
         s.location.longitude = self.gps_long
         s.location.elevation = self.gps_elevation
+        s.runs.append(self.run_metadata())
 
         return s

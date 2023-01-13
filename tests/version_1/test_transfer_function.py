@@ -57,7 +57,7 @@ class TestTFGroup(unittest.TestCase):
                     "comments",
                     "The USMTArray-CONUS South campaign was carried out through a cooperative agreement between\nthe U.S. Geological Survey (USGS) and Oregon State University (OSU). A subset of 40 stations\nin the SW US were funded through NASA grant 80NSSC19K0232.\nLand permitting, data acquisition, quality control and field processing were\ncarried out by Green Geophysics with project management and instrument/engineering\nsupport from OSU and Chaytus Engineering, respectively.\nProgram oversight, definitive data processing and data archiving were provided\nby the USGS Geomagnetism Program and the Geology, Geophysics and Geochemistry Science Centers.\nWe thank the U.S. Forest Service, the Bureau of Land Management, the National Park Service,\nthe Department of Defense, numerous state land offices and the many private landowners\nwho permitted land access to acquire the USMTArray data.",
                 ),
-                ("country", "USA"),
+                ("country", ["USA"]),
                 ("datum", "WGS84"),
                 ("geographic_name", "CONUS South"),
                 ("id", "CONUS South"),
@@ -67,7 +67,7 @@ class TestTFGroup(unittest.TestCase):
                 ("project", "USMTArray"),
                 ("project_lead.email", None),
                 ("project_lead.organization", None),
-                ("release_license", "CC-0"),
+                ("release_license", "CC0-1.0"),
                 ("southeast_corner.latitude", 0.0),
                 ("southeast_corner.longitude", 0.0),
                 ("summary", "Magnetotelluric Transfer Functions"),
@@ -82,7 +82,7 @@ class TestTFGroup(unittest.TestCase):
 
         self.assertDictEqual(meta_dict, h5_meta_dict)
 
-    def test_station_metadta(self):
+    def test_station_metadata(self):
 
         meta_dict = OrderedDict(
             [
@@ -103,7 +103,7 @@ class TestTFGroup(unittest.TestCase):
                 ("orientation.method", None),
                 ("orientation.reference_frame", "geographic"),
                 ("provenance.creation_time", "2021-03-17T14:47:44+00:00"),
-                ("provenance.software.author", "none"),
+                ("provenance.software.author", None),
                 (
                     "provenance.software.name",
                     "EMTF File Conversion Utilities 4.0",
@@ -115,6 +115,7 @@ class TestTFGroup(unittest.TestCase):
                     "provenance.submitter.organization",
                     "U.S. Geological Survey, Geomagnetism Program",
                 ),
+                ("release_license", "CC0-1.0"),
                 ("run_list", ["NMX20a", "NMX20b"]),
                 ("time_period.end", "2020-10-07T20:28:00+00:00"),
                 ("time_period.start", "2020-09-20T19:03:06+00:00"),

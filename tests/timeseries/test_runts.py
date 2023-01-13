@@ -23,6 +23,7 @@ from mth5.timeseries import ChannelTS, RunTS
 from mth5.utils.exceptions import MTTSError
 
 from mt_metadata.utils.mttime import MTime
+import mt_metadata.timeseries as metadata
 from mt_metadata.timeseries.filters import (
     PoleZeroFilter,
     ChannelResponseFilter,
@@ -36,7 +37,7 @@ class TestRunTS(unittest.TestCase):
         self.run = RunTS()
         self.maxDiff = None
         self.start = "2015-01-08T19:49:18+00:00"
-        self.end = "2015-01-08T19:57:50.00000"
+        self.end = "2015-01-08T19:57:49.875000"
         self.sample_rate = 8
         self.npts = 4096
 
@@ -118,6 +119,7 @@ class TestRunTS(unittest.TestCase):
 
     def test_str(self):
         s_list = [
+            f"Survey:      {self.run.survey_metadata.id}",
             f"Station:     {self.run.station_metadata.id}",
             f"Run:         {self.run.run_metadata.id}",
             f"Start:       {self.run.start}",
@@ -131,6 +133,7 @@ class TestRunTS(unittest.TestCase):
 
     def test_repr(self):
         s_list = [
+            f"Survey:      {self.run.survey_metadata.id}",
             f"Station:     {self.run.station_metadata.id}",
             f"Run:         {self.run.run_metadata.id}",
             f"Start:       {self.run.start}",
@@ -143,11 +146,47 @@ class TestRunTS(unittest.TestCase):
         self.assertEqual(test_str, self.run.__repr__())
 
     def test_set_run_metadata_fail(self):
-        self.assertRaises(MTTSError, RunTS, [self.ex], **{"run_metadata": []})
+        self.assertRaises(TypeError, RunTS, [self.ex], **{"run_metadata": []})
 
     def test_set_station_metadata_fail(self):
         self.assertRaises(
-            MTTSError, RunTS, [self.ex], **{"station_metadata": []}
+            TypeError, RunTS, [self.ex], **{"station_metadata": []}
+        )
+
+    def test_validate_run_metadata(self):
+        self.assertEqual(
+            self.run.run_metadata,
+            self.run._validate_run_metadata(self.run.run_metadata),
+        )
+
+    def test_validate_run_metadata_from_dict(self):
+        self.assertEqual(
+            metadata.Run(id="0"),
+            self.run._validate_run_metadata({"id": "0"}),
+        )
+
+    def test_validate_station_metadata(self):
+        self.assertEqual(
+            self.run.station_metadata,
+            self.run._validate_station_metadata(self.run.station_metadata),
+        )
+
+    def test_validate_station_metadata_from_dict(self):
+        self.assertEqual(
+            metadata.Station(id="0"),
+            self.run._validate_station_metadata({"id": "0"}),
+        )
+
+    def test_validate_survey_metadata(self):
+        self.assertEqual(
+            self.run.survey_metadata,
+            self.run._validate_survey_metadata(self.run.survey_metadata),
+        )
+
+    def test_validate_survey_metadata_from_dict(self):
+        self.assertEqual(
+            metadata.Survey(id="0"),
+            self.run._validate_survey_metadata({"id": "0"}),
         )
 
     def test_validate_array_fail(self):
@@ -187,7 +226,7 @@ class TestRunTS(unittest.TestCase):
         )
 
         self.assertRaises(
-            MTTSError,
+            ValueError,
             self.run.set_dataset,
             [self.ex, self.ey, self.hx, self.hy, hz],
         )
@@ -255,24 +294,22 @@ class TestRunTS(unittest.TestCase):
         with self.subTest("sample rate"):
             self.assertEqual(r_slice.sample_rate, self.sample_rate)
         with self.subTest("start not equal"):
-            self.assertNotEqual(r_slice.start, MTime(start))
+            self.assertEqual(r_slice.start, MTime(start))
 
         with self.subTest("start equal"):
             # the time index does not have a value at the requested location
             # so it grabs the closest one.
-            self.assertEqual(r_slice.start, MTime(start) + 0.002930)
+            self.assertEqual(r_slice.start, MTime(start))
         with self.subTest("end"):
             self.assertEqual(
-                r_slice.end, MTime("2015-01-08T19:50:01.885714+00:00")
+                r_slice.end, MTime("2015-01-08T19:50:01.875000+00:00")
             )
 
         with self.subTest("npts"):
             self.assertEqual(r_slice.dataset.ex.data.shape[0], npts)
 
     def test_filters_dict(self):
-        self.assertEqual(
-            list(self.run.filters.keys()), ["instrument_response"]
-        )
+        self.assertEqual(list(self.run.filters.keys()), ["instrument_response"])
 
     def test_filters_fail(self):
         def set_filters(value):

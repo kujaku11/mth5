@@ -10,6 +10,7 @@ Created on Thu Sep 15 15:47:42 2022
 import unittest
 from pathlib import Path
 from collections import OrderedDict
+import numpy as np
 
 from mth5.io.usgs_ascii import AsciiMetadata
 
@@ -33,7 +34,7 @@ class TestAsciiMetadata(unittest.TestCase):
         self.assertEqual(self.header.coordinate_system, "geographic north")
 
     def test_elevation(self):
-        self.assertEqual(self.header.elevation, 1803.07)
+        self.assertTrue(np.isclose(self.header.elevation, 1803.00, 0))
 
     def test_missing_data_flag(self):
         self.assertEqual(self.header.missing_data_flag, "1.000e+09")
@@ -246,7 +247,7 @@ class TestAsciiMetadata(unittest.TestCase):
             OrderedDict(
                 [
                     ("acquired_by.name", None),
-                    ("channels_recorded", []),
+                    ("channels_recorded", ["ex", "ey", "hx", "hy", "hz"]),
                     ("data_type", "BBMT"),
                     ("geographic_name", None),
                     ("id", "003"),
@@ -258,11 +259,12 @@ class TestAsciiMetadata(unittest.TestCase):
                     ("orientation.method", None),
                     ("orientation.reference_frame", "geographic"),
                     ("provenance.creation_time", "1980-01-01T00:00:00+00:00"),
-                    ("provenance.software.author", "none"),
+                    ("provenance.software.author", None),
                     ("provenance.software.name", None),
                     ("provenance.software.version", None),
                     ("provenance.submitter.email", None),
                     ("provenance.submitter.organization", None),
+                    ("release_license", "CC0-1.0"),
                     ("run_list", ["rgr003a"]),
                     ("time_period.end", "2012-08-24T16:25:26+00:00"),
                     ("time_period.start", "2012-08-21T22:02:27+00:00"),
@@ -280,7 +282,6 @@ class TestAsciiMetadata(unittest.TestCase):
                 [
                     ("citation_dataset.doi", None),
                     ("citation_journal.doi", None),
-                    ("country", None),
                     ("datum", "WGS84"),
                     ("geographic_name", None),
                     ("id", "RGR"),
@@ -290,7 +291,7 @@ class TestAsciiMetadata(unittest.TestCase):
                     ("project", None),
                     ("project_lead.email", None),
                     ("project_lead.organization", None),
-                    ("release_license", "CC-0"),
+                    ("release_license", "CC0-1.0"),
                     ("southeast_corner.latitude", 0.0),
                     ("southeast_corner.longitude", 0.0),
                     ("summary", None),
@@ -307,7 +308,7 @@ class TestAsciiMetadata(unittest.TestCase):
             "RunID: rgr003a",
             "SiteLatitude: 39.282",
             "SiteLongitude: -108.1582",
-            "SiteElevation: 1803.07",
+            "SiteElevation: 1803.0",
             "AcqStartTime: 2012-08-21T22:02:27+00:00",
             "AcqStopTime: 2012-08-24T16:25:26+00:00",
             "AcqSmpFreq: 4.0",

@@ -38,7 +38,7 @@ class TestUSGSAscii(unittest.TestCase):
                 self.assertEqual("2012-08-21T22:02:27+00:00", ch_obj.start)
 
             with self.subTest("end"):
-                self.assertEqual("2012-08-24T16:25:26+00:00", ch_obj.end)
+                self.assertEqual("2012-08-24T16:25:25.750000+00:00", ch_obj.end)
 
             with self.subTest("sample rate"):
                 self.assertEqual(4, ch_obj.sample_rate)
@@ -62,7 +62,7 @@ class TestUSGSAscii(unittest.TestCase):
             self.assertEqual("2012-08-21T22:02:27+00:00", r.start)
 
         with self.subTest("end"):
-            self.assertEqual("2012-08-24T16:25:26+00:00", r.end)
+            self.assertEqual("2012-08-24T16:25:25.750000+00:00", r.end)
 
         with self.subTest("sample rate"):
             self.assertEqual(4, r.sample_rate)

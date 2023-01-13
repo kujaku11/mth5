@@ -44,9 +44,7 @@ def butter_bandpass(lowcut, highcut, fs, order=5):
             order, [low, high], analog=False, btype="band", output="sos"
         )
     elif highcut is None:
-        sos = signal.butter(
-            order, low, analog=False, btype="low", output="sos"
-        )
+        sos = signal.butter(order, low, analog=False, btype="low", output="sos")
     elif lowcut is None:
         sos = signal.butter(
             order, high, analog=False, btype="high", output="sos"
@@ -280,7 +278,7 @@ class RemoveInstrumentResponse:
         :rtype: np.ndarray
 
         """
-        ts = signal.detrend(ts, type="linear")
+        ts = signal.detrend(np.nan_to_num(ts), type="linear")
 
         if self.plot:
             self._subplots(
@@ -378,9 +376,9 @@ class RemoveInstrumentResponse:
 
         """
 
-        w = self.get_window(
-            self.f_window, self.f_window_params, 2 * data.size
-        )[data.size :]
+        w = self.get_window(self.f_window, self.f_window_params, 2 * data.size)[
+            data.size :
+        ]
         data = data * w
         if self.plot:
             f = np.fft.rfftfreq(2 * data.size, d=self.sample_interval)[1:]
@@ -719,9 +717,7 @@ def adaptive_notch_filter(
             fspot = int(round(notch / dfn))
             nspot = np.where(
                 abs(BX)
-                == max(
-                    abs(BX[max([fspot - dfnn, 0]) : min([fspot + dfnn, n])])
-                )
+                == max(abs(BX[max([fspot - dfnn, 0]) : min([fspot + dfnn, n])]))
             )[0][0]
 
             med_bx = np.median(
