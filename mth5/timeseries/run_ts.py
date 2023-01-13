@@ -739,7 +739,8 @@ class RunTS:
 
         # need to be sure update any input metadata.
         if run_metadata is not None:
-            self.run_metadata.update(run_metadata)
+            self.station_metadata.runs = ListDict()
+            self.station_metadata.add_run(run_metadata)
 
         self.validate_metadata()
 

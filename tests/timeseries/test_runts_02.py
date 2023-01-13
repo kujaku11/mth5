@@ -87,6 +87,11 @@ class TestMakeRunTS(unittest.TestCase):
                 self.run_ts.station_metadata.run_list,
                 [self.run_metadata.id],
             )
+        with self.subTest("channels_recorded"):
+            self.assertListEqual(
+                ["ex", "ey", "hx", "hy", "hz", "temperature"],
+                self.run_ts.station_metadata.channels_recorded,
+            )
 
     def test_run_metadata(self):
         with self.subTest("run id"):
