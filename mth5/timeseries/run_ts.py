@@ -236,6 +236,7 @@ class RunTS:
         if station_metadata.id not in ["0", None]:
             station_metadata.runs = ListDict()
             station_metadata.runs.append(run_metadata)
+            station_metadata.runs.extend(self.station_metadata.runs)
             self.station_metadata = station_metadata
         # if the run metadata was updated
         elif run_metadata.id not in ["0", None]:
