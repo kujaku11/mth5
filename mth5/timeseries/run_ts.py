@@ -191,6 +191,9 @@ class RunTS:
             raise TypeError(msg)
 
         valid_list = []
+        station_metadata = metadata.Station()
+        run_metadata = metadata.Run()
+        channels = ListDict()
 
         for index, item in enumerate(array_list):
             if not isinstance(item, (ChannelTS, xr.DataArray)):
@@ -202,30 +205,27 @@ class RunTS:
 
                 # if a channelTS is input then it comes with run and station metadata
                 # use those first, then the user can update later.
-                if index == 0:
-                    if item.station_metadata.id not in ["0", None]:
-                        if self.station_metadata.run_list == ["0"]:
-                            self.station_metadata = item.station_metadata
-                        else:
-                            self.station_metadata.update(item.station_metadata)
-                    if item.run_metadata.id not in ["0", None]:
-                        self.run_metadata.update(item.run_metadata)
 
-                else:
-                    if item.station_metadata.id not in ["0", None]:
-                        if self.station_metadata.run_list == ["0"]:
-                            self.station_metadata = item.station_metadata
-                        else:
-                            self.station_metadata.update(
-                                item.station_metadata, match=["id"]
-                            )
-                    if item.run_metadata.id not in ["0", None]:
-                        self.run_metadata.update(
-                            item.run_metadata, match=["id"]
+                if item.station_metadata.id not in ["0", None]:
+                    if station_metadata.id not in ["0", None]:
+                        station_metadata.update(
+                            item.station_metadata, match=["id"]
                         )
+                    else:
+                        station_metadata.update(item.station_metadata)
+                else:
+                    station_metadata.update(item.station_metadata)
 
-                # need to do this after a run has been filled in.
-                self.run_metadata.channels.append(item.channel_metadata)
+                if item.run_metadata.id not in ["0", None]:
+                    if run_metadata.id not in ["0", None]:
+                        run_metadata.update(item.run_metadata, match=["id"])
+                    else:
+                        run_metadata.update(item.run_metadata)
+                else:
+                    run_metadata.update(item.run_metadata)
+
+                channels.append(item.channel_metadata)
+
                 # get the filters from the channel
                 if item.channel_response_filter.filters_list != []:
                     for ff in item.channel_response_filter.filters_list:
@@ -233,6 +233,11 @@ class RunTS:
 
             else:
                 valid_list.append(item)
+
+        run_metadata.channels = channels
+        station_metadata.runs = ListDict()
+        station_metadata.runs.append(run_metadata)
+        self.station_metadata = station_metadata
 
         # probably should test for sampling rate.
         sr_test = dict(
