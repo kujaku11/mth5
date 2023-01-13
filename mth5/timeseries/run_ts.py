@@ -238,7 +238,9 @@ class RunTS:
             station_metadata.runs.append(run_metadata)
             # need to add the other runs that are in the metadata for
             # completeness.
-            station_metadata.runs.extend(self.station_metadata.runs)
+            for run in self.station_metadata.runs:
+                if run.id not in [run_metadata.id, "0", None]:
+                    station_metadata.runs.append(run)
             self.station_metadata = station_metadata
         # if the run metadata was updated
         elif run_metadata.id not in ["0", None]:
