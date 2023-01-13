@@ -213,16 +213,12 @@ class RunTS:
                         )
                     else:
                         station_metadata.update(item.station_metadata)
-                else:
-                    station_metadata.update(item.station_metadata)
 
                 if item.run_metadata.id not in ["0", None]:
                     if run_metadata.id not in ["0", None]:
                         run_metadata.update(item.run_metadata, match=["id"])
                     else:
                         run_metadata.update(item.run_metadata)
-                else:
-                    run_metadata.update(item.run_metadata)
 
                 channels.append(item.channel_metadata)
 
@@ -234,10 +230,20 @@ class RunTS:
             else:
                 valid_list.append(item)
 
+        # need to make sure that the station metadata was actually updated,
+        # should have an ID.
         run_metadata.channels = channels
-        station_metadata.runs = ListDict()
-        station_metadata.runs.append(run_metadata)
-        self.station_metadata = station_metadata
+        if station_metadata.id not in ["0", None]:
+            station_metadata.runs = ListDict()
+            station_metadata.runs.append(run_metadata)
+            self.station_metadata = station_metadata
+        # if the run metadata was updated
+        elif run_metadata.id not in ["0", None]:
+            self.run_metadata = run_metadata
+        # if the run metadata or station metadata was not updated from channel
+        # metadata, then update just the channels.
+        else:
+            self.run_metadata.channels = channels
 
         # probably should test for sampling rate.
         sr_test = dict(
