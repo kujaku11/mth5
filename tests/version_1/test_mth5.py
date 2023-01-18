@@ -87,6 +87,9 @@ class TestMTH5(unittest.TestCase):
             self.assertIn("MT001", self.mth5_obj.stations_group.groups_list)
         with self.subTest("isinstance StationGroup"):
             self.assertIsInstance(new_station, mth5.groups.StationGroup)
+        with self.subTest("get channel"):
+            sg = self.mth5_obj.get_station("MT001")
+            self.assertIsInstance(sg, mth5.groups.StationGroup)
 
     def test_remove_station(self):
         self.mth5_obj.add_station("MT001")
@@ -103,6 +106,9 @@ class TestMTH5(unittest.TestCase):
             self.assertIn("MT001a", new_station.groups_list)
         with self.subTest("isinstance RunGroup"):
             self.assertIsInstance(new_run, mth5.groups.RunGroup)
+        with self.subTest("get run"):
+            rg = self.mth5_obj.get_run("MT001", "MT001a")
+            self.assertIsInstance(rg, mth5.groups.RunGroup)
 
     def test_remove_run(self):
         new_station = self.mth5_obj.add_station("MT001")
@@ -211,6 +217,29 @@ class TestMTH5(unittest.TestCase):
             with self.subTest(f"{cg.metadata.component}.n_samples"):
                 self.assertEqual(4096, cg.n_samples)
         # check the summary table
+
+    def test_make_survey_path(self):
+        self.assertEqual("/Survey", self.mth5_obj._make_h5_path())
+
+    def test_make_station_path(self):
+        self.assertEqual(
+            "/Survey/Stations/mt_001",
+            self.mth5_obj._make_h5_path(station="mt 001"),
+        )
+
+    def test_make_run_path(self):
+        self.assertEqual(
+            "/Survey/Stations/mt_001/a_001",
+            self.mth5_obj._make_h5_path(station="mt 001", run="a 001"),
+        )
+
+    def test_make_channel_path(self):
+        self.assertEqual(
+            "/Survey/Stations/mt_001/a_001/ex",
+            self.mth5_obj._make_h5_path(
+                station="mt 001", run="a 001", channel="ex"
+            ),
+        )
 
     @classmethod
     def tearDownClass(self):
