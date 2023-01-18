@@ -803,6 +803,39 @@ class MTH5:
                 return True
             return False
 
+    def _make_h5_path(
+        self, survey=None, station=None, run=None, channel=None, tf_id=None
+    ):
+        """
+        create an h5 path from inputs
+        """
+
+        if self.file_version == "0.1.0":
+            h5_path = self._root_path
+
+        elif self.file_version == "0.2.0":
+            if survey is None:
+                raise ValueError("Survey must be input for file type 0.2.0")
+            else:
+                survey = helpers.validate_name(survey)
+            h5_path = f"{self._root_path}/Surveys/{survey}"
+
+        if station is not None:
+            station = helpers.validate_name(station)
+            h5_path += f"/Stations/{station}"
+
+            if tf_id is not None:
+                tf_id = helpers.validate_name(tf_id)
+                h5_path += f"/Transfer_Functions/{tf_id}"
+            elif run is not None:
+                run = helpers.validate_name(run)
+                h5_path += f"/{run}"
+                if channel is not None:
+                    channel = helpers.validate_name(channel)
+                    h5_path += f"/{channel}"
+
+        return h5_path
+
     def from_reference(self, h5_reference):
         """
         Get an HDF5 group, dataset, etc from a reference
@@ -1009,16 +1042,16 @@ class MTH5:
 
         """
 
-        survey_name = helpers.validate_name(survey_name)
+        survey_path = self._make_h5_path(survey=survey_name)
         try:
             return groups.SurveyGroup(
-                self.__hdf5_obj[f"{self._root_path}/Surveys/{survey_name}"],
+                self.__hdf5_obj[survey_path],
                 **self.dataset_options,
             )
         except KeyError:
             msg = (
-                f"{self._root_path}/Surveys/{survey_name} does not exist, "
-                + "check survey_list for existing names"
+                f"{survey_path} does not exist, check survey_list for "
+                "existing names."
             )
             self.logger.warning(msg)
             raise MTH5Error(msg)
@@ -1047,19 +1080,19 @@ class MTH5:
 
         """
 
-        survey_name = helpers.validate_name(survey_name)
+        survey_path = self._make_h5_path(survey=survey_name)
         try:
-            del self.__hdf5_obj[f"{self._root_path}/Surveys/{survey_name}"]
+            del self.__hdf5_obj[f"{survey_path}"]
             self.logger.info(
                 "Deleting a survey does not reduce the HDF5"
-                + "file size it simply remove the reference. If "
-                + "file size reduction is your goal, simply copy"
-                + " what you want into another file."
+                "file size it simply remove the reference. If "
+                "file size reduction is your goal, simply copy"
+                " what you want into another file."
             )
         except KeyError:
             msg = (
-                f"{self._root_path}/Surveys/{survey_name} does not exist, "
-                + "check station_list for existing names"
+                f"{survey_path} does not exist, "
+                "check station_list for existing names"
             )
             self.logger.warning(msg)
             raise MTH5Error(msg)
@@ -1094,6 +1127,7 @@ class MTH5:
         >>> new_staiton = mth5_obj.add_station('MT001')
 
         """
+
         if self.file_version in ["0.1.0"]:
             return self.stations_group.add_station(
                 station_name, station_metadata=station_metadata
@@ -1128,17 +1162,12 @@ class MTH5:
         MTH5Error: MT001 does not exist, check station_list for existing names
 
         """
-        station_name = helpers.validate_name(station_name)
-        if self.file_version in ["0.1.0"]:
-            return self.stations_group.get_station(station_name)
-        elif self.file_version in ["0.2.0"]:
-            if survey is None:
-                msg = "Need to input 'survey' for file version %s"
-                self.logger.error(msg, self.file_version)
-                raise ValueError(msg % self.file_version)
-            survey = helpers.validate_name(survey)
-            sg = self.get_survey(survey)
-            return sg.stations_group.get_station(station_name)
+
+        station_path = self._make_h5_path(survey=survey, station=station_name)
+        try:
+            return groups.StationGroup(self.__hdf5_obj[station_path])
+        except KeyError:
+            raise MTH5Error(f"Could not find station {station_name}")
 
     def remove_station(self, station_name, survey=None):
         """
@@ -1223,18 +1252,10 @@ class MTH5:
         >>> existing_run = mth5_obj.get_run('MT001', 'MT001a')
 
         """
-        station_name = helpers.validate_name(station_name)
-        run_name = helpers.validate_name(run_name)
-        if self.file_version in ["0.1.0"]:
-            run_path = f"{self._root_path}/Stations/{station_name}/{run_name}"
-        elif self.file_version in ["0.2.0"]:
-            if survey is None:
-                msg = "Need to input 'survey' for file version %s"
-                self.logger.error(msg, self.file_version)
-                raise ValueError(msg % self.file_version)
 
-            survey = helpers.validate_name(survey)
-            run_path = f"{self._root_path}/Surveys/{survey}/Stations/{station_name}/{run_name}"
+        run_path = self._make_h5_path(
+            survey=survey, station=station_name, run=run_name
+        )
         try:
             return groups.RunGroup(self.__hdf5_obj[run_path])
         except KeyError:
@@ -1374,16 +1395,16 @@ class MTH5:
                 sample rate:      4096
 
         """
-        station_name = helpers.validate_name(station_name)
-        run_name = helpers.validate_name(run_name)
-        channel_name = helpers.validate_name(channel_name)
-        # ch = f"Survey/Stations/{station_name}/{run_name}/{channel_name}"
-        # return groups.ChannelDataset(self.__hdf5_obj[ch])
-        return (
-            self.get_station(station_name, survey=survey)
-            .get_run(run_name)
-            .get_channel(channel_name)
+        run_path = self._make_h5_path(
+            survey=survey, station=station_name, run=run_name
         )
+        rg = groups.RunGroup(self.__hdf5_obj[run_path])
+        try:
+            return rg.get_channel(helpers.validate_name(channel_name))
+        except (AttributeError, KeyError):
+            raise MTH5Error(
+                f"Could not find channel, {run_path}/{channel_name}"
+            )
 
     def remove_channel(self, station_name, run_name, channel_name, survey=None):
         """
@@ -1553,9 +1574,27 @@ class MTH5:
 
         """
 
-        station_group = self.get_station(station_id, survey=survey)
-
-        return station_group.transfer_functions_group.get_tf_object(tf_id)
+        try:
+            tf_df = self.tf_summary.to_dataframe()
+            ref = (
+                tf_df.loc[
+                    (tf_df.station == station_id)
+                    & (tf_df.tf_id == tf_id)
+                    & (tf_df.survey == "unknown_survey")
+                ]
+                .iloc[0]
+                .hdf5_reference
+            )
+            return self.from_reference(ref)
+        except IndexError:
+            tf_path = self._make_h5_path(
+                survey=survey, station=station_id, tf_id=tf_id
+            )
+            try:
+                tg = groups.TransferFunctionGroup(self.__hdf5_obj[tf_path])
+                return tg.to_tf_object()
+            except KeyError:
+                raise MTH5Error(f"Could not find {tf_path}")
 
     def remove_transfer_function(self, station_id, tf_id, survey=None):
         """

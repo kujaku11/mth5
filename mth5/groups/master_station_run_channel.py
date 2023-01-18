@@ -1276,7 +1276,7 @@ class RunGroup(BaseGroup):
                     ("component", "U20"),
                     ("start", "datetime64[ns]"),
                     ("end", "datetime64[ns]"),
-                    ("n_samples", int),
+                    ("n_samples", np.int64),
                     ("measurement_type", "U12"),
                     ("units", "U25"),
                     ("hdf5_reference", h5py.ref_dtype),
@@ -1385,6 +1385,14 @@ class RunGroup(BaseGroup):
                 else:
                     estimate_size = (1,)
                     chunks = CHUNK_SIZE
+
+                if estimate_size[0] > 2**31:
+                    estimate_size = (1,)
+                    self.logger.warning(
+                        "Estimated size is too large. Check start and end "
+                        "times, initializing with size (1,)"
+                    )
+
                 channel_group = self.hdf5_group.create_dataset(
                     channel_name,
                     shape=estimate_size,
@@ -1393,6 +1401,7 @@ class RunGroup(BaseGroup):
                     chunks=chunks,
                     **self.dataset_options,
                 )
+
             if channel_metadata and channel_metadata.component is None:
                 channel_metadata.component = channel_name
             if channel_type.lower() in ["magnetic"]:

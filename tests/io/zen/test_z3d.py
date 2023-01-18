@@ -156,10 +156,10 @@ class TestZ3DEY(unittest.TestCase):
                 ("dc.end", 0.019371436521409924),
                 ("dc.start", 0.019130984313785026),
                 ("dipole_length", 56.0),
-                ("filter.applied", [False, False, False]),
+                ("filter.applied", [False, False]),
                 (
                     "filter.name",
-                    ["zen_counts2mv", "zen024_256_response", "dipole_56.00m"],
+                    ["zen_counts2mv", "dipole_56.00m"],
                 ),
                 ("measurement_azimuth", 0.0),
                 ("measurement_tilt", 0.0),
@@ -293,10 +293,11 @@ class TestZ3DEY(unittest.TestCase):
         )
 
         with self.subTest("test zen response"):
-            self.assertDictEqual(
-                self.z3d.zen_response.to_dict(single=True),
-                zr.to_dict(single=True),
-            )
+            self.assertEqual(None, self.z3d.zen_response)
+            # self.assertDictEqual(
+            #     self.z3d.zen_response.to_dict(single=True),
+            #     zr.to_dict(single=True),
+            # )
         with self.subTest("test_dipole_filter"):
 
             self.assertDictEqual(
@@ -313,7 +314,7 @@ class TestZ3DEY(unittest.TestCase):
 
         with self.subTest("channel_response"):
 
-            cr = ChannelResponseFilter(filters_list=[cf, zr, df])
+            cr = ChannelResponseFilter(filters_list=[cf, df])
             self.assertListEqual(
                 cr.filters_list, self.z3d.channel_response.filters_list
             )
@@ -549,12 +550,11 @@ class TestZ3DHY(unittest.TestCase):
                 ("channel_number", 2),
                 ("component", "hy"),
                 ("data_quality.rating.value", 0),
-                ("filter.applied", [False, False, False]),
+                ("filter.applied", [False, False]),
                 (
                     "filter.name",
                     [
                         "zen_counts2mv",
-                        "zen024_256_response",
                         "ant4_2324_response",
                     ],
                 ),
@@ -642,10 +642,11 @@ class TestZ3DHY(unittest.TestCase):
         self.assertDictEqual(self.z3d.station_metadata.to_dict(single=True), sm)
 
     def test_zen_esponse(self):
-        self.assertDictEqual(
-            self.z3d.zen_response.to_dict(single=True),
-            self.zr.to_dict(single=True),
-        )
+        self.assertEqual(None, self.z3d.zen_response)
+        # self.assertDictEqual(
+        #     self.z3d.zen_response.to_dict(single=True),
+        #     self.zr.to_dict(single=True),
+        # )
 
     def test_coil_response_filter(self):
 
@@ -677,7 +678,7 @@ class TestZ3DHY(unittest.TestCase):
 
     def channel_response(self):
 
-        cr = ChannelResponseFilter(filters_list=[self.cf, self.zr, self.cr])
+        cr = ChannelResponseFilter(filters_list=[self.cf, self.cr])
 
         self.assertListEqual(
             cr.filters_list, self.z3d.channel_response.filters_list

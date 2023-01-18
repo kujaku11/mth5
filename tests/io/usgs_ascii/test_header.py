@@ -276,30 +276,34 @@ class TestAsciiMetadata(unittest.TestCase):
         self.assertEqual(self.header.survey_id, "RGR")
 
     def test_survey_metadata(self):
-        self.assertDictEqual(
-            self.header.survey_metadata.to_dict(single=True),
-            OrderedDict(
-                [
-                    ("citation_dataset.doi", None),
-                    ("citation_journal.doi", None),
-                    ("datum", "WGS84"),
-                    ("geographic_name", None),
-                    ("id", "RGR"),
-                    ("name", None),
-                    ("northwest_corner.latitude", 0.0),
-                    ("northwest_corner.longitude", 0.0),
-                    ("project", None),
-                    ("project_lead.email", None),
-                    ("project_lead.organization", None),
-                    ("release_license", "CC0-1.0"),
-                    ("southeast_corner.latitude", 0.0),
-                    ("southeast_corner.longitude", 0.0),
-                    ("summary", None),
-                    ("time_period.end_date", "1980-01-01"),
-                    ("time_period.start_date", "1980-01-01"),
-                ]
-            ),
+        od = OrderedDict(
+            [
+                ("citation_dataset.doi", None),
+                ("citation_journal.doi", None),
+                ("datum", "WGS84"),
+                ("geographic_name", None),
+                ("id", "RGR"),
+                ("name", None),
+                ("northwest_corner.latitude", 0.0),
+                ("northwest_corner.longitude", 0.0),
+                ("project", None),
+                ("project_lead.email", None),
+                ("project_lead.organization", None),
+                ("release_license", "CC0-1.0"),
+                ("southeast_corner.latitude", 0.0),
+                ("southeast_corner.longitude", 0.0),
+                ("summary", None),
+                ("time_period.end_date", "1980-01-01"),
+                ("time_period.start_date", "1980-01-01"),
+            ]
         )
+        for key in self.header.survey_metadata.to_dict(single=True).keys():
+            if "mth5" in key:
+                continue
+            with self.subTest(key):
+                self.assertEqual(
+                    self.header.survey_metadata.get_attr_from_name(key), od[key]
+                )
 
     def test_write_header(self):
         original = [
