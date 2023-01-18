@@ -63,21 +63,85 @@ class TestChannelTS(unittest.TestCase):
 
     def test_set_channel_fail(self):
         self.assertRaises(
-            MTTSError, timeseries.ChannelTS, **{"channel_metadata": []}
+            TypeError, timeseries.ChannelTS, **{"channel_metadata": []}
         )
 
     def test_set_run_metadata_fail(self):
         self.assertRaises(
-            MTTSError, timeseries.ChannelTS, **{"run_metadata": []}
+            TypeError, timeseries.ChannelTS, **{"run_metadata": []}
         )
 
     def test_set_station_metadata_fail(self):
         self.assertRaises(
-            MTTSError, timeseries.ChannelTS, **{"station_metadata": []}
+            TypeError, timeseries.ChannelTS, **{"station_metadata": []}
+        )
+
+    def test_validate_channel_type(self):
+        for ch in ["electric", "magnetic", "auxiliary"]:
+            with self.subTest(ch):
+                self.assertEqual(
+                    ch.capitalize(), self.ts._validate_channel_type(ch)
+                )
+
+    def test_validate_channel_type_fail(self):
+        def set_ch_type(value):
+            self.ts._validate_channel_type(value)
+
+        self.assertRaises(ValueError, set_ch_type, "frogs")
+
+    def test_validate_channel_metadata(self):
+        self.assertEqual(
+            self.ts.channel_metadata,
+            self.ts._validate_channel_metadata(self.ts.channel_metadata),
+        )
+
+    def test_validate_channel_metadata_from_dict(self):
+        self.assertEqual(
+            self.ts.channel_metadata,
+            self.ts._validate_channel_metadata({"type": "auxiliary"}),
+        )
+
+    def test_validate_run_metadata(self):
+        self.assertDictEqual(
+            self.ts.run_metadata.to_dict(single=True),
+            self.ts._validate_run_metadata(self.ts.run_metadata).to_dict(
+                single=True
+            ),
+        )
+
+    def test_validate_run_metadata_from_dict(self):
+        self.assertEqual(
+            metadata.Run(id="0"),
+            self.ts._validate_run_metadata({"id": "0"}),
+        )
+
+    def test_validate_station_metadata(self):
+        self.assertEqual(
+            self.ts.station_metadata,
+            self.ts._validate_station_metadata(self.ts.station_metadata),
+        )
+
+    def test_validate_station_metadata_from_dict(self):
+        self.assertEqual(
+            metadata.Station(id="0"),
+            self.ts._validate_station_metadata({"id": "0"}),
+        )
+
+    def test_validate_survey_metadata(self):
+        self.assertEqual(
+            self.ts.survey_metadata,
+            self.ts._validate_survey_metadata(self.ts.survey_metadata),
+        )
+
+    def test_validate_survey_metadata_from_dict(self):
+        self.assertEqual(
+            metadata.Survey(id="0"),
+            self.ts._validate_survey_metadata({"id": "0"}),
         )
 
     def test_str(self):
         lines = [
+            f"Survey:       {self.ts.survey_metadata.id}",
             f"Station:      {self.ts.station_metadata.id}",
             f"Run:          {self.ts.run_metadata.id}",
             f"Channel Type: {self.ts.channel_type}",
@@ -93,6 +157,7 @@ class TestChannelTS(unittest.TestCase):
 
     def test_repr(self):
         lines = [
+            f"Survey:       {self.ts.survey_metadata.id}",
             f"Station:      {self.ts.station_metadata.id}",
             f"Run:          {self.ts.run_metadata.id}",
             f"Channel Type: {self.ts.channel_type}",
@@ -137,7 +202,7 @@ class TestChannelTS(unittest.TestCase):
         self.ts._update_xarray_metadata()
 
         self.ts.ts = np.random.rand(4096)
-        end = self.ts.channel_metadata.time_period._start_dt + (4096)
+        end = self.ts.channel_metadata.time_period._start_dt + (4096 - 1)
 
         # check to make sure the times align
         with self.subTest(name="is aligned"):
@@ -164,7 +229,7 @@ class TestChannelTS(unittest.TestCase):
         self.ts.channel_metadata.sample_rate = 1.0
 
         self.ts.ts = np.random.rand(4096).tolist()
-        end = self.ts.channel_metadata.time_period._start_dt + (4096)
+        end = self.ts.channel_metadata.time_period._start_dt + (4096 - 1)
 
         # check to make sure the times align
         with self.subTest(name="is aligned"):
@@ -183,7 +248,7 @@ class TestChannelTS(unittest.TestCase):
         def set_ts(value):
             self.ts.ts = value
 
-        self.assertRaises(MTTSError, set_ts, 10)
+        self.assertRaises(TypeError, set_ts, 10)
 
     def test_df_without_index_input(self):
         self.ts.channel_metadata.sample_rate = 1.0
@@ -191,7 +256,7 @@ class TestChannelTS(unittest.TestCase):
         self.ts._update_xarray_metadata()
 
         self.ts.ts = pd.DataFrame({"data": np.random.rand(4096)})
-        end = self.ts.channel_metadata.time_period._start_dt + (4096)
+        end = self.ts.channel_metadata.time_period._start_dt + (4096 - 1)
 
         # check to make sure the times align
         with self.subTest(name="is aligned"):
@@ -244,7 +309,7 @@ class TestChannelTS(unittest.TestCase):
 
         for ch in ["hx", "bx", "temperature"]:
             with self.subTest(name=f"fail {ch}"):
-                self.assertRaises(MTTSError, set_comp, ch)
+                self.assertRaises(ValueError, set_comp, ch)
 
     def test_change_sample_rate(self):
         self.ts.sample_rate = 16
@@ -256,8 +321,10 @@ class TestChannelTS(unittest.TestCase):
         with self.subTest(name="sample_interval"):
             self.assertEqual(self.ts.sample_interval, 1.0 / 16.0)
         self.ts.sample_rate = 8
-        self.assertEqual(self.ts.sample_rate, 8.0)
-        self.assertEqual(self.ts.n_samples, 4096)
+        with self.subTest("8"):
+            self.assertEqual(self.ts.sample_rate, 8.0)
+        with self.subTest("n_samples"):
+            self.assertEqual(self.ts.n_samples, 4096)
 
         with self.subTest(name="sample_interval"):
             self.assertEqual(self.ts.sample_interval, 1.0 / 8.0)
@@ -271,17 +338,22 @@ class TestChannelTS(unittest.TestCase):
 
         ts_xr = self.ts.to_xarray()
 
-        self.assertEqual(ts_xr.attrs["station.id"], "mt01")
-        self.assertEqual(ts_xr.attrs["run.id"], "mt01a")
-        self.assertEqual(ts_xr.sample_rate, 16)
-        self.assertEqual(
-            ts_xr.coords["time"].to_index()[0].isoformat(),
-            ts_xr.attrs["time_period.start"].split("+")[0],
-        )
-        self.assertEqual(
-            ts_xr.coords["time"].to_index()[-1].isoformat(),
-            ts_xr.attrs["time_period.end"].split("+")[0],
-        )
+        with self.subTest("station ID"):
+            self.assertEqual(ts_xr.attrs["station.id"], "mt01")
+        with self.subTest("run ID"):
+            self.assertEqual(ts_xr.attrs["run.id"], "mt01a")
+        with self.subTest("sample rate"):
+            self.assertEqual(ts_xr.sample_rate, 16)
+        with self.subTest("start"):
+            self.assertEqual(
+                ts_xr.coords["time"].to_index()[0].isoformat(),
+                ts_xr.attrs["time_period.start"].split("+")[0],
+            )
+        with self.subTest("end"):
+            self.assertEqual(
+                ts_xr.coords["time"].to_index()[-1].isoformat(),
+                ts_xr.attrs["time_period.end"].split("+")[0],
+            )
 
     def test_xarray_input(self):
         ch = timeseries.ChannelTS(
@@ -291,19 +363,25 @@ class TestChannelTS(unittest.TestCase):
                 "auxiliary": {
                     "time_period.start": "2020-01-01T12:00:00",
                     "sample_rate": 8,
+                    "component": "temp",
                 }
             },
             station_metadata={"Station": {"id": "mt01"}},
             run_metadata={"Run": {"id": "0001"}},
         )
-        self.assertEqual(ch.channel_type, "auxiliary")
+        with self.subTest("station ID"):
+            self.assertEqual(ch.channel_type.lower(), "auxiliary")
         self.ts.ts = ch.to_xarray()
 
-        self.assertEqual(self.ts.run_metadata.id, "0001")
-        self.assertEqual(self.ts.station_metadata.id, "mt01")
-        self.assertEqual(self.ts.start, "2020-01-01T12:00:00+00:00")
+        with self.subTest("run ID"):
+            self.assertEqual(self.ts.run_metadata.id, "0001")
+        with self.subTest("station ID"):
+            self.assertEqual(self.ts.station_metadata.id, "mt01")
+        with self.subTest("start"):
+            self.assertEqual(self.ts.start, "2020-01-01T12:00:00+00:00")
 
     def test_time_slice(self):
+        self.ts.component = "temp"
         self.ts.sample_rate = 16
         self.ts.start = "2020-01-01T12:00:00"
         self.ts.ts = np.arange(4096)
@@ -313,11 +391,12 @@ class TestChannelTS(unittest.TestCase):
             self.assertEqual(new_ts.ts.size, 48)
         with self.subTest(name="end time"):
             new_ts = self.ts.get_slice(
-                "2020-01-01T12:00:00", end="2020-01-01T12:00:03"
+                "2020-01-01T12:00:00", end="2020-01-01T12:00:02.937500"
             )
             self.assertEqual(new_ts.ts.size, 48)
 
     def test_time_slice_metadata(self):
+        self.ts.component = "temp"
         self.ts.sample_rate = 16
         self.ts.start = "2020-01-01T12:00:00"
         self.ts.ts = np.arange(4096)

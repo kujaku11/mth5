@@ -121,7 +121,7 @@ def close_open_files():
                     msg += f"{obj.filename} file already closed."
                     logger.info(msg)
         except:
-            logger.info(f"Object {type(obj)} does not have __class__")
+            logger.debug(f"Object {type(obj)} does not have __class__")
 
 
 def get_tree(parent):
@@ -146,14 +146,10 @@ def get_tree(parent):
 
         if isinstance(obj, h5py.Group):
             lines.append("{0}|- Group: {1}".format(spacing, group_name))
-            lines.append(
-                "{0}{1}".format(spacing, (len(group_name) + 10) * "-")
-            )
+            lines.append("{0}{1}".format(spacing, (len(group_name) + 10) * "-"))
         elif isinstance(obj, h5py.Dataset):
             lines.append("{0}--> Dataset: {1}".format(spacing, group_name))
-            lines.append(
-                "{0}{1}".format(spacing, (len(group_name) + 15) * ".")
-            )
+            lines.append("{0}{1}".format(spacing, (len(group_name) + 15) * "."))
 
     # lines.append(parent.name)
     parent.visititems(fancy_print)

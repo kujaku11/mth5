@@ -35,6 +35,7 @@ class TestReadPhoenixNative(unittest.TestCase):
             r"c:\Users\jpeacock\OneDrive - DOI\mt\phoenix_example_data\Sample Data\10128_2021-04-27-025909\0\10128_60877DFD_0_00000001.bin"
         )
         self.original_data = self.original.read_frames(10)
+        self.maxDiff = None
 
     def test_readers_match(self):
         self.assertTrue(
@@ -171,7 +172,7 @@ class TestReadPhoenixNative(unittest.TestCase):
                     ("sensor.id", None),
                     ("sensor.manufacturer", None),
                     ("sensor.type", None),
-                    ("time_period.end", "2021-04-26T20:00:09+00:00"),
+                    ("time_period.end", "2021-04-26T20:00:08.999958+00:00"),
                     ("time_period.start", "2021-04-26T19:59:09+00:00"),
                     ("type", "magnetic"),
                     ("units", None),

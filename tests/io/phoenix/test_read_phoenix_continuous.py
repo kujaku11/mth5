@@ -36,6 +36,8 @@ class TestReadPhoenixContinuous(unittest.TestCase):
         )
         self.original_data = self.original.read()
 
+        self.maxDiff = None
+
     def test_readers_match(self):
         self.assertTrue(
             np.allclose(
@@ -164,7 +166,7 @@ class TestReadPhoenixContinuous(unittest.TestCase):
                     ("sensor.id", None),
                     ("sensor.manufacturer", None),
                     ("sensor.type", None),
-                    ("time_period.end", "2021-04-26T20:30:41+00:00"),
+                    ("time_period.end", "2021-04-26T20:30:40.993333+00:00"),
                     ("time_period.start", "2021-04-26T20:24:36+00:00"),
                     ("type", "magnetic"),
                     ("units", None),

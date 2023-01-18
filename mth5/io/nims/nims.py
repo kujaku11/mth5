@@ -296,8 +296,7 @@ class NIMS(NIMSHeader):
         )
 
     @property
-    def hx(self):
-        """HX"""
+    def hx_metadata(self):
         if self.ts_data is not None:
             hx_metadata = Magnetic()
             hx_metadata.from_dict(
@@ -316,11 +315,17 @@ class NIMS(NIMSHeader):
                     "sensor.type": "fluxgate triaxial magnetometer",
                 }
             )
+            return hx_metadata
+
+    @property
+    def hx(self):
+        """HX"""
+        if self.ts_data is not None:
 
             return timeseries.ChannelTS(
                 channel_type="magnetic",
                 data=self.ts_data.hx.to_numpy(),
-                channel_metadata=hx_metadata,
+                channel_metadata=self.hx_metadata,
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
                 channel_response_filter=self.get_channel_response("hx"),
@@ -328,8 +333,7 @@ class NIMS(NIMSHeader):
         return None
 
     @property
-    def hy(self):
-        """HY"""
+    def hy_metadata(self):
         if self.ts_data is not None:
             hy_metadata = Magnetic()
             hy_metadata.from_dict(
@@ -348,11 +352,16 @@ class NIMS(NIMSHeader):
                     "sensor.type": "fluxgate triaxial magnetometer",
                 }
             )
+            return hy_metadata
 
+    @property
+    def hy(self):
+        """HY"""
+        if self.ts_data is not None:
             return timeseries.ChannelTS(
                 channel_type="magnetic",
                 data=self.ts_data.hy.to_numpy(),
-                channel_metadata=hy_metadata,
+                channel_metadata=self.hy_metadata,
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
                 channel_response_filter=self.get_channel_response("hy"),
@@ -360,8 +369,7 @@ class NIMS(NIMSHeader):
         return None
 
     @property
-    def hz(self):
-        """HZ"""
+    def hz_metadata(self):
         if self.ts_data is not None:
             hz_metadata = Magnetic()
             hz_metadata.from_dict(
@@ -369,7 +377,7 @@ class NIMS(NIMSHeader):
                     "channel_number": 3,
                     "component": "hz",
                     "measurement_azimuth": 0,
-                    "measurement_tilt": 90,
+                    "measurement_tilt": 0,
                     "sample_rate": self.sample_rate,
                     "time_period.start": self.start_time.isoformat(),
                     "time_period.end": self.end_time.isoformat(),
@@ -380,11 +388,17 @@ class NIMS(NIMSHeader):
                     "sensor.type": "fluxgate triaxial magnetometer",
                 }
             )
+            return hz_metadata
+
+    @property
+    def hz(self):
+        """HZ"""
+        if self.ts_data is not None:
 
             return timeseries.ChannelTS(
                 channel_type="magnetic",
                 data=self.ts_data.hz.to_numpy(),
-                channel_metadata=hz_metadata,
+                channel_metadata=self.hz_metadata,
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
                 channel_response_filter=self.get_channel_response("hz"),
@@ -392,8 +406,7 @@ class NIMS(NIMSHeader):
         return None
 
     @property
-    def ex(self):
-        """EX"""
+    def ex_metadata(self):
         if self.ts_data is not None:
             ex_metadata = Electric()
             ex_metadata.from_dict(
@@ -413,10 +426,17 @@ class NIMS(NIMSHeader):
                 }
             )
 
+            return ex_metadata
+
+    @property
+    def ex(self):
+        """EX"""
+        if self.ts_data is not None:
+
             return timeseries.ChannelTS(
                 channel_type="electric",
                 data=self.ts_data.ex.to_numpy(),
-                channel_metadata=ex_metadata,
+                channel_metadata=self.ex_metadata,
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
                 channel_response_filter=self.get_channel_response(
@@ -426,8 +446,7 @@ class NIMS(NIMSHeader):
         return None
 
     @property
-    def ey(self):
-        """EY"""
+    def ey_metadata(self):
         if self.ts_data is not None:
             ey_metadata = Electric()
             ey_metadata.from_dict(
@@ -447,10 +466,17 @@ class NIMS(NIMSHeader):
                 }
             )
 
+            return ey_metadata
+
+    @property
+    def ey(self):
+        """EY"""
+        if self.ts_data is not None:
+
             return timeseries.ChannelTS(
                 channel_type="electric",
                 data=self.ts_data.ey.to_numpy(),
-                channel_metadata=ey_metadata,
+                channel_metadata=self.ey_metadata,
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
                 channel_response_filter=self.get_channel_response(
@@ -485,6 +511,8 @@ class NIMS(NIMSHeader):
                     }
                 }
             )
+            for comp in ["hx", "hy", "hz", "ex", "ey"]:
+                run_metadata.channels.append(getattr(self, f"{comp}_metadata"))
 
             return run_metadata
 
@@ -508,6 +536,7 @@ class NIMS(NIMSHeader):
                     }
                 }
             )
+            station_metadata.runs.append(self.run_metadata)
             return station_metadata
         return None
 
@@ -849,9 +878,7 @@ class NIMS(NIMSHeader):
         return_data_array = np.delete(data_array, remove_data_index)
 
         ### set sequence to be monotonic
-        return_info_array["sequence"][:] = np.arange(
-            return_info_array.shape[0]
-        )
+        return_info_array["sequence"][:] = np.arange(return_info_array.shape[0])
 
         return return_info_array, return_data_array, duplicate_list
 
@@ -934,9 +961,7 @@ class NIMS(NIMSHeader):
             data = data[0:end_data]
 
         # resized the data into an even amount of blocks
-        data = data.reshape(
-            (int(data.size / self.block_size), self.block_size)
-        )
+        data = data.reshape((int(data.size / self.block_size), self.block_size))
 
         ### need to parse the data
         ### first get the status information

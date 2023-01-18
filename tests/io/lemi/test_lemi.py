@@ -97,6 +97,7 @@ with open(lemi_fn, "w") as fid:
 class TestLEMI424(unittest.TestCase):
     @classmethod
     def setUpClass(self):
+        self.maxDiff = None
         self.lemi_obj = LEMI424(lemi_fn)
         self.lemi_obj.read()
 
@@ -105,7 +106,18 @@ class TestLEMI424(unittest.TestCase):
             OrderedDict(
                 [
                     ("acquired_by.name", None),
-                    ("channels_recorded", []),
+                    (
+                        "channels_recorded",
+                        [
+                            "bx",
+                            "by",
+                            "bz",
+                            "e1",
+                            "e2",
+                            "temperature_e",
+                            "temperature_h",
+                        ],
+                    ),
                     ("data_type", "BBMT"),
                     ("geographic_name", None),
                     ("id", None),
@@ -159,6 +171,7 @@ class TestLEMI424(unittest.TestCase):
                 ]
             )
         )
+        self.station_metadata.add_run(self.run_metadata)
 
     def test_has_data(self):
         self.assertTrue(self.lemi_obj._has_data())
@@ -192,21 +205,31 @@ class TestLEMI424(unittest.TestCase):
         )
 
     def test_station_metadata(self):
-        self.assertTrue(
-            self.station_metadata == self.lemi_obj.station_metadata
+        self.assertDictEqual(
+            self.station_metadata.to_dict(single=True),
+            self.lemi_obj.station_metadata.to_dict(single=True),
         )
 
     def test_run_metadata(self):
-        self.assertTrue(self.run_metadata == self.lemi_obj.run_metadata)
+        self.assertDictEqual(
+            self.run_metadata.to_dict(single=True),
+            self.lemi_obj.run_metadata.to_dict(single=True),
+        )
 
     def test_to_runts(self):
         r = self.lemi_obj.to_run_ts()
 
         with self.subTest("station_metadata"):
-            self.assertTrue(r.station_metadata == self.station_metadata)
+            self.assertDictEqual(
+                self.station_metadata.to_dict(single=True),
+                r.station_metadata.to_dict(single=True),
+            )
 
         with self.subTest("run_metadata"):
-            self.assertTrue(r.run_metadata == self.run_metadata)
+            self.assertDictEqual(
+                self.run_metadata.to_dict(single=True),
+                r.run_metadata.to_dict(single=True),
+            )
 
         with self.subTest("channels"):
             self.assertListEqual(
