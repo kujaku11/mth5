@@ -298,7 +298,7 @@ class TestAsciiMetadata(unittest.TestCase):
             ]
         )
         for key in self.header.survey_metadata.to_dict(single=True).keys():
-            if "hdf5" in key:
+            if "mth5" in key:
                 continue
             with self.subTest(key):
                 self.assertEqual(
