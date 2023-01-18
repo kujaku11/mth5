@@ -127,6 +127,9 @@ class TestMTH5(unittest.TestCase):
             self.assertIn("ex", new_run.groups_list)
         with self.subTest("isinstance ElectricDataset"):
             self.assertIsInstance(new_channel, mth5.groups.ElectricDataset)
+        with self.subTest("get channel"):
+            ch = self.mth5_obj.get_channel("MT001", "MT001a", "ex")
+            self.assertIsInstance(ch, mth5.groups.ElectricDataset)
 
     def test_remove_channel(self):
         new_station = self.mth5_obj.add_station("MT001")
