@@ -1341,6 +1341,7 @@ class RunGroup(BaseGroup):
 
         """
         channel_name = validate_name(channel_name.lower())
+        estimate_size = (1,)
         for key, value in kwargs.items():
             setattr(self, key, value)
         if data is not None:
