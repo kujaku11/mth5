@@ -180,7 +180,6 @@ class FCDecimationLevelGroup(BaseGroup):
             - window sample rate (method or property)
         - [optional] masking or weighting information
 
-
     """
 
     def __init__(self, group, decimation_level_metadata=None, **kwargs):
