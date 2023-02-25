@@ -26,6 +26,27 @@ class FCDataset(MTH5Table):
     """
     This will hold multi-dimensional set of Fourier Coefficients
 
+    Columns
+
+        - time
+        - frequency [ integer as harmonic index or float ]
+        - fc
+        - weight_channel (maybe)
+        - weight_band (maybe)
+        - weight_time (maybe)
+
+    Attributes:
+
+        - name
+        - start time
+        - end time
+        - acquistion_sample_rate
+        - decimated_sample rate
+        - window_sample_rate (delta_t within the window)
+        - units
+        - [optional] weights or masking
+        - frequency method (integer * window length / delta_t of window)
+
     :param dataset: hdf5 dataset
     :type dataset: h5py.Dataset
     :param dataset_metadata: data set metadata see
@@ -71,9 +92,7 @@ class FCDataset(MTH5Table):
         if dataset_metadata is not None:
             if not isinstance(dataset_metadata, type(self.metadata)):
                 msg = "metadata must be type metadata.%s not %s"
-                self.logger.error(
-                    msg, self._class_name, type(dataset_metadata)
-                )
+                self.logger.error(msg, self._class_name, type(dataset_metadata))
                 raise MTH5Error(msg % self._class_name, type(dataset_metadata))
 
             # load from dict because of the extra attributes for MTH5
@@ -232,9 +251,7 @@ class FCDataset(MTH5Table):
         if new_estimate.dtype != self.hdf5_dataset.dtype:
             msg = "Input array must be type %s not %s"
             self.logger.error(msg, new_estimate.dtype, self.hdf5_dataset.dtype)
-            raise TypeError(
-                msg % (new_estimate.dtype, self.hdf5_dataset.dtype)
-            )
+            raise TypeError(msg % (new_estimate.dtype, self.hdf5_dataset.dtype))
 
         if new_estimate.shape != self.hdf5_dataset.shape:
             self.hdf5_dataset.resize(new_estimate.shape)

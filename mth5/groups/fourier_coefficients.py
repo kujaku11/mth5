@@ -23,12 +23,14 @@ from mt_metadata.transfer_functions.fourier_coefficients import (
 )
 
 # =============================================================================
+"""Station -> FCMasterGroup -> FCGroup -> DecimationLevelGroup -> ChannelGroup -> FCDataset"""
 
 
 class MasterFCGroup(BaseGroup):
     """
     Master group to hold various Fourier coefficient estimations of time series
     data.
+    No metadata needed as of yet.
     """
 
     def __init__(self, group, **kwargs):
@@ -91,27 +93,24 @@ class FCGroup(BaseGroup):
     Holds a set of Fourier Coefficients based on a single set of configuration
     parameters.
 
+    .. note:: Must be calibrated FCs. Otherwise weird things will happen, can
+     always rerun the FC estimation if the metadata changes.
+
+    Metadata should include:
+
+        - list of decimation levels
+        - start time (earliest)
+        - end time (latest)
+        - method (fft, wavelet, ...)
+        - list of channels (all inclusive)
+        - list of acquistion runs (maybe)
+        - starting sample rate
+
     """
 
     def __init__(self, group, fc_metadata=None, **kwargs):
 
         super().__init__(group, group_metadata=fc_metadata, **kwargs)
-
-        self._default_subgroup_names = ["DecimationLevel"]
-
-    def initialize_group(self, **kwargs):
-        """
-        Initialize group by making a summary table and writing metadata
-
-        """
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-        self.write_metadata()
-
-        for group_name in self._default_subgroup_names:
-            self.hdf5_group.create_group(f"{group_name}")
-            m5_grp = getattr(self, f"{group_name.lower()}_group")
-            m5_grp.initialize_group()
 
     def add_decimation_level(
         self, decimation_level_name, decimation_level_metadata=None
@@ -155,14 +154,40 @@ class FCGroup(BaseGroup):
         pass
 
 
-class DecimationLevel(BaseGroup):
+class FCDecimationLevelGroup(BaseGroup):
     """
     Holds a single decimation level
+
+    Attributes
+
+        - start time
+        - end time
+        - channels (list)
+        - decimation factor
+        - decimation level
+        - decimation sample rate
+        - method (FFT, wavelet, ...)
+        - anti alias filter
+        - prewhitening type
+        - extra_pre_fft_detrend_type
+        - recoloring (True | False)
+        - harmonics_kept (index values of harmonics kept (list) | 'all')
+        - window parameters
+            - length
+            - overlap
+            - type
+            - type parameters
+            - window sample rate (method or property)
+        - [optional] masking or weighting information
+
+
     """
 
-    def __init__(self, group, **kwargs):
+    def __init__(self, group, decimation_level_metadata=None, **kwargs):
 
-        super().__init__(group, **kwargs)
+        super().__init__(
+            group, group_metadata=decimation_level_metadata, **kwargs
+        )
 
     def add_channel(self, channel_name, channel_metadata=None):
         """
@@ -206,6 +231,18 @@ class DecimationLevel(BaseGroup):
 class FCChannel(BaseGroup):
     """
     Holds FC information for a single channel at a single decimation level.
+
+    Attributes
+
+        - name
+        - start time
+        - end time
+        - acquistion_sample_rate
+        - decimated_sample rate
+        - window_sample_rate (delta_t within the window) [property?]
+        - units
+        - [optional] weights or masking
+
     """
 
     def __init__(self, group, **kwargs):
