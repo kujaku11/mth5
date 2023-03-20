@@ -401,7 +401,13 @@ class GeomagClient:
                             index=request_json["times"],
                         )
                     )
+            else:
+                raise IOError(
+                    "Could not connect to server. Error code: "
+                    f"{request_obj.status_code}"
+                )
 
+        survey_metadata = Survey(id="USGS-GEOMAG")
         station_metadata = self._to_station_metadata(request_json["metadata"])
         run_metadata = Run(id="001")
 
@@ -412,12 +418,19 @@ class GeomagClient:
             ch_metadata.component = self._ch_map[key]
             ch_metadata.sample_rate = 1.0 / self.sampling_period
             ch_metadata.units = "nanotesla"
+            if "y" in ch_metadata.component:
+                ch_metadata.measurement_azimuth = 90
+            ch_metadata.location.latitude = station_metadata.location.latitude
+            ch_metadata.location.longitude = station_metadata.location.longitude
+            ch_metadata.location.elevation = station_metadata.location.elevation
             ch_metadata.time_period.start = df.index[0]
             ch_metadata.time_period.end = df.index[-1]
             run_metadata.time_period.start = df.index[0]
             run_metadata.time_period.end = df.index[-1]
             station_metadata.time_period.start = df.index[0]
             station_metadata.time_period.end = df.index[-1]
+            survey_metadata.time_period.start = df.index[0]
+            survey_metadata.time_period.end = df.index[-1]
             ch_list.append(
                 ChannelTS(
                     channel_type="magnetic",
@@ -425,6 +438,7 @@ class GeomagClient:
                     channel_metadata=ch_metadata,
                     run_metadata=run_metadata,
                     station_metadata=station_metadata,
+                    survey_metadata=survey_metadata,
                 )
             )
 
@@ -432,6 +446,7 @@ class GeomagClient:
             ch_list,
             run_metadata=run_metadata,
             station_metadata=station_metadata,
+            survey_metadata=survey_metadata,
         )
 
     def make_mth5_from_geomag(self, save_path):
