@@ -12,6 +12,7 @@ import requests
 import json
 import sys
 import platform
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -449,7 +450,85 @@ class GeomagClient:
             survey_metadata=survey_metadata,
         )
 
-    def make_mth5_from_geomag(self, save_path):
+
+class MakeMTH5FromGeomag:
+    """
+    make an MTH5 from Geomagnetic data supplied by the USGS
+    """
+
+    def __ini__(self, **kwargs):
+        self.save_path = Path()
+        self.filename = None
+        self.request_df = None
+        self.mth5_file_type = "0.2.0"
+        self.mth5_compression = None
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+    def make_request_df(
+        self, observatories, elements, sampling_periods, starts, ends
+    ):
+        """
+
+        create a request dataframe from information given. This is for
+        relatively simple requests, for more complicated ones, think about
+        making your own data frame in the form of
+
+        row -> observatory, elements, sampling_period, start, end
+
+        :param observatories: DESCRIPTION
+        :type observatories: TYPE
+        :param elements: DESCRIPTION
+        :type elements: TYPE
+        :param sampling_periods: DESCRIPTION
+        :type sampling_periods: TYPE
+        :param starts: DESCRIPTION
+        :type starts: TYPE
+        :param ends: DESCRIPTION
+        :type ends: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if isinstance(observatories, str):
+            observatories = [observatories]
+
+        if isinstance(sampling_periods, (float, str, int)):
+            sampling_periods = [float(sampling_periods)]
+        elif isinstance(sampling_periods, (list, tuple)):
+            sampling_periods = [float(item) for item in sampling_periods]
+
+        if isinstance(starts, str):
+            starts = [starts]
+
+        if isinstance(ends, str):
+            ends = [ends]
+
+        if len(starts) != len(ends):
+            raise ValueError(
+                "starts and stops must have the same number of entries"
+            )
+
+        request_list = []
+
+        for observatory in observatories:
+            for sampling_period in sampling_periods:
+                for start, end in zip(starts, ends):
+                    request_list.append(
+                        {
+                            "observatory": observatory,
+                            "elements": elements,
+                            "sampling_period": sampling_period,
+                            "start": start,
+                            "end": end,
+                        }
+                    )
+
+        return pd.DataFrame(request_list)
+
+    def make_mth5_from_geomag(self, request_df, save_path, **kwargs):
         """
         write a mth5 to the path given
 
@@ -462,4 +541,10 @@ class GeomagClient:
 
         """
 
-        pass
+        save_path = Path(save_path)
+        if save_path.is_dir():
+            fn = f"usgs_geomag_{self.observatory}_{''.join(self.elements)}.h5"
+            save_path = save_path.joinpath(fn)
+
+        m = MTH5(file_version=self.mth5_file_type)
+        m.open_mth5(save_path)
