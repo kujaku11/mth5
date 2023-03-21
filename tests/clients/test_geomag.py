@@ -90,37 +90,40 @@ class TestRequestDF(unittest.TestCase):
         )
 
 
-# @unittest.skipIf(
-#     "peacock" not in str(Path(__file__).as_posix()),
-#     "Downloading takes too long",
-# )
-# class TestMakeMTH5FromGeomag(unittest.TestCase):
-#     @classmethod
-#     def setUpClass(self):
-#         self.client = USGSGeomag()
+@unittest.skipIf(
+    "peacock" not in str(Path(__file__).as_posix()),
+    "Downloading takes too long",
+)
+class TestMakeMTH5FromGeomag(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.client = USGSGeomag()
 
-#         self.request_df = pd.DataFrame(
-#             {
-#                 "observatory": ["frn", "frn", "ott", "ott"],
-#                 "type": ["adjusted"] * 4,
-#                 "elements": [["x", "y"], ["x", "y"], ["x", "y"], ["x", "y"]],
-#                 "sampling_period": [1, 1, 1, 1],
-#                 "start": [
-#                     "2022-01-01T00:00:00",
-#                     "2022-01-03T00:00:00",
-#                     "2022-01-01T00:00:00",
-#                     "2022-01-03T00:00:00",
-#                 ],
-#                 "end": [
-#                     "2022-01-02T00:00:00",
-#                     "2022-01-04T00:00:00",
-#                     "2022-01-02T00:00:00",
-#                     "2022-01-04T00:00:00",
-#                 ],
-#             }
-#         )
+        self.request_df = pd.DataFrame(
+            {
+                "observatory": ["frn", "frn", "ott", "ott"],
+                "type": ["adjusted"] * 4,
+                "elements": [["x", "y"], ["x", "y"], ["x", "y"], ["x", "y"]],
+                "sampling_period": [1, 1, 1, 1],
+                "start": [
+                    "2022-01-01T00:00:00",
+                    "2022-01-03T00:00:00",
+                    "2022-01-01T00:00:00",
+                    "2022-01-03T00:00:00",
+                ],
+                "end": [
+                    "2022-01-02T00:00:00",
+                    "2022-01-04T00:00:00",
+                    "2022-01-02T00:00:00",
+                    "2022-01-04T00:00:00",
+                ],
+            }
+        )
 
-#         self.m =
+        self.m = self.client.make_mth5_from_geomag(self.request_df, Path())
+
+    def test_file_exists(self):
+        self.assertTrue(self.m.exists())
 
 
 # =============================================================================
