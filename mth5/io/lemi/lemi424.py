@@ -176,9 +176,7 @@ class LEMI424:
     """
 
     def __init__(self, fn=None, **kwargs):
-        self.logger = logging.getLogger(
-            f"{__name__}.{self.__class__.__name__}"
-        )
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.fn = fn
         self.sample_rate = 1.0
         self.chunk_size = 8640
@@ -364,8 +362,7 @@ class LEMI424:
         """median longitude where data have been collected in the LEMI424 file"""
         if self._has_data():
             return (
-                self.data.longitude.median()
-                * self.data.lon_hemisphere.median()
+                self.data.longitude.median() * self.data.lon_hemisphere.median()
             )
 
     @property
@@ -627,13 +624,13 @@ class LEMI424:
         """
 
         ch_list = []
+
         for comp in (
-            ["bx", "by", "bz"]
-            + e_channels
-            + ["temperature_e", "temperature_h"]
+            ["bx", "by", "bz"] + e_channels + ["temperature_e", "temperature_h"]
         ):
             if comp[0] in ["h", "b"]:
                 ch = ChannelTS("magnetic")
+
             elif comp[0] in ["e"]:
                 ch = ChannelTS("electric")
             else:
@@ -643,17 +640,13 @@ class LEMI424:
             ch.start = self.start
             ch.ts = self.data[comp].values
             ch.component = comp
+
             ch_list.append(ch)
 
-        run_metadata = deepcopy(self.run_metadata)
-        run_metadata.channels = []
-
-        station_metadata = deepcopy(self.station_metadata)
-        station_metadata.runs = []
         return RunTS(
             array_list=ch_list,
-            station_metadata=station_metadata,
-            run_metadata=run_metadata,
+            station_metadata=self.station_metadata,
+            run_metadata=self.run_metadata,
         )
 
 

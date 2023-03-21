@@ -12,7 +12,8 @@ Created on Thu Aug 27 16:54:09 2020
 # Imports
 # =============================================================================
 from pathlib import Path
-import urllib as url
+from urllib.request import Request, urlopen
+from urllib.error import HTTPError
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
 
@@ -193,14 +194,16 @@ class AsciiMetadata:
         get elevation from national map
         """
         # the url for national map elevation query
-        nm_url = r"https://nationalmap.gov/epqs/pqs.php?x={0:.5f}&y={1:.5f}&units=Meters&output=xml"
+        nm_url = Request(
+            r"https://nationalmap.gov/epqs/pqs.php?x={0:.5f}&y={1:.5f}&units=Meters&output=xml".format(
+                self.longitude, self.latitude
+            )
+        )
 
         # call the url and get the response
         try:
-            response = url.request.urlopen(
-                nm_url.format(self.longitude, self.latitude)
-            )
-        except url.error.HTTPError:
+            response = urlopen(nm_url)
+        except HTTPError:
             self.logger.error(
                 "could not connect to get elevation from national map."
             )

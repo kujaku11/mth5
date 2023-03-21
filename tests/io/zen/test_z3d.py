@@ -25,9 +25,7 @@ from mt_metadata.timeseries.filters import (
 # =============================================================================
 
 
-@unittest.skipIf(
-    "peacock" not in str(Path(__file__).as_posix()), "local files"
-)
+@unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local files")
 class TestZ3DEY(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -134,9 +132,7 @@ class TestZ3DEY(unittest.TestCase):
         self.assertEqual(self.z3d._block_len, 65536)
 
     def test_gps_flag(self):
-        self.assertEqual(
-            self.z3d.gps_flag, b"\xff\xff\xff\x7f\x00\x00\x00\x80"
-        )
+        self.assertEqual(self.z3d.gps_flag, b"\xff\xff\xff\x7f\x00\x00\x00\x80")
 
     def test_get_gps_time(self):
         self.assertTupleEqual(
@@ -160,10 +156,10 @@ class TestZ3DEY(unittest.TestCase):
                 ("dc.end", 0.019371436521409924),
                 ("dc.start", 0.019130984313785026),
                 ("dipole_length", 56.0),
-                ("filter.applied", [False, False, False]),
+                ("filter.applied", [False, False]),
                 (
                     "filter.name",
-                    ["zen_counts2mv", "zen024_256_response", "dipole_56.00m"],
+                    ["zen_counts2mv", "dipole_56.00m"],
                 ),
                 ("measurement_azimuth", 0.0),
                 ("measurement_tilt", 0.0),
@@ -187,9 +183,7 @@ class TestZ3DEY(unittest.TestCase):
             ]
         )
 
-        self.assertDictEqual(
-            self.z3d.channel_metadata.to_dict(single=True), ey
-        )
+        self.assertDictEqual(self.z3d.channel_metadata.to_dict(single=True), ey)
 
     def test_run_metadata(self):
         rm = OrderedDict(
@@ -237,20 +231,19 @@ class TestZ3DEY(unittest.TestCase):
                 ("orientation.method", None),
                 ("orientation.reference_frame", "geographic"),
                 ("provenance.creation_time", "1980-01-01T00:00:00+00:00"),
-                ("provenance.software.author", "none"),
+                ("provenance.software.author", None),
                 ("provenance.software.name", None),
                 ("provenance.software.version", None),
                 ("provenance.submitter.email", None),
                 ("provenance.submitter.organization", None),
+                ("release_license", "CC0-1.0"),
                 ("run_list", []),
                 ("time_period.end", "2022-05-17T15:54:42+00:00"),
                 ("time_period.start", "2022-05-17T13:09:58+00:00"),
             ]
         )
 
-        self.assertDictEqual(
-            self.z3d.station_metadata.to_dict(single=True), sm
-        )
+        self.assertDictEqual(self.z3d.station_metadata.to_dict(single=True), sm)
 
     def test_filters(self):
         zr = FrequencyResponseTableFilter(
@@ -300,10 +293,11 @@ class TestZ3DEY(unittest.TestCase):
         )
 
         with self.subTest("test zen response"):
-            self.assertDictEqual(
-                self.z3d.zen_response.to_dict(single=True),
-                zr.to_dict(single=True),
-            )
+            self.assertEqual(None, self.z3d.zen_response)
+            # self.assertDictEqual(
+            #     self.z3d.zen_response.to_dict(single=True),
+            #     zr.to_dict(single=True),
+            # )
         with self.subTest("test_dipole_filter"):
 
             self.assertDictEqual(
@@ -320,15 +314,13 @@ class TestZ3DEY(unittest.TestCase):
 
         with self.subTest("channel_response"):
 
-            cr = ChannelResponseFilter(filters_list=[cf, zr, df])
+            cr = ChannelResponseFilter(filters_list=[cf, df])
             self.assertListEqual(
                 cr.filters_list, self.z3d.channel_response.filters_list
             )
 
 
-@unittest.skipIf(
-    "peacock" not in str(Path(__file__).as_posix()), "local files"
-)
+@unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local files")
 class TestZ3DHY(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -558,12 +550,11 @@ class TestZ3DHY(unittest.TestCase):
                 ("channel_number", 2),
                 ("component", "hy"),
                 ("data_quality.rating.value", 0),
-                ("filter.applied", [False, False, False]),
+                ("filter.applied", [False, False]),
                 (
                     "filter.name",
                     [
                         "zen_counts2mv",
-                        "zen024_256_response",
                         "ant4_2324_response",
                     ],
                 ),
@@ -588,9 +579,7 @@ class TestZ3DHY(unittest.TestCase):
             ]
         )
 
-        self.assertDictEqual(
-            self.z3d.channel_metadata.to_dict(single=True), ey
-        )
+        self.assertDictEqual(self.z3d.channel_metadata.to_dict(single=True), ey)
 
     def test_run_metadata(self):
         rm = OrderedDict(
@@ -638,26 +627,26 @@ class TestZ3DHY(unittest.TestCase):
                 ("orientation.method", None),
                 ("orientation.reference_frame", "geographic"),
                 ("provenance.creation_time", "1980-01-01T00:00:00+00:00"),
-                ("provenance.software.author", "none"),
+                ("provenance.software.author", None),
                 ("provenance.software.name", None),
                 ("provenance.software.version", None),
                 ("provenance.submitter.email", None),
                 ("provenance.submitter.organization", None),
+                ("release_license", "CC0-1.0"),
                 ("run_list", []),
                 ("time_period.end", "2022-05-17T15:54:42+00:00"),
                 ("time_period.start", "2022-05-17T13:09:58+00:00"),
             ]
         )
 
-        self.assertDictEqual(
-            self.z3d.station_metadata.to_dict(single=True), sm
-        )
+        self.assertDictEqual(self.z3d.station_metadata.to_dict(single=True), sm)
 
     def test_zen_esponse(self):
-        self.assertDictEqual(
-            self.z3d.zen_response.to_dict(single=True),
-            self.zr.to_dict(single=True),
-        )
+        self.assertEqual(None, self.z3d.zen_response)
+        # self.assertDictEqual(
+        #     self.z3d.zen_response.to_dict(single=True),
+        #     self.zr.to_dict(single=True),
+        # )
 
     def test_coil_response_filter(self):
 
@@ -689,7 +678,7 @@ class TestZ3DHY(unittest.TestCase):
 
     def channel_response(self):
 
-        cr = ChannelResponseFilter(filters_list=[self.cf, self.zr, self.cr])
+        cr = ChannelResponseFilter(filters_list=[self.cf, self.cr])
 
         self.assertListEqual(
             cr.filters_list, self.z3d.channel_response.filters_list

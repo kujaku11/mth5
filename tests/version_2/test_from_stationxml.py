@@ -25,9 +25,7 @@ class TestFromStationXML01(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.translator = stationxml.XMLInventoryMTExperiment()
-        self.experiment = self.translator.xml_to_mt(
-            stationxml_fn=STATIONXML_01
-        )
+        self.experiment = self.translator.xml_to_mt(stationxml_fn=STATIONXML_01)
         self.experiment.surveys[0].id = "test"
         self.base_path = "Experiment/Surveys/test"
         self.fn = fn_path.joinpath("from_stationxml.h5")
@@ -67,9 +65,9 @@ class TestFromStationXML01(unittest.TestCase):
         with self.subTest(name="network"):
             self.assertEqual(sg.metadata.fdsn.network, "ZU")
         with self.subTest(name="start time"):
-            self.assertEqual(sg.metadata.time_period.start_date, "2020-01-01")
+            self.assertEqual(sg.metadata.time_period.start_date, "2020-06-02")
         with self.subTest(name="end time"):
-            self.assertEqual(sg.metadata.time_period.end_date, "2023-12-31")
+            self.assertEqual(sg.metadata.time_period.end_date, "2020-07-13")
         with self.subTest(name="summary"):
             self.assertEqual(
                 sg.metadata.summary,
@@ -82,8 +80,8 @@ class TestFromStationXML01(unittest.TestCase):
 
     def test_station_metadata(self):
         station_dict = {
-            "acquired_by.author": "none",
-            "channels_recorded": [],
+            "acquired_by.author": None,
+            "channels_recorded": ["ey", "hy"],
             "data_type": "BBMT",
             "fdsn.id": "CAS04",
             "geographic_name": "Corral Hollow, CA, USA",
@@ -97,7 +95,7 @@ class TestFromStationXML01(unittest.TestCase):
             "mth5_type": "Station",
             "orientation.method": None,
             "orientation.reference_frame": "geographic",
-            "provenance.software.author": "none",
+            "provenance.software.author": None,
             "provenance.software.name": None,
             "provenance.software.version": None,
             "provenance.submitter.author": None,

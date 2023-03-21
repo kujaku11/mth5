@@ -49,3 +49,14 @@ History
 * adding in new tutorial and modifications to mth5_in_parallel.ipynb by @nre900 in issue #112
 * Add phoenix reader by @kujaku11 in PR #103
 * Remove response by @kujaku11 in PR #100 
+
+0.3.1 (2023-01-18)
+------------------------
+
+* Speed up station and survey validataion by 
+* Tutorial updates by @nre900 
+* remove kwarg specifying default value 
+* update initialize_mth5 
+* Have a single metadata object for ChannelTS and RunTS 
+* Use h5 Paths to get groups and datasets
+* Bump wheel from 0.33.6 to 0.38.1

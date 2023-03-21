@@ -27,9 +27,9 @@ from matplotlib import pyplot as plt
 
 from mt_metadata import timeseries as metadata
 from mt_metadata.utils.mttime import MTime
+from mt_metadata.utils.list_dict import ListDict
 from mt_metadata.timeseries.filters import ChannelResponseFilter
 
-from mth5.utils.exceptions import MTTSError
 from .channel_ts import ChannelTS
 from mth5.utils.mth5_logger import setup_logger
 
@@ -50,6 +50,9 @@ class RunTS:
 
     components --> {'ex': ex_xarray, 'ey': ey_xarray}
 
+    ToDo, have a single Survey object under the hood and properties to other
+    metadata objects for get/set.
+
     """
 
     def __init__(
@@ -61,71 +64,17 @@ class RunTS:
     ):
 
         self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
-        self.run_metadata = metadata.Run()
-        self.station_metadata = metadata.Station()
-        self.survey_metadata = metadata.Survey()
+        self._survey_metadata = self._initialize_metadata()
         self._dataset = xr.Dataset()
         self._filters = {}
+
+        self.survey_metadata = survey_metadata
+        self.station_metadata = station_metadata
+        self.run_metadata = run_metadata
 
         # load the arrays first this will write run and station metadata
         if array_list is not None:
             self.dataset = array_list
-
-        # if the use inputs metadata, overwrite all values in the metadata element
-        if run_metadata is not None:
-            if isinstance(run_metadata, dict):
-                # make sure the input dictionary has the correct form
-                if "Run" not in list(run_metadata.keys()):
-                    run_metadata = {"Run": run_metadata}
-                self.run_metadata.from_dict(run_metadata)
-
-            elif isinstance(run_metadata, metadata.Run):
-                self.run_metadata.from_dict(run_metadata.to_dict())
-            else:
-                msg = (
-                    "Input metadata must be a dictionary or Run object, "
-                    f"not {type(run_metadata)}"
-                )
-                self.logger.error(msg)
-                raise MTTSError(msg)
-
-        # add station metadata, this will be important when propogating a run
-        if station_metadata is not None:
-            if isinstance(station_metadata, metadata.Station):
-                self.station_metadata.from_dict(station_metadata.to_dict())
-
-            elif isinstance(station_metadata, dict):
-                if "Station" not in list(station_metadata.keys()):
-                    station_metadata = {"Station": station_metadata}
-                self.station_metadata.from_dict(station_metadata)
-
-            else:
-                msg = "input metadata must be type %s or dict, not %s"
-                self.logger.error(
-                    msg, type(self.station_metadata), type(station_metadata)
-                )
-                raise MTTSError(
-                    msg % (type(self.station_metadata), type(station_metadata))
-                )
-
-        # add survey metadata, this will be important when propogating a run
-        if survey_metadata is not None:
-            if isinstance(survey_metadata, metadata.Survey):
-                self.survey_metadata.from_dict(survey_metadata.to_dict())
-
-            elif isinstance(survey_metadata, dict):
-                if "Station" not in list(survey_metadata.keys()):
-                    survey_metadata = {"Station": survey_metadata}
-                self.survey_metadata.from_dict(survey_metadata)
-
-            else:
-                msg = "input metadata must be type %s or dict, not %s"
-                self.logger.error(
-                    msg, type(self.survey_metadata), type(survey_metadata)
-                )
-                raise MTTSError(
-                    msg % (type(self.survey_metadata), type(survey_metadata))
-                )
 
     def __str__(self):
         s_list = [
@@ -142,6 +91,97 @@ class RunTS:
     def __repr__(self):
         return self.__str__()
 
+    def _initialize_metadata(self):
+        """
+        Create a single `Survey` object to store all metadata
+
+        :param channel_type: DESCRIPTION
+        :type channel_type: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        survey_metadata = metadata.Survey(id="0")
+        survey_metadata.stations.append(metadata.Station(id="0"))
+        survey_metadata.stations[0].runs.append(metadata.Run(id="0"))
+
+        return survey_metadata
+
+    def _validate_run_metadata(self, run_metadata):
+        """
+        validate run metadata
+
+        """
+
+        if not isinstance(run_metadata, metadata.Run):
+            if isinstance(run_metadata, dict):
+                if "run" not in [cc.lower() for cc in run_metadata.keys()]:
+                    run_metadata = {"Run": run_metadata}
+                r_metadata = metadata.Run()
+                r_metadata.from_dict(run_metadata)
+                self.logger.debug("Loading from metadata dict")
+                return r_metadata
+            else:
+                msg = "input metadata must be type %s or dict, not %s"
+                self.logger.error(
+                    msg, type(self.run_metadata), type(run_metadata)
+                )
+                raise TypeError(
+                    msg % (type(self.run_metadata), type(run_metadata))
+                )
+        return run_metadata.copy()
+
+    def _validate_station_metadata(self, station_metadata):
+        """
+        validate station metadata
+        """
+
+        if not isinstance(station_metadata, metadata.Station):
+            if isinstance(station_metadata, dict):
+                if "station" not in [
+                    cc.lower() for cc in station_metadata.keys()
+                ]:
+                    station_metadata = {"Station": station_metadata}
+
+                st_metadata = metadata.Station()
+                st_metadata.from_dict(station_metadata)
+                self.logger.debug("Loading from metadata dict")
+                return st_metadata
+            else:
+                msg = "input metadata must be type {0} or dict, not {1}".format(
+                    type(self.station_metadata), type(station_metadata)
+                )
+                self.logger.error(msg)
+                raise TypeError(msg)
+
+        return station_metadata.copy()
+
+    def _validate_survey_metadata(self, survey_metadata):
+        """
+        validate station metadata
+        """
+
+        if not isinstance(survey_metadata, metadata.Survey):
+            if isinstance(survey_metadata, dict):
+                if "station" not in [
+                    cc.lower() for cc in survey_metadata.keys()
+                ]:
+                    survey_metadata = {"Survey": survey_metadata}
+
+                sv_metadata = metadata.Station()
+                sv_metadata.from_dict(survey_metadata)
+                self.logger.debug("Loading from metadata dict")
+                return sv_metadata
+            else:
+                msg = "input metadata must be type {0} or dict, not {1}".format(
+                    type(self.survey_metadata), type(survey_metadata)
+                )
+                self.logger.error(msg)
+                raise TypeError(msg)
+
+        return survey_metadata.copy()
+
     def _validate_array_list(self, array_list):
         """check to make sure all entries are a :class:`ChannelTS` object"""
 
@@ -151,6 +191,10 @@ class RunTS:
             raise TypeError(msg)
 
         valid_list = []
+        station_metadata = metadata.Station()
+        run_metadata = metadata.Run()
+        channels = ListDict()
+
         for index, item in enumerate(array_list):
             if not isinstance(item, (ChannelTS, xr.DataArray)):
                 msg = f"array entry {index} must be ChannelTS object not {type(item)}"
@@ -161,24 +205,50 @@ class RunTS:
 
                 # if a channelTS is input then it comes with run and station metadata
                 # use those first, then the user can update later.
-                self.run_metadata.channels.append(item.channel_metadata)
-                if index == 0:
-                    self.station_metadata.from_dict(
-                        item.station_metadata.to_dict()
-                    )
-                    self.run_metadata.from_dict(item.run_metadata.to_dict())
-                else:
-                    self.station_metadata.update(
-                        item.station_metadata, match=["id"]
-                    )
-                    self.run_metadata.update(item.run_metadata, match=["id"])
 
+                if item.station_metadata.id not in ["0", None]:
+                    if station_metadata.id not in ["0", None]:
+                        station_metadata.update(
+                            item.station_metadata, match=["id"]
+                        )
+                    else:
+                        station_metadata.update(item.station_metadata)
+
+                if item.run_metadata.id not in ["0", None]:
+                    if run_metadata.id not in ["0", None]:
+                        run_metadata.update(item.run_metadata, match=["id"])
+                    else:
+                        run_metadata.update(item.run_metadata)
+
+                channels.append(item.channel_metadata)
+
+                # get the filters from the channel
                 if item.channel_response_filter.filters_list != []:
                     for ff in item.channel_response_filter.filters_list:
                         self._filters[ff.name] = ff
 
             else:
                 valid_list.append(item)
+
+        # need to make sure that the station metadata was actually updated,
+        # should have an ID.
+        run_metadata.channels = channels
+        if station_metadata.id not in ["0", None]:
+            station_metadata.runs = ListDict()
+            station_metadata.runs.append(run_metadata)
+            # need to add the other runs that are in the metadata for
+            # completeness.
+            for run in self.station_metadata.runs:
+                if run.id not in [run_metadata.id, "0", None]:
+                    station_metadata.runs.append(run)
+            self.station_metadata = station_metadata
+        # if the run metadata was updated
+        elif run_metadata.id not in ["0", None]:
+            self.run_metadata = run_metadata
+        # if the run metadata or station metadata was not updated from channel
+        # metadata, then update just the channels.
+        else:
+            self.run_metadata.channels = channels
 
         # probably should test for sampling rate.
         sr_test = dict(
@@ -188,7 +258,7 @@ class RunTS:
         if len(set([v for k, v in sr_test.items()])) != 1:
             msg = f"sample rates are not all the same {sr_test}"
             self.logger.error(msg)
-            raise MTTSError(msg)
+            raise ValueError(msg)
 
         return valid_list
 
@@ -230,10 +300,9 @@ class RunTS:
             return ChannelTS(
                 self.dataset[name].attrs["type"],
                 self.dataset[name],
-                run_metadata=self.run_metadata,
-                station_metadata=self.station_metadata,
+                run_metadata=self.run_metadata.copy(),
+                station_metadata=self.station_metadata.copy(),
                 channel_response_filter=ch_response_filter,
-                survey_metadata=self.survey_metadata,
             )
         else:
             # this is a hack for now until figure out who is calling shape, size
@@ -243,18 +312,93 @@ class RunTS:
                 try:
                     return super().__getattribute__(name)
                 except AttributeError:
-                    # elif name not in self.__dict__.keys() and name not in [
-                    #     "shape",
-                    #     "size",
-                    #     "sample_rate",
-                    #     "start",
-                    #     "end",
-                    # ]:
                     msg = f"RunTS has no attribute {name}"
                     self.logger.error(msg)
                     raise NameError(msg)
 
+    ### Properties ------------------------------------------------------------
     @property
+    def survey_metadata(self):
+        """
+        survey metadata
+        """
+        return self._survey_metadata
+
+    @survey_metadata.setter
+    def survey_metadata(self, survey_metadata):
+        """
+
+        :param survey_metadata: survey metadata object or dictionary
+        :type survey_metadata: :class:`mt_metadata.timeseries.Survey` or dict
+
+        """
+
+        if survey_metadata is not None:
+            survey_metadata = self._validate_survey_metadata(survey_metadata)
+            self._survey_metadata.update(
+                self._validate_survey_metadata(survey_metadata)
+            )
+
+    @property
+    def station_metadata(self):
+        """
+        station metadata
+        """
+
+        return self.survey_metadata.stations[0]
+
+    @station_metadata.setter
+    def station_metadata(self, station_metadata):
+        """
+        set station metadata from a valid input
+        """
+
+        if station_metadata is not None:
+            station_metadata = self._validate_station_metadata(station_metadata)
+
+            runs = ListDict()
+            if self.run_metadata.id not in ["0", 0]:
+                runs.append(self.run_metadata.copy())
+            runs.extend(station_metadata.runs)
+            if len(runs) == 0:
+                runs[0] = metadata.Run(id="0")
+
+            # be sure there is a level below
+            if len(runs[0].channels) == 0:
+                ch_metadata = metadata.Auxiliary()
+                ch_metadata.type = "auxiliary"
+                runs[0].channels.append(ch_metadata)
+
+            stations = ListDict()
+            stations.append(station_metadata)
+            stations[0].runs = runs
+
+            self.survey_metadata.stations = stations
+
+    @property
+    def run_metadata(self):
+        """
+        station metadata
+        """
+        run_metadata = self.survey_metadata.stations[0].runs[0]
+
+        return run_metadata
+
+    @run_metadata.setter
+    def run_metadata(self, run_metadata):
+        """
+        set run metadata from a valid input
+        """
+
+        if run_metadata is not None:
+            run_metadata = self._validate_run_metadata(run_metadata)
+            runs = ListDict()
+            runs.append(run_metadata)
+            runs.extend(
+                self.station_metadata.runs, skip_keys=[run_metadata.id, "0"]
+            )
+            self._survey_metadata.stations[0].runs = runs
+
     def has_data(self):
         """check to see if there is data"""
         if len(self.channels) > 0:
@@ -289,7 +433,7 @@ class RunTS:
         """
 
         # check sampling rate
-        if self.has_data:
+        if self.has_data():
             # check start time
             if self.start != self.run_metadata.time_period.start:
                 if (
@@ -329,20 +473,11 @@ class RunTS:
                     self.logger.warning(msg)
                 self.run_metadata.sample_rate = self.sample_rate
 
-            # update channels recorded
-            self.run_metadata.channels_recorded_auxiliary = []
-            self.run_metadata.channels_recorded_electric = []
-            self.run_metadata.channels_recorded_magnetic = []
-            for ch in self.channels:
-                if ch[0] in ["e"]:
-                    self.run_metadata.channels_recorded_electric.append(ch)
-                elif ch[0] in ["h", "b"]:
-                    self.run_metadata.channels_recorded_magnetic.append(ch)
-                else:
-                    self.run_metadata.channels_recorded_auxiliary.append(ch)
+            if self.run_metadata.id not in self.station_metadata.runs.keys():
+                self.station_metadata.runs[0].update(self.run_metadata)
 
-            if self.run_metadata.id not in self.station_metadata.run_list:
-                self.station_metadata.runs.append(self.run_metadata)
+            self.station_metadata.update_time_period()
+            self.survey_metadata.update_time_period()
 
     def set_dataset(self, array_list, align_type="outer"):
         """
@@ -419,7 +554,7 @@ class RunTS:
                 + f"input {c.sample_rate}"
             )
             self.logger.error(msg)
-            raise MTTSError(msg)
+            raise ValueError(msg)
 
         ### should probably check for other metadata like station and run?
         if len(self.dataset.dims) == 0:
@@ -445,17 +580,15 @@ class RunTS:
     @property
     def start(self):
         """Start time UTC"""
-        if self.has_data:
+        if self.has_data():
             return MTime(self.dataset.coords["time"].to_index()[0].isoformat())
         return self.run_metadata.time_period.start
 
     @property
     def end(self):
         """End time UTC"""
-        if self.has_data:
-            return MTime(
-                self.dataset.coords["time"].to_index()[-1].isoformat()
-            )
+        if self.has_data():
+            return MTime(self.dataset.coords["time"].to_index()[-1].isoformat())
         return self.run_metadata.time_period.end
 
     @property
@@ -465,7 +598,7 @@ class RunTS:
         samples in time, if data is present. Otherwise return the metadata
         sample rate.
         """
-        if self.has_data:
+        if self.has_data():
             try:
                 return round(
                     1.0
@@ -567,7 +700,7 @@ class RunTS:
         if not isinstance(obspy_stream, Stream):
             msg = f"Input must be obspy.core.Stream not {type(obspy_stream)}"
             self.logger.error(msg)
-            raise MTTSError(msg)
+            raise TypeError(msg)
 
         array_list = []
         station_list = []
@@ -617,7 +750,8 @@ class RunTS:
 
         # need to be sure update any input metadata.
         if run_metadata is not None:
-            self.run_metadata.update(run_metadata)
+            self.station_metadata.runs = ListDict()
+            self.station_metadata.add_run(run_metadata)
 
         self.validate_metadata()
 
@@ -658,7 +792,7 @@ class RunTS:
             start = MTime(start)
 
         if n_samples is not None:
-            seconds = n_samples / self.sample_rate
+            seconds = (n_samples - 1) / self.sample_rate
             end = start + seconds
 
         elif end is not None:
@@ -690,8 +824,8 @@ class RunTS:
         """
 
         new_run = RunTS()
-        new_run.run_metadata.update(self.run_metadata)
-        new_run.station_metadata.update(self.station_metadata)
+        new_run.run_metadata = self.run_metadata
+        new_run.station_metadata = self.station_metadata
 
         for channel in self.channels:
             ch_ts = getattr(self, channel)

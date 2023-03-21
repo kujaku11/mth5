@@ -24,11 +24,11 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from mt_metadata import timeseries as metadata
-from mt_metadata.utils.mttime import MTime
+import mt_metadata.timeseries as metadata
 from mt_metadata.timeseries.filters import ChannelResponseFilter
+from mt_metadata.utils.mttime import MTime
+from mt_metadata.utils.list_dict import ListDict
 
-from mth5.utils.exceptions import MTTSError
 from mth5.utils.mth5_logger import setup_logger
 from mth5.utils import fdsn_tools
 from mth5.timeseries.ts_filters import RemoveInstrumentResponse
@@ -82,7 +82,9 @@ def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
     # not quite right since the rounding clips some samples and your
     # end time will be incorrect (short).
     # FIX: therefore estimate the end time based on the decimal sample rate.
-    end_time = start_time + n_samples / sample_rate
+    # need to account for the fact that the start time is the first sample
+    # need n_samples - 1
+    end_time = start_time + (n_samples - 1) / sample_rate
 
     # dt_freq = "{0:.0f}N".format(1.0e9 / (sample_rate))
 
@@ -156,93 +158,25 @@ class ChannelTS:
         channel_type="auxiliary",
         data=None,
         channel_metadata=None,
-        run_metadata=None,
         station_metadata=None,
+        run_metadata=None,
         survey_metadata=None,
         **kwargs,
     ):
 
         self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
-        self.run_metadata = metadata.Run()
-        self.station_metadata = metadata.Station()
-        self.survey_metadata = metadata.Survey()
+
+        self._channel_type = self._validate_channel_type(channel_type)
+        self._survey_metadata = self._initialize_metadata()
+
         self._ts = xr.DataArray([1], coords=[("time", [1])], name="ts")
         self._channel_response = ChannelResponseFilter()
 
-        # get correct metadata class
-        try:
-            self.channel_metadata = meta_classes[channel_type.capitalize()]()
-            self.channel_metadata.type = channel_type.lower()
-        except KeyError:
-            msg = (
-                "Channel type is undefined, must be [ electric | "
-                + "magnetic | auxiliary ]"
-            )
-            self.logger.error(msg)
-            raise ValueError(msg)
-        if channel_metadata is not None:
-            if isinstance(channel_metadata, type(self.channel_metadata)):
-                self.channel_metadata.update(channel_metadata)
-                self.logger.debug(
-                    "Loading from metadata class {0}".format(
-                        type(self.channel_metadata)
-                    )
-                )
-            elif isinstance(channel_metadata, dict):
-                if channel_type not in [
-                    cc.lower() for cc in channel_metadata.keys()
-                ]:
-                    channel_metadata = {channel_type: channel_metadata}
-                self.channel_metadata.from_dict(channel_metadata)
-                self.logger.debug("Loading from metadata dict")
-            else:
-                msg = "input metadata must be type %s or dict, not %s"
-                self.logger.error(
-                    msg, type(self.channel_metadata), type(channel_metadata)
-                )
-                raise MTTSError(
-                    msg % (type(self.channel_metadata), type(channel_metadata))
-                )
+        self.survey_metadata = survey_metadata
+        self.station_metadata = station_metadata
+        self.run_metadata = run_metadata
+        self.channel_metadata = channel_metadata
 
-        # add run metadata, this will be important when propogating a single
-        # channel such that it can stand alone.
-        if run_metadata is not None:
-            if isinstance(run_metadata, metadata.Run):
-                self.run_metadata.update(run_metadata)
-            elif isinstance(run_metadata, dict):
-                if "run" not in [cc.lower() for cc in run_metadata.keys()]:
-                    run_metadata = {"Run": run_metadata}
-                self.run_metadata.from_dict(run_metadata)
-                self.logger.debug("Loading from metadata dict")
-            else:
-                msg = "input metadata must be type %s or dict, not %s"
-                self.logger.error(
-                    msg, type(self.run_metadata), type(run_metadata)
-                )
-                raise MTTSError(
-                    msg % (type(self.run_metadata), type(run_metadata))
-                )
-
-        # add station metadata, this will be important when propogating a single
-        # channel such that it can stand alone.
-        if station_metadata is not None:
-            if isinstance(station_metadata, metadata.Station):
-                self.station_metadata.update(station_metadata)
-            elif isinstance(station_metadata, dict):
-                if "station" not in [
-                    cc.lower() for cc in station_metadata.keys()
-                ]:
-                    station_metadata = {"Station": station_metadata}
-                self.station_metadata.from_dict(station_metadata)
-                self.logger.debug("Loading from metadata dict")
-            else:
-                msg = (
-                    "input metadata must be type {0} or dict, not {1}".format(
-                        type(self.station_metadata), type(station_metadata)
-                    )
-                )
-                self.logger.error(msg)
-                raise MTTSError(msg)
         # input data
         if data is not None:
             self.ts = data
@@ -253,6 +187,7 @@ class ChannelTS:
 
     def __str__(self):
         lines = [
+            f"Survey:       {self.survey_metadata.id}",
             f"Station:      {self.station_metadata.id}",
             f"Run:          {self.run_metadata.id}",
             f"Channel Type: {self.channel_type}",
@@ -294,34 +229,291 @@ class ChannelTS:
     def __gt__(self, other):
         return not self.__lt__(other)
 
-    def _validate_metadata(self, value, metadata_type):
+    def _initialize_metadata(self):
         """
+        Create a single `Survey` object to store all metadata
 
-        :param value: DESCRIPTION
-        :type value: TYPE
-        :param metadata_type: DESCRIPTION
-        :type metadata_type: TYPE
+        :param channel_type: DESCRIPTION
+        :type channel_type: TYPE
         :return: DESCRIPTION
         :rtype: TYPE
 
         """
 
-        metadata_type = metadata_type.capitalize()
-        if isinstance(value, getattr(metadata, metadata_type)):
-            return value
-        elif isinstance(value, dict):
-            if metadata_type not in [cc.lower() for cc in value.keys()]:
-                value = {metadata_type: value}
-            obj = getattr(metadata, metadata_type)()
-            obj.from_dict(value)
-            self.logger.debug("Loading from metadata dict")
-            return obj
-        else:
-            msg = "input metadata must be type %s or dict, not %s"
-            self.logger.error(msg, metadata_type, type(value))
-            raise MTTSError(msg % (metadata_type, type(value)))
+        survey_metadata = metadata.Survey(id="0")
+        survey_metadata.stations.append(metadata.Station(id="0"))
+        survey_metadata.stations[0].runs.append(metadata.Run(id="0"))
+
+        ch_metadata = meta_classes[self.channel_type]()
+        ch_metadata.type = self.channel_type.lower()
+        survey_metadata.stations[0].runs[0].channels.append(ch_metadata)
+
+        return survey_metadata
+
+    def _validate_channel_type(self, channel_type):
+        """
+        Validate channel type should be [ electric | magnetic | auxiliary ]
+
+        """
+
+        if channel_type is None:
+            channel_type = "auxiliary"
+
+        if not channel_type.capitalize() in meta_classes.keys():
+            msg = (
+                "Channel type is undefined, must be [ electric | "
+                "magnetic | auxiliary ]"
+            )
+            self.logger.error(msg)
+            raise ValueError(msg)
+
+        return channel_type.capitalize()
+
+    def _validate_channel_metadata(self, channel_metadata):
+        """
+        validate input channel metadata
+        """
+
+        if not isinstance(
+            channel_metadata,
+            (metadata.Electric, metadata.Magnetic, metadata.Auxiliary),
+        ):
+            if isinstance(channel_metadata, dict):
+                if self.channel_type.lower() not in [
+                    cc.lower() for cc in channel_metadata.keys()
+                ]:
+                    try:
+                        self.channel_type = channel_metadata["type"]
+                    except KeyError:
+                        pass
+                    channel_metadata = {self.channel_type: channel_metadata}
+
+                self.channel_type = list(channel_metadata.keys())[0]
+                ch_metadata = meta_classes[self.channel_type]()
+                ch_metadata.from_dict(channel_metadata)
+                channel_metadata = ch_metadata.copy()
+                self.logger.debug("Loading from metadata dict")
+                return channel_metadata
+            else:
+                msg = "input metadata must be type %s or dict, not %s"
+                self.logger.error(
+                    msg, type(self.channel_metadata), type(channel_metadata)
+                )
+                raise TypeError(
+                    msg % (type(self.channel_metadata), type(channel_metadata))
+                )
+
+        return channel_metadata.copy()
+
+    def _validate_run_metadata(self, run_metadata):
+        """
+        validate run metadata
+
+        """
+
+        if not isinstance(run_metadata, metadata.Run):
+            if isinstance(run_metadata, dict):
+                if "run" not in [cc.lower() for cc in run_metadata.keys()]:
+                    run_metadata = {"Run": run_metadata}
+                r_metadata = metadata.Run()
+                r_metadata.from_dict(run_metadata)
+                self.logger.debug("Loading from metadata dict")
+                return r_metadata
+            else:
+                msg = "input metadata must be type %s or dict, not %s"
+                self.logger.error(
+                    msg, type(self.run_metadata), type(run_metadata)
+                )
+                raise TypeError(
+                    msg % (type(self.run_metadata), type(run_metadata))
+                )
+        return run_metadata.copy()
+
+    def _validate_station_metadata(self, station_metadata):
+        """
+        validate station metadata
+        """
+
+        if not isinstance(station_metadata, metadata.Station):
+            if isinstance(station_metadata, dict):
+                if "station" not in [
+                    cc.lower() for cc in station_metadata.keys()
+                ]:
+                    station_metadata = {"Station": station_metadata}
+
+                st_metadata = metadata.Station()
+                st_metadata.from_dict(station_metadata)
+                self.logger.debug("Loading from metadata dict")
+                return st_metadata
+            else:
+                msg = "input metadata must be type {0} or dict, not {1}".format(
+                    type(self.station_metadata), type(station_metadata)
+                )
+                self.logger.error(msg)
+                raise TypeError(msg)
+
+        return station_metadata.copy()
+
+    def _validate_survey_metadata(self, survey_metadata):
+        """
+        validate station metadata
+        """
+
+        if not isinstance(survey_metadata, metadata.Survey):
+            if isinstance(survey_metadata, dict):
+                if "station" not in [
+                    cc.lower() for cc in survey_metadata.keys()
+                ]:
+                    survey_metadata = {"Survey": survey_metadata}
+
+                sv_metadata = metadata.Station()
+                sv_metadata.from_dict(survey_metadata)
+                self.logger.debug("Loading from metadata dict")
+                return sv_metadata
+            else:
+                msg = "input metadata must be type {0} or dict, not {1}".format(
+                    type(self.survey_metadata), type(survey_metadata)
+                )
+                self.logger.error(msg)
+                raise TypeError(msg)
+
+        return survey_metadata.copy()
 
     ### Properties ------------------------------------------------------------
+    @property
+    def survey_metadata(self):
+        """
+        survey metadata
+        """
+        return self._survey_metadata
+
+    @survey_metadata.setter
+    def survey_metadata(self, survey_metadata):
+        """
+
+        :param survey_metadata: survey metadata object or dictionary
+        :type survey_metadata: :class:`mt_metadata.timeseries.Survey` or dict
+
+        """
+
+        if survey_metadata is not None:
+            survey_metadata = self._validate_survey_metadata(survey_metadata)
+            self._survey_metadata.update(survey_metadata)
+
+    @property
+    def station_metadata(self):
+        """
+        station metadata
+        """
+
+        return self.survey_metadata.stations[0]
+
+    @station_metadata.setter
+    def station_metadata(self, station_metadata):
+        """
+        set station metadata from a valid input
+        """
+
+        if station_metadata is not None:
+            station_metadata = self._validate_station_metadata(station_metadata)
+
+            runs = ListDict()
+            if self.run_metadata.id not in ["0", 0, None]:
+                runs.append(self.run_metadata.copy())
+            runs.extend(station_metadata.runs)
+            if len(runs) == 0:
+                runs[0] = metadata.Run(id="0")
+
+            # be sure there is a level below
+            if len(runs[0].channels) == 0:
+                ch_metadata = meta_classes[self.channel_type]()
+                ch_metadata.type = self.channel_type.lower()
+                runs[0].channels.append(ch_metadata)
+
+            stations = ListDict()
+            stations.append(station_metadata)
+            stations[0].runs = runs
+
+            self.survey_metadata.stations = stations
+
+    @property
+    def run_metadata(self):
+        """
+        station metadata
+        """
+
+        return self.survey_metadata.stations[0].runs[0]
+
+    @run_metadata.setter
+    def run_metadata(self, run_metadata):
+        """
+        set run metadata from a valid input
+        """
+
+        # need to make sure the first index is the desired channel
+        if run_metadata is not None:
+            run_metadata = self._validate_run_metadata(run_metadata)
+
+            runs = ListDict()
+            runs.append(run_metadata)
+            channels = ListDict()
+            if self.component is not None:
+                key = str(self.component)
+
+                channels.append(self.station_metadata.runs[0].channels[key])
+                # add existing channels
+                channels.extend(
+                    self.run_metadata.channels, skip_keys=[key, "0"]
+                )
+
+            # add channels from input metadata
+            channels.extend(run_metadata.channels)
+
+            runs[0].channels = channels
+            runs.extend(
+                self.station_metadata.runs, skip_keys=[run_metadata.id, "0"]
+            )
+
+            self._survey_metadata.stations[0].runs = runs
+
+    @property
+    def channel_metadata(self):
+        """
+        station metadata
+        """
+
+        return self._survey_metadata.stations[0].runs[0].channels[0]
+
+    @channel_metadata.setter
+    def channel_metadata(self, channel_metadata):
+        """
+        set run metadata from a valid input
+        """
+
+        if channel_metadata is not None:
+            channel_metadata = self._validate_channel_metadata(channel_metadata)
+            if channel_metadata.component is not None:
+                channels = ListDict()
+                if (
+                    channel_metadata.component
+                    in self.run_metadata.channels.keys()
+                ):
+                    channels.append(
+                        self.run_metadata.channels[channel_metadata.component]
+                    )
+                    channels[0].update(channel_metadata)
+                else:
+                    channels.append(channel_metadata)
+                channels.extend(
+                    self.run_metadata.channels,
+                    skip_keys=[channel_metadata.component, None],
+                )
+
+                self.run_metadata.channels = channels
+                self.channel_type = self.run_metadata.channels[0].type
+            else:
+                raise ValueError("Channel ID cannot be None")
+
     @property
     def ts(self):
         return self._ts.data
@@ -375,7 +567,7 @@ class ChannelTS:
                     + "where the time series data is stored"
                 )
                 self.logger.error(msg)
-                raise MTTSError(msg)
+                raise ValueError(msg)
         elif isinstance(ts_arr, pd.core.series.Series):
             if isinstance(
                 ts_arr.index[0], pd._libs.tslibs.timestamps.Timestamp
@@ -399,26 +591,25 @@ class ChannelTS:
             meta_dict = dict([(k, v) for k, v in ts_arr.attrs.items()])
 
             # need to get station and run metadata out
-            station_keys = [k for k in meta_dict.keys() if "station." in k]
-            run_keys = [k for k in meta_dict.keys() if "run." in k]
+            survey_dict = {}
             station_dict = {}
             run_dict = {}
-            for key in station_keys:
+
+            for key in [k for k in meta_dict.keys() if "survey." in k]:
+                survey_dict[key.split("station.")[-1]] = meta_dict.pop(key)
+            for key in [k for k in meta_dict.keys() if "station." in k]:
                 station_dict[key.split("station.")[-1]] = meta_dict.pop(key)
-            for key in run_keys:
+            for key in [k for k in meta_dict.keys() if "run." in k]:
                 run_dict[key.split("run.")[-1]] = meta_dict.pop(key)
 
-            if meta_dict["type"] == "electric":
-                ch_metadata = metadata.Electric()
-            elif meta_dict["type"] == "magnetic":
-                ch_metadata = metadata.Magnetic()
-            else:
-                ch_metadata = metadata.Auxiliary()
+            self.channel_type = meta_dict["type"]
+            ch_metadata = meta_classes[self.channel_type]()
+            ch_metadata.from_dict({self.channel_type: meta_dict})
 
-            ch_metadata.from_dict({meta_dict["type"]: meta_dict})
-            self.channel_metadata = ch_metadata
+            self.survey_metadata.from_dict({"survey": survey_dict})
             self.station_metadata.from_dict({"station": station_dict})
             self.run_metadata.from_dict({"run": run_dict})
+            self.channel_metadata = ch_metadata
             # need to run this incase things are different.
             self._update_xarray_metadata()
         else:
@@ -427,7 +618,7 @@ class ChannelTS:
                 + ", ts needs to be a numpy.ndarray, pandas DataFrame, "
                 + "or xarray.DataArray."
             )
-            raise MTTSError(msg)
+            raise TypeError(msg)
 
     @property
     def time_index(self):
@@ -447,37 +638,32 @@ class ChannelTS:
     @property
     def channel_type(self):
         """Channel Type"""
-        return self.channel_metadata._class_name
+        return self._channel_type
 
     @channel_type.setter
     def channel_type(self, value):
         """change channel type means changing the metadata type"""
 
-        if value.lower() != self.channel_metadata._class_name.lower():
-            m_dict = self.channel_metadata.to_dict()[
-                self.channel_metadata._class_name
-            ]
-            try:
-                self.channel_metadata = meta_classes[value.capitalize()]()
-                msg = (
-                    f"Changing metadata to {value.capitalize()}"
-                    + "will translate any similar attributes."
-                )
-                self.logger.info(msg)
-            except KeyError:
-                msg = (
-                    f"Channel type {value} not understood, must be "
-                    + "[ Electrict | Magnetic | Auxiliary ]"
-                )
-                self.logger.error(msg)
-            for key in self.channel_metadata.to_dict()[
-                self.channel_metadata._class_name
-            ].keys():
+        value = self._validate_channel_type(value)
+        if value != self._channel_type:
+            m_dict = self.channel_metadata.to_dict(single=True)
+
+            msg = (
+                f"Changing metadata from {self.channel_type} to {value}, "
+                "will translate any similar attributes."
+            )
+            channel_metadata = meta_classes[value]()
+            self.logger.debug(msg)
+            for key in channel_metadata.to_dict(single=True).keys():
+                # need to skip type otherwise it keeps the same type
+                if key in ["type"]:
+                    continue
                 try:
-                    self.channel_metadata.set_attr_from_name(key, m_dict[key])
+                    channel_metadata.set_attr_from_name(key, m_dict[key])
                 except KeyError:
                     pass
-        return
+            self._channel_type = value
+            self.run_metadata.channels[0] = channel_metadata
 
     def _update_xarray_metadata(self):
         """
@@ -521,7 +707,7 @@ class ChannelTS:
                     "Cannot change channel type, create a new ChannelTS object."
                 )
                 self.logger.error(msg)
-                raise MTTSError(msg)
+                raise ValueError(msg)
         elif self.channel_metadata.type == "magnetic":
             if comp[0].lower() not in ["h", "b"]:
                 msg = (
@@ -529,7 +715,7 @@ class ChannelTS:
                     "Cannot change channel type, create a new ChannelTS object."
                 )
                 self.logger.error(msg)
-                raise MTTSError(msg)
+                raise ValueError(msg)
         if self.channel_metadata.type == "auxiliary":
             if comp[0].lower() in ["e", "h", "b"]:
                 msg = (
@@ -537,8 +723,17 @@ class ChannelTS:
                     "Cannot change channel type, create a new ChannelTS object."
                 )
                 self.logger.error(msg)
-                raise MTTSError(msg)
+                raise ValueError(msg)
         self.channel_metadata.component = comp
+
+        # need to update the keys in the list dict
+        channels = ListDict()
+        channels.append(self.channel_metadata)
+        if len(self.run_metadata.channels) > 1:
+            for ch in self.run_metadata.channels[1:]:
+                channels.append(ch)
+        self.run_metadata.channels = channels
+
         self._update_xarray_metadata()
 
     # --> number of samples just to make sure there is consistency
@@ -574,11 +769,26 @@ class ChannelTS:
     def sample_rate(self):
         """sample rate in samples/second"""
         if self.has_data:
-            t_diff = (
-                self._ts.coords.indexes["time"][-1]
+            # this is more accurate for high sample rates, the way
+            # pandas.date_range rounds nanoseconds is not consistent between
+            # samples, therefore taking the median provides better results
+            # if the time series is long this can be inefficient so test first
+            if (
+                self._ts.coords.indexes["time"][1]
                 - self._ts.coords.indexes["time"][0]
-            )
-            sr = self._ts.size / t_diff.total_seconds()
+            ).total_seconds() < 1e-4:
+
+                sr = 1 / (
+                    float(np.median(np.diff(self._ts.coords.indexes["time"])))
+                    / 1e9
+                )
+
+            else:
+                t_diff = (
+                    self._ts.coords.indexes["time"][-1]
+                    - self._ts.coords.indexes["time"][0]
+                )
+                sr = self._ts.size / t_diff.total_seconds()
 
         else:
             self.logger.debug(
@@ -677,6 +887,11 @@ class ChannelTS:
         # make a time series that the data can be indexed by
         else:
             self.logger.debug("No data, just updating metadata start")
+
+        self._survey_metadata.stations[0].runs[0].update_time_period()
+        self._survey_metadata.stations[0].update_time_period()
+        self._survey_metadata.update_time_period()
+
         self._update_xarray_metadata()
 
     @property
@@ -877,21 +1092,21 @@ class ChannelTS:
             start = MTime(start)
         if n_samples is not None:
             n_samples = int(n_samples)
-            end = start + n_samples / self.sample_rate
+            end = start + ((n_samples - 1) / self.sample_rate)
         if end is not None:
             if not isinstance(end, MTime):
                 end = MTime(end)
-        new_ts = self._ts.loc[
-            (self._ts.indexes["time"] >= start.iso_no_tz)
-            & (self._ts.indexes["time"] < end.iso_no_tz)
-        ]
+
+        chunk = self._ts.indexes["time"].slice_indexer(
+            start=np.datetime64(start.iso_no_tz),
+            end=np.datetime64(end.iso_no_tz),
+        )
+        new_ts = self._ts.isel(indexers={"time": chunk})
 
         new_ch_ts = ChannelTS(
             channel_type=self.channel_type,
             data=new_ts,
-            channel_metadata=self.channel_metadata,
-            run_metadata=self.run_metadata,
-            station_metadata=self.station_metadata,
+            survey_metadata=self.survey_metadata,
             channel_response_filter=self.channel_response_filter,
         )
 
@@ -986,13 +1201,13 @@ class ChannelTS:
         if not isinstance(obspy_trace, Trace):
             msg = f"Input must be obspy.core.Trace, not {type(obspy_trace)}"
             self.logger.error(msg)
-            raise MTTSError(msg)
+            raise TypeError(msg)
         if obspy_trace.stats.channel[1].lower() in ["e", "q"]:
-            self.channel_metadata = metadata.Electric()
+            self.channel_type = "electric"
         elif obspy_trace.stats.channel[1].lower() in ["h", "b", "f"]:
-            self.channel_metadata = metadata.Magnetic()
+            self.channel_type = "magnetic"
         else:
-            self.channel_metadata = metadata.Auxiliary()
+            self.channel_type = "auxiliary"
         mt_code = fdsn_tools.make_mt_channel(
             fdsn_tools.read_channel_code(obspy_trace.stats.channel)
         )
