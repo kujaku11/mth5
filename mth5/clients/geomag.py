@@ -128,6 +128,9 @@ class GeomagClient:
         self.start = None
         self.end = None
 
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
     @property
     def user_agent(self):
         """
@@ -451,11 +454,7 @@ class GeomagClient:
         )
 
 
-class MakeMTH5FromGeomag:
-    """
-    make an MTH5 from Geomagnetic data supplied by the USGS
-    """
-
+class USGSGeomag:
     def __ini__(self, **kwargs):
         self.save_path = Path()
         self.filename = None
@@ -541,6 +540,9 @@ class MakeMTH5FromGeomag:
 
         """
 
+        if not isinstance(request_df, pd.DataFrame):
+            raise TypeError(
+                f"Request input must be a pandas.DataFrame, not {type(request_df)}.")
         save_path = Path(save_path)
         if save_path.is_dir():
             fn = f"usgs_geomag_{self.observatory}_{''.join(self.elements)}.h5"
@@ -548,3 +550,14 @@ class MakeMTH5FromGeomag:
 
         m = MTH5(file_version=self.mth5_file_type)
         m.open_mth5(save_path)
+
+        for row in request_df.itertuples():
+            geomag_client = GeomagClient(
+                observatory=row.observatory,
+                type=row.type,
+                elements=row.elements,
+                start_time=row.start,
+                end_time=row.end,
+                sampling_period=row.sampling_period)
+
+            run = geomag_client.get_data()
