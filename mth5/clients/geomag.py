@@ -37,8 +37,8 @@ class GeomagClient:
 
     - **observatory**: Geogmangetic observatory ID
     - **type**: type of data to get 'adjusted'
-    - **start_time**: start date time to request UTC
-    - **end_time**: end date time to request UTC
+    - **start**: start date time to request UTC
+    - **end**: end date time to request UTC
     - **elements**: components to get
     - **sampling_period**: samples between measurements in seconds
     - **format**: JSON or IAGA2002
@@ -372,7 +372,7 @@ class GeomagClient:
 
         return sm
 
-    def get_data(self):
+    def get_data(self, run_id="001"):
         """
         Get data from geomag client at USGS based on the request.  This might
         have to be done in chunks depending on the request size.  The returned
@@ -413,11 +413,11 @@ class GeomagClient:
 
         survey_metadata = Survey(id="USGS-GEOMAG")
         station_metadata = self._to_station_metadata(request_json["metadata"])
-        run_metadata = Run(id="001")
+        run_metadata = Run(id=run_id)
 
         ch_list = []
         for key, df_list in ch.items():
-            df = pd.concat(df_list)
+            df = pd.concat(df_list).astype(float)
             ch_metadata = Magnetic()
             ch_metadata.component = self._ch_map[key]
             ch_metadata.sample_rate = 1.0 / self.sampling_period
@@ -623,7 +623,7 @@ class USGSGeomag:
         if save_path.is_dir():
             fn = f"usgs_geomag_{self.observatory}_{''.join(self.elements)}.h5"
             save_path = save_path.joinpath(fn)
-
+        print(save_path)
         m = MTH5(file_version=self.mth5_version)
         m.open_mth5(save_path)
 
@@ -641,13 +641,12 @@ class USGSGeomag:
                 observatory=row.observatory,
                 type=row.type,
                 elements=row.elements,
-                start_time=row.start,
-                end_time=row.end,
+                start=row.start,
+                end=row.end,
                 sampling_period=row.sampling_period,
             )
 
-            run = geomag_client.get_data()
-            run.run_metadata.id = row.run
+            run = geomag_client.get_data(run_id=row.run)
             station_group = survey_group.stations_group.add_station(
                 run.station_metadata.id, station_metadata=run.station_metadata
             )
