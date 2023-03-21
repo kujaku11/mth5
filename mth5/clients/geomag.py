@@ -425,8 +425,12 @@ class GeomagClient:
             if "y" in ch_metadata.component:
                 ch_metadata.measurement_azimuth = 90
             ch_metadata.location.latitude = station_metadata.location.latitude
-            ch_metadata.location.longitude = station_metadata.location.longitude
-            ch_metadata.location.elevation = station_metadata.location.elevation
+            ch_metadata.location.longitude = (
+                station_metadata.location.longitude
+            )
+            ch_metadata.location.elevation = (
+                station_metadata.location.elevation
+            )
             ch_metadata.time_period.start = df.index[0]
             ch_metadata.time_period.end = df.index[-1]
             run_metadata.time_period.start = df.index[0]
@@ -455,12 +459,18 @@ class GeomagClient:
 
 
 class USGSGeomag:
-    def __ini__(self, **kwargs):
+    def __init__(self, **kwargs):
         self.save_path = Path()
         self.filename = None
-        self.request_df = None
-        self.mth5_file_type = "0.2.0"
-        self.mth5_compression = None
+        self.mth5_version = "0.2.0"
+        self.request_columns = [
+            "observatory",
+            "type",
+            "elements",
+            "sampling_period",
+            "start",
+            "end",
+        ]
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -527,7 +537,74 @@ class USGSGeomag:
 
         return pd.DataFrame(request_list)
 
-    def make_mth5_from_geomag(self, request_df, save_path, **kwargs):
+    def validate_request_df(self, request_df):
+        """
+
+        :param request_df: DESCRIPTION
+        :type request_df: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if not isinstance(request_df, pd.DataFrame):
+            raise TypeError(
+                f"Request input must be a pandas.DataFrame, not {type(request_df)}."
+            )
+
+        if "run" in request_df.columns:
+            if sorted(request_df.columns.tolist()) != sorted(
+                self.request_columns + ["run"]
+            ):
+                raise ValueError(
+                    f"Request must have columns {', '.join(self.request_columns)}"
+                )
+        else:
+            if sorted(request_df.columns.tolist()) != sorted(
+                self.request_columns
+            ):
+                raise ValueError(
+                    f"Request must have columns {', '.join(self.request_columns)}"
+                )
+
+        request_df = self.add_run_id(request_df)
+
+        return request_df
+
+    def add_run_id(self, request_df):
+        """
+        Add run id to request df
+
+        :param request_df: DESCRIPTION
+        :type request_df: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        request_df.start = pd.to_datetime(request_df.start)
+        request_df.end = pd.to_datetime(request_df.end)
+        request_df["run"] = ""
+
+        for obs in request_df.observatory.unique():
+            for sr in request_df.loc[
+                request_df.observatory == obs, "sampling_period"
+            ].unique():
+                sr_df = request_df.loc[
+                    (request_df.observatory == obs)
+                    & (request_df.sampling_period == sr)
+                ].sort_values("start")
+                request_df.loc[
+                    (request_df.observatory == obs)
+                    & (request_df.sampling_period == sr),
+                    "run",
+                ] = [f"{ii+1:03}" for ii in range(len(sr_df))]
+
+        return request_df
+
+    def make_mth5_from_geomag(
+        self, request_df, save_path, interact=False, **kwargs
+    ):
         """
         write a mth5 to the path given
 
@@ -540,16 +617,24 @@ class USGSGeomag:
 
         """
 
-        if not isinstance(request_df, pd.DataFrame):
-            raise TypeError(
-                f"Request input must be a pandas.DataFrame, not {type(request_df)}.")
+        request_df = self.validate_request_df(request_df)
+
         save_path = Path(save_path)
         if save_path.is_dir():
             fn = f"usgs_geomag_{self.observatory}_{''.join(self.elements)}.h5"
             save_path = save_path.joinpath(fn)
 
-        m = MTH5(file_version=self.mth5_file_type)
+        m = MTH5(file_version=self.mth5_version)
         m.open_mth5(save_path)
+
+        if self.mth5_version in ["0.1.0"]:
+            survey_group = m.survey_group
+        elif self.mth5_version in ["0.2.0"]:
+            survey_group = m.add_survey("USGS-GEOMAG")
+        else:
+            raise ValueError(
+                f"MTH5 version must be [ '0.1.0' | '0.2.0' ] not {self.mth5_version}"
+            )
 
         for row in request_df.itertuples():
             geomag_client = GeomagClient(
@@ -558,6 +643,21 @@ class USGSGeomag:
                 elements=row.elements,
                 start_time=row.start,
                 end_time=row.end,
-                sampling_period=row.sampling_period)
+                sampling_period=row.sampling_period,
+            )
 
             run = geomag_client.get_data()
+            run.run_metadata.id = row.run
+            station_group = survey_group.stations_group.add_station(
+                run.station_metadata.id, station_metadata=run.station_metadata
+            )
+            run_group = station_group.add_run(
+                run.run_metadata.id, run_metadata=run.run_metadata
+            )
+            run_group.from_runts(run)
+
+        if interact:
+            return m
+        else:
+            m.close_mth5()
+            return m.filename
