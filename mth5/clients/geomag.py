@@ -602,6 +602,26 @@ class USGSGeomag:
 
         return request_df
 
+    def _make_filename(self, save_path, request_df):
+        """
+
+        :param request_df: DESCRIPTION
+        :type request_df: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        elements = "".join(request_df.elements.explode().unique().tolist())
+        obs = "_".join(sorted(request_df.observatory.unique().tolist()))
+
+        save_path = Path(save_path)
+        if save_path.is_dir():
+            fn = f"usgs_geomag_{obs}_{elements}.h5"
+            save_path = save_path.joinpath(fn)
+
+        return save_path
+
     def make_mth5_from_geomag(
         self, request_df, save_path, interact=False, **kwargs
     ):
@@ -619,11 +639,8 @@ class USGSGeomag:
 
         request_df = self.validate_request_df(request_df)
 
-        save_path = Path(save_path)
-        if save_path.is_dir():
-            fn = f"usgs_geomag_{self.observatory}_{''.join(self.elements)}.h5"
-            save_path = save_path.joinpath(fn)
-        print(save_path)
+        save_path = self._make_filename(save_path, request_df)
+
         m = MTH5(file_version=self.mth5_version)
         m.open_mth5(save_path)
 

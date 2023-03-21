@@ -8,8 +8,7 @@ Created on Tue Mar 21 12:40:28 2023
 # Imports
 # =============================================================================
 import unittest
-from collections import OrderedDict
-import numpy as np
+from pathlib import Path
 import pandas as pd
 
 from mth5.clients.geomag import USGSGeomag
@@ -17,7 +16,7 @@ from mth5.clients.geomag import USGSGeomag
 # =============================================================================
 
 
-class TestMakeMTH5FromGeomag(unittest.TestCase):
+class TestRequestDF(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.client = USGSGeomag()
@@ -81,6 +80,47 @@ class TestMakeMTH5FromGeomag(unittest.TestCase):
 
         rdf = self.client.add_run_id(request_df)
         self.assertListEqual(rdf.run.tolist(), ["001", "001", "001", "001"])
+
+    def test_make_fn(self):
+        fn = self.client._make_filename(Path(), self.request_df)
+
+        self.assertEqual(
+            fn.as_posix(),
+            Path().joinpath("usgs_geomag_frn_ott_xy.h5").as_posix(),
+        )
+
+
+# @unittest.skipIf(
+#     "peacock" not in str(Path(__file__).as_posix()),
+#     "Downloading takes too long",
+# )
+# class TestMakeMTH5FromGeomag(unittest.TestCase):
+#     @classmethod
+#     def setUpClass(self):
+#         self.client = USGSGeomag()
+
+#         self.request_df = pd.DataFrame(
+#             {
+#                 "observatory": ["frn", "frn", "ott", "ott"],
+#                 "type": ["adjusted"] * 4,
+#                 "elements": [["x", "y"], ["x", "y"], ["x", "y"], ["x", "y"]],
+#                 "sampling_period": [1, 1, 1, 1],
+#                 "start": [
+#                     "2022-01-01T00:00:00",
+#                     "2022-01-03T00:00:00",
+#                     "2022-01-01T00:00:00",
+#                     "2022-01-03T00:00:00",
+#                 ],
+#                 "end": [
+#                     "2022-01-02T00:00:00",
+#                     "2022-01-04T00:00:00",
+#                     "2022-01-02T00:00:00",
+#                     "2022-01-04T00:00:00",
+#                 ],
+#             }
+#         )
+
+#         self.m =
 
 
 # =============================================================================
