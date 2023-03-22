@@ -128,6 +128,11 @@ class TestMakeMTH5FromGeomag(unittest.TestCase):
     def test_file_exists(self):
         self.assertTrue(self.m.exists())
 
+    @classmethod
+    def tearDownClass(self):
+        self.m.close_mth5()
+        self.m.filename.unlink()
+
 
 # =============================================================================
 # Run

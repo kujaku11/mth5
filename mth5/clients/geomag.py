@@ -646,6 +646,8 @@ class USGSGeomag:
                 run.run_metadata.id, run_metadata=run.run_metadata
             )
             run_group.from_runts(run)
+            station_group.update_station_metadata()
+        survey_group.update_survey_metadata()
 
         if self.interact:
             return m
