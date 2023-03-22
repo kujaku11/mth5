@@ -40,6 +40,12 @@ class MakeMTH5:
         self.mth5_version = mth5_version
         self.interact = False
         self.save_path = None
+        self.compression = "gzip"
+        self.compression_opts = 4
+        self.shuffle = True
+        self.fletcher32 = True
+        self.data_level = 1
+        self.file_version = "0.2.0"
 
     def from_fdsn_client(self, request_df, client="IRIS"):
         """

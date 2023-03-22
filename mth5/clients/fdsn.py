@@ -30,7 +30,7 @@ from mth5.timeseries import RunTS
 
 
 class FDSN:
-    def __init__(self, client="IRIS", mth5_version="0.2.0"):
+    def __init__(self, client="IRIS", mth5_version="0.2.0", **kwargs):
         self.column_names = [
             "network",
             "station",
@@ -40,7 +40,17 @@ class FDSN:
             "end",
         ]
         self.client = client
+
+        # parameters of hdf5 file
+        self.compression = "gzip"
+        self.compression_opts = 4
+        self.shuffle = True
+        self.fletcher32 = True
+        self.data_level = 1
         self.mth5_version = mth5_version
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     def _validate_dataframe(self, df):
         if not isinstance(df, pd.DataFrame):
@@ -51,14 +61,18 @@ class FDSN:
                 df = pd.read_csv(fn)
                 df = df.fillna("")
             else:
-                raise ValueError(f"Input must be a pandas.Dataframe not {type(df)}")
+                raise ValueError(
+                    f"Input must be a pandas.Dataframe not {type(df)}"
+                )
         if df.columns.to_list() != self.column_names:
             raise ValueError(
                 f"column names in file {df.columns} are not the expected {self.column_names}"
             )
         return df
 
-    def make_mth5_from_fdsnclient(self, df, path=None, client=None, interact=False):
+    def make_mth5_from_fdsnclient(
+        self, df, path=None, client=None, interact=False
+    ):
         """
         Make an MTH5 file from an FDSN data center
 
@@ -104,11 +118,20 @@ class FDSN:
         unique_list = self.get_unique_networks_and_stations(df)
         if self.mth5_version in ["0.1.0"]:
             if len(unique_list) != 1:
-                raise AttributeError("MTH5 supports one survey/network per container.")
+                raise AttributeError(
+                    "MTH5 supports one survey/network per container."
+                )
         file_name = path.joinpath(self.make_filename(df))
 
         # initiate MTH5 file
-        m = MTH5(file_version=self.mth5_version)
+        m = MTH5(
+            file_version=self.mth5_version,
+            compression=self.compression,
+            compression_opts=self.compression_opts,
+            shuffle=self.shuffle,
+            fletcher32=self.fletcher32,
+            data_level=self.data_level,
+        )
         m.open_mth5(file_name, "w")
 
         # read in inventory and streams
@@ -127,10 +150,19 @@ class FDSN:
                 # get the streams for the given station
                 msstreams = streams.select(station=station_id)
                 trace_start_times = sorted(
-                    list(set([tr.stats.starttime.isoformat() for tr in msstreams]))
+                    list(
+                        set(
+                            [
+                                tr.stats.starttime.isoformat()
+                                for tr in msstreams
+                            ]
+                        )
+                    )
                 )
                 trace_end_times = sorted(
-                    list(set([tr.stats.endtime.isoformat() for tr in msstreams]))
+                    list(
+                        set([tr.stats.endtime.isoformat() for tr in msstreams])
+                    )
                 )
                 if len(trace_start_times) != len(trace_end_times):
                     raise ValueError(
@@ -148,15 +180,17 @@ class FDSN:
                     ):
                         # add the group first this will get the already filled in
                         # metadata to update the run_ts_obj.
-                        run_group = m.stations_group.get_station(station_id).add_run(
-                            run_id
-                        )
+                        run_group = m.stations_group.get_station(
+                            station_id
+                        ).add_run(run_id)
                         # then get the streams an add existing metadata
                         run_stream = msstreams.slice(
                             UTCDateTime(start), UTCDateTime(end)
                         )
                         run_ts_obj = RunTS()
-                        run_ts_obj.from_obspy_stream(run_stream, run_group.metadata)
+                        run_ts_obj.from_obspy_stream(
+                            run_stream, run_group.metadata
+                        )
                         run_group.from_runts(run_ts_obj)
                 # if there is just one run
                 elif len(run_list) == 1:
@@ -171,17 +205,21 @@ class FDSN:
                                 UTCDateTime(times[0]), UTCDateTime(times[1])
                             )
                             run_ts_obj = RunTS()
-                            run_ts_obj.from_obspy_stream(run_stream, run_group.metadata)
+                            run_ts_obj.from_obspy_stream(
+                                run_stream, run_group.metadata
+                            )
                             run_group.from_runts(run_ts_obj)
                     elif n_times == 1:
-                        run_group = m.stations_group.get_station(station_id).add_run(
-                            run_list[0]
-                        )
+                        run_group = m.stations_group.get_station(
+                            station_id
+                        ).add_run(run_list[0])
                         run_stream = msstreams.slice(
                             UTCDateTime(times[0]), UTCDateTime(times[1])
                         )
                         run_ts_obj = RunTS()
-                        run_ts_obj.from_obspy_stream(run_stream, run_group.metadata)
+                        run_ts_obj.from_obspy_stream(
+                            run_stream, run_group.metadata
+                        )
                         run_group.from_runts(run_ts_obj)
                 elif len(run_list) != n_times:
                     print(
@@ -229,7 +267,9 @@ class FDSN:
             # mt_metadata translates the mt survey id into the survey id
             # if it is provided which will be different from the fdsn network
             # id, so we need to map the fdsn networks onto the survey id.
-            survey_map = dict([(s.fdsn.network, s.id) for s in experiment.surveys])
+            survey_map = dict(
+                [(s.fdsn.network, s.id) for s in experiment.surveys]
+            )
 
             for survey_dict in unique_list:
                 # get the mt survey id that maps to the fdsn network
@@ -241,10 +281,24 @@ class FDSN:
                     # get the streams for the given station
                     msstreams = streams.select(station=station_id)
                     trace_start_times = sorted(
-                        list(set([tr.stats.starttime.isoformat() for tr in msstreams]))
+                        list(
+                            set(
+                                [
+                                    tr.stats.starttime.isoformat()
+                                    for tr in msstreams
+                                ]
+                            )
+                        )
                     )
                     trace_end_times = sorted(
-                        list(set([tr.stats.endtime.isoformat() for tr in msstreams]))
+                        list(
+                            set(
+                                [
+                                    tr.stats.endtime.isoformat()
+                                    for tr in msstreams
+                                ]
+                            )
+                        )
                     )
                     if len(trace_start_times) != len(trace_end_times):
                         raise ValueError(
@@ -261,16 +315,20 @@ class FDSN:
                         ):
                             # add the group first this will get the already filled in
                             # metadata to update the run_ts_obj.
-                            run_group = survey_group.stations_group.get_station(
-                                station_id
-                            ).add_run(run_id)
+                            run_group = (
+                                survey_group.stations_group.get_station(
+                                    station_id
+                                ).add_run(run_id)
+                            )
 
                             # then get the streams an add existing metadata
                             run_stream = msstreams.slice(
                                 UTCDateTime(start), UTCDateTime(end)
                             )
                             run_ts_obj = RunTS()
-                            run_ts_obj.from_obspy_stream(run_stream, run_group.metadata)
+                            run_ts_obj.from_obspy_stream(
+                                run_stream, run_group.metadata
+                            )
                             run_group.from_runts(run_ts_obj)
                     # if there is just one run
                     elif len(run_list) == 1:
@@ -278,11 +336,14 @@ class FDSN:
                             for run_id, times in enumerate(
                                 zip(trace_start_times, trace_end_times), 1
                             ):
-                                run_group = survey_group.stations_group.get_station(
-                                    station_id
-                                ).add_run(f"{run_id:03}")
+                                run_group = (
+                                    survey_group.stations_group.get_station(
+                                        station_id
+                                    ).add_run(f"{run_id:03}")
+                                )
                                 run_stream = msstreams.slice(
-                                    UTCDateTime(times[0]), UTCDateTime(times[1])
+                                    UTCDateTime(times[0]),
+                                    UTCDateTime(times[1]),
                                 )
                                 run_ts_obj = RunTS()
                                 run_ts_obj.from_obspy_stream(
@@ -290,14 +351,18 @@ class FDSN:
                                 )
                                 run_group.from_runts(run_ts_obj)
                         elif n_times == 1:
-                            run_group = survey_group.stations_group.get_station(
-                                station_id
-                            ).add_run(run_list[0])
+                            run_group = (
+                                survey_group.stations_group.get_station(
+                                    station_id
+                                ).add_run(run_list[0])
+                            )
                             run_stream = msstreams.slice(
                                 UTCDateTime(times[0]), UTCDateTime(times[1])
                             )
                             run_ts_obj = RunTS()
-                            run_ts_obj.from_obspy_stream(run_stream, run_group.metadata)
+                            run_ts_obj.from_obspy_stream(
+                                run_stream, run_group.metadata
+                            )
                             run_group.from_runts(run_ts_obj)
                     elif len(run_list) != n_times:
                         print(
@@ -314,12 +379,16 @@ class FDSN:
                             # add the group first this will get the already filled in
                             # metadata
                             for run in run_list:
-                                run_group = survey_group.stations_group.get_station(
-                                    station_id
-                                ).get_run(run)
+                                run_group = (
+                                    survey_group.stations_group.get_station(
+                                        station_id
+                                    ).get_run(run)
+                                )
 
                                 # Chekcs for start and end times of runs
-                                run_start = run_group.metadata.time_period.start
+                                run_start = (
+                                    run_group.metadata.time_period.start
+                                )
                                 run_end = run_group.metadata.time_period.end
                                 # Create if statment that checks for start and end
                                 # times in the run.
@@ -460,7 +529,9 @@ class FDSN:
                             channel=ch_row.channel,
                             level="response",
                         )
-                        returned_chan = cha_inv.networks[0].stations[0].channels[0]
+                        returned_chan = (
+                            cha_inv.networks[0].stations[0].channels[0]
+                        )
                         returned_sta.channels.append(returned_chan)
 
                         # -----------------------------
@@ -528,7 +599,9 @@ class FDSN:
         for network in net_list:
             network_dict = {
                 "network": network,
-                "stations": df[df.network == network].station.unique().tolist(),
+                "stations": df[df.network == network]
+                .station.unique()
+                .tolist(),
             }
             unique_list.append(network_dict)
         return unique_list
@@ -547,7 +620,12 @@ class FDSN:
         unique_list = self.get_unique_networks_and_stations(df)
 
         return (
-            "_".join([f"{d['network']}_{'_'.join(d['stations'])}" for d in unique_list])
+            "_".join(
+                [
+                    f"{d['network']}_{'_'.join(d['stations'])}"
+                    for d in unique_list
+                ]
+            )
             + ".h5"
         )
 
