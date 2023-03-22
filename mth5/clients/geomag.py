@@ -460,9 +460,9 @@ class GeomagClient:
 
 class USGSGeomag:
     def __init__(self, **kwargs):
-        self.save_path = Path()
+        self.save_path = Path().cwd()
         self.filename = None
-        self.mth5_version = "0.2.0"
+        self.interact = False
         self.request_columns = [
             "observatory",
             "type",
@@ -472,85 +472,38 @@ class USGSGeomag:
             "end",
         ]
 
+        # parameters of hdf5 file
+        self.compression = "gzip"
+        self.compression_opts = 4
+        self.shuffle = True
+        self.fletcher32 = True
+        self.data_level = 1
+        self.mth5_version = "0.2.0"
+
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-    def make_request_df(
-        self, observatories, elements, sampling_periods, starts, ends
-    ):
-        """
-
-        create a request dataframe from information given. This is for
-        relatively simple requests, for more complicated ones, think about
-        making your own data frame in the form of
-
-        row -> observatory, elements, sampling_period, start, end
-
-        :param observatories: DESCRIPTION
-        :type observatories: TYPE
-        :param elements: DESCRIPTION
-        :type elements: TYPE
-        :param sampling_periods: DESCRIPTION
-        :type sampling_periods: TYPE
-        :param starts: DESCRIPTION
-        :type starts: TYPE
-        :param ends: DESCRIPTION
-        :type ends: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        if isinstance(observatories, str):
-            observatories = [observatories]
-
-        if isinstance(sampling_periods, (float, str, int)):
-            sampling_periods = [float(sampling_periods)]
-        elif isinstance(sampling_periods, (list, tuple)):
-            sampling_periods = [float(item) for item in sampling_periods]
-
-        if isinstance(starts, str):
-            starts = [starts]
-
-        if isinstance(ends, str):
-            ends = [ends]
-
-        if len(starts) != len(ends):
-            raise ValueError(
-                "starts and stops must have the same number of entries"
-            )
-
-        request_list = []
-
-        for observatory in observatories:
-            for sampling_period in sampling_periods:
-                for start, end in zip(starts, ends):
-                    request_list.append(
-                        {
-                            "observatory": observatory,
-                            "elements": elements,
-                            "sampling_period": sampling_period,
-                            "start": start,
-                            "end": end,
-                        }
-                    )
-
-        return pd.DataFrame(request_list)
-
     def validate_request_df(self, request_df):
         """
+        Make sure the input request dataframe has the appropriate columns
 
-        :param request_df: DESCRIPTION
-        :type request_df: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :param request_df: request dataframe
+        :type request_df: :class:`pandas.DataFrame`
+        :return: valid request dataframe
+        :rtype: :class:`pandas.DataFrame`
 
         """
 
         if not isinstance(request_df, pd.DataFrame):
-            raise TypeError(
-                f"Request input must be a pandas.DataFrame, not {type(request_df)}."
-            )
+            if isinstance(request_df, (str, Path)):
+                fn = Path(request_df)
+                if not fn.exists():
+                    raise IOError(f"File {fn} does not exist. Check path")
+                request_df = pd.read_csv(fn, infer_datetime_format=True)
+            else:
+                raise TypeError(
+                    f"Request input must be a pandas.DataFrame, not {type(request_df)}."
+                )
 
         if "run" in request_df.columns:
             if sorted(request_df.columns.tolist()) != sorted(
@@ -575,10 +528,11 @@ class USGSGeomag:
         """
         Add run id to request df
 
-        :param request_df: DESCRIPTION
-        :type request_df: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :param request_df: request dataframe
+        :type request_df: :class:`pandas.DataFrame`
+        :return: add a run number to unique time windows for each observatory
+         at each unique sampling period.
+        :rtype: :class:`pandas.DataFrame`
 
         """
 
@@ -605,10 +559,14 @@ class USGSGeomag:
     def _make_filename(self, save_path, request_df):
         """
 
-        :param request_df: DESCRIPTION
-        :type request_df: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Create filename from the information in the dataframe
+
+        The filename will look like f"usgs_geomag_{obs}_{elements}.h5"
+
+        :param request_df: request dataframe
+        :type request_df: :class:`pandas.DataFrame`
+        :return: file name derived from dataframe
+        :rtype: :class:`pathlib.Path`
 
         """
 
@@ -622,27 +580,44 @@ class USGSGeomag:
 
         return save_path
 
-    def make_mth5_from_geomag(
-        self, request_df, save_path, interact=False, **kwargs
-    ):
+    def make_mth5_from_geomag(self, request_df):
         """
-        write a mth5 to the path given
+        Download geomagnetic observatory data from USGS webservices into an
+        MTH5 using a request dataframe or csv file.
 
-        todo: make observatory be a list
+        :param request_df: DataFrame with columns
 
-        :param save_path: DESCRIPTION
-        :type save_path: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+            - 'observatory'     --> Observatory code
+            - 'type'            --> data type [ 'variation' | 'adjusted' | 'quasi-definitive' | 'definitive' ]
+            - 'elements'        --> Elements to get [D, DIST, DST, E, E-E, E-N, F, G, H, SQ, SV, UK1, UK2, UK3, UK4, X, Y, Z]
+            - 'sampling_period' --> sample period [ 1 | 60 | 3600 ]
+            - 'start'           --> Start time YYYY-MM-DDThh:mm:ss
+            - 'end'             --> End time YYYY-MM-DDThh:mm:ss
+
+        :type request_df: :class:`pandas.DataFrame`, str or Path if csv file
+
+
+        :return: if interact is True an MTH5 object is returned otherwise the
+         path to the file is returned
+        :rtype: Path or :class:`mth5.mth5.MTH5`
+
+        .. seealso:: https://www.usgs.gov/tools/web-service-geomagnetism-data
 
         """
 
         request_df = self.validate_request_df(request_df)
 
-        save_path = self._make_filename(save_path, request_df)
+        fn = self._make_filename(self.save_path, request_df)
 
-        m = MTH5(file_version=self.mth5_version)
-        m.open_mth5(save_path)
+        m = MTH5(
+            file_version=self.mth5_version,
+            compression=self.compression,
+            compression_opts=self.compression_opts,
+            shuffle=self.shuffle,
+            fletcher32=self.fletcher32,
+            data_level=self.data_level,
+        )
+        m.open_mth5(fn)
 
         if self.mth5_version in ["0.1.0"]:
             survey_group = m.survey_group
@@ -672,7 +647,7 @@ class USGSGeomag:
             )
             run_group.from_runts(run)
 
-        if interact:
+        if self.interact:
             return m
         else:
             m.close_mth5()

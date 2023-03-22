@@ -36,7 +36,10 @@ class TestMakeMTH5(unittest.TestCase):
     @classmethod
     def setUpClass(self):
 
-        self.make_mth5 = FDSN(mth5_version="0.1.0")
+        self.fdsn = FDSN(mth5_version="0.1.0")
+        self.make_mth5 = MakeMTH5(
+            mth5_version="0.1.0", interact=True, save_path=Path().cwd()
+        )
 
         channels = ["LFE", "LFN", "LFZ", "LQE", "LQN"]
         CAS04 = ["8P", "CAS04", "2020-06-02T18:00:00", "2020-07-13T19:00:00"]
@@ -57,7 +60,7 @@ class TestMakeMTH5(unittest.TestCase):
 
         # Turn list into dataframe
         self.metadata_df = pd.DataFrame(
-            request_list, columns=self.make_mth5.column_names
+            request_list, columns=self.fdsn.request_columns
         )
 
         self.metadata_df.to_csv(self.csv_fn, index=False)
@@ -68,29 +71,27 @@ class TestMakeMTH5(unittest.TestCase):
         )
 
     def test_client(self):
-        self.assertEqual(self.make_mth5.client, "IRIS")
+        self.assertEqual(self.fdsn.client, "IRIS")
 
     def test_file_version(self):
-        self.assertEqual(self.make_mth5.mth5_version, "0.1.0")
+        self.assertEqual(self.fdsn.mth5_version, "0.1.0")
 
     def test_validate_dataframe_fail(self):
         with self.subTest("bad value"):
-            self.assertRaises(
-                ValueError, self.make_mth5._validate_dataframe, []
-            )
+            self.assertRaises(ValueError, self.fdsn._validate_dataframe, [])
         with self.subTest("bad path"):
-            self.assertRaises(
-                IOError, self.make_mth5._validate_dataframe, "k.fail"
-            )
+            self.assertRaises(IOError, self.fdsn._validate_dataframe, "k.fail")
 
     def test_df_input_inventory(self):
-        inv, streams = self.make_mth5.get_inventory_from_df(
+        inv, streams = self.fdsn.get_inventory_from_df(
             self.metadata_df, data=False
         )
         with self.subTest(name="stations"):
             self.assertListEqual(
                 sorted(self.stations),
-                sorted(list(set([ss.code for ss in inv.networks[0].stations]))),
+                sorted(
+                    list(set([ss.code for ss in inv.networks[0].stations]))
+                ),
             )
         with self.subTest(name="channels_CAS04"):
             self.assertListEqual(
@@ -122,9 +123,7 @@ class TestMakeMTH5(unittest.TestCase):
             )
 
     def test_csv_input_inventory(self):
-        inv, streams = self.make_mth5.get_inventory_from_df(
-            self.csv_fn, data=False
-        )
+        inv, streams = self.fdsn.get_inventory_from_df(self.csv_fn, data=False)
         with self.subTest(name="stations"):
             self.assertListEqual(
                 sorted(self.stations),
@@ -162,23 +161,55 @@ class TestMakeMTH5(unittest.TestCase):
     def test_fail_csv_inventory(self):
         self.assertRaises(
             ValueError,
-            self.make_mth5.get_inventory_from_df,
-            *(self.metadata_df_fail, self.make_mth5.client, False),
+            self.fdsn.get_inventory_from_df,
+            *(self.metadata_df_fail, self.fdsn.client, False),
         )
 
     def test_fail_wrong_input_type(self):
         self.assertRaises(
             ValueError,
-            self.make_mth5.get_inventory_from_df,
-            *(("bad tuple", "bad_tuple"), self.make_mth5.client, False),
+            self.fdsn.get_inventory_from_df,
+            *(("bad tuple", "bad_tuple"), self.fdsn.client, False),
         )
 
     def test_fail_non_existing_file(self):
         self.assertRaises(
             IOError,
-            self.make_mth5.get_inventory_from_df,
-            *("c:\bad\file\name", self.make_mth5.client, False),
+            self.fdsn.get_inventory_from_df,
+            *("c:\bad\file\name", self.fdsn.client, False),
         )
+
+    def test_h5_parameters(self):
+        with self.subTest("compression"):
+            self.assertEqual(self.make_mth5.compression, "gzip")
+        with self.subTest("compression_options"):
+            self.assertEqual(self.make_mth5.compression_opts, 4)
+        with self.subTest("shuffle"):
+            self.assertEqual(self.make_mth5.shuffle, True)
+        with self.subTest("fletcher32"):
+            self.assertEqual(self.make_mth5.fletcher32, True)
+        with self.subTest("data_level"):
+            self.assertEqual(self.make_mth5.data_level, 1)
+        with self.subTest("file_version"):
+            self.assertEqual(self.make_mth5.mth5_version, "0.1.0")
+        with self.subTest("save_path"):
+            self.assertEqual(self.make_mth5.save_path, self.mth5_path)
+        with self.subTest("interact"):
+            self.assertEqual(self.make_mth5.interact, True)
+
+    def test_fdsn_h5_parameters(self):
+        with self.subTest("compression"):
+            self.assertEqual(self.fdsn.compression, "gzip")
+        with self.subTest("compression_options"):
+            self.assertEqual(self.fdsn.compression_opts, 4)
+        with self.subTest("shuffle"):
+            self.assertEqual(self.fdsn.shuffle, True)
+        with self.subTest("fletcher32"):
+            self.assertEqual(self.fdsn.fletcher32, True)
+        with self.subTest("data_level"):
+            self.assertEqual(self.fdsn.data_level, 1)
+        with self.subTest("file_version"):
+            self.assertEqual(self.fdsn.mth5_version, "0.1.0")
 
     @unittest.skipIf(
         "peacock" not in str(Path().cwd().as_posix()),
@@ -186,8 +217,9 @@ class TestMakeMTH5(unittest.TestCase):
     )
     def test_make_mth5(self):
         try:
-            m = self.make_mth5.make_mth5_from_fdsnclient(
-                self.metadata_df, self.mth5_path, interact=True
+            self.make_mth5.save_path = self.mth5_path
+            m = self.make_mth5.from_fdsn_client(
+                self.metadata_df, client="IRIS"
             )
 
             with self.subTest(name="stations"):

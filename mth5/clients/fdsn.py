@@ -31,7 +31,7 @@ from mth5.timeseries import RunTS
 
 class FDSN:
     def __init__(self, client="IRIS", mth5_version="0.2.0", **kwargs):
-        self.column_names = [
+        self.request_columns = [
             "network",
             "station",
             "location",
@@ -64,13 +64,13 @@ class FDSN:
                 raise ValueError(
                     f"Input must be a pandas.Dataframe not {type(df)}"
                 )
-        if df.columns.to_list() != self.column_names:
+        if df.columns.to_list() != self.request_columns:
             raise ValueError(
-                f"column names in file {df.columns} are not the expected {self.column_names}"
+                f"column names in file {df.columns} are not the expected {self.request_columns}"
             )
         return df
 
-    def make_mth5_from_fdsnclient(
+    def make_mth5_from_fdsn_client(
         self, df, path=None, client=None, interact=False
     ):
         """
@@ -461,7 +461,7 @@ class FDSN:
         inv = Inventory(networks=[], source="MTH5")
 
         # sort the values to be logically ordered
-        df.sort_values(self.column_names[:-1])
+        df.sort_values(self.request_columns[:-1])
 
         used_network = dict()
         used_station = dict()
@@ -578,7 +578,7 @@ class FDSN:
                         channel.end_date,
                     )
                     rows.append(entry)
-        return pd.DataFrame(rows, columns=self.column_names)
+        return pd.DataFrame(rows, columns=self.request_columns)
 
     def get_unique_networks_and_stations(self, df):
         """

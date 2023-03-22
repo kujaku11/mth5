@@ -20,12 +20,15 @@ Updated on Wed Aug  25 19:57:00 2021
 # =============================================================================
 
 from . import FDSN
+from . import USGSGeomag
 
 # =============================================================================
 
 
 class MakeMTH5:
-    def __init__(self, mth5_version="0.2.0", interact=False, save_path=None):
+    def __init__(
+        self, mth5_version="0.2.0", interact=False, save_path=None, **kwargs
+    ):
         """
 
         :param mth5_version: MTH5 file version, defaults to "0.2.0"
@@ -38,14 +41,16 @@ class MakeMTH5:
         """
 
         self.mth5_version = mth5_version
-        self.interact = False
-        self.save_path = None
+        self.interact = interact
+        self.save_path = save_path
         self.compression = "gzip"
         self.compression_opts = 4
         self.shuffle = True
         self.fletcher32 = True
         self.data_level = 1
-        self.file_version = "0.2.0"
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     def from_fdsn_client(self, request_df, client="IRIS"):
         """
@@ -82,9 +87,61 @@ class MakeMTH5:
 
         """
 
-        fdsn_client = FDSN(client=client, mth5_version=self.mth5_version)
-        mth5_object = fdsn_client.make_mth5_from_fdsnclient(
+        fdsn_client = FDSN(
+            client=client,
+            mth5_version=self.mth5_version,
+            compression=self.compression,
+            compression_opts=self.compression_opts,
+            shuffle=self.shuffle,
+            fletcher32=self.fletcher32,
+            data_level=self.data_level,
+        )
+        mth5_object = fdsn_client.make_mth5_from_fdsn_client(
             request_df, path=self.save_path, interact=self.interact
         )
 
         return mth5_object
+
+    def from_usgs_geomag(self, request_df):
+        """
+        Download geomagnetic observatory data from USGS webservices into an
+        MTH5 using a request dataframe or csv file.
+
+        - **observatory**: Geogmangetic observatory ID
+        - **type**: type of data to get 'adjusted'
+        - **start**: start date time to request UTC
+        - **end**: end date time to request UTC
+        - **elements**: components to get
+        - **sampling_period**: samples between measurements in seconds
+
+        :param request_df: DataFrame with columns
+
+            - 'observatory'     --> Observatory code
+            - 'type'            --> data type [ 'variation' | 'adjusted' | 'quasi-definitive' | 'definitive' ]
+            - 'elements'        --> Elements to get [D, DIST, DST, E, E-E, E-N, F, G, H, SQ, SV, UK1, UK2, UK3, UK4, X, Y, Z]
+            - 'sampling_period' --> sample period [ 1 | 60 | 3600 ]
+            - 'start'           --> Start time YYYY-MM-DDThh:mm:ss
+            - 'end'             --> End time YYYY-MM-DDThh:mm:ss
+
+        :type request_df: :class:`pandas.DataFrame`, str or Path if csv file
+
+
+        :return: if interact is True an MTH5 object is returned otherwise the
+         path to the file is returned
+        :rtype: Path or :class:`mth5.mth5.MTH5`
+
+        .. seealso:: https://www.usgs.gov/tools/web-service-geomagnetism-data
+
+        """
+
+        geomag_client = USGSGeomag(
+            mth5_version=self.mth5_version,
+            compression=self.compression,
+            compression_opts=self.compression_opts,
+            shuffle=self.shuffle,
+            fletcher32=self.fletcher32,
+            data_level=self.data_level,
+            interact=self.interact,
+        )
+
+        return geomag_client.make_mth5_from_geomag(request_df)

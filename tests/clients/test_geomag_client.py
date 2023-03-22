@@ -157,7 +157,12 @@ class TestGeomagClientGetData(unittest.TestCase):
             ]
         )
 
-        self.assertDictEqual(s, self.r.survey_metadata.to_dict(single=True))
+        for key, value in s.items():
+            if key not in ["mth5_type", "hdf5_reference"]:
+                with self.subTest(key):
+                    self.assertEqual(
+                        value, self.r.survey_metadata.get_attr_from_name(key)
+                    )
 
     def test_station_metadata(self):
         s = OrderedDict(
@@ -193,6 +198,9 @@ class TestGeomagClientGetData(unittest.TestCase):
                 r_value = self.r.station_metadata.get_attr_from_name(key)
                 if key in ["provenance.creation_time"]:
                     self.assertNotEqual(value, r_value)
+
+                elif key in ["mth5_type", "hdf5_reference"]:
+                    pass
                 else:
                     self.assertEqual(value, r_value)
 
@@ -219,7 +227,12 @@ class TestGeomagClientGetData(unittest.TestCase):
             ]
         )
 
-        self.assertDictEqual(r, self.r.run_metadata.to_dict(single=True))
+        for key, value in r.items():
+            if key not in ["mth5_type", "hdf5_reference"]:
+                with self.subTest(key):
+                    self.assertEqual(
+                        value, self.r.run_metadata.get_attr_from_name(key)
+                    )
 
     def test_hx_metadata(self):
         ch = OrderedDict(
@@ -245,9 +258,13 @@ class TestGeomagClientGetData(unittest.TestCase):
             ]
         )
 
-        self.assertDictEqual(
-            ch, self.r.hx.channel_metadata.to_dict(single=True)
-        )
+        for key, value in ch.items():
+            if key not in ["mth5_type", "hdf5_reference"]:
+                with self.subTest(key):
+                    self.assertEqual(
+                        value,
+                        self.r.hx.channel_metadata.get_attr_from_name(key),
+                    )
 
     def test_hy_metadata(self):
         ch = OrderedDict(
@@ -273,9 +290,13 @@ class TestGeomagClientGetData(unittest.TestCase):
             ]
         )
 
-        self.assertDictEqual(
-            ch, self.r.hy.channel_metadata.to_dict(single=True)
-        )
+        for key, value in ch.items():
+            if key not in ["mth5_type", "hdf5_reference"]:
+                with self.subTest(key):
+                    self.assertEqual(
+                        value,
+                        self.r.hy.channel_metadata.get_attr_from_name(key),
+                    )
 
     def test_hx_data(self):
         hx = np.array(

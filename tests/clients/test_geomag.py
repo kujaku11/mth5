@@ -42,8 +42,11 @@ class TestRequestDF(unittest.TestCase):
             }
         )
 
+    def test_fail_request_df_bad_file(self):
+        self.assertRaises(IOError, self.client.validate_request_df, "a")
+
     def test_fail_request_df_type(self):
-        self.assertRaises(TypeError, self.client.validate_request_df, "a")
+        self.assertRaises(TypeError, self.client.validate_request_df, 10)
 
     def test_fail_request_df_bad_columns(self):
         self.assertRaises(
@@ -97,7 +100,7 @@ class TestRequestDF(unittest.TestCase):
 class TestMakeMTH5FromGeomag(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.client = USGSGeomag()
+        self.client = USGSGeomag(save_path=Path().cwd())
 
         self.request_df = pd.DataFrame(
             {
@@ -120,7 +123,7 @@ class TestMakeMTH5FromGeomag(unittest.TestCase):
             }
         )
 
-        self.m = self.client.make_mth5_from_geomag(self.request_df, Path())
+        self.m = self.client.make_mth5_from_geomag(self.request_df)
 
     def test_file_exists(self):
         self.assertTrue(self.m.exists())
