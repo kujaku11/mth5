@@ -65,7 +65,7 @@ class TestMakeMTH5FromGeomag(unittest.TestCase):
                 ("datum", "WGS84"),
                 ("geographic_name", None),
                 ("hdf5_reference", "<HDF5 object reference>"),
-                ("id", None),
+                ("id", "USGS-GEOMAG"),
                 ("mth5_type", "Survey"),
                 ("name", None),
                 ("northwest_corner.latitude", 45.4),

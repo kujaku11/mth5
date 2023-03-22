@@ -621,6 +621,7 @@ class USGSGeomag:
 
         if self.mth5_version in ["0.1.0"]:
             survey_group = m.survey_group
+            survey_group.metadata.id = "USGS-GEOMAG"
         elif self.mth5_version in ["0.2.0"]:
             survey_group = m.add_survey("USGS-GEOMAG")
         else:
