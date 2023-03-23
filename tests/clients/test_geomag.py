@@ -57,7 +57,9 @@ class TestRequestDF(unittest.TestCase):
 
     def test_add_run(self):
         rdf = self.client.add_run_id(self.request_df)
-        self.assertListEqual(rdf.run.tolist(), ["001", "002", "001", "002"])
+        self.assertListEqual(
+            rdf.run.tolist(), ["sp1_001", "sp1_002", "sp1_001", "sp1_002"]
+        )
 
     def test_add_run_different_sampling_periods(self):
         request_df = pd.DataFrame(
@@ -82,7 +84,9 @@ class TestRequestDF(unittest.TestCase):
         )
 
         rdf = self.client.add_run_id(request_df)
-        self.assertListEqual(rdf.run.tolist(), ["001", "001", "001", "001"])
+        self.assertListEqual(
+            rdf.run.tolist(), ["sp1_001", "sp60_001", "sp1_001", "sp60_001"]
+        )
 
     def test_make_fn(self):
         fn = self.client._make_filename(Path(), self.request_df)
@@ -130,8 +134,7 @@ class TestMakeMTH5FromGeomag(unittest.TestCase):
 
     @classmethod
     def tearDownClass(self):
-        self.m.close_mth5()
-        self.m.filename.unlink()
+        self.m.unlink()
 
 
 # =============================================================================

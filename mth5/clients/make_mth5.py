@@ -96,6 +96,7 @@ class MakeMTH5:
             fletcher32=self.fletcher32,
             data_level=self.data_level,
         )
+
         mth5_object = fdsn_client.make_mth5_from_fdsn_client(
             request_df, path=self.save_path, interact=self.interact
         )

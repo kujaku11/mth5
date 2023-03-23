@@ -552,7 +552,7 @@ class USGSGeomag:
                     (request_df.observatory == obs)
                     & (request_df.sampling_period == sr),
                     "run",
-                ] = [f"{ii+1:03}" for ii in range(len(sr_df))]
+                ] = [f"sp{sr}_{ii+1:03}" for ii in range(len(sr_df))]
 
         return request_df
 
