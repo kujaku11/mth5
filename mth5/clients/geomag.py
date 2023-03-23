@@ -285,7 +285,7 @@ class GeomagClient:
                     f"{MTime(dt[ii]).iso_no_tz}Z",
                     f"{MTime(dt[ii + 1]).iso_no_tz}Z",
                 )
-                for ii in range(0, len(dt), 2)
+                for ii in range(len(dt) - 1)
             ]
 
             return dt_request

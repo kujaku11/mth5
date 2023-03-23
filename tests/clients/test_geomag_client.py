@@ -85,11 +85,18 @@ class TestGeomagClient(unittest.TestCase):
         self.assertEqual(self.client.end, "2020-01-01T00:00:00Z")
 
     def test_estimate_chunks(self):
-        self.client.start = "2020-01-01T00:00:00+00:00"
-        self.client.end = "2020-01-02T12:00:00+00:00"
+        self.client.start = "2021-04-05T00:00:00+00:00"
+        self.client.end = "2021-04-16T00:00:00+00:00"
 
         self.assertListEqual(
-            [("2020-01-01T00:00:00Z", "2020-01-02T12:00:00Z")],
+            [
+                ("2021-04-05T00:00:00Z", "2021-04-07T00:00:00Z"),
+                ("2021-04-07T00:00:00Z", "2021-04-09T00:00:00Z"),
+                ("2021-04-09T00:00:00Z", "2021-04-11T00:00:00Z"),
+                ("2021-04-11T00:00:00Z", "2021-04-13T00:00:00Z"),
+                ("2021-04-13T00:00:00Z", "2021-04-15T00:00:00Z"),
+                ("2021-04-15T00:00:00Z", "2021-04-16T00:00:00Z"),
+            ],
             self.client.get_chunks(),
         )
 
