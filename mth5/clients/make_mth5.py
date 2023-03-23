@@ -18,6 +18,7 @@ Updated on Wed Aug  25 19:57:00 2021
 # =============================================================================
 # Imports
 # =============================================================================
+from pathlib import Path
 
 from . import FDSN
 from . import USGSGeomag
@@ -51,6 +52,9 @@ class MakeMTH5:
 
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+        if self.save_path is None:
+            self.save_path = Path().cwd()
 
     def from_fdsn_client(self, request_df, client="IRIS"):
         """
@@ -137,6 +141,7 @@ class MakeMTH5:
 
         geomag_client = USGSGeomag(
             mth5_version=self.mth5_version,
+            save_path=self.save_path,
             compression=self.compression,
             compression_opts=self.compression_opts,
             shuffle=self.shuffle,
