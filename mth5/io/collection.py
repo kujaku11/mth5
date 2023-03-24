@@ -110,7 +110,7 @@ class Collection:
         else:
             fn_list = list(self.file_path.rglob(f"*.{extension}"))
 
-        return fn_list
+        return list(set(fn_list))
 
     def to_dataframe(self):
         """
