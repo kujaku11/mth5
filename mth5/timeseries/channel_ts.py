@@ -229,6 +229,18 @@ class ChannelTS:
     def __gt__(self, other):
         return not self.__lt__(other)
 
+    def __add__(self, other):
+        if not isinstance(other, ChannelTS):
+            raise TypeError(f"Cannot combine {type(other)} with ChannelTS.")
+
+        if self.component != other.component:
+            raise ValueError(
+                "Cannot combine channels with different components. "
+                f"{self.component} != {other.component}"
+            )
+
+        combined = xr.combine_by_coords()
+
     def _initialize_metadata(self):
         """
         Create a single `Survey` object to store all metadata
@@ -691,6 +703,7 @@ class ChannelTS:
         # more metadata down the road.
         self._ts.attrs["station.id"] = self.station_metadata.id
         self._ts.attrs["run.id"] = self.run_metadata.id
+        self._ts.name = self.component
 
     @property
     def component(self):
