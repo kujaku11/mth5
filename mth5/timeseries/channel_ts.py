@@ -1239,8 +1239,14 @@ class ChannelTS:
         :rtype: :class:`mth5.timeseries.ChannelTS`
 
         """
+        if new_sample_rate is not None:
+            decimation_factor = int(self.sample_rate / new_sample_rate)
+            merge_sample_rate = new_sample_rate
+        else:
+            merge_sample_rate = self.sample_rate
+
+        combine_list = [self._ts]
         if isinstance(other, (list, tuple)):
-            other_list = []
             for ch in other:
                 if not isinstance(ch, ChannelTS):
                     raise TypeError(
@@ -1252,8 +1258,9 @@ class ChannelTS:
                         "Cannot combine channels with different components. "
                         f"{self.component} != {ch.component}"
                     )
-
-                other_list.append(other._ts)
+                if new_sample_rate is not None:
+                    ch = ch.resample(decimation_factor)
+                combine_list.append(ch._ts)
         else:
             if not isinstance(other, ChannelTS):
                 raise TypeError(f"Cannot combine {type(other)} with ChannelTS.")
@@ -1263,15 +1270,18 @@ class ChannelTS:
                     "Cannot combine channels with different components. "
                     f"{self.component} != {other.component}"
                 )
-            other_list = [other._ts]
+            if new_sample_rate is not None:
+                other = other.resample(decimation_factor)
+            combine_list.append(other._ts)
 
         # combine into a data set use override to keep attrs from original
+
         combined_ds = xr.combine_by_coords(
-            [self._ts, other_list], combine_attrs="override"
+            combine_list, combine_attrs="override"
         )
 
         n_samples = (
-            self.sample_rate
+            merge_sample_rate
             * float(
                 combined_ds.time.max().values - combined_ds.time.min().values
             )
@@ -1280,14 +1290,19 @@ class ChannelTS:
 
         new_dt_index = make_dt_coordinates(
             combined_ds.time.min().values,
-            self.sample_rate,
+            merge_sample_rate,
             n_samples,
             self.logger,
         )
 
+        channel_metadata = self.channel_metadata.copy()
+        channel_metadata.sample_rate = merge_sample_rate
+        run_metadata = self.run_metadata.copy()
+        run_metadata.sample_rate = merge_sample_rate
+
         new_channel = ChannelTS(
             channel_type=self.channel_metadata.type,
-            channel_metadata=self.channel_metadata,
+            channel_metadata=channel_metadata,
             run_metadata=self.run_metadata,
             station_metadata=self.station_metadata,
             survey_metadata=self.survey_metadata,
