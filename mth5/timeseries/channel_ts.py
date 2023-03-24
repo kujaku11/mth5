@@ -1221,7 +1221,7 @@ class ChannelTS:
                 metadata=self.channel_metadata,
             )
 
-    def merge(self, other, gap_method="nearest", new_sample_rate=None):
+    def merge(self, other, gap_method="slinear", new_sample_rate=None):
         """
         merg two channels or list of channels together in the following steps
 
@@ -1308,9 +1308,14 @@ class ChannelTS:
             survey_metadata=self.survey_metadata,
         )
 
-        new_channel._ts = combined_ds.reindex(
-            {"time": new_dt_index}, method="nearest"
-        ).to_array()
+        new_channel._ts = (
+            combined_ds.reindex(
+                {"time": new_dt_index},
+                method=None,
+            )
+            .to_array()
+            .interpolate_na(dim="time", method=gap_method)
+        )
 
         new_channel.channel_metadata.time_period.start = new_channel.start
         new_channel.channel_metadata.time_period.end = new_channel.end
