@@ -1189,7 +1189,7 @@ class ChannelTS:
         return new_ch_ts
 
     # decimate data
-    def resample(self, dec_factor=1, inplace=False):
+    def resample(self, new_sample_rate, inplace=False):
         """
         decimate the data by using scipy.signal.decimate
 
@@ -1200,12 +1200,12 @@ class ChannelTS:
 
         """
 
-        new_dt_freq = "{0:.0f}N".format(1e9 / (self.sample_rate / dec_factor))
+        new_dt_freq = "{0:.0f}N".format(1e9 / new_sample_rate)
 
         new_ts = self._ts.resample(time=new_dt_freq).nearest(
             tolerance=new_dt_freq
         )
-        new_ts.attrs["sample_rate"] = self.sample_rate / dec_factor
+        new_ts.attrs["sample_rate"] = new_sample_rate
         self.channel_metadata.sample_rate = new_ts.attrs["sample_rate"]
 
         if inplace:
@@ -1242,7 +1242,6 @@ class ChannelTS:
 
         """
         if new_sample_rate is not None:
-            decimation_factor = int(self.sample_rate / new_sample_rate)
             merge_sample_rate = new_sample_rate
         else:
             merge_sample_rate = self.sample_rate
@@ -1261,7 +1260,7 @@ class ChannelTS:
                         f"{self.component} != {ch.component}"
                     )
                 if new_sample_rate is not None:
-                    ch = ch.resample(decimation_factor)
+                    ch = ch.resample(new_sample_rate)
                 combine_list.append(ch._ts)
         else:
             if not isinstance(other, ChannelTS):
@@ -1273,7 +1272,7 @@ class ChannelTS:
                     f"{self.component} != {other.component}"
                 )
             if new_sample_rate is not None:
-                other = other.resample(decimation_factor)
+                other = other.resample(new_sample_rate)
             combine_list.append(other._ts)
 
         # combine into a data set use override to keep attrs from original

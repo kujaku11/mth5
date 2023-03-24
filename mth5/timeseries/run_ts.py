@@ -30,7 +30,7 @@ from mt_metadata.utils.mttime import MTime
 from mt_metadata.utils.list_dict import ListDict
 from mt_metadata.timeseries.filters import ChannelResponseFilter
 
-from .channel_ts import ChannelTS
+from .channel_ts import ChannelTS, make_dt_coordinates
 from mth5.utils.mth5_logger import setup_logger
 
 from obspy.core import Stream
@@ -90,6 +90,63 @@ class RunTS:
 
     def __repr__(self):
         return self.__str__()
+
+    def __add__(self, other):
+        """
+        Add two runs together in the following steps
+
+        1. xr.combine_by_coords([original, other])
+        2. compute monotonic time index
+        3. reindex(new_time_index, method='nearest')
+
+        If you want a different method or more control use merge
+
+        :param other: Another run
+        :type other: :class:`mth5.timeseries.RunTS`
+        :raises TypeError: If input is not a RunTS
+        :raises ValueError: if the components are different
+        :return: Combined channel with monotonic time index and same metadata
+        :rtype: :class:`mth5.timeseries.RunTS`
+
+        """
+        if not isinstance(other, RunTS):
+            raise TypeError(f"Cannot combine {type(other)} with RunTS.")
+
+        # combine into a data set use override to keep attrs from original
+        combined_ds = xr.combine_by_coords(
+            [self.dataset, other.dataset], combine_attrs="override"
+        )
+
+        n_samples = (
+            self.sample_rate
+            * float(
+                combined_ds.time.max().values - combined_ds.time.min().values
+            )
+            / 1e9
+        ) + 1
+
+        new_dt_index = make_dt_coordinates(
+            combined_ds.time.min().values,
+            self.sample_rate,
+            n_samples,
+            self.logger,
+        )
+
+        new_run = RunTS(
+            run_metadata=self.run_metadata,
+            station_metadata=self.station_metadata,
+            survey_metadata=self.survey_metadata,
+        )
+
+        new_run.dataset = combined_ds.reindex(
+            {"time": new_dt_index}, method=None
+        ).interpolate_na(dim="time", method="slinear")
+
+        new_run.run_metadata.update_time_period()
+        new_run.station_metadata.update_time_period()
+        new_run.survey_metadata.update_time_period()
+
+        return new_run
 
     def _initialize_metadata(self):
         """
@@ -831,6 +888,124 @@ class RunTS:
             ch_ts = getattr(self, channel)
             calibrated_ch_ts = ch_ts.remove_instrument_response(**kwargs)
             new_run.add_channel(calibrated_ch_ts)
+
+        return new_run
+
+    def resample(self, new_sample_rate, inplace=False):
+        """
+        Resample data to new sample rate.
+
+        :param new_sample_rate: DESCRIPTION
+        :type new_sample_rate: TYPE
+        :param inplace: DESCRIPTION, defaults to False
+        :type inplace: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        new_dt_freq = "{0:.0f}N".format(1e9 / (new_sample_rate))
+
+        new_ds = self.dataset.resample(time=new_dt_freq).nearest(
+            tolerance=new_dt_freq
+        )
+        new_ds.attrs["sample_rate"] = new_sample_rate
+        self.run_metadata.sample_rate = new_ds.attrs["sample_rate"]
+
+        if inplace:
+            self.dataset = new_ds
+        else:
+            # return new_ts
+            return RunTS(
+                new_ds,
+                run_metadata=self.run_metadata,
+                station_metadata=self.station_metadata,
+                survey_metadata=self.survey_metadata,
+            )
+
+    def merge(self, other, gap_method="slinear", new_sample_rate=None):
+        """
+        merg two runs or list of runs together in the following steps
+
+        1. xr.combine_by_coords([original, other])
+        2. compute monotonic time index
+        3. reindex(new_time_index, method=gap_method)
+
+        If you want a different method or more control use merge
+
+        :param other: Another run
+        :type other: :class:`mth5.timeseries.RunTS`
+        :raises TypeError: If input is not a RunTS
+        :raises ValueError: if the components are different
+        :return: Combined run with monotonic time index and same metadata
+        :rtype: :class:`mth5.timeseries.RunTS`
+
+        """
+        if new_sample_rate is not None:
+            merge_sample_rate = new_sample_rate
+        else:
+            merge_sample_rate = self.sample_rate
+
+        combine_list = [self.dataset]
+        if isinstance(other, (list, tuple)):
+            for run in other:
+                if not isinstance(run, RunTS):
+                    raise TypeError(f"Cannot combine {type(run)} with RunTS.")
+
+                if new_sample_rate is not None:
+                    run = run.resample(new_sample_rate)
+                combine_list.append(run.dataset)
+        else:
+            if not isinstance(other, RunTS):
+                raise TypeError(f"Cannot combine {type(other)} with RunTS.")
+
+            if self.component != other.component:
+                raise ValueError(
+                    "Cannot combine channels with different components. "
+                    f"{self.component} != {other.component}"
+                )
+            if new_sample_rate is not None:
+                other = other.resample(new_sample_rate)
+            combine_list.append(other._ts)
+
+        # combine into a data set use override to keep attrs from original
+
+        combined_ds = xr.combine_by_coords(
+            combine_list, combine_attrs="override"
+        )
+
+        n_samples = (
+            merge_sample_rate
+            * float(
+                combined_ds.time.max().values - combined_ds.time.min().values
+            )
+            / 1e9
+        ) + 1
+
+        new_dt_index = make_dt_coordinates(
+            combined_ds.time.min().values,
+            merge_sample_rate,
+            n_samples,
+            self.logger,
+        )
+
+        run_metadata = self.run_metadata.copy()
+        run_metadata.sample_rate = merge_sample_rate
+
+        new_run = RunTS(
+            run_metadata=self.run_metadata,
+            station_metadata=self.station_metadata,
+            survey_metadata=self.survey_metadata,
+        )
+
+        new_run.dataset = combined_ds.reindex(
+            {"time": new_dt_index},
+            method=None,
+        ).interpolate_na(dim="time", method=gap_method)
+
+        new_run.run_metadata.update_time_period()
+        new_run.station_metadata.update_time_period()
+        new_run.survey_metadata.update_time_period()
 
         return new_run
 
