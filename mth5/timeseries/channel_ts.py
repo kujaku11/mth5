@@ -238,8 +238,38 @@ class ChannelTS:
                 "Cannot combine channels with different components. "
                 f"{self.component} != {other.component}"
             )
+        if self._ts.name != self.component:
+            self._ts.name = self.component
+        if other._ts.name != self.component:
+            other._ts.name = self.component
 
-        combined = xr.combine_by_coords()
+        # combine into a data set
+        combined_ds = xr.combine_by_coords([self._ts, other._ts])
+
+        n_samples = (
+            self.sample_rate
+            * float(
+                combined_ds.time.max().values - combined_ds.time.min().values
+            )
+            / 1e9
+        )
+
+        new_dt_index = make_dt_coordinates(
+            combined_ds.time.min().values,
+            self.sample_rate,
+            n_samples,
+            self.logger,
+        )
+
+        new_channel = ChannelTS()
+        new_channel.survey_metadata = self.survey_metadata
+
+        new_channel._ts = combined_ds.reindex(
+            {"time": new_dt_index}, method="nearest"
+        ).to_array()
+        new_channel._update_xarray_metadata()
+
+        return new_channel
 
     def _initialize_metadata(self):
         """
