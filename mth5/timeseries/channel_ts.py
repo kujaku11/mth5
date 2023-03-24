@@ -262,7 +262,7 @@ class ChannelTS:
 
         # combine into a data set use override to keep attrs from original
         combined_ds = xr.combine_by_coords(
-            [self._ts, other._ts], combine_attrs="drop_conflicts"
+            [self._ts, other._ts], combine_attrs="override"
         )
 
         n_samples = (
@@ -271,7 +271,7 @@ class ChannelTS:
                 combined_ds.time.max().values - combined_ds.time.min().values
             )
             / 1e9
-        )
+        ) + 1
 
         new_dt_index = make_dt_coordinates(
             combined_ds.time.min().values,
@@ -280,14 +280,24 @@ class ChannelTS:
             self.logger,
         )
 
-        new_channel = ChannelTS()
+        new_channel = ChannelTS(
+            channel_type=self.channel_metadata.type,
+            channel_metadata=self.channel_metadata,
+            run_metadata=self.run_metadata,
+            station_metadata=self.station_metadata,
+            survey_metadata=self.survey_metadata,
+        )
+
         new_channel._ts = combined_ds.reindex(
             {"time": new_dt_index}, method="nearest"
         ).to_array()
-        new_channel.survey_metadata = self.survey_metadata
-        new_channel.station_metadata = self.station_metadata
-        new_channel.run_metadata = self.run_metadata
-        new_channel.channel_metadata = self.channel_metadata
+
+        new_channel.channel_metadata.time_period.start = new_channel.start
+        new_channel.channel_metadata.time_period.end = new_channel.end
+
+        new_channel.run_metadata.update_time_period()
+        new_channel.station_metadata.update_time_period()
+        new_channel.survey_metadata.update_time_period()
 
         new_channel._update_xarray_metadata()
 
@@ -814,12 +824,11 @@ class ChannelTS:
             "Cannot set the number of samples. Use `ChannelTS.resample` or `get_slice`"
         )
 
-    @property
     def has_data(self):
         """
         check to see if there is an index in the time series
         """
-        if len(self._ts) > 1:
+        if self._ts.data.size > 1:
             if isinstance(
                 self._ts.indexes["time"][0],
                 pd._libs.tslibs.timestamps.Timestamp,
@@ -833,7 +842,7 @@ class ChannelTS:
     @property
     def sample_rate(self):
         """sample rate in samples/second"""
-        if self.has_data:
+        if self.has_data():
             # this is more accurate for high sample rates, the way
             # pandas.date_range rounds nanoseconds is not consistent between
             # samples, therefore taking the median provides better results
@@ -871,7 +880,7 @@ class ChannelTS:
 
         type float
         """
-        if self.has_data:
+        if self.has_data():
             self.logger.warning(
                 "Resetting sample_rate assumes same start time and "
                 + "same number of samples, resulting in new end time. "
@@ -911,7 +920,7 @@ class ChannelTS:
     @property
     def start(self):
         """MTime object"""
-        if self.has_data:
+        if self.has_data():
             return MTime(self._ts.coords.indexes["time"][0].isoformat())
         else:
             self.logger.debug(
@@ -939,7 +948,7 @@ class ChannelTS:
         if not isinstance(start_time, MTime):
             start_time = MTime(start_time)
         self.channel_metadata.time_period.start = start_time.iso_str
-        if self.has_data:
+        if self.has_data():
             if start_time == MTime(
                 self._ts.coords.indexes["time"][0].isoformat()
             ):
@@ -962,7 +971,7 @@ class ChannelTS:
     @property
     def end(self):
         """MTime object"""
-        if self.has_data:
+        if self.has_data():
             return MTime(self._ts.coords.indexes["time"][-1].isoformat())
         else:
             self.logger.debug(
@@ -1211,6 +1220,83 @@ class ChannelTS:
                 data=new_ts,
                 metadata=self.channel_metadata,
             )
+
+    def merge(self, other, gap_method="nearest"):
+        """
+        merg two channels or list of channels together in the following steps
+
+        1. xr.combine_by_coords([original, other])
+        2. compute monotonic time index
+        3. reindex(new_time_index, method=gap_method)
+
+        If you want a different method or more control use merge
+
+        :param other: Another channel
+        :type other: :class:`mth5.timeseries.ChannelTS`
+        :raises TypeError: If input is not a ChannelTS
+        :raises ValueError: if the components are different
+        :return: Combined channel with monotonic time index and same metadata
+        :rtype: :class:`mth5.timeseries.ChannelTS`
+
+        """
+        if isinstance(other, (list, tuple)):
+            other_list = []
+            for ch in other:
+                if not isinstance(ch, ChannelTS):
+                    raise TypeError(
+                        f"Cannot combine {type(ch)} with ChannelTS."
+                    )
+
+                if self.component != ch.component:
+                    raise ValueError(
+                        "Cannot combine channels with different components. "
+                        f"{self.component} != {ch.component}"
+                    )
+
+                other_list.append(other._ts)
+        else:
+            if not isinstance(other, ChannelTS):
+                raise TypeError(f"Cannot combine {type(other)} with ChannelTS.")
+
+            if self.component != other.component:
+                raise ValueError(
+                    "Cannot combine channels with different components. "
+                    f"{self.component} != {other.component}"
+                )
+            other_list = [other._ts]
+
+        # combine into a data set use override to keep attrs from original
+        combined_ds = xr.combine_by_coords(
+            [self._ts, other_list], combine_attrs="override"
+        )
+
+        n_samples = (
+            self.sample_rate
+            * float(
+                combined_ds.time.max().values - combined_ds.time.min().values
+            )
+            / 1e9
+        )
+
+        new_dt_index = make_dt_coordinates(
+            combined_ds.time.min().values,
+            self.sample_rate,
+            n_samples,
+            self.logger,
+        )
+
+        new_channel = ChannelTS()
+        new_channel._ts = combined_ds.reindex(
+            {"time": new_dt_index}, method=gap_method
+        ).to_array()
+        new_channel.survey_metadata = self.survey_metadata
+        new_channel.station_metadata = self.station_metadata
+        new_channel.run_metadata = self.run_metadata
+        new_channel.channel_metadata = self.channel_metadata
+
+        new_channel._update_xarray_metadata()
+
+        return new_channel
 
     def to_xarray(self):
         """

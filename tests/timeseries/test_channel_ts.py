@@ -19,7 +19,6 @@ import numpy as np
 import pandas as pd
 
 from mth5 import timeseries
-from mth5.utils.exceptions import MTTSError
 
 from mt_metadata import timeseries as metadata
 from mt_metadata.timeseries.filters import CoefficientFilter
@@ -419,6 +418,266 @@ class TestChannelTS(unittest.TestCase):
 
         with self.subTest("station metadata"):
             self.assertEqual(new_ts.station_metadata, new_ts.station_metadata)
+
+
+class TestAddChannels(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.survey_metadata = metadata.Survey(id="test")
+
+        self.station_metadata = metadata.Station(id="mt01")
+        self.station_metadata.location.latitude = 40
+        self.station_metadata.location.longitude = -112
+        self.station_metadata.location.elevation = 120
+
+        self.run_metadata = metadata.Run(id="001")
+
+        self.channel_metadata = metadata.Electric(component="ex", sample_rate=1)
+        self.channel_metadata.time_period.start = "2020-01-01T00:00:00+00:00"
+        self.channel_metadata.time_period.end = "2020-01-01T00:00:59+00:00"
+
+        self.channel_metadata2 = metadata.Electric(
+            component="ex", sample_rate=1
+        )
+        self.channel_metadata2.time_period.start = "2020-01-01T00:01:10"
+        self.channel_metadata2.time_period.end = "2020-01-01T00:02:09"
+
+        self.combined_start = "2020-01-01T00:00:00+00:00"
+        self.combined_end = "2020-01-01T00:02:09+00:00"
+
+        self.ex1 = timeseries.ChannelTS(
+            channel_type="electric",
+            data=np.linspace(0, 59, 60),
+            channel_metadata=self.channel_metadata,
+            survey_metadata=self.survey_metadata,
+            station_metadata=self.station_metadata,
+            run_metadata=self.run_metadata,
+        )
+        self.ex2 = timeseries.ChannelTS(
+            channel_type="electric",
+            data=np.linspace(70, 69 + 60, 60),
+            channel_metadata=self.channel_metadata2,
+        )
+
+        self.combined_ex = self.ex1 + self.ex2
+
+    def test_survey_metadata(self):
+        with self.subTest("id"):
+            self.assertEqual(
+                self.survey_metadata.id, self.combined_ex.survey_metadata.id
+            )
+        with self.subTest("start"):
+            self.assertEqual(
+                self.combined_start,
+                self.combined_ex.survey_metadata.time_period.start,
+            )
+        with self.subTest("end"):
+            self.assertEqual(
+                self.combined_end,
+                self.combined_ex.survey_metadata.time_period.end,
+            )
+
+    def test_station_metadata(self):
+        for key in [
+            "id",
+            "location.latitude",
+            "location.longitude",
+            "location.elevation",
+        ]:
+            with self.subTest(key):
+                self.assertEqual(
+                    self.station_metadata.get_attr_from_name(key),
+                    self.combined_ex.station_metadata.get_attr_from_name(key),
+                )
+
+        with self.subTest("start"):
+            self.assertEqual(
+                self.combined_start,
+                self.combined_ex.station_metadata.time_period.start,
+            )
+        with self.subTest("end"):
+            self.assertEqual(
+                self.combined_end,
+                self.combined_ex.station_metadata.time_period.end,
+            )
+
+    def test_run_metadata(self):
+        with self.subTest("id"):
+            self.assertEqual(
+                self.run_metadata.id, self.combined_ex.run_metadata.id
+            )
+        with self.subTest("start"):
+            self.assertEqual(
+                self.combined_start,
+                self.combined_ex.run_metadata.time_period.start,
+            )
+        with self.subTest("end"):
+            self.assertEqual(
+                self.combined_end,
+                self.combined_ex.run_metadata.time_period.end,
+            )
+
+    def test_channel_metadata(self):
+        with self.subTest("component"):
+            self.assertEqual(
+                self.channel_metadata.component,
+                self.combined_ex.channel_metadata.component,
+            )
+        with self.subTest("start"):
+            self.assertEqual(
+                self.combined_start,
+                self.combined_ex.channel_metadata.time_period.start,
+            )
+        with self.subTest("end"):
+            self.assertEqual(
+                self.combined_end,
+                self.combined_ex.channel_metadata.time_period.end,
+            )
+
+    def test_data(self):
+        data = np.array(
+            [
+                [
+                    0.0,
+                    1.0,
+                    2.0,
+                    3.0,
+                    4.0,
+                    5.0,
+                    6.0,
+                    7.0,
+                    8.0,
+                    9.0,
+                    10.0,
+                    11.0,
+                    12.0,
+                    13.0,
+                    14.0,
+                    15.0,
+                    16.0,
+                    17.0,
+                    18.0,
+                    19.0,
+                    20.0,
+                    21.0,
+                    22.0,
+                    23.0,
+                    24.0,
+                    25.0,
+                    26.0,
+                    27.0,
+                    28.0,
+                    29.0,
+                    30.0,
+                    31.0,
+                    32.0,
+                    33.0,
+                    34.0,
+                    35.0,
+                    36.0,
+                    37.0,
+                    38.0,
+                    39.0,
+                    40.0,
+                    41.0,
+                    42.0,
+                    43.0,
+                    44.0,
+                    45.0,
+                    46.0,
+                    47.0,
+                    48.0,
+                    49.0,
+                    50.0,
+                    51.0,
+                    52.0,
+                    53.0,
+                    54.0,
+                    55.0,
+                    56.0,
+                    57.0,
+                    58.0,
+                    59.0,
+                    59.0,
+                    59.0,
+                    59.0,
+                    59.0,
+                    59.0,
+                    70.0,
+                    70.0,
+                    70.0,
+                    70.0,
+                    70.0,
+                    70.0,
+                    71.0,
+                    72.0,
+                    73.0,
+                    74.0,
+                    75.0,
+                    76.0,
+                    77.0,
+                    78.0,
+                    79.0,
+                    80.0,
+                    81.0,
+                    82.0,
+                    83.0,
+                    84.0,
+                    85.0,
+                    86.0,
+                    87.0,
+                    88.0,
+                    89.0,
+                    90.0,
+                    91.0,
+                    92.0,
+                    93.0,
+                    94.0,
+                    95.0,
+                    96.0,
+                    97.0,
+                    98.0,
+                    99.0,
+                    100.0,
+                    101.0,
+                    102.0,
+                    103.0,
+                    104.0,
+                    105.0,
+                    106.0,
+                    107.0,
+                    108.0,
+                    109.0,
+                    110.0,
+                    111.0,
+                    112.0,
+                    113.0,
+                    114.0,
+                    115.0,
+                    116.0,
+                    117.0,
+                    118.0,
+                    119.0,
+                    120.0,
+                    121.0,
+                    122.0,
+                    123.0,
+                    124.0,
+                    125.0,
+                    126.0,
+                    127.0,
+                    128.0,
+                    129.0,
+                ]
+            ]
+        )
+        self.assertTrue(np.all(data == self.combined_ex.ts))
+
+    def test_data_size(self):
+        self.assertEqual(130, self.combined_ex.ts.size)
+
+    def test_has_data(self):
+        self.assertEqual(True, self.combined_ex.has_data())
 
 
 # =============================================================================
