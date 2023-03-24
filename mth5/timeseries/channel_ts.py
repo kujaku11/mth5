@@ -230,6 +230,23 @@ class ChannelTS:
         return not self.__lt__(other)
 
     def __add__(self, other):
+        """
+        Add two channels together in the following steps
+
+        1. xr.combine_by_coords([original, other])
+        2. compute monotonic time index
+        3. reindex(new_time_index, method='nearest')
+
+        If you want a different method or more control use merge
+
+        :param other: Another channel
+        :type other: :class:`mth5.timeseries.ChannelTS`
+        :raises TypeError: If input is not a ChannelTS
+        :raises ValueError: if the components are different
+        :return: Combined channel with monotonic time index and same metadata
+        :rtype: :class:`mth5.timeseries.ChannelTS`
+
+        """
         if not isinstance(other, ChannelTS):
             raise TypeError(f"Cannot combine {type(other)} with ChannelTS.")
 
@@ -243,8 +260,10 @@ class ChannelTS:
         if other._ts.name != self.component:
             other._ts.name = self.component
 
-        # combine into a data set
-        combined_ds = xr.combine_by_coords([self._ts, other._ts])
+        # combine into a data set use override to keep attrs from original
+        combined_ds = xr.combine_by_coords(
+            [self._ts, other._ts], combine_attrs="drop_conflicts"
+        )
 
         n_samples = (
             self.sample_rate
@@ -262,11 +281,14 @@ class ChannelTS:
         )
 
         new_channel = ChannelTS()
-        new_channel.survey_metadata = self.survey_metadata
-
         new_channel._ts = combined_ds.reindex(
             {"time": new_dt_index}, method="nearest"
         ).to_array()
+        new_channel.survey_metadata = self.survey_metadata
+        new_channel.station_metadata = self.station_metadata
+        new_channel.run_metadata = self.run_metadata
+        new_channel.channel_metadata = self.channel_metadata
+
         new_channel._update_xarray_metadata()
 
         return new_channel
