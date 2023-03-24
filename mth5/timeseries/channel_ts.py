@@ -1221,7 +1221,7 @@ class ChannelTS:
                 metadata=self.channel_metadata,
             )
 
-    def merge(self, other, gap_method="nearest"):
+    def merge(self, other, gap_method="nearest", new_sample_rate=None):
         """
         merg two channels or list of channels together in the following steps
 
@@ -1276,7 +1276,7 @@ class ChannelTS:
                 combined_ds.time.max().values - combined_ds.time.min().values
             )
             / 1e9
-        )
+        ) + 1
 
         new_dt_index = make_dt_coordinates(
             combined_ds.time.min().values,
@@ -1285,14 +1285,24 @@ class ChannelTS:
             self.logger,
         )
 
-        new_channel = ChannelTS()
+        new_channel = ChannelTS(
+            channel_type=self.channel_metadata.type,
+            channel_metadata=self.channel_metadata,
+            run_metadata=self.run_metadata,
+            station_metadata=self.station_metadata,
+            survey_metadata=self.survey_metadata,
+        )
+
         new_channel._ts = combined_ds.reindex(
-            {"time": new_dt_index}, method=gap_method
+            {"time": new_dt_index}, method="nearest"
         ).to_array()
-        new_channel.survey_metadata = self.survey_metadata
-        new_channel.station_metadata = self.station_metadata
-        new_channel.run_metadata = self.run_metadata
-        new_channel.channel_metadata = self.channel_metadata
+
+        new_channel.channel_metadata.time_period.start = new_channel.start
+        new_channel.channel_metadata.time_period.end = new_channel.end
+
+        new_channel.run_metadata.update_time_period()
+        new_channel.station_metadata.update_time_period()
+        new_channel.survey_metadata.update_time_period()
 
         new_channel._update_xarray_metadata()
 
