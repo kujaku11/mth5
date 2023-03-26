@@ -16,11 +16,9 @@ Created on Tue Jun 30 16:38:27 2020
 # =============================================================================
 
 import unittest
-
 import numpy as np
 
 from mth5.timeseries import ChannelTS, RunTS
-from mth5.utils.exceptions import MTTSError
 
 from mt_metadata.utils.mttime import MTime
 import mt_metadata.timeseries as metadata
@@ -34,6 +32,7 @@ from mt_metadata.timeseries.filters import (
 # =============================================================================
 class TestRunTS(unittest.TestCase):
     def setUp(self):
+        np.random.seed(0)
         self.run = RunTS()
         self.maxDiff = None
         self.start = "2015-01-08T19:49:18+00:00"
@@ -350,6 +349,98 @@ class TestRunTS(unittest.TestCase):
 
             with self.subTest("npts"):
                 self.assertEqual(tr.stats.npts, self.npts)
+
+
+class TestMergeRunTS(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        np.random.seed(0)
+        self.maxDiff = None
+        self.sample_rate = 8
+        self.npts = 4096
+        self.start_01 = "2015-01-08T19:49:18+00:00"
+        self.end_01 = "2015-01-08T19:57:49.875000"
+        self.start_02 = "2015-01-08T19:57:52+00:00"
+        self.end_02 = "2015-01-08T20:06:23.875000+00:00"
+
+        pz1 = PoleZeroFilter(
+            units_in="volts", units_out="nanotesla", name="filter_1"
+        )
+        pz1.poles = [
+            (-6.283185 + 10.882477j),
+            (-6.283185 - 10.882477j),
+            (-12.566371 + 0j),
+        ]
+        pz1.zeros = []
+        pz1.normalization_factor = 18244400
+        pz2 = pz1.copy()
+        pz2.name = "filter_2"
+
+        self.cr_01 = ChannelResponseFilter(filters_list=[pz1])
+        self.cr_02 = ChannelResponseFilter(filters_list=[pz2])
+
+        self.run_01 = RunTS()
+        self.ey_01 = ChannelTS(
+            "electric",
+            data=np.random.rand(self.npts),
+            channel_metadata={
+                "electric": {
+                    "component": "Ey",
+                    "sample_rate": self.sample_rate,
+                    "time_period.start": self.start,
+                }
+            },
+            channel_response_filter=self.cr_01,
+        )
+        self.hx_01 = ChannelTS(
+            "magnetic",
+            data=np.random.rand(self.npts),
+            channel_metadata={
+                "magnetic": {
+                    "component": "hx",
+                    "sample_rate": self.sample_rate,
+                    "time_period.start": self.start,
+                }
+            },
+            channel_response_filter=self.cr_01,
+        )
+
+        self.run_01.set_dataset([self.ey_01, self.hx_01])
+
+        self.run_02 = RunTS()
+        self.ey_02 = ChannelTS(
+            "electric",
+            data=np.random.rand(self.npts),
+            channel_metadata={
+                "electric": {
+                    "component": "Ey",
+                    "sample_rate": self.sample_rate,
+                    "time_period.start": self.start,
+                }
+            },
+            channel_response_filter=self.cr_02,
+        )
+        self.hx_02 = ChannelTS(
+            "magnetic",
+            data=np.random.rand(self.npts),
+            channel_metadata={
+                "magnetic": {
+                    "component": "hx",
+                    "sample_rate": self.sample_rate,
+                    "time_period.start": self.start,
+                }
+            },
+            channel_response_filter=self.cr_02,
+        )
+
+        self.run_02.set_dataset([self.ey_02, self.hx_02])
+
+        self.combined_run = self.run_01 + self.run_02
+        self.merged_run = self.run_01.merge(self.run_02)
+        self.merged_run_sr01 = self.run_01.merge(self.run_02, new_sample_rate=1)
+
+    def test_add_runs(self):
+        combined_run = self.run_01 + self.run_02
 
 
 # =============================================================================

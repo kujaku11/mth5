@@ -136,6 +136,7 @@ class RunTS:
             run_metadata=self.run_metadata,
             station_metadata=self.station_metadata,
             survey_metadata=self.survey_metadata,
+            channel_response_filter=self.channel_response_filter,
         )
 
         new_run.dataset = combined_ds.reindex(
@@ -996,6 +997,7 @@ class RunTS:
             run_metadata=self.run_metadata,
             station_metadata=self.station_metadata,
             survey_metadata=self.survey_metadata,
+            channel_response_filter=self.channel_response_filter,
         )
 
         new_run.dataset = combined_ds.reindex(
