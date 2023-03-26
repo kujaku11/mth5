@@ -57,9 +57,6 @@ class TestChannelTS(unittest.TestCase):
             self.ts.channel_metadata.to_dict(), auxiliary_meta.to_dict()
         )
 
-    def test_input_type_fail(self):
-        self.assertRaises(ValueError, timeseries.ChannelTS, "temperature")
-
     def test_set_channel_fail(self):
         self.assertRaises(
             TypeError, timeseries.ChannelTS, **{"channel_metadata": []}
@@ -82,11 +79,8 @@ class TestChannelTS(unittest.TestCase):
                     ch.capitalize(), self.ts._validate_channel_type(ch)
                 )
 
-    def test_validate_channel_type_fail(self):
-        def set_ch_type(value):
-            self.ts._validate_channel_type(value)
-
-        self.assertRaises(ValueError, set_ch_type, "frogs")
+    def test_validate_channel_type_auxiliary(self):
+        self.assertEqual("Auxiliary", self.ts._validate_channel_type("frogs"))
 
     def test_validate_channel_metadata(self):
         self.assertEqual(
@@ -418,6 +412,74 @@ class TestChannelTS(unittest.TestCase):
 
         with self.subTest("station metadata"):
             self.assertEqual(new_ts.station_metadata, new_ts.station_metadata)
+
+
+class TestChannelTS2ObspyTrace(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.ch = timeseries.ChannelTS(
+            "auxiliary",
+            data=np.random.rand(4096),
+            channel_metadata={
+                "auxiliary": {
+                    "time_period.start": "2020-01-01T12:00:00",
+                    "sample_rate": 8,
+                    "component": "temp",
+                    "type": "temperature",
+                }
+            },
+            station_metadata={"Station": {"id": "mt01"}},
+            run_metadata={"Run": {"id": "0001"}},
+        )
+
+    def test_to_obspy_trace(self):
+        tr = self.ch.to_obspy_trace()
+        with self.subTest("network"):
+            self.assertEqual("", tr.stats.network)
+        with self.subTest("station"):
+            self.assertEqual(self.ch.station_metadata.id, tr.stats.station)
+        with self.subTest("location"):
+            self.assertEqual("", tr.stats.location)
+        with self.subTest("channel"):
+            self.assertEqual("MKN", tr.stats.channel)
+        with self.subTest("start"):
+            self.assertEqual(self.ch.start.isoformat(), tr.stats.starttime)
+        with self.subTest("end"):
+            self.assertEqual(self.ch.end.isoformat(), tr.stats.endtime)
+        with self.subTest("sample_rate"):
+            self.assertEqual(self.ch.sample_rate, tr.stats.sampling_rate)
+        with self.subTest("delta"):
+            self.assertEqual(1 / self.ch.sample_rate, tr.stats.delta)
+        with self.subTest("npts"):
+            self.assertEqual(self.ch.ts.size, tr.stats.npts)
+        with self.subTest("calib"):
+            self.assertEqual(1.0, tr.stats.calib)
+        with self.subTest("Data"):
+            self.assertTrue(np.allclose(self.ch.ts, tr.data))
+
+    def test_from_obspy_trace(self):
+        tr = self.ch.to_obspy_trace()
+        new_ch = timeseries.ChannelTS()
+        new_ch.from_obspy_trace(tr)
+
+        with self.subTest("station"):
+            self.assertEqual(
+                self.ch.station_metadata.id, new_ch.station_metadata.id
+            )
+        with self.subTest("channel"):
+            self.assertEqual("temperaturex", new_ch.component)
+        with self.subTest("channel metadata type"):
+            self.assertEqual("temperature", new_ch.channel_metadata.type)
+        with self.subTest("start"):
+            self.assertEqual(self.ch.start, new_ch.start)
+        with self.subTest("end"):
+            self.assertEqual(self.ch.end, new_ch.end)
+        with self.subTest("sample_rate"):
+            self.assertEqual(self.ch.sample_rate, new_ch.sample_rate)
+        with self.subTest("npts"):
+            self.assertEqual(self.ch.ts.size, new_ch.ts.size)
+        with self.subTest("Data"):
+            self.assertTrue(np.allclose(self.ch.ts, new_ch.ts))
 
 
 class TestAddChannels(unittest.TestCase):

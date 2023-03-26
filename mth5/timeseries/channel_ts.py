@@ -335,6 +335,9 @@ class ChannelTS:
         if channel_type is None:
             channel_type = "auxiliary"
 
+        if channel_type.lower() not in ["electric", "magnetic"]:
+            channel_type = "auxiliary"
+
         if not channel_type.capitalize() in meta_classes.keys():
             msg = (
                 "Channel type is undefined, must be [ electric | "
@@ -1368,6 +1371,8 @@ class ChannelTS:
         )
         obspy_trace.stats.starttime = self.start.iso_str
         obspy_trace.stats.sampling_rate = self.sample_rate
+        if self.station_metadata.fdsn.id is None:
+            self.station_metadata.fdsn.id = self.station_metadata.id
         obspy_trace.stats.station = self.station_metadata.fdsn.id
 
         return obspy_trace
@@ -1386,14 +1391,24 @@ class ChannelTS:
             raise TypeError(msg)
         if obspy_trace.stats.channel[1].lower() in ["e", "q"]:
             self.channel_type = "electric"
+            measurement = "electric"
         elif obspy_trace.stats.channel[1].lower() in ["h", "b", "f"]:
             self.channel_type = "magnetic"
+            measurement = "magnetic"
         else:
+            try:
+                measurement = fdsn_tools.measurement_code_dict_reverse[
+                    obspy_trace.stats.channel[1]
+                ]
+            except KeyError:
+                measurement = "auxiliary"
             self.channel_type = "auxiliary"
         mt_code = fdsn_tools.make_mt_channel(
             fdsn_tools.read_channel_code(obspy_trace.stats.channel)
         )
+
         self.channel_metadata.component = mt_code
+        self.channel_metadata.type = measurement
         self.start = obspy_trace.stats.starttime.isoformat()
         self.sample_rate = obspy_trace.stats.sampling_rate
         self.station_metadata.fdsn.id = obspy_trace.stats.station

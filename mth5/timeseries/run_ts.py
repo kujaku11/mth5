@@ -734,13 +734,7 @@ class RunTS:
 
         trace_list = []
         for channel in self.channels:
-            if channel[0] in ["e"]:
-                ch_type = "electric"
-            elif channel[0] in ["h", "b"]:
-                ch_type = "magnetic"
-            else:
-                ch_type = "auxiliary"
-            ts_obj = ChannelTS(ch_type, self.dataset[channel])
+            ts_obj = getattr(self, channel)
             trace_list.append(ts_obj.to_obspy_trace())
 
         return Stream(traces=trace_list)
