@@ -136,7 +136,6 @@ class RunTS:
             run_metadata=self.run_metadata,
             station_metadata=self.station_metadata,
             survey_metadata=self.survey_metadata,
-            channel_response_filter=self.channel_response_filter,
         )
 
         new_run.dataset = combined_ds.reindex(
@@ -146,6 +145,8 @@ class RunTS:
         new_run.run_metadata.update_time_period()
         new_run.station_metadata.update_time_period()
         new_run.survey_metadata.update_time_period()
+        new_run.filters = self.filters
+        new_run.filters.update(other.filters)
 
         return new_run
 
@@ -948,6 +949,7 @@ class RunTS:
             merge_sample_rate = self.sample_rate
 
         combine_list = [self.dataset]
+        ts_filters = self.filters
         if isinstance(other, (list, tuple)):
             for run in other:
                 if not isinstance(run, RunTS):
@@ -956,18 +958,15 @@ class RunTS:
                 if new_sample_rate is not None:
                     run = run.resample(new_sample_rate)
                 combine_list.append(run.dataset)
+                ts_filters.update(other.filters)
         else:
             if not isinstance(other, RunTS):
                 raise TypeError(f"Cannot combine {type(other)} with RunTS.")
 
-            if self.component != other.component:
-                raise ValueError(
-                    "Cannot combine channels with different components. "
-                    f"{self.component} != {other.component}"
-                )
             if new_sample_rate is not None:
                 other = other.resample(new_sample_rate)
-            combine_list.append(other._ts)
+            combine_list.append(other.dataset)
+            ts_filters.update(other.filters)
 
         # combine into a data set use override to keep attrs from original
 
@@ -997,7 +996,6 @@ class RunTS:
             run_metadata=self.run_metadata,
             station_metadata=self.station_metadata,
             survey_metadata=self.survey_metadata,
-            channel_response_filter=self.channel_response_filter,
         )
 
         new_run.dataset = combined_ds.reindex(
@@ -1008,6 +1006,7 @@ class RunTS:
         new_run.run_metadata.update_time_period()
         new_run.station_metadata.update_time_period()
         new_run.survey_metadata.update_time_period()
+        new_run.filters = ts_filters
 
         return new_run
 
