@@ -458,6 +458,7 @@ class Z3D:
         rm.time_period.start = self.start.isoformat()
         rm.time_period.end = self.end.isoformat()
         rm.acquired_by.author = self.metadata.gdp_operator
+        rm.id = f"sr{int(self.sample_rate)}_001"
 
         return rm
 

@@ -19,7 +19,6 @@ import numpy as np
 import pandas as pd
 
 from mth5 import timeseries
-from mth5.utils.exceptions import MTTSError
 
 from mt_metadata import timeseries as metadata
 from mt_metadata.timeseries.filters import CoefficientFilter
@@ -58,9 +57,6 @@ class TestChannelTS(unittest.TestCase):
             self.ts.channel_metadata.to_dict(), auxiliary_meta.to_dict()
         )
 
-    def test_input_type_fail(self):
-        self.assertRaises(ValueError, timeseries.ChannelTS, "temperature")
-
     def test_set_channel_fail(self):
         self.assertRaises(
             TypeError, timeseries.ChannelTS, **{"channel_metadata": []}
@@ -83,11 +79,8 @@ class TestChannelTS(unittest.TestCase):
                     ch.capitalize(), self.ts._validate_channel_type(ch)
                 )
 
-    def test_validate_channel_type_fail(self):
-        def set_ch_type(value):
-            self.ts._validate_channel_type(value)
-
-        self.assertRaises(ValueError, set_ch_type, "frogs")
+    def test_validate_channel_type_auxiliary(self):
+        self.assertEqual("Auxiliary", self.ts._validate_channel_type("frogs"))
 
     def test_validate_channel_metadata(self):
         self.assertEqual(
@@ -419,6 +412,466 @@ class TestChannelTS(unittest.TestCase):
 
         with self.subTest("station metadata"):
             self.assertEqual(new_ts.station_metadata, new_ts.station_metadata)
+
+
+class TestChannelTS2ObspyTrace(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.ch = timeseries.ChannelTS(
+            "auxiliary",
+            data=np.random.rand(4096),
+            channel_metadata={
+                "auxiliary": {
+                    "time_period.start": "2020-01-01T12:00:00",
+                    "sample_rate": 8,
+                    "component": "temp",
+                    "type": "temperature",
+                }
+            },
+            station_metadata={"Station": {"id": "mt01"}},
+            run_metadata={"Run": {"id": "0001"}},
+        )
+
+    def test_to_obspy_trace(self):
+        tr = self.ch.to_obspy_trace()
+        with self.subTest("network"):
+            self.assertEqual("", tr.stats.network)
+        with self.subTest("station"):
+            self.assertEqual(self.ch.station_metadata.id, tr.stats.station)
+        with self.subTest("location"):
+            self.assertEqual("", tr.stats.location)
+        with self.subTest("channel"):
+            self.assertEqual("MKN", tr.stats.channel)
+        with self.subTest("start"):
+            self.assertEqual(self.ch.start.isoformat(), tr.stats.starttime)
+        with self.subTest("end"):
+            self.assertEqual(self.ch.end.isoformat(), tr.stats.endtime)
+        with self.subTest("sample_rate"):
+            self.assertEqual(self.ch.sample_rate, tr.stats.sampling_rate)
+        with self.subTest("delta"):
+            self.assertEqual(1 / self.ch.sample_rate, tr.stats.delta)
+        with self.subTest("npts"):
+            self.assertEqual(self.ch.ts.size, tr.stats.npts)
+        with self.subTest("calib"):
+            self.assertEqual(1.0, tr.stats.calib)
+        with self.subTest("Data"):
+            self.assertTrue(np.allclose(self.ch.ts, tr.data))
+
+    def test_from_obspy_trace(self):
+        tr = self.ch.to_obspy_trace()
+        new_ch = timeseries.ChannelTS()
+        new_ch.from_obspy_trace(tr)
+
+        with self.subTest("station"):
+            self.assertEqual(
+                self.ch.station_metadata.id, new_ch.station_metadata.id
+            )
+        with self.subTest("channel"):
+            self.assertEqual("temperaturex", new_ch.component)
+        with self.subTest("channel metadata type"):
+            self.assertEqual("temperature", new_ch.channel_metadata.type)
+        with self.subTest("start"):
+            self.assertEqual(self.ch.start, new_ch.start)
+        with self.subTest("end"):
+            self.assertEqual(self.ch.end, new_ch.end)
+        with self.subTest("sample_rate"):
+            self.assertEqual(self.ch.sample_rate, new_ch.sample_rate)
+        with self.subTest("npts"):
+            self.assertEqual(self.ch.ts.size, new_ch.ts.size)
+        with self.subTest("Data"):
+            self.assertTrue(np.allclose(self.ch.ts, new_ch.ts))
+
+
+class TestAddChannels(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.survey_metadata = metadata.Survey(id="test")
+
+        self.station_metadata = metadata.Station(id="mt01")
+        self.station_metadata.location.latitude = 40
+        self.station_metadata.location.longitude = -112
+        self.station_metadata.location.elevation = 120
+
+        self.run_metadata = metadata.Run(id="001")
+
+        self.channel_metadata = metadata.Electric(component="ex", sample_rate=1)
+        self.channel_metadata.time_period.start = "2020-01-01T00:00:00+00:00"
+        self.channel_metadata.time_period.end = "2020-01-01T00:00:59+00:00"
+
+        self.channel_metadata2 = metadata.Electric(
+            component="ex", sample_rate=1
+        )
+        self.channel_metadata2.time_period.start = "2020-01-01T00:01:10"
+        self.channel_metadata2.time_period.end = "2020-01-01T00:02:09"
+
+        self.combined_start = "2020-01-01T00:00:00+00:00"
+        self.combined_end = "2020-01-01T00:02:09+00:00"
+
+        self.ex1 = timeseries.ChannelTS(
+            channel_type="electric",
+            data=np.linspace(0, 59, 60),
+            channel_metadata=self.channel_metadata,
+            survey_metadata=self.survey_metadata,
+            station_metadata=self.station_metadata,
+            run_metadata=self.run_metadata,
+        )
+        self.ex2 = timeseries.ChannelTS(
+            channel_type="electric",
+            data=np.linspace(70, 69 + 60, 60),
+            channel_metadata=self.channel_metadata2,
+        )
+
+        self.combined_ex = self.ex1 + self.ex2
+
+    def test_copy(self):
+        ex1_copy = self.ex1.copy()
+
+        self.assertEqual(self.ex1, ex1_copy)
+
+    def test_survey_metadata(self):
+        with self.subTest("id"):
+            self.assertEqual(
+                self.survey_metadata.id, self.combined_ex.survey_metadata.id
+            )
+        with self.subTest("start"):
+            self.assertEqual(
+                self.combined_start,
+                self.combined_ex.survey_metadata.time_period.start,
+            )
+        with self.subTest("end"):
+            self.assertEqual(
+                self.combined_end,
+                self.combined_ex.survey_metadata.time_period.end,
+            )
+
+    def test_station_metadata(self):
+        for key in [
+            "id",
+            "location.latitude",
+            "location.longitude",
+            "location.elevation",
+        ]:
+            with self.subTest(key):
+                self.assertEqual(
+                    self.station_metadata.get_attr_from_name(key),
+                    self.combined_ex.station_metadata.get_attr_from_name(key),
+                )
+
+        with self.subTest("start"):
+            self.assertEqual(
+                self.combined_start,
+                self.combined_ex.station_metadata.time_period.start,
+            )
+        with self.subTest("end"):
+            self.assertEqual(
+                self.combined_end,
+                self.combined_ex.station_metadata.time_period.end,
+            )
+
+    def test_run_metadata(self):
+        with self.subTest("id"):
+            self.assertEqual(
+                self.run_metadata.id, self.combined_ex.run_metadata.id
+            )
+        with self.subTest("start"):
+            self.assertEqual(
+                self.combined_start,
+                self.combined_ex.run_metadata.time_period.start,
+            )
+        with self.subTest("end"):
+            self.assertEqual(
+                self.combined_end,
+                self.combined_ex.run_metadata.time_period.end,
+            )
+
+    def test_channel_metadata(self):
+        with self.subTest("component"):
+            self.assertEqual(
+                self.channel_metadata.component,
+                self.combined_ex.channel_metadata.component,
+            )
+        with self.subTest("start"):
+            self.assertEqual(
+                self.combined_start,
+                self.combined_ex.channel_metadata.time_period.start,
+            )
+        with self.subTest("end"):
+            self.assertEqual(
+                self.combined_end,
+                self.combined_ex.channel_metadata.time_period.end,
+            )
+
+    def test_data(self):
+        data = np.arange(130)
+        self.assertTrue(np.all(data == self.combined_ex.ts))
+
+    def test_data_size(self):
+        self.assertEqual(130, self.combined_ex.ts.size)
+
+    def test_has_data(self):
+        self.assertEqual(True, self.combined_ex.has_data())
+
+
+class TestMergeChannels(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.survey_metadata = metadata.Survey(id="test")
+
+        self.station_metadata = metadata.Station(id="mt01")
+        self.station_metadata.location.latitude = 40
+        self.station_metadata.location.longitude = -112
+        self.station_metadata.location.elevation = 120
+
+        self.run_metadata = metadata.Run(id="001")
+
+        self.channel_metadata = metadata.Electric(
+            component="ex", sample_rate=10
+        )
+        self.channel_metadata.time_period.start = "2020-01-01T00:00:00+00:00"
+        self.channel_metadata.time_period.end = "2020-01-01T00:00:59+00:00"
+
+        self.channel_metadata2 = metadata.Electric(
+            component="ex", sample_rate=10
+        )
+        self.channel_metadata2.time_period.start = "2020-01-01T00:01:10"
+        self.channel_metadata2.time_period.end = "2020-01-01T00:02:09"
+
+        self.combined_start = "2020-01-01T00:00:00+00:00"
+        self.combined_end = "2020-01-01T00:02:09+00:00"
+
+        self.ex1 = timeseries.ChannelTS(
+            channel_type="electric",
+            data=np.linspace(0, 59, 600),
+            channel_metadata=self.channel_metadata,
+            survey_metadata=self.survey_metadata,
+            station_metadata=self.station_metadata,
+            run_metadata=self.run_metadata,
+        )
+        self.ex2 = timeseries.ChannelTS(
+            channel_type="electric",
+            data=np.linspace(70, 69 + 60, 600),
+            channel_metadata=self.channel_metadata2,
+        )
+
+        self.combined_ex = self.ex1.merge(self.ex2, new_sample_rate=1)
+
+    def test_survey_metadata(self):
+        with self.subTest("id"):
+            self.assertEqual(
+                self.survey_metadata.id, self.combined_ex.survey_metadata.id
+            )
+        with self.subTest("start"):
+            self.assertEqual(
+                self.combined_start,
+                self.combined_ex.survey_metadata.time_period.start,
+            )
+        with self.subTest("end"):
+            self.assertEqual(
+                self.combined_end,
+                self.combined_ex.survey_metadata.time_period.end,
+            )
+
+    def test_station_metadata(self):
+        for key in [
+            "id",
+            "location.latitude",
+            "location.longitude",
+            "location.elevation",
+        ]:
+            with self.subTest(key):
+                self.assertEqual(
+                    self.station_metadata.get_attr_from_name(key),
+                    self.combined_ex.station_metadata.get_attr_from_name(key),
+                )
+
+        with self.subTest("start"):
+            self.assertEqual(
+                self.combined_start,
+                self.combined_ex.station_metadata.time_period.start,
+            )
+        with self.subTest("end"):
+            self.assertEqual(
+                self.combined_end,
+                self.combined_ex.station_metadata.time_period.end,
+            )
+
+    def test_run_metadata(self):
+        with self.subTest("id"):
+            self.assertEqual(
+                self.run_metadata.id, self.combined_ex.run_metadata.id
+            )
+        with self.subTest("start"):
+            self.assertEqual(
+                self.combined_start,
+                self.combined_ex.run_metadata.time_period.start,
+            )
+        with self.subTest("end"):
+            self.assertEqual(
+                self.combined_end,
+                self.combined_ex.run_metadata.time_period.end,
+            )
+
+    def test_channel_metadata(self):
+        with self.subTest("component"):
+            self.assertEqual(
+                self.channel_metadata.component,
+                self.combined_ex.channel_metadata.component,
+            )
+        with self.subTest("start"):
+            self.assertEqual(
+                self.combined_start,
+                self.combined_ex.channel_metadata.time_period.start,
+            )
+        with self.subTest("end"):
+            self.assertEqual(
+                self.combined_end,
+                self.combined_ex.channel_metadata.time_period.end,
+            )
+
+    def test_data(self):
+        data = np.array(
+            [
+                [
+                    0.0,
+                    0.98497496,
+                    1.96994992,
+                    2.95492487,
+                    3.93989983,
+                    4.92487479,
+                    5.90984975,
+                    6.89482471,
+                    7.87979967,
+                    8.86477462,
+                    9.84974958,
+                    10.83472454,
+                    11.8196995,
+                    12.80467446,
+                    13.78964942,
+                    14.77462437,
+                    15.75959933,
+                    16.74457429,
+                    17.72954925,
+                    18.71452421,
+                    19.69949917,
+                    20.68447412,
+                    21.66944908,
+                    22.65442404,
+                    23.639399,
+                    24.62437396,
+                    25.60934891,
+                    26.59432387,
+                    27.57929883,
+                    28.56427379,
+                    29.54924875,
+                    30.53422371,
+                    31.51919866,
+                    32.50417362,
+                    33.48914858,
+                    34.47412354,
+                    35.4590985,
+                    36.44407346,
+                    37.42904841,
+                    38.41402337,
+                    39.39899833,
+                    40.38397329,
+                    41.36894825,
+                    42.35392321,
+                    43.33889816,
+                    44.32387312,
+                    45.30884808,
+                    46.29382304,
+                    47.278798,
+                    48.26377295,
+                    49.24874791,
+                    50.23372287,
+                    51.21869783,
+                    52.20367279,
+                    53.18864775,
+                    54.1736227,
+                    55.15859766,
+                    56.14357262,
+                    57.12854758,
+                    58.11352254,
+                    59.1941114,
+                    60.27470026,
+                    61.35528912,
+                    62.43587798,
+                    63.51646684,
+                    64.5970557,
+                    65.67764456,
+                    66.75823342,
+                    67.83882228,
+                    68.91941114,
+                    70.0,
+                    70.98497496,
+                    71.96994992,
+                    72.95492487,
+                    73.93989983,
+                    74.92487479,
+                    75.90984975,
+                    76.89482471,
+                    77.87979967,
+                    78.86477462,
+                    79.84974958,
+                    80.83472454,
+                    81.8196995,
+                    82.80467446,
+                    83.78964942,
+                    84.77462437,
+                    85.75959933,
+                    86.74457429,
+                    87.72954925,
+                    88.71452421,
+                    89.69949917,
+                    90.68447412,
+                    91.66944908,
+                    92.65442404,
+                    93.639399,
+                    94.62437396,
+                    95.60934891,
+                    96.59432387,
+                    97.57929883,
+                    98.56427379,
+                    99.54924875,
+                    100.53422371,
+                    101.51919866,
+                    102.50417362,
+                    103.48914858,
+                    104.47412354,
+                    105.4590985,
+                    106.44407346,
+                    107.42904841,
+                    108.41402337,
+                    109.39899833,
+                    110.38397329,
+                    111.36894825,
+                    112.35392321,
+                    113.33889816,
+                    114.32387312,
+                    115.30884808,
+                    116.29382304,
+                    117.278798,
+                    118.26377295,
+                    119.24874791,
+                    120.23372287,
+                    121.21869783,
+                    122.20367279,
+                    123.18864775,
+                    124.1736227,
+                    125.15859766,
+                    126.14357262,
+                    127.12854758,
+                    128.11352254,
+                ]
+            ]
+        )
+        self.assertTrue(np.allclose(data, self.combined_ex.ts))
+
+    def test_data_size(self):
+        self.assertEqual(130, self.combined_ex.ts.size)
+
+    def test_has_data(self):
+        self.assertEqual(True, self.combined_ex.has_data())
 
 
 # =============================================================================
