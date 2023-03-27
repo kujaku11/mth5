@@ -105,6 +105,9 @@ class RunTS:
             return False
         return True
 
+    def __neq__(self, other):
+        return not self.__eq__(other)
+
     def __add__(self, other):
         """
         Add two runs together in the following steps
