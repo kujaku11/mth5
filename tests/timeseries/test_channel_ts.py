@@ -523,6 +523,11 @@ class TestAddChannels(unittest.TestCase):
 
         self.combined_ex = self.ex1 + self.ex2
 
+    def test_copy(self):
+        ex1_copy = self.ex1.copy()
+
+        self.assertEqual(self.ex1, ex1_copy)
+
     def test_survey_metadata(self):
         with self.subTest("id"):
             self.assertEqual(

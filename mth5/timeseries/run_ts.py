@@ -91,6 +91,20 @@ class RunTS:
     def __repr__(self):
         return self.__str__()
 
+    def __eq__(self, other):
+
+        if not isinstance(other, RunTS):
+            raise TypeError(f"Cannot compare RunTS with {type(other)}.")
+        if not other.survey_metadata == self.survey_metadata:
+            return False
+        if not other.station_metadata == self.station_metadata:
+            return False
+        if not other.run_metadata == self.run_metadata:
+            return False
+        if self.dataset.equals(other.dataset) is False:
+            return False
+        return True
+
     def __add__(self, other):
         """
         Add two runs together in the following steps
@@ -374,6 +388,30 @@ class RunTS:
                     msg = f"RunTS has no attribute {name}"
                     self.logger.error(msg)
                     raise NameError(msg)
+
+    def copy(self, data=True):
+        """
+
+        :param data: DESCRIPTION, defaults to True
+        :type data: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if not data:
+            return RunTS(
+                run_metadata=self.run_metadata.copy(),
+                station_metadata=self.station_metadata.copy(),
+                survey_metadata=self.survey_metadata.copy(),
+            )
+        else:
+            return RunTS(
+                array_list=self.dataset,
+                run_metadata=self.run_metadata.copy(),
+                station_metadata=self.station_metadata.copy(),
+                survey_metadata=self.survey_metadata.copy(),
+            )
 
     ### Properties ------------------------------------------------------------
     @property

@@ -53,6 +53,11 @@ class TestRunTSClass(unittest.TestCase):
 
         self.run_object.set_dataset([self.ex])
 
+    def test_copy(self):
+        run_copy = self.run_object.copy()
+
+        self.assertEqual(self.run_object, run_copy)
+
     def test_set_run_metadata_fail(self):
         self.assertRaises(TypeError, RunTS, [self.ex], **{"run_metadata": []})
 

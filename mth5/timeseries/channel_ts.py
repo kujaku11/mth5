@@ -206,7 +206,7 @@ class ChannelTS:
     def __eq__(self, other):
 
         if not isinstance(other, ChannelTS):
-            raise ValueError(f"Cannot compare ChannelTS with {type(other)}")
+            raise TypeError(f"Cannot compare ChannelTS with {type(other)}.")
         if not other.channel_metadata == self.channel_metadata:
             return False
         if self._ts.equals(other._ts) is False:
