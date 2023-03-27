@@ -26,7 +26,8 @@ class TestFromStationXML01(unittest.TestCase):
     test from a stationxml
     """
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         self.translator = stationxml.XMLInventoryMTExperiment()
         self.experiment = self.translator.xml_to_mt(stationxml_fn=STATIONXML_01)
 
@@ -46,22 +47,29 @@ class TestFromStationXML01(unittest.TestCase):
         with self.subTest("has CAS04"):
             self.assertEqual(self.m.has_group("Survey/Stations/CAS04"), True)
         with self.subTest("has run 001"):
-            self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001"), True)
+            self.assertEqual(
+                self.m.has_group("Survey/Stations/CAS04/001"), True
+            )
         with self.subTest("has channel ey"):
-            self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001/ey"), True)
+            self.assertEqual(
+                self.m.has_group("Survey/Stations/CAS04/001/ey"), True
+            )
         with self.subTest("has channel hy"):
-            self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001/hy"), True)
+            self.assertEqual(
+                self.m.has_group("Survey/Stations/CAS04/001/hy"), True
+            )
 
     def test_survey_metadata(self):
         with self.subTest("has network ZU"):
             self.assertEqual(self.m.survey_group.metadata.fdsn.network, "ZU")
         with self.subTest("test start"):
             self.assertEqual(
-                self.m.survey_group.metadata.time_period.start_date, "2020-01-01"
+                self.m.survey_group.metadata.time_period.start_date,
+                "2020-06-02",
             )
         with self.subTest("test end"):
             self.assertEqual(
-                self.m.survey_group.metadata.time_period.end_date, "2023-12-31"
+                self.m.survey_group.metadata.time_period.end_date, "2020-07-13"
             )
         with self.subTest("survey summary"):
 
@@ -71,13 +79,14 @@ class TestFromStationXML01(unittest.TestCase):
             )
         with self.subTest("doi"):
             self.assertEqual(
-                self.m.survey_group.metadata.citation_dataset.doi, "10.7914/SN/ZU_2020"
+                self.m.survey_group.metadata.citation_dataset.doi,
+                "10.7914/SN/ZU_2020",
             )
 
     def test_station_metadata(self):
         station_dict = {
-            "acquired_by.author": "none",
-            "channels_recorded": [],
+            "acquired_by.author": None,
+            "channels_recorded": ["ey", "hy"],
             "data_type": "BBMT",
             "fdsn.id": "CAS04",
             "geographic_name": "Corral Hollow, CA, USA",
@@ -91,12 +100,13 @@ class TestFromStationXML01(unittest.TestCase):
             "mth5_type": "Station",
             "orientation.method": None,
             "orientation.reference_frame": "geographic",
-            "provenance.software.author": "none",
+            "provenance.software.author": None,
             "provenance.software.name": None,
             "provenance.software.version": None,
             "provenance.submitter.author": None,
             "provenance.submitter.email": None,
             "provenance.submitter.organization": None,
+            "release_license": "CC0-1.0",
             "run_list": ["001"],
             "time_period.end": "2020-07-13T21:46:12+00:00",
             "time_period.start": "2020-06-02T18:41:43+00:00",
@@ -168,10 +178,13 @@ class TestFromStationXML01(unittest.TestCase):
         for f_name in self.experiment.surveys[0].filters.keys():
             with self.subTest(f_name):
                 exp_filter = self.experiment.surveys[0].filters[f_name]
-                h5_filter = self.m.survey_group.filters_group.to_filter_object(f_name)
+                h5_filter = self.m.survey_group.filters_group.to_filter_object(
+                    f_name
+                )
 
                 self.assertTrue(exp_filter, h5_filter)
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(self):
         self.m.close_mth5()
         self.fn.unlink()

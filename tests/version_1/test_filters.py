@@ -28,7 +28,8 @@ class TestFilters(unittest.TestCase):
     Test filters to make sure get out what is put in
     """
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         self.fn = fn_path.joinpath("filter_test.h5")
         self.m_obj = mth5.MTH5(file_version="0.1.0")
         self.m_obj.open_mth5(self.fn, "w")
@@ -64,7 +65,9 @@ class TestFilters(unittest.TestCase):
         self.assertEqual(self.zpk_group.attrs["units_out"], self.zpk.units_out)
 
     def test_zpk_poles(self):
-        self.assertTrue(np.allclose(self.zpk_group["poles"][()], self.zpk.poles))
+        self.assertTrue(
+            np.allclose(self.zpk_group["poles"][()], self.zpk.poles)
+        )
 
     def test_zpk_zeros(self):
         self.assertTrue(np.allclose(self.zpk_group["zeros"], self.zpk.zeros))
@@ -81,7 +84,9 @@ class TestFilters(unittest.TestCase):
         )
 
     def test_coefficient_name(self):
-        self.assertEqual(self.coefficient_group.attrs["name"], self.coefficient.name)
+        self.assertEqual(
+            self.coefficient_group.attrs["name"], self.coefficient.name
+        )
 
     def test_coefficient_units_in(self):
         self.assertEqual(
@@ -90,14 +95,18 @@ class TestFilters(unittest.TestCase):
 
     def test_coefficient_units_out(self):
         self.assertEqual(
-            self.coefficient_group.attrs["units_out"], self.coefficient.units_out
+            self.coefficient_group.attrs["units_out"],
+            self.coefficient.units_out,
         )
 
     def test_coefficient_out(self):
-        new_coefficient = self.filter_group.to_filter_object(self.coefficient.name)
+        new_coefficient = self.filter_group.to_filter_object(
+            self.coefficient.name
+        )
 
         self.assertTrue(new_coefficient == self.coefficient)
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(self):
         self.m_obj.close_mth5()
         self.fn.unlink()

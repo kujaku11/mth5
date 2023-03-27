@@ -23,7 +23,8 @@ fn_path = Path(__file__).parent
 
 
 class TestTFGroup(unittest.TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
 
         self.maxDiff = None
         self.fn = fn_path.joinpath("test.mth5")
@@ -31,6 +32,7 @@ class TestTFGroup(unittest.TestCase):
         self.mth5_obj.open_mth5(self.fn, mode="a")
 
         self.tf_obj = TF(TF_XML)
+        self.tf_obj.read_tf_file()
 
         self.tf_group = self.mth5_obj.add_transfer_function(self.tf_obj)
         self.tf_h5 = self.mth5_obj.get_transfer_function(
@@ -43,7 +45,10 @@ class TestTFGroup(unittest.TestCase):
         meta_dict = OrderedDict(
             [
                 ("acquired_by.author", "National Geoelectromagnetic Facility"),
-                ("citation_dataset.doi", "doi:10.17611/DP/EMTF/USMTARRAY/SOUTH"),
+                (
+                    "citation_dataset.doi",
+                    "doi:10.17611/DP/EMTF/USMTARRAY/SOUTH",
+                ),
                 (
                     "citation_dataset.title",
                     "USMTArray South Magnetotelluric Transfer Functions",
@@ -54,7 +59,7 @@ class TestTFGroup(unittest.TestCase):
                     "comments",
                     "The USMTArray-CONUS South campaign was carried out through a cooperative agreement between\nthe U.S. Geological Survey (USGS) and Oregon State University (OSU). A subset of 40 stations\nin the SW US were funded through NASA grant 80NSSC19K0232.\nLand permitting, data acquisition, quality control and field processing were\ncarried out by Green Geophysics with project management and instrument/engineering\nsupport from OSU and Chaytus Engineering, respectively.\nProgram oversight, definitive data processing and data archiving were provided\nby the USGS Geomagnetism Program and the Geology, Geophysics and Geochemistry Science Centers.\nWe thank the U.S. Forest Service, the Bureau of Land Management, the National Park Service,\nthe Department of Defense, numerous state land offices and the many private landowners\nwho permitted land access to acquire the USMTArray data.",
                 ),
-                ("country", "USA"),
+                ("country", ["USA"]),
                 ("datum", "WGS84"),
                 ("geographic_name", "CONUS South"),
                 ("id", "CONUS South"),
@@ -64,7 +69,7 @@ class TestTFGroup(unittest.TestCase):
                 ("project", "USMTArray"),
                 ("project_lead.email", None),
                 ("project_lead.organization", None),
-                ("release_license", "CC-0"),
+                ("release_license", "CC0-1.0"),
                 ("southeast_corner.latitude", 0.0),
                 ("southeast_corner.longitude", 0.0),
                 ("summary", "Magnetotelluric Transfer Functions"),
@@ -100,8 +105,11 @@ class TestTFGroup(unittest.TestCase):
                 ("orientation.method", None),
                 ("orientation.reference_frame", "geographic"),
                 ("provenance.creation_time", "2021-03-17T14:47:44+00:00"),
-                ("provenance.software.author", "none"),
-                ("provenance.software.name", "EMTF File Conversion Utilities 4.0"),
+                ("provenance.software.author", None),
+                (
+                    "provenance.software.name",
+                    "EMTF File Conversion Utilities 4.0",
+                ),
                 ("provenance.software.version", None),
                 ("provenance.submitter.author", "Anna Kelbert"),
                 ("provenance.submitter.email", "akelbert@usgs.gov"),
@@ -109,6 +117,7 @@ class TestTFGroup(unittest.TestCase):
                     "provenance.submitter.organization",
                     "U.S. Geological Survey, Geomagnetism Program",
                 ),
+                ("release_license", "CC0-1.0"),
                 ("run_list", ["NMX20a", "NMX20b"]),
                 ("time_period.end", "2020-10-07T20:28:00+00:00"),
                 ("time_period.start", "2020-09-20T19:03:06+00:00"),
@@ -220,6 +229,7 @@ class TestTFGroup(unittest.TestCase):
                     self.mth5_obj.tf_summary.array[name][0], true_dict[name]
                 )
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(self):
         self.mth5_obj.close_mth5()
         self.fn.unlink()

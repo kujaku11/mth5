@@ -28,7 +28,8 @@ mth5.helpers.close_open_files()
 
 
 class TestMTH5(unittest.TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         self.maxDiff = None
         self.fn = fn_path.joinpath("test.h5")
         self.mth5_obj = mth5.MTH5(file_version="0.1.0")
@@ -73,6 +74,68 @@ class TestMTH5(unittest.TestCase):
 
                 self.assertDictEqual(h5_sd, sd)
 
+    def test_to_run_ts(self):
+        run_group = self.mth5_obj.get_run(
+            self.experiment.surveys[0].stations[0].id,
+            self.experiment.surveys[0].stations[0].runs[0].id,
+        )
+        run_ts = run_group.to_runts()
+
+        for key in self.experiment.surveys[0].to_dict(single=True).keys():
+            with self.subTest(f"survey.{key}"):
+                self.assertEqual(
+                    self.experiment.surveys[0].get_attr_from_name(key),
+                    run_ts.survey_metadata.get_attr_from_name(key),
+                )
+
+        for key in (
+            self.experiment.surveys[0].stations[0].to_dict(single=True).keys()
+        ):
+            if key in ["hdf5_reference", "mth5_type"]:
+                continue
+
+            with self.subTest(f"station.{key}"):
+                if key in ["run_list"]:
+                    self.assertListEqual(
+                        ["a", "b", "c", "d", "e"],
+                        run_ts.station_metadata.run_list,
+                    )
+
+                else:
+                    self.assertEqual(
+                        self.experiment.surveys[0]
+                        .stations[0]
+                        .get_attr_from_name(key),
+                        run_ts.station_metadata.get_attr_from_name(key),
+                    )
+
+        for key in (
+            self.experiment.surveys[0]
+            .stations[0]
+            .runs[0]
+            .to_dict(single=True)
+            .keys()
+        ):
+            if key in ["hdf5_reference", "mth5_type"]:
+                continue
+            with self.subTest(f"run.{key}"):
+                if key in ["time_period.end"]:
+                    self.assertNotEqual(
+                        self.experiment.surveys[0]
+                        .stations[0]
+                        .runs[0]
+                        .get_attr_from_name(key),
+                        run_ts.run_metadata.get_attr_from_name(key),
+                    )
+                else:
+                    self.assertEqual(
+                        self.experiment.surveys[0]
+                        .stations[0]
+                        .runs[0]
+                        .get_attr_from_name(key),
+                        run_ts.run_metadata.get_attr_from_name(key),
+                    )
+
     def test_channels(self):
         runs = self.experiment.surveys[0].stations[0].runs
         for run in runs:
@@ -92,6 +155,105 @@ class TestMTH5(unittest.TestCase):
                     h5_sd.pop("mth5_type")
 
                     self.assertDictEqual(h5_sd, sd)
+
+    def test_to_channel_ts(self):
+        channel_group = self.mth5_obj.get_channel(
+            self.experiment.surveys[0].stations[0].id,
+            self.experiment.surveys[0].stations[0].runs[0].id,
+            self.experiment.surveys[0]
+            .stations[0]
+            .runs[0]
+            .channels[0]
+            .component,
+        )
+        ch_ts = channel_group.to_channel_ts()
+
+        for key in self.experiment.surveys[0].to_dict(single=True).keys():
+            with self.subTest(f"survey.{key}"):
+                self.assertEqual(
+                    self.experiment.surveys[0].get_attr_from_name(key),
+                    ch_ts.survey_metadata.get_attr_from_name(key),
+                )
+
+        for key in (
+            self.experiment.surveys[0].stations[0].to_dict(single=True).keys()
+        ):
+            if key in ["hdf5_reference", "mth5_type"]:
+                continue
+
+            with self.subTest(f"station.{key}"):
+                if key in ["run_list", "channels_recorded"]:
+                    self.assertListEqual(
+                        ["a", "b", "c", "d", "e"],
+                        ch_ts.station_metadata.run_list,
+                    )
+                else:
+                    self.assertEqual(
+                        self.experiment.surveys[0]
+                        .stations[0]
+                        .get_attr_from_name(key),
+                        ch_ts.station_metadata.get_attr_from_name(key),
+                    )
+
+        for key in (
+            self.experiment.surveys[0]
+            .stations[0]
+            .runs[0]
+            .to_dict(single=True)
+            .keys()
+        ):
+            if key in [
+                "hdf5_reference",
+                "mth5_type",
+                "channels_recorded_magnetic",
+                "channels_recorded_electric",
+                "channels_recorded_auxiliary",
+            ]:
+                continue
+            with self.subTest(f"run.{key}"):
+                self.assertEqual(
+                    self.experiment.surveys[0]
+                    .stations[0]
+                    .runs[0]
+                    .get_attr_from_name(key),
+                    ch_ts.run_metadata.get_attr_from_name(key),
+                )
+
+        for key in (
+            self.experiment.surveys[0]
+            .stations[0]
+            .runs[0]
+            .channels[0]
+            .to_dict(single=True)
+            .keys()
+        ):
+            if key in [
+                "hdf5_reference",
+                "mth5_type",
+                "filter.name",
+                "filter.applied",
+            ]:
+                continue
+            with self.subTest(f"channel.{key}"):
+                # end time is off by one second (bug?)
+                if key in ["time_period.end"]:
+                    self.assertNotEqual(
+                        self.experiment.surveys[0]
+                        .stations[0]
+                        .runs[0]
+                        .channels[0]
+                        .get_attr_from_name(key),
+                        ch_ts.station_metadata.get_attr_from_name(key),
+                    )
+                else:
+                    self.assertEqual(
+                        self.experiment.surveys[0]
+                        .stations[0]
+                        .runs[0]
+                        .channels[0]
+                        .get_attr_from_name(key),
+                        ch_ts.channel_metadata.get_attr_from_name(key),
+                    )
 
     def test_filters(self):
         exp_filters = self.experiment.surveys[0].filters
@@ -124,16 +286,20 @@ class TestMTH5(unittest.TestCase):
             self.assertEqual(self.mth5_obj.channel_summary.dtype, CHANNEL_DTYPE)
         with self.subTest("test station"):
             self.assertTrue(
-                (self.mth5_obj.channel_summary.array["station"] == b"REW09").all()
+                (
+                    self.mth5_obj.channel_summary.array["station"] == b"REW09"
+                ).all()
             )
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(self):
         self.mth5_obj.close_mth5()
         self.fn.unlink()
 
 
 class TestUpdateFromExperiment(unittest.TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         self.maxDiff = None
         self.fn = fn_path.joinpath("test.h5")
         self.mth5_obj = mth5.MTH5(file_version="0.1.0")
@@ -153,7 +319,8 @@ class TestUpdateFromExperiment(unittest.TestCase):
 
         with self.subTest("new_survey"):
             self.assertEqual(
-                self.mth5_obj.survey_group.metadata.id, self.experiment_02.surveys[0].id
+                self.mth5_obj.survey_group.metadata.id,
+                self.experiment_02.surveys[0].id,
             )
         with self.subTest("new_location"):
             st = self.mth5_obj.get_station("REW09")
@@ -162,6 +329,14 @@ class TestUpdateFromExperiment(unittest.TestCase):
                 self.experiment_02.surveys[0].stations[0].location.latitude,
             )
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(self):
         self.mth5_obj.close_mth5()
         self.fn.unlink()
+
+
+# =============================================================================
+# Run
+# =============================================================================
+if __name__ == "__main__":
+    unittest.main()

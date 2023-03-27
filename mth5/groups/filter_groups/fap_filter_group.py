@@ -38,29 +38,40 @@ class FAPGroup(BaseGroup):
 
         :return: DESCRIPTION
         :rtype: TYPE
+
         """
         f_dict = {}
         for key in self.hdf5_group.keys():
             fap_group = self.hdf5_group[key]
-            f_dict[key] = {"type": fap_group.attrs["type"], "hdf5_ref": fap_group.ref}
+            f_dict[key] = {
+                "type": fap_group.attrs["type"],
+                "hdf5_ref": fap_group.ref,
+            }
 
         return f_dict
 
     def add_filter(self, name, frequency, amplitude, phase, fap_metadata):
         """
-        create an HDF5 group/dataset from information given.
 
-        :param name: Nane of the filter
+        create an HDF5 group/dataset from information given.
+        
+        :param name: name of the filter
         :type name: string
-        :param poles: poles of the filter as complex numbers
-        :type poles: np.ndarray(dtype=complex)
-        :param zeros: zeros of the filter as complex numbers
-        :type zeros: np.ndarray(dtype=comples)
-        :param fap_metadata: metadata dictionary see
-        :class:`mt_metadata.timeseries.filters.PoleZeroFilter` for details on entries
+        :param frequency: frequency array in samples per second
+        :type frequency: list, np.ndarray
+        :param amplitude: amplitude array in units of units out
+        :type amplitude: list, np.ndarray
+        :param phase: Phase in degrees
+        :type phase: list, np.ndarray
+        :param fap_metadata: other metadata for the filter see
+        :class:`mt_metadata.timeseries.filters.FrequencyResponseTableFilter` \
+         for details on entries
         :type fap_metadata: dictionary
+        :return: DESCRIPTION
+        :rtype: TYPE
 
         """
+
         # create a group for the filter by the name
         fap_filter_group = self.hdf5_group.create_group(name)
 
@@ -105,9 +116,7 @@ class FAPGroup(BaseGroup):
         """
 
         if not isinstance(fap_object, FrequencyResponseTableFilter):
-            msg = (
-                f"Filter must be a FrequencyResponseTableFilter not {type(fap_object)}"
-            )
+            msg = f"Filter must be a FrequencyResponseTableFilter not {type(fap_object)}"
             self.logger.error(msg)
             raise TypeError(msg)
 
@@ -131,6 +140,7 @@ class FAPGroup(BaseGroup):
     def to_object(self, name):
         """
         make a :class:`mt_metadata.timeseries.filters.pole_zeros_filter` object
+
         :return: DESCRIPTION
         :rtype: TYPE
 
