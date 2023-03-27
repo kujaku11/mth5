@@ -2,16 +2,16 @@
 """
 .. module:: timeseries
    :synopsis: Deal with MT time series
-   
-.. todo:: Check the conversion to netcdf.  There are some weird serializations of 
+
+.. todo:: Check the conversion to netcdf.  There are some weird serializations of
 lists and arrays that goes on, seems easiest to convert all lists to strings and then
 convert them back if read in.
 
 
 :copyright:
     Jared Peacock (jpeacock@usgs.gov)
-    
-:license: 
+
+:license:
     MIT
 """
 
@@ -186,7 +186,7 @@ class ChannelTS:
                     )
                 )
             elif isinstance(channel_metadata, dict):
-                if not channel_type in [cc.lower() for cc in channel_metadata.keys()]:
+                if channel_type not in [cc.lower() for cc in channel_metadata.keys()]:
                     channel_metadata = {channel_type: channel_metadata}
                 self.channel_metadata.from_dict(channel_metadata)
                 self.logger.debug("Loading from metadata dict")
@@ -204,7 +204,7 @@ class ChannelTS:
             if isinstance(station_metadata, metadata.Station):
                 self.station_metadata.update(station_metadata)
             elif isinstance(station_metadata, dict):
-                if not "station" in [cc.lower() for cc in station_metadata.keys()]:
+                if "station" not in [cc.lower() for cc in station_metadata.keys()]:
                     station_metadata = {"Station": station_metadata}
                 self.station_metadata.from_dict(station_metadata)
                 self.logger.debug("Loading from metadata dict")
@@ -220,7 +220,7 @@ class ChannelTS:
             if isinstance(run_metadata, metadata.Run):
                 self.run_metadata.update(run_metadata)
             elif isinstance(run_metadata, dict):
-                if not "run" in [cc.lower() for cc in run_metadata.keys()]:
+                if "run" not in [cc.lower() for cc in run_metadata.keys()]:
                     run_metadata = {"Run": run_metadata}
                 self.run_metadata.from_dict(run_metadata)
                 self.logger.debug("Loading from metadata dict")
@@ -312,7 +312,10 @@ class ChannelTS:
                 dt = ts_arr.index
             else:
                 dt = make_dt_coordinates(
-                    self.start, self.sample_rate, ts_arr["data"].size, self.logger,
+                    self.start,
+                    self.sample_rate,
+                    ts_arr["data"].size,
+                    self.logger,
                 )
             try:
                 self._ts = xr.DataArray(
@@ -331,7 +334,10 @@ class ChannelTS:
                 dt = ts_arr.index
             else:
                 dt = make_dt_coordinates(
-                    self.start, self.sample_rate, ts_arr["data"].size, self.logger,
+                    self.start,
+                    self.sample_rate,
+                    ts_arr["data"].size,
+                    self.logger,
                 )
             self._ts = xr.DataArray(ts_arr.values, coords=[("time", dt)], name="ts")
             self._update_xarray_metadata()
@@ -488,7 +494,8 @@ class ChannelTS:
         """
         if len(self._ts) > 1:
             if isinstance(
-                self._ts.indexes["time"][0], pd._libs.tslibs.timestamps.Timestamp,
+                self._ts.indexes["time"][0],
+                pd._libs.tslibs.timestamps.Timestamp,
             ):
                 return True
             return False
@@ -663,9 +670,9 @@ class ChannelTS:
     def remove_instrument_response(self, **kwargs):
         """
         Remove instrument response from the given channel response filter
-        
+
         The order of operations is important (if applied):
-            
+
             1) detrend
             2) zero mean
             3) zero pad
@@ -674,25 +681,25 @@ class ChannelTS:
             6) remove response
             7) undo time window
             8) bandpass
-        
+
         **kwargs**
-        
+
         :param plot: to plot the calibration process [ False | True ]
-        :type plot: boolean, default True 
+        :type plot: boolean, default True
         :param detrend: Remove linar trend of the time series
-        :type detrend: boolean, default True 
+        :type detrend: boolean, default True
         :param zero_mean: Remove the mean of the time series
-        :type zero_mean: boolean, default True 
+        :type zero_mean: boolean, default True
         :param zero_pad: pad the time series to the next power of 2 for efficiency
-        :type zero_pad: boolean, default True 
+        :type zero_pad: boolean, default True
         :param t_window: Time domain windown name see `scipy.signal.windows` for options
-        :type t_window: string, default None 
-        :param t_window_params: Time domain window parameters, parameters can be 
-        found in `scipy.signal.windows` 
+        :type t_window: string, default None
+        :param t_window_params: Time domain window parameters, parameters can be
+        found in `scipy.signal.windows`
         :type t_window_params: dictionary
         :param f_window: Frequency domain windown name see `scipy.signal.windows` for options
         :type f_window: string, defualt None
-        :param f_window_params: Frequency window parameters, parameters can be 
+        :param f_window_params: Frequency window parameters, parameters can be
         found in `scipy.signal.windows`
         :type f_window_params: dictionary
         :param bandpass: bandpass freequency and order {"low":, "high":, "order":,}
