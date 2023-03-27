@@ -782,8 +782,8 @@ class RunTS:
                     self.logger.warning(
                         "could not find %s" % channel_ts.component
                     )
-            else:
-                run_metadata = metadata.Run(id="001")
+            # else:
+            #     run_metadata = metadata.Run(id="001")
             station_list.append(channel_ts.station_metadata.fdsn.id)
 
             array_list.append(channel_ts)

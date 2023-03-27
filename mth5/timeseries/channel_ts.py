@@ -286,6 +286,7 @@ class ChannelTS:
             run_metadata=self.run_metadata,
             station_metadata=self.station_metadata,
             survey_metadata=self.survey_metadata,
+            channel_response_filter=self.channel_response_filter,
         )
 
         new_channel._ts = (
@@ -457,6 +458,33 @@ class ChannelTS:
                 raise TypeError(msg)
 
         return survey_metadata.copy()
+
+    def copy(self, data=True):
+        """
+        :return: Coppy of the channel
+        :rtype: :class:`mth5.timeseries.ChannelTS
+
+        """
+
+        if not data:
+            return ChannelTS(
+                channel_type=self.channel_metadata.type,
+                channel_metadata=self.channel_metadata.copy(),
+                run_metadata=self.run_metadata.copy(),
+                station_metadata=self.station_metadata.copy(),
+                survey_metadata=self.survey_metadata.copy(),
+                channel_response_filter=self.channel_response_filter.copy(),
+            )
+        else:
+            return ChannelTS(
+                channel_type=self.channel_metadata.type,
+                data=self.ts,
+                channel_metadata=self.channel_metadata.copy(),
+                run_metadata=self.run_metadata.copy(),
+                station_metadata=self.station_metadata.copy(),
+                survey_metadata=self.survey_metadata.copy(),
+                channel_response_filter=self.channel_response_filter.copy(),
+            )
 
     ### Properties ------------------------------------------------------------
     @property
@@ -1310,6 +1338,7 @@ class ChannelTS:
             run_metadata=self.run_metadata,
             station_metadata=self.station_metadata,
             survey_metadata=self.survey_metadata,
+            channel_response_filter=self.channel_response_filter,
         )
 
         new_channel._ts = (
@@ -1416,6 +1445,7 @@ class ChannelTS:
         self.station_metadata.id = obspy_trace.stats.station
         self.channel_metadata.units = "counts"
         self.ts = obspy_trace.data
+        self.run_metadata.id = f"sr{int(self.sample_rate)}_001"
 
     def plot(self):
         """
