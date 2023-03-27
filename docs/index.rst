@@ -27,8 +27,10 @@ Welcome to MTH5's documentation!
     examples/notebooks/remove_instrument_response_example.ipynb
     source/file_readers
     examples/notebooks/transfer_function_example.ipynb
-    examples/notebooks/mth5_in_parallel.ipynb
     source/examples
+    source/parallel
+    
+    
     
 .. toctree::
     :maxdepth: 1
