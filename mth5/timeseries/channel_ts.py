@@ -594,8 +594,10 @@ class ChannelTS:
         """
         station metadata
         """
-
-        return self._survey_metadata.stations[0].runs[0].channels[0]
+        ch_metadata = self._survey_metadata.stations[0].runs[0].channels[0]
+        if ch_metadata.sample_rate != self.sample_rate:
+            ch_metadata.sample_rate = self.sample_rate
+        return ch_metadata
 
     @channel_metadata.setter
     def channel_metadata(self, channel_metadata):
@@ -1289,10 +1291,11 @@ class ChannelTS:
         """
         if new_sample_rate is not None:
             merge_sample_rate = new_sample_rate
+            combine_list = [self.decimate(new_sample_rate)._ts]
         else:
             merge_sample_rate = self.sample_rate
+            combine_list = [self._ts]
 
-        combine_list = [self._ts]
         if isinstance(other, (list, tuple)):
             for ch in other:
                 if not isinstance(ch, ChannelTS):

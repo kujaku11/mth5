@@ -225,8 +225,10 @@ class RunTS:
                 self.logger.debug("Loading from metadata dict")
                 return st_metadata
             else:
-                msg = "input metadata must be type {0} or dict, not {1}".format(
-                    type(self.station_metadata), type(station_metadata)
+                msg = (
+                    "input metadata must be type {0} or dict, not {1}".format(
+                        type(self.station_metadata), type(station_metadata)
+                    )
                 )
                 self.logger.error(msg)
                 raise TypeError(msg)
@@ -250,8 +252,10 @@ class RunTS:
                 self.logger.debug("Loading from metadata dict")
                 return sv_metadata
             else:
-                msg = "input metadata must be type {0} or dict, not {1}".format(
-                    type(self.survey_metadata), type(survey_metadata)
+                msg = (
+                    "input metadata must be type {0} or dict, not {1}".format(
+                        type(self.survey_metadata), type(survey_metadata)
+                    )
                 )
                 self.logger.error(msg)
                 raise TypeError(msg)
@@ -454,7 +458,9 @@ class RunTS:
         """
 
         if station_metadata is not None:
-            station_metadata = self._validate_station_metadata(station_metadata)
+            station_metadata = self._validate_station_metadata(
+                station_metadata
+            )
 
             runs = ListDict()
             if self.run_metadata.id not in ["0", 0]:
@@ -688,7 +694,9 @@ class RunTS:
     def end(self):
         """End time UTC"""
         if self.has_data():
-            return MTime(self.dataset.coords["time"].to_index()[-1].isoformat())
+            return MTime(
+                self.dataset.coords["time"].to_index()[-1].isoformat()
+            )
         return self.run_metadata.time_period.end
 
     @property
@@ -930,9 +938,9 @@ class RunTS:
 
         return new_run
 
-    def resample(self, new_sample_rate, inplace=False):
+    def decimate(self, new_sample_rate, inplace=False):
         """
-        Resample data to new sample rate.
+        decimate data to new sample rate.
 
         :param new_sample_rate: DESCRIPTION
         :type new_sample_rate: TYPE
@@ -943,18 +951,24 @@ class RunTS:
 
         """
 
-        new_dt_freq = "{0:.0f}N".format(1e9 / (new_sample_rate))
+        if self.sample_rate / new_sample_rate > 12:
+            q_list = [8] * (self.sample_rate // new_sample_rate) + [
+                self.sample_rate % 8
+            ]
 
-        new_ds = self.dataset.resample(time=new_dt_freq).nearest(
-            tolerance=new_dt_freq
-        )
+            new_ds = self.dataset.filt.decimate(q_list[0])
+            for q_factor in q_list[1:]:
+                new_ds = new_ds.filt.decimate(q_factor)
+
+        else:
+            new_ds = self.dataset.filt.decimate(new_sample_rate, dim="time")
         new_ds.attrs["sample_rate"] = new_sample_rate
         self.run_metadata.sample_rate = new_ds.attrs["sample_rate"]
 
         if inplace:
             self.dataset = new_ds
         else:
-            # return new_ts
+            # return new_ds
             return RunTS(
                 new_ds,
                 run_metadata=self.run_metadata,
@@ -982,10 +996,11 @@ class RunTS:
         """
         if new_sample_rate is not None:
             merge_sample_rate = new_sample_rate
+            combine_list = [self.decimate(new_sample_rate).dataset]
         else:
             merge_sample_rate = self.sample_rate
+            combine_list = [self.dataset]
 
-        combine_list = [self.dataset]
         ts_filters = self.filters
         if isinstance(other, (list, tuple)):
             for run in other:
@@ -993,7 +1008,7 @@ class RunTS:
                     raise TypeError(f"Cannot combine {type(run)} with RunTS.")
 
                 if new_sample_rate is not None:
-                    run = run.resample(new_sample_rate)
+                    run = run.decimate(new_sample_rate)
                 combine_list.append(run.dataset)
                 ts_filters.update(other.filters)
         else:
@@ -1001,7 +1016,7 @@ class RunTS:
                 raise TypeError(f"Cannot combine {type(other)} with RunTS.")
 
             if new_sample_rate is not None:
-                other = other.resample(new_sample_rate)
+                other = other.decimate(new_sample_rate)
             combine_list.append(other.dataset)
             ts_filters.update(other.filters)
 

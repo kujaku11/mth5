@@ -520,6 +520,7 @@ def savgol_filter(
 
 
 @xarray.register_dataarray_accessor("filt")
+@xarray.register_dataset_accessor("filt")
 class FilterAccessor(object):
     """Accessor exposing common frequency and other filtering methods"""
 
