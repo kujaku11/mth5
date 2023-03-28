@@ -14,7 +14,7 @@ Created on Thu Aug 27 16:54:09 2020
 from pathlib import Path
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
-import xml.etree.ElementTree as ET
+import json
 from collections import OrderedDict
 
 import numpy as np
@@ -84,6 +84,8 @@ class AsciiMetadata:
         self.hz_metadata = Magnetic(component="hz")
 
         self.channel_order = ["hx", "ex", "hy", "ey", "hz"]
+
+        self.national_map_url = r"https://epqs.nationalmap.gov/v1/json?x={0:.5f}&y={1:.5f}&units=Meters&wkid=4326&includeDate=False"
 
         self._key_dict = OrderedDict(
             **{
@@ -195,9 +197,7 @@ class AsciiMetadata:
         """
         # the url for national map elevation query
         nm_url = Request(
-            r"https://nationalmap.gov/epqs/pqs.php?x={0:.5f}&y={1:.5f}&units=Meters&output=xml".format(
-                self.longitude, self.latitude
-            )
+            self.national_map_url.format(self.longitude, self.latitude)
         )
 
         # call the url and get the response
@@ -211,10 +211,14 @@ class AsciiMetadata:
             return self.station_metadata.location.elevation
 
         # read the xml response and convert to a float
-        info = ET.ElementTree(ET.fromstring(response.read()))
-        info = info.getroot()
-        for elev in info.iter("Elevation"):
-            nm_elev = float(elev.text)
+        info = json.loads(response.read().decode())
+        try:
+            nm_elev = round(float(info["value"]), 1)
+        except ValueError:
+            self.logger.warning(
+                "could not read elevation from national map url. Setting to 0"
+            )
+            nm_elev = 0
         return nm_elev
 
     @elevation.setter

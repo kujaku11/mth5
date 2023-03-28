@@ -34,6 +34,7 @@ class TestLEMICollection(unittest.TestCase):
 
         self.df = self.lc.to_dataframe()
         self.runs = self.lc.get_runs([1])
+        self.maxDiff = None
 
     def test_file_path(self):
         self.assertIsInstance(self.lc.file_path, Path)
