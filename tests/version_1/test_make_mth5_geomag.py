@@ -114,7 +114,7 @@ class TestMakeMTH5FromGeomag(unittest.TestCase):
                 ("provenance.submitter.email", None),
                 ("provenance.submitter.organization", None),
                 ("release_license", "CC0-1.0"),
-                ("run_list", ["001", "002"]),
+                ("run_list", ["sp1_001", "sp1_002"]),
                 ("time_period.end", "2022-01-04T00:00:00+00:00"),
                 ("time_period.start", "2022-01-01T00:00:00+00:00"),
             ]
@@ -132,7 +132,7 @@ class TestMakeMTH5FromGeomag(unittest.TestCase):
                     self.assertEqual(value, r_value)
 
     def test_fresno_run_001_metadata(self):
-        r = self.m.get_run("Fresno", "001")
+        r = self.m.get_run("Fresno", "sp1_001")
         rm = OrderedDict(
             [
                 ("channels_recorded_auxiliary", []),
@@ -149,7 +149,7 @@ class TestMakeMTH5FromGeomag(unittest.TestCase):
                 ("data_logger.type", None),
                 ("data_type", "BBMT"),
                 ("hdf5_reference", "<HDF5 object reference>"),
-                ("id", "001"),
+                ("id", "sp1_001"),
                 ("mth5_type", "Run"),
                 ("sample_rate", 1.0),
                 ("time_period.end", "2022-01-02T00:00:00+00:00"),
@@ -164,7 +164,7 @@ class TestMakeMTH5FromGeomag(unittest.TestCase):
                     self.assertEqual(value, r_value)
 
     def test_fresno_run_002_metadata(self):
-        r = self.m.get_run("Fresno", "002")
+        r = self.m.get_run("Fresno", "sp1_002")
         rm = OrderedDict(
             [
                 ("channels_recorded_auxiliary", []),
@@ -181,7 +181,7 @@ class TestMakeMTH5FromGeomag(unittest.TestCase):
                 ("data_logger.type", None),
                 ("data_type", "BBMT"),
                 ("hdf5_reference", "<HDF5 object reference>"),
-                ("id", "002"),
+                ("id", "sp1_002"),
                 ("mth5_type", "Run"),
                 ("sample_rate", 1.0),
                 ("time_period.end", "2022-01-04T00:00:00+00:00"),
@@ -196,7 +196,7 @@ class TestMakeMTH5FromGeomag(unittest.TestCase):
                     self.assertEqual(value, r_value)
 
     def test_fresno_run_001_hx_metadata(self):
-        r = self.m.get_channel("Fresno", "001", "hx")
+        r = self.m.get_channel("Fresno", "sp1_001", "hx")
         rm = OrderedDict(
             [
                 ("channel_number", 0),
@@ -229,7 +229,7 @@ class TestMakeMTH5FromGeomag(unittest.TestCase):
                     self.assertEqual(value, r_value)
 
     def test_fresno_run_001_hy_metadata(self):
-        r = self.m.get_channel("Fresno", "001", "hy")
+        r = self.m.get_channel("Fresno", "sp1_001", "hy")
         rm = OrderedDict(
             [
                 ("channel_number", 0),
@@ -287,7 +287,7 @@ class TestMakeMTH5FromGeomag(unittest.TestCase):
                 ("provenance.submitter.email", None),
                 ("provenance.submitter.organization", None),
                 ("release_license", "CC0-1.0"),
-                ("run_list", ["001", "002"]),
+                ("run_list", ["sp1_001", "sp1_002"]),
                 ("time_period.end", "2022-01-04T00:00:00+00:00"),
                 ("time_period.start", "2022-01-01T00:00:00+00:00"),
             ]
@@ -305,7 +305,7 @@ class TestMakeMTH5FromGeomag(unittest.TestCase):
                     self.assertEqual(value, r_value)
 
     def test_ottowa_run_001_metadata(self):
-        r = self.m.get_run("Ottowa", "001")
+        r = self.m.get_run("Ottowa", "sp1_001")
         rm = OrderedDict(
             [
                 ("channels_recorded_auxiliary", []),
@@ -322,7 +322,7 @@ class TestMakeMTH5FromGeomag(unittest.TestCase):
                 ("data_logger.type", None),
                 ("data_type", "BBMT"),
                 ("hdf5_reference", "<HDF5 object reference>"),
-                ("id", "001"),
+                ("id", "sp1_001"),
                 ("mth5_type", "Run"),
                 ("sample_rate", 1.0),
                 ("time_period.end", "2022-01-02T00:00:00+00:00"),
@@ -337,7 +337,7 @@ class TestMakeMTH5FromGeomag(unittest.TestCase):
                     self.assertEqual(value, r_value)
 
     def test_ottowa_run_002_metadata(self):
-        r = self.m.get_run("Ottowa", "002")
+        r = self.m.get_run("Ottowa", "sp1_002")
         rm = OrderedDict(
             [
                 ("channels_recorded_auxiliary", []),
@@ -354,7 +354,7 @@ class TestMakeMTH5FromGeomag(unittest.TestCase):
                 ("data_logger.type", None),
                 ("data_type", "BBMT"),
                 ("hdf5_reference", "<HDF5 object reference>"),
-                ("id", "002"),
+                ("id", "sp1_002"),
                 ("mth5_type", "Run"),
                 ("sample_rate", 1.0),
                 ("time_period.end", "2022-01-04T00:00:00+00:00"),
@@ -369,7 +369,7 @@ class TestMakeMTH5FromGeomag(unittest.TestCase):
                     self.assertEqual(value, r_value)
 
     def test_ottowa_run_001_hx_metadata(self):
-        r = self.m.get_channel("Ottowa", "001", "hx")
+        r = self.m.get_channel("Ottowa", "sp1_001", "hx")
         rm = OrderedDict(
             [
                 ("channel_number", 0),
@@ -402,7 +402,7 @@ class TestMakeMTH5FromGeomag(unittest.TestCase):
                     self.assertEqual(value, r_value)
 
     def test_ottowa_run_001_hy_metadata(self):
-        r = self.m.get_channel("Ottowa", "001", "hy")
+        r = self.m.get_channel("Ottowa", "sp1_001", "hy")
         rm = OrderedDict(
             [
                 ("channel_number", 0),

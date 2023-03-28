@@ -14,7 +14,9 @@ import unittest
 from pathlib import Path
 import numpy as np
 
-from mth5 import mth5
+from mth5.mth5 import MTH5
+from mth5 import helpers
+from mth5 import groups
 from mth5.utils.exceptions import MTH5Error
 from mth5.timeseries import ChannelTS, RunTS
 from mth5.groups.standards import summarize_metadata_standards
@@ -24,14 +26,14 @@ fn_path = Path(__file__).parent
 # =============================================================================
 #
 # =============================================================================
-mth5.helpers.close_open_files()
+helpers.close_open_files()
 
 
 class TestMTH5(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.fn = fn_path.joinpath("test.mth5")
-        self.mth5_obj = mth5.MTH5(file_version="0.1.0")
+        self.mth5_obj = MTH5(file_version="0.1.0")
         self.mth5_obj.open_mth5(self.fn, mode="w")
         self.maxDiff = None
 
@@ -86,10 +88,10 @@ class TestMTH5(unittest.TestCase):
         with self.subTest("groups list"):
             self.assertIn("MT001", self.mth5_obj.stations_group.groups_list)
         with self.subTest("isinstance StationGroup"):
-            self.assertIsInstance(new_station, mth5.groups.StationGroup)
+            self.assertIsInstance(new_station, groups.StationGroup)
         with self.subTest("get channel"):
             sg = self.mth5_obj.get_station("MT001")
-            self.assertIsInstance(sg, mth5.groups.StationGroup)
+            self.assertIsInstance(sg, groups.StationGroup)
 
     def test_remove_station(self):
         self.mth5_obj.add_station("MT001")
@@ -105,10 +107,10 @@ class TestMTH5(unittest.TestCase):
         with self.subTest("groups list"):
             self.assertIn("MT001a", new_station.groups_list)
         with self.subTest("isinstance RunGroup"):
-            self.assertIsInstance(new_run, mth5.groups.RunGroup)
+            self.assertIsInstance(new_run, groups.RunGroup)
         with self.subTest("get run"):
             rg = self.mth5_obj.get_run("MT001", "MT001a")
-            self.assertIsInstance(rg, mth5.groups.RunGroup)
+            self.assertIsInstance(rg, groups.RunGroup)
 
     def test_remove_run(self):
         new_station = self.mth5_obj.add_station("MT001")
@@ -126,10 +128,10 @@ class TestMTH5(unittest.TestCase):
         with self.subTest("groups list"):
             self.assertIn("ex", new_run.groups_list)
         with self.subTest("isinstance ElectricDataset"):
-            self.assertIsInstance(new_channel, mth5.groups.ElectricDataset)
+            self.assertIsInstance(new_channel, groups.ElectricDataset)
         with self.subTest("get channel"):
             ch = self.mth5_obj.get_channel("MT001", "MT001a", "ex")
-            self.assertIsInstance(ch, mth5.groups.ElectricDataset)
+            self.assertIsInstance(ch, groups.ElectricDataset)
 
     def test_remove_channel(self):
         new_station = self.mth5_obj.add_station("MT001")
