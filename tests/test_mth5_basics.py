@@ -13,20 +13,21 @@ Created on Thu Jun 18 16:54:19 2020
 import unittest
 from pathlib import Path
 
-from mth5 import mth5
+from mth5.mth5 import MTH5
+from mth5 import helpers
 
 
 fn_path = Path(__file__).parent
 # =============================================================================
 #
 # =============================================================================
-mth5.helpers.close_open_files()
+helpers.close_open_files()
 
 
 class TestMTH5Basics(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.mth5_obj = mth5.MTH5()
+        self.mth5_obj = MTH5()
         self.maxDiff = None
 
     def test_str(self):

@@ -595,7 +595,7 @@ class ChannelTS:
         station metadata
         """
         ch_metadata = self._survey_metadata.stations[0].runs[0].channels[0]
-        if ch_metadata.sample_rate != self.sample_rate:
+        if self.has_data():
             ch_metadata.sample_rate = self.sample_rate
         return ch_metadata
 
