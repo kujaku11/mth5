@@ -435,7 +435,9 @@ class Header:
         # Total of the gain that is selectable by the user (i.e. att * pre * gain)
         if self._has_header():
             return (
-                self.channel_main_gain * self.preamp_gain * self.attenuator_gain
+                self.channel_main_gain
+                * self.preamp_gain
+                * self.attenuator_gain
             )
         return 1.0
 
@@ -632,6 +634,7 @@ class Header:
         r.sample_rate = self.sample_rate
         r.data_logger.power_source.voltage.start = self.battery_voltage_v
         r.channels.append(self.channel_metadata())
+        r.id = f"sr{self.sample_rate}_0001"
 
         return r
 

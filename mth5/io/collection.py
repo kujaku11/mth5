@@ -110,7 +110,7 @@ class Collection:
         else:
             fn_list = list(self.file_path.rglob(f"*.{extension}"))
 
-        return list(set(fn_list))
+        return sorted(list(set(fn_list)))
 
     def to_dataframe(self):
         """
@@ -184,6 +184,7 @@ class Collection:
         """
 
         df.sort_values(by=["start"], inplace=True)
+        df.reset_index(inplace=True, drop=True)
 
         # assign run names
         df = self.assign_run_names(df, zeros=zeros)

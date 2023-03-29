@@ -25,7 +25,9 @@ from mt_metadata.timeseries.filters import (
 # =============================================================================
 
 
-@unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local files")
+@unittest.skipIf(
+    "peacock" not in str(Path(__file__).as_posix()), "local files"
+)
 class TestZ3DEY(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -132,7 +134,9 @@ class TestZ3DEY(unittest.TestCase):
         self.assertEqual(self.z3d._block_len, 65536)
 
     def test_gps_flag(self):
-        self.assertEqual(self.z3d.gps_flag, b"\xff\xff\xff\x7f\x00\x00\x00\x80")
+        self.assertEqual(
+            self.z3d.gps_flag, b"\xff\xff\xff\x7f\x00\x00\x00\x80"
+        )
 
     def test_get_gps_time(self):
         self.assertTupleEqual(
@@ -183,7 +187,9 @@ class TestZ3DEY(unittest.TestCase):
             ]
         )
 
-        self.assertDictEqual(self.z3d.channel_metadata.to_dict(single=True), ey)
+        self.assertDictEqual(
+            self.z3d.channel_metadata.to_dict(single=True), ey
+        )
 
     def test_run_metadata(self):
         rm = OrderedDict(
@@ -203,7 +209,7 @@ class TestZ3DEY(unittest.TestCase):
                 ("data_logger.timing_system.uncertainty", 0.0),
                 ("data_logger.type", None),
                 ("data_type", "MTBB"),
-                ("id", None),
+                ("id", "sr256_001"),
                 ("sample_rate", 256.0),
                 ("time_period.end", "2022-05-17T15:54:42+00:00"),
                 ("time_period.start", "2022-05-17T13:09:58+00:00"),
@@ -243,7 +249,9 @@ class TestZ3DEY(unittest.TestCase):
             ]
         )
 
-        self.assertDictEqual(self.z3d.station_metadata.to_dict(single=True), sm)
+        self.assertDictEqual(
+            self.z3d.station_metadata.to_dict(single=True), sm
+        )
 
     def test_filters(self):
         zr = FrequencyResponseTableFilter(
@@ -320,7 +328,9 @@ class TestZ3DEY(unittest.TestCase):
             )
 
 
-@unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local files")
+@unittest.skipIf(
+    "peacock" not in str(Path(__file__).as_posix()), "local files"
+)
 class TestZ3DHY(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -579,7 +589,9 @@ class TestZ3DHY(unittest.TestCase):
             ]
         )
 
-        self.assertDictEqual(self.z3d.channel_metadata.to_dict(single=True), ey)
+        self.assertDictEqual(
+            self.z3d.channel_metadata.to_dict(single=True), ey
+        )
 
     def test_run_metadata(self):
         rm = OrderedDict(
@@ -599,7 +611,7 @@ class TestZ3DHY(unittest.TestCase):
                 ("data_logger.timing_system.uncertainty", 0.0),
                 ("data_logger.type", None),
                 ("data_type", "MTBB"),
-                ("id", None),
+                ("id", "sr256_001"),
                 ("sample_rate", 256.0),
                 ("time_period.end", "2022-05-17T15:54:42+00:00"),
                 ("time_period.start", "2022-05-17T13:09:58+00:00"),
@@ -639,7 +651,9 @@ class TestZ3DHY(unittest.TestCase):
             ]
         )
 
-        self.assertDictEqual(self.z3d.station_metadata.to_dict(single=True), sm)
+        self.assertDictEqual(
+            self.z3d.station_metadata.to_dict(single=True), sm
+        )
 
     def test_zen_esponse(self):
         self.assertEqual(None, self.z3d.zen_response)

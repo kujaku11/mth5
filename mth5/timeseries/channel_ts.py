@@ -426,8 +426,10 @@ class ChannelTS:
                 self.logger.debug("Loading from metadata dict")
                 return st_metadata
             else:
-                msg = "input metadata must be type {0} or dict, not {1}".format(
-                    type(self.station_metadata), type(station_metadata)
+                msg = (
+                    "input metadata must be type {0} or dict, not {1}".format(
+                        type(self.station_metadata), type(station_metadata)
+                    )
                 )
                 self.logger.error(msg)
                 raise TypeError(msg)
@@ -451,8 +453,10 @@ class ChannelTS:
                 self.logger.debug("Loading from metadata dict")
                 return sv_metadata
             else:
-                msg = "input metadata must be type {0} or dict, not {1}".format(
-                    type(self.survey_metadata), type(survey_metadata)
+                msg = (
+                    "input metadata must be type {0} or dict, not {1}".format(
+                        type(self.survey_metadata), type(survey_metadata)
+                    )
                 )
                 self.logger.error(msg)
                 raise TypeError(msg)
@@ -522,7 +526,9 @@ class ChannelTS:
         """
 
         if station_metadata is not None:
-            station_metadata = self._validate_station_metadata(station_metadata)
+            station_metadata = self._validate_station_metadata(
+                station_metadata
+            )
 
             runs = ListDict()
             if self.run_metadata.id not in ["0", 0, None]:
@@ -588,8 +594,10 @@ class ChannelTS:
         """
         station metadata
         """
-
-        return self._survey_metadata.stations[0].runs[0].channels[0]
+        ch_metadata = self._survey_metadata.stations[0].runs[0].channels[0]
+        if self.has_data():
+            ch_metadata.sample_rate = self.sample_rate
+        return ch_metadata
 
     @channel_metadata.setter
     def channel_metadata(self, channel_metadata):
@@ -598,7 +606,9 @@ class ChannelTS:
         """
 
         if channel_metadata is not None:
-            channel_metadata = self._validate_channel_metadata(channel_metadata)
+            channel_metadata = self._validate_channel_metadata(
+                channel_metadata
+            )
             if channel_metadata.component is not None:
                 channels = ListDict()
                 if (
@@ -1220,7 +1230,7 @@ class ChannelTS:
         return new_ch_ts
 
     # decimate data
-    def resample(self, new_sample_rate, inplace=False):
+    def decimate(self, new_sample_rate, inplace=False):
         """
         decimate the data by using scipy.signal.decimate
 
@@ -1231,11 +1241,18 @@ class ChannelTS:
 
         """
 
-        new_dt_freq = "{0:.0f}N".format(1e9 / new_sample_rate)
+        if self.sample_rate / new_sample_rate > 12:
+            q_list = [8] * (self.sample_rate // new_sample_rate) + [
+                self.sample_rate % 8
+            ]
 
-        new_ts = self._ts.resample(time=new_dt_freq).nearest(
-            tolerance=new_dt_freq
-        )
+            new_ts = self._ts.filt.decimate(q_list[0])
+            for q_factor in q_list[1:]:
+                new_ts = new_ts.filt.decimate(q_factor)
+
+        else:
+            new_ts = self._ts.filt.decimate(new_sample_rate, dim="time")
+
         new_ts.attrs["sample_rate"] = new_sample_rate
         self.channel_metadata.sample_rate = new_ts.attrs["sample_rate"]
 
@@ -1274,10 +1291,11 @@ class ChannelTS:
         """
         if new_sample_rate is not None:
             merge_sample_rate = new_sample_rate
+            combine_list = [self.decimate(new_sample_rate)._ts]
         else:
             merge_sample_rate = self.sample_rate
+            combine_list = [self._ts]
 
-        combine_list = [self._ts]
         if isinstance(other, (list, tuple)):
             for ch in other:
                 if not isinstance(ch, ChannelTS):
@@ -1291,11 +1309,13 @@ class ChannelTS:
                         f"{self.component} != {ch.component}"
                     )
                 if new_sample_rate is not None:
-                    ch = ch.resample(new_sample_rate)
+                    ch = ch.decimate(new_sample_rate)
                 combine_list.append(ch._ts)
         else:
             if not isinstance(other, ChannelTS):
-                raise TypeError(f"Cannot combine {type(other)} with ChannelTS.")
+                raise TypeError(
+                    f"Cannot combine {type(other)} with ChannelTS."
+                )
 
             if self.component != other.component:
                 raise ValueError(
@@ -1303,7 +1323,7 @@ class ChannelTS:
                     f"{self.component} != {other.component}"
                 )
             if new_sample_rate is not None:
-                other = other.resample(new_sample_rate)
+                other = other.decimate(new_sample_rate)
             combine_list.append(other._ts)
 
         # combine into a data set use override to keep attrs from original

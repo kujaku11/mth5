@@ -13,7 +13,7 @@ import unittest
 from pathlib import Path
 import numpy as np
 import numpy.testing as npt
-from mth5 import mth5
+from mth5.mth5 import MTH5
 
 from mt_metadata.timeseries.stationxml import XMLInventoryMTExperiment
 from mt_metadata import STATIONXML_FAP
@@ -38,7 +38,7 @@ class TestFAPMTH5(unittest.TestCase):
         # if self.fn.exists():
         #     self.fn.unlink()
 
-        self.m = mth5.MTH5(file_version="0.1.0")
+        self.m = MTH5(file_version="0.1.0")
         self.m.open_mth5(self.fn, mode="a")
         self.m.from_experiment(self.experiment, 0)
 
