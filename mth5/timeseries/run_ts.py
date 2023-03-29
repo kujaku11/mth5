@@ -1011,7 +1011,7 @@ class RunTS:
                 if new_sample_rate is not None:
                     run = run.decimate(new_sample_rate)
                 combine_list.append(run.dataset)
-                ts_filters.update(other.filters)
+                ts_filters.update(run.filters)
         else:
             if not isinstance(other, RunTS):
                 raise TypeError(f"Cannot combine {type(other)} with RunTS.")
