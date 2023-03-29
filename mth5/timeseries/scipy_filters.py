@@ -519,6 +519,30 @@ def savgol_filter(
     )
 
 
+def detrend(darray, dim=None, trend_type="linear"):
+    """
+    detrend xarray
+
+    :param darray: DESCRIPTION
+    :type darray: TYPE
+    :param type: DESCRIPTION, defaults to "linear"
+    :type type: TYPE, optional
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+
+    dim = get_maybe_only_dim(darray, dim)
+
+    return xarray.apply_ufunc(
+        scipy.signal.detrend,
+        darray,
+        input_core_dims=[[dim]],
+        output_core_dims=[[dim]],
+        kwargs={"type": trend_type},
+    )
+
+
 @xarray.register_dataarray_accessor("filt")
 @xarray.register_dataset_accessor("filt")
 class FilterAccessor(object):
@@ -613,3 +637,7 @@ class FilterAccessor(object):
     def decimate(self, target_sample_rate, n_order=8, dim=None):
         """Decimate signal, wraps decimate"""
         return decimate(self.darray, target_sample_rate, n_order, dim)
+
+    def detrend(self, trend_type="linear", dim=None):
+        """Detrend data, wraps detrend"""
+        return detrend(self.darray, dim, trend_type)
