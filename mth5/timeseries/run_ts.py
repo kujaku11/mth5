@@ -30,7 +30,11 @@ from mt_metadata.utils.mttime import MTime
 from mt_metadata.utils.list_dict import ListDict
 from mt_metadata.timeseries.filters import ChannelResponseFilter
 
-from .channel_ts import ChannelTS, make_dt_coordinates
+from .channel_ts import ChannelTS
+from .ts_helpers import (
+    make_dt_coordinates,
+    get_decimation_sample_rates,
+)
 from mth5.utils.mth5_logger import setup_logger
 
 from obspy.core import Stream
@@ -938,7 +942,7 @@ class RunTS:
 
         return new_run
 
-    def decimate(self, new_sample_rate, inplace=False):
+    def decimate(self, new_sample_rate, inplace=False, max_decimation=8):
         """
         decimate data to new sample rate.
 
@@ -951,17 +955,14 @@ class RunTS:
 
         """
 
-        if self.sample_rate / new_sample_rate > 12:
-            q_list = [8] * (self.sample_rate // new_sample_rate) + [
-                self.sample_rate % 8
-            ]
+        sr_list = get_decimation_sample_rates(
+            self.sample_rate, new_sample_rate, max_decimation
+        )
 
-            new_ds = self.dataset.filt.decimate(q_list[0])
-            for q_factor in q_list[1:]:
-                new_ds = new_ds.filt.decimate(q_factor)
+        new_ds = self.dataset.filt.decimate(sr_list[0])
+        for step_sr in sr_list[1:]:
+            new_ds = new_ds.filt.decimate(step_sr)
 
-        else:
-            new_ds = self.dataset.filt.decimate(new_sample_rate, dim="time")
         new_ds.attrs["sample_rate"] = new_sample_rate
         self.run_metadata.sample_rate = new_ds.attrs["sample_rate"]
 
