@@ -11,7 +11,7 @@ It creates a wrapper for scipy methods for xarray.
 # =============================================================================
 
 import warnings
-import xarray
+import xarray as xr
 import scipy.signal
 import numpy as np
 
@@ -70,7 +70,11 @@ def get_maybe_only_dim(darray, dim):
     """
     if dim is None:
         if len(darray.dims) == 1:
-            return darray.dims[0]
+            if isinstance(darray, xr.DataArray):
+                return darray.dims[0]
+            elif isinstance(darray, xr.Dataset):
+                return list(darray.dims.keys())[0]
+
         else:
             raise ValueError("Specify the dimension")
     else:
@@ -226,7 +230,7 @@ def frequency_filter(
             order, f_crit_norm, output="sos", **kwargs
         )
         if filtfilt:
-            ret = xarray.apply_ufunc(
+            ret = xr.apply_ufunc(
                 sosfiltfilt,
                 sos,
                 darray,
@@ -235,7 +239,7 @@ def frequency_filter(
                 kwargs=apply_kwargs,
             )
         else:
-            ret = xarray.apply_ufunc(
+            ret = xr.apply_ufunc(
                 scipy.signal.sosfilt,
                 sos,
                 darray,
@@ -246,7 +250,7 @@ def frequency_filter(
     else:
         b, a = _BA_FUNCS[irtype](order, f_crit_norm, **kwargs)
         if filtfilt:
-            ret = xarray.apply_ufunc(
+            ret = xr.apply_ufunc(
                 scipy.signal.filtfilt,
                 b,
                 a,
@@ -256,7 +260,7 @@ def frequency_filter(
                 kwargs=apply_kwargs,
             )
         else:
-            ret = xarray.apply_ufunc(
+            ret = xr.apply_ufunc(
                 scipy.signal.lfilter,
                 b,
                 a,
@@ -427,7 +431,7 @@ def decimate(darray, target_sample_rate, n_order=8, dim=None):
         )
     sos = scipy.signal.cheby1(n_order, 0.05, 0.8 / q, output="sos")
 
-    ret = xarray.apply_ufunc(
+    ret = xr.apply_ufunc(
         sosfiltfilt,
         sos,
         darray,
@@ -503,7 +507,7 @@ def savgol_filter(
         window_length = int(np.rint(window_length / delta))
         if window_length % 2 == 0:  # must be odd
             window_length += 1
-    return xarray.apply_ufunc(
+    return xr.apply_ufunc(
         scipy.signal.savgol_filter,
         darray,
         input_core_dims=[[dim]],
@@ -534,7 +538,7 @@ def detrend(darray, dim=None, trend_type="linear"):
 
     dim = get_maybe_only_dim(darray, dim)
 
-    return xarray.apply_ufunc(
+    return xr.apply_ufunc(
         scipy.signal.detrend,
         darray,
         input_core_dims=[[dim]],
@@ -543,8 +547,8 @@ def detrend(darray, dim=None, trend_type="linear"):
     )
 
 
-@xarray.register_dataarray_accessor("filt")
-@xarray.register_dataset_accessor("filt")
+@xr.register_dataarray_accessor("filt")
+@xr.register_dataset_accessor("filt")
 class FilterAccessor(object):
     """Accessor exposing common frequency and other filtering methods"""
 
