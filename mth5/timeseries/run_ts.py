@@ -371,19 +371,26 @@ class RunTS:
                 earliest_start, latest_end, sample_rate
             )
             tolerance = f"{(1e9 / sample_rate):.0f}N"
+            aligned_list = []
             for ch in valid_list:
-                ch._ts = ch._ts.reindex(
-                    time=new_time_index, method="nearest", tolerance=tolerance
+                aligned_list.append(
+                    ch.reindex(
+                        time=new_time_index,
+                        method="nearest",
+                        tolerance=tolerance,
+                    )
                 )
+        else:
+            aligned_list = valid_list
 
-        return valid_list
+        return aligned_list
 
     def _check_sample_rate(self, valid_list):
         # probably should test for sampling rate.
         sr_test = list(
             set(
                 [(item.sample_rate) for item in valid_list]
-                + [np.round(item._ts.filt.fs, 3) for item in valid_list]
+                + [np.round(item.filt.fs, 3) for item in valid_list]
             )
         )
 
