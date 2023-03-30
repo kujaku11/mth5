@@ -334,18 +334,118 @@ class RunTS:
         else:
             self.run_metadata.channels = channels
 
-        # probably should test for sampling rate.
-        sr_test = dict(
-            [(item.component, (item.sample_rate)) for item in valid_list]
-        )
-        sr = list(set([v for v in sr_test.values()]))
+        # first need to align the time series.
+        valid_list = self._align_channels(valid_list)
 
-        if len(sr) != 1:
+        return valid_list
+
+    def _align_channels(self, valid_list):
+        """
+        check for common start and end times, if not resample each.
+
+        :param valid_list: DESCRIPTION
+        :type valid_list: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        earliest_start = self._get_earliest_start(valid_list)
+        latest_end = self._get_latest_end(valid_list)
+        reindex = False
+        if not self._check_common_start(valid_list):
+            self.logger.info(
+                f"Channels do not have a common start, using earliest: {earliest_start}"
+            )
+            reindex = True
+        if not self._check_common_end(valid_list):
+            self.logger.info(
+                f"Channels do not have a common end, using latest: {latest_end}"
+            )
+            reindex = True
+
+        if reindex:
+            sample_rate = self._check_sample_rate(valid_list)
+
+            new_time_index = self._get_common_time_index(
+                earliest_start, latest_end, sample_rate
+            )
+            tolerance = f"{(1e9 / sample_rate):.0f}N"
+            for ch in valid_list:
+                ch._ts.reindex(
+                    time=new_time_index, method="nearest", tolerance=tolerance
+                )
+
+        return valid_list
+
+    def _check_sample_rate(self, valid_list):
+        # probably should test for sampling rate.
+        sr_test = list(
+            set(
+                [(item.sample_rate) for item in valid_list]
+                + [np.round(item._ts.filt.fs, 3) for item in valid_list]
+            )
+        )
+
+        if len(sr_test) != 1:
             msg = f"sample rates are not all the same {sr_test}"
             self.logger.error(msg)
             raise ValueError(msg)
 
-        return valid_list, sr[0]
+        return sr_test[0]
+
+    def _check_common_start(self, valid_list):
+        """
+        check to see if there are different starting times
+
+        :param valid_list: DESCRIPTION
+        :type valid_list: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        start_list = list(set([item.start for item in valid_list]))
+        if len(start_list) != 1:
+            return False
+        return True
+
+    def _check_common_end(self, valid_list):
+        """
+        check to see if there are different end times
+
+        :param valid_list: DESCRIPTION
+        :type valid_list: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        end_list = list(set([item.end for item in valid_list]))
+        if len(end_list) != 1:
+            return False
+        return True
+
+    def _get_earliest_start(self, valid_list):
+        """
+        get the earliest start time
+        """
+
+        return min([item.start for item in valid_list])
+
+    def _get_latest_end(self, valid_list):
+        """
+        get the earliest start time
+        """
+
+        return min([item.end for item in valid_list])
+
+    def _get_common_time_index(self, start, end, sample_rate):
+        """
+        get common time index
+        """
+
+        n_samples = int(sample_rate * (end - start)) + 1
+
+        return make_dt_coordinates(start, sample_rate, n_samples, self.logger)
 
     def _get_channel_response_filter(self, ch_name):
         """
