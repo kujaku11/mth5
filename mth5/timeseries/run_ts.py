@@ -958,7 +958,7 @@ class RunTS:
         sr_list = get_decimation_sample_rates(
             self.sample_rate, new_sample_rate, max_decimation
         )
-
+        print(sr_list)
         new_ds = self.dataset.filt.decimate(sr_list[0])
         for step_sr in sr_list[1:]:
             new_ds = new_ds.filt.decimate(step_sr)
