@@ -372,7 +372,7 @@ class RunTS:
             )
             tolerance = f"{(1e9 / sample_rate):.0f}N"
             for ch in valid_list:
-                ch._ts.reindex(
+                ch._ts = ch._ts.reindex(
                     time=new_time_index, method="nearest", tolerance=tolerance
                 )
 
@@ -404,7 +404,9 @@ class RunTS:
         :rtype: TYPE
 
         """
-        start_list = list(set([item.start for item in valid_list]))
+        start_list = list(
+            set([item.coords["time"].values[0] for item in valid_list])
+        )
         if len(start_list) != 1:
             return False
         return True
@@ -419,7 +421,9 @@ class RunTS:
         :rtype: TYPE
 
         """
-        end_list = list(set([item.end for item in valid_list]))
+        end_list = list(
+            set([item.coords["time"].values[-1] for item in valid_list])
+        )
         if len(end_list) != 1:
             return False
         return True
@@ -429,21 +433,21 @@ class RunTS:
         get the earliest start time
         """
 
-        return min([item.start for item in valid_list])
+        return min([item.coords["time"].values[0] for item in valid_list])
 
     def _get_latest_end(self, valid_list):
         """
         get the earliest start time
         """
 
-        return min([item.end for item in valid_list])
+        return max([item.coords["time"].values[-1] for item in valid_list])
 
     def _get_common_time_index(self, start, end, sample_rate):
         """
         get common time index
         """
 
-        n_samples = int(sample_rate * (end - start)) + 1
+        n_samples = int(sample_rate * float(end - start) / 1e9) + 1
 
         return make_dt_coordinates(start, sample_rate, n_samples, self.logger)
 
@@ -709,25 +713,11 @@ class RunTS:
 
         """
         if isinstance(array_list, (list, tuple)):
-            x_array_list, sample_rate = self._validate_array_list(array_list)
-
-            # first need to align the time series.
-            x_array_list = xr.align(*x_array_list, join=align_type)
+            x_array_list = self._validate_array_list(array_list)
 
             # input as a dictionary
             xdict = dict([(x.component.lower(), x) for x in x_array_list])
             self._dataset = xr.Dataset(xdict)
-
-            if self._dataset.filt.fs != sample_rate:
-                new_dt_freq = "{0:.0f}N".format(1e9 / (sample_rate))
-                self._dataset = self._dataset.resample(
-                    time=new_dt_freq
-                ).interpolate("slinear")
-                self.logger.info(
-                    f"Merged sample rate ({self._dataset.filt.fs}) was not the "
-                    f"expected value ({sample_rate}), reindexing to expected "
-                    "sample rate."
-                )
 
         elif isinstance(array_list, xr.Dataset):
             self._dataset = array_list
