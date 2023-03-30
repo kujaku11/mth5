@@ -338,13 +338,14 @@ class RunTS:
         sr_test = dict(
             [(item.component, (item.sample_rate)) for item in valid_list]
         )
+        sr = list(set([v for v in sr_test.values()]))
 
-        if len(set([v for k, v in sr_test.items()])) != 1:
+        if len(sr) != 1:
             msg = f"sample rates are not all the same {sr_test}"
             self.logger.error(msg)
             raise ValueError(msg)
 
-        return valid_list
+        return valid_list, sr[0]
 
     def _get_channel_response_filter(self, ch_name):
         """
@@ -608,7 +609,7 @@ class RunTS:
 
         """
         if isinstance(array_list, (list, tuple)):
-            x_array_list = self._validate_array_list(array_list)
+            x_array_list, sample_rate = self._validate_array_list(array_list)
 
             # first need to align the time series.
             x_array_list = xr.align(*x_array_list, join=align_type)
@@ -616,6 +617,17 @@ class RunTS:
             # input as a dictionary
             xdict = dict([(x.component.lower(), x) for x in x_array_list])
             self._dataset = xr.Dataset(xdict)
+
+            if self._dataset.filt.fs != sample_rate:
+                new_dt_freq = "{0:.0f}N".format(1e9 / (sample_rate))
+                self._dataset = self._dataset.resample(
+                    time=new_dt_freq
+                ).interpolate("slinear")
+                self.logger.info(
+                    f"Merged sample rate ({self._dataset.filt.fs}) was not the "
+                    f"expected value ({sample_rate}), reindexing to expected "
+                    "sample rate."
+                )
 
         elif isinstance(array_list, xr.Dataset):
             self._dataset = array_list
@@ -970,6 +982,36 @@ class RunTS:
             self.dataset = new_ds
         else:
             # return new_ds
+            return RunTS(
+                new_ds,
+                run_metadata=self.run_metadata,
+                station_metadata=self.station_metadata,
+                survey_metadata=self.survey_metadata,
+            )
+
+    def resample(self, new_sample_rate, inplace=False):
+        """
+        Resample data to new sample rate.
+        :param new_sample_rate: DESCRIPTION
+        :type new_sample_rate: TYPE
+        :param inplace: DESCRIPTION, defaults to False
+        :type inplace: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+        """
+
+        new_dt_freq = "{0:.0f}N".format(1e9 / (new_sample_rate))
+
+        new_ds = self.dataset.resample(time=new_dt_freq).nearest(
+            tolerance=new_dt_freq
+        )
+        new_ds.attrs["sample_rate"] = new_sample_rate
+        self.run_metadata.sample_rate = new_ds.attrs["sample_rate"]
+
+        if inplace:
+            self.dataset = new_ds
+        else:
+            # return new_ts
             return RunTS(
                 new_ds,
                 run_metadata=self.run_metadata,
