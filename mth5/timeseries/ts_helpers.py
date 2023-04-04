@@ -118,23 +118,17 @@ def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
     start_sig_figs = _count_decimal_sig_figs(start_time)
     sr_sig_figs = _count_decimal_sig_figs(1 / sample_rate)
     if start_sig_figs > sr_sig_figs:
-        if start_sig_figs < 3:
-            dt_index = dt_index.round(freq="ms")
-        elif start_sig_figs >= 3 and start_sig_figs < 6:
-            dt_index = dt_index.round(freq="us")
-        elif start_sig_figs >= 6 and start_sig_figs < 9:
-            dt_index = dt_index.round(freq="ns")
-        else:
-            pass
-
+        test_sf = start_sig_figs
     else:
-        if sample_rate < 1:
-            dt_index = dt_index.round(freq="s")
-        elif sample_rate >= 1 and sample_rate < 1e3:
-            dt_index = dt_index.round(freq="ms")
-        elif sample_rate >= 1e3 and sample_rate < 10e6:
-            dt_index = dt_index.round(freq="us")
-        elif sample_rate >= 1e6 and sample_rate < 1e9:
-            dt_index = dt_index.round(freq="ns")
+        test_sf = sr_sig_figs
+
+    if test_sf < 3:
+        dt_index = dt_index.round(freq="ms")
+    elif test_sf >= 3 and test_sf < 6:
+        dt_index = dt_index.round(freq="us")
+    elif test_sf >= 6 and test_sf < 9:
+        dt_index = dt_index.round(freq="ns")
+    else:
+        pass
 
     return dt_index

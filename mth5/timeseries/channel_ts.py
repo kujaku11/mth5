@@ -1304,7 +1304,7 @@ class ChannelTS:
 
         new_channel._ts = combined_ds.interp(
             time=new_dt_index, method=gap_method
-        )
+        ).to_array()
 
         new_channel.channel_metadata.time_period.start = new_channel.start
         new_channel.channel_metadata.time_period.end = new_channel.end

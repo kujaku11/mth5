@@ -84,6 +84,40 @@ class TestMakeDtCoordinates(unittest.TestCase):
         with self.subTest("length"):
             self.assertEqual(16, len(dt))
 
+    def test_sr_sig_figs_ms(self):
+        dt = make_dt_coordinates("1980-01-01T00:00:00.000", 16, 16, None)
+
+        with self.subTest("start"):
+            self.assertEqual(MTime(dt[0]), MTime("1980-01-01T00:00:00.00"))
+        with self.subTest("end"):
+            self.assertEqual(MTime(dt[-1]), MTime("1980-01-01T00:00:00.9375"))
+        with self.subTest("length"):
+            self.assertEqual(16, len(dt))
+
+    def test_sr_sig_figs_us(self):
+        dt = make_dt_coordinates("1980-01-01T00:00:00.00000", 256, 16, None)
+
+        with self.subTest("start"):
+            self.assertEqual(MTime(dt[0]), MTime("1980-01-01T00:00:00.0000"))
+        with self.subTest("end"):
+            self.assertEqual(
+                MTime(dt[-1]), MTime("1980-01-01T00:00:00.058594")
+            )
+        with self.subTest("length"):
+            self.assertEqual(16, len(dt))
+
+    def test_sr_sig_figs_ns(self):
+        dt = make_dt_coordinates("1980-01-01T00:00:00.00000", 4096, 16, None)
+
+        with self.subTest("start"):
+            self.assertEqual(MTime(dt[0]), MTime("1980-01-01T00:00:00.0000"))
+        with self.subTest("end"):
+            self.assertEqual(
+                MTime(dt[-1]), MTime("1980-01-01T00:00:00.003662")
+            )
+        with self.subTest("length"):
+            self.assertEqual(16, len(dt))
+
 
 class TestDecimalSigFigs(unittest.TestCase):
     def test_sig_figs(self):
