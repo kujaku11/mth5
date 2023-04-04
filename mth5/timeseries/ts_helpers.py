@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 
 from mt_metadata.utils.mttime import MTime
+from mth5.utils.mth5_logger import setup_logger
 
 # =============================================================================
 
@@ -48,6 +49,14 @@ def get_decimation_sample_rates(
     return [new_sample_rate]
 
 
+def _count_decimal_sig_figs(digits):
+    """Return the number of significant figures of the input digit string"""
+
+    _, _, fractional = str(digits).partition(".")
+
+    return len(fractional.rstrip("0"))
+
+
 def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
     """
     get the date time index from the data
@@ -60,6 +69,9 @@ def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
     :return: date-time index
 
     """
+
+    if logger is None:
+        logger = setup_logger("mth5.timeseries.ts_helpers.make_dt_coordinates")
 
     if sample_rate in [0, None]:
         msg = (
@@ -100,5 +112,29 @@ def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
         end=end_time.iso_no_tz,
         periods=n_samples,
     )
+
+    ## need to enforce some rounding errors otherwise an expected time step
+    ## will have a rounding error, messes things up when reindexing.
+    start_sig_figs = _count_decimal_sig_figs(start_time)
+    sr_sig_figs = _count_decimal_sig_figs(1 / sample_rate)
+    if start_sig_figs > sr_sig_figs:
+        if start_sig_figs < 3:
+            dt_index = dt_index.round(freq="ms")
+        elif start_sig_figs >= 3 and start_sig_figs < 6:
+            dt_index = dt_index.round(freq="us")
+        elif start_sig_figs >= 6 and start_sig_figs < 9:
+            dt_index = dt_index.round(freq="ns")
+        else:
+            pass
+
+    else:
+        if sample_rate < 1:
+            dt_index = dt_index.round(freq="s")
+        elif sample_rate >= 1 and sample_rate < 1e3:
+            dt_index = dt_index.round(freq="ms")
+        elif sample_rate >= 1e3 and sample_rate < 10e6:
+            dt_index = dt_index.round(freq="us")
+        elif sample_rate >= 1e6 and sample_rate < 1e9:
+            dt_index = dt_index.round(freq="ns")
 
     return dt_index

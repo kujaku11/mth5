@@ -159,9 +159,9 @@ class RunTS:
             survey_metadata=self.survey_metadata,
         )
 
-        new_run.dataset = combined_ds.reindex(
-            {"time": new_dt_index}, method=None
-        ).interpolate_na(dim="time", method="slinear")
+        new_run.dataset = combined_ds.interp(
+            time=new_dt_index, method="slinear"
+        )
 
         new_run.run_metadata.update_time_period()
         new_run.station_metadata.update_time_period()
@@ -1067,7 +1067,6 @@ class RunTS:
         sr_list = get_decimation_sample_rates(
             self.sample_rate, new_sample_rate, max_decimation
         )
-        print(sr_list)
         new_ds = self.dataset.filt.decimate(sr_list[0])
         for step_sr in sr_list[1:]:
             new_ds = new_ds.filt.decimate(step_sr)
@@ -1190,10 +1189,18 @@ class RunTS:
             survey_metadata=self.survey_metadata,
         )
 
-        new_run.dataset = combined_ds.reindex(
-            {"time": new_dt_index},
-            method=None,
-        ).interpolate_na(dim="time", method=gap_method)
+        ## tried reindex then interpolate_na, but that has issues if the
+        ## intial time index does not exactly match up with the new time index
+        ## and then get a bunch of Nan, unless use nearest or pad, but then
+        ## gaps are not filled correctly, just do a interp seems easier.
+        new_run.dataset = combined_ds.interp(
+            time=new_dt_index, method=gap_method
+        )
+
+        # update channel attributes
+        for ch in new_run.channels:
+            new_run.dataset[ch].attrs["time_period.start"] = new_run.start
+            new_run.dataset[ch].attrs["time_period.end"] = new_run.end
 
         new_run.run_metadata.update_time_period()
         new_run.station_metadata.update_time_period()
