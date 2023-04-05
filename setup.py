@@ -13,7 +13,7 @@ requirements = [
     "matplotlib",
     "numpy",
     "obspy",
-    "pandas==1.5",
+    "pandas=1.5",
     "pyyaml",
     "scipy",
     "xarray",
