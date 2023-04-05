@@ -32,9 +32,7 @@ class TestGetDecimationSampleRates(unittest.TestCase):
         )
 
     def test_1000_to_1000(self):
-        self.assertListEqual(
-            [1000], get_decimation_sample_rates(1000, 1000, 8)
-        )
+        self.assertListEqual([1000], get_decimation_sample_rates(1000, 1000, 8))
 
 
 class TestMakeDtCoordinates(unittest.TestCase):
@@ -64,9 +62,7 @@ class TestMakeDtCoordinates(unittest.TestCase):
         with self.subTest("start"):
             self.assertEqual(MTime(dt[0]), MTime("1980-01-01T00:00:00.000001"))
         with self.subTest("end"):
-            self.assertEqual(
-                MTime(dt[-1]), MTime("1980-01-01T00:00:15.000001")
-            )
+            self.assertEqual(MTime(dt[-1]), MTime("1980-01-01T00:00:15.000001"))
         with self.subTest("length"):
             self.assertEqual(16, len(dt))
 
@@ -100,9 +96,7 @@ class TestMakeDtCoordinates(unittest.TestCase):
         with self.subTest("start"):
             self.assertEqual(MTime(dt[0]), MTime("1980-01-01T00:00:00.0000"))
         with self.subTest("end"):
-            self.assertEqual(
-                MTime(dt[-1]), MTime("1980-01-01T00:00:00.058594")
-            )
+            self.assertEqual(MTime(dt[-1]), MTime("1980-01-01T00:00:00.058594"))
         with self.subTest("length"):
             self.assertEqual(16, len(dt))
 
@@ -113,7 +107,7 @@ class TestMakeDtCoordinates(unittest.TestCase):
             self.assertEqual(MTime(dt[0]), MTime("1980-01-01T00:00:00.0000"))
         with self.subTest("end"):
             self.assertEqual(
-                MTime(dt[-1]), MTime("1980-01-01T00:00:00.003662")
+                MTime(dt[-1]), MTime("1980-01-01T00:00:00.003662109")
             )
         with self.subTest("length"):
             self.assertEqual(16, len(dt))
