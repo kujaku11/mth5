@@ -371,10 +371,8 @@ class ChannelTS:
                 self.logger.debug("Loading from metadata dict")
                 return st_metadata
             else:
-                msg = (
-                    "input metadata must be type {0} or dict, not {1}".format(
-                        type(self.station_metadata), type(station_metadata)
-                    )
+                msg = "input metadata must be type {0} or dict, not {1}".format(
+                    type(self.station_metadata), type(station_metadata)
                 )
                 self.logger.error(msg)
                 raise TypeError(msg)
@@ -398,10 +396,8 @@ class ChannelTS:
                 self.logger.debug("Loading from metadata dict")
                 return sv_metadata
             else:
-                msg = (
-                    "input metadata must be type {0} or dict, not {1}".format(
-                        type(self.survey_metadata), type(survey_metadata)
-                    )
+                msg = "input metadata must be type {0} or dict, not {1}".format(
+                    type(self.survey_metadata), type(survey_metadata)
                 )
                 self.logger.error(msg)
                 raise TypeError(msg)
@@ -471,9 +467,7 @@ class ChannelTS:
         """
 
         if station_metadata is not None:
-            station_metadata = self._validate_station_metadata(
-                station_metadata
-            )
+            station_metadata = self._validate_station_metadata(station_metadata)
 
             runs = ListDict()
             if self.run_metadata.id not in ["0", 0, None]:
@@ -551,9 +545,7 @@ class ChannelTS:
         """
 
         if channel_metadata is not None:
-            channel_metadata = self._validate_channel_metadata(
-                channel_metadata
-            )
+            channel_metadata = self._validate_channel_metadata(channel_metadata)
             if channel_metadata.component is not None:
                 channels = ListDict()
                 if (
@@ -1190,8 +1182,10 @@ class ChannelTS:
             self.sample_rate, new_sample_rate, max_decimation
         )
 
-        new_ts = self._ts.filt.decimate(sr_list[0])
-        for step_sr in sr_list[1:]:
+        # need to fill nans with 0 otherwise they wipeout the decimation values
+        # and all becomes nan.
+        new_ts = self._ts.fillna(0)
+        for step_sr in sr_list:
             new_ts = new_ts.filt.decimate(step_sr)
 
         new_ts.attrs["sample_rate"] = new_sample_rate
@@ -1254,9 +1248,7 @@ class ChannelTS:
                 combine_list.append(ch._ts)
         else:
             if not isinstance(other, ChannelTS):
-                raise TypeError(
-                    f"Cannot combine {type(other)} with ChannelTS."
-                )
+                raise TypeError(f"Cannot combine {type(other)} with ChannelTS.")
 
             if self.component != other.component:
                 raise ValueError(
