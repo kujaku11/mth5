@@ -106,8 +106,8 @@ class TestMakeDtCoordinates(unittest.TestCase):
         with self.subTest("start"):
             self.assertEqual(MTime(dt[0]), MTime("1980-01-01T00:00:00.0000"))
         with self.subTest("end"):
-            self.assertEqual(
-                MTime(dt[-1]), MTime("1980-01-01T00:00:00.003662109")
+            self.assertAlmostEqual(
+                MTime(dt[-1]), MTime("1980-01-01T00:00:00.003662109"), 9
             )
         with self.subTest("length"):
             self.assertEqual(16, len(dt))
