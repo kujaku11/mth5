@@ -22,7 +22,10 @@ from mth5.timeseries import ChannelTS, RunTS
 
 from mt_metadata.utils.mttime import MTime
 import mt_metadata.timeseries as metadata
-from mt_metadata.timeseries.filters import PoleZeroFilter, ChannelResponseFilter
+from mt_metadata.timeseries.filters import (
+    PoleZeroFilter,
+    ChannelResponseFilter,
+)
 
 # =============================================================================
 # test run
@@ -475,7 +478,9 @@ class TestRunTS(unittest.TestCase):
         :return:
         """
 
-        self.assertRaises(NameError, getattr, *(self.run_object, "temperature"))
+        self.assertRaises(
+            NameError, getattr, *(self.run_object, "temperature")
+        )
 
     def test_get_slice(self):
 
@@ -778,6 +783,152 @@ class TestMergeRunTS(unittest.TestCase):
                 ["ey", "hx"],
                 self.merged_run_sr01.channels,
             )
+
+
+class TestMisalignedRuns(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.maxDiff = None
+        channel_list = []
+        self.common_start = "2020-01-01T00:00:00+00:00"
+        self.sample_rate = 1.0
+        self.hx_n_samples = 4098
+        self.ey_n_samples = 4096
+        self.station_metadata = metadata.Station(id="mt001")
+        self.run_metadata = metadata.Run(id="001")
+        channel_list = []
+
+        ### HX
+        hx_metadata = metadata.Magnetic(component="hx")
+        hx_metadata.time_period.start = self.common_start
+        hx_metadata.sample_rate = self.sample_rate
+
+        t = np.arange(self.hx_n_samples)
+        data = np.sum(
+            [
+                np.cos(2 * np.pi * w * t + phi)
+                for w, phi in zip(np.logspace(-3, 3, 20), np.random.rand(20))
+            ],
+            axis=0,
+        )
+
+        self.hx = ChannelTS(
+            channel_type="magnetic",
+            data=data,
+            channel_metadata=hx_metadata,
+            run_metadata=self.run_metadata,
+            station_metadata=self.station_metadata,
+        )
+        channel_list.append(self.hx)
+
+        ## EY
+        ey_metadata = metadata.Electric(component="ey")
+        ey_metadata.time_period.start = self.common_start
+        ey_metadata.sample_rate = self.sample_rate
+
+        t = np.arange(self.ey_n_samples)
+        data = np.sum(
+            [
+                np.cos(2 * np.pi * w * t + phi)
+                for w, phi in zip(np.logspace(-3, 3, 20), np.random.rand(20))
+            ],
+            axis=0,
+        )
+
+        self.ey = ChannelTS(
+            channel_type="electric",
+            data=data,
+            channel_metadata=ey_metadata,
+            run_metadata=self.run_metadata,
+            station_metadata=self.station_metadata,
+        )
+        channel_list.append(self.ey)
+
+        ## bad channel
+        ex_metadata = metadata.Electric(component="ex")
+        ex_metadata.time_period.start = "2021-05-05T12:10:05+00:00"
+        ex_metadata.sample_rate = self.sample_rate + 10
+
+        self.bad_ch = ChannelTS(
+            channel_type="electric",
+            data=data,
+            channel_metadata=ex_metadata,
+            run_metadata=self.run_metadata,
+            station_metadata=self.station_metadata,
+        )
+
+        self.run_ts = RunTS(channel_list)
+        self.ch_list = [self.ey._ts, self.hx._ts]
+        self.bad_ch_list = [self.ey._ts, self.hx._ts, self.bad_ch._ts]
+
+    def test_check_sample_rate(self):
+        self.assertEqual(
+            self.sample_rate,
+            self.run_ts._check_sample_rate(self.ch_list),
+        )
+
+    def test_check_sample_rate_fail(self):
+        self.assertRaises(
+            ValueError,
+            self.run_ts._check_sample_rate,
+            **{"valid_list": self.bad_ch_list},
+        )
+
+    def test_common_start(self):
+        self.assertEqual(True, self.run_ts._check_common_start(self.ch_list))
+
+    def test_common_start_fail(self):
+        self.assertEqual(
+            False, self.run_ts._check_common_start(self.bad_ch_list)
+        )
+
+    def test_common_end(self):
+        self.assertEqual(False, self.run_ts._check_common_end(self.ch_list))
+
+    def test_common_end_fail(self):
+        self.assertEqual(
+            False, self.run_ts._check_common_end(self.bad_ch_list)
+        )
+
+    def test_earliest_start(self):
+        self.assertEqual(
+            self.ey._ts.coords["time"].values[0],
+            self.run_ts._get_earliest_start(self.ch_list),
+        )
+
+    def test_latest_end(self):
+        self.assertEqual(
+            self.hx._ts.coords["time"].values[-1],
+            self.run_ts._get_latest_end(self.ch_list),
+        )
+
+    def test_get_common_time_index(self):
+        dt = self.run_ts._get_common_time_index(
+            self.ey._ts.coords["time"].values[0],
+            self.hx._ts.coords["time"].values[-1],
+            self.sample_rate,
+        )
+
+        earliest_start = self.run_ts._get_earliest_start(self.ch_list)
+        latest_end = self.run_ts._get_latest_end(self.ch_list)
+
+        dt2 = self.run_ts._get_common_time_index(
+            earliest_start, latest_end, self.sample_rate
+        )
+
+        self.assertTrue((dt == dt2).all())
+
+    def test_run_start(self):
+        self.assertEqual(self.run_ts.start, self.common_start)
+
+    def test_run_end(self):
+        self.assertEqual(self.run_ts.end, self.hx.end)
+
+    def test_run_nsamples(self):
+        self.assertEqual(self.run_ts.dataset.sizes["time"], self.hx_n_samples)
+
+    def test_run_sample_rate(self):
+        self.assertEqual(self.run_ts.sample_rate, self.sample_rate)
 
 
 # =============================================================================

@@ -32,6 +32,10 @@ from mt_metadata.utils.list_dict import ListDict
 from mth5.utils.mth5_logger import setup_logger
 from mth5.utils import fdsn_tools
 from mth5.timeseries.ts_filters import RemoveInstrumentResponse
+from mth5.timeseries.ts_helpers import (
+    make_dt_coordinates,
+    get_decimation_sample_rates,
+)
 
 from obspy.core import Trace
 
@@ -39,63 +43,6 @@ from obspy.core import Trace
 # make a dictionary of available metadata classes
 # =============================================================================
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
-
-
-def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
-    """
-    get the date time index from the data
-
-    :param string start_time: start time in time format
-    :param float sample_rate: sample rate in samples per seconds
-    :param int n_samples: number of samples in time series
-    :param logger: logger class object
-    :type logger: ":class:`logging.logger`
-    :return: date-time index
-
-    """
-
-    if sample_rate in [0, None]:
-        msg = (
-            f"Need to input a valid sample rate. Not {sample_rate}, "
-            + "returning a time index assuming a sample rate of 1"
-        )
-        logger.warning(msg)
-        sample_rate = 1
-    if start_time is None:
-        msg = (
-            f"Need to input a start time. Not {start_time}, "
-            + "returning a time index with start time of "
-            + "1980-01-01T00:00:00"
-        )
-        logger.warning(msg)
-        start_time = "1980-01-01T00:00:00"
-    if n_samples < 1:
-        msg = f"Need to input a valid n_samples. Not {n_samples}"
-        logger.error(msg)
-        raise ValueError(msg)
-    if not isinstance(start_time, MTime):
-        start_time = MTime(start_time)
-
-    # there is something screwy that happens when your sample rate is not a
-    # nice value that can easily fit into the 60 base.  For instance if you
-    # have a sample rate of 24000 the dt_freq will be '41667N', but that is
-    # not quite right since the rounding clips some samples and your
-    # end time will be incorrect (short).
-    # FIX: therefore estimate the end time based on the decimal sample rate.
-    # need to account for the fact that the start time is the first sample
-    # need n_samples - 1
-    end_time = start_time + (n_samples - 1) / sample_rate
-
-    # dt_freq = "{0:.0f}N".format(1.0e9 / (sample_rate))
-
-    dt_index = pd.date_range(
-        start=start_time.iso_no_tz,
-        end=end_time.iso_no_tz,
-        periods=n_samples,
-    )
-
-    return dt_index
-
 
 # ==============================================================================
 # Channel Time Series Object
@@ -289,11 +236,9 @@ class ChannelTS:
             channel_response_filter=self.channel_response_filter,
         )
 
-        new_channel._ts = (
-            combined_ds.reindex({"time": new_dt_index}, method=None)
-            .to_array()
-            .interpolate_na(dim="time", method="slinear")
-        )
+        new_channel._ts = combined_ds.interp(
+            time=new_dt_index, method="slinear"
+        ).to_array()
 
         new_channel.channel_metadata.time_period.start = new_channel.start
         new_channel.channel_metadata.time_period.end = new_channel.end
@@ -426,10 +371,8 @@ class ChannelTS:
                 self.logger.debug("Loading from metadata dict")
                 return st_metadata
             else:
-                msg = (
-                    "input metadata must be type {0} or dict, not {1}".format(
-                        type(self.station_metadata), type(station_metadata)
-                    )
+                msg = "input metadata must be type {0} or dict, not {1}".format(
+                    type(self.station_metadata), type(station_metadata)
                 )
                 self.logger.error(msg)
                 raise TypeError(msg)
@@ -453,10 +396,8 @@ class ChannelTS:
                 self.logger.debug("Loading from metadata dict")
                 return sv_metadata
             else:
-                msg = (
-                    "input metadata must be type {0} or dict, not {1}".format(
-                        type(self.survey_metadata), type(survey_metadata)
-                    )
+                msg = "input metadata must be type {0} or dict, not {1}".format(
+                    type(self.survey_metadata), type(survey_metadata)
                 )
                 self.logger.error(msg)
                 raise TypeError(msg)
@@ -526,9 +467,7 @@ class ChannelTS:
         """
 
         if station_metadata is not None:
-            station_metadata = self._validate_station_metadata(
-                station_metadata
-            )
+            station_metadata = self._validate_station_metadata(station_metadata)
 
             runs = ListDict()
             if self.run_metadata.id not in ["0", 0, None]:
@@ -606,9 +545,7 @@ class ChannelTS:
         """
 
         if channel_metadata is not None:
-            channel_metadata = self._validate_channel_metadata(
-                channel_metadata
-            )
+            channel_metadata = self._validate_channel_metadata(channel_metadata)
             if channel_metadata.component is not None:
                 channels = ListDict()
                 if (
@@ -1230,7 +1167,7 @@ class ChannelTS:
         return new_ch_ts
 
     # decimate data
-    def decimate(self, new_sample_rate, inplace=False):
+    def decimate(self, new_sample_rate, inplace=False, max_decimation=8):
         """
         decimate the data by using scipy.signal.decimate
 
@@ -1241,17 +1178,15 @@ class ChannelTS:
 
         """
 
-        if self.sample_rate / new_sample_rate > 12:
-            q_list = [8] * (self.sample_rate // new_sample_rate) + [
-                self.sample_rate % 8
-            ]
+        sr_list = get_decimation_sample_rates(
+            self.sample_rate, new_sample_rate, max_decimation
+        )
 
-            new_ts = self._ts.filt.decimate(q_list[0])
-            for q_factor in q_list[1:]:
-                new_ts = new_ts.filt.decimate(q_factor)
-
-        else:
-            new_ts = self._ts.filt.decimate(new_sample_rate, dim="time")
+        # need to fill nans with 0 otherwise they wipeout the decimation values
+        # and all becomes nan.
+        new_ts = self._ts.fillna(0)
+        for step_sr in sr_list:
+            new_ts = new_ts.filt.decimate(step_sr)
 
         new_ts.attrs["sample_rate"] = new_sample_rate
         self.channel_metadata.sample_rate = new_ts.attrs["sample_rate"]
@@ -1313,9 +1248,7 @@ class ChannelTS:
                 combine_list.append(ch._ts)
         else:
             if not isinstance(other, ChannelTS):
-                raise TypeError(
-                    f"Cannot combine {type(other)} with ChannelTS."
-                )
+                raise TypeError(f"Cannot combine {type(other)} with ChannelTS.")
 
             if self.component != other.component:
                 raise ValueError(
@@ -1361,14 +1294,9 @@ class ChannelTS:
             channel_response_filter=self.channel_response_filter,
         )
 
-        new_channel._ts = (
-            combined_ds.reindex(
-                {"time": new_dt_index},
-                method=None,
-            )
-            .to_array()
-            .interpolate_na(dim="time", method=gap_method)
-        )
+        new_channel._ts = combined_ds.interp(
+            time=new_dt_index, method=gap_method
+        ).to_array()
 
         new_channel.channel_metadata.time_period.start = new_channel.start
         new_channel.channel_metadata.time_period.end = new_channel.end
