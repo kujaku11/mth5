@@ -498,7 +498,7 @@ class Z3D:
             fap.units_in = "nanotesla"
             fap.units_out = "millivolts"
             fap.frequencies = self.metadata.coil_cal.frequency
-            fap.amplitudes = 1 / self.metadata.coil_cal.amplitude
+            fap.amplitudes = 1.0 / self.metadata.coil_cal.amplitude
             fap.phases = -1 * self.metadata.coil_cal.phase / 1e3
             fap.name = f"ant4_{self.coil_number}_response"
             fap.comments = "induction coil response read from z3d file"
