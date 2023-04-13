@@ -475,8 +475,8 @@ class Z3D:
         """
 
         c2mv = CoefficientFilter()
-        c2mv.units_in = "digital counts"
-        c2mv.units_out = "millivolts"
+        c2mv.units_in = "millivolts"
+        c2mv.units_out = "digital counts"
         c2mv.name = "zen_counts2mv"
         c2mv.gain = 1.0 / self.header.ch_factor
         c2mv.comments = "digital counts to millivolts"
@@ -491,13 +491,15 @@ class Z3D:
         Phase must be in radians
         """
         fap = None
+        # needs to be inverse to calibrate correctly.  The units of the
+        # response are mV/nT, but we need nT/mV
         if self.metadata.cal_ant is not None:
             fap = FrequencyResponseTableFilter()
-            fap.units_in = "millivolts"
-            fap.units_out = "nanotesla"
+            fap.units_in = "nanotesla"
+            fap.units_out = "millivolts"
             fap.frequencies = self.metadata.coil_cal.frequency
-            fap.amplitudes = self.metadata.coil_cal.amplitude
-            fap.phases = self.metadata.coil_cal.phase / 1e3
+            fap.amplitudes = 1 / self.metadata.coil_cal.amplitude
+            fap.phases = -1 * self.metadata.coil_cal.phase / 1e3
             fap.name = f"ant4_{self.coil_number}_response"
             fap.comments = "induction coil response read from z3d file"
 
@@ -577,23 +579,27 @@ class Z3D:
 
     @property
     def channel_response(self):
-        filter_list = [self.counts2mv_filter]
-        if self.zen_response:
-            filter_list.append(self.zen_response)
+        filter_list = []
+        # don't have a good handle on the zen response yet.
+        # if self.zen_response:
+        #     filter_list.append(self.zen_response)
         if self.coil_response:
             filter_list.append(self.coil_response)
         elif self.dipole_filter:
             filter_list.append(self.dipole_filter)
+
+        filter_list.append(self.counts2mv_filter)
 
         return ChannelResponseFilter(filters_list=filter_list)
 
     @property
     def dipole_filter(self):
         dipole = None
+        # needs to be the inverse for processing
         if self.dipole_length != 0:
             dipole = CoefficientFilter()
-            dipole.units_in = "millivolts"
-            dipole.units_out = "millivolts per kilometer"
+            dipole.units_in = "millivolts per kilometer"
+            dipole.units_out = "millivolts"
             dipole.name = f"dipole_{self.dipole_length:.2f}m"
             dipole.gain = self.dipole_length / 1000.0
             dipole.comments = "convert to electric field"
@@ -1116,7 +1122,7 @@ class Z3D:
         )
 
         # compute date and time from seconds and return a datetime object
-        # easier to manipulate later
+        # easier to manipulate later, must be in nanoseconds
         return MTime(utc_seconds, gps_time=True)
 
     # =================================================
