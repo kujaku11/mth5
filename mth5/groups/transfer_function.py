@@ -10,7 +10,6 @@ Created on Thu Mar 10 08:22:33 2022
 # =============================================================================
 import numpy as np
 import xarray as xr
-import h5py
 
 from mth5.groups import BaseGroup, EstimateDataset
 from mth5.helpers import validate_name, from_numpy_type
@@ -318,7 +317,9 @@ class TransferFunctionGroup(BaseGroup):
         if self.period is not None:
             tf_obj.period = self.period
         else:
-            msg = "Period must not be None to create a transfer function object"
+            msg = (
+                "Period must not be None to create a transfer function object"
+            )
             self.logger.error(msg)
             raise ValueError(msg)
         for estimate_name in self.groups_list:
