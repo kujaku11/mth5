@@ -116,9 +116,7 @@ class Z3D:
     """
 
     def __init__(self, fn=None, **kwargs):
-        self.logger = logging.getLogger(
-            f"{__name__}.{self.__class__.__name__}"
-        )
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.fn = fn
 
         self.header = Z3DHeader(fn)
@@ -491,15 +489,16 @@ class Z3D:
         Phase must be in radians
         """
         fap = None
-        # needs to be inverse to calibrate correctly.  The units of the
-        # response are mV/nT, but we need nT/mV
+        # looks like zen outputs radial frequency
         if self.metadata.cal_ant is not None:
             fap = FrequencyResponseTableFilter()
             fap.units_in = "nanotesla"
             fap.units_out = "millivolts"
-            fap.frequencies = self.metadata.coil_cal.frequency
-            fap.amplitudes = 1.0 / self.metadata.coil_cal.amplitude
-            fap.phases = -1 * self.metadata.coil_cal.phase / 1e3
+            fap.frequencies = (
+                1 / (2 * np.pi)
+            ) * self.metadata.coil_cal.frequency
+            fap.amplitudes = self.metadata.coil_cal.amplitude
+            fap.phases = self.metadata.coil_cal.phase / 1e3
             fap.name = f"ant4_{self.coil_number}_response"
             fap.comments = "induction coil response read from z3d file"
 
@@ -544,9 +543,7 @@ class Z3D:
                     fap_str = self.metadata.cal_board["cal.ch"]
                     for ss in fap_str.split(";"):
                         freq, _, resp = ss.split(",")
-                        ff, amp, phs = [
-                            float(item) for item in resp.split(":")
-                        ]
+                        ff, amp, phs = [float(item) for item in resp.split(":")]
                         if float(freq) == self.sample_rate:
                             frequency = ff
                             amplitude = amp
@@ -628,9 +625,7 @@ class Z3D:
             self._gps_stamp_length = 36
             self._gps_bytes = self._gps_stamp_length / 4
             self._gps_flag_0 = -1
-            self._block_len = int(
-                self._gps_stamp_length + self.sample_rate * 4
-            )
+            self._block_len = int(self._gps_stamp_length + self.sample_rate * 4)
             self.gps_flag = self._gps_f0
 
         else:
@@ -883,9 +878,7 @@ class Z3D:
         self.raw_data = data.copy()
 
         # find the gps stamps
-        gps_stamp_find = self.get_gps_stamp_index(
-            data, self.header.old_version
-        )
+        gps_stamp_find = self.get_gps_stamp_index(data, self.header.old_version)
 
         # skip the first two stamps and trim data
         try:
@@ -896,9 +889,7 @@ class Z3D:
             raise ZenGPSError(msg)
 
         # find gps stamps of the trimmed data
-        gps_stamp_find = self.get_gps_stamp_index(
-            data, self.header.old_version
-        )
+        gps_stamp_find = self.get_gps_stamp_index(data, self.header.old_version)
 
         # read data chunks and GPS stamps
         self.gps_stamps = np.zeros(len(gps_stamp_find), dtype=self._gps_dtype)
