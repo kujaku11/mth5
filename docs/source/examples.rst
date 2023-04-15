@@ -1,4 +1,4 @@
-Make MTH5 from IRIS Data Center
+Examples
 ---------------------------------------
 
 .. toctree::
@@ -6,5 +6,6 @@ Make MTH5 from IRIS Data Center
 
     ../examples/notebooks/make_mth5_driver_v0.1.0.ipynb
     ../examples/notebooks/make_mth5_driver_v0.2.0.ipynb
+    ../examples/notebooks/make_mth5_from_geomag.ipynb
 
 

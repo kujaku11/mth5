@@ -32,6 +32,10 @@ from mt_metadata.utils.list_dict import ListDict
 from mth5.utils.mth5_logger import setup_logger
 from mth5.utils import fdsn_tools
 from mth5.timeseries.ts_filters import RemoveInstrumentResponse
+from mth5.timeseries.ts_helpers import (
+    make_dt_coordinates,
+    get_decimation_sample_rates,
+)
 
 from obspy.core import Trace
 
@@ -39,63 +43,6 @@ from obspy.core import Trace
 # make a dictionary of available metadata classes
 # =============================================================================
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
-
-
-def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
-    """
-    get the date time index from the data
-
-    :param string start_time: start time in time format
-    :param float sample_rate: sample rate in samples per seconds
-    :param int n_samples: number of samples in time series
-    :param logger: logger class object
-    :type logger: ":class:`logging.logger`
-    :return: date-time index
-
-    """
-
-    if sample_rate in [0, None]:
-        msg = (
-            f"Need to input a valid sample rate. Not {sample_rate}, "
-            + "returning a time index assuming a sample rate of 1"
-        )
-        logger.warning(msg)
-        sample_rate = 1
-    if start_time is None:
-        msg = (
-            f"Need to input a start time. Not {start_time}, "
-            + "returning a time index with start time of "
-            + "1980-01-01T00:00:00"
-        )
-        logger.warning(msg)
-        start_time = "1980-01-01T00:00:00"
-    if n_samples < 1:
-        msg = f"Need to input a valid n_samples. Not {n_samples}"
-        logger.error(msg)
-        raise ValueError(msg)
-    if not isinstance(start_time, MTime):
-        start_time = MTime(start_time)
-
-    # there is something screwy that happens when your sample rate is not a
-    # nice value that can easily fit into the 60 base.  For instance if you
-    # have a sample rate of 24000 the dt_freq will be '41667N', but that is
-    # not quite right since the rounding clips some samples and your
-    # end time will be incorrect (short).
-    # FIX: therefore estimate the end time based on the decimal sample rate.
-    # need to account for the fact that the start time is the first sample
-    # need n_samples - 1
-    end_time = start_time + (n_samples - 1) / sample_rate
-
-    # dt_freq = "{0:.0f}N".format(1.0e9 / (sample_rate))
-
-    dt_index = pd.date_range(
-        start=start_time.iso_no_tz,
-        end=end_time.iso_no_tz,
-        periods=n_samples,
-    )
-
-    return dt_index
-
 
 # ==============================================================================
 # Channel Time Series Object
@@ -206,7 +153,7 @@ class ChannelTS:
     def __eq__(self, other):
 
         if not isinstance(other, ChannelTS):
-            raise ValueError(f"Cannot compare ChannelTS with {type(other)}")
+            raise TypeError(f"Cannot compare ChannelTS with {type(other)}.")
         if not other.channel_metadata == self.channel_metadata:
             return False
         if self._ts.equals(other._ts) is False:
@@ -228,6 +175,81 @@ class ChannelTS:
 
     def __gt__(self, other):
         return not self.__lt__(other)
+
+    def __add__(self, other):
+        """
+        Add two channels together in the following steps
+
+        1. xr.combine_by_coords([original, other])
+        2. compute monotonic time index
+        3. reindex(new_time_index, method='nearest')
+
+        If you want a different method or more control use merge
+
+        :param other: Another channel
+        :type other: :class:`mth5.timeseries.ChannelTS`
+        :raises TypeError: If input is not a ChannelTS
+        :raises ValueError: if the components are different
+        :return: Combined channel with monotonic time index and same metadata
+        :rtype: :class:`mth5.timeseries.ChannelTS`
+
+        """
+        if not isinstance(other, ChannelTS):
+            raise TypeError(f"Cannot combine {type(other)} with ChannelTS.")
+
+        if self.component != other.component:
+            raise ValueError(
+                "Cannot combine channels with different components. "
+                f"{self.component} != {other.component}"
+            )
+        if self._ts.name != self.component:
+            self._ts.name = self.component
+        if other._ts.name != self.component:
+            other._ts.name = self.component
+
+        # combine into a data set use override to keep attrs from original
+        combined_ds = xr.combine_by_coords(
+            [self._ts, other._ts], combine_attrs="override"
+        )
+
+        n_samples = (
+            self.sample_rate
+            * float(
+                combined_ds.time.max().values - combined_ds.time.min().values
+            )
+            / 1e9
+        ) + 1
+
+        new_dt_index = make_dt_coordinates(
+            combined_ds.time.min().values,
+            self.sample_rate,
+            n_samples,
+            self.logger,
+        )
+
+        new_channel = ChannelTS(
+            channel_type=self.channel_metadata.type,
+            channel_metadata=self.channel_metadata,
+            run_metadata=self.run_metadata,
+            station_metadata=self.station_metadata,
+            survey_metadata=self.survey_metadata,
+            channel_response_filter=self.channel_response_filter,
+        )
+
+        new_channel._ts = combined_ds.interp(
+            time=new_dt_index, method="slinear"
+        ).to_array()
+
+        new_channel.channel_metadata.time_period.start = new_channel.start
+        new_channel.channel_metadata.time_period.end = new_channel.end
+
+        new_channel.run_metadata.update_time_period()
+        new_channel.station_metadata.update_time_period()
+        new_channel.survey_metadata.update_time_period()
+
+        new_channel._update_xarray_metadata()
+
+        return new_channel
 
     def _initialize_metadata(self):
         """
@@ -257,6 +279,9 @@ class ChannelTS:
         """
 
         if channel_type is None:
+            channel_type = "auxiliary"
+
+        if channel_type.lower() not in ["electric", "magnetic"]:
             channel_type = "auxiliary"
 
         if not channel_type.capitalize() in meta_classes.keys():
@@ -379,6 +404,33 @@ class ChannelTS:
 
         return survey_metadata.copy()
 
+    def copy(self, data=True):
+        """
+        :return: Coppy of the channel
+        :rtype: :class:`mth5.timeseries.ChannelTS
+
+        """
+
+        if not data:
+            return ChannelTS(
+                channel_type=self.channel_metadata.type,
+                channel_metadata=self.channel_metadata.copy(),
+                run_metadata=self.run_metadata.copy(),
+                station_metadata=self.station_metadata.copy(),
+                survey_metadata=self.survey_metadata.copy(),
+                channel_response_filter=self.channel_response_filter.copy(),
+            )
+        else:
+            return ChannelTS(
+                channel_type=self.channel_metadata.type,
+                data=self.ts,
+                channel_metadata=self.channel_metadata.copy(),
+                run_metadata=self.run_metadata.copy(),
+                station_metadata=self.station_metadata.copy(),
+                survey_metadata=self.survey_metadata.copy(),
+                channel_response_filter=self.channel_response_filter.copy(),
+            )
+
     ### Properties ------------------------------------------------------------
     @property
     def survey_metadata(self):
@@ -481,8 +533,10 @@ class ChannelTS:
         """
         station metadata
         """
-
-        return self._survey_metadata.stations[0].runs[0].channels[0]
+        ch_metadata = self._survey_metadata.stations[0].runs[0].channels[0]
+        if self.has_data():
+            ch_metadata.sample_rate = self.sample_rate
+        return ch_metadata
 
     @channel_metadata.setter
     def channel_metadata(self, channel_metadata):
@@ -691,6 +745,7 @@ class ChannelTS:
         # more metadata down the road.
         self._ts.attrs["station.id"] = self.station_metadata.id
         self._ts.attrs["run.id"] = self.run_metadata.id
+        self._ts.name = self.component
 
     @property
     def component(self):
@@ -749,12 +804,11 @@ class ChannelTS:
             "Cannot set the number of samples. Use `ChannelTS.resample` or `get_slice`"
         )
 
-    @property
     def has_data(self):
         """
         check to see if there is an index in the time series
         """
-        if len(self._ts) > 1:
+        if self._ts.data.size > 1:
             if isinstance(
                 self._ts.indexes["time"][0],
                 pd._libs.tslibs.timestamps.Timestamp,
@@ -768,7 +822,7 @@ class ChannelTS:
     @property
     def sample_rate(self):
         """sample rate in samples/second"""
-        if self.has_data:
+        if self.has_data():
             # this is more accurate for high sample rates, the way
             # pandas.date_range rounds nanoseconds is not consistent between
             # samples, therefore taking the median provides better results
@@ -806,7 +860,7 @@ class ChannelTS:
 
         type float
         """
-        if self.has_data:
+        if self.has_data():
             self.logger.warning(
                 "Resetting sample_rate assumes same start time and "
                 + "same number of samples, resulting in new end time. "
@@ -846,7 +900,7 @@ class ChannelTS:
     @property
     def start(self):
         """MTime object"""
-        if self.has_data:
+        if self.has_data():
             return MTime(self._ts.coords.indexes["time"][0].isoformat())
         else:
             self.logger.debug(
@@ -874,7 +928,7 @@ class ChannelTS:
         if not isinstance(start_time, MTime):
             start_time = MTime(start_time)
         self.channel_metadata.time_period.start = start_time.iso_str
-        if self.has_data:
+        if self.has_data():
             if start_time == MTime(
                 self._ts.coords.indexes["time"][0].isoformat()
             ):
@@ -897,7 +951,7 @@ class ChannelTS:
     @property
     def end(self):
         """MTime object"""
-        if self.has_data:
+        if self.has_data():
             return MTime(self._ts.coords.indexes["time"][-1].isoformat())
         else:
             self.logger.debug(
@@ -1113,7 +1167,7 @@ class ChannelTS:
         return new_ch_ts
 
     # decimate data
-    def resample(self, dec_factor=1, inplace=False):
+    def decimate(self, new_sample_rate, inplace=False, max_decimation=8):
         """
         decimate the data by using scipy.signal.decimate
 
@@ -1124,12 +1178,17 @@ class ChannelTS:
 
         """
 
-        new_dt_freq = "{0:.0f}N".format(1e9 / (self.sample_rate / dec_factor))
-
-        new_ts = self._ts.resample(time=new_dt_freq).nearest(
-            tolerance=new_dt_freq
+        sr_list = get_decimation_sample_rates(
+            self.sample_rate, new_sample_rate, max_decimation
         )
-        new_ts.attrs["sample_rate"] = self.sample_rate / dec_factor
+
+        # need to fill nans with 0 otherwise they wipeout the decimation values
+        # and all becomes nan.
+        new_ts = self._ts.fillna(0)
+        for step_sr in sr_list:
+            new_ts = new_ts.filt.decimate(step_sr)
+
+        new_ts.attrs["sample_rate"] = new_sample_rate
         self.channel_metadata.sample_rate = new_ts.attrs["sample_rate"]
 
         if inplace:
@@ -1146,6 +1205,109 @@ class ChannelTS:
                 data=new_ts,
                 metadata=self.channel_metadata,
             )
+
+    def merge(self, other, gap_method="slinear", new_sample_rate=None):
+        """
+        merg two channels or list of channels together in the following steps
+
+        1. xr.combine_by_coords([original, other])
+        2. compute monotonic time index
+        3. reindex(new_time_index, method=gap_method)
+
+        If you want a different method or more control use merge
+
+        :param other: Another channel
+        :type other: :class:`mth5.timeseries.ChannelTS`
+        :raises TypeError: If input is not a ChannelTS
+        :raises ValueError: if the components are different
+        :return: Combined channel with monotonic time index and same metadata
+        :rtype: :class:`mth5.timeseries.ChannelTS`
+
+        """
+        if new_sample_rate is not None:
+            merge_sample_rate = new_sample_rate
+            combine_list = [self.decimate(new_sample_rate)._ts]
+        else:
+            merge_sample_rate = self.sample_rate
+            combine_list = [self._ts]
+
+        if isinstance(other, (list, tuple)):
+            for ch in other:
+                if not isinstance(ch, ChannelTS):
+                    raise TypeError(
+                        f"Cannot combine {type(ch)} with ChannelTS."
+                    )
+
+                if self.component != ch.component:
+                    raise ValueError(
+                        "Cannot combine channels with different components. "
+                        f"{self.component} != {ch.component}"
+                    )
+                if new_sample_rate is not None:
+                    ch = ch.decimate(new_sample_rate)
+                combine_list.append(ch._ts)
+        else:
+            if not isinstance(other, ChannelTS):
+                raise TypeError(f"Cannot combine {type(other)} with ChannelTS.")
+
+            if self.component != other.component:
+                raise ValueError(
+                    "Cannot combine channels with different components. "
+                    f"{self.component} != {other.component}"
+                )
+            if new_sample_rate is not None:
+                other = other.decimate(new_sample_rate)
+            combine_list.append(other._ts)
+
+        # combine into a data set use override to keep attrs from original
+
+        combined_ds = xr.combine_by_coords(
+            combine_list, combine_attrs="override"
+        )
+
+        n_samples = (
+            merge_sample_rate
+            * float(
+                combined_ds.time.max().values - combined_ds.time.min().values
+            )
+            / 1e9
+        ) + 1
+
+        new_dt_index = make_dt_coordinates(
+            combined_ds.time.min().values,
+            merge_sample_rate,
+            n_samples,
+            self.logger,
+        )
+
+        channel_metadata = self.channel_metadata.copy()
+        channel_metadata.sample_rate = merge_sample_rate
+        run_metadata = self.run_metadata.copy()
+        run_metadata.sample_rate = merge_sample_rate
+
+        new_channel = ChannelTS(
+            channel_type=self.channel_metadata.type,
+            channel_metadata=channel_metadata,
+            run_metadata=self.run_metadata,
+            station_metadata=self.station_metadata,
+            survey_metadata=self.survey_metadata,
+            channel_response_filter=self.channel_response_filter,
+        )
+
+        new_channel._ts = combined_ds.interp(
+            time=new_dt_index, method=gap_method
+        ).to_array()
+
+        new_channel.channel_metadata.time_period.start = new_channel.start
+        new_channel.channel_metadata.time_period.end = new_channel.end
+
+        new_channel.run_metadata.update_time_period()
+        new_channel.station_metadata.update_time_period()
+        new_channel.survey_metadata.update_time_period()
+
+        new_channel._update_xarray_metadata()
+
+        return new_channel
 
     def to_xarray(self):
         """
@@ -1186,6 +1348,8 @@ class ChannelTS:
         )
         obspy_trace.stats.starttime = self.start.iso_str
         obspy_trace.stats.sampling_rate = self.sample_rate
+        if self.station_metadata.fdsn.id is None:
+            self.station_metadata.fdsn.id = self.station_metadata.id
         obspy_trace.stats.station = self.station_metadata.fdsn.id
 
         return obspy_trace
@@ -1204,14 +1368,24 @@ class ChannelTS:
             raise TypeError(msg)
         if obspy_trace.stats.channel[1].lower() in ["e", "q"]:
             self.channel_type = "electric"
+            measurement = "electric"
         elif obspy_trace.stats.channel[1].lower() in ["h", "b", "f"]:
             self.channel_type = "magnetic"
+            measurement = "magnetic"
         else:
+            try:
+                measurement = fdsn_tools.measurement_code_dict_reverse[
+                    obspy_trace.stats.channel[1]
+                ]
+            except KeyError:
+                measurement = "auxiliary"
             self.channel_type = "auxiliary"
         mt_code = fdsn_tools.make_mt_channel(
             fdsn_tools.read_channel_code(obspy_trace.stats.channel)
         )
+
         self.channel_metadata.component = mt_code
+        self.channel_metadata.type = measurement
         self.start = obspy_trace.stats.starttime.isoformat()
         self.sample_rate = obspy_trace.stats.sampling_rate
         self.station_metadata.fdsn.id = obspy_trace.stats.station
@@ -1219,6 +1393,7 @@ class ChannelTS:
         self.station_metadata.id = obspy_trace.stats.station
         self.channel_metadata.units = "counts"
         self.ts = obspy_trace.data
+        self.run_metadata.id = f"sr{int(self.sample_rate)}_001"
 
     def plot(self):
         """

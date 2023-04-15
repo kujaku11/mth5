@@ -15,12 +15,13 @@ import unittest
 from pathlib import Path
 import numpy as np
 
-from mth5 import mth5
+from mth5.mth5 import MTH5
+from mth5 import helpers
 from mt_metadata.timeseries.filters import PoleZeroFilter, CoefficientFilter
 
 fn_path = Path(__file__).parent
 # =============================================================================
-mth5.helpers.close_open_files()
+helpers.close_open_files()
 
 
 class TestFilters(unittest.TestCase):
@@ -31,7 +32,7 @@ class TestFilters(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.fn = fn_path.joinpath("filter_test.h5")
-        self.m_obj = mth5.MTH5(file_version="0.2.0")
+        self.m_obj = MTH5(file_version="0.2.0")
         self.m_obj.open_mth5(self.fn, "w")
 
         self.survey_group = self.m_obj.add_survey("test")

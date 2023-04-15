@@ -3,10 +3,12 @@
 # Imports
 # =============================================================================
 import numpy as np
+import xarray as xr
 import h5py
 
 from mth5.io.reader import read_file
 from mth5.utils.mth5_logger import setup_logger, load_logging_config
+import mth5.timeseries.scipy_filters
 
 # =============================================================================
 # Package Variables
@@ -25,6 +27,10 @@ __version__ = "0.3.1"
 load_logging_config()
 debug_logger = setup_logger(__name__, fn="mth5_debug", level="info")
 debug_logger.debug("Starting MTH5 Debug Log File")
+
+# need to set this to make sure attributes of data arrays and data sets
+# are kept when doing xarray computations like merge.
+xr.set_options(keep_attrs=True)
 
 # =============================================================================
 # Defualt Parameters

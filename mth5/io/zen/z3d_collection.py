@@ -105,14 +105,20 @@ class Z3DCollection(Collection):
         station_metadata = []
         cal_obj = self.get_calibrations(calibration_path)
         entries = []
-        for z3d_fn in self.get_files(
-            [self.file_ext, self.file_ext.lower(), self.file_ext.upper()]
+        for z3d_fn in set(
+            self.get_files(
+                [self.file_ext, self.file_ext.lower(), self.file_ext.upper()]
+            )
         ):
             z3d_obj = Z3D(z3d_fn)
             z3d_obj.read_all_info()
-            station_metadata.append(z3d_obj.station_metadata.to_dict(single=True))
+            station_metadata.append(
+                z3d_obj.station_metadata.to_dict(single=True)
+            )
             if not int(z3d_obj.sample_rate) in sample_rates:
-                self.logger.warning(f"{z3d_obj.sample_rate} not in {sample_rates}")
+                self.logger.warning(
+                    f"{z3d_obj.sample_rate} not in {sample_rates}"
+                )
                 return
 
             entry = {}
@@ -136,9 +142,13 @@ class Z3DCollection(Collection):
 
             entries.append(entry)
         # make pandas dataframe and set data types
-        df = self._sort_df(self._set_df_dtypes(pd.DataFrame(entries)), run_name_zeros)
+        df = self._sort_df(
+            self._set_df_dtypes(pd.DataFrame(entries)), run_name_zeros
+        )
 
-        self.station_metadata_dict = self._sort_station_metadata(station_metadata)
+        self.station_metadata_dict = self._sort_station_metadata(
+            station_metadata
+        )
 
         return df
 

@@ -13,7 +13,7 @@ Created on Wed Mar 10 13:05:54 2021
 # =============================================================================
 import unittest
 from pathlib import Path
-from mth5 import mth5
+from mth5.mth5 import MTH5
 from mt_metadata.timeseries import stationxml
 from mt_metadata import STATIONXML_01
 
@@ -29,12 +29,14 @@ class TestFromStationXML01(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.translator = stationxml.XMLInventoryMTExperiment()
-        self.experiment = self.translator.xml_to_mt(stationxml_fn=STATIONXML_01)
+        self.experiment = self.translator.xml_to_mt(
+            stationxml_fn=STATIONXML_01
+        )
 
         self.fn = fn_path.joinpath("from_stationxml.h5")
         if self.fn.exists():
             self.fn.unlink()
-        self.m = mth5.MTH5(file_version="0.1.0")
+        self.m = MTH5(file_version="0.1.0")
         self.m.open_mth5(self.fn)
         self.m.from_experiment(self.experiment, 0)
 

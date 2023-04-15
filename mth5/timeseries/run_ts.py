@@ -31,6 +31,10 @@ from mt_metadata.utils.list_dict import ListDict
 from mt_metadata.timeseries.filters import ChannelResponseFilter
 
 from .channel_ts import ChannelTS
+from .ts_helpers import (
+    make_dt_coordinates,
+    get_decimation_sample_rates,
+)
 from mth5.utils.mth5_logger import setup_logger
 
 from obspy.core import Stream
@@ -90,6 +94,82 @@ class RunTS:
 
     def __repr__(self):
         return self.__str__()
+
+    def __eq__(self, other):
+
+        if not isinstance(other, RunTS):
+            raise TypeError(f"Cannot compare RunTS with {type(other)}.")
+        if not other.survey_metadata == self.survey_metadata:
+            return False
+        if not other.station_metadata == self.station_metadata:
+            return False
+        if not other.run_metadata == self.run_metadata:
+            return False
+        if self.dataset.equals(other.dataset) is False:
+            return False
+        return True
+
+    def __neq__(self, other):
+        return not self.__eq__(other)
+
+    def __add__(self, other):
+        """
+        Add two runs together in the following steps
+
+        1. xr.combine_by_coords([original, other])
+        2. compute monotonic time index
+        3. reindex(new_time_index, method='nearest')
+
+        If you want a different method or more control use merge
+
+        :param other: Another run
+        :type other: :class:`mth5.timeseries.RunTS`
+        :raises TypeError: If input is not a RunTS
+        :raises ValueError: if the components are different
+        :return: Combined channel with monotonic time index and same metadata
+        :rtype: :class:`mth5.timeseries.RunTS`
+
+        """
+        if not isinstance(other, RunTS):
+            raise TypeError(f"Cannot combine {type(other)} with RunTS.")
+
+        # combine into a data set use override to keep attrs from original
+        combined_ds = xr.combine_by_coords(
+            [self.dataset, other.dataset], combine_attrs="override"
+        )
+
+        n_samples = (
+            self.sample_rate
+            * float(
+                combined_ds.time.max().values - combined_ds.time.min().values
+            )
+            / 1e9
+        ) + 1
+
+        new_dt_index = make_dt_coordinates(
+            combined_ds.time.min().values,
+            self.sample_rate,
+            n_samples,
+            self.logger,
+        )
+
+        new_run = RunTS(
+            run_metadata=self.run_metadata,
+            station_metadata=self.station_metadata,
+            survey_metadata=self.survey_metadata,
+        )
+
+        new_run.dataset = combined_ds.interp(
+            time=new_dt_index, method="slinear"
+        )
+
+        new_run.run_metadata.update_time_period()
+        new_run.station_metadata.update_time_period()
+        new_run.survey_metadata.update_time_period()
+        new_run.filters = self.filters
+        new_run.filters.update(other.filters)
+
+        return new_run
 
     def _initialize_metadata(self):
         """
@@ -250,17 +330,129 @@ class RunTS:
         else:
             self.run_metadata.channels = channels
 
+        # first need to align the time series.
+        valid_list = self._align_channels(valid_list)
+
+        return valid_list
+
+    def _align_channels(self, valid_list):
+        """
+        check for common start and end times, if not resample each.
+
+        :param valid_list: DESCRIPTION
+        :type valid_list: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        earliest_start = self._get_earliest_start(valid_list)
+        latest_end = self._get_latest_end(valid_list)
+        reindex = False
+        if not self._check_common_start(valid_list):
+            self.logger.info(
+                f"Channels do not have a common start, using earliest: {earliest_start}"
+            )
+            reindex = True
+        if not self._check_common_end(valid_list):
+            self.logger.info(
+                f"Channels do not have a common end, using latest: {latest_end}"
+            )
+            reindex = True
+
+        if reindex:
+            sample_rate = self._check_sample_rate(valid_list)
+
+            new_time_index = self._get_common_time_index(
+                earliest_start, latest_end, sample_rate
+            )
+            tolerance = f"{(1e9 / sample_rate):.0f}N"
+            aligned_list = []
+            for ch in valid_list:
+                aligned_list.append(
+                    ch.reindex(
+                        time=new_time_index,
+                        method="nearest",
+                        tolerance=tolerance,
+                    )
+                )
+        else:
+            aligned_list = valid_list
+
+        return aligned_list
+
+    def _check_sample_rate(self, valid_list):
         # probably should test for sampling rate.
-        sr_test = dict(
-            [(item.component, (item.sample_rate)) for item in valid_list]
+        sr_test = list(
+            set(
+                [(item.sample_rate) for item in valid_list]
+                + [np.round(item.filt.fs, 3) for item in valid_list]
+            )
         )
 
-        if len(set([v for k, v in sr_test.items()])) != 1:
+        if len(sr_test) != 1:
             msg = f"sample rates are not all the same {sr_test}"
             self.logger.error(msg)
             raise ValueError(msg)
 
-        return valid_list
+        return sr_test[0]
+
+    def _check_common_start(self, valid_list):
+        """
+        check to see if there are different starting times
+
+        :param valid_list: DESCRIPTION
+        :type valid_list: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        start_list = list(
+            set([item.coords["time"].values[0] for item in valid_list])
+        )
+        if len(start_list) != 1:
+            return False
+        return True
+
+    def _check_common_end(self, valid_list):
+        """
+        check to see if there are different end times
+
+        :param valid_list: DESCRIPTION
+        :type valid_list: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        end_list = list(
+            set([item.coords["time"].values[-1] for item in valid_list])
+        )
+        if len(end_list) != 1:
+            return False
+        return True
+
+    def _get_earliest_start(self, valid_list):
+        """
+        get the earliest start time
+        """
+
+        return min([item.coords["time"].values[0] for item in valid_list])
+
+    def _get_latest_end(self, valid_list):
+        """
+        get the earliest start time
+        """
+
+        return max([item.coords["time"].values[-1] for item in valid_list])
+
+    def _get_common_time_index(self, start, end, sample_rate):
+        """
+        get common time index
+        """
+
+        n_samples = int(sample_rate * float(end - start) / 1e9) + 1
+
+        return make_dt_coordinates(start, sample_rate, n_samples, self.logger)
 
     def _get_channel_response_filter(self, ch_name):
         """
@@ -315,6 +507,30 @@ class RunTS:
                     msg = f"RunTS has no attribute {name}"
                     self.logger.error(msg)
                     raise NameError(msg)
+
+    def copy(self, data=True):
+        """
+
+        :param data: DESCRIPTION, defaults to True
+        :type data: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if not data:
+            return RunTS(
+                run_metadata=self.run_metadata.copy(),
+                station_metadata=self.station_metadata.copy(),
+                survey_metadata=self.survey_metadata.copy(),
+            )
+        else:
+            return RunTS(
+                array_list=self.dataset,
+                run_metadata=self.run_metadata.copy(),
+                station_metadata=self.station_metadata.copy(),
+                survey_metadata=self.survey_metadata.copy(),
+            )
 
     ### Properties ------------------------------------------------------------
     @property
@@ -500,9 +716,6 @@ class RunTS:
         if isinstance(array_list, (list, tuple)):
             x_array_list = self._validate_array_list(array_list)
 
-            # first need to align the time series.
-            x_array_list = xr.align(*x_array_list, join=align_type)
-
             # input as a dictionary
             xdict = dict([(x.component.lower(), x) for x in x_array_list])
             self._dataset = xr.Dataset(xdict)
@@ -675,13 +888,7 @@ class RunTS:
 
         trace_list = []
         for channel in self.channels:
-            if channel[0] in ["e"]:
-                ch_type = "electric"
-            elif channel[0] in ["h", "b"]:
-                ch_type = "magnetic"
-            else:
-                ch_type = "auxiliary"
-            ts_obj = ChannelTS(ch_type, self.dataset[channel])
+            ts_obj = getattr(self, channel)
             trace_list.append(ts_obj.to_obspy_trace())
 
         return Stream(traces=trace_list)
@@ -729,6 +936,8 @@ class RunTS:
                     self.logger.warning(
                         "could not find %s" % channel_ts.component
                     )
+            # else:
+            #     run_metadata = metadata.Run(id="001")
             station_list.append(channel_ts.station_metadata.fdsn.id)
 
             array_list.append(channel_ts)
@@ -831,6 +1040,166 @@ class RunTS:
             ch_ts = getattr(self, channel)
             calibrated_ch_ts = ch_ts.remove_instrument_response(**kwargs)
             new_run.add_channel(calibrated_ch_ts)
+
+        return new_run
+
+    def decimate(self, new_sample_rate, inplace=False, max_decimation=8):
+        """
+        decimate data to new sample rate.
+
+        :param new_sample_rate: DESCRIPTION
+        :type new_sample_rate: TYPE
+        :param inplace: DESCRIPTION, defaults to False
+        :type inplace: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        sr_list = get_decimation_sample_rates(
+            self.sample_rate, new_sample_rate, max_decimation
+        )
+        # need to fill nans with 0 otherwise they wipeout the decimation values
+        # and all becomes nan.
+        new_ds = self.dataset.fillna(0)
+        for step_sr in sr_list:
+            new_ds = new_ds.filt.decimate(step_sr)
+
+        new_ds.attrs["sample_rate"] = new_sample_rate
+        self.run_metadata.sample_rate = new_ds.attrs["sample_rate"]
+
+        if inplace:
+            self.dataset = new_ds
+        else:
+            # return new_ds
+            return RunTS(
+                new_ds,
+                run_metadata=self.run_metadata,
+                station_metadata=self.station_metadata,
+                survey_metadata=self.survey_metadata,
+            )
+
+    def resample(self, new_sample_rate, inplace=False):
+        """
+        Resample data to new sample rate.
+        :param new_sample_rate: DESCRIPTION
+        :type new_sample_rate: TYPE
+        :param inplace: DESCRIPTION, defaults to False
+        :type inplace: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+        """
+
+        new_dt_freq = "{0:.0f}N".format(1e9 / (new_sample_rate))
+
+        new_ds = self.dataset.resample(time=new_dt_freq).nearest(
+            tolerance=new_dt_freq
+        )
+        new_ds.attrs["sample_rate"] = new_sample_rate
+        self.run_metadata.sample_rate = new_ds.attrs["sample_rate"]
+
+        if inplace:
+            self.dataset = new_ds
+        else:
+            # return new_ts
+            return RunTS(
+                new_ds,
+                run_metadata=self.run_metadata,
+                station_metadata=self.station_metadata,
+                survey_metadata=self.survey_metadata,
+            )
+
+    def merge(self, other, gap_method="slinear", new_sample_rate=None):
+        """
+        merg two runs or list of runs together in the following steps
+
+        1. xr.combine_by_coords([original, other])
+        2. compute monotonic time index
+        3. reindex(new_time_index, method=gap_method)
+
+        If you want a different method or more control use merge
+
+        :param other: Another run
+        :type other: :class:`mth5.timeseries.RunTS`
+        :raises TypeError: If input is not a RunTS
+        :raises ValueError: if the components are different
+        :return: Combined run with monotonic time index and same metadata
+        :rtype: :class:`mth5.timeseries.RunTS`
+
+        """
+        if new_sample_rate is not None:
+            merge_sample_rate = new_sample_rate
+            combine_list = [self.decimate(new_sample_rate).dataset]
+        else:
+            merge_sample_rate = self.sample_rate
+            combine_list = [self.dataset]
+
+        ts_filters = self.filters
+        if isinstance(other, (list, tuple)):
+            for run in other:
+                if not isinstance(run, RunTS):
+                    raise TypeError(f"Cannot combine {type(run)} with RunTS.")
+
+                if new_sample_rate is not None:
+                    run = run.decimate(new_sample_rate)
+                combine_list.append(run.dataset)
+                ts_filters.update(run.filters)
+        else:
+            if not isinstance(other, RunTS):
+                raise TypeError(f"Cannot combine {type(other)} with RunTS.")
+
+            if new_sample_rate is not None:
+                other = other.decimate(new_sample_rate)
+            combine_list.append(other.dataset)
+            ts_filters.update(other.filters)
+
+        # combine into a data set use override to keep attrs from original
+
+        combined_ds = xr.combine_by_coords(
+            combine_list, combine_attrs="override"
+        )
+
+        n_samples = (
+            merge_sample_rate
+            * float(
+                combined_ds.time.max().values - combined_ds.time.min().values
+            )
+            / 1e9
+        ) + 1
+
+        new_dt_index = make_dt_coordinates(
+            combined_ds.time.min().values,
+            merge_sample_rate,
+            n_samples,
+            self.logger,
+        )
+
+        run_metadata = self.run_metadata.copy()
+        run_metadata.sample_rate = merge_sample_rate
+
+        new_run = RunTS(
+            run_metadata=self.run_metadata,
+            station_metadata=self.station_metadata,
+            survey_metadata=self.survey_metadata,
+        )
+
+        ## tried reindex then interpolate_na, but that has issues if the
+        ## intial time index does not exactly match up with the new time index
+        ## and then get a bunch of Nan, unless use nearest or pad, but then
+        ## gaps are not filled correctly, just do a interp seems easier.
+        new_run.dataset = combined_ds.interp(
+            time=new_dt_index, method=gap_method
+        )
+
+        # update channel attributes
+        for ch in new_run.channels:
+            new_run.dataset[ch].attrs["time_period.start"] = new_run.start
+            new_run.dataset[ch].attrs["time_period.end"] = new_run.end
+
+        new_run.run_metadata.update_time_period()
+        new_run.station_metadata.update_time_period()
+        new_run.survey_metadata.update_time_period()
+        new_run.filters = ts_filters
 
         return new_run
 
