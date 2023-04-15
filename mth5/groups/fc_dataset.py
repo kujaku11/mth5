@@ -30,7 +30,7 @@ class FCDataset(MTH5Table):
 
         - time
         - frequency [ integer as harmonic index or float ]
-        - fc
+        - fc (complex)
         - weight_channel (maybe)
         - weight_band (maybe)
         - weight_time (maybe)

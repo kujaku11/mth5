@@ -17,9 +17,9 @@ from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import validate_name
 
 from mt_metadata.transfer_functions.fourier_coefficients import (
-    DecimationLevel,
+    Decimation,
     Channel,
-    Window,
+    FC,
 )
 
 # =============================================================================
