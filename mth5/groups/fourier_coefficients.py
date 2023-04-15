@@ -16,12 +16,6 @@ from mth5.groups import BaseGroup
 from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import validate_name
 
-from mt_metadata.transfer_functions.fourier_coefficients import (
-    Decimation,
-    Channel,
-    FC,
-)
-
 # =============================================================================
 """Station -> FCMasterGroup -> FCGroup -> DecimationLevelGroup -> ChannelGroup -> FCDataset"""
 
@@ -154,7 +148,7 @@ class FCGroup(BaseGroup):
         pass
 
 
-class FCDecimationLevelGroup(BaseGroup):
+class FCDecimationGroup(BaseGroup):
     """
     Holds a single decimation level
 
