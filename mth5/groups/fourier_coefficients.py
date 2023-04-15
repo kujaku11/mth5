@@ -31,6 +31,9 @@ class MasterFCGroup(BaseGroup):
 
         super().__init__(group, **kwargs)
 
+    def initialize_group(self):
+        pass
+
     @property
     def fc_summary(self):
         """

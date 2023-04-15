@@ -31,6 +31,7 @@ from mt_metadata.timeseries.filters import ChannelResponseFilter
 from mth5 import CHUNK_SIZE, CHANNEL_DTYPE
 from mth5.groups.base import BaseGroup
 from mth5.groups import FiltersGroup, TransferFunctionGroup
+from mth5.groups.fourier_coefficients import MasterFCGroup, FCGroup, FCChannel
 from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import (
     to_numpy_type,
@@ -281,9 +282,7 @@ class MasterStationGroup(BaseGroup):
 
         """
         if station_name is None:
-            raise Exception(
-                "station name is None, do not know what to name it"
-            )
+            raise Exception("station name is None, do not know what to name it")
         station_name = validate_name(station_name)
         try:
             station_group = self.hdf5_group.create_group(station_name)
@@ -565,6 +564,7 @@ class StationGroup(BaseGroup):
 
         self._default_subgroup_names = [
             "Transfer_Functions",
+            "Fourier_Coefficients",
         ]
 
     def initialize_group(self, **kwargs):
@@ -591,6 +591,13 @@ class StationGroup(BaseGroup):
         """Convinience method for /Station/Transfer_Functions"""
         return TransferFunctionsGroup(
             self.hdf5_group["Transfer_Functions"], **self.dataset_options
+        )
+
+    @property
+    def fourier_coefficients_group(self):
+        """Convinience method for /Station/Fourier_Coefficients"""
+        return MasterFCGroup(
+            self.hdf5_group["Fourier_Coefficients"], **self.dataset_options
         )
 
     @BaseGroup.metadata.getter
@@ -1814,9 +1821,7 @@ class ChannelDataset:
         if dataset_metadata is not None:
             if not isinstance(dataset_metadata, type(self.metadata)):
                 msg = "metadata must be type metadata.%s not %s"
-                self.logger.error(
-                    msg, self._class_name, type(dataset_metadata)
-                )
+                self.logger.error(msg, self._class_name, type(dataset_metadata))
                 raise MTH5Error(
                     msg % (self._class_name, type(dataset_metadata))
                 )
@@ -1873,9 +1878,7 @@ class ChannelDataset:
             lines = ["Channel {0}:".format(self._class_name)]
             lines.append("-" * (len(lines[0]) + 2))
             info_str = "\t{0:<18}{1}"
-            lines.append(
-                info_str.format("component:", self.metadata.component)
-            )
+            lines.append(info_str.format("component:", self.metadata.component))
             lines.append(info_str.format("data type:", self.metadata.type))
             lines.append(
                 info_str.format("data format:", self.hdf5_dataset.dtype)
@@ -1886,9 +1889,7 @@ class ChannelDataset:
             lines.append(
                 info_str.format("start:", self.metadata.time_period.start)
             )
-            lines.append(
-                info_str.format("end:", self.metadata.time_period.end)
-            )
+            lines.append(info_str.format("end:", self.metadata.time_period.end))
             lines.append(
                 info_str.format("sample rate:", self.metadata.sample_rate)
             )
@@ -2499,9 +2500,7 @@ class ChannelDataset:
         """
 
         if not isinstance(channel_ts_obj, ChannelTS):
-            msg = (
-                f"Input must be a ChannelTS object not {type(channel_ts_obj)}"
-            )
+            msg = f"Input must be a ChannelTS object not {type(channel_ts_obj)}"
             self.logger.error(msg)
             raise TypeError(msg)
         if how == "replace":
@@ -2678,12 +2677,8 @@ class ChannelDataset:
                     self.hdf5_dataset.parent.parent.attrs["id"],
                     self.hdf5_dataset.parent.attrs["id"],
                     self.hdf5_dataset.parent.parent.attrs["location.latitude"],
-                    self.hdf5_dataset.parent.parent.attrs[
-                        "location.longitude"
-                    ],
-                    self.hdf5_dataset.parent.parent.attrs[
-                        "location.elevation"
-                    ],
+                    self.hdf5_dataset.parent.parent.attrs["location.longitude"],
+                    self.hdf5_dataset.parent.parent.attrs["location.elevation"],
                     self.metadata.component,
                     self.metadata.time_period.start,
                     self.metadata.time_period.end,
