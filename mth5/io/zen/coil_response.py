@@ -140,7 +140,7 @@ class CoilResponse:
             fap.phases = cal["phase"]
             fap.units_out = "millivolts"
             fap.units_in = "nanotesla"
-            fap.name = f"coil_{coil_number}"
+            fap.name = f"ant4_{coil_number}_response"
             fap.instrument_type = "ANT4 induction coil"
             fap.calibration_date = MTime(
                 self.calibration_file.stat().st_mtime
