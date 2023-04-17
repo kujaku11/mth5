@@ -23,7 +23,7 @@ import h5py
 
 from mt_metadata import timeseries as metadata
 from mt_metadata.transfer_functions.tf import TransferFunction
-from mt_metadata.transfer_functions.fourier_coefficients import (
+from mt_metadata.transfer_functions.processing.fourier_coefficients import (
     Decimation,
     Channel,
     FC,
