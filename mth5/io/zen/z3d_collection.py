@@ -17,7 +17,8 @@ Created on Sat Apr  4 12:40:40 2020
 import pandas as pd
 
 from mth5.io.collection import Collection
-from mth5.io.zen import CoilResponse, Z3D
+from mth5.io.zen import Z3D
+from mth5.io.zen.coil_response import CoilResponse
 
 from mt_metadata.timeseries import Station
 
@@ -135,6 +136,7 @@ class Z3DCollection(Collection):
             entry["n_samples"] = z3d_obj.n_samples
             entry["sequence_number"] = 0
             entry["instrument_id"] = f"ZEN_{int(z3d_obj.header.box_number):03}"
+            entry["coil_number"] = z3d_obj.coil_number
             if cal_obj.has_coil_number(z3d_obj.coil_number):
                 entry["calibration_fn"] = cal_obj.calibration_file
             else:

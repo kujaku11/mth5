@@ -138,8 +138,8 @@ class CoilResponse:
             fap.frequencies = cal["frequency"]
             fap.amplitudes = cal["amplitude"]
             fap.phases = cal["phase"]
-            fap.units_in = "millivolts"
-            fap.units_out = "nanotesla"
+            fap.units_out = "millivolts"
+            fap.units_in = "nanotesla"
             fap.name = f"coil_{coil_number}"
             fap.instrument_type = "ANT4 induction coil"
             fap.calibration_date = MTime(
@@ -172,7 +172,7 @@ class CoilResponse:
 
             if coil_number in self.coil_calibrations.keys():
                 return True
-            self.logger.error(
+            self.logger.debug(
                 f"Could not find {coil_number} in {self.calibration_file}"
             )
             return False
