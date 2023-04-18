@@ -168,7 +168,7 @@ class CoilResponse:
 
         """
         if self.file_exists():
-            coil_number = str(int(coil_number))
+            coil_number = str(int(float(coil_number)))
 
             if coil_number in self.coil_calibrations.keys():
                 return True
