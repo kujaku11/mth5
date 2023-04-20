@@ -76,7 +76,6 @@ def get_drive_names():
             pass
 
     if not bool(drive_dict):
-        print("No external drives detected, check the connections.")
         return None
     return drive_dict
 
@@ -153,12 +152,13 @@ def copy_from_sd(
         level="debug",
     )
 
-    if drive_names is None:
-        logger.error("No drive names found.")
-        raise IOError("No drives to copy from.")
-
     if not save_path.exists():
         save_path.mkdir()
+
+    if drive_names is None:
+        logger.error("No drive names found. No files copied.")
+
+        return [], save_path
 
     # make a datetime object from copy date
     if copy_date is not None:
