@@ -167,6 +167,9 @@ class CoilResponse:
         :rtype: boolean
 
         """
+        if coil_number is None:
+            return False
+
         if self.file_exists():
             coil_number = str(int(float(coil_number)))
 

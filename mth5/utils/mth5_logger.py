@@ -80,7 +80,11 @@ def load_logging_config(config_fn=CONF_FILE):
                     "propagate": False,
                 }
             },
-            "root": {"level": "DEBUG", "handlers": ["console"], "propogate": False},
+            "root": {
+                "level": "DEBUG",
+                "handlers": ["console"],
+                "propogate": False,
+            },
         }
 
     logging.config.dictConfig(config_dict)
@@ -127,11 +131,15 @@ def setup_logger(logger_name, fn=None, level="debug"):
             fn = Path(fn.parent, f"{fn.stem}.log")
 
         # fn_handler = logging.FileHandler(fn)
-        fn_handler = ConcurrentRotatingFileHandler(fn, maxBytes=2 ** 21, backupCount=2)
+        fn_handler = ConcurrentRotatingFileHandler(
+            fn, maxBytes=2**21, backupCount=2
+        )
         fn_handler.setFormatter(LOG_FORMAT)
         fn_handler.setLevel(LEVEL_DICT[level.lower()])
         logger.addHandler(fn_handler)
         if not exists:
-            logger.info(f"Logging file can be found {logger.handlers[-1].baseFilename}")
+            logger.info(
+                f"Logging file can be found {logger.handlers[-1].baseFilename}"
+            )
 
     return logger
