@@ -287,6 +287,9 @@ class MTH5:
     def __repr__(self):
         return self.__str__()
 
+    def __enter__(self):
+        return self
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close_mth5()
         return False
@@ -660,9 +663,7 @@ class MTH5:
             root_group.write_metadata()
         for group_name in self._default_subgroup_names:
             try:
-                self.__hdf5_obj.create_group(
-                    f"{self._default_root_name}/{group_name}"
-                )
+                self.__hdf5_obj.create_group(f"{self._default_root_name}/{group_name}")
             except ValueError:
                 pass
             m5_grp = getattr(self, f"{group_name.lower()}_group")
@@ -810,14 +811,12 @@ class MTH5:
 
         if self.file_version == "0.1.0":
             h5_path = self._root_path
-
         elif self.file_version == "0.2.0":
             if survey is None:
                 raise ValueError("Survey must be input for file type 0.2.0")
             else:
                 survey = helpers.validate_name(survey)
             h5_path = f"{self._root_path}/Surveys/{survey}"
-
         if station is not None:
             station = helpers.validate_name(station)
             h5_path += f"/Stations/{station}"
@@ -831,7 +830,6 @@ class MTH5:
                 if channel is not None:
                     channel = helpers.validate_name(channel)
                     h5_path += f"/{channel}"
-
         return h5_path
 
     def from_reference(self, h5_reference):
@@ -901,14 +899,10 @@ class MTH5:
         if self.h5_is_write():
             if self.file_version in ["0.1.0"]:
                 sg = self.survey_group
-                sg.metadata.from_dict(
-                    experiment.surveys[survey_index].to_dict()
-                )
+                sg.metadata.from_dict(experiment.surveys[survey_index].to_dict())
                 sg.write_metadata()
                 for station in experiment.surveys[0].stations:
-                    mt_station = self.add_station(
-                        station.id, station_metadata=station
-                    )
+                    mt_station = self.add_station(station.id, station_metadata=station)
                     if update:
                         mt_station.metadata.update(station)
                         mt_station.write_metadata()
@@ -949,9 +943,7 @@ class MTH5:
                             mt_station.metadata.update(station)
                             mt_station.write_metadata()
                         for run in station.runs:
-                            mt_run = mt_station.add_run(
-                                run.id, run_metadata=run
-                            )
+                            mt_run = mt_station.add_run(run.id, run_metadata=run)
                             if update:
                                 mt_run.metadata.update(run)
                                 mt_run.write_metadata()
@@ -965,7 +957,6 @@ class MTH5:
                                 if update:
                                     mt_ch.metadata.update(channel)
                                     mt_ch.write_metadata()
-
                             mt_run.update_run_metadata()
                         mt_station.update_station_metadata()
                     sg.update_survey_metadata()
@@ -1251,9 +1242,7 @@ class MTH5:
 
         """
 
-        run_path = self._make_h5_path(
-            survey=survey, station=station_name, run=run_name
-        )
+        run_path = self._make_h5_path(survey=survey, station=station_name, run=run_name)
         try:
             return groups.RunGroup(self.__hdf5_obj[run_path])
         except KeyError:
@@ -1281,9 +1270,7 @@ class MTH5:
 
         """
 
-        return self.get_station(station_name, survey=survey).remove_run(
-            run_name
-        )
+        return self.get_station(station_name, survey=survey).remove_run(run_name)
 
     def add_channel(
         self,
@@ -1393,20 +1380,14 @@ class MTH5:
                 sample rate:      4096
 
         """
-        run_path = self._make_h5_path(
-            survey=survey, station=station_name, run=run_name
-        )
+        run_path = self._make_h5_path(survey=survey, station=station_name, run=run_name)
         rg = groups.RunGroup(self.__hdf5_obj[run_path])
         try:
             return rg.get_channel(helpers.validate_name(channel_name))
         except (AttributeError, KeyError):
-            raise MTH5Error(
-                f"Could not find channel, {run_path}/{channel_name}"
-            )
+            raise MTH5Error(f"Could not find channel, {run_path}/{channel_name}")
 
-    def remove_channel(
-        self, station_name, run_name, channel_name, survey=None
-    ):
+    def remove_channel(self, station_name, run_name, channel_name, survey=None):
         """
         Convenience function to remove a channel using
         ``mth5.stations_group.get_station().get_run().remove_channel()``
@@ -1474,9 +1455,7 @@ class MTH5:
                             for (
                                 key,
                                 value,
-                            ) in tf_object.survey_metadata.to_dict(
-                                single=True
-                            ).items():
+                            ) in tf_object.survey_metadata.to_dict(single=True).items():
                                 if key in [
                                     "hdf5_reference",
                                     "mth5_type",
@@ -1525,9 +1504,7 @@ class MTH5:
                 station_metadata=tf_object.to_ts_station_metadata(),
             )
         ## need to check for runs and channels
-        for (
-            run_id
-        ) in tf_object.station_metadata.transfer_function.runs_processed:
+        for run_id in tf_object.station_metadata.transfer_function.runs_processed:
             if run_id in ["", None, "None"]:
                 continue
             try:
@@ -1537,7 +1514,6 @@ class MTH5:
                 if run is None:
                     run = tf_object.station_metadata.runs[0].copy()
                     run.id = run_id
-
                 run_group = station_group.add_run(run_id, run_metadata=run)
 
                 for ch in run.channels:
@@ -1548,18 +1524,14 @@ class MTH5:
                             ch.component, ch.type, None, channel_metadata=ch
                         )
         try:
-            tf_group = (
-                station_group.transfer_functions_group.add_transfer_function(
-                    tf_object.station, tf_object=tf_object
-                )
+            tf_group = station_group.transfer_functions_group.add_transfer_function(
+                tf_object.station, tf_object=tf_object
             )
         except (OSError, RuntimeError, ValueError):
             msg = f"TF {tf_object.station} already exists, returning existing group."
             self.logger.debug(msg)
-            tf_group = (
-                station_group.transfer_functions_group.get_transfer_function(
-                    tf_object.station
-                )
+            tf_group = station_group.transfer_functions_group.get_transfer_function(
+                tf_object.station
             )
         return tf_group
 
@@ -1591,9 +1563,7 @@ class MTH5:
             )
             return self.from_reference(ref)
         except IndexError:
-            tf_path = self._make_h5_path(
-                survey=survey, station=station_id, tf_id=tf_id
-            )
+            tf_path = self._make_h5_path(survey=survey, station=station_id, tf_id=tf_id)
             try:
                 tg = groups.TransferFunctionGroup(self.__hdf5_obj[tf_path])
                 return tg.to_tf_object()
