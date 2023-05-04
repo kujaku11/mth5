@@ -11,6 +11,7 @@ It creates a wrapper for scipy methods for xarray.
 # =============================================================================
 
 import warnings
+from fractions import Fraction
 import xarray as xr
 import scipy.signal
 import numpy as np
@@ -19,7 +20,6 @@ try:
     from scipy.signal import sosfiltfilt
 except ImportError:
     sosfiltfilt = None
-
 # =============================================================================
 
 
@@ -74,7 +74,6 @@ def get_maybe_only_dim(darray, dim):
                 return darray.dims[0]
             elif isinstance(darray, xr.Dataset):
                 return list(darray.dims.keys())[0]
-
         else:
             raise ValueError("Specify the dimension")
     else:
@@ -119,10 +118,7 @@ def get_sampling_step(darray, dim=None, rtol=1e-3):
         t_scale = 1e3
     else:
         t_scale = 1
-
-    dt_avg = (
-        float(coord[-1] - coord[0]) / (len(coord) - 1)
-    ) / t_scale  # N-1 segments
+    dt_avg = (float(coord[-1] - coord[0]) / (len(coord) - 1)) / t_scale  # N-1 segments
     dt_first = float(coord[1] - coord[0]) / t_scale
 
     if abs(dt_avg - dt_first) > rtol * min(dt_first, dt_avg):
@@ -227,9 +223,7 @@ def frequency_filter(
             stacklevel=2,
         )
     if sosfiltfilt and irtype == "iir":
-        sos = scipy.signal.iirfilter(
-            order, f_crit_norm, output="sos", **kwargs
-        )
+        sos = scipy.signal.iirfilter(order, f_crit_norm, output="sos", **kwargs)
         if filtfilt:
             ret = xr.apply_ufunc(
                 sosfiltfilt,
@@ -444,6 +438,34 @@ def decimate(darray, target_sample_rate, n_order=8, dim=None):
     return ret.isel(**{dim: slice(None, None, q)})
 
 
+def resample(darray, new_sample_rate, dim=None, pad_type="mean"):
+    """
+    Use scipy.signal.resample_poly
+    :param new_sample_rate: DESCRIPTION
+    :type new_sample_rate: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+    dim = get_maybe_only_dim(darray, dim)
+    old_sample_rate = 1.0 / get_sampling_step(darray, dim)
+
+    fraction = Fraction(new_sample_rate / old_sample_rate).limit_denominator()
+
+    ret = xr.apply_ufunc(
+        scipy.signal.resample_poly,
+        darray,
+        fraction.numerator,
+        fraction.denominator,
+        input_core_dims=[[dim], [], []],
+        output_core_dims=[[dim]],
+        exclude_dims=set([dim]),
+        kwargs={"padtype": pad_type},
+    )
+
+    return ret
+
+
 def savgol_filter(
     darray,
     window_length,
@@ -646,3 +668,7 @@ class FilterAccessor(object):
     def detrend(self, trend_type="linear", dim=None):
         """Detrend data, wraps detrend"""
         return detrend(self.darray, dim, trend_type)
+
+    def resample(self, target_sample_rate, pad_type="mean", dim=None):
+        """Resample using resample_poly"""
+        return resample(self.darray, target_sample_rate, dim=dim, pad_type=pad_type)
