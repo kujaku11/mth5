@@ -450,6 +450,7 @@ def resample(darray, new_sample_rate, dim=None, pad_type="mean"):
     dim = get_maybe_only_dim(darray, dim)
     old_sample_rate = 1.0 / get_sampling_step(darray, dim)
 
+    print(new_sample_rate, old_sample_rate)
     fraction = Fraction(new_sample_rate / old_sample_rate).limit_denominator()
 
     ret = xr.apply_ufunc(
