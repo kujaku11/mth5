@@ -1173,7 +1173,9 @@ class ChannelTS:
                 metadata=self.channel_metadata,
             )
 
-    def merge(self, other, gap_method="slinear", new_sample_rate=None):
+    def merge(
+        self, other, gap_method="slinear", new_sample_rate=None, resample_method="poly"
+    ):
         """
         merg two channels or list of channels together in the following steps
 
@@ -1193,7 +1195,10 @@ class ChannelTS:
         """
         if new_sample_rate is not None:
             merge_sample_rate = new_sample_rate
-            combine_list = [self.decimate(new_sample_rate)._ts]
+            if resample_method == "decimate":
+                combine_list = [self.decimate(new_sample_rate)._ts]
+            elif resample_method == "poly":
+                combine_list = [self.resample_poly(new_sample_rate)._ts]
         else:
             merge_sample_rate = self.sample_rate
             combine_list = [self._ts]
@@ -1207,7 +1212,10 @@ class ChannelTS:
                         f"{self.component} != {ch.component}"
                     )
                 if new_sample_rate is not None:
-                    ch = ch.decimate(new_sample_rate)
+                    if resample_method == "decimate":
+                        ch = ch.decimate(new_sample_rate)
+                    elif resample_method == "poly":
+                        ch = ch.resample_poly(new_sample_rate)
                 combine_list.append(ch._ts)
         else:
             if not isinstance(other, ChannelTS):
@@ -1218,7 +1226,10 @@ class ChannelTS:
                     f"{self.component} != {other.component}"
                 )
             if new_sample_rate is not None:
-                other = other.decimate(new_sample_rate)
+                if resample_method == "decimate":
+                    other = other.decimate(new_sample_rate)
+                elif resample_method == "poly":
+                    other = other.resample_poly(new_sample_rate)
             combine_list.append(other._ts)
         # combine into a data set use override to keep attrs from original
 

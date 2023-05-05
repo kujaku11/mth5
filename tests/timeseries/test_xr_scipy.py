@@ -28,9 +28,7 @@ class TestChannelScipyFilters(unittest.TestCase):
             np.sum(
                 [
                     np.cos(2 * np.pi * w * self.t + phi)
-                    for w, phi in zip(
-                        np.logspace(-3, 3, 20), np.random.rand(20)
-                    )
+                    for w, phi in zip(np.logspace(-3, 3, 20), np.random.rand(20))
                 ],
                 axis=0,
             )
@@ -47,11 +45,10 @@ class TestChannelScipyFilters(unittest.TestCase):
         self.ch = xr.DataArray(self.data, coords={"time": dt_index}, name="ex")
 
     def test_decimate(self):
-        decimated_ch = self.ch.filt.decimate(1)
+        decimated_ch = self.ch.sps_filters.decimate(1)
 
         with self.subTest("sample rate"):
-            self.assertEqual(decimated_ch.filt.fs, 1.0)
-
+            self.assertEqual(decimated_ch.sps_filters.fs, 1.0)
         with self.subTest("start"):
             self.assertEqual(
                 self.ch.coords["time"][0].values,
@@ -62,23 +59,22 @@ class TestChannelScipyFilters(unittest.TestCase):
                 self.ch.coords["time"][-1].values,
                 decimated_ch.coords["time"][-1].values,
             )
-
         with self.subTest("size"):
             self.assertEqual(64, decimated_ch.sizes["time"])
 
     def test_dtrend(self):
-        dtrend_ch = self.ch.filt.detrend()
+        dtrend_ch = self.ch.sps_filters.detrend()
 
         self.assertEqual(0, round(dtrend_ch.data.mean(), 7))
 
     def test_dt(self):
-        self.assertEqual(1 / 64, self.ch.filt.dt)
+        self.assertEqual(1 / 64, self.ch.sps_filters.dt)
 
     def test_fs(self):
-        self.assertEqual(self.sample_rate, self.ch.filt.fs)
+        self.assertEqual(self.sample_rate, self.ch.sps_filters.fs)
 
     def test_dx(self):
-        self.assertListEqual([1 / self.sample_rate], self.ch.filt.dx.tolist())
+        self.assertListEqual([1 / self.sample_rate], self.ch.sps_filters.dx.tolist())
 
 
 # =============================================================================
