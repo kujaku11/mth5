@@ -438,7 +438,7 @@ def decimate(darray, target_sample_rate, n_order=8, dim=None):
     return ret.isel(**{dim: slice(None, None, q)})
 
 
-def resample(darray, new_sample_rate, dim=None, pad_type="mean"):
+def resample_poly(darray, new_sample_rate, dim=None, pad_type="mean"):
     """
     Use scipy.signal.resample_poly
     :param new_sample_rate: DESCRIPTION
@@ -450,8 +450,16 @@ def resample(darray, new_sample_rate, dim=None, pad_type="mean"):
     dim = get_maybe_only_dim(darray, dim)
     old_sample_rate = 1.0 / get_sampling_step(darray, dim)
 
-    print(new_sample_rate, old_sample_rate)
     fraction = Fraction(new_sample_rate / old_sample_rate).limit_denominator()
+
+    # need to resample the time coordinate because it will change and that
+    # is illegal in apply_ufunc.
+    dim = get_maybe_only_dim(darray, dim)
+
+    dt = get_sampling_step(darray, dim)
+    q = int(np.rint(1 / (dt * new_sample_rate)))
+
+    new_dim = darray[dim].values[slice(None, None, q)]
 
     ret = xr.apply_ufunc(
         scipy.signal.resample_poly,
@@ -463,6 +471,7 @@ def resample(darray, new_sample_rate, dim=None, pad_type="mean"):
         exclude_dims=set([dim]),
         kwargs={"padtype": pad_type},
     )
+    ret[dim] = new_dim
 
     return ret
 
@@ -571,8 +580,8 @@ def detrend(darray, dim=None, trend_type="linear"):
     )
 
 
-@xr.register_dataarray_accessor("filt")
-@xr.register_dataset_accessor("filt")
+@xr.register_dataarray_accessor("sps_filters")
+@xr.register_dataset_accessor("sps_filters")
 class FilterAccessor(object):
     """Accessor exposing common frequency and other filtering methods"""
 
@@ -670,6 +679,8 @@ class FilterAccessor(object):
         """Detrend data, wraps detrend"""
         return detrend(self.darray, dim, trend_type)
 
-    def resample(self, target_sample_rate, pad_type="mean", dim=None):
+    def resample_poly(self, target_sample_rate, pad_type="mean", dim=None):
         """Resample using resample_poly"""
-        return resample(self.darray, target_sample_rate, dim=dim, pad_type=pad_type)
+        return resample_poly(
+            self.darray, target_sample_rate, dim=dim, pad_type=pad_type
+        )

@@ -196,7 +196,6 @@ class ChannelTS:
         """
         if not isinstance(other, ChannelTS):
             raise TypeError(f"Cannot combine {type(other)} with ChannelTS.")
-
         if self.component != other.component:
             raise ValueError(
                 "Cannot combine channels with different components. "
@@ -206,7 +205,6 @@ class ChannelTS:
             self._ts.name = self.component
         if other._ts.name != self.component:
             other._ts.name = self.component
-
         # combine into a data set use override to keep attrs from original
         combined_ds = xr.combine_by_coords(
             [self._ts, other._ts], combine_attrs="override"
@@ -214,9 +212,7 @@ class ChannelTS:
 
         n_samples = (
             self.sample_rate
-            * float(
-                combined_ds.time.max().values - combined_ds.time.min().values
-            )
+            * float(combined_ds.time.max().values - combined_ds.time.min().values)
             / 1e9
         ) + 1
 
@@ -280,10 +276,8 @@ class ChannelTS:
 
         if channel_type is None:
             channel_type = "auxiliary"
-
         if channel_type.lower() not in ["electric", "magnetic"]:
             channel_type = "auxiliary"
-
         if not channel_type.capitalize() in meta_classes.keys():
             msg = (
                 "Channel type is undefined, must be [ electric | "
@@ -291,7 +285,6 @@ class ChannelTS:
             )
             self.logger.error(msg)
             raise ValueError(msg)
-
         return channel_type.capitalize()
 
     def _validate_channel_metadata(self, channel_metadata):
@@ -312,7 +305,6 @@ class ChannelTS:
                     except KeyError:
                         pass
                     channel_metadata = {self.channel_type: channel_metadata}
-
                 self.channel_type = list(channel_metadata.keys())[0]
                 ch_metadata = meta_classes[self.channel_type]()
                 ch_metadata.from_dict(channel_metadata)
@@ -327,7 +319,6 @@ class ChannelTS:
                 raise TypeError(
                     msg % (type(self.channel_metadata), type(channel_metadata))
                 )
-
         return channel_metadata.copy()
 
     def _validate_run_metadata(self, run_metadata):
@@ -346,12 +337,8 @@ class ChannelTS:
                 return r_metadata
             else:
                 msg = "input metadata must be type %s or dict, not %s"
-                self.logger.error(
-                    msg, type(self.run_metadata), type(run_metadata)
-                )
-                raise TypeError(
-                    msg % (type(self.run_metadata), type(run_metadata))
-                )
+                self.logger.error(msg, type(self.run_metadata), type(run_metadata))
+                raise TypeError(msg % (type(self.run_metadata), type(run_metadata)))
         return run_metadata.copy()
 
     def _validate_station_metadata(self, station_metadata):
@@ -361,11 +348,8 @@ class ChannelTS:
 
         if not isinstance(station_metadata, metadata.Station):
             if isinstance(station_metadata, dict):
-                if "station" not in [
-                    cc.lower() for cc in station_metadata.keys()
-                ]:
+                if "station" not in [cc.lower() for cc in station_metadata.keys()]:
                     station_metadata = {"Station": station_metadata}
-
                 st_metadata = metadata.Station()
                 st_metadata.from_dict(station_metadata)
                 self.logger.debug("Loading from metadata dict")
@@ -376,7 +360,6 @@ class ChannelTS:
                 )
                 self.logger.error(msg)
                 raise TypeError(msg)
-
         return station_metadata.copy()
 
     def _validate_survey_metadata(self, survey_metadata):
@@ -386,11 +369,8 @@ class ChannelTS:
 
         if not isinstance(survey_metadata, metadata.Survey):
             if isinstance(survey_metadata, dict):
-                if "station" not in [
-                    cc.lower() for cc in survey_metadata.keys()
-                ]:
+                if "station" not in [cc.lower() for cc in survey_metadata.keys()]:
                     survey_metadata = {"Survey": survey_metadata}
-
                 sv_metadata = metadata.Station()
                 sv_metadata.from_dict(survey_metadata)
                 self.logger.debug("Loading from metadata dict")
@@ -401,7 +381,6 @@ class ChannelTS:
                 )
                 self.logger.error(msg)
                 raise TypeError(msg)
-
         return survey_metadata.copy()
 
     def copy(self, data=True):
@@ -475,13 +454,11 @@ class ChannelTS:
             runs.extend(station_metadata.runs)
             if len(runs) == 0:
                 runs[0] = metadata.Run(id="0")
-
             # be sure there is a level below
             if len(runs[0].channels) == 0:
                 ch_metadata = meta_classes[self.channel_type]()
                 ch_metadata.type = self.channel_type.lower()
                 runs[0].channels.append(ch_metadata)
-
             stations = ListDict()
             stations.append(station_metadata)
             stations[0].runs = runs
@@ -514,17 +491,12 @@ class ChannelTS:
 
                 channels.append(self.station_metadata.runs[0].channels[key])
                 # add existing channels
-                channels.extend(
-                    self.run_metadata.channels, skip_keys=[key, "0"]
-                )
-
+                channels.extend(self.run_metadata.channels, skip_keys=[key, "0"])
             # add channels from input metadata
             channels.extend(run_metadata.channels)
 
             runs[0].channels = channels
-            runs.extend(
-                self.station_metadata.runs, skip_keys=[run_metadata.id, "0"]
-            )
+            runs.extend(self.station_metadata.runs, skip_keys=[run_metadata.id, "0"])
 
             self._survey_metadata.stations[0].runs = runs
 
@@ -548,10 +520,7 @@ class ChannelTS:
             channel_metadata = self._validate_channel_metadata(channel_metadata)
             if channel_metadata.component is not None:
                 channels = ListDict()
-                if (
-                    channel_metadata.component
-                    in self.run_metadata.channels.keys()
-                ):
+                if channel_metadata.component in self.run_metadata.channels.keys():
                     channels.append(
                         self.run_metadata.channels[channel_metadata.component]
                     )
@@ -594,14 +563,10 @@ class ChannelTS:
             dt = make_dt_coordinates(
                 self.start, self.sample_rate, ts_arr.size, self.logger
             )
-            self._ts = xr.DataArray(
-                ts_arr, coords=[("time", dt)], name=self.component
-            )
+            self._ts = xr.DataArray(ts_arr, coords=[("time", dt)], name=self.component)
             self._update_xarray_metadata()
         elif isinstance(ts_arr, pd.core.frame.DataFrame):
-            if isinstance(
-                ts_arr.index[0], pd._libs.tslibs.timestamps.Timestamp
-            ):
+            if isinstance(ts_arr.index[0], pd._libs.tslibs.timestamps.Timestamp):
                 dt = ts_arr.index
             else:
                 dt = make_dt_coordinates(
@@ -623,9 +588,7 @@ class ChannelTS:
                 self.logger.error(msg)
                 raise ValueError(msg)
         elif isinstance(ts_arr, pd.core.series.Series):
-            if isinstance(
-                ts_arr.index[0], pd._libs.tslibs.timestamps.Timestamp
-            ):
+            if isinstance(ts_arr.index[0], pd._libs.tslibs.timestamps.Timestamp):
                 dt = ts_arr.index
             else:
                 dt = make_dt_coordinates(
@@ -655,7 +618,6 @@ class ChannelTS:
                 station_dict[key.split("station.")[-1]] = meta_dict.pop(key)
             for key in [k for k in meta_dict.keys() if "run." in k]:
                 run_dict[key.split("run.")[-1]] = meta_dict.pop(key)
-
             self.channel_type = meta_dict["type"]
             ch_metadata = meta_classes[self.channel_type]()
             ch_metadata.from_dict({self.channel_type: meta_dict})
@@ -828,26 +790,20 @@ class ChannelTS:
             # samples, therefore taking the median provides better results
             # if the time series is long this can be inefficient so test first
             if (
-                self._ts.coords.indexes["time"][1]
-                - self._ts.coords.indexes["time"][0]
+                self._ts.coords.indexes["time"][1] - self._ts.coords.indexes["time"][0]
             ).total_seconds() < 1e-4:
 
                 sr = 1 / (
-                    float(np.median(np.diff(self._ts.coords.indexes["time"])))
-                    / 1e9
+                    float(np.median(np.diff(self._ts.coords.indexes["time"]))) / 1e9
                 )
-
             else:
                 t_diff = (
                     self._ts.coords.indexes["time"][-1]
                     - self._ts.coords.indexes["time"][0]
                 )
                 sr = self._ts.size / t_diff.total_seconds()
-
         else:
-            self.logger.debug(
-                "Data has not been set yet, sample rate is from metadata"
-            )
+            self.logger.debug("Data has not been set yet, sample rate is from metadata")
             sr = self.channel_metadata.sample_rate
             if sr is None:
                 sr = 0.0
@@ -929,9 +885,7 @@ class ChannelTS:
             start_time = MTime(start_time)
         self.channel_metadata.time_period.start = start_time.iso_str
         if self.has_data():
-            if start_time == MTime(
-                self._ts.coords.indexes["time"][0].isoformat()
-            ):
+            if start_time == MTime(self._ts.coords.indexes["time"][0].isoformat()):
                 return
             else:
                 new_dt = make_dt_coordinates(
@@ -941,7 +895,6 @@ class ChannelTS:
         # make a time series that the data can be indexed by
         else:
             self.logger.debug("No data, just updating metadata start")
-
         self._survey_metadata.stations[0].runs[0].update_time_period()
         self._survey_metadata.stations[0].update_time_period()
         self._survey_metadata.update_time_period()
@@ -955,8 +908,7 @@ class ChannelTS:
             return MTime(self._ts.coords.indexes["time"][-1].isoformat())
         else:
             self.logger.debug(
-                "Data not set yet, pulling end time from "
-                + "metadata.time_period.end"
+                "Data not set yet, pulling end time from " + "metadata.time_period.end"
             )
             return MTime(self.channel_metadata.time_period.end)
 
@@ -973,8 +925,7 @@ class ChannelTS:
         the new start time.
         """
         self.logger.warning(
-            "Cannot set `end`. If you want a slice, then "
-            + "use get_slice method"
+            "Cannot set `end`. If you want a slice, then " + "use get_slice method"
         )
 
     @property
@@ -1066,11 +1017,8 @@ class ChannelTS:
         calibrated_ts.__dict__.update(self.__dict__)
 
         if self.channel_metadata.filter.name is []:
-            self.logger.warning(
-                "No filters to apply to calibrate time series data"
-            )
+            self.logger.warning("No filters to apply to calibrate time series data")
             return calibrated_ts
-
         remover = RemoveInstrumentResponse(
             self.ts,
             self.time_index,
@@ -1090,29 +1038,17 @@ class ChannelTS:
         # setting up the filter list.  Currently it follows the FDSN standard
         # which has the filter stages starting with physical units to digital
         # counts.
-        if (
-            self.channel_response_filter.units_out
-            == self.channel_metadata.units
-        ):
-            calibrated_ts._ts.attrs[
-                "units"
-            ] = self.channel_response_filter.units_in
-            calibrated_ts.channel_metadata.units = (
-                self.channel_response_filter.units_in
-            )
+        if self.channel_response_filter.units_out == self.channel_metadata.units:
+            calibrated_ts._ts.attrs["units"] = self.channel_response_filter.units_in
+            calibrated_ts.channel_metadata.units = self.channel_response_filter.units_in
         elif (
             self.channel_response_filter.units_out == None
             and self.channel_response_filter.units_out == None
         ):
             calibrated_ts.channel_metadata.units = self.channel_metadata.units
         else:
-            calibrated_ts._ts.attrs[
-                "units"
-            ] = self.channel_response_filter.units_in
-            calibrated_ts.channel_metadata.units = (
-                self.channel_response_filter.units_in
-            )
-
+            calibrated_ts._ts.attrs["units"] = self.channel_response_filter.units_in
+            calibrated_ts.channel_metadata.units = self.channel_response_filter.units_in
         calibrated_ts._update_xarray_metadata()
 
         return calibrated_ts
@@ -1150,7 +1086,6 @@ class ChannelTS:
         if end is not None:
             if not isinstance(end, MTime):
                 end = MTime(end)
-
         chunk = self._ts.indexes["time"].slice_indexer(
             start=np.datetime64(start.iso_no_tz),
             end=np.datetime64(end.iso_no_tz),
@@ -1186,7 +1121,41 @@ class ChannelTS:
         # and all becomes nan.
         new_ts = self._ts.fillna(0)
         for step_sr in sr_list:
-            new_ts = new_ts.filt.decimate(step_sr)
+            new_ts = new_ts.sps_filters.decimate(step_sr)
+        new_ts.attrs["sample_rate"] = new_sample_rate
+        self.channel_metadata.sample_rate = new_ts.attrs["sample_rate"]
+
+        if inplace:
+            self.ts = new_ts
+        else:
+            new_ts.attrs.update(
+                self.channel_metadata.to_dict()[self.channel_metadata._class_name]
+            )
+            # return new_ts
+            return ChannelTS(
+                self.channel_metadata.type,
+                data=new_ts,
+                metadata=self.channel_metadata,
+            )
+
+    def resample_poly(self, new_sample_rate, pad_type="mean", inplace=False):
+        """
+        Use scipy.signal.resample_poly to resample data while using an FIR
+        filter to remove aliasing.
+
+        :param new_sample_rate: DESCRIPTION
+        :type new_sample_rate: TYPE
+        :param pad_type: DESCRIPTION, defaults to "mean"
+        :type pad_type: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        # need to fill nans with 0 otherwise they wipeout the decimation values
+        # and all becomes nan.
+        new_ts = self._ts.fillna(0)
+        new_ts = new_ts.sps_filters.resample_poly(new_sample_rate, pad_type=pad_type)
 
         new_ts.attrs["sample_rate"] = new_sample_rate
         self.channel_metadata.sample_rate = new_ts.attrs["sample_rate"]
@@ -1195,9 +1164,7 @@ class ChannelTS:
             self.ts = new_ts
         else:
             new_ts.attrs.update(
-                self.channel_metadata.to_dict()[
-                    self.channel_metadata._class_name
-                ]
+                self.channel_metadata.to_dict()[self.channel_metadata._class_name]
             )
             # return new_ts
             return ChannelTS(
@@ -1230,14 +1197,10 @@ class ChannelTS:
         else:
             merge_sample_rate = self.sample_rate
             combine_list = [self._ts]
-
         if isinstance(other, (list, tuple)):
             for ch in other:
                 if not isinstance(ch, ChannelTS):
-                    raise TypeError(
-                        f"Cannot combine {type(ch)} with ChannelTS."
-                    )
-
+                    raise TypeError(f"Cannot combine {type(ch)} with ChannelTS.")
                 if self.component != ch.component:
                     raise ValueError(
                         "Cannot combine channels with different components. "
@@ -1249,7 +1212,6 @@ class ChannelTS:
         else:
             if not isinstance(other, ChannelTS):
                 raise TypeError(f"Cannot combine {type(other)} with ChannelTS.")
-
             if self.component != other.component:
                 raise ValueError(
                     "Cannot combine channels with different components. "
@@ -1258,18 +1220,13 @@ class ChannelTS:
             if new_sample_rate is not None:
                 other = other.decimate(new_sample_rate)
             combine_list.append(other._ts)
-
         # combine into a data set use override to keep attrs from original
 
-        combined_ds = xr.combine_by_coords(
-            combine_list, combine_attrs="override"
-        )
+        combined_ds = xr.combine_by_coords(combine_list, combine_attrs="override")
 
         n_samples = (
             merge_sample_rate
-            * float(
-                combined_ds.time.max().values - combined_ds.time.min().values
-            )
+            * float(combined_ds.time.max().values - combined_ds.time.min().values)
             / 1e9
         ) + 1
 
@@ -1343,9 +1300,7 @@ class ChannelTS:
         """
 
         obspy_trace = Trace(self.ts)
-        obspy_trace.stats.channel = fdsn_tools.make_channel_code(
-            self.channel_metadata
-        )
+        obspy_trace.stats.channel = fdsn_tools.make_channel_code(self.channel_metadata)
         obspy_trace.stats.starttime = self.start.iso_str
         obspy_trace.stats.sampling_rate = self.sample_rate
         if self.station_metadata.fdsn.id is None:
