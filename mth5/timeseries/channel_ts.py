@@ -23,6 +23,7 @@ import inspect
 import numpy as np
 import pandas as pd
 import xarray as xr
+from scipy import signal
 
 import mt_metadata.timeseries as metadata
 from mt_metadata.timeseries.filters import ChannelResponseFilter
@@ -1371,3 +1372,47 @@ class ChannelTS:
         """
 
         return self._ts.plot()
+
+    def welch_spectra(self, window_length=2 ** 12, **kwargs):
+        """
+        get welch spectra
+
+        :param window_length: DESCRIPTION
+        :type window_length: TYPE
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        plot_frequency, power = signal.welch(
+            self.ts, fs=self.sample_rate, nperseg=window_length, **kwargs
+        )
+
+        return plot_frequency, power
+
+    def plot_spectra(self, spectra_type="welch", window_length=2 ** 12, **kwargs):
+        """
+
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        from matplotlib import pyplot as plt
+
+        if spectra_type == "welch":
+            plot_frequency, power = self.welch_spectra(
+                window_length=window_length, **kwargs
+            )
+        fig = plt.figure()
+        ax = fig.add_subplot(1, 1, 1)
+        ax.loglog(plot_frequency, power, lw=1.5)
+        ax.set_xlabel("Frequency (Hz)", fontdict={"size": 10, "weight": "bold"})
+        ax.set_ylabel("Power (dB)", fontdict={"size": 10, "weight": "bold"})
+        ax.axis("tight")
+        ax.grid(which="both")
+
+        plt.show()

@@ -1199,3 +1199,45 @@ class RunTS:
             if ii != len(ch_list):
                 plt.setp(ax.get_xticklabels(), visible=False)
             ax_list.append(ax)
+
+    def plot_spectra(
+        self,
+        spectra_type="welch",
+        color_map={
+            "ex": (1, 0.2, 0.2),
+            "ey": (1, 0.5, 0),
+            "hx": (0, 0.5, 1),
+            "hy": (0.5, 0.2, 1),
+            "hz": (0.2, 1, 1),
+        },
+        **kwargs,
+    ):
+        """
+
+        :param spectra_type: DESCRIPTION, defaults to "welch"
+        :type spectra_type: TYPE, optional
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        fig = plt.figure()
+        ax = fig.add_subplot(1, 1, 1)
+        line_list = []
+        label_list = []
+        for comp in self.channels:
+            ch = getattr(self, comp)
+            plot_freq, power = ch.welch_spectra(**kwargs)
+            (l1,) = ax.loglog(plot_freq, power, lw=1.5, color=color_map[comp])
+            line_list.append(l1)
+            label_list.append(comp)
+        ax.set_xlabel("Frequency (Hz)", fontdict={"size": 10, "weight": "bold"})
+        ax.set_ylabel("Power (dB)", fontdict={"size": 10, "weight": "bold"})
+        ax.axis("tight")
+        ax.grid(which="both")
+
+        ax.legend(line_list, label_list)
+
+        plt.show()
