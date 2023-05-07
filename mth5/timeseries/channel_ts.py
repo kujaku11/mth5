@@ -386,7 +386,11 @@ class ChannelTS:
 
     def copy(self, data=True):
         """
-        :return: Coppy of the channel
+        Make a copy of the ChannelTS object with or without data.
+
+        :param data: include data in the copy (True) or not (False)
+        :type data: boolean
+        :return: Copy of the channel
         :rtype: :class:`mth5.timeseries.ChannelTS
 
         """
@@ -540,13 +544,18 @@ class ChannelTS:
 
     @property
     def ts(self):
+        """Time series as a numpy array"""
         return self.data_array.data
 
     @ts.setter
     def ts(self, ts_arr):
         """
-        if setting ts with a pandas data frame, make sure the data is in a
-        column name 'data'
+
+        :param ts_arr: time series array or data array
+        :type ts_arr: numpy.ndarray, pandas.DataFrame, xarray.DataArray
+
+        .. note:: If setting ts with a pandas dataframe, make sure the data
+         is in a column name 'data'.
 
         """
 
@@ -819,7 +828,8 @@ class ChannelTS:
         """
         sample rate in samples/second
 
-        type float
+        :param sample_rate: sample rate in samples per second
+        :type sample_rate: float
         """
         if self.has_data():
             self.logger.warning(
@@ -848,8 +858,8 @@ class ChannelTS:
         """
         Sample interval = 1 / sample_rate
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :return: sample interval as time distance between time samples
+        :rtype: float
 
         """
 
@@ -940,8 +950,8 @@ class ChannelTS:
         """
         Full channel response filter
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :return: full channel response filter
+        :rtype: :class:`mt_metadata.timeseries.filters.ChannelResponseFilter`
 
         """
 
@@ -951,10 +961,9 @@ class ChannelTS:
     def channel_response_filter(self, value):
         """
 
-        :param value: DESCRIPTION
-        :type value: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :param value: channel response filter
+        :type value: :class:`mt_metadata.timeseries.filters.ChannelResponseFilter`
+
 
         """
         if value is None:
@@ -1068,12 +1077,14 @@ class ChannelTS:
 
         Uses loc to be exact with milliseconds
 
-        :param start: DESCRIPTION
-        :type start: TYPE
-        :param end: DESCRIPTION
-        :type end: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :param start: start time of the slice
+        :type start: string, MTime
+        :param end: end time of the slice
+        :type end: string, MTime
+        :param n_samples: number of sample to get after start time
+        :type n_samples: integer
+        :return: slice of the channel requested
+        :rtype: ChannelTS
 
         """
 
