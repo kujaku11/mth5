@@ -1213,13 +1213,20 @@ class RunTS:
         **kwargs,
     ):
         """
+        Plot spectra using spectra type, only 'welch' is supported now.
 
-        :param spectra_type: DESCRIPTION, defaults to "welch"
-        :type spectra_type: TYPE, optional
-        :param **kwargs: DESCRIPTION
-        :type **kwargs: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :param spectra_type: spectra type, defaults to "welch"
+        :type spectra_type: string, optional
+        :param color_map: colors of channels, defaults to {
+            "ex": (1, 0.2, 0.2),
+            "ey": (1, 0.5, 0),
+            "hx": (0, 0.5, 1),
+            "hy": (0.5, 0.2, 1),
+            "hz": (0.2, 1, 1),
+            }
+        :type color_map: dictionary, optional
+        :param **kwargs: key words for the spectra type
+        :type **kwargs: dictionary
 
         """
 

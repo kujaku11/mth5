@@ -117,7 +117,7 @@ class ChannelTS:
         self._channel_type = self._validate_channel_type(channel_type)
         self._survey_metadata = self._initialize_metadata()
 
-        self._ts = xr.DataArray([1], coords=[("time", [1])], name="ts")
+        self.data_array = xr.DataArray([1], coords=[("time", [1])], name="ts")
         self._channel_response = ChannelResponseFilter()
 
         self.survey_metadata = survey_metadata
@@ -157,7 +157,7 @@ class ChannelTS:
             raise TypeError(f"Cannot compare ChannelTS with {type(other)}.")
         if not other.channel_metadata == self.channel_metadata:
             return False
-        if self._ts.equals(other._ts) is False:
+        if self.data_array.equals(other._ts) is False:
             msg = "timeseries are not equal"
             self.logger.info(msg)
             return False
@@ -202,13 +202,13 @@ class ChannelTS:
                 "Cannot combine channels with different components. "
                 f"{self.component} != {other.component}"
             )
-        if self._ts.name != self.component:
-            self._ts.name = self.component
+        if self.data_array.name != self.component:
+            self.data_array.name = self.component
         if other._ts.name != self.component:
             other._ts.name = self.component
         # combine into a data set use override to keep attrs from original
         combined_ds = xr.combine_by_coords(
-            [self._ts, other._ts], combine_attrs="override"
+            [self.data_array, other._ts], combine_attrs="override"
         )
 
         n_samples = (
@@ -540,7 +540,7 @@ class ChannelTS:
 
     @property
     def ts(self):
-        return self._ts.data
+        return self.data_array.data
 
     @ts.setter
     def ts(self, ts_arr):
@@ -564,7 +564,9 @@ class ChannelTS:
             dt = make_dt_coordinates(
                 self.start, self.sample_rate, ts_arr.size, self.logger
             )
-            self._ts = xr.DataArray(ts_arr, coords=[("time", dt)], name=self.component)
+            self.data_array = xr.DataArray(
+                ts_arr, coords=[("time", dt)], name=self.component
+            )
             self._update_xarray_metadata()
         elif isinstance(ts_arr, pd.core.frame.DataFrame):
             if isinstance(ts_arr.index[0], pd._libs.tslibs.timestamps.Timestamp):
@@ -577,7 +579,7 @@ class ChannelTS:
                     self.logger,
                 )
             try:
-                self._ts = xr.DataArray(
+                self.data_array = xr.DataArray(
                     ts_arr["data"], coords=[("time", dt)], name=self.component
                 )
                 self._update_xarray_metadata()
@@ -598,13 +600,13 @@ class ChannelTS:
                     ts_arr["data"].size,
                     self.logger,
                 )
-            self._ts = xr.DataArray(
+            self.data_array = xr.DataArray(
                 ts_arr.values, coords=[("time", dt)], name=self.component
             )
             self._update_xarray_metadata()
         elif isinstance(ts_arr, xr.DataArray):
             # TODO: need to validate the input xarray
-            self._ts = ts_arr
+            self.data_array = ts_arr
             # need to pull out the metadata as a separate dictionary
             meta_dict = dict([(k, v) for k, v in ts_arr.attrs.items()])
 
@@ -648,9 +650,9 @@ class ChannelTS:
         """
 
         try:
-            return self._ts.time.to_numpy()
+            return self.data_array.time.to_numpy()
         except AttributeError:
-            return self._ts.time.values
+            return self.data_array.time.values
 
     @property
     def channel_type(self):
@@ -701,14 +703,14 @@ class ChannelTS:
         self.channel_metadata.time_period.end = self.end.iso_no_tz
         self.channel_metadata.sample_rate = self.sample_rate
 
-        self._ts.attrs.update(
+        self.data_array.attrs.update(
             self.channel_metadata.to_dict()[self.channel_metadata._class_name]
         )
         # add station and run id's here, for now this is all we need but may need
         # more metadata down the road.
-        self._ts.attrs["station.id"] = self.station_metadata.id
-        self._ts.attrs["run.id"] = self.run_metadata.id
-        self._ts.name = self.component
+        self.data_array.attrs["station.id"] = self.station_metadata.id
+        self.data_array.attrs["run.id"] = self.run_metadata.id
+        self.data_array.name = self.component
 
     @property
     def component(self):
@@ -771,9 +773,9 @@ class ChannelTS:
         """
         check to see if there is an index in the time series
         """
-        if self._ts.data.size > 1:
+        if self.data_array.data.size > 1:
             if isinstance(
-                self._ts.indexes["time"][0],
+                self.data_array.indexes["time"][0],
                 pd._libs.tslibs.timestamps.Timestamp,
             ):
                 return True
@@ -791,18 +793,20 @@ class ChannelTS:
             # samples, therefore taking the median provides better results
             # if the time series is long this can be inefficient so test first
             if (
-                self._ts.coords.indexes["time"][1] - self._ts.coords.indexes["time"][0]
+                self.data_array.coords.indexes["time"][1]
+                - self.data_array.coords.indexes["time"][0]
             ).total_seconds() < 1e-4:
 
                 sr = 1 / (
-                    float(np.median(np.diff(self._ts.coords.indexes["time"]))) / 1e9
+                    float(np.median(np.diff(self.data_array.coords.indexes["time"])))
+                    / 1e9
                 )
             else:
                 t_diff = (
-                    self._ts.coords.indexes["time"][-1]
-                    - self._ts.coords.indexes["time"][0]
+                    self.data_array.coords.indexes["time"][-1]
+                    - self.data_array.coords.indexes["time"][0]
                 )
-                sr = self._ts.size / t_diff.total_seconds()
+                sr = self.data_array.size / t_diff.total_seconds()
         else:
             self.logger.debug("Data has not been set yet, sample rate is from metadata")
             sr = self.channel_metadata.sample_rate
@@ -830,7 +834,7 @@ class ChannelTS:
             new_dt = make_dt_coordinates(
                 self.start, sample_rate, self.n_samples, self.logger
             )
-            self._ts.coords["time"] = new_dt
+            self.data_array.coords["time"] = new_dt
         else:
             if self.channel_metadata.sample_rate not in [0.0, None]:
                 self.logger.warning(
@@ -858,7 +862,7 @@ class ChannelTS:
     def start(self):
         """MTime object"""
         if self.has_data():
-            return MTime(self._ts.coords.indexes["time"][0].isoformat())
+            return MTime(self.data_array.coords.indexes["time"][0].isoformat())
         else:
             self.logger.debug(
                 "Data not set yet, pulling start time from "
@@ -886,13 +890,15 @@ class ChannelTS:
             start_time = MTime(start_time)
         self.channel_metadata.time_period.start = start_time.iso_str
         if self.has_data():
-            if start_time == MTime(self._ts.coords.indexes["time"][0].isoformat()):
+            if start_time == MTime(
+                self.data_array.coords.indexes["time"][0].isoformat()
+            ):
                 return
             else:
                 new_dt = make_dt_coordinates(
                     start_time, self.sample_rate, self.n_samples, self.logger
                 )
-                self._ts.coords["time"] = new_dt
+                self.data_array.coords["time"] = new_dt
         # make a time series that the data can be indexed by
         else:
             self.logger.debug("No data, just updating metadata start")
@@ -906,7 +912,7 @@ class ChannelTS:
     def end(self):
         """MTime object"""
         if self.has_data():
-            return MTime(self._ts.coords.indexes["time"][-1].isoformat())
+            return MTime(self.data_array.coords.indexes["time"][-1].isoformat())
         else:
             self.logger.debug(
                 "Data not set yet, pulling end time from " + "metadata.time_period.end"
@@ -926,7 +932,7 @@ class ChannelTS:
         the new start time.
         """
         self.logger.warning(
-            "Cannot set `end`. If you want a slice, then " + "use get_slice method"
+            "Cannot set `end`. If you want a slice, then use get_slice method"
         )
 
     @property
@@ -1087,11 +1093,11 @@ class ChannelTS:
         if end is not None:
             if not isinstance(end, MTime):
                 end = MTime(end)
-        chunk = self._ts.indexes["time"].slice_indexer(
+        chunk = self.data_array.indexes["time"].slice_indexer(
             start=np.datetime64(start.iso_no_tz),
             end=np.datetime64(end.iso_no_tz),
         )
-        new_ts = self._ts.isel(indexers={"time": chunk})
+        new_ts = self.data_array.isel(indexers={"time": chunk})
 
         new_ch_ts = ChannelTS(
             channel_type=self.channel_type,
@@ -1120,7 +1126,7 @@ class ChannelTS:
 
         # need to fill nans with 0 otherwise they wipeout the decimation values
         # and all becomes nan.
-        new_ts = self._ts.fillna(0)
+        new_ts = self.data_array.fillna(0)
         for step_sr in sr_list:
             new_ts = new_ts.sps_filters.decimate(step_sr)
         new_ts.attrs["sample_rate"] = new_sample_rate
@@ -1155,7 +1161,7 @@ class ChannelTS:
 
         # need to fill nans with 0 otherwise they wipeout the decimation values
         # and all becomes nan.
-        new_ts = self._ts.fillna(0)
+        new_ts = self.data_array.fillna(0)
         new_ts = new_ts.sps_filters.resample_poly(new_sample_rate, pad_type=pad_type)
 
         new_ts.attrs["sample_rate"] = new_sample_rate
@@ -1202,7 +1208,7 @@ class ChannelTS:
                 combine_list = [self.resample_poly(new_sample_rate)._ts]
         else:
             merge_sample_rate = self.sample_rate
-            combine_list = [self._ts]
+            combine_list = [self.data_array]
         if isinstance(other, (list, tuple)):
             for ch in other:
                 if not isinstance(ch, ChannelTS):
@@ -1298,7 +1304,7 @@ class ChannelTS:
 
         """
         self._update_xarray_metadata()
-        return self._ts
+        return self.data_array
 
     def to_obspy_trace(self):
         """
@@ -1371,7 +1377,7 @@ class ChannelTS:
 
         """
 
-        return self._ts.plot()
+        return self.data_array.plot()
 
     def welch_spectra(self, window_length=2 ** 12, **kwargs):
         """
@@ -1395,10 +1401,13 @@ class ChannelTS:
     def plot_spectra(self, spectra_type="welch", window_length=2 ** 12, **kwargs):
         """
 
+        :param spectra_type: spectra type, defaults to "welch"
+        :type spectra_type: string, optional
+        :param window_length: window length of the welch method should be a
+         power of 2, defaults to 2 ** 12
+        :type window_length: int, optional
         :param **kwargs: DESCRIPTION
         :type **kwargs: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
 
         """
         from matplotlib import pyplot as plt
