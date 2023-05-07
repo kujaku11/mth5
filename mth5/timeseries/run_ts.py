@@ -1230,13 +1230,18 @@ class RunTS:
         for comp in self.channels:
             ch = getattr(self, comp)
             plot_freq, power = ch.welch_spectra(**kwargs)
-            (l1,) = ax.loglog(plot_freq, power, lw=1.5, color=color_map[comp])
+            (l1,) = ax.loglog(1.0 / plot_freq, power, lw=1.5, color=color_map[comp])
             line_list.append(l1)
             label_list.append(comp)
-        ax.set_xlabel("Frequency (Hz)", fontdict={"size": 10, "weight": "bold"})
+        ax.set_xlabel("Period (s)", fontdict={"size": 10, "weight": "bold"})
         ax.set_ylabel("Power (dB)", fontdict={"size": 10, "weight": "bold"})
         ax.axis("tight")
         ax.grid(which="both")
+
+        ax2 = ax.twiny()
+        ax2.loglog(plot_freq, power, lw=0)
+        ax2.set_xlabel("Frequency (Hz)", fontdict={"size": 10, "weight": "bold"})
+        ax2.set_xlim([1 / cc for cc in ax.get_xlim()])
 
         ax.legend(line_list, label_list)
 
