@@ -387,6 +387,19 @@ def bandstop(darray, f_low, f_high, *args, **kwargs):
     return frequency_filter(darray, [f_low, f_high], *args, **kwargs)
 
 
+# def notch(
+#     darray,
+#     notch_freq,
+#     notch_radius=0.5,
+#     frequency_radius=0.9,
+#     ripple=0.1,
+#     db_stop_limit=5.0,
+# ):
+#     ford, wn = signal.cheb1ord(wp, ws, 1, dbstop)
+#     b, a = signal.cheby1(1, 0.5, wn, btype="bandstop")
+#     bx = signal.filtfilt(b, a, bx)
+
+
 def decimate(darray, target_sample_rate, n_order=8, dim=None):
     """
     Decimate data following the method of scipy.signal.decimate.
