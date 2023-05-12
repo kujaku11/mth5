@@ -245,10 +245,28 @@ class FCChannel(BaseGroup):
 
         super().__init__(group, **kwargs)
 
-    def add_fc_dataset(self, fc_datastet_name, fc_dataset_metadata=None):
+    def add_fc_dataset(self,
+                       fc_name,
+                       fc_data=None,
+                       fc_metadata=None,
+                       max_shape=(None, None, None),
+                       chunks=True,
+                       **kwargs):
         """
+
         Add a set of Fourier coefficients for a single channel at a single
         decimation level for a processing run.
+
+        - time
+        - frequency [ integer as harmonic index or float ]
+        - fc (complex)
+
+        Weights should be a separate data set as a 1D array along with matching
+        index as fcs.
+
+        - weight_channel (maybe)
+        - weight_band (maybe)
+        - weight_time (maybe)
 
         :param fc_datastet_name: DESCRIPTION
         :type fc_datastet_name: TYPE
@@ -283,3 +301,10 @@ class FCChannel(BaseGroup):
 
         """
         pass
+
+    def add_weights(self, weight_name,
+    weight_data=None,
+    weight_metadata=None,
+    max_shape=(None, None, None),
+    chunks=True,
+    **kwargs))

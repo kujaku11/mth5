@@ -14,7 +14,6 @@ import h5py
 import numpy as np
 import xarray as xr
 
-from mth5.tables import MTH5Table
 from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import to_numpy_type
 from mth5.utils.mth5_logger import setup_logger
@@ -22,7 +21,7 @@ from mth5.utils.mth5_logger import setup_logger
 # =============================================================================
 
 
-class FCDataset(MTH5Table):
+class FCDataset:
     """
     This will hold multi-dimensional set of Fourier Coefficients
 
@@ -92,7 +91,8 @@ class FCDataset(MTH5Table):
         if dataset_metadata is not None:
             if not isinstance(dataset_metadata, type(self.metadata)):
                 msg = "metadata must be type metadata.%s not %s"
-                self.logger.error(msg, self._class_name, type(dataset_metadata))
+                self.logger.error(msg, self._class_name,
+                                  type(dataset_metadata))
                 raise MTH5Error(msg % self._class_name, type(dataset_metadata))
 
             # load from dict because of the extra attributes for MTH5
@@ -251,7 +251,8 @@ class FCDataset(MTH5Table):
         if new_estimate.dtype != self.hdf5_dataset.dtype:
             msg = "Input array must be type %s not %s"
             self.logger.error(msg, new_estimate.dtype, self.hdf5_dataset.dtype)
-            raise TypeError(msg % (new_estimate.dtype, self.hdf5_dataset.dtype))
+            raise TypeError(
+                msg % (new_estimate.dtype, self.hdf5_dataset.dtype))
 
         if new_estimate.shape != self.hdf5_dataset.shape:
             self.hdf5_dataset.resize(new_estimate.shape)
