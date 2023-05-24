@@ -118,7 +118,9 @@ def get_sampling_step(darray, dim=None, rtol=1e-3):
         t_scale = 1e3
     else:
         t_scale = 1
-    dt_avg = (float(coord[-1] - coord[0]) / (len(coord) - 1)) / t_scale  # N-1 segments
+    dt_avg = (
+        float(coord[-1] - coord[0]) / (len(coord) - 1)
+    ) / t_scale  # N-1 segments
     dt_first = float(coord[1] - coord[0]) / t_scale
 
     if abs(dt_avg - dt_first) > rtol * min(dt_first, dt_avg):
@@ -223,7 +225,9 @@ def frequency_filter(
             stacklevel=2,
         )
     if sosfiltfilt and irtype == "iir":
-        sos = scipy.signal.iirfilter(order, f_crit_norm, output="sos", **kwargs)
+        sos = scipy.signal.iirfilter(
+            order, f_crit_norm, output="sos", **kwargs
+        )
         if filtfilt:
             ret = xr.apply_ufunc(
                 sosfiltfilt,
@@ -454,6 +458,10 @@ def decimate(darray, target_sample_rate, n_order=8, dim=None):
 def resample_poly(darray, new_sample_rate, dim=None, pad_type="mean"):
     """
     Use scipy.signal.resample_poly
+
+    In newer versions of scipy, need to cast data types as floats and returned
+    object has data type of float, can change later if desired.
+
     :param new_sample_rate: DESCRIPTION
     :type new_sample_rate: TYPE
     :return: DESCRIPTION
@@ -476,7 +484,7 @@ def resample_poly(darray, new_sample_rate, dim=None, pad_type="mean"):
 
     ret = xr.apply_ufunc(
         scipy.signal.resample_poly,
-        darray,
+        darray.astype(float),
         fraction.numerator,
         fraction.denominator,
         input_core_dims=[[dim], [], []],
