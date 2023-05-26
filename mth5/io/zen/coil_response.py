@@ -114,6 +114,45 @@ class CoilResponse:
                 self.coil_calibrations[ant][ff] = (f * 6, amp6, phase6)
                 self.coil_calibrations[ant][ff + 1] = (f * 8, amp8, phase8)
 
+    def extrapolate_amplitude(
+        self, fap, frequency_limit, order=2, low_cutoff=0.1, high_cutoff=1500
+    ):
+        """
+        Extrapolate amplitude to a frequency limit.
+
+        If the frequency limit determines if extrapolating from the high or low
+        side of the response curve.
+
+        Uses an order polynomial in the linear domain to fit the data, 2 works
+        well.
+
+        :param fap: DESCRIPTION
+        :type fap: TYPE
+        :param frequency_limit: DESCRIPTION
+        :type frequency_limit: TYPE
+        :param order: DESCRIPTION, defaults to 2
+        :type order: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if frequency_limit <= low_cutoff:
+            f_index = np.where(fap.frequencies <= low_cutoff)
+        elif frequency_limit >= high_cutoff:
+            f_index = np.where(fap.frequencies >= high_cutoff)
+        else:
+            raise ValueError(
+                "frequency limit is within the pass band, no need to extrapolate"
+            )
+
+        x = fap.frequencies[f_index]
+        y = fap.amplitudes[f_index]
+
+        return
+
+        # a, b, c = np.polyfit()
+
     def get_coil_response_fap(self, coil_number):
         """
         Read an amtant.cal file provided by Zonge.
