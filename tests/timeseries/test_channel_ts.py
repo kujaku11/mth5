@@ -58,18 +58,26 @@ class TestChannelTS(unittest.TestCase):
         )
 
     def test_set_channel_fail(self):
-        self.assertRaises(TypeError, timeseries.ChannelTS, **{"channel_metadata": []})
+        self.assertRaises(
+            TypeError, timeseries.ChannelTS, **{"channel_metadata": []}
+        )
 
     def test_set_run_metadata_fail(self):
-        self.assertRaises(TypeError, timeseries.ChannelTS, **{"run_metadata": []})
+        self.assertRaises(
+            TypeError, timeseries.ChannelTS, **{"run_metadata": []}
+        )
 
     def test_set_station_metadata_fail(self):
-        self.assertRaises(TypeError, timeseries.ChannelTS, **{"station_metadata": []})
+        self.assertRaises(
+            TypeError, timeseries.ChannelTS, **{"station_metadata": []}
+        )
 
     def test_validate_channel_type(self):
         for ch in ["electric", "magnetic", "auxiliary"]:
             with self.subTest(ch):
-                self.assertEqual(ch.capitalize(), self.ts._validate_channel_type(ch))
+                self.assertEqual(
+                    ch.capitalize(), self.ts._validate_channel_type(ch)
+                )
 
     def test_validate_channel_type_auxiliary(self):
         self.assertEqual("Auxiliary", self.ts._validate_channel_type("frogs"))
@@ -89,7 +97,9 @@ class TestChannelTS(unittest.TestCase):
     def test_validate_run_metadata(self):
         self.assertDictEqual(
             self.ts.run_metadata.to_dict(single=True),
-            self.ts._validate_run_metadata(self.ts.run_metadata).to_dict(single=True),
+            self.ts._validate_run_metadata(self.ts.run_metadata).to_dict(
+                single=True
+            ),
         )
 
     def test_validate_run_metadata_from_dict(self):
@@ -161,7 +171,7 @@ class TestChannelTS(unittest.TestCase):
         with self.subTest(name="component in metadata"):
             self.assertEqual(self.ts.channel_metadata.component, "ex")
         with self.subTest(name="compnent in attrs"):
-            self.assertEqual(self.ts._ts.attrs["component"], "ex")
+            self.assertEqual(self.ts.data_array.attrs["component"], "ex")
 
     def test_equal(self):
         self.assertTrue(self.ts == self.ts)
@@ -190,12 +200,13 @@ class TestChannelTS(unittest.TestCase):
         # check to make sure the times align
         with self.subTest(name="is aligned"):
             self.assertEqual(
-                self.ts._ts.coords.to_index()[0].isoformat(),
+                self.ts.data_array.coords.to_index()[0].isoformat(),
                 self.ts.channel_metadata.time_period._start_dt.iso_no_tz,
             )
         with self.subTest(name="has index"):
             self.assertEqual(
-                self.ts._ts.coords.to_index()[-1].isoformat(), end.iso_no_tz
+                self.ts.data_array.coords.to_index()[-1].isoformat(),
+                end.iso_no_tz,
             )
         with self.subTest(name="has n samples"):
             self.assertEqual(self.ts.n_samples, 4096)
@@ -217,12 +228,13 @@ class TestChannelTS(unittest.TestCase):
         # check to make sure the times align
         with self.subTest(name="is aligned"):
             self.assertEqual(
-                self.ts._ts.coords.to_index()[0].isoformat(),
+                self.ts.data_array.coords.to_index()[0].isoformat(),
                 self.ts.channel_metadata.time_period._start_dt.iso_no_tz,
             )
         with self.subTest(name="has index"):
             self.assertEqual(
-                self.ts._ts.coords.to_index()[-1].isoformat(), end.iso_no_tz
+                self.ts.data_array.coords.to_index()[-1].isoformat(),
+                end.iso_no_tz,
             )
         with self.subTest(name="has n samples"):
             self.assertEqual(self.ts.n_samples, 4096)
@@ -244,12 +256,13 @@ class TestChannelTS(unittest.TestCase):
         # check to make sure the times align
         with self.subTest(name="is aligned"):
             self.assertEqual(
-                self.ts._ts.coords.to_index()[0].isoformat(),
+                self.ts.data_array.coords.to_index()[0].isoformat(),
                 self.ts.channel_metadata.time_period._start_dt.iso_no_tz,
             )
         with self.subTest(name="has index"):
             self.assertEqual(
-                self.ts._ts.coords.to_index()[-1].isoformat(), end.iso_no_tz
+                self.ts.data_array.coords.to_index()[-1].isoformat(),
+                end.iso_no_tz,
             )
         with self.subTest(name="has n samples"):
             self.assertEqual(self.ts.n_samples, 4096)
@@ -268,13 +281,13 @@ class TestChannelTS(unittest.TestCase):
         # check to make sure the times align
         with self.subTest(name="is aligned"):
             self.assertEqual(
-                self.ts._ts.coords.to_index()[0].isoformat(),
+                self.ts.data_array.coords.to_index()[0].isoformat(),
                 self.ts.channel_metadata.time_period._start_dt.iso_no_tz,
             )
         # check to make sure the times align
         with self.subTest(name="same end"):
             self.assertEqual(
-                self.ts._ts.coords.to_index()[-1].isoformat(),
+                self.ts.data_array.coords.to_index()[-1].isoformat(),
                 self.ts.channel_metadata.time_period._end_dt.iso_no_tz,
             )
         with self.subTest(name="sample rate"):
@@ -449,7 +462,9 @@ class TestChannelTS2ObspyTrace(unittest.TestCase):
         new_ch.from_obspy_trace(tr)
 
         with self.subTest("station"):
-            self.assertEqual(self.ch.station_metadata.id, new_ch.station_metadata.id)
+            self.assertEqual(
+                self.ch.station_metadata.id, new_ch.station_metadata.id
+            )
         with self.subTest("channel"):
             self.assertEqual("temperaturex", new_ch.component)
         with self.subTest("channel metadata type"):
@@ -482,7 +497,9 @@ class TestAddChannels(unittest.TestCase):
         self.channel_metadata.time_period.start = "2020-01-01T00:00:00+00:00"
         self.channel_metadata.time_period.end = "2020-01-01T00:00:59+00:00"
 
-        self.channel_metadata2 = metadata.Electric(component="ex", sample_rate=1)
+        self.channel_metadata2 = metadata.Electric(
+            component="ex", sample_rate=1
+        )
         self.channel_metadata2.time_period.start = "2020-01-01T00:01:10"
         self.channel_metadata2.time_period.end = "2020-01-01T00:02:09"
 
@@ -551,7 +568,9 @@ class TestAddChannels(unittest.TestCase):
 
     def test_run_metadata(self):
         with self.subTest("id"):
-            self.assertEqual(self.run_metadata.id, self.combined_ex.run_metadata.id)
+            self.assertEqual(
+                self.run_metadata.id, self.combined_ex.run_metadata.id
+            )
         with self.subTest("start"):
             self.assertEqual(
                 self.combined_start,
@@ -603,11 +622,15 @@ class TestMergeChannels(unittest.TestCase):
 
         self.run_metadata = metadata.Run(id="001")
 
-        self.channel_metadata = metadata.Electric(component="ex", sample_rate=10)
+        self.channel_metadata = metadata.Electric(
+            component="ex", sample_rate=10
+        )
         self.channel_metadata.time_period.start = "2020-01-01T00:00:00+00:00"
         self.channel_metadata.time_period.end = "2020-01-01T00:00:59+00:00"
 
-        self.channel_metadata2 = metadata.Electric(component="ex", sample_rate=10)
+        self.channel_metadata2 = metadata.Electric(
+            component="ex", sample_rate=10
+        )
         self.channel_metadata2.time_period.start = "2020-01-01T00:01:10"
         self.channel_metadata2.time_period.end = "2020-01-01T00:02:09"
 
@@ -671,7 +694,9 @@ class TestMergeChannels(unittest.TestCase):
 
     def test_run_metadata(self):
         with self.subTest("id"):
-            self.assertEqual(self.run_metadata.id, self.combined_ex.run_metadata.id)
+            self.assertEqual(
+                self.run_metadata.id, self.combined_ex.run_metadata.id
+            )
         with self.subTest("start"):
             self.assertEqual(
                 self.combined_start,
