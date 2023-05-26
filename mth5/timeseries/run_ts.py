@@ -227,10 +227,8 @@ class RunTS:
                 self.logger.debug("Loading from metadata dict")
                 return st_metadata
             else:
-                msg = (
-                    "input metadata must be type {0} or dict, not {1}".format(
-                        type(self.station_metadata), type(station_metadata)
-                    )
+                msg = "input metadata must be type {0} or dict, not {1}".format(
+                    type(self.station_metadata), type(station_metadata)
                 )
                 self.logger.error(msg)
                 raise TypeError(msg)
@@ -252,10 +250,8 @@ class RunTS:
                 self.logger.debug("Loading from metadata dict")
                 return sv_metadata
             else:
-                msg = (
-                    "input metadata must be type {0} or dict, not {1}".format(
-                        type(self.survey_metadata), type(survey_metadata)
-                    )
+                msg = "input metadata must be type {0} or dict, not {1}".format(
+                    type(self.survey_metadata), type(survey_metadata)
                 )
                 self.logger.error(msg)
                 raise TypeError(msg)
@@ -558,9 +554,7 @@ class RunTS:
         """
 
         if station_metadata is not None:
-            station_metadata = self._validate_station_metadata(
-                station_metadata
-            )
+            station_metadata = self._validate_station_metadata(station_metadata)
 
             runs = ListDict()
             if self.run_metadata.id not in ["0", 0]:
@@ -750,9 +744,9 @@ class RunTS:
             raise ValueError(msg)
         ### should probably check for other metadata like station and run?
         if len(self.dataset.dims) == 0:
-            self.dataset = c._ts.to_dataset()
+            self.dataset = c.data_array.to_dataset()
         else:
-            self.dataset = xr.merge([self.dataset, c._ts.to_dataset()])
+            self.dataset = xr.merge([self.dataset, c.data_array.to_dataset()])
 
     @property
     def dataset(self):
@@ -780,9 +774,7 @@ class RunTS:
     def end(self):
         """End time UTC"""
         if self.has_data():
-            return MTime(
-                self.dataset.coords["time"].to_index()[-1].isoformat()
-            )
+            return MTime(self.dataset.coords["time"].to_index()[-1].isoformat())
         return self.run_metadata.time_period.end
 
     @property
