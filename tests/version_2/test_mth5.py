@@ -87,9 +87,7 @@ class TestMTH5(unittest.TestCase):
     def test_add_station(self):
         new_station = self.mth5_obj.add_station("MT001", survey="test")
         with self.subTest(name="station exists"):
-            self.assertIn(
-                "MT001", self.survey_group.stations_group.groups_list
-            )
+            self.assertIn("MT001", self.survey_group.stations_group.groups_list)
         with self.subTest(name="is station group"):
             self.assertIsInstance(new_station, groups.StationGroup)
         with self.subTest("get channel"):
@@ -102,9 +100,7 @@ class TestMTH5(unittest.TestCase):
         self.assertNotIn("MT001", self.survey_group.stations_group.groups_list)
 
     def test_get_station_fail(self):
-        self.assertRaises(
-            MTH5Error, self.mth5_obj.get_station, "MT020", "test"
-        )
+        self.assertRaises(MTH5Error, self.mth5_obj.get_station, "MT020", "test")
 
     def test_add_run(self):
         new_station = self.mth5_obj.add_station("MT001", survey="test")
@@ -141,9 +137,7 @@ class TestMTH5(unittest.TestCase):
                 ch = self.mth5_obj.get_channel("MT001", "MT001a", "ex", "test")
                 self.assertIsInstance(ch, groups.ElectricDataset)
             except AttributeError:
-                print(
-                    "test_add_channel.get_channel failed with AttributeError"
-                )
+                print("test_add_channel.get_channel failed with AttributeError")
 
     def test_remove_channel(self):
         new_station = self.mth5_obj.add_station("MT001", survey="test")
@@ -192,7 +186,8 @@ class TestMTH5(unittest.TestCase):
             self.assertEqual(channel_ts.start, new_ts.start)
         with self.subTest(name="metadata"):
             self.assertDictEqual(
-                channel_ts._ts.time.to_dict(), new_ts._ts.time.to_dict()
+                channel_ts.data_array.time.to_dict(),
+                new_ts.data_array.time.to_dict(),
             )
 
     def test_from_run_ts(self):
