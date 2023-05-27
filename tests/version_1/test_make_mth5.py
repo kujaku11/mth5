@@ -89,9 +89,7 @@ class TestMakeMTH5(unittest.TestCase):
         with self.subTest(name="stations"):
             self.assertListEqual(
                 sorted(self.stations),
-                sorted(
-                    list(set([ss.code for ss in inv.networks[0].stations]))
-                ),
+                sorted(list(set([ss.code for ss in inv.networks[0].stations]))),
             )
         with self.subTest(name="channels_CAS04"):
             self.assertListEqual(
@@ -218,9 +216,7 @@ class TestMakeMTH5(unittest.TestCase):
     def test_make_mth5(self):
         try:
             self.make_mth5.save_path = self.mth5_path
-            m = self.make_mth5.from_fdsn_client(
-                self.metadata_df, client="IRIS"
-            )
+            m = self.make_mth5.from_fdsn_client(self.metadata_df, client="IRIS")
 
             with self.subTest(name="stations"):
                 self.assertListEqual(self.stations, m.station_list)
@@ -236,7 +232,13 @@ class TestMakeMTH5(unittest.TestCase):
                         self.assertTrue(abs(x.hdf5_dataset[()].mean()) > 0)
             with self.subTest(name="NVR08_runs"):
                 self.assertListEqual(
-                    ["Transfer_Functions", "a", "b", "c"],
+                    [
+                        "Fourier_Coefficients",
+                        "Transfer_Functions",
+                        "a",
+                        "b",
+                        "c",
+                    ],
                     m.get_station("NVR08").groups_list,
                 )
             for run in ["a", "b", "c"]:

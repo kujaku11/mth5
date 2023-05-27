@@ -202,9 +202,7 @@ class TestMakeMTH5(unittest.TestCase):
     )
     def test_make_mth5(self):
         try:
-            m = self.make_mth5.from_fdsn_client(
-                self.metadata_df, client="IRIS"
-            )
+            m = self.make_mth5.from_fdsn_client(self.metadata_df, client="IRIS")
 
             sg = m.get_survey("CONUS_South")
             with self.subTest(name="stations"):
@@ -213,7 +211,14 @@ class TestMakeMTH5(unittest.TestCase):
                 )
             with self.subTest(name="CAS04_runs"):
                 self.assertListEqual(
-                    ["Transfer_Functions", "a", "b", "c", "d"],
+                    [
+                        "Fourier_Coefficients",
+                        "Transfer_Functions",
+                        "a",
+                        "b",
+                        "c",
+                        "d",
+                    ],
                     m.get_station("CAS04", "CONUS_South").groups_list,
                 )
             for run in ["a", "b", "c", "d"]:
