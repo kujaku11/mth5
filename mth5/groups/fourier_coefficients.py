@@ -8,9 +8,6 @@ Created on Fri Feb 24 12:49:32 2023
 # =============================================================================
 # Imports
 # =============================================================================
-import numpy as np
-import pandas as pd
-import h5py
 
 from mth5.groups import BaseGroup
 from mth5.utils.exceptions import MTH5Error
@@ -34,11 +31,7 @@ class MasterFCGroup(BaseGroup):
     """
 
     def __init__(self, group, **kwargs):
-
         super().__init__(group, **kwargs)
-
-    def initialize_group(self):
-        pass
 
     @property
     def fc_summary(self):

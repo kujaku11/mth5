@@ -464,12 +464,11 @@ class StationGroup(BaseGroup):
     """
 
     def __init__(self, group, station_metadata=None, **kwargs):
-        super().__init__(group, group_metadata=station_metadata, **kwargs)
-
         self._default_subgroup_names = [
             "Transfer_Functions",
             "Fourier_Coefficients",
         ]
+        super().__init__(group, group_metadata=station_metadata, **kwargs)
 
     def initialize_group(self, **kwargs):
         """
@@ -510,7 +509,9 @@ class StationGroup(BaseGroup):
 
         self._metadata.runs = []
         for key in self.groups_list:
-            if key.lower() == "transfer_functions":
+            if key.lower() in [
+                name.lower() for name in self._default_subgroup_names
+            ]:
                 continue
             try:
                 key_group = self.get_run(key)
