@@ -172,7 +172,7 @@ class TestReadPhoenixNative(unittest.TestCase):
                     ("sensor.id", None),
                     ("sensor.manufacturer", None),
                     ("sensor.type", None),
-                    ("time_period.end", "2021-04-26T20:00:08.999958+00:00"),
+                    ("time_period.end", "2021-04-26T20:00:08.999958333+00:00"),
                     ("time_period.start", "2021-04-26T19:59:09+00:00"),
                     ("type", "magnetic"),
                     ("units", None),

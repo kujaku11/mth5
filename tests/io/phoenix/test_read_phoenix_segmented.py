@@ -182,7 +182,7 @@ class TestReadPhoenixContinuous(unittest.TestCase):
                     ("sensor.id", None),
                     ("sensor.manufacturer", None),
                     ("sensor.type", None),
-                    ("time_period.end", "2021-04-27T03:25:31.999958+00:00"),
+                    ("time_period.end", "2021-04-27T03:25:31.999958333+00:00"),
                     ("time_period.start", "2021-04-27T03:25:30+00:00"),
                     ("type", "magnetic"),
                     ("units", None),
