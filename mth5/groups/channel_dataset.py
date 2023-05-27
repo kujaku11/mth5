@@ -21,19 +21,16 @@ from mt_metadata.utils.mttime import MTime
 from mt_metadata.base import Base
 from mt_metadata.timeseries.filters import ChannelResponseFilter
 
-from mth5 import CHUNK_SIZE, CHANNEL_DTYPE
-from mth5.groups.base import BaseGroup
-from mth5.groups import FiltersGroup, TransferFunctionGroup
-from mth5.groups.fourier_coefficients import MasterFCGroup, FCGroup, FCChannel
+from mth5 import CHANNEL_DTYPE
 from mth5.utils.exceptions import MTH5Error
+from mth5.groups import FiltersGroup
 from mth5.helpers import (
     to_numpy_type,
     from_numpy_type,
     inherit_doc_string,
-    validate_name,
 )
 
-from mth5.timeseries import ChannelTS, RunTS
+from mth5.timeseries import ChannelTS
 from mth5.timeseries.channel_ts import make_dt_coordinates
 from mth5.utils.mth5_logger import setup_logger
 
@@ -201,11 +198,6 @@ class ChannelDataset:
         return self.__class__.__name__.split("Dataset")[0]
 
     @property
-    def run_group(self):
-        """shortcut to run group"""
-        return RunGroup(self.hdf5_dataset.parent)
-
-    @property
     def run_metadata(self):
         """run metadata"""
 
@@ -217,12 +209,6 @@ class ChannelDataset:
         return run_metadata
 
     @property
-    def station_group(self):
-        """shortcut to station group"""
-
-        return StationGroup(self.hdf5_dataset.parent.parent)
-
-    @property
     def station_metadata(self):
         """station metadata"""
 
@@ -232,12 +218,6 @@ class ChannelDataset:
         station_metadata = metadata.Station()
         station_metadata.from_dict({"station": meta_dict})
         return station_metadata
-
-    @property
-    def master_station_group(self):
-        """shortcut to master station group"""
-
-        return MasterStationGroup(self.hdf5_dataset.parent.parent.parent)
 
     @property
     def survey_metadata(self):
@@ -927,38 +907,6 @@ class ChannelDataset:
         if end_time != self.end:
             t_diff = end_time - self.end
         return t_diff
-
-    @property
-    def table_entry(self):
-        """
-        Creat a table entry to put into the run summary table.
-
-        """
-
-        return np.array(
-            [
-                (
-                    self.metadata.component,
-                    self.metadata.time_period._start_dt.iso_no_tz,
-                    self.metadata.time_period._end_dt.iso_no_tz,
-                    self.hdf5_dataset.size,
-                    self.metadata.type,
-                    self.metadata.units,
-                    self.hdf5_dataset.ref,
-                )
-            ],
-            dtype=np.dtype(
-                [
-                    ("component", "U20"),
-                    ("start", "datetime64[ns]"),
-                    ("end", "datetime64[ns]"),
-                    ("n_samples", int),
-                    ("measurement_type", "U12"),
-                    ("units", "U25"),
-                    ("hdf5_reference", h5py.ref_dtype),
-                ]
-            ),
-        )
 
     @property
     def channel_entry(self):

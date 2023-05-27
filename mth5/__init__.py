@@ -36,6 +36,9 @@ xr.set_options(keep_attrs=True)
 # Defualt Parameters
 # =============================================================================
 CHUNK_SIZE = 8196
+ACCEPTABLE_FILE_TYPES = ["mth5", "MTH5", "h5", "H5"]
+ACCEPTABLE_FILE_VERSIONS = ["0.1.0", "0.2.0"]
+ACCEPTABLE_DATA_LEVELS = [0, 1, 2, 3]
 
 TF_DTYPE = np.dtype(
     [

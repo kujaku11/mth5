@@ -27,22 +27,22 @@ import h5py
 
 from mth5.utils.exceptions import MTH5Error
 from mth5 import __version__ as mth5_version
-from mth5 import groups as groups
+from mth5 import groups
 from mth5.tables import ChannelSummaryTable, TFSummaryTable
 from mth5 import helpers
 from mth5.utils.mth5_logger import setup_logger
-from mth5 import CHANNEL_DTYPE, TF_DTYPE
+from mth5 import (
+    CHANNEL_DTYPE,
+    TF_DTYPE,
+    ACCEPTABLE_FILE_TYPES,
+    ACCEPTABLE_FILE_VERSIONS,
+    ACCEPTABLE_DATA_LEVELS,
+)
 
 from mt_metadata.utils.mttime import get_now_utc
 from mt_metadata.timeseries import Experiment
 from mt_metadata.transfer_functions.core import TF
 
-# =============================================================================
-# Acceptable parameters
-# =============================================================================
-acceptable_file_types = ["mth5", "MTH5", "h5", "H5"]
-acceptable_file_versions = ["0.1.0", "0.2.0"]
-acceptable_data_levels = [0, 1, 2, 3]
 
 # =============================================================================
 # MT HDF5 file
@@ -332,7 +332,7 @@ class MTH5:
         if value is not None:
             if not isinstance(value, Path):
                 value = Path(value)
-            if value.suffix not in acceptable_file_types:
+            if value.suffix not in ACCEPTABLE_FILE_TYPES:
                 msg = (
                     f"file extension {value.suffix} is not correct. "
                     "Changing to default .h5"
@@ -362,9 +362,9 @@ class MTH5:
             msg = f"Input file type must be a string not {type(value)}"
             self.logger.error(msg)
             raise ValueError(msg)
-        if value not in acceptable_file_types:
+        if value not in ACCEPTABLE_FILE_TYPES:
             msg = (
-                f"Input file.type is not valid, must be {acceptable_file_types}"
+                f"Input file.type is not valid, must be {ACCEPTABLE_FILE_TYPES}"
             )
             self.logger.error(msg)
             raise ValueError(msg)
@@ -392,8 +392,8 @@ class MTH5:
             msg = f"Input file version must be a string not {type(value)}"
             self.logger.error(msg)
             raise ValueError(msg)
-        if value not in acceptable_file_versions:
-            msg = f"Input file.version is not valid, must be {acceptable_file_versions}"
+        if value not in ACCEPTABLE_FILE_VERSIONS:
+            msg = f"Input file.version is not valid, must be {ACCEPTABLE_FILE_VERSIONS}"
             self.logger.error(msg)
             raise ValueError(msg)
         self.__file_version = value
@@ -427,8 +427,8 @@ class MTH5:
             msg = f"Input file type must be an integer not {type(value)}"
             self.logger.error(msg)
             raise ValueError(msg)
-        if value not in acceptable_data_levels:
-            msg = f"Input data_level is not valid, must be {acceptable_data_levels}"
+        if value not in ACCEPTABLE_DATA_LEVELS:
+            msg = f"Input data_level is not valid, must be {ACCEPTABLE_DATA_LEVELS}"
             self.logger.error(msg)
             raise ValueError(msg)
         self.__data_level = value
@@ -710,15 +710,15 @@ class MTH5:
         """
 
         if self.h5_is_read():
-            if self.file_type not in acceptable_file_types:
+            if self.file_type not in ACCEPTABLE_FILE_TYPES:
                 msg = f"Unacceptable file type {self.file_type}"
                 self.logger.error(msg)
                 return False
-            if self.file_version not in acceptable_file_versions:
+            if self.file_version not in ACCEPTABLE_FILE_VERSIONS:
                 msg = f"Unacceptable file version {self.file_version}"
                 self.logger.error(msg)
                 return False
-            if self.data_level not in acceptable_data_levels:
+            if self.data_level not in ACCEPTABLE_DATA_LEVELS:
                 msg = f"Unacceptable data_level {self.data_level}"
                 self.logger.error(msg)
                 return False

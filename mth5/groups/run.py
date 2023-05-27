@@ -9,33 +9,29 @@ Created on Sat May 27 09:59:03 2023
 # Imports
 # =============================================================================
 import inspect
-import weakref
 
 import h5py
 import numpy as np
 import pandas as pd
-import xarray as xr
 
 from mt_metadata import timeseries as metadata
-from mt_metadata.utils.mttime import MTime
-from mt_metadata.base import Base
-from mt_metadata.timeseries.filters import ChannelResponseFilter
 
-from mth5 import CHUNK_SIZE, CHANNEL_DTYPE
-from mth5.groups.base import BaseGroup
-from mth5.groups import FiltersGroup, TransferFunctionGroup
-from mth5.groups.fourier_coefficients import MasterFCGroup, FCGroup, FCChannel
+from mth5 import CHUNK_SIZE
+from mth5.groups import (
+    BaseGroup,
+    ChannelDataset,
+    ElectricDataset,
+    MagneticDataset,
+    AuxiliaryDataset,
+)
 from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import (
     to_numpy_type,
     from_numpy_type,
-    inherit_doc_string,
     validate_name,
 )
 
 from mth5.timeseries import ChannelTS, RunTS
-from mth5.timeseries.channel_ts import make_dt_coordinates
-from mth5.utils.mth5_logger import setup_logger
 
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
 # =============================================================================
@@ -204,28 +200,6 @@ class RunGroup(BaseGroup):
     def __init__(self, group, run_metadata=None, **kwargs):
         super().__init__(group, group_metadata=run_metadata, **kwargs)
 
-        # summary of channels in run
-        self._defaults_summary_attrs = {
-            "name": "summary",
-            "max_shape": (20,),
-            "dtype": np.dtype(
-                [
-                    ("component", "S20"),
-                    ("start", "S32"),
-                    ("end", "S32"),
-                    ("n_samples", int),
-                    ("measurement_type", "S12"),
-                    ("units", "S25"),
-                    ("hdf5_reference", h5py.ref_dtype),
-                ]
-            ),
-        }
-
-    @property
-    def station_group(self):
-        """shortcut to station group"""
-        return StationGroup(self.hdf5_group.parent)
-
     @property
     def station_metadata(self):
         """station metadata"""
@@ -236,11 +210,6 @@ class RunGroup(BaseGroup):
         station_metadata = metadata.Station()
         station_metadata.from_dict({"station": meta_dict})
         return station_metadata
-
-    @property
-    def master_station_group(self):
-        """shortcut to master station group"""
-        return MasterStationGroup(self.hdf5_group.parent.parent)
 
     @property
     def survey_metadata(self):
@@ -382,11 +351,10 @@ class RunGroup(BaseGroup):
                     maxshape=max_shape,
                     **self.dataset_options,
                 )
-            # initialize an resizable data array
+            # initialize a resizable data array
             # need to set the chunk size to something useful, if the chunk
             # size is 1 this causes performance issues and bloating of the
-            # hdf5 file.  Set to 8196 for now.  Should add a parameter for
-            # this
+            # hdf5 file.  Set to 8196 for now.
             else:
                 if channel_metadata is not None:
                     # can estimate a size, this will help with allocating
@@ -640,11 +608,11 @@ class RunGroup(BaseGroup):
             ch = getattr(run_ts_obj, comp)
 
             if ch.station_metadata.id is not None:
-                if ch.station_metadata.id != self.station_group.metadata.id:
+                if ch.station_metadata.id != self.station_metadata.id:
                     if ch.station_metadata.id not in ["0", None]:
                         self.logger.warning(
                             f"Channel station.id {ch.station_metadata.id} != "
-                            + f" group station.id {self.station_group.metadata.id}"
+                            + f" group station.id {self.station_metadata.id}"
                         )
             if ch.run_metadata.id is not None:
                 if ch.run_metadata.id != self.metadata.id:
@@ -754,4 +722,4 @@ class RunGroup(BaseGroup):
 
         runts = self.to_runts(start=start, end=end, n_samples=n_samples)
 
-        runts.plot()
+        return runts.plot()
