@@ -8,16 +8,17 @@ Created on Fri Feb 24 12:49:32 2023
 # =============================================================================
 # Imports
 # =============================================================================
+import numpy as np
+import xarray as xr
 
-from mth5.groups import BaseGroup
-from mth5.utils.exceptions import MTH5Error
+from mth5.groups import BaseGroup, FCDataset
 from mth5.helpers import validate_name
+from mth5.utils.exceptions import MTH5Error
 
 from mt_metadata.transfer_functions.processing.fourier_coefficients import (
-    Decimation,
     Channel,
-    FC,
 )
+
 
 # =============================================================================
 """fc -> FCMasterGroup -> FCGroup -> DecimationLevelGroup -> ChannelGroup -> FCDataset"""
@@ -84,22 +85,7 @@ class MasterFCGroup(BaseGroup):
 
         """
 
-        fc_name = validate_name(fc_name)
-        try:
-            del self.hdf5_group[fc_name]
-            self.logger.info(
-                "Deleting a fc does not reduce the HDF5"
-                + "file size it simply remove the reference. If "
-                + "file size reduction is your goal, simply copy"
-                + " what you want into another file."
-            )
-        except KeyError:
-            msg = (
-                f"{fc_name} does not exist, "
-                + "check fc_list for existing names"
-            )
-            self.logger.debug("Error" + msg)
-            raise MTH5Error(msg)
+        self._remove_group(fc_name)
 
 
 class FCGroup(BaseGroup):
@@ -143,39 +129,12 @@ class FCGroup(BaseGroup):
 
         """
 
-        decimation_level_name = validate_name(decimation_level_name)
-
-        try:
-            decimation_group = self.hdf5_group.create_group(
-                decimation_level_name
-            )
-            if decimation_level_metadata is None:
-                decimation_level_metadata = Decimation(
-                    decimation_level=decimation_level_name
-                )
-            else:
-                if (
-                    validate_name(decimation_level_metadata.decimation_level)
-                    != decimation_level_name
-                ):
-                    msg = (
-                        f"FC group name {decimation_level_name} must be same as "
-                        f"fc_metadata.id {decimation_level_metadata.decimation_level}"
-                    )
-                    self.logger.error(msg)
-                    raise MTH5Error(msg)
-            fc_obj = FCDecimationGroup(
-                decimation_group,
-                decimation_level_metadata=decimation_level_metadata,
-                **self.dataset_options,
-            )
-            fc_obj.initialize_group()
-
-        except ValueError:
-            msg = "FC %s already exists, returning existing group."
-            self.logger.info(msg, decimation_level_name)
-            fc_obj = self.get_fc_group(decimation_level_name)
-        return fc_obj
+        return self._add_group(
+            decimation_level_name,
+            FCDecimationGroup,
+            group_metadata=decimation_level_metadata,
+            match="decimation_level",
+        )
 
     def get_decimation_level(self, decimation_level_name):
         """
@@ -187,7 +146,7 @@ class FCGroup(BaseGroup):
         :rtype: TYPE
 
         """
-        pass
+        return self._get_group(decimation_level_name, FCDecimationGroup)
 
     def remove_decimation_level(self, decimation_level_name):
         """
@@ -199,7 +158,8 @@ class FCGroup(BaseGroup):
         :rtype: TYPE
 
         """
-        pass
+
+        self._remove_group(decimation_level_name)
 
 
 class FCDecimationGroup(BaseGroup):
@@ -248,7 +208,13 @@ class FCDecimationGroup(BaseGroup):
         :rtype: TYPE
 
         """
-        pass
+
+        return self._add_group(
+            channel_name,
+            FCChannel,
+            group_metadata=channel_metadata,
+            match="name",
+        )
 
     def get_channel(self, channel_name):
         """
@@ -260,7 +226,7 @@ class FCDecimationGroup(BaseGroup):
         :rtype: TYPE
 
         """
-        pass
+        return self._get_group(channel_name, FCChannel)
 
     def remove_channel(self, channel_name):
         """
@@ -272,7 +238,7 @@ class FCDecimationGroup(BaseGroup):
         :rtype: TYPE
 
         """
-        pass
+        self._remove_group(channel_name)
 
 
 class FCChannel(BaseGroup):
@@ -301,6 +267,7 @@ class FCChannel(BaseGroup):
         fc_name,
         fc_data=None,
         fc_metadata=None,
+        channel_dtype="complex128",
         max_shape=(None, None, None),
         chunks=True,
         **kwargs,
@@ -329,9 +296,51 @@ class FCChannel(BaseGroup):
         :rtype: TYPE
 
         """
-        pass
 
-    def get_fc_dataset(self, fc_dataset_name):
+        fc_name = validate_name(fc_name)
+
+        if fc_metadata is None:
+            fc_metadata = Channel(name=fc_name)
+
+        if fc_data is not None:
+            if not isinstance(fc_data, (np.ndarray, xr.DataArray)):
+                msg = f"Need to input a numpy or xarray.DataArray not {type(fc_data)}"
+                self.logger.exception(msg)
+                raise TypeError(msg)
+
+            dtype = fc_data.dtype
+
+        else:
+            dtype = np.dtype(
+                [
+                    ("time", "U32"),
+                    ("frequency", float),
+                    ("coefficient", complex),
+                ]
+            )
+
+            chunks = True
+            fc_data = np.zeros((1, 1, 1), dtype=dtype)
+        try:
+            dataset = self.hdf5_group.create_dataset(
+                fc_name,
+                data=fc_data,
+                dtype=dtype,
+                chunks=chunks,
+                maxshape=max_shape,
+                **self.dataset_options,
+            )
+
+            fc_dataset = FCDataset(dataset, dataset_metadata=fc_metadata)
+        except (OSError, RuntimeError, ValueError) as error:
+            self.logger.error(error)
+            msg = f"estimate {fc_metadata.name} already exists, returning existing group."
+            self.logger.debug(msg)
+
+            fc_dataset = self.get_estimate(fc_metadata.name)
+        return fc_dataset
+
+    def get_fc_dataset(self, fc_name):
         """
         get an fc dataset
 
@@ -341,9 +350,26 @@ class FCChannel(BaseGroup):
         :rtype: TYPE
 
         """
-        pass
+        fc_name = validate_name(fc_name)
 
-    def remove_fc_dataset(self, fc_dataset_name):
+        try:
+            fc_dataset = self.hdf5_group[fc_name]
+            fc_metadata = Channel(**dict(fc_dataset.attrs))
+            return FCDataset(fc_dataset, dataset_metadata=fc_metadata)
+
+        except (KeyError):
+            msg = (
+                f"{fc_name} does not exist, "
+                + "check groups_list for existing names"
+            )
+            self.logger.error(msg)
+            raise MTH5Error(msg)
+
+        except (OSError) as error:
+            self.logger.error(error)
+            raise MTH5Error(error)
+
+    def remove_fc_dataset(self, fc_name):
         """
         remove an fc dataset
 
@@ -353,7 +379,23 @@ class FCChannel(BaseGroup):
         :rtype: TYPE
 
         """
-        pass
+        fc_name = validate_name(fc_name.lower())
+
+        try:
+            del self.hdf5_group[fc_name]
+            self.logger.info(
+                "Deleting a estimate does not reduce the HDF5"
+                + "file size it simply remove the reference. If "
+                + "file size reduction is your goal, simply copy"
+                + " what you want into another file."
+            )
+        except KeyError:
+            msg = (
+                f"{fc_name} does not exist, "
+                + "check groups_list for existing names"
+            )
+            self.logger.error(msg)
+            raise MTH5Error(msg)
 
     def add_weights(
         self,
