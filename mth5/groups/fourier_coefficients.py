@@ -16,8 +16,14 @@ from mth5.groups import BaseGroup
 from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import validate_name
 
+from mt_metadata.transfer_functions.processing.fourier_coefficients import (
+    Decimation,
+    Channel,
+    FC,
+)
+
 # =============================================================================
-"""Station -> FCMasterGroup -> FCGroup -> DecimationLevelGroup -> ChannelGroup -> FCDataset"""
+"""fc -> FCMasterGroup -> FCGroup -> DecimationLevelGroup -> ChannelGroup -> FCDataset"""
 
 
 class MasterFCGroup(BaseGroup):
@@ -57,7 +63,33 @@ class MasterFCGroup(BaseGroup):
         :rtype: TYPE
 
         """
-        pass
+
+        fc_name = validate_name(fc_name)
+
+        try:
+            fc_group = self.hdf5_group.create_group(fc_name)
+            if fc_metadata is None:
+                fc_metadata = FC(id="default")
+            else:
+                if validate_name(fc_metadata.id) != fc_name:
+                    msg = (
+                        f"FC group name {fc_name} must be same as "
+                        f"fc_metadata.id {fc_metadata.id}"
+                    )
+                    self.logger.error(msg)
+                    raise MTH5Error(msg)
+            fc_obj = FCGroup(
+                fc_group,
+                fc_metadata=fc_metadata,
+                **self.dataset_options,
+            )
+            fc_obj.initialize_group()
+
+        except ValueError:
+            msg = "FC %s already exists, returning existing group."
+            self.logger.info(msg, fc_name)
+            fc_obj = self.get_fc_group(fc_name)
+        return fc_obj
 
     def get_fc_group(self, fc_name):
         """
@@ -69,7 +101,16 @@ class MasterFCGroup(BaseGroup):
         :rtype: TYPE
 
         """
-        pass
+        fc_name = validate_name(fc_name)
+        try:
+            return FCGroup(self.hdf5_group[fc_name], **self.dataset_options)
+        except KeyError:
+            msg = (
+                f"{fc_name} does not exist, "
+                + "check fc_list for existing names"
+            )
+            self.logger.debug("Error" + msg)
+            raise MTH5Error(msg)
 
     def remove_fc_group(self, fc_name):
         """
@@ -82,7 +123,22 @@ class MasterFCGroup(BaseGroup):
 
         """
 
-        pass
+        fc_name = validate_name(fc_name)
+        try:
+            del self.hdf5_group[fc_name]
+            self.logger.info(
+                "Deleting a fc does not reduce the HDF5"
+                + "file size it simply remove the reference. If "
+                + "file size reduction is your goal, simply copy"
+                + " what you want into another file."
+            )
+        except KeyError:
+            msg = (
+                f"{fc_name} does not exist, "
+                + "check fc_list for existing names"
+            )
+            self.logger.debug("Error" + msg)
+            raise MTH5Error(msg)
 
 
 class FCGroup(BaseGroup):
@@ -105,9 +161,11 @@ class FCGroup(BaseGroup):
 
     """
 
-    def __init__(self, group, fc_metadata=None, **kwargs):
+    def __init__(self, group, decimation_level_metadata=None, **kwargs):
 
-        super().__init__(group, group_metadata=fc_metadata, **kwargs)
+        super().__init__(
+            group, group_metadata=decimation_level_metadata, **kwargs
+        )
 
     def add_decimation_level(
         self, decimation_level_name, decimation_level_metadata=None
@@ -124,7 +182,39 @@ class FCGroup(BaseGroup):
 
         """
 
-        pass
+        decimation_level_name = validate_name(decimation_level_name)
+
+        try:
+            decimation_group = self.hdf5_group.create_group(
+                decimation_level_name
+            )
+            if decimation_level_metadata is None:
+                decimation_level_metadata = Decimation(
+                    decimation_level=decimation_level_name
+                )
+            else:
+                if (
+                    validate_name(decimation_level_metadata.decimation_level)
+                    != decimation_level_name
+                ):
+                    msg = (
+                        f"FC group name {decimation_level_name} must be same as "
+                        f"fc_metadata.id {decimation_level_metadata.decimation_level}"
+                    )
+                    self.logger.error(msg)
+                    raise MTH5Error(msg)
+            fc_obj = FCDecimationGroup(
+                decimation_group,
+                decimation_level_metadata=decimation_level_metadata,
+                **self.dataset_options,
+            )
+            fc_obj.initialize_group()
+
+        except ValueError:
+            msg = "FC %s already exists, returning existing group."
+            self.logger.info(msg, decimation_level_name)
+            fc_obj = self.get_fc_group(decimation_level_name)
+        return fc_obj
 
     def get_decimation_level(self, decimation_level_name):
         """
@@ -245,13 +335,15 @@ class FCChannel(BaseGroup):
 
         super().__init__(group, **kwargs)
 
-    def add_fc_dataset(self,
-                       fc_name,
-                       fc_data=None,
-                       fc_metadata=None,
-                       max_shape=(None, None, None),
-                       chunks=True,
-                       **kwargs):
+    def add_fc_dataset(
+        self,
+        fc_name,
+        fc_data=None,
+        fc_metadata=None,
+        max_shape=(None, None, None),
+        chunks=True,
+        **kwargs,
+    ):
         """
 
         Add a set of Fourier coefficients for a single channel at a single
@@ -302,9 +394,13 @@ class FCChannel(BaseGroup):
         """
         pass
 
-    def add_weights(self, weight_name,
-    weight_data=None,
-    weight_metadata=None,
-    max_shape=(None, None, None),
-    chunks=True,
-    **kwargs))
+    def add_weights(
+        self,
+        weight_name,
+        weight_data=None,
+        weight_metadata=None,
+        max_shape=(None, None, None),
+        chunks=True,
+        **kwargs,
+    ):
+        pass

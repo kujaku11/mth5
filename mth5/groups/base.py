@@ -30,7 +30,7 @@ from mt_metadata.transfer_functions.processing.fourier_coefficients import (
 )
 from mt_metadata.base import Base
 
-from mth5.helpers import get_tree
+from mth5.helpers import get_tree, validate_name
 from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import to_numpy_type, from_numpy_type
 from mth5.utils.mth5_logger import setup_logger
@@ -258,3 +258,108 @@ class BaseGroup:
         for key, value in kwargs.items():
             setattr(self, key, value)
         self.write_metadata()
+
+    def _add_group(
+        self,
+        name,
+        group_class,
+        group_metadata=None,
+        match="id",
+    ):
+        """
+        Add a group
+
+        If the station already exists, will return that station and nothing
+        is added.
+
+        :param name: Name of the station, should be the same as
+        :type name: string
+        :param station_metadata: Station metadata container, defaults to None
+        :type station_metadata: :class:`mth5.metadata.Station`, optional
+        :return: A convenience class for the added station
+        :rtype: :class:`mth5_groups.StationGroup`
+
+        """
+        name = validate_name(name)
+
+        try:
+            if group_metadata is not None:
+                if validate_name(group_metadata.id) != name:
+                    msg = "%s name %s must be the same as group_metadata.%s %s"
+                    self.logger.error(
+                        msg,
+                        group_class.__name__,
+                        name,
+                        match,
+                        group_metadata.id,
+                    )
+                    raise MTH5Error(
+                        msg
+                        % (group_class.__name__, name, match, group_metadata.id)
+                    )
+            new_group = self.hdf5_group.create_group(name)
+            return_obj = group_class(new_group, **self.dataset_options)
+            if group_metadata is None:
+                return_obj.metadata.set_attr_from_name(match, name)
+
+            return_obj = group_class(
+                new_group, group_metadata=group_metadata, **self.dataset_options
+            )
+            if hasattr(return_obj, "initialize_group"):
+                return_obj.initialize_group()
+        except ValueError:
+            msg = "%s %s already exists, returning existing group."
+            self.logger.info(msg, group_class.__name__, name)
+            return_obj = self._get_group(name)
+        return return_obj
+
+    def _get_group(self, name, group_class):
+        """
+        Get a group with the same name as name
+
+        :param name: existing group name
+        :type station_name: string
+        :return: convenience name class
+        :rtype: group_class
+        :raises MTH5Error:  if the name is not found.
+
+        """
+        name = validate_name(name)
+        try:
+            return group_class(self.hdf5_group[name], **self.dataset_options)
+        except KeyError:
+            msg = (
+                f"{name} does not exist, check station_list for existing names"
+            )
+            self.logger.debug(f"Error {msg}")
+            raise MTH5Error(msg)
+
+    def _remove_group(self, name):
+        """
+        Remove a group from the file.
+
+        .. note:: Deleting a group is not as simple as del(station).  In HDF5
+              this does not free up memory, it simply removes the reference
+              to that group.  The common way to get around this is to
+              copy what you want into a new file, or overwrite the group.
+
+        :param name: existing station name
+        :type name: string
+
+        """
+        name = validate_name(name)
+        try:
+            del self.hdf5_group[name]
+            self.logger.info(
+                "Deleting a station does not reduce the HDF5"
+                "file size it simply remove the reference. If "
+                "file size reduction is your goal, simply copy"
+                " what you want into another file."
+            )
+        except KeyError:
+            msg = (
+                f"{name} does not exist, "
+                "check station_list for existing names"
+            )
+            self.logger.debug(f"Error {msg}")
+            raise MTH5Error(msg)
