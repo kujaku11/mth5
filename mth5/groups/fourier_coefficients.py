@@ -57,32 +57,9 @@ class MasterFCGroup(BaseGroup):
 
         """
 
-        fc_name = validate_name(fc_name)
-
-        try:
-            fc_group = self.hdf5_group.create_group(fc_name)
-            if fc_metadata is None:
-                fc_metadata = FC(id="default")
-            else:
-                if validate_name(fc_metadata.id) != fc_name:
-                    msg = (
-                        f"FC group name {fc_name} must be same as "
-                        f"fc_metadata.id {fc_metadata.id}"
-                    )
-                    self.logger.error(msg)
-                    raise MTH5Error(msg)
-            fc_obj = FCGroup(
-                fc_group,
-                fc_metadata=fc_metadata,
-                **self.dataset_options,
-            )
-            fc_obj.initialize_group()
-
-        except ValueError:
-            msg = "FC %s already exists, returning existing group."
-            self.logger.info(msg, fc_name)
-            fc_obj = self.get_fc_group(fc_name)
-        return fc_obj
+        return self._add_group(
+            fc_name, FCGroup, group_metadata=fc_metadata, match="id"
+        )
 
     def get_fc_group(self, fc_name):
         """
@@ -94,16 +71,7 @@ class MasterFCGroup(BaseGroup):
         :rtype: TYPE
 
         """
-        fc_name = validate_name(fc_name)
-        try:
-            return FCGroup(self.hdf5_group[fc_name], **self.dataset_options)
-        except KeyError:
-            msg = (
-                f"{fc_name} does not exist, "
-                + "check fc_list for existing names"
-            )
-            self.logger.debug("Error" + msg)
-            raise MTH5Error(msg)
+        return self._get_group(fc_name, FCGroup)
 
     def remove_fc_group(self, fc_name):
         """
