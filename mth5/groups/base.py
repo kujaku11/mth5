@@ -303,14 +303,14 @@ class BaseGroup:
                 return_obj.metadata.set_attr_from_name(match, name)
 
             return_obj = group_class(
-                new_group, group_metadata=group_metadata, **self.dataset_options
+                new_group, group_metadata, **self.dataset_options
             )
             if hasattr(return_obj, "initialize_group"):
                 return_obj.initialize_group()
         except ValueError:
             msg = "%s %s already exists, returning existing group."
             self.logger.info(msg, group_class.__name__, name)
-            return_obj = self._get_group(name)
+            return_obj = self._get_group(name, group_class)
         return return_obj
 
     def _get_group(self, name, group_class):
