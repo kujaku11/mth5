@@ -29,9 +29,7 @@ class TestFromStationXML01(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.translator = stationxml.XMLInventoryMTExperiment()
-        self.experiment = self.translator.xml_to_mt(
-            stationxml_fn=STATIONXML_01
-        )
+        self.experiment = self.translator.xml_to_mt(stationxml_fn=STATIONXML_01)
         self.experiment.surveys[0].id = "test"
         self.base_path = "Experiment/Surveys/test"
         self.fn = fn_path.joinpath("from_stationxml.h5")
