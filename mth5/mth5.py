@@ -287,6 +287,9 @@ class MTH5:
     def __repr__(self):
         return self.__str__()
 
+    def __enter__(self):
+        return self
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close_mth5()
         return False

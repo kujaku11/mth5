@@ -301,10 +301,9 @@ class BaseGroup:
             return_obj = group_class(new_group, **self.dataset_options)
             if group_metadata is None:
                 return_obj.metadata.set_attr_from_name(match, name)
+            else:
+                return_obj.metadata = group_metadata
 
-            return_obj = group_class(
-                new_group, group_metadata, **self.dataset_options
-            )
             if hasattr(return_obj, "initialize_group"):
                 return_obj.initialize_group()
         except ValueError:

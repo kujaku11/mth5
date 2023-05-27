@@ -18,6 +18,10 @@ from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import to_numpy_type
 from mth5.utils.mth5_logger import setup_logger
 
+from mt_metadata.transfer_functions.processing.fourier_coefficients import (
+    Channel,
+)
+
 # =============================================================================
 
 
@@ -73,6 +77,7 @@ class FCDataset:
         # set metadata to the appropriate class.  Standards is not a
         # Base object so should be skipped. If the class name is not
         # defined yet set to Base class.
+        self.metadata = Channel()
 
         if not hasattr(self.metadata, "mth5_type"):
             self._add_base_attributes()
@@ -91,8 +96,7 @@ class FCDataset:
         if dataset_metadata is not None:
             if not isinstance(dataset_metadata, type(self.metadata)):
                 msg = "metadata must be type metadata.%s not %s"
-                self.logger.error(msg, self._class_name,
-                                  type(dataset_metadata))
+                self.logger.error(msg, self._class_name, type(dataset_metadata))
                 raise MTH5Error(msg % self._class_name, type(dataset_metadata))
 
             # load from dict because of the extra attributes for MTH5
@@ -251,8 +255,7 @@ class FCDataset:
         if new_estimate.dtype != self.hdf5_dataset.dtype:
             msg = "Input array must be type %s not %s"
             self.logger.error(msg, new_estimate.dtype, self.hdf5_dataset.dtype)
-            raise TypeError(
-                msg % (new_estimate.dtype, self.hdf5_dataset.dtype))
+            raise TypeError(msg % (new_estimate.dtype, self.hdf5_dataset.dtype))
 
         if new_estimate.shape != self.hdf5_dataset.shape:
             self.hdf5_dataset.resize(new_estimate.shape)

@@ -192,83 +192,24 @@ class FCDecimationGroup(BaseGroup):
 
     def __init__(self, group, decimation_level_metadata=None, **kwargs):
 
+        self._dtype = np.dtype(
+            [
+                ("time", "S32"),
+                ("frequency", float),
+                ("coefficient", complex),
+            ]
+        )
+
         super().__init__(
             group, group_metadata=decimation_level_metadata, **kwargs
         )
 
-    def add_channel(self, channel_name, channel_metadata=None):
-        """
-        Add FC coefficients for a single channel
-
-        :param channel_name: DESCRIPTION
-        :type channel_name: TYPE
-        :param channel_metadata: DESCRIPTION, defaults to None
-        :type channel_metadata: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        return self._add_group(
-            channel_name,
-            FCChannel,
-            group_metadata=channel_metadata,
-            match="name",
-        )
-
-    def get_channel(self, channel_name):
-        """
-        Get Fourier Coefficients for given channel
-
-        :param channel_name: DESCRIPTION
-        :type channel_name: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-        return self._get_group(channel_name, FCChannel)
-
-    def remove_channel(self, channel_name):
-        """
-        Remove channel
-
-        :param channel_name: DESCRIPTION
-        :type channel_name: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-        self._remove_group(channel_name)
-
-
-class FCChannel(BaseGroup):
-    """
-    Holds FC information for a single channel at a single decimation level.
-
-    Attributes
-
-        - name
-        - start time
-        - end time
-        - acquistion_sample_rate
-        - decimated_sample rate
-        - window_sample_rate (delta_t within the window) [property?]
-        - units
-        - [optional] weights or masking
-
-    """
-
-    def __init__(self, group, **kwargs):
-
-        super().__init__(group, **kwargs)
-
-    def add_fc_dataset(
+    def add_channel(
         self,
         fc_name,
         fc_data=None,
         fc_metadata=None,
-        channel_dtype="complex128",
-        max_shape=(None, None, None),
+        max_shape=(None),
         chunks=True,
         **kwargs,
     ):
@@ -308,24 +249,15 @@ class FCChannel(BaseGroup):
                 self.logger.exception(msg)
                 raise TypeError(msg)
 
-            dtype = fc_data.dtype
-
         else:
-            dtype = np.dtype(
-                [
-                    ("time", "U32"),
-                    ("frequency", float),
-                    ("coefficient", complex),
-                ]
-            )
 
             chunks = True
-            fc_data = np.zeros((1, 1, 1), dtype=dtype)
+            fc_data = np.zeros((1, 1, 1), dtype=self._dtype)
         try:
             dataset = self.hdf5_group.create_dataset(
                 fc_name,
                 data=fc_data,
-                dtype=dtype,
+                dtype=self._dtype,
                 chunks=chunks,
                 maxshape=max_shape,
                 **self.dataset_options,
@@ -337,10 +269,10 @@ class FCChannel(BaseGroup):
             msg = f"estimate {fc_metadata.name} already exists, returning existing group."
             self.logger.debug(msg)
 
-            fc_dataset = self.get_estimate(fc_metadata.name)
+            fc_dataset = self.get_fc_dataset(fc_metadata.name)
         return fc_dataset
 
-    def get_fc_dataset(self, fc_name):
+    def get_channel(self, fc_name):
         """
         get an fc dataset
 
@@ -369,7 +301,7 @@ class FCChannel(BaseGroup):
             self.logger.error(error)
             raise MTH5Error(error)
 
-    def remove_fc_dataset(self, fc_name):
+    def remove_channel(self, fc_name):
         """
         remove an fc dataset
 

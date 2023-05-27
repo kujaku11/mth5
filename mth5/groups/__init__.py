@@ -8,7 +8,7 @@ from .standards import StandardsGroup
 from .filters import FiltersGroup
 from .estimate_dataset import EstimateDataset
 from .fc_dataset import FCDataset
-from .fourier_coefficients import MasterFCGroup, FCGroup, FCChannel
+from .fourier_coefficients import MasterFCGroup, FCGroup, FCDecimationGroup
 from .transfer_function import TransferFunctionsGroup, TransferFunctionGroup
 from .channel_dataset import (
     ElectricDataset,
@@ -36,7 +36,7 @@ __all__ = [
     "TransferFunctionsGroup",
     "MasterFCGroup",
     "FCGroup",
-    "FCChannel",
+    "FCDecimationGroup",
     "ExperimentGroup",
     "SurveyGroup",
     "ReportsGroup",
