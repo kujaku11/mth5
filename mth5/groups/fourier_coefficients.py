@@ -361,6 +361,17 @@ class FCDecimationGroup(BaseGroup):
         - frequency [ integer as harmonic index or float ]
         - fc (complex)
 
+        The input can be
+
+        * a numpy array where the index values for the time, frequency, and
+         coefficients are supplied in channel_key, frequency_key, channel_key
+         as integer values.
+        * a numpy structured array, dataframe, or xarray dataset or dataarray
+         where the channel_key if not supplied is assumed to the same as the
+         fc_name.
+
+        haven't fully tested dataframe or xarray yet.
+
         Weights should be a separate data set as a 1D array along with matching
         index as fcs.
 
