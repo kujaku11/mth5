@@ -209,6 +209,7 @@ class FCDecimationGroup(BaseGroup):
         self, df, channel_key, time_key="time", frequency_key="frequency"
     ):
         """
+        assumes channel_key is the coefficient values
 
         :param df: DESCRIPTION
         :type df: TYPE
@@ -245,6 +246,8 @@ class FCDecimationGroup(BaseGroup):
         """
          get information from an xarray
 
+         not sure if this will work for both data_array and dataset.
+
         :param data_array: DESCRIPTION
         :type data_array: TYPE
         :param coefficient_key: DESCRIPTION
@@ -274,6 +277,8 @@ class FCDecimationGroup(BaseGroup):
         self, nd_array, channel_index=2, frequency_index=1, time_index=0
     ):
         """
+        assumes shape of (n_samples, 3) and supplied index values identify
+        which column is which.
 
         :param array: DESCRIPTION
         :type array: TYPE
