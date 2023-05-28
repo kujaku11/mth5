@@ -10,6 +10,7 @@ Created on Fri Feb 24 12:49:32 2023
 # =============================================================================
 import numpy as np
 import xarray as xr
+import pandas as pd
 
 from mth5.groups import BaseGroup, FCDataset
 from mth5.helpers import validate_name
@@ -204,6 +205,141 @@ class FCDecimationGroup(BaseGroup):
             group, group_metadata=decimation_level_metadata, **kwargs
         )
 
+    def from_dataframe(
+        self, df, channel_key, time_key="time", frequency_key="frequency"
+    ):
+        """
+
+        :param df: DESCRIPTION
+        :type df: TYPE
+        :param channel_key: DESCRIPTION
+        :type channel_key: TYPE
+        :param time_key: DESCRIPTION, defaults to "time"
+        :type time_key: TYPE, optional
+        :param frequency_key: DESCRIPTION, defaults to "frequency"
+        :type frequency_key: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if not isinstance(df, pd.DataFrame):
+            msg = "Must input a pandas dataframe not %s"
+            self.logger.error(msg, type(df))
+            raise TypeError(msg % type(df))
+
+        array = np.zeros(df.shape[0], dtype=self._dtype)
+        array["time"] = df[time_key]
+        array["frequency"] = df[frequency_key]
+        array["coefficient"] = df[channel_key]
+
+        return array
+
+    def from_xarray(
+        self,
+        data_array,
+        channel_key,
+        time_key="time",
+        frequency_key="frequency",
+    ):
+        """
+         get information from an xarray
+
+        :param data_array: DESCRIPTION
+        :type data_array: TYPE
+        :param coefficient_key: DESCRIPTION
+        :type coefficient_key: TYPE
+        :param time_key: DESCRIPTION, defaults to "time"
+        :type time_key: TYPE, optional
+        :param frequency_key: DESCRIPTION, defaults to "frequency"
+        :type frequency_key: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if not isinstance(data_array, (xr.Dataset, xr.DataArray)):
+            msg = "Must input a xarray Dataset or DataArray not %s"
+            self.logger.error(msg, type(data_array))
+            raise TypeError(msg % type(data_array))
+
+        array = np.zeros(data_array.shape[0], dtype=self._dtype)
+        array["time"] = data_array[time_key]
+        array["frequency"] = data_array[frequency_key]
+        array["coefficient"] = data_array[channel_key]
+
+        return array
+
+    def from_numpy_array(
+        self, nd_array, channel_index=2, frequency_index=1, time_index=0
+    ):
+        """
+
+        :param array: DESCRIPTION
+        :type array: TYPE
+        :param channel_index: DESCRIPTION, defaults to 2
+        :type channel_index: TYPE, optional
+        :param frequency_index: DESCRIPTION, defaults to 1
+        :type frequency_index: TYPE, optional
+        :param time_index: DESCRIPTION, defaults to 0
+        :type time_index: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if not isinstance(nd_array, (np.nd_array)):
+            msg = "Must input a numpy ndarray not %s"
+            self.logger.error(msg, type(nd_array))
+            raise TypeError(msg % type(nd_array))
+
+        if nd_array.shape[0] == 3:
+            nd_array = nd_array.T
+        if len(nd_array.shape) > 2:
+            raise ValueError("input array must be shaped (n, 3)")
+
+        array = np.zeros(nd_array.shape[0], dtype=self._dtype)
+        array["time"] = nd_array[:, time_index]
+        array["frequency"] = nd_array[:, frequency_index]
+        array["coefficient"] = nd_array[:, channel_index]
+
+        return array
+
+    def from_numpy_structured_array(
+        self, st_array, channel_key, time_key="time", frequency_key="frequency"
+    ):
+        """
+
+        :param st_array: DESCRIPTION
+        :type st_array: TYPE
+        :param channel_key: DESCRIPTION
+        :type channel_key: TYPE
+        :param time_key: DESCRIPTION, defaults to "time"
+        :type time_key: TYPE, optional
+        :param frequency_key: DESCRIPTION, defaults to "frequency"
+        :type frequency_key: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if not isinstance(st_array, (np.ndarray)):
+            msg = "Must input a numpy ndarray not %s"
+            self.logger.error(msg, type(st_array))
+            raise TypeError(msg % type(st_array))
+
+        if st_array.shape[0] == 3:
+            st_array = st_array.T
+        if len(st_array.shape) > 2:
+            raise ValueError("input array must be shaped (n, 3)")
+
+        array = np.zeros(st_array.shape[0], dtype=self._dtype)
+        array["time"] = st_array[time_key]
+        array["frequency"] = st_array[frequency_key]
+        array["coefficient"] = st_array[channel_key]
+
+        return array
+
     def add_channel(
         self,
         fc_name,
@@ -211,6 +347,9 @@ class FCDecimationGroup(BaseGroup):
         fc_metadata=None,
         max_shape=(None),
         chunks=True,
+        channel_key=None,
+        frequency_key="frequency",
+        time_key="time",
         **kwargs,
     ):
         """
@@ -244,15 +383,51 @@ class FCDecimationGroup(BaseGroup):
             fc_metadata = Channel(name=fc_name)
 
         if fc_data is not None:
-            if not isinstance(fc_data, (np.ndarray, xr.DataArray)):
-                msg = f"Need to input a numpy or xarray.DataArray not {type(fc_data)}"
-                self.logger.exception(msg)
-                raise TypeError(msg)
+            if channel_key is None:
+                channel_key = fc_name
+
+            if isinstance(fc_data, np.ndarray):
+                if fc_data.dtype.names is None:
+                    fc_data = self.from_numpy_array(
+                        fc_data,
+                        channel_index=channel_key,
+                        time_index=time_key,
+                        frequency_index=frequency_key,
+                    )
+                else:
+                    fc_data = self.from_numpy_structured_array(
+                        fc_data,
+                        channel_key,
+                        time_key=time_key,
+                        frequency_key=frequency_key,
+                    )
+            elif isinstance(fc_data, pd.DataFrame):
+                fc_data = self.from_dataframe(
+                    fc_data,
+                    channel_key,
+                    time_key=time_key,
+                    frequency_key=frequency_key,
+                )
+            elif isinstance(fc_data, (xr.Dataset, xr.DataArray)):
+                fc_data = self.from_xarray(
+                    fc_data,
+                    channel_key,
+                    time_key=time_key,
+                    frequency_key=frequency_key,
+                )
+
+            else:
+                msg = (
+                    "Need to input a numpy.array, xarray.DataArray, "
+                    "xr.Dataset, pd.DataFrame not %s"
+                )
+                self.logger.exception(msg, type(fc_data))
+                raise TypeError(msg % type(fc_data))
 
         else:
 
             chunks = True
-            fc_data = np.zeros((1, 1, 1), dtype=self._dtype)
+            fc_data = np.zeros((1), dtype=self._dtype)
         try:
             dataset = self.hdf5_group.create_dataset(
                 fc_name,

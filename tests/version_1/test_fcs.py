@@ -8,42 +8,67 @@ Created on Sat May 27 13:59:26 2023
 # =============================================================================
 # Imports
 # =============================================================================
+from pathlib import Path
+import unittest
 import pandas as pd
 import numpy as np
 from mth5.mth5 import MTH5
 
-from mth5.helpers import to_numpy_type
-
 # =============================================================================
-
-df = pd.read_csv(
-    r"c:\Users\jpeacock\OneDrive - DOI\mt\fcs\test1_dec_level_0.csv"
-)
-df["time"] = pd.to_datetime(df.time).astype(str)
+fn_path = Path(__file__).parent
 
 
-def cast_df_to_numpy(df):
-    b = np.zeros(
-        df.shape[0],
+def create_nd_array(ch, n_samples):
+    nd_array = np.zeros(
+        n_samples,
         dtype=[
             ("time", "S32"),
             ("frequency", float),
-            ("coefficient", complex),
+            (ch, complex),
         ],
     )
-    b["frequency"] = df["frequency"]
-    b["time"] = df["time"]
-    b["coefficient"] = df["ex"]
+    nd_array["time"] = pd.date_range(
+        "2020-01-01T00:00:00", periods=n_samples, freq="s"
+    )
+    nd_array["frequency"] = np.logspace(-5, 5, 50)
+    nd_array[ch] = np.arange(n_samples) + 1j * np.arange(n_samples)
+    return nd_array
 
-    return b
+
+class TestFC(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.m = MTH5()
+        self.m.file_version = "0.1.0"
+        self.m.open_mth5(fn_path.joinpath("fc_test.h5"))
+        self.station_group = self.m.add_station("mt01")
+        self.fc_group = (
+            self.station_group.fourier_coefficients_group.add_fc_group(
+                "default"
+            )
+        )
+        self.decimation_level = self.fc_group.add_decimation_level("1")
+        self.n_samples = 50
+
+    def test_np_structured_array_input(self):
+        name = "nd_array"
+        a = create_nd_array(name, self.n_samples)
+        ch = self.decimation_level.add_channel(name, fc_data=a)
+
+        with self.subTest("channel_exists"):
+            self.assertIn(name, self.decimation_level.groups_list)
+
+        with self.subTest("channel_name"):
+            self.assertEqual(ch.metadata.name, name)
+
+    @classmethod
+    def tearDownClass(self):
+        self.m.close_mth5()
+        self.m.filename.unlink()
 
 
-n = cast_df_to_numpy(df[["time", "frequency", "ex"]])
-
-with MTH5() as m:
-    m.file_version = "0.1.0"
-    m.open_mth5(r"c:\Users\jpeacock\OneDrive - DOI\mt\fcs\fc_test.h5")
-    sg = m.add_station("mt01")
-    fcg = sg.fourier_coefficients_group.add_fc_group("default")
-    dl = fcg.add_decimation_level("1")
-    ch = dl.add_channel("ex", fc_data=n)
+# =============================================================================
+# run
+# =============================================================================
+if __name__ == "__main__":
+    unittest.main()
