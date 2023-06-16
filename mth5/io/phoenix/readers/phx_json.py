@@ -260,9 +260,10 @@ class ReceiverMetadataJSON:
             c.time_period.start = self.obj.start
             c.time_period.end = self.obj.stop
             c.filter.name = [
-                f"{self.lp_filter_base_name}_{int(ch.lp)}hz_low_pass"
+                f"{self.lp_filter_base_name}_{int(ch.lp)}hz_low_pass",
+                f"dipole_{int(c.dipole_length)}m",
             ]
-            c.filter.applied = [False]
+            c.filter.applied = [False, False]
         return c
 
     def _to_magnetic_metadata(self, tag):
