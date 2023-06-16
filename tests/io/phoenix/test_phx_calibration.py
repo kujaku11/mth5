@@ -10,9 +10,8 @@ Created on Fri Jun 16 10:20:14 2023
 # =============================================================================
 import unittest
 from pathlib import Path
-import numpy as np
 
-from mth5.io.phoenix.calibrations import PHXCalibration
+from mth5.io.phoenix.readers import RXCalibration
 
 # =============================================================================
 cal_fn = Path(__file__).parent.joinpath("example_rxcal.json")
@@ -21,7 +20,7 @@ cal_fn = Path(__file__).parent.joinpath("example_rxcal.json")
 class TestPHXCalibrations(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.c = PHXCalibration(cal_fn)
+        self.c = RXCalibration(cal_fn)
 
     def test_has_channel(self):
         for ch in ["e1", "e2", "h1", "h2", "h3"]:
@@ -65,6 +64,12 @@ class TestPHXCalibrations(unittest.TestCase):
 
                 with self.subTest(f"{ch}_{lp}_max_frequency"):
                     self.assertTrue(lp == self.c.get_max_freq(fap.frequencies))
+
+    def test_get_filter_fail_key_error(self):
+        self.assertRaises(KeyError, self.c.get_filter, "e1", 2)
+
+    def test_get_filter_fail_attribute_error(self):
+        self.assertRaises(AttributeError, self.c.get_filter, "bx", 100)
 
 
 # =============================================================================

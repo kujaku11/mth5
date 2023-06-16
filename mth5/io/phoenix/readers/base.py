@@ -15,6 +15,7 @@ Revised 2022 by J. Peacock
 # =============================================================================
 from pathlib import Path
 from .header import Header
+from .rx_calibrations import RXCalibration
 
 from mth5.utils.mth5_logger import setup_logger
 
@@ -225,3 +226,27 @@ class TSReaderBase(Header):
         """
         if self.stream is not None:
             self.stream.close()
+
+    def get_rxcal_filter(self, lp_name, rxcal_fn):
+        """
+        get reciever lowpass filter from the rxcal.json file
+
+        :param lp_name: DESCRIPTION
+        :type lp_name: TYPE
+        :param rxcal_fn: DESCRIPTION
+        :type rxcal_fn: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        rx_cal_obj = RXCalibration(rxcal_fn)
+        if rx_cal_obj._has_read():
+            return rx_cal_obj.get_filter(
+                self.channel_metadata().component, lp_name
+            )
+        else:
+            self.logger.error(
+                f"Could not find {lp_name} for channel "
+                f"{self.channel_metadata().comp}"
+            )

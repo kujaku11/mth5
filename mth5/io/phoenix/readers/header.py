@@ -44,11 +44,11 @@ class Header:
         self._channel_id = None
 
         self.channel_map = {
-            0: "hx",
-            1: "hy",
-            2: "hz",
-            3: "ex",
-            4: "ey",
+            0: "h1",
+            1: "h2",
+            2: "h3",
+            3: "e1",
+            4: "e2",
             5: "h1",
             6: "h2",
             7: "h3",
@@ -435,9 +435,7 @@ class Header:
         # Total of the gain that is selectable by the user (i.e. att * pre * gain)
         if self._has_header():
             return (
-                self.channel_main_gain
-                * self.preamp_gain
-                * self.attenuator_gain
+                self.channel_main_gain * self.preamp_gain * self.attenuator_gain
             )
         return 1.0
 

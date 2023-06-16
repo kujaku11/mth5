@@ -23,7 +23,7 @@ from mt_metadata.utils.mttime import MTime
 # =============================================================================
 
 
-class PHXCalibration:
+class RXCalibration:
     def __init__(self, cal_fn=None, **kwargs):
         self._raw_dict = None
 
@@ -150,20 +150,9 @@ class PHXCalibration:
 
         """
 
-        if hasattr(self, channel):
-            try:
-                return getattr(self, channel)[int(lp_name)]
-            except AttributeError:
-                raise AttributeError(f"Could not find {channel}")
-            except KeyError:
-                raise KeyError(f"Could not find lowpass filter {lp_name}")
-
-
-# =============================================================================
-#
-# =============================================================================
-cal_fn = Path(
-    r"c:\Users\jpeacock\OneDrive - DOI\mt\phoenix_example_data\calibrations\10621_647A2F41.rxcal.json"
-)
-
-c = PHXCalibration(cal_fn)
+        try:
+            return getattr(self, channel)[int(lp_name)]
+        except AttributeError:
+            raise AttributeError(f"Could not find {channel}")
+        except KeyError:
+            raise KeyError(f"Could not find lowpass filter {lp_name}")

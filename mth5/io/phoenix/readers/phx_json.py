@@ -221,6 +221,15 @@ class ReceiverMetadataJSON:
     def channel_map(self):
         return dict([(d.idx, d.tag) for d in self.obj.channel_map.mapping])
 
+    @property
+    def lp_filter_base_name(self):
+        if self.has_obj():
+            return (
+                f"{self.obj.receiver_commercial_name}_"
+                f"{self.obj.receiver_model}_"
+                f"{self.obj.instid}"
+            ).lower()
+
     def get_ch_index(self, tag):
         if self.has_obj():
             for item in self.obj.channel_map.mapping:
@@ -250,6 +259,10 @@ class ReceiverMetadataJSON:
             c.units = "millivolts"
             c.time_period.start = self.obj.start
             c.time_period.end = self.obj.stop
+            c.filter.name = [
+                f"{self.lp_filter_base_name}_{int(ch.lp)}hz_low_pass"
+            ]
+            c.filter.applied = [False]
         return c
 
     def _to_magnetic_metadata(self, tag):
@@ -267,6 +280,10 @@ class ReceiverMetadataJSON:
             c.units = "millivolts"
             c.time_period.start = self.obj.start
             c.time_period.end = self.obj.stop
+            c.filter.name = [
+                f"{self.lp_filter_base_name}_{int(ch.lp)}hz_low_pass"
+            ]
+            c.filter.applied = [False]
         return c
 
     ### should think about putting this part in set_attr
