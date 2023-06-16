@@ -18,17 +18,26 @@ import json
 
 import numpy as np
 from mt_metadata.timeseries.filters import FrequencyResponseTableFilter
+from mt_metadata.utils.mttime import MTime
 
 # =============================================================================
 
 
 class PHXCalibration:
     def __init__(self, cal_fn=None, **kwargs):
-        self.cal_fn = cal_fn
         self._raw_dict = None
 
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+        self.cal_fn = cal_fn
+
+    def __str__(self):
+        lines = ["Phoenix Response Filters"]
+        return "\n".join(lines)
+
+    def __repr__(self):
+        return self.__str__()
 
     @property
     def cal_fn(self):
@@ -40,6 +49,11 @@ class PHXCalibration:
             self._cal_fn = Path(cal_fn)
             if self._cal_fn.exists():
                 self.read()
+
+    @property
+    def calibration_date(self):
+        if self._has_read():
+            return MTime(self._raw_dict["timestamp_utc"])
 
     def _has_read(self):
         if self._raw_dict is not None:
@@ -65,7 +79,7 @@ class PHXCalibration:
                 f"{self._raw_dict['instrument_type']}_"
                 f"{self._raw_dict['instrument_model']}_"
                 f"{self._raw_dict['inst_serial']}"
-            )
+            ).lower()
 
     def get_filter_name(self, channel, max_freq):
         """
@@ -82,7 +96,9 @@ class PHXCalibration:
 
         """
 
-        return f"{self.base_filter_name}_{channel}_{max_freq}hz_low_pass"
+        return (
+            f"{self.base_filter_name}_{channel}_{max_freq}hz_low_pass".lower()
+        )
 
     def read(self, cal_fn=None):
         """
@@ -103,22 +119,44 @@ class PHXCalibration:
         with open(self.cal_fn, "r") as fid:
             self._raw_dict = json.load(fid)
 
-        cal_dict = {}
         for channel in self._raw_dict["cal_data"]:
             comp = channel["tag"].lower()
-            cal_dict[comp] = {}
+            ch_cal_dict = {}
             for cal in channel["chan_data"]:
                 ch_fap = FrequencyResponseTableFilter(
                     frequencies=cal["freq_Hz"],
                     amplitudes=cal["magnitude"],
-                    phases=cal["phs_deg"],
+                    phases=np.deg2rad(cal["phs_deg"]),
                 )
                 max_freq = self.get_max_freq(ch_fap.frequencies)
                 ch_fap.name = self.get_filter_name(comp, max_freq)
                 ch_fap.calibration_date = self._raw_dict["timestamp_utc"]
-                cal_dict[comp][max_freq] = ch_fap
+                ch_cal_dict[max_freq] = ch_fap
                 ch_fap.units_in = "volts"
                 ch_fap.units_out = "volts"
+
+            setattr(self, comp, ch_cal_dict)
+
+    def get_filter(self, channel, lp_name):
+        """
+        get the lowpass filter for the given channel and lowpass value
+
+        :param channel: DESCRIPTION
+        :type channel: TYPE
+        :param lp_name: DESCRIPTION
+        :type lp_name: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if hasattr(self, channel):
+            try:
+                return getattr(self, channel)[int(lp_name)]
+            except AttributeError:
+                raise AttributeError(f"Could not find {channel}")
+            except KeyError:
+                raise KeyError(f"Could not find lowpass filter {lp_name}")
 
 
 # =============================================================================
