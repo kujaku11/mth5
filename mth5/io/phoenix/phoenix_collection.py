@@ -127,7 +127,13 @@ class PhoenixCollection(Collection):
                     phx_obj = open_phoenix(fn)
                     if hasattr(phx_obj, "read_segment"):
                         segment = phx_obj.read_segment(metadata_only=True)
-                        start = segment.segment_start_time.isoformat()
+                        try:
+                            start = segment.segment_start_time.isoformat()
+                        except IOError:
+                            self.logger.warning(
+                                f"Could not read file {fn}, SKIPPING"
+                            )
+                            continue
                         end = segment.segment_end_time.isoformat()
                         n_samples = segment.n_samples
 

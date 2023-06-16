@@ -69,11 +69,14 @@ class SubHeader:
 
     def _unpack_value(self, key):
         if self._has_header():
-            return unpack_from(
-                self._unpack_dict[key]["dtype"],
-                self._header,
-                self._unpack_dict[key]["index"],
-            )
+            try:
+                return unpack_from(
+                    self._unpack_dict[key]["dtype"],
+                    self._header,
+                    self._unpack_dict[key]["index"],
+                )
+            except Exception as error:
+                raise IOError(error)
 
     @property
     def gps_time_stamp(self):
