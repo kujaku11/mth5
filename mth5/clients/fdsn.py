@@ -237,6 +237,8 @@ class FDSN:
                 f"Do not have the same number of start {len(start_times)}"
                 f" and end times {len(end_times)} from streams"
             )
+        start_times = [UTCDateTime(x) for x in start_times]
+        end_times = [UTCDateTime(x) for x in end_times]
         return start_times, end_times
 
     def add_runs_to_mth5(
@@ -278,6 +280,31 @@ class FDSN:
         run_group.from_runts(run_ts_obj)
         return run_group
 
+    def run_timings_match_stream_timing(self, run_group, stream_start, stream_end):
+        """
+        Checks start and end times in the run.
+        Compares start and end times of runs to start and end times of traces.
+        If True, will packs runs based on time spans.
+
+        Parameters
+        ----------
+        run_group
+        stream_start
+        stream_end
+
+        Returns
+        -------
+
+        """
+        streams_and_run_timings_match = False
+        run_start = run_group.metadata.time_period.start
+        run_end = run_group.metadata.time_period.end
+        cond1 = stream_start >= UTCDateTime(run_start)
+        cond2 = stream_end <= UTCDateTime(run_end)
+        if cond1 and cond2:  # paired up
+            streams_and_run_timings_match = True
+        return streams_and_run_timings_match
+
     def wrangle_runs_into_containers_v1(
         self,
         m,
@@ -308,7 +335,7 @@ class FDSN:
             for run_id, start, end in zip(run_list, trace_start_times, trace_end_times):
                 run_group = self.get_run_group(m, station_id, run_id)
                 run_group = m.stations_group.get_station(station_id).add_run(run_id)
-                run_stream = msstreams.slice(UTCDateTime(start), UTCDateTime(end))
+                run_stream = msstreams.slice(start, end)
                 run_group = self.pack_stream_into_run_group(run_group, run_stream)
         elif len(run_list) == 1:
             for run_id, times in enumerate(zip(trace_start_times, trace_end_times), 1):
@@ -316,32 +343,20 @@ class FDSN:
                 end = times[1]
                 run_id = f"{run_id:03}"
                 run_group = self.get_run_group(m, station_id, run_id)
-                run_stream = msstreams.slice(UTCDateTime(start), UTCDateTime(end))
+                run_stream = msstreams.slice(start, end)
                 run_group = self.pack_stream_into_run_group(run_group, run_stream)
         elif len(run_list) != n_times:
             self.run_list_ne_stream_intervals_message
             for run_id, start, end in zip(run_list, trace_start_times, trace_end_times):
                 for run in run_list:
                     run_group = self.get_run_group(m, station_id, run)
-                    # Chekcs for start and end times of runs
-                    run_start = run_group.metadata.time_period.start
-                    run_end = run_group.metadata.time_period.end
-                    # Create if statment that checks for start and end
-                    # times in the run.
-                    # Compares start and end times of runs
-                    # to start and end times of traces. Packs runs based on
-                    # time spans
-                    if UTCDateTime(start) >= UTCDateTime(run_start) and UTCDateTime(
-                        end
-                    ) <= UTCDateTime(run_end):
-                        run_stream = msstreams.slice(
-                            UTCDateTime(start), UTCDateTime(end)
-                        )
+                    if self.run_timings_match_stream_timing(run_group, start, end):
+                        run_stream = msstreams.slice(start, end)
                         run_group = self.pack_stream_into_run_group(
                             run_group, run_stream
                         )
                     else:
-                        continue
+                        continue  # not paired up
         else:
             raise ValueError("Cannot add Run for some reason.")
         return m
@@ -363,7 +378,7 @@ class FDSN:
         if len(run_list) == n_times:
             for run_id, start, end in zip(run_list, trace_start_times, trace_end_times):
                 run_group = self.get_run_group(survey_group, station_id, run_id)
-                run_stream = msstreams.slice(UTCDateTime(start), UTCDateTime(end))
+                run_stream = msstreams.slice(start, end)
                 run_group = self.pack_stream_into_run_group(run_group, run_stream)
         elif len(run_list) == 1:
             for run_id, times in enumerate(zip(trace_start_times, trace_end_times), 1):
@@ -371,27 +386,15 @@ class FDSN:
                 end = times[1]
                 run_id = f"{run_id:03}"
                 run_group = self.get_run_group(survey_group, station_id, run_id)
-                run_stream = msstreams.slice(UTCDateTime(start), UTCDateTime(end))
+                run_stream = msstreams.slice(start, end)
                 run_group = self.pack_stream_into_run_group(run_group, run_stream)
         elif len(run_list) != n_times:
             self.run_list_ne_stream_intervals_message
             for run_id, start, end in zip(run_list, trace_start_times, trace_end_times):
                 for run in run_list:
                     run_group = self.get_run_group(survey_group, station_id, run)
-                    # Chekcs for start and end times of runs
-                    run_start = run_group.metadata.time_period.start
-                    run_end = run_group.metadata.time_period.end
-                    # Create if statment that checks for start and end
-                    # times in the run.
-                    # Compares start and end times of runs
-                    # to start and end times of traces. Packs runs based on
-                    # time spans
-                    if UTCDateTime(start) >= UTCDateTime(run_start) and UTCDateTime(
-                        end
-                    ) <= UTCDateTime(run_end):
-                        run_stream = msstreams.slice(
-                            UTCDateTime(start), UTCDateTime(end)
-                        )
+                    if self.run_timings_match_stream_timing(run_group, start, end):
+                        run_stream = msstreams.slice(start, end)
                         run_group = self.pack_stream_into_run_group(
                             run_group, run_stream
                         )
