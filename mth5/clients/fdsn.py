@@ -56,6 +56,8 @@ from mth5.timeseries import RunTS
 #                 f"Do not have the same number of start {len(start_times)}"
 #                 f" and end times {len(end_times)} from streams"
 #             )
+#         start_times = [UTCDateTime(x) for x in start_times]
+#         end_times = [UTCDateTime(x) for x in end_times]
 #         self.start_times = start_times
 #         self.end_times = end_times
 #
@@ -213,11 +215,11 @@ class FDSN:
         return run_group
 
     def pack_stream_into_run_group(self, run_group, run_stream):
-        """Not sure if we need to return run_group here"""
+        """"""
         run_ts_obj = RunTS()
         run_ts_obj.from_obspy_stream(run_stream, run_group.metadata)
         run_group.from_runts(run_ts_obj)
-        return run_group
+        return
 
     def run_timings_match_stream_timing(self, run_group, stream_start, stream_end):
         """
@@ -283,7 +285,7 @@ class FDSN:
             for run_id, start, end in zip(run_list, trace_start_times, trace_end_times):
                 run_group = self.get_run_group(run_group_source, station_id, run_id)
                 run_stream = msstreams.slice(start, end)
-                run_group = self.pack_stream_into_run_group(run_group, run_stream)
+                self.pack_stream_into_run_group(run_group, run_stream)
         elif len(run_list) == 1:
             for run_id, times in enumerate(zip(trace_start_times, trace_end_times), 1):
                 start = times[0]
@@ -291,7 +293,7 @@ class FDSN:
                 run_id = f"{run_id:03}"
                 run_group = self.get_run_group(run_group_source, station_id, run_id)
                 run_stream = msstreams.slice(start, end)
-                run_group = self.pack_stream_into_run_group(run_group, run_stream)
+                self.pack_stream_into_run_group(run_group, run_stream)
         elif len(run_list) != n_times:
             self.run_list_ne_stream_intervals_message
             for run_id, start, end in zip(run_list, trace_start_times, trace_end_times):
@@ -299,14 +301,12 @@ class FDSN:
                     run_group = self.get_run_group(run_group_source, station_id, run)
                     if self.run_timings_match_stream_timing(run_group, start, end):
                         run_stream = msstreams.slice(start, end)
-                        run_group = self.pack_stream_into_run_group(
-                            run_group, run_stream
-                        )
+                        self.pack_stream_into_run_group(run_group, run_stream)
                     else:
                         continue
         else:
             raise ValueError("Cannot add Run for some reason.")
-        return m
+        return
 
     def make_mth5_from_fdsn_client(self, df, path=None, client=None, interact=False):
         """
@@ -383,7 +383,7 @@ class FDSN:
         m.from_experiment(experiment)
         if self.mth5_version in ["0.1.0"]:
             for station_id in unique_list[0]["stations"]:
-                m = self.wrangle_runs_into_containers(m, station_id, survey_group=None)
+                self.wrangle_runs_into_containers(m, station_id, survey_group=None)
 
         # Version 0.2.0 has the ability to store multiple surveys
         elif self.mth5_version in ["0.2.0"]:
@@ -399,16 +399,15 @@ class FDSN:
 
                 survey_group = m.get_survey(survey_id)
                 for station_id in survey_dict["stations"]:
-                    m = self.wrangle_runs_into_containers(
+                    self.wrangle_runs_into_containers(
                         m, station_id, survey_group=survey_group
                     )
 
-        if not interact:
-            m.close_mth5()
-
-            return file_name
         if interact:
             return m
+        else:
+            m.close_mth5()
+            return file_name
 
     def get_inventory_from_df(self, df, client=None, data=True):
         """
