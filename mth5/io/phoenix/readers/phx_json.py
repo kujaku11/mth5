@@ -17,6 +17,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from mt_metadata.timeseries import Survey, Station, Run, Electric, Magnetic
+from mth5.utils.mth5_logger import setup_logger
 
 # =============================================================================
 
@@ -47,6 +48,9 @@ class ConfigJSON:
 
         self.fn = fn
         self.obj = None
+        self.logger = setup_logger(
+            f"{self.__class__}.{self.__class__.__name__}"
+        )
 
     @property
     def fn(self):
@@ -178,6 +182,9 @@ class ReceiverMetadataJSON:
             "type": "sensor.type",
             "serial": "sensor.id",
         }
+        self.logger = setup_logger(
+            f"{self.__class__}.{self.__class__.__name__}"
+        )
 
         if self.fn is not None:
             self.read()
@@ -256,7 +263,7 @@ class ReceiverMetadataJSON:
                 c.set_attr_from_name(m_value, getattr(ch, p_key))
             c.channel_number = self.get_ch_index(tag)
             c.dipole_length = ch.length1 + ch.length2
-            c.units = "millivolts"
+            c.units = "volts"
             c.time_period.start = self.obj.start
             c.time_period.end = self.obj.stop
             c.filter.name = [
@@ -275,16 +282,26 @@ class ReceiverMetadataJSON:
             for p_key, m_value in self._h_map.items():
                 if p_key == "ty":
                     m_value = "magnetic"
-                c.set_attr_from_name(m_value, getattr(ch, p_key))
+                try:
+                    c.set_attr_from_name(m_value, getattr(ch, p_key))
+                except AttributeError:
+                    self.logger.error(
+                        f"recmeta.json does not contain attribute '{p_key}' for "
+                        f"channel '{ch.tag}'."
+                    )
             c.channel_number = self.get_ch_index(tag)
             c.sensor.manufacturer = "Phoenix Geophysics"
-            c.units = "millivolts"
+            c.units = "volts"
             c.time_period.start = self.obj.start
             c.time_period.end = self.obj.stop
             c.filter.name = [
                 f"{self.lp_filter_base_name}_{int(ch.lp)}hz_low_pass"
             ]
             c.filter.applied = [False]
+            if c.sensor.id is not None:
+                c.filter.name.append(f"coil_{c.sensor.id}_response")
+                c.filter.applied.append(False)
+
         return c
 
     ### should think about putting this part in set_attr
