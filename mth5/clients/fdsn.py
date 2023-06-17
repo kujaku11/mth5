@@ -334,7 +334,6 @@ class FDSN:
         if len(run_list) == n_times:  # msstreams.num_streams:
             for run_id, start, end in zip(run_list, trace_start_times, trace_end_times):
                 run_group = self.get_run_group(m, station_id, run_id)
-                run_group = m.stations_group.get_station(station_id).add_run(run_id)
                 run_stream = msstreams.slice(start, end)
                 run_group = self.pack_stream_into_run_group(run_group, run_stream)
         elif len(run_list) == 1:
