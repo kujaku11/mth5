@@ -246,6 +246,31 @@ class FDSN:
     ):
         pass
 
+    def get_run_group(self, mth5_obj_or_survey, station_id, run_id):
+        """
+        This method is key to merging wrangle_runs_into_containers_v1 and
+        wrangle_runs_into_containers_v2.
+        Because a v1 mth5 object can get a survey group with the same method as can a v2 survey_group
+
+        Thus we can replace
+        run_group = m.stations_group.get_station(station_id).add_run(run_id)
+        &
+        run_group = survey_group.stations_group.get_station(station_id).add_run(run_id)
+        with
+        run_group = mth5_obj_or_survey.stations_group.get_station(station_id).add_run(run_id)
+        Parameters
+        ----------
+        mth5_obj_or_survey: mth5.mth5.MTH5 or mth5.groups.survey.SurveyGroup
+
+        Returns
+        -------
+
+        """
+        run_group = mth5_obj_or_survey.stations_group.get_station(station_id).add_run(
+            run_id
+        )
+        return run_group
+
     def pack_stream_into_run_group(self, run_group, run_stream):
         """Not sure if we need to return run_group here"""
         run_ts_obj = RunTS()
@@ -270,39 +295,34 @@ class FDSN:
         run_list = self.get_run_list_from_station_id(m, station_id)
         n_times = len(trace_start_times)
 
-        # adding logic if there are already runs filled in
-
         # KEY
         # add_runs(m, run_list, starts, endstimes)
         # add_runs(surveyobj, run_list, starts, endstimes)
+
+        # Logic if there are already runs filled in
         # In all of the following if/elif/else cases, the strategy is as follows:
         # 1. Add the group first. This will get the already filled in metadata to
         # update the run_ts_obj.
         # 2. Then get the streams an add existing metadata
         if len(run_list) == n_times:  # msstreams.num_streams:
             for run_id, start, end in zip(run_list, trace_start_times, trace_end_times):
+                run_group = self.get_run_group(m, station_id, run_id)
                 run_group = m.stations_group.get_station(station_id).add_run(run_id)
                 run_stream = msstreams.slice(UTCDateTime(start), UTCDateTime(end))
                 run_group = self.pack_stream_into_run_group(run_group, run_stream)
-
-        # if there is just one run
         elif len(run_list) == 1:
             for run_id, times in enumerate(zip(trace_start_times, trace_end_times), 1):
                 start = times[0]
                 end = times[1]
                 run_id = f"{run_id:03}"
-                run_group = m.stations_group.get_station(station_id).add_run(run_id)
+                run_group = self.get_run_group(m, station_id, run_id)
                 run_stream = msstreams.slice(UTCDateTime(start), UTCDateTime(end))
                 run_group = self.pack_stream_into_run_group(run_group, run_stream)
-
         elif len(run_list) != n_times:
             self.run_list_ne_stream_intervals_message
             for run_id, start, end in zip(run_list, trace_start_times, trace_end_times):
-
-                # add the group first this will get the already filled in
-                # metadata
                 for run in run_list:
-                    run_group = m.stations_group.get_station(station_id).get_run(run)
+                    run_group = self.get_run_group(m, station_id, run)
                     # Chekcs for start and end times of runs
                     run_start = run_group.metadata.time_period.start
                     run_end = run_group.metadata.time_period.end
@@ -335,42 +355,29 @@ class FDSN:
         run_list = self.get_run_list_from_station_id(m, station_id, survey_id=survey_id)
         n_times = len(trace_start_times)
 
-        # adding logic if there are already runs filled in
+        # Logic if there are already runs filled in
+        # In all of the following if/elif/else cases, the strategy is as follows:
+        # 1. Add the group first. This will get the already filled in metadata to
+        # update the run_ts_obj.
+        # 2. Then get the streams an add existing metadata
         if len(run_list) == n_times:
             for run_id, start, end in zip(run_list, trace_start_times, trace_end_times):
-                # add the group first this will get the already filled in
-                # metadata to update the run_ts_obj.
-                run_group = survey_group.stations_group.get_station(station_id).add_run(
-                    run_id
-                )
-
-                # then get the streams an add existing metadata
+                run_group = self.get_run_group(survey_group, station_id, run_id)
                 run_stream = msstreams.slice(UTCDateTime(start), UTCDateTime(end))
                 run_group = self.pack_stream_into_run_group(run_group, run_stream)
-        # if there is just one run
         elif len(run_list) == 1:
             for run_id, times in enumerate(zip(trace_start_times, trace_end_times), 1):
                 start = times[0]
                 end = times[1]
-                run_group = survey_group.stations_group.get_station(station_id).add_run(
-                    f"{run_id:03}"
-                )
-                run_stream = msstreams.slice(
-                    UTCDateTime(start),
-                    UTCDateTime(end),
-                )
+                run_id = f"{run_id:03}"
+                run_group = self.get_run_group(survey_group, station_id, run_id)
+                run_stream = msstreams.slice(UTCDateTime(start), UTCDateTime(end))
                 run_group = self.pack_stream_into_run_group(run_group, run_stream)
         elif len(run_list) != n_times:
             self.run_list_ne_stream_intervals_message
             for run_id, start, end in zip(run_list, trace_start_times, trace_end_times):
-
-                # add the group first this will get the already filled in
-                # metadata
                 for run in run_list:
-                    run_group = survey_group.stations_group.get_station(
-                        station_id
-                    ).get_run(run)
-
+                    run_group = self.get_run_group(survey_group, station_id, run)
                     # Chekcs for start and end times of runs
                     run_start = run_group.metadata.time_period.start
                     run_end = run_group.metadata.time_period.end
