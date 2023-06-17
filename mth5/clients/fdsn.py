@@ -290,12 +290,12 @@ class FDSN:
                 for run_id, times in enumerate(
                     zip(trace_start_times, trace_end_times), 1
                 ):
+                    start = times[0]
+                    end = times[1]
                     run_group = m.stations_group.get_station(station_id).add_run(
                         f"{run_id:03}"
                     )
-                    run_stream = msstreams.slice(
-                        UTCDateTime(times[0]), UTCDateTime(times[1])
-                    )
+                    run_stream = msstreams.slice(UTCDateTime(start), UTCDateTime(end))
                     run_group = self.pack_stream_into_run_group(run_group, run_stream)
             elif n_times == 1:
                 run_group = m.stations_group.get_station(station_id).add_run(
@@ -327,9 +327,9 @@ class FDSN:
                         run_stream = msstreams.slice(
                             UTCDateTime(start), UTCDateTime(end)
                         )
-                        run_ts_obj = RunTS()
-                        run_ts_obj.from_obspy_stream(run_stream, run_group.metadata)
-                        run_group.from_runts(run_ts_obj)
+                        run_group = self.pack_stream_into_run_group(
+                            run_group, run_stream
+                        )
                     else:
                         continue
         else:
@@ -363,16 +363,16 @@ class FDSN:
                 for run_id, times in enumerate(
                     zip(trace_start_times, trace_end_times), 1
                 ):
+                    start = times[0]
+                    end = times[1]
                     run_group = survey_group.stations_group.get_station(
                         station_id
                     ).add_run(f"{run_id:03}")
                     run_stream = msstreams.slice(
-                        UTCDateTime(times[0]),
-                        UTCDateTime(times[1]),
+                        UTCDateTime(start),
+                        UTCDateTime(end),
                     )
-                    run_ts_obj = RunTS()
-                    run_ts_obj.from_obspy_stream(run_stream, run_group.metadata)
-                    run_group.from_runts(run_ts_obj)
+                    run_group = self.pack_stream_into_run_group(run_group, run_stream)
             elif n_times == 1:
                 run_group = survey_group.stations_group.get_station(station_id).add_run(
                     run_list[0]
