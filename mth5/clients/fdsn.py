@@ -26,60 +26,6 @@ from mt_metadata.timeseries.stationxml import XMLInventoryMTExperiment
 from mth5.mth5 import MTH5
 from mth5.timeseries import RunTS
 
-# =============================================================================
-# class StationStreams(object):
-#     """helper class to keep the info from a collection of streams handy"""
-#     def __init__(self, station_id, streams):
-#         self.station_id = station_id
-#         self.streams = streams.select(station=station_id)
-#         self.start_times = None
-#         self.end_times = None
-#         self.get_stream_boundaries()
-#
-#     def get_stream_boundaries(self):
-#         """
-#
-#         Parameters
-#         ----------
-#         streams: obspy.core.stream.Stream
-#
-#         Returns
-#         -------
-#
-#         """
-#         start_times = [tr.stats.starttime.isoformat() for tr in streams]
-#         start_times = sorted(list(set(start_times)))
-#         end_times = [tr.stats.endtime.isoformat() for tr in streams]
-#         end_times = sorted(list(set(end_times)))
-#         if len(start_times) != len(end_times):
-#             raise ValueError(
-#                 f"Do not have the same number of start {len(start_times)}"
-#                 f" and end times {len(end_times)} from streams"
-#             )
-#         start_times = [UTCDateTime(x) for x in start_times]
-#         end_times = [UTCDateTime(x) for x in end_times]
-#         self.start_times = start_times
-#         self.end_times = end_times
-#
-#     @property
-#     def num_streams(self):
-#         return len(self.start_times)
-#
-#
-#     def pack_streams_into_mth5_obj(self, mth5_obj, run_list):
-#         """
-#
-#         Parameters
-#         ----------
-#         mth5_obj: could be mth5.MTH5 or
-#         run_list
-#
-#         Returns
-#         -------
-#
-#         """
-#         pass
-
 
 class FDSN:
     def __init__(self, client="IRIS", mth5_version="0.2.0", **kwargs):
@@ -182,13 +128,6 @@ class FDSN:
     def get_station_streams(self, station_id):
         return self._streams.select(station=station_id)
 
-    def add_runs_to_mth5(
-        self,
-        mth5_obj,
-        run_list,
-    ):
-        pass
-
     def get_run_group(self, mth5_obj_or_survey, station_id, run_id):
         """
         This method is key to merging wrangle_runs_into_containers_v1 and
@@ -278,10 +217,10 @@ class FDSN:
         msstreams = self.get_station_streams(station_id)
         trace_start_times, trace_end_times = self.stream_boundaries(msstreams)
         run_list = self.get_run_list_from_station_id(m, station_id, survey_id=survey_id)
-        n_times = len(trace_start_times)
+        num_streams = len(trace_start_times)
 
         # See Note 2
-        if len(run_list) == n_times:
+        if len(run_list) == num_streams:
             for run_id, start, end in zip(run_list, trace_start_times, trace_end_times):
                 run_group = self.get_run_group(run_group_source, station_id, run_id)
                 run_stream = msstreams.slice(start, end)
@@ -294,7 +233,7 @@ class FDSN:
                 run_group = self.get_run_group(run_group_source, station_id, run_id)
                 run_stream = msstreams.slice(start, end)
                 self.pack_stream_into_run_group(run_group, run_stream)
-        elif len(run_list) != n_times:
+        elif len(run_list) != num_streams:
             self.run_list_ne_stream_intervals_message
             for run_id, start, end in zip(run_list, trace_start_times, trace_end_times):
                 for run in run_list:
