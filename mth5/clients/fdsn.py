@@ -305,78 +305,44 @@ class FDSN:
             streams_and_run_timings_match = True
         return streams_and_run_timings_match
 
-    def wrangle_runs_into_containers_v1(
-        self,
-        m,
-        streams,
-        station_id,
-    ):
+    def wrangle_runs_into_containers(self, m, streams, station_id, survey_group=None):
         """
-        Consider making _streams a property of this class
-        self.streams initializes it the first time, and then returns the streams
+        Note 1: There used to be two separate functions for this, but now there is one
+        run_group_source is defined as either m or survey_group depending on v0.1.0
+        or 0.2.0
+
+        Note 2: If/elif/elif/else Logic:
+        The strategy is to add the group first. This will get the already filled in
+        metadata to update the run_ts_obj. Then get streams an add existing metadata.
+
+
+        Parameters
+        ----------
+        m
+        streams
+        station_id
+        survey_group
+
+        Returns
+        -------
+
         """
-        # get the streams for the given station
-        # msstreams = StationStreams(station_id, streams)
-        msstreams = streams.select(station=station_id)
-        trace_start_times, trace_end_times = self.stream_boundaries(msstreams)
-        run_list = self.get_run_list_from_station_id(m, station_id)
-        n_times = len(trace_start_times)
-
-        # KEY
-        # add_runs(m, run_list, starts, endstimes)
-        # add_runs(surveyobj, run_list, starts, endstimes)
-
-        # Logic if there are already runs filled in
-        # In all of the following if/elif/else cases, the strategy is as follows:
-        # 1. Add the group first. This will get the already filled in metadata to
-        # update the run_ts_obj.
-        # 2. Then get the streams an add existing metadata
-        if len(run_list) == n_times:  # msstreams.num_streams:
-            for run_id, start, end in zip(run_list, trace_start_times, trace_end_times):
-                run_group = self.get_run_group(m, station_id, run_id)
-                run_stream = msstreams.slice(start, end)
-                run_group = self.pack_stream_into_run_group(run_group, run_stream)
-        elif len(run_list) == 1:
-            for run_id, times in enumerate(zip(trace_start_times, trace_end_times), 1):
-                start = times[0]
-                end = times[1]
-                run_id = f"{run_id:03}"
-                run_group = self.get_run_group(m, station_id, run_id)
-                run_stream = msstreams.slice(start, end)
-                run_group = self.pack_stream_into_run_group(run_group, run_stream)
-        elif len(run_list) != n_times:
-            self.run_list_ne_stream_intervals_message
-            for run_id, start, end in zip(run_list, trace_start_times, trace_end_times):
-                for run in run_list:
-                    run_group = self.get_run_group(m, station_id, run)
-                    if self.run_timings_match_stream_timing(run_group, start, end):
-                        run_stream = msstreams.slice(start, end)
-                        run_group = self.pack_stream_into_run_group(
-                            run_group, run_stream
-                        )
-                    else:
-                        continue  # not paired up
+        if survey_group is not None:
+            survey_id = survey_group.metadata.id
+            run_group_source = survey_group
         else:
-            raise ValueError("Cannot add Run for some reason.")
-        return m
-
-    def wrangle_runs_into_containers_v2(
-        self, m, streams, station_id, survey_id, survey_group
-    ):
+            survey_id = None
+            run_group_source = m
         # get the streams for the given station
         msstreams = streams.select(station=station_id)
         trace_start_times, trace_end_times = self.stream_boundaries(msstreams)
         run_list = self.get_run_list_from_station_id(m, station_id, survey_id=survey_id)
         n_times = len(trace_start_times)
 
-        # Logic if there are already runs filled in
-        # In all of the following if/elif/else cases, the strategy is as follows:
-        # 1. Add the group first. This will get the already filled in metadata to
-        # update the run_ts_obj.
-        # 2. Then get the streams an add existing metadata
+        # See Note 2
         if len(run_list) == n_times:
             for run_id, start, end in zip(run_list, trace_start_times, trace_end_times):
-                run_group = self.get_run_group(survey_group, station_id, run_id)
+                run_group = self.get_run_group(run_group_source, station_id, run_id)
                 run_stream = msstreams.slice(start, end)
                 run_group = self.pack_stream_into_run_group(run_group, run_stream)
         elif len(run_list) == 1:
@@ -384,14 +350,14 @@ class FDSN:
                 start = times[0]
                 end = times[1]
                 run_id = f"{run_id:03}"
-                run_group = self.get_run_group(survey_group, station_id, run_id)
+                run_group = self.get_run_group(run_group_source, station_id, run_id)
                 run_stream = msstreams.slice(start, end)
                 run_group = self.pack_stream_into_run_group(run_group, run_stream)
         elif len(run_list) != n_times:
             self.run_list_ne_stream_intervals_message
             for run_id, start, end in zip(run_list, trace_start_times, trace_end_times):
                 for run in run_list:
-                    run_group = self.get_run_group(survey_group, station_id, run)
+                    run_group = self.get_run_group(run_group_source, station_id, run)
                     if self.run_timings_match_stream_timing(run_group, start, end):
                         run_stream = msstreams.slice(start, end)
                         run_group = self.pack_stream_into_run_group(
@@ -478,7 +444,9 @@ class FDSN:
         m.from_experiment(experiment)
         if self.mth5_version in ["0.1.0"]:
             for station_id in unique_list[0]["stations"]:
-                m = self.wrangle_runs_into_containers_v1(m, streams, station_id)
+                m = self.wrangle_runs_into_containers(
+                    m, streams, station_id, survey_group=None
+                )
 
         # Version 0.2.0 has the ability to store multiple surveys
         elif self.mth5_version in ["0.2.0"]:
@@ -494,8 +462,8 @@ class FDSN:
 
                 survey_group = m.get_survey(survey_id)
                 for station_id in survey_dict["stations"]:
-                    m = self.wrangle_runs_into_containers_v2(
-                        m, streams, station_id, survey_id, survey_group
+                    m = self.wrangle_runs_into_containers(
+                        m, streams, station_id, survey_group=survey_group
                     )
 
         if not interact:
