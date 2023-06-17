@@ -52,6 +52,9 @@ class FDSN:
         for key, value in kwargs.items():
             setattr(self, key, value)
 
+        # ivars
+        self._streams = None
+
     def _validate_dataframe(self, df):
         if not isinstance(df, pd.DataFrame):
             if isinstance(df, (str, Path)):
@@ -67,6 +70,16 @@ class FDSN:
                 f"column names in file {df.columns} are not the expected {self.request_columns}"
             )
         return df
+
+    @property
+    def run_list_ne_stream_intervals_message(self):
+        print(
+            "More or less runs have been requested by the user "
+            + "than are defined in the metadata. Runs will be "
+            + "defined but only the requested run extents contain "
+            + "time series data "
+            + "based on the users request."
+        )
 
     def stream_boundaries(self, streams):
         """
@@ -101,6 +114,7 @@ class FDSN:
         trace_start_times, trace_end_times = self.stream_boundaries(msstreams)
         run_list = m.get_station(station_id).groups_list
         # IGNORE
+        print("YOU NEED TO ADD THIS TO ADDRESS #153")
         n_times = len(trace_start_times)
 
         # adding logic if there are already runs filled in
@@ -140,13 +154,7 @@ class FDSN:
                 run_ts_obj.from_obspy_stream(run_stream, run_group.metadata)
                 run_group.from_runts(run_ts_obj)
         elif len(run_list) != n_times:
-            print(
-                "More or less runs have been requested by the user "
-                + "than are defined in the metadata. Runs will be "
-                + "defined but only the requested run extents contain "
-                + "time series data "
-                + "based on the users request."
-            )
+            self.run_list_ne_stream_intervals_message
             for run_id, start, end in zip(run_list, trace_start_times, trace_end_times):
 
                 # add the group first this will get the already filled in
@@ -226,13 +234,7 @@ class FDSN:
                 run_ts_obj.from_obspy_stream(run_stream, run_group.metadata)
                 run_group.from_runts(run_ts_obj)
         elif len(run_list) != n_times:
-            print(
-                "More or less runs have been requested by the user "
-                + "than are defined in the metadata. Runs will be "
-                + "defined but only the requested run extents contain "
-                + "time series data "
-                + "based on the users request."
-            )
+            self.run_list_ne_stream_intervals_message
             for run_id, start, end in zip(run_list, trace_start_times, trace_end_times):
 
                 # add the group first this will get the already filled in
@@ -327,6 +329,8 @@ class FDSN:
 
         # read in inventory and streams
         inv, streams = self.get_inventory_from_df(df, self.client)
+        self._streams = streams
+
         # translate obspy.core.Inventory to an mt_metadata.timeseries.Experiment
         translator = XMLInventoryMTExperiment()
         experiment = translator.xml_to_mt(inv)
@@ -342,9 +346,9 @@ class FDSN:
 
         # Version 0.2.0 has the ability to store multiple surveys
         elif self.mth5_version in ["0.2.0"]:
-            # mt_metadata translates the mt survey id into the survey id
-            # if it is provided which will be different from the fdsn network
-            # id, so we need to map the fdsn networks onto the survey id.
+            # mt_metadata translates mt survey id into survey id if it (which?) is
+            # provided which will be different from the fdsn network id, so we need
+            # to map the fdsn networks onto the survey id.
             survey_map = dict([(s.fdsn.network, s.id) for s in experiment.surveys])
 
             for survey_dict in unique_list:
@@ -541,8 +545,8 @@ class FDSN:
 
         """
         unique_list = []
-        net_list = df["network"].unique()
-        for network in net_list:
+        networks = df["network"].unique()
+        for network in networks:
             network_dict = {
                 "network": network,
                 "stations": df[df.network == network].station.unique().tolist(),
