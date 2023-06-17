@@ -81,6 +81,28 @@ class FDSN:
             + "based on the users request."
         )
 
+    def get_run_list_from_station_id(self, m, station_id, survey_id=None):
+        """
+        ignored_groups created to address issue #153.  This might be better placed
+        closer to the core of mth5.
+
+        Parameters
+        ----------
+        m
+        station_id
+
+        Returns
+        -------
+        run_list: list of strings
+        """
+        ignored_groups = [
+            "Fourier_Coefficients",
+            "Transfer_Functions",
+        ]
+        run_list = m.get_station(station_id, survey_id).groups_list
+        run_list = [x for x in run_list if x not in ignored_groups]
+        return run_list
+
     def stream_boundaries(self, streams):
         """
 
@@ -109,15 +131,21 @@ class FDSN:
         streams,
         station_id,
     ):
+        """
+        Consider making _streams a property of this class
+        self.streams initializes it the first time, and then returns the streams
+        """
         # get the streams for the given station
         msstreams = streams.select(station=station_id)
         trace_start_times, trace_end_times = self.stream_boundaries(msstreams)
-        run_list = m.get_station(station_id).groups_list
-        # IGNORE
-        print("YOU NEED TO ADD THIS TO ADDRESS #153")
+        run_list = self.get_run_list_from_station_id(m, station_id)
         n_times = len(trace_start_times)
 
         # adding logic if there are already runs filled in
+
+        # KEY
+        # add_runs(m, run_list, starts, endstimes)
+        # add_runs(surveyobj, run_list, starts, endstimes)
         if len(run_list) == n_times:
             for run_id, start, end in zip(run_list, trace_start_times, trace_end_times):
                 # add the group first this will get the already filled in
@@ -190,7 +218,7 @@ class FDSN:
         # get the streams for the given station
         msstreams = streams.select(station=station_id)
         trace_start_times, trace_end_times = self.stream_boundaries(msstreams)
-        run_list = m.get_station(station_id, survey_id).groups_list
+        run_list = self.get_run_list_from_station_id(m, station_id, survey_id=survey_id)
         n_times = len(trace_start_times)
 
         # adding logic if there are already runs filled in
