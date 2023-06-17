@@ -275,36 +275,26 @@ class FDSN:
         # KEY
         # add_runs(m, run_list, starts, endstimes)
         # add_runs(surveyobj, run_list, starts, endstimes)
+        # In all of the following if/elif/else cases, the strategy is as follows:
+        # 1. Add the group first. This will get the already filled in metadata to
+        # update the run_ts_obj.
+        # 2. Then get the streams an add existing metadata
         if len(run_list) == n_times:  # msstreams.num_streams:
             for run_id, start, end in zip(run_list, trace_start_times, trace_end_times):
-                # add the group first this will get the already filled in
-                # metadata to update the run_ts_obj.
                 run_group = m.stations_group.get_station(station_id).add_run(run_id)
-                # then get the streams an add existing metadata
                 run_stream = msstreams.slice(UTCDateTime(start), UTCDateTime(end))
                 run_group = self.pack_stream_into_run_group(run_group, run_stream)
 
         # if there is just one run
         elif len(run_list) == 1:
-            if n_times > 1:
-                for run_id, times in enumerate(
-                    zip(trace_start_times, trace_end_times), 1
-                ):
-                    start = times[0]
-                    end = times[1]
-                    run_group = m.stations_group.get_station(station_id).add_run(
-                        f"{run_id:03}"
-                    )
-                    run_stream = msstreams.slice(UTCDateTime(start), UTCDateTime(end))
-                    run_group = self.pack_stream_into_run_group(run_group, run_stream)
-            elif n_times == 1:
-                run_group = m.stations_group.get_station(station_id).add_run(
-                    run_list[0]
-                )
-                run_stream = msstreams.slice(
-                    UTCDateTime(times[0]), UTCDateTime(times[1])
-                )
+            for run_id, times in enumerate(zip(trace_start_times, trace_end_times), 1):
+                start = times[0]
+                end = times[1]
+                run_id = f"{run_id:03}"
+                run_group = m.stations_group.get_station(station_id).add_run(run_id)
+                run_stream = msstreams.slice(UTCDateTime(start), UTCDateTime(end))
                 run_group = self.pack_stream_into_run_group(run_group, run_stream)
+
         elif len(run_list) != n_times:
             self.run_list_ne_stream_intervals_message
             for run_id, start, end in zip(run_list, trace_start_times, trace_end_times):
@@ -359,26 +349,15 @@ class FDSN:
                 run_group = self.pack_stream_into_run_group(run_group, run_stream)
         # if there is just one run
         elif len(run_list) == 1:
-            if n_times > 1:
-                for run_id, times in enumerate(
-                    zip(trace_start_times, trace_end_times), 1
-                ):
-                    start = times[0]
-                    end = times[1]
-                    run_group = survey_group.stations_group.get_station(
-                        station_id
-                    ).add_run(f"{run_id:03}")
-                    run_stream = msstreams.slice(
-                        UTCDateTime(start),
-                        UTCDateTime(end),
-                    )
-                    run_group = self.pack_stream_into_run_group(run_group, run_stream)
-            elif n_times == 1:
+            for run_id, times in enumerate(zip(trace_start_times, trace_end_times), 1):
+                start = times[0]
+                end = times[1]
                 run_group = survey_group.stations_group.get_station(station_id).add_run(
-                    run_list[0]
+                    f"{run_id:03}"
                 )
                 run_stream = msstreams.slice(
-                    UTCDateTime(times[0]), UTCDateTime(times[1])
+                    UTCDateTime(start),
+                    UTCDateTime(end),
                 )
                 run_group = self.pack_stream_into_run_group(run_group, run_stream)
         elif len(run_list) != n_times:
