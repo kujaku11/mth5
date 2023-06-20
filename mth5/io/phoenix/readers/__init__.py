@@ -4,7 +4,8 @@ from .base import TSReaderBase
 from .native import NativeReader
 from .segmented import DecimatedSegmentedReader
 from .contiguous import DecimatedContinuousReader
-from .phx_json import ConfigJSON, ReceiverMetadataJSON
+from .config import PhoenixConfig
+from .receiver_metadata import PhoenixReceiverMetadata
 
 __all__ = [
     "Header",
@@ -13,6 +14,6 @@ __all__ = [
     "NativeReader",
     "DecimatedSegmentedReader",
     "DecimatedContinuousReader",
-    "ConfigJSON",
-    "ReceiverMetadataJSON",
+    "PhoenixConfig",
+    "PhoenixReceiverMetadata",
 ]

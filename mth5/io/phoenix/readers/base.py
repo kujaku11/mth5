@@ -18,6 +18,11 @@ from .header import Header
 from .rx_calibrations import RXCalibration
 from .phx_json import ConfigJSON, ReceiverMetadataJSON
 
+from mt_metadata.timeseries.filters import (
+    CoefficientFilter,
+    ChannelResponseFilter,
+)
+
 
 # =============================================================================
 
@@ -317,6 +322,8 @@ class TSReaderBase(Header):
         if self.recmeta_file_path is not None:
             rx_run_metadata = self.rx_metadata.run_metadata
             run_metadata.update(rx_run_metadata)
+            run_metadata.add_channel(self.channel_metadata)
+        run_metadata.update_time_period()
         return run_metadata
 
     def _update_station_metadata_from_recmeta(self):
@@ -331,6 +338,8 @@ class TSReaderBase(Header):
         if self.recmeta_file_path is not None:
             rx_station_metadata = self.rx_metadata.station_metadata
             station_metadata.update(rx_station_metadata)
+            station_metadata.add_run(self.run_metadata)
+        station_metadata.update_time_period()
         return station_metadata
 
     @property
@@ -369,7 +378,7 @@ class TSReaderBase(Header):
 
         return self._update_station_metadata_from_recmeta()
 
-    def get_rxcal_filter(self, rxcal_fn):
+    def get_receiver_lowpass_filter(self, rxcal_fn):
         """
         get reciever lowpass filter from the rxcal.json file
 
@@ -393,3 +402,24 @@ class TSReaderBase(Header):
                 f"Could not find {lp_name} for channel "
                 f"{self.channel_metadata().comp}"
             )
+
+    def get_dipole_filter(self):
+        """
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        ch_metadata = self.channel_metadata.copy()
+
+        if hasattr(ch_metadata.dipole_length):
+            dp_filter = CoefficientFilter()
+            dp_filter.gain = ch_metadata.dipole_length / 1000
+            dp_filter.units_out = "volts"
+            dp_filter.units_in = "volts per kilometer"
+
+            for f_name in ch_metadata.filters.name:
+                if "dipole" in f_name:
+                    dp_filter.name = f_name
+
+            return dp_filter

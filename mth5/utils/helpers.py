@@ -2,6 +2,8 @@
 # Imports
 # =============================================================================
 from pathlib import Path
+from types import SimpleNamespace
+import json
 
 from mth5.mth5 import MTH5
 from mth5.helpers import close_open_files
@@ -45,7 +47,12 @@ def initialize_mth5(h5_path, mode="a", file_version="0.1.0"):
 
 
 def read_back_data(
-    mth5_path, station_id, run_id, survey=None, close_mth5=True, return_objects=[]
+    mth5_path,
+    station_id,
+    run_id,
+    survey=None,
+    close_mth5=True,
+    return_objects=[],
 ):
     """
     Testing helper function, used to confirm that the h5 file can be accessed
@@ -91,3 +98,19 @@ def read_back_data(
     else:
         return_dict["mth5_obj"] = m
     return return_dict
+
+
+def read_json_to_object(fn):
+    """
+    read a json file directly into an object
+
+    :param fn: DESCRIPTION
+    :type fn: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+
+    with open(fn, "r") as fid:
+        obj = json.load(fid, object_hook=lambda d: SimpleNamespace(**d))
+    return obj

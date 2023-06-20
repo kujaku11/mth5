@@ -665,6 +665,6 @@ class Header:
         s.location.latitude = self.gps_lat
         s.location.longitude = self.gps_long
         s.location.elevation = self.gps_elevation
-        s.runs.append(self.run_metadata())
+        s.runs.append(self.get_run_metadata())
 
         return s
