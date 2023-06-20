@@ -25,6 +25,8 @@ import string
 from mt_metadata.timeseries import Station, Run, Electric, Magnetic
 from mt_metadata.utils.mttime import MTime
 
+from mth5.utils.mth5_logger import setup_logger
+
 # =============================================================================
 class Header:
     """
@@ -36,6 +38,9 @@ class Header:
     """
 
     def __init__(self, **kwargs):
+        self.logger = setup_logger(
+            f"{self.__class__}.{self.__class__.__name__}"
+        )
         self.report_hw_sat = False
         self.header_length = 128
         self.ad_plus_minus_range = 5.0  # differential voltage range that the A/D can measure (Board model dependent)
@@ -52,6 +57,14 @@ class Header:
             5: "h1",
             6: "h2",
             7: "h3",
+        }
+
+        self.channel_azimuths = {
+            "h1": 0,
+            "h2": 90,
+            "h3": 0,
+            "e1": 0,
+            "e2": 90,
         }
 
         for key, value in kwargs.items():
@@ -593,7 +606,7 @@ class Header:
         else:
             return
 
-    def channel_metadata(self):
+    def get_channel_metadata(self):
         """
         translate metadata to channel metadata
         :return: DESCRIPTION
@@ -603,19 +616,25 @@ class Header:
 
         if self.channel_type.lower() in ["h"]:
             ch = Magnetic()
+            ch.location.latitude = self.gps_lat
+            ch.location.longitude = self.gps_long
+            ch.location.elevation = self.gps_elevation
         elif self.channel_type.lower() in ["e"]:
             ch = Electric()
         try:
             ch.component = self.channel_map[self.channel_id]
         except KeyError:
-            print(f"Could not find {self.channel_id} in channel_map")
+            self.logger.error(
+                f"Could not find {self.channel_id} in channel_map"
+            )
         ch.channel_number = self.channel_id
         ch.time_period.start = self.recording_start_time
         ch.sample_rate = self.sample_rate
+        ch.measurement_azimuth = self.channel_azimuths[ch.component]
 
         return ch
 
-    def run_metadata(self):
+    def get_run_metadata(self):
         """
         translate to run metadata
 
@@ -631,12 +650,12 @@ class Header:
         r.data_logger.timing_system.uncertainty = self.timing_stability
         r.sample_rate = self.sample_rate
         r.data_logger.power_source.voltage.start = self.battery_voltage_v
-        r.channels.append(self.channel_metadata())
+        r.channels.append(self.get_channel_metadata())
         r.id = f"sr{self.sample_rate}_0001"
 
         return r
 
-    def station_metadata(self):
+    def get_station_metadata(self):
         """
         translate to station metadata
 

@@ -16,8 +16,8 @@ Revised 2022 by J. Peacock
 from pathlib import Path
 from .header import Header
 from .rx_calibrations import RXCalibration
+from .phx_json import ConfigJSON, ReceiverMetadataJSON
 
-from mth5.utils.mth5_logger import setup_logger
 
 # =============================================================================
 
@@ -42,9 +42,6 @@ class TSReaderBase(Header):
             header_length=header_length, report_hw_sat=report_hw_sat, **kwargs
         )
 
-        self.logger = setup_logger(
-            f"{self.__class__}.{self.__class__.__name__}"
-        )
         self.base_path = path
         self.last_seq = self.seq + num_files
         self.stream = None
@@ -54,6 +51,12 @@ class TSReaderBase(Header):
             self.recording_id = self.base_path.stem.split("_")[1]
         if self._channel_id is None:
             self.channel_id = self.base_path.stem.split("_")[2]
+
+        self.rx_metadata = None
+        self.get_receiver_metadata_object()
+
+        if self.recmeta_file_path is not None:
+            self.update_channel_map_from_recmeta()
 
     @property
     def base_path(self):
@@ -169,6 +172,24 @@ class TSReaderBase(Header):
         """
         return sorted(list(self.base_dir.glob(f"*{self.file_extension}")))
 
+    @property
+    def config_file_path(self):
+        if self.base_path is not None:
+            config_fn = self.base_path.parent.parent.joinpath("config.json")
+            if config_fn.exists():
+                return config_fn
+            else:
+                self.logger.warning("Could not find config file")
+
+    @property
+    def recmeta_file_path(self):
+        if self.base_path is not None:
+            recmeta_fn = self.base_path.parent.parent.joinpath("recmeta.json")
+            if recmeta_fn.exists():
+                return recmeta_fn
+            else:
+                self.logger.warning("Could not find recmeta file")
+
     def _open_file(self, filename):
         """
         open a given file in 'rb' mode
@@ -227,7 +248,128 @@ class TSReaderBase(Header):
         if self.stream is not None:
             self.stream.close()
 
-    def get_rxcal_filter(self, lp_name, rxcal_fn):
+    def get_config_object(self):
+        """
+        Read a config file into an object.
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if self.config_file_path is not None:
+            return ConfigJSON(self.config_file_path)
+
+    def get_receiver_metadata_object(self):
+        """
+        Read recmeta.json into an object
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if self.recmeta_file_path is not None and self.rx_metadata is None:
+            self.rx_metadata = ReceiverMetadataJSON(self.recmeta_file_path)
+
+    def get_lowpass_filter_name(self):
+        """
+        Get the lowpass filter used by the receiver pre-decimation.
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if self.recmeta_file_path is not None:
+            rx_metadata = self.get_receiver_metadata_object()
+            return rx_metadata.obj.chconfig.chans[0].lp
+
+    def update_channel_map_from_recmeta(self):
+        if self.recmeta_file_path is not None:
+            self.channel_map = self.rx_metadata.channel_map
+
+    def _update_channel_metadata_from_recmeta(self):
+        """
+        Get channel metadata from recmeta.json
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        ch_metadata = self.get_channel_metadata()
+        if self.recmeta_file_path is not None:
+            rx_ch_metadata = self.rx_metadata.get_ch_metadata(self._channel_id)
+
+            ch_metadata.update(rx_ch_metadata)
+        return ch_metadata
+
+    def _update_run_metadata_from_recmeta(self):
+        """
+        Updata run metadata from recmeta.json
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        run_metadata = self.get_run_metadata()
+        if self.recmeta_file_path is not None:
+            rx_run_metadata = self.rx_metadata.run_metadata
+            run_metadata.update(rx_run_metadata)
+        return run_metadata
+
+    def _update_station_metadata_from_recmeta(self):
+        """
+        Updata station metadata from recmeta.json
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        station_metadata = self.get_station_metadata()
+        if self.recmeta_file_path is not None:
+            rx_station_metadata = self.rx_metadata.station_metadata
+            station_metadata.update(rx_station_metadata)
+        return station_metadata
+
+    @property
+    def channel_metadata(self):
+        """
+        Channel metadata updated from recmeta
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        return self._update_channel_metadata_from_recmeta()
+
+    @property
+    def run_metadata(self):
+        """
+        Run metadata updated from recmeta
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        return self._update_run_metadata_from_recmeta()
+
+    @property
+    def station_metadata(self):
+        """
+        station metadata updated from recmeta
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        return self._update_station_metadata_from_recmeta()
+
+    def get_rxcal_filter(self, rxcal_fn):
         """
         get reciever lowpass filter from the rxcal.json file
 
@@ -242,6 +384,7 @@ class TSReaderBase(Header):
 
         rx_cal_obj = RXCalibration(rxcal_fn)
         if rx_cal_obj._has_read():
+            lp_name = self.get_lowpass_filter_name()
             return rx_cal_obj.get_filter(
                 self.channel_metadata().component, lp_name
             )

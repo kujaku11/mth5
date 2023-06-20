@@ -226,7 +226,9 @@ class ReceiverMetadataJSON:
 
     @property
     def channel_map(self):
-        return dict([(d.idx, d.tag) for d in self.obj.channel_map.mapping])
+        return dict(
+            [(d.idx, d.tag.lower()) for d in self.obj.channel_map.mapping]
+        )
 
     @property
     def lp_filter_base_name(self):
