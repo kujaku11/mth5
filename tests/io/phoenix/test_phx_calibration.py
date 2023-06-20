@@ -11,7 +11,7 @@ Created on Fri Jun 16 10:20:14 2023
 import unittest
 from pathlib import Path
 
-from mth5.io.phoenix.readers import RXCalibration
+from mth5.io.phoenix.readers import PhoenixCalibration
 
 # =============================================================================
 cal_fn = Path(__file__).parent.joinpath("example_rxcal.json")
@@ -20,7 +20,7 @@ cal_fn = Path(__file__).parent.joinpath("example_rxcal.json")
 class TestPHXCalibrations(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.c = RXCalibration(cal_fn)
+        self.c = PhoenixCalibration(cal_fn)
 
     def test_has_channel(self):
         for ch in ["e1", "e2", "h1", "h2", "h3"]:
@@ -45,7 +45,7 @@ class TestPHXCalibrations(unittest.TestCase):
                 with self.subTest(f"{ch}_{lp}_name"):
                     self.assertEqual(
                         fap.name,
-                        f"{self.c.base_filter_name}_{ch}_{lp}hz_low_pass",
+                        f"{self.c.base_filter_name}_{ch}_{lp}hz_lowpass",
                     )
 
                 with self.subTest(f"{ch}_{lp}_calibration_date"):

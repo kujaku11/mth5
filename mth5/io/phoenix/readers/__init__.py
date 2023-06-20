@@ -1,5 +1,5 @@
 from .header import Header
-from .rx_calibrations import RXCalibration
+from .calibrations import PhoenixCalibration
 from .base import TSReaderBase
 from .native import NativeReader
 from .segmented import DecimatedSegmentedReader
@@ -9,7 +9,7 @@ from .receiver_metadata import PhoenixReceiverMetadata
 
 __all__ = [
     "Header",
-    "RXCalibration",
+    "PhoenixCalibration",
     "TSReaderBase",
     "NativeReader",
     "DecimatedSegmentedReader",

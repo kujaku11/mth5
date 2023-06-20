@@ -15,8 +15,9 @@ Revised 2022 by J. Peacock
 # =============================================================================
 from pathlib import Path
 from .header import Header
-from .rx_calibrations import RXCalibration
-from .phx_json import ConfigJSON, ReceiverMetadataJSON
+from .calibrations import PhoenixCalibration
+from .config import PhoenixConfig
+from .receiver_metadata import PhoenixReceiverMetadata
 
 from mt_metadata.timeseries.filters import (
     CoefficientFilter,
@@ -263,7 +264,7 @@ class TSReaderBase(Header):
         """
 
         if self.config_file_path is not None:
-            return ConfigJSON(self.config_file_path)
+            return PhoenixConfig(self.config_file_path)
 
     def get_receiver_metadata_object(self):
         """
@@ -275,7 +276,7 @@ class TSReaderBase(Header):
         """
 
         if self.recmeta_file_path is not None and self.rx_metadata is None:
-            self.rx_metadata = ReceiverMetadataJSON(self.recmeta_file_path)
+            self.rx_metadata = PhoenixReceiverMetadata(self.recmeta_file_path)
 
     def get_lowpass_filter_name(self):
         """
@@ -287,8 +288,7 @@ class TSReaderBase(Header):
         """
 
         if self.recmeta_file_path is not None:
-            rx_metadata = self.get_receiver_metadata_object()
-            return rx_metadata.obj.chconfig.chans[0].lp
+            return self.rx_metadata.obj.chconfig.chans[0].lp
 
     def update_channel_map_from_recmeta(self):
         if self.recmeta_file_path is not None:
@@ -391,11 +391,11 @@ class TSReaderBase(Header):
 
         """
 
-        rx_cal_obj = RXCalibration(rxcal_fn)
+        rx_cal_obj = PhoenixCalibration(rxcal_fn)
         if rx_cal_obj._has_read():
             lp_name = self.get_lowpass_filter_name()
             return rx_cal_obj.get_filter(
-                self.channel_metadata().component, lp_name
+                self.channel_metadata.component, lp_name
             )
         else:
             self.logger.error(
@@ -412,14 +412,52 @@ class TSReaderBase(Header):
         """
         ch_metadata = self.channel_metadata.copy()
 
-        if hasattr(ch_metadata.dipole_length):
+        if hasattr(ch_metadata, "dipole_length"):
             dp_filter = CoefficientFilter()
             dp_filter.gain = ch_metadata.dipole_length / 1000
-            dp_filter.units_out = "volts"
-            dp_filter.units_in = "volts per kilometer"
+            dp_filter.units_in = "volts"
+            dp_filter.units_out = "volts per kilometer"
 
-            for f_name in ch_metadata.filters.name:
+            for f_name in ch_metadata.filter.name:
                 if "dipole" in f_name:
                     dp_filter.name = f_name
 
             return dp_filter
+
+    def get_sensor_filter(self, scal_fn):
+        """
+
+        :param scal_fn: DESCRIPTION
+        :type scal_fn: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        return
+
+    def get_channel_response_filter(self, rxcal_fn=None, scal_fn=None):
+        """
+        Get the channel response filter
+
+        :param rxcal_fn: DESCRIPTION, defaults to None
+        :type rxcal_fn: TYPE, optional
+        :param scal_fn: DESCRIPTION, defaults to None
+        :type scal_fn: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        ch_metadata = self.channel_metadata.copy()
+
+        filter_list = []
+        if rxcal_fn is not None:
+            filter_list.append(self.get_receiver_lowpass_filter(rxcal_fn))
+
+        if ch_metadata.type in ["magnetic"] and scal_fn is not None:
+            filter_list.append(self.get_sensor_filter(scal_fn))
+
+        if ch_metadata.type in ["electric"]:
+            filter_list.append(self.get_dipole_filter())
+
+        return ChannelResponseFilter(filters_list=filter_list)

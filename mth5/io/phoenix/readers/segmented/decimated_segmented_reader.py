@@ -223,7 +223,7 @@ class DecimatedSegmentedReader(TSReaderBase):
 
         return segment
 
-    def to_channel_ts(self):
+    def to_channel_ts(self, rxcal_fn=None, scal_fn=None):
         """
         convert to a ChannelTS object
 
@@ -233,15 +233,18 @@ class DecimatedSegmentedReader(TSReaderBase):
         """
 
         segment = self.read_segment()
-        ch_metadata = self.channel_metadata()
+        ch_metadata = self.channel_metadata
         ch_metadata.time_period.start = segment.segment_start_time.isoformat()
 
         return ChannelTS(
             channel_type=ch_metadata.type,
             data=segment.data,
             channel_metadata=ch_metadata,
-            run_metadata=self.run_metadata(),
-            station_metadata=self.station_metadata(),
+            run_metadata=self.run_metadata,
+            station_metadata=self.station_metadata,
+            channel_response_filter=self.get_channel_response_filter(
+                rxcal_fn=rxcal_fn, scal_fn=scal_fn
+            ),
         )
 
 
@@ -304,7 +307,7 @@ class DecimatedSegmentCollection(TSReaderBase):
 
         return segments
 
-    def to_channel_ts(self):
+    def to_channel_ts(self, rxcal_fn=None, scal_fn=None):
         """
         convert to a ChannelTS object
 
@@ -315,7 +318,7 @@ class DecimatedSegmentCollection(TSReaderBase):
 
         seq_list = []
         for seq in self.read_segments():
-            ch_metadata = self.channel_metadata()
+            ch_metadata = self.channel_metadata
             ch_metadata.time_period.start = seq.gps_time_stamp.isoformat()
 
             seq_list.append(
@@ -323,8 +326,11 @@ class DecimatedSegmentCollection(TSReaderBase):
                     channel_type=ch_metadata.type,
                     data=seq.data,
                     channel_metadata=ch_metadata,
-                    run_metadata=self.run_metadata(),
-                    station_metadata=self.station_metadata(),
+                    run_metadata=self.run_metadata,
+                    station_metadata=self.station_metadata,
+                    channel_response_filter=self.get_channel_response_filter(
+                        rxcal_fn=rxcal_fn, scal_fn=scal_fn
+                    ),
                 )
             )
         return seq_list

@@ -15,7 +15,7 @@ from collections import OrderedDict
 import numpy as np
 import pandas as pd
 
-from mth5.io.phoenix import open_phoenix, ReceiverMetadataJSON
+from mth5.io.phoenix import open_phoenix, PhoenixReceiverMetadata
 from mth5.io import Collection
 
 # =============================================================================
@@ -65,7 +65,7 @@ class PhoenixCollection(Collection):
         """
 
         if Path(rec_fn).is_file():
-            return ReceiverMetadataJSON(fn=rec_fn)
+            return PhoenixReceiverMetadata(fn=rec_fn)
         else:
             self.logger.warning(
                 f"Could not fine {self._receiver_metadata_name} in {self.file_path}"

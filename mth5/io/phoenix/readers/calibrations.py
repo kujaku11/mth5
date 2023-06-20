@@ -14,18 +14,19 @@ sensor calibrations.
 # Imports
 # =============================================================================
 from pathlib import Path
-import json
 
 import numpy as np
 from mt_metadata.timeseries.filters import FrequencyResponseTableFilter
 from mt_metadata.utils.mttime import MTime
 
+from .helpers import read_json_to_object
+
 # =============================================================================
 
 
-class RXCalibration:
+class PhoenixCalibration:
     def __init__(self, cal_fn=None, **kwargs):
-        self._raw_dict = None
+        self.obj = None
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -53,10 +54,10 @@ class RXCalibration:
     @property
     def calibration_date(self):
         if self._has_read():
-            return MTime(self._raw_dict["timestamp_utc"])
+            return MTime(self.obj.timestamp_utc)
 
     def _has_read(self):
-        if self._raw_dict is not None:
+        if self.obj is not None:
             return True
         return False
 
@@ -76,19 +77,19 @@ class RXCalibration:
     def base_filter_name(self):
         if self._has_read():
             return (
-                f"{self._raw_dict['instrument_type']}_"
-                f"{self._raw_dict['instrument_model']}_"
-                f"{self._raw_dict['inst_serial']}"
+                f"{self.obj.instrument_type}_"
+                f"{self.obj.instrument_model}_"
+                f"{self.obj.inst_serial}"
             ).lower()
 
-    def get_filter_name(self, channel, max_freq):
+    def get_filter_lp_name(self, channel, max_freq):
         """
         get the filter name as
 
         {instrument_model}_{instrument_type}_{inst_serial}_{channel}_{max_freq}_lp
 
-        :param raw_dict: DESCRIPTION
-        :type raw_dict: TYPE
+        :param channel: DESCRIPTION
+        :type channel: TYPE
         :param max_freq: DESCRIPTION
         :type max_freq: TYPE
         :return: DESCRIPTION
@@ -96,9 +97,24 @@ class RXCalibration:
 
         """
 
-        return (
-            f"{self.base_filter_name}_{channel}_{max_freq}hz_low_pass".lower()
-        )
+        return f"{self.base_filter_name}_{channel}_{max_freq}hz_lowpass".lower()
+
+    def get_filter_sensor_name(self, channel, sensor):
+        """
+        get the filter name as
+
+        {instrument_model}_{instrument_type}_{inst_serial}_{sensor}
+
+        :param channel: DESCRIPTION
+        :type channel: TYPE
+        :param max_freq: DESCRIPTION
+        :type max_freq: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        return f"{self.base_filter_name}_{sensor}".lower()
 
     def read(self, cal_fn=None):
         """
@@ -116,28 +132,30 @@ class RXCalibration:
         if not self.cal_fn.exists():
             raise IOError(f"Could not find {self.cal_fn}")
 
-        with open(self.cal_fn, "r") as fid:
-            self._raw_dict = json.load(fid)
+        self.obj = read_json_to_object(self.cal_fn)
 
-        for channel in self._raw_dict["cal_data"]:
-            comp = channel["tag"].lower()
+        for channel in self.obj.cal_data:
+            comp = channel.tag.lower()
             ch_cal_dict = {}
-            for cal in channel["chan_data"]:
+            for cal in channel.chan_data:
                 ch_fap = FrequencyResponseTableFilter(
-                    frequencies=cal["freq_Hz"],
-                    amplitudes=cal["magnitude"],
-                    phases=np.deg2rad(cal["phs_deg"]),
+                    frequencies=cal.freq_Hz,
+                    amplitudes=cal.magnitude,
+                    phases=np.deg2rad(cal.phs_deg),
                 )
                 max_freq = self.get_max_freq(ch_fap.frequencies)
-                ch_fap.name = self.get_filter_name(comp, max_freq)
-                ch_fap.calibration_date = self._raw_dict["timestamp_utc"]
+                if self.obj.file_type in ["receiver calibration"]:
+                    ch_fap.name = self.get_filter_lp_name(comp, max_freq)
+                else:
+                    ch_fap.name = self.get_filter_sensor_name(comp, comp)
+                ch_fap.calibration_date = self.obj.timestamp_utc
                 ch_cal_dict[max_freq] = ch_fap
                 ch_fap.units_in = "volts"
                 ch_fap.units_out = "volts"
 
             setattr(self, comp, ch_cal_dict)
 
-    def get_filter(self, channel, lp_name):
+    def get_filter(self, channel, filter_name):
         """
         get the lowpass filter for the given channel and lowpass value
 
@@ -149,10 +167,14 @@ class RXCalibration:
         :rtype: TYPE
 
         """
+        try:
+            filter_name = int(filter_name)
+        except ValueError:
+            pass
 
         try:
-            return getattr(self, channel)[int(lp_name)]
+            return getattr(self, channel)[filter_name]
         except AttributeError:
             raise AttributeError(f"Could not find {channel}")
         except KeyError:
-            raise KeyError(f"Could not find lowpass filter {lp_name}")
+            raise KeyError(f"Could not find lowpass filter {filter_name}")

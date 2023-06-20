@@ -17,7 +17,7 @@ from pathlib import Path
 from mt_metadata.timeseries import Station
 
 from mth5.utils.mth5_logger import setup_logger
-from mth5.utils.helpers import read_json_to_object
+from .helpers import read_json_to_object
 
 # =============================================================================
 
