@@ -36,6 +36,8 @@ class TestReadPhoenixContinuous(unittest.TestCase):
         )
         self.original_data = self.original.read()
 
+        self.rxcal_fn = Path(__file__).parent.joinpath("example_rxcal.json")
+
         self.maxDiff = None
 
     def test_readers_match(self):
@@ -138,7 +140,7 @@ class TestReadPhoenixContinuous(unittest.TestCase):
                     self.assertEqual(original_value, new_value)
 
     def test_to_channel_ts(self):
-        ch_ts = self.phx_obj.to_channel_ts()
+        ch_ts = self.phx_obj.to_channel_ts(rxcal_fn=self.rxcal_fn)
 
         ## Need to test filters eventually
         ch_metadata = OrderedDict(
@@ -147,7 +149,7 @@ class TestReadPhoenixContinuous(unittest.TestCase):
                 ("component", "h2"),
                 ("data_quality.rating.value", 0),
                 ("filter.applied", [False]),
-                ("filter.name", []),
+                ("filter.name", ["mtu-5c_rmt03-j_666_h2_10000hz_lowpass"]),
                 ("location.elevation", 181.12939453125),
                 ("location.latitude", 43.696022033691406),
                 ("location.longitude", -79.39376831054688),
@@ -176,6 +178,21 @@ class TestReadPhoenixContinuous(unittest.TestCase):
                     self.assertEqual(
                         value, ch_ts.channel_metadata.get_attr_from_name(key)
                     )
+        with self.subTest("channel_response_filter_length"):
+            self.assertEqual(1, len(ch_ts.channel_response_filter.filters_list))
+
+        with self.subTest("channel_response_filter_frequency_shape"):
+            self.assertEqual(
+                (69,),
+                ch_ts.channel_response_filter.filters_list[0].frequencies.shape,
+            )
 
         with self.subTest("Channel Size"):
             self.assertEqual(54750, ch_ts.ts.size)
+
+
+# =============================================================================
+# run
+# =============================================================================
+if __name__ == "__main__":
+    unittest.main()
