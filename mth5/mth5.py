@@ -366,9 +366,7 @@ class MTH5:
             self.logger.error(msg)
             raise ValueError(msg)
         if value not in ACCEPTABLE_FILE_TYPES:
-            msg = (
-                f"Input file.type is not valid, must be {ACCEPTABLE_FILE_TYPES}"
-            )
+            msg = f"Input file.type is not valid, must be {ACCEPTABLE_FILE_TYPES}"
             self.logger.error(msg)
             raise ValueError(msg)
         self.__file_type = value
@@ -864,10 +862,10 @@ class MTH5:
         mth5_type = referenced.attrs["mth5_type"].lower()
 
         try:
+            group = ref_dict[mth5_type](referenced)
             if mth5_type == "transferfunction":
-                group = ref_dict[mth5_type](referenced)
                 return group.to_tf_object()
-            return ref_dict[mth5_type](referenced)
+            return group
         except KeyError:
             self.logger.info(
                 f"Could not identify the MTH5 type {mth5_type}, "
@@ -1409,7 +1407,9 @@ class MTH5:
                 f"Could not find channel, {run_path}/{channel_name}"
             )
 
-    def remove_channel(self, station_name, run_name, channel_name, survey=None):
+    def remove_channel(
+        self, station_name, run_name, channel_name, survey=None
+    ):
         """
         Convenience function to remove a channel using
         ``mth5.stations_group.get_station().get_run().remove_channel()``
