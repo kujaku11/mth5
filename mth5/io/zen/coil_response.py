@@ -32,6 +32,12 @@ class CoilResponse:
         if calibration_file:
             self.read_antenna_file()
 
+        self._extrapolate_values = {
+            "low": {"frequency": 1e-10, "amplitude": 1e-8, "phase": np.pi / 2},
+            "high": {"frequency": 1e5, "amplitude": 1e-4, "phase": np.pi / 6},
+        }
+        self._low_frequency_cutoff = 250
+
     @property
     def calibration_file(self):
         return self._calibration_fn
@@ -114,7 +120,7 @@ class CoilResponse:
                 self.coil_calibrations[ant][ff] = (f * 6, amp6, phase6)
                 self.coil_calibrations[ant][ff + 1] = (f * 8, amp8, phase8)
 
-    def get_coil_response_fap(self, coil_number):
+    def get_coil_response_fap(self, coil_number, extrapolate=True):
         """
         Read an amtant.cal file provided by Zonge.
 
@@ -146,8 +152,9 @@ class CoilResponse:
                 self.calibration_file.stat().st_mtime
             ).isoformat()
 
+            if extrapolate:
+                return self.extrapolate(fap)
             return fap
-
         else:
             self.logger.error(
                 f"Could not find {coil_number} in {self.calibration_file}"
@@ -155,6 +162,49 @@ class CoilResponse:
             raise KeyError(
                 f"Could not find {coil_number} in {self.calibration_file}"
             )
+
+    def extrapolate(self, fap):
+        """
+        Extrapolate assuming log-linear relationship
+
+        :param fap: DESCRIPTION
+        :type fap: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if self._low_frequency_cutoff is not None:
+            index = np.where(
+                fap.frequencies < 1.0 / self._low_frequency_cutoff
+            )[0][-1]
+        else:
+            index = 0
+
+        new_fap = fap.copy()
+        new_fap.frequencies = np.append(
+            np.append(
+                [self._extrapolate_values["low"]["frequency"]],
+                fap.frequencies[index:],
+            ),
+            self._extrapolate_values["high"]["frequency"],
+        )
+        new_fap.amplitudes = np.append(
+            np.append(
+                [self._extrapolate_values["low"]["amplitude"]],
+                fap.amplitudes[index:],
+            ),
+            self._extrapolate_values["high"]["amplitude"],
+        )
+        new_fap.phases = np.append(
+            np.append(
+                [self._extrapolate_values["low"]["phase"]],
+                fap.phases[index:],
+            ),
+            self._extrapolate_values["high"]["phase"],
+        )
+
+        return new_fap
 
     def has_coil_number(self, coil_number):
         """
