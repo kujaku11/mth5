@@ -114,7 +114,9 @@ class ChannelDataset:
         if dataset_metadata is not None:
             if not isinstance(dataset_metadata, type(self.metadata)):
                 msg = "metadata must be type metadata.%s not %s"
-                self.logger.error(msg, self._class_name, type(dataset_metadata))
+                self.logger.error(
+                    msg, self._class_name, type(dataset_metadata)
+                )
                 raise MTH5Error(
                     msg % (self._class_name, type(dataset_metadata))
                 )
@@ -126,6 +128,9 @@ class ChannelDataset:
             # write out metadata to make sure that its in the file.
             if write_metadata:
                 self.write_metadata()
+        else:
+            self.read_metadata()
+
         # if the attrs don't have the proper metadata keys yet write them
         if not "mth5_type" in list(self.hdf5_dataset.attrs.keys()):
             self.write_metadata()
@@ -171,7 +176,9 @@ class ChannelDataset:
             lines = ["Channel {0}:".format(self._class_name)]
             lines.append("-" * (len(lines[0]) + 2))
             info_str = "\t{0:<18}{1}"
-            lines.append(info_str.format("component:", self.metadata.component))
+            lines.append(
+                info_str.format("component:", self.metadata.component)
+            )
             lines.append(info_str.format("data type:", self.metadata.type))
             lines.append(
                 info_str.format("data format:", self.hdf5_dataset.dtype)
@@ -182,7 +189,9 @@ class ChannelDataset:
             lines.append(
                 info_str.format("start:", self.metadata.time_period.start)
             )
-            lines.append(info_str.format("end:", self.metadata.time_period.end))
+            lines.append(
+                info_str.format("end:", self.metadata.time_period.end)
+            )
             lines.append(
                 info_str.format("sample rate:", self.metadata.sample_rate)
             )
@@ -776,7 +785,9 @@ class ChannelDataset:
         """
 
         if not isinstance(channel_ts_obj, ChannelTS):
-            msg = f"Input must be a ChannelTS object not {type(channel_ts_obj)}"
+            msg = (
+                f"Input must be a ChannelTS object not {type(channel_ts_obj)}"
+            )
             self.logger.error(msg)
             raise TypeError(msg)
         if how == "replace":
@@ -921,8 +932,12 @@ class ChannelDataset:
                     self.hdf5_dataset.parent.parent.attrs["id"],
                     self.hdf5_dataset.parent.attrs["id"],
                     self.hdf5_dataset.parent.parent.attrs["location.latitude"],
-                    self.hdf5_dataset.parent.parent.attrs["location.longitude"],
-                    self.hdf5_dataset.parent.parent.attrs["location.elevation"],
+                    self.hdf5_dataset.parent.parent.attrs[
+                        "location.longitude"
+                    ],
+                    self.hdf5_dataset.parent.parent.attrs[
+                        "location.elevation"
+                    ],
                     self.metadata.component,
                     self.metadata.time_period.start,
                     self.metadata.time_period.end,

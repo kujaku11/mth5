@@ -47,7 +47,7 @@ jobs:
       shell: bash
       run: |
         source activate mth5-test
-        pytest -v --cov=./ --cov-report=xml --cov=mth5
+        pytest -rA --cov=./ --cov-report=xml --cov=mth5
         
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v1

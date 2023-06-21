@@ -26,8 +26,6 @@ from mt_metadata.timeseries.stationxml import XMLInventoryMTExperiment
 from mth5.mth5 import MTH5
 from mth5.timeseries import RunTS
 
-# =============================================================================
-
 
 class FDSN:
     def __init__(self, client="IRIS", mth5_version="0.2.0", **kwargs):
@@ -52,6 +50,9 @@ class FDSN:
         for key, value in kwargs.items():
             setattr(self, key, value)
 
+        # ivars
+        self._streams = None
+
     def _validate_dataframe(self, df):
         if not isinstance(df, pd.DataFrame):
             if isinstance(df, (str, Path)):
@@ -61,18 +62,192 @@ class FDSN:
                 df = pd.read_csv(fn)
                 df = df.fillna("")
             else:
-                raise ValueError(
-                    f"Input must be a pandas.Dataframe not {type(df)}"
-                )
+                raise ValueError(f"Input must be a pandas.Dataframe not {type(df)}")
         if df.columns.to_list() != self.request_columns:
             raise ValueError(
                 f"column names in file {df.columns} are not the expected {self.request_columns}"
             )
         return df
 
-    def make_mth5_from_fdsn_client(
-        self, df, path=None, client=None, interact=False
-    ):
+    @property
+    def run_list_ne_stream_intervals_message(self):
+        print(
+            "More or less runs have been requested by the user "
+            + "than are defined in the metadata. Runs will be "
+            + "defined but only the requested run extents contain "
+            + "time series data "
+            + "based on the users request."
+        )
+
+    def get_run_list_from_station_id(self, m, station_id, survey_id=None):
+        """
+        ignored_groups created to address issue #153.  This might be better placed
+        closer to the core of mth5.
+
+        Parameters
+        ----------
+        m
+        station_id
+
+        Returns
+        -------
+        run_list: list of strings
+        """
+        ignored_groups = [
+            "Fourier_Coefficients",
+            "Transfer_Functions",
+        ]
+        run_list = m.get_station(station_id, survey_id).groups_list
+        run_list = [x for x in run_list if x not in ignored_groups]
+        return run_list
+
+    def stream_boundaries(self, streams):
+        """
+
+        Parameters
+        ----------
+        streams: obspy.core.stream.Stream
+
+        Returns
+        -------
+
+        """
+        start_times = [tr.stats.starttime.isoformat() for tr in streams]
+        start_times = sorted(list(set(start_times)))
+        end_times = [tr.stats.endtime.isoformat() for tr in streams]
+        end_times = sorted(list(set(end_times)))
+        if len(start_times) != len(end_times):
+            raise ValueError(
+                f"Do not have the same number of start {len(start_times)}"
+                f" and end times {len(end_times)} from streams"
+            )
+        start_times = [UTCDateTime(x) for x in start_times]
+        end_times = [UTCDateTime(x) for x in end_times]
+        return start_times, end_times
+
+    def get_station_streams(self, station_id):
+        return self._streams.select(station=station_id)
+
+    def get_run_group(self, mth5_obj_or_survey, station_id, run_id):
+        """
+        This method is key to merging wrangle_runs_into_containers_v1 and
+        wrangle_runs_into_containers_v2.
+        Because a v1 mth5 object can get a survey group with the same method as can a v2 survey_group
+
+        Thus we can replace
+        run_group = m.stations_group.get_station(station_id).add_run(run_id)
+        &
+        run_group = survey_group.stations_group.get_station(station_id).add_run(run_id)
+        with
+        run_group = mth5_obj_or_survey.stations_group.get_station(station_id).add_run(run_id)
+        Parameters
+        ----------
+        mth5_obj_or_survey: mth5.mth5.MTH5 or mth5.groups.survey.SurveyGroup
+
+        Returns
+        -------
+
+        """
+        run_group = mth5_obj_or_survey.stations_group.get_station(station_id).add_run(
+            run_id
+        )
+        return run_group
+
+    def pack_stream_into_run_group(self, run_group, run_stream):
+        """"""
+        run_ts_obj = RunTS()
+        run_ts_obj.from_obspy_stream(run_stream, run_group.metadata)
+        run_group.from_runts(run_ts_obj)
+        return
+
+    def run_timings_match_stream_timing(self, run_group, stream_start, stream_end):
+        """
+        Checks start and end times in the run.
+        Compares start and end times of runs to start and end times of traces.
+        If True, will packs runs based on time spans.
+
+        Parameters
+        ----------
+        run_group
+        stream_start
+        stream_end
+
+        Returns
+        -------
+
+        """
+        streams_and_run_timings_match = False
+        run_start = run_group.metadata.time_period.start
+        run_end = run_group.metadata.time_period.end
+        cond1 = stream_start >= UTCDateTime(run_start)
+        cond2 = stream_end <= UTCDateTime(run_end)
+        if cond1 and cond2:  # paired up
+            streams_and_run_timings_match = True
+        return streams_and_run_timings_match
+
+    def wrangle_runs_into_containers(self, m, station_id, survey_group=None):
+        """
+        Note 1: There used to be two separate functions for this, but now there is one
+        run_group_source is defined as either m or survey_group depending on v0.1.0
+        or 0.2.0
+
+        Note 2: If/elif/elif/else Logic:
+        The strategy is to add the group first. This will get the already filled in
+        metadata to update the run_ts_obj. Then get streams an add existing metadata.
+
+
+        Parameters
+        ----------
+        m
+        streams
+        station_id
+        survey_group
+
+        Returns
+        -------
+
+        """
+        if survey_group is not None:
+            survey_id = survey_group.metadata.id
+            run_group_source = survey_group
+        else:
+            survey_id = None
+            run_group_source = m
+        # get the streams for the given station
+        msstreams = self.get_station_streams(station_id)
+        trace_start_times, trace_end_times = self.stream_boundaries(msstreams)
+        run_list = self.get_run_list_from_station_id(m, station_id, survey_id=survey_id)
+        num_streams = len(trace_start_times)
+
+        # See Note 2
+        if len(run_list) == num_streams:
+            for run_id, start, end in zip(run_list, trace_start_times, trace_end_times):
+                run_group = self.get_run_group(run_group_source, station_id, run_id)
+                run_stream = msstreams.slice(start, end)
+                self.pack_stream_into_run_group(run_group, run_stream)
+        elif len(run_list) == 1:
+            for run_id, times in enumerate(zip(trace_start_times, trace_end_times), 1):
+                start = times[0]
+                end = times[1]
+                run_id = f"{run_id:03}"
+                run_group = self.get_run_group(run_group_source, station_id, run_id)
+                run_stream = msstreams.slice(start, end)
+                self.pack_stream_into_run_group(run_group, run_stream)
+        elif len(run_list) != num_streams:
+            self.run_list_ne_stream_intervals_message
+            for run_id, start, end in zip(run_list, trace_start_times, trace_end_times):
+                for run in run_list:
+                    run_group = self.get_run_group(run_group_source, station_id, run)
+                    if self.run_timings_match_stream_timing(run_group, start, end):
+                        run_stream = msstreams.slice(start, end)
+                        self.pack_stream_into_run_group(run_group, run_stream)
+                    else:
+                        continue
+        else:
+            raise ValueError("Cannot add Run for some reason.")
+        return
+
+    def make_mth5_from_fdsn_client(self, df, path=None, client=None, interact=False):
         """
         Make an MTH5 file from an FDSN data center
 
@@ -118,9 +293,7 @@ class FDSN:
         unique_list = self.get_unique_networks_and_stations(df)
         if self.mth5_version in ["0.1.0"]:
             if len(unique_list) != 1:
-                raise AttributeError(
-                    "MTH5 supports one survey/network per container."
-                )
+                raise AttributeError("MTH5 supports one survey/network per container.")
         file_name = path.joinpath(self.make_filename(df))
 
         # initiate MTH5 file
@@ -136,6 +309,8 @@ class FDSN:
 
         # read in inventory and streams
         inv, streams = self.get_inventory_from_df(df, self.client)
+        self._streams = streams
+
         # translate obspy.core.Inventory to an mt_metadata.timeseries.Experiment
         translator = XMLInventoryMTExperiment()
         experiment = translator.xml_to_mt(inv)
@@ -147,129 +322,14 @@ class FDSN:
         m.from_experiment(experiment)
         if self.mth5_version in ["0.1.0"]:
             for station_id in unique_list[0]["stations"]:
-                # get the streams for the given station
-                msstreams = streams.select(station=station_id)
-                trace_start_times = sorted(
-                    list(
-                        set(
-                            [
-                                tr.stats.starttime.isoformat()
-                                for tr in msstreams
-                            ]
-                        )
-                    )
-                )
-                trace_end_times = sorted(
-                    list(
-                        set([tr.stats.endtime.isoformat() for tr in msstreams])
-                    )
-                )
-                if len(trace_start_times) != len(trace_end_times):
-                    raise ValueError(
-                        f"Do not have the same number of start {len(trace_start_times)}"
-                        f" and end times {len(trace_end_times)} from streams"
-                    )
-                run_list = m.get_station(station_id).groups_list
+                self.wrangle_runs_into_containers(m, station_id, survey_group=None)
 
-                n_times = len(trace_start_times)
-
-                # adding logic if there are already runs filled in
-                if len(run_list) == n_times:
-                    for run_id, start, end in zip(
-                        run_list, trace_start_times, trace_end_times
-                    ):
-                        # add the group first this will get the already filled in
-                        # metadata to update the run_ts_obj.
-                        run_group = m.stations_group.get_station(
-                            station_id
-                        ).add_run(run_id)
-                        # then get the streams an add existing metadata
-                        run_stream = msstreams.slice(
-                            UTCDateTime(start), UTCDateTime(end)
-                        )
-                        run_ts_obj = RunTS()
-                        run_ts_obj.from_obspy_stream(
-                            run_stream, run_group.metadata
-                        )
-                        run_group.from_runts(run_ts_obj)
-                # if there is just one run
-                elif len(run_list) == 1:
-                    if n_times > 1:
-                        for run_id, times in enumerate(
-                            zip(trace_start_times, trace_end_times), 1
-                        ):
-                            run_group = m.stations_group.get_station(
-                                station_id
-                            ).add_run(f"{run_id:03}")
-                            run_stream = msstreams.slice(
-                                UTCDateTime(times[0]), UTCDateTime(times[1])
-                            )
-                            run_ts_obj = RunTS()
-                            run_ts_obj.from_obspy_stream(
-                                run_stream, run_group.metadata
-                            )
-                            run_group.from_runts(run_ts_obj)
-                    elif n_times == 1:
-                        run_group = m.stations_group.get_station(
-                            station_id
-                        ).add_run(run_list[0])
-                        run_stream = msstreams.slice(
-                            UTCDateTime(times[0]), UTCDateTime(times[1])
-                        )
-                        run_ts_obj = RunTS()
-                        run_ts_obj.from_obspy_stream(
-                            run_stream, run_group.metadata
-                        )
-                        run_group.from_runts(run_ts_obj)
-                elif len(run_list) != n_times:
-                    print(
-                        "More or less runs have been requested by the user "
-                        + "than are defined in the metadata. Runs will be "
-                        + "defined but only the requested run extents contain "
-                        + "time series data "
-                        + "based on the users request."
-                    )
-                    for run_id, start, end in zip(
-                        run_list, trace_start_times, trace_end_times
-                    ):
-
-                        # add the group first this will get the already filled in
-                        # metadata
-                        for run in run_list:
-                            run_group = m.stations_group.get_station(
-                                station_id
-                            ).get_run(run)
-                            # Chekcs for start and end times of runs
-                            run_start = run_group.metadata.time_period.start
-                            run_end = run_group.metadata.time_period.end
-                            # Create if statment that checks for start and end
-                            # times in the run.
-                            # Compares start and end times of runs
-                            # to start and end times of traces. Packs runs based on
-                            # time spans
-                            if UTCDateTime(start) >= UTCDateTime(
-                                run_start
-                            ) and UTCDateTime(end) <= UTCDateTime(run_end):
-                                run_stream = msstreams.slice(
-                                    UTCDateTime(start), UTCDateTime(end)
-                                )
-                                run_ts_obj = RunTS()
-                                run_ts_obj.from_obspy_stream(
-                                    run_stream, run_group.metadata
-                                )
-                                run_group.from_runts(run_ts_obj)
-                            else:
-                                continue
-                else:
-                    raise ValueError("Cannot add Run for some reason.")
         # Version 0.2.0 has the ability to store multiple surveys
         elif self.mth5_version in ["0.2.0"]:
-            # mt_metadata translates the mt survey id into the survey id
-            # if it is provided which will be different from the fdsn network
-            # id, so we need to map the fdsn networks onto the survey id.
-            survey_map = dict(
-                [(s.fdsn.network, s.id) for s in experiment.surveys]
-            )
+            # mt_metadata translates mt survey id into survey id if it (which?) is
+            # provided which will be different from the fdsn network id, so we need
+            # to map the fdsn networks onto the survey id.
+            survey_map = dict([(s.fdsn.network, s.id) for s in experiment.surveys])
 
             for survey_dict in unique_list:
                 # get the mt survey id that maps to the fdsn network
@@ -278,144 +338,15 @@ class FDSN:
 
                 survey_group = m.get_survey(survey_id)
                 for station_id in survey_dict["stations"]:
-                    # get the streams for the given station
-                    msstreams = streams.select(station=station_id)
-                    trace_start_times = sorted(
-                        list(
-                            set(
-                                [
-                                    tr.stats.starttime.isoformat()
-                                    for tr in msstreams
-                                ]
-                            )
-                        )
+                    self.wrangle_runs_into_containers(
+                        m, station_id, survey_group=survey_group
                     )
-                    trace_end_times = sorted(
-                        list(
-                            set(
-                                [
-                                    tr.stats.endtime.isoformat()
-                                    for tr in msstreams
-                                ]
-                            )
-                        )
-                    )
-                    if len(trace_start_times) != len(trace_end_times):
-                        raise ValueError(
-                            f"Do not have the same number of start {len(trace_start_times)}"
-                            f" and end times {len(trace_end_times)} from streams"
-                        )
-                    run_list = m.get_station(station_id, survey_id).groups_list
-                    n_times = len(trace_start_times)
 
-                    # adding logic if there are already runs filled in
-                    if len(run_list) == n_times:
-                        for run_id, start, end in zip(
-                            run_list, trace_start_times, trace_end_times
-                        ):
-                            # add the group first this will get the already filled in
-                            # metadata to update the run_ts_obj.
-                            run_group = (
-                                survey_group.stations_group.get_station(
-                                    station_id
-                                ).add_run(run_id)
-                            )
-
-                            # then get the streams an add existing metadata
-                            run_stream = msstreams.slice(
-                                UTCDateTime(start), UTCDateTime(end)
-                            )
-                            run_ts_obj = RunTS()
-                            run_ts_obj.from_obspy_stream(
-                                run_stream, run_group.metadata
-                            )
-                            run_group.from_runts(run_ts_obj)
-                    # if there is just one run
-                    elif len(run_list) == 1:
-                        if n_times > 1:
-                            for run_id, times in enumerate(
-                                zip(trace_start_times, trace_end_times), 1
-                            ):
-                                run_group = (
-                                    survey_group.stations_group.get_station(
-                                        station_id
-                                    ).add_run(f"{run_id:03}")
-                                )
-                                run_stream = msstreams.slice(
-                                    UTCDateTime(times[0]),
-                                    UTCDateTime(times[1]),
-                                )
-                                run_ts_obj = RunTS()
-                                run_ts_obj.from_obspy_stream(
-                                    run_stream, run_group.metadata
-                                )
-                                run_group.from_runts(run_ts_obj)
-                        elif n_times == 1:
-                            run_group = (
-                                survey_group.stations_group.get_station(
-                                    station_id
-                                ).add_run(run_list[0])
-                            )
-                            run_stream = msstreams.slice(
-                                UTCDateTime(times[0]), UTCDateTime(times[1])
-                            )
-                            run_ts_obj = RunTS()
-                            run_ts_obj.from_obspy_stream(
-                                run_stream, run_group.metadata
-                            )
-                            run_group.from_runts(run_ts_obj)
-                    elif len(run_list) != n_times:
-                        print(
-                            "More or less runs have been requested by the user "
-                            + "than are defined in the metadata. Runs will be "
-                            + "defined but only the requested run extents contain "
-                            + "time series data "
-                            + "based on the users request."
-                        )
-                        for run_id, start, end in zip(
-                            run_list, trace_start_times, trace_end_times
-                        ):
-
-                            # add the group first this will get the already filled in
-                            # metadata
-                            for run in run_list:
-                                run_group = (
-                                    survey_group.stations_group.get_station(
-                                        station_id
-                                    ).get_run(run)
-                                )
-
-                                # Chekcs for start and end times of runs
-                                run_start = (
-                                    run_group.metadata.time_period.start
-                                )
-                                run_end = run_group.metadata.time_period.end
-                                # Create if statment that checks for start and end
-                                # times in the run.
-                                # Compares start and end times of runs
-                                # to start and end times of traces. Packs runs based on
-                                # time spans
-                                if UTCDateTime(start) >= UTCDateTime(
-                                    run_start
-                                ) and UTCDateTime(end) <= UTCDateTime(run_end):
-                                    run_stream = msstreams.slice(
-                                        UTCDateTime(start), UTCDateTime(end)
-                                    )
-                                    run_ts_obj = RunTS()
-                                    run_ts_obj.from_obspy_stream(
-                                        run_stream, run_group.metadata
-                                    )
-                                    run_group.from_runts(run_ts_obj)
-                                else:
-                                    continue
-                    else:
-                        raise ValueError("Cannot add Run for some reason.")
-        if not interact:
-            m.close_mth5()
-
-            return file_name
         if interact:
             return m
+        else:
+            m.close_mth5()
+            return file_name
 
     def get_inventory_from_df(self, df, client=None, data=True):
         """
@@ -529,9 +460,7 @@ class FDSN:
                             channel=ch_row.channel,
                             level="response",
                         )
-                        returned_chan = (
-                            cha_inv.networks[0].stations[0].channels[0]
-                        )
+                        returned_chan = cha_inv.networks[0].stations[0].channels[0]
                         returned_sta.channels.append(returned_chan)
 
                         # -----------------------------
@@ -595,13 +524,11 @@ class FDSN:
 
         """
         unique_list = []
-        net_list = df["network"].unique()
-        for network in net_list:
+        networks = df["network"].unique()
+        for network in networks:
             network_dict = {
                 "network": network,
-                "stations": df[df.network == network]
-                .station.unique()
-                .tolist(),
+                "stations": df[df.network == network].station.unique().tolist(),
             }
             unique_list.append(network_dict)
         return unique_list
@@ -620,12 +547,7 @@ class FDSN:
         unique_list = self.get_unique_networks_and_stations(df)
 
         return (
-            "_".join(
-                [
-                    f"{d['network']}_{'_'.join(d['stations'])}"
-                    for d in unique_list
-                ]
-            )
+            "_".join([f"{d['network']}_{'_'.join(d['stations'])}" for d in unique_list])
             + ".h5"
         )
 
