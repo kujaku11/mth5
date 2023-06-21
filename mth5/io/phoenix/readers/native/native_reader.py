@@ -272,7 +272,7 @@ class NativeReader(TSReaderBase):
         self.last_frame += num_frames
         return True
 
-    def to_channel_ts(self):
+    def to_channel_ts(self, rxcal_fn=None, scal_fn=None):
         """
         convert to a ChannelTS object
 
@@ -281,11 +281,14 @@ class NativeReader(TSReaderBase):
 
         """
         data, footer = self.read()
-        ch_metadata = self.channel_metadata()
+        ch_metadata = self.channel_metadata
         return ChannelTS(
             channel_type=ch_metadata.type,
             data=data,
             channel_metadata=ch_metadata,
-            run_metadata=self.run_metadata(),
-            station_metadata=self.station_metadata(),
+            run_metadata=self.run_metadata,
+            station_metadata=self.station_metadata,
+            channel_response_filter=self.get_channel_response_filter(
+                rxcal_fn=rxcal_fn, scal_fn=scal_fn
+            ),
         )
