@@ -30,6 +30,8 @@ class TestReadPhoenixContinuous(unittest.TestCase):
         )
 
         self.segment = self.phx_obj.read_segment()
+
+        self.rxcal_fn = Path(__file__).parent.joinpath("example_rxcal.json")
         self.maxDiff = None
 
     def test_subheader(self):
@@ -154,7 +156,7 @@ class TestReadPhoenixContinuous(unittest.TestCase):
                     self.assertEqual(original_value, new_value)
 
     def test_to_channel_ts(self):
-        ch_ts = self.phx_obj.to_channel_ts()
+        ch_ts = self.phx_obj.to_channel_ts(rxcal_fn=self.rxcal_fn)
 
         ch_metadata = OrderedDict(
             [
@@ -162,7 +164,7 @@ class TestReadPhoenixContinuous(unittest.TestCase):
                 ("component", "h2"),
                 ("data_quality.rating.value", 0),
                 ("filter.applied", [False]),
-                ("filter.name", []),
+                ("filter.name", ["mtu-5c_rmt03-j_666_h2_10000hz_lowpass"]),
                 ("location.elevation", 140.10263061523438),
                 ("location.latitude", 43.69625473022461),
                 ("location.longitude", -79.39364624023438),
@@ -191,6 +193,15 @@ class TestReadPhoenixContinuous(unittest.TestCase):
                     self.assertEqual(
                         value, ch_ts.channel_metadata.get_attr_from_name(key)
                     )
+
+        with self.subTest("channel_response_filter_length"):
+            self.assertEqual(1, len(ch_ts.channel_response_filter.filters_list))
+
+        with self.subTest("channel_response_filter_frequency_shape"):
+            self.assertEqual(
+                (69,),
+                ch_ts.channel_response_filter.filters_list[0].frequencies.shape,
+            )
 
         with self.subTest("Channel Size"):
             self.assertEqual(48000, ch_ts.ts.size)

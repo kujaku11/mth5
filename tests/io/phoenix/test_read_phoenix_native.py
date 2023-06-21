@@ -35,6 +35,8 @@ class TestReadPhoenixNative(unittest.TestCase):
             r"c:\Users\jpeacock\OneDrive - DOI\mt\phoenix_example_data\Sample Data\10128_2021-04-27-025909\0\10128_60877DFD_0_00000001.bin"
         )
         self.original_data = self.original.read_frames(10)
+
+        self.rxcal_fn = Path(__file__).parent.joinpath("example_rxcal.json")
         self.maxDiff = None
 
     def test_readers_match(self):
@@ -144,7 +146,7 @@ class TestReadPhoenixNative(unittest.TestCase):
                     self.assertEqual(original_value, new_value)
 
     def test_to_channel_ts(self):
-        ch_ts = self.phx_obj.to_channel_ts()
+        ch_ts = self.phx_obj.to_channel_ts(rxcal_fn=self.rxcal_fn)
 
         ch_metadata = OrderedDict(
             [
@@ -152,7 +154,7 @@ class TestReadPhoenixNative(unittest.TestCase):
                 ("component", "h2"),
                 ("data_quality.rating.value", 0),
                 ("filter.applied", [False]),
-                ("filter.name", []),
+                ("filter.name", ["mtu-5c_rmt03-j_666_h2_10000hz_lowpass"]),
                 ("location.elevation", 70.11294555664062),
                 ("location.latitude", 43.69640350341797),
                 ("location.longitude", -79.3936996459961),
@@ -181,6 +183,15 @@ class TestReadPhoenixNative(unittest.TestCase):
                     self.assertEqual(
                         value, ch_ts.channel_metadata.get_attr_from_name(key)
                     )
+
+        with self.subTest("channel_response_filter_length"):
+            self.assertEqual(1, len(ch_ts.channel_response_filter.filters_list))
+
+        with self.subTest("channel_response_filter_frequency_shape"):
+            self.assertEqual(
+                (69,),
+                ch_ts.channel_response_filter.filters_list[0].frequencies.shape,
+            )
 
         with self.subTest("Channel Size"):
             self.assertEqual(1440000, ch_ts.ts.size)
