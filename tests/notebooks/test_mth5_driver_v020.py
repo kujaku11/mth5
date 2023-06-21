@@ -206,31 +206,33 @@ print(cas04.metadata.location.declination)
 
 # In[ ]:
 
-
-ex = mth5_object.from_reference(ch_df.iloc[0].hdf5_reference).to_channel_ts()
-print(ex)
-
-
-# In[ ]:
-
-
-ex.channel_metadata
-
-
-# ## Calibrate time series data
-# Most data loggers output data in digital counts.  Then a series of filters that represent the various instrument responses are applied to get the data into physical units.  The data can then be analyzed and processed. Commonly this is done during the processing step, but it is important to be able to look at time series data in physical units.  Here we provide a `remove_instrument_response` method in the `ChananelTS` object.  Here's an example:
-
-# In[ ]:
-
-
-print(ex.channel_response_filter)
-ex.channel_response_filter.plot_response(np.logspace(-4, 1, 50))
-
-
-# In[ ]:
-
-
-ex.remove_instrument_response(plot=True)
+try:
+    ex = mth5_object.from_reference(ch_df.iloc[0].hdf5_reference).to_channel_ts()
+    print(ex)
+    
+    
+    # In[ ]:
+    
+    
+    ex.channel_metadata
+    
+    
+    # ## Calibrate time series data
+    # Most data loggers output data in digital counts.  Then a series of filters that represent the various instrument responses are applied to get the data into physical units.  The data can then be analyzed and processed. Commonly this is done during the processing step, but it is important to be able to look at time series data in physical units.  Here we provide a `remove_instrument_response` method in the `ChananelTS` object.  Here's an example:
+    
+    # In[ ]:
+    
+    
+    print(ex.channel_response_filter)
+    ex.channel_response_filter.plot_response(np.logspace(-4, 1, 50))
+    
+    
+    # In[ ]:
+    
+    
+    ex.remove_instrument_response(plot=True)
+except ValueError as error:
+    print(error)
 
 
 # ## Have a look at a run
