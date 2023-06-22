@@ -197,17 +197,6 @@ class PhoenixClient:
                     )
                     for row in run_df.itertuples():
                         ch_ts = read_file(row.fn)
-                        ch_metadata = (
-                            phx_collection.receiver_metadata.get_ch_metadata(
-                                ch_ts.channel_metadata.channel_number
-                            )
-                        )
-                        # need to update the time period and sample rate as estimated from the data not the metadata
-                        ch_metadata.sample_rate = ch_ts.sample_rate
-                        ch_metadata.time_period.update(
-                            ch_ts.channel_metadata.time_period
-                        )
-                        ch_ts.channel_metadata.update(ch_metadata)
 
                         # add channel to the run group
                         ch_dataset = run_group.from_channel_ts(ch_ts)
@@ -219,6 +208,3 @@ class PhoenixClient:
 
             survey_group.update_survey_metadata()
             survey_group.write_metadata()
-
-
-m.close_mth5()
