@@ -55,7 +55,7 @@ class TestFCFromXarray(unittest.TestCase):
         self.station_group = self.m.add_station("mt01")
         self.fc_group = (
             self.station_group.fourier_coefficients_group.add_fc_group(
-                "default"
+                "processing_run_01"
             )
         )
         self.decimation_level = self.fc_group.add_decimation_level("3")
@@ -228,7 +228,7 @@ class TestFCFromXarray(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         self.m.close_mth5()
-        self.m.filename.unlink()
+        # self.m.filename.unlink()
 
 
 # =============================================================================
