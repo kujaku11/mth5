@@ -171,7 +171,7 @@ class TestFCFromXarray(unittest.TestCase):
                     fc_ch.metadata.sample_rate_window_step,
                     self.expected_window_step,
                 )
-            with self.subTest(f"{ch} window_step"):
+            with self.subTest(f"{ch} sr_decimation_level"):
                 self.assertEqual(
                     fc_ch.metadata.sample_rate_decimation_level,
                     self.expected_sr_decimation_level,
@@ -187,6 +187,43 @@ class TestFCFromXarray(unittest.TestCase):
                 self.assertTrue(
                     np.isclose(fc_ch.frequency, self.expected_frequency).all()
                 )
+
+    def test_to_xarray(self):
+        da = self.decimation_level.to_xarray()
+
+        self.assertEqual(da, self.ds)
+
+    def test_ch_to_xarray(self):
+        fc_ch = self.decimation_level.get_channel("ex")
+        ch_da = fc_ch.to_xarray()
+
+        with self.subTest("time"):
+            self.assertTrue((ch_da.time.values == self.expected_time).all())
+        with self.subTest("frequency"):
+            self.assertTrue(
+                np.isclose(ch_da.frequency, self.expected_frequency).all()
+            )
+        with self.subTest("name"):
+            self.assertTrue("ex", ch_da.name)
+
+        with self.subTest("ex start"):
+            self.assertEqual(
+                ch_da.attrs["time_period.start"], self.expected_start
+            )
+        with self.subTest("ex end"):
+            self.assertEqual(ch_da.attrs["time_period.end"], self.expected_end)
+        with self.subTest("ex window_step"):
+            self.assertEqual(
+                ch_da.attrs["sample_rate_window_step"],
+                self.expected_window_step,
+            )
+        with self.subTest("ex sr_decimation_level"):
+            self.assertEqual(
+                ch_da.attrs["sample_rate_decimation_level"],
+                self.expected_sr_decimation_level,
+            )
+        with self.subTest("ex shape"):
+            self.assertTupleEqual(ch_da.shape, self.expected_shape)
 
     @classmethod
     def tearDownClass(self):

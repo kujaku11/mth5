@@ -258,7 +258,7 @@ class FCDataset:
         return xr.DataArray(
             data=self.hdf5_dataset[()],
             dims=["frequency", "time"],
-            name=self.metadata.name,
+            name=self.metadata.component,
             coords=[
                 ("frequency", self.frequency),
                 ("time", self.time),

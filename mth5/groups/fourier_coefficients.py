@@ -272,6 +272,28 @@ class FCDecimationGroup(BaseGroup):
                     fc_metadata=ch_metadata,
                 )
 
+    def to_xarray(self, channels=None):
+        """
+        create an xarray dataset from the desired channels. If none grabs all
+        channels in the decimation level.
+
+        :param channels: DESCRIPTION, defaults to None
+        :type channels: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if channels is None:
+            channels = self.groups_list
+
+        ch_dict = {}
+        for ch in channels:
+            ch_ds = self.get_channel(ch)
+            ch_dict[ch] = ch_ds.to_xarray()
+
+        return xr.Dataset(ch_dict)
+
     def from_numpy_array(self, nd_array, ch_name):
         """
         assumes shape of (n_frequencies, n_windows) or
