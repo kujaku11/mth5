@@ -228,7 +228,7 @@ class TestFCFromXarray(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         self.m.close_mth5()
-        # self.m.filename.unlink()
+        self.m.filename.unlink()
 
 
 # =============================================================================
