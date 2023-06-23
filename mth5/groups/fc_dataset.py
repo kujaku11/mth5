@@ -17,10 +17,12 @@ import xarray as xr
 from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import to_numpy_type
 from mth5.utils.mth5_logger import setup_logger
+from mth5.timeseries.ts_helpers import make_dt_coordinates
 
 from mt_metadata.transfer_functions.processing.fourier_coefficients import (
     Channel,
 )
+
 
 # =============================================================================
 
@@ -178,6 +180,49 @@ class FCDataset:
             value = to_numpy_type(value)
             self.hdf5_dataset.attrs.create(key, value)
 
+    @property
+    def n_windows(self):
+        """number of time windows"""
+        return self.hdf5_dataset.shape[1]
+
+    @property
+    def time(self):
+        """
+        Time array that includes the start of each time window
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        return make_dt_coordinates(
+            self.metadata.time_period.start,
+            1.0 / self.metadata.sample_rate_window_step,
+            self.n_windows,
+            self.logger,
+        )
+
+    @property
+    def n_frequencies(self):
+        """number of frequencies (window size)"""
+        return self.hdf5_dataset.shape[0]
+
+    @property
+    def frequency(self):
+        """
+        frequency array dictated by window size and sample rate
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        return np.linspace(
+            0,
+            self.metadata.sample_rate_decimation_level / 2,
+            self.n_frequencies,
+        )
+
     def replace_dataset(self, new_data_array):
         """
         replace the entire dataset with a new one, nothing left behind
@@ -199,7 +244,7 @@ class FCDataset:
 
         self.hdf5_dataset[...] = new_data_array
 
-    def to_xarray(self, period):
+    def to_xarray(self):
         """
         :return: an xarray DataArray with appropriate metadata and the
          appropriate coordinates.
@@ -212,12 +257,11 @@ class FCDataset:
 
         return xr.DataArray(
             data=self.hdf5_dataset[()],
-            dims=["period", "output", "input"],
+            dims=["frequency", "time"],
             name=self.metadata.name,
             coords=[
-                ("period", period),
-                ("output", self.metadata.output_channels),
-                ("input", self.metadata.input_channels),
+                ("frequency", self.frequency),
+                ("time", self.time),
             ],
             attrs=self.metadata.to_dict(single=True),
         )
@@ -272,11 +316,19 @@ class FCDataset:
 
         loads from memory
         """
-
-        self.metadata.output_channels = data.coords["output"].values.tolist()
-        self.metadata.input_channels = data.coords["input"].values.tolist()
-        self.metadata.name = data.name
-        self.metadata.data_type = data.dtype.name
+        self.metadata.time_period.start = data.time[0].values
+        self.metadata.time_period.end = data.time[-1].values
+        self.metadata.sample_rate_decimation_level = (
+            data.coords["frequency"].values.max() * 2
+        )
+        self.metadata.sample_rate_window_step = np.median(
+            np.diff(data.coords["time"].values)
+        ) / np.timedelta64(1, "s")
+        self.metadata.component = data.name
+        try:
+            self.metadata.units = data.units
+        except AttributeError:
+            self.logger.debug("Could not find 'units' in xarray")
 
         self.write_metadata()
 

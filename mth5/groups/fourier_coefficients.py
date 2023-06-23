@@ -193,14 +193,6 @@ class FCDecimationGroup(BaseGroup):
 
     def __init__(self, group, decimation_level_metadata=None, **kwargs):
 
-        self._dtype = np.dtype(
-            [
-                ("time", "S32"),
-                ("frequency", float),
-                ("coefficient", complex),
-            ]
-        )
-
         super().__init__(
             group, group_metadata=decimation_level_metadata, **kwargs
         )
@@ -229,33 +221,17 @@ class FCDecimationGroup(BaseGroup):
             self.logger.error(msg, type(df))
             raise TypeError(msg % type(df))
 
-        array = np.zeros(df.shape[0], dtype=self._dtype)
-        array["time"] = df[time_key]
-        array["frequency"] = df[frequency_key]
-        array["coefficient"] = df[channel_key]
+        for col in df.columns:
+            df[col] = np.complex128(df[col])
+            xrds = df[col].to_xarray()
+            self.add_channel(col, fc_data=xrds.to_numpy())
 
-        return array
-
-    def from_xarray(
-        self,
-        data_array,
-        channel_key,
-        time_key="time",
-        frequency_key="frequency",
-    ):
+    def from_xarray(self, data_array):
         """
-         get information from an xarray
-
-         not sure if this will work for both data_array and dataset.
+        can input a dataarray or dataset
 
         :param data_array: DESCRIPTION
         :type data_array: TYPE
-        :param coefficient_key: DESCRIPTION
-        :type coefficient_key: TYPE
-        :param time_key: DESCRIPTION, defaults to "time"
-        :type time_key: TYPE, optional
-        :param frequency_key: DESCRIPTION, defaults to "frequency"
-        :type frequency_key: TYPE, optional
         :return: DESCRIPTION
         :rtype: TYPE
 
@@ -266,28 +242,44 @@ class FCDecimationGroup(BaseGroup):
             self.logger.error(msg, type(data_array))
             raise TypeError(msg % type(data_array))
 
-        array = np.zeros(data_array.shape[0], dtype=self._dtype)
-        array["time"] = data_array[time_key]
-        array["frequency"] = data_array[frequency_key]
-        array["coefficient"] = data_array[channel_key]
+        ch_metadata = Channel()
+        ch_metadata.time_period.start = data_array.time[0].values
+        ch_metadata.time_period.end = data_array.time[-1].values
+        ch_metadata.sample_rate_decimation_level = (
+            data_array.coords["frequency"].values.max() * 2
+        )
+        ch_metadata.sample_rate_window_step = np.median(
+            np.diff(data_array.coords["time"].values)
+        ) / np.timedelta64(1, "s")
+        try:
+            ch_metadata.units = data_array.units
+        except AttributeError:
+            self.logger.debug("Could not find 'units' in xarray")
 
-        return array
+        if isinstance(data_array, xr.DataArray):
+            self.add_channel(
+                data_array.name,
+                fc_data=data_array.to_numpy(),
+                fc_metadata=ch_metadata,
+            )
 
-    def from_numpy_array(
-        self, nd_array, channel_index=2, frequency_index=1, time_index=0
-    ):
+        else:
+            for ch in data_array.data_vars.keys():
+                ch_metadata.component = ch
+                self.add_channel(
+                    ch,
+                    fc_data=data_array[ch].to_numpy(),
+                    fc_metadata=ch_metadata,
+                )
+
+    def from_numpy_array(self, nd_array, ch_name):
         """
-        assumes shape of (n_samples, 3) and supplied index values identify
-        which column is which.
+        assumes shape of (n_frequencies, n_windows) or
+        (n_channels, n_frequencies, n_windows)
 
-        :param array: DESCRIPTION
-        :type array: TYPE
-        :param channel_index: DESCRIPTION, defaults to 2
-        :type channel_index: TYPE, optional
-        :param frequency_index: DESCRIPTION, defaults to 1
-        :type frequency_index: TYPE, optional
-        :param time_index: DESCRIPTION, defaults to 0
-        :type time_index: TYPE, optional
+        :param nd_array: DESCRIPTION
+        :type nd_array: TYPE
+        :param ch_name: name of channel(s)
         :return: DESCRIPTION
         :rtype: TYPE
 
@@ -298,63 +290,23 @@ class FCDecimationGroup(BaseGroup):
             self.logger.error(msg, type(nd_array))
             raise TypeError(msg % type(nd_array))
 
-        if nd_array.shape[0] == 3:
-            nd_array = nd_array.T
-        if len(nd_array.shape) > 2:
-            raise ValueError("input array must be shaped (n, 3)")
-
-        array = np.zeros(nd_array.shape[0], dtype=self._dtype)
-        array["time"] = nd_array[:, time_index]
-        array["frequency"] = nd_array[:, frequency_index]
-        array["coefficient"] = nd_array[:, channel_index]
-
-        return array
-
-    def from_numpy_structured_array(
-        self, st_array, channel_key, time_key="time", frequency_key="frequency"
-    ):
-        """
-
-        :param st_array: DESCRIPTION
-        :type st_array: TYPE
-        :param channel_key: DESCRIPTION
-        :type channel_key: TYPE
-        :param time_key: DESCRIPTION, defaults to "time"
-        :type time_key: TYPE, optional
-        :param frequency_key: DESCRIPTION, defaults to "frequency"
-        :type frequency_key: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        if not isinstance(st_array, (np.ndarray)):
-            msg = "Must input a numpy ndarray not %s"
-            self.logger.error(msg, type(st_array))
-            raise TypeError(msg % type(st_array))
-
-        if st_array.shape[0] == 3:
-            st_array = st_array.T
-        if len(st_array.shape) > 2:
-            raise ValueError("input array must be shaped (n, 3)")
-
-        array = np.zeros(st_array.shape[0], dtype=self._dtype)
-        array["time"] = st_array[time_key]
-        array["frequency"] = st_array[frequency_key]
-        array["coefficient"] = st_array[channel_key]
-
-        return array
+        if len(nd_array.shape[0]) == 3:
+            for index, ch in zip(nd_array.shape[0], ch_name):
+                self.add_channel(ch, fc_data=nd_array[index])
+        elif len(nd_array.shape) == 2:
+            self.add_channel(ch_name, fc_data=nd_array)
+        else:
+            raise ValueError(
+                "input array must be shaped (n_frequencies, n_windows)"
+            )
 
     def add_channel(
         self,
         fc_name,
         fc_data=None,
         fc_metadata=None,
-        max_shape=(None),
+        max_shape=(None, None),
         chunks=True,
-        channel_key=None,
-        frequency_key="frequency",
-        time_key="time",
         **kwargs,
     ):
         """
@@ -399,40 +351,9 @@ class FCDecimationGroup(BaseGroup):
             fc_metadata = Channel(name=fc_name)
 
         if fc_data is not None:
-            if channel_key is None:
-                channel_key = fc_name
-
-            if isinstance(fc_data, np.ndarray):
-                if fc_data.dtype.names is None:
-                    fc_data = self.from_numpy_array(
-                        fc_data,
-                        channel_index=channel_key,
-                        time_index=time_key,
-                        frequency_index=frequency_key,
-                    )
-                else:
-                    fc_data = self.from_numpy_structured_array(
-                        fc_data,
-                        channel_key,
-                        time_key=time_key,
-                        frequency_key=frequency_key,
-                    )
-            elif isinstance(fc_data, pd.DataFrame):
-                fc_data = self.from_dataframe(
-                    fc_data,
-                    channel_key,
-                    time_key=time_key,
-                    frequency_key=frequency_key,
-                )
-            elif isinstance(fc_data, (xr.Dataset, xr.DataArray)):
-                fc_data = self.from_xarray(
-                    fc_data,
-                    channel_key,
-                    time_key=time_key,
-                    frequency_key=frequency_key,
-                )
-
-            else:
+            if not isinstance(
+                fc_data, (np.ndarray, xr.DataArray, xr.Dataset, pd.DataFrame)
+            ):
                 msg = (
                     "Need to input a numpy.array, xarray.DataArray, "
                     "xr.Dataset, pd.DataFrame not %s"
@@ -441,14 +362,13 @@ class FCDecimationGroup(BaseGroup):
                 raise TypeError(msg % type(fc_data))
 
         else:
-
             chunks = True
-            fc_data = np.zeros((1), dtype=self._dtype)
+            fc_data = np.zeros((1, 1), dtype=complex)
         try:
             dataset = self.hdf5_group.create_dataset(
                 fc_name,
                 data=fc_data,
-                dtype=self._dtype,
+                dtype=complex,
                 chunks=chunks,
                 maxshape=max_shape,
                 **self.dataset_options,

@@ -12,30 +12,41 @@ from pathlib import Path
 import unittest
 import pandas as pd
 import numpy as np
+
 from mth5.mth5 import MTH5
+
+from mt_metadata.utils.mttime import MTime
 
 # =============================================================================
 fn_path = Path(__file__).parent
+csv_fn = fn_path.joinpath("test1_dec_level_3.csv")
 
 
-def create_nd_array(ch, n_samples):
-    nd_array = np.zeros(
-        n_samples,
-        dtype=[
-            ("time", "S32"),
-            ("frequency", float),
-            (ch, complex),
+def read_fc_csv(csv_name):
+    """
+    read csv to xarray
+
+    :param csv_name: DESCRIPTION
+    :type csv_name: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+    df = pd.read_csv(
+        csv_name,
+        index_col=[0, 1],
+        parse_dates=[
+            "time",
         ],
+        skipinitialspace=True,
     )
-    nd_array["time"] = pd.date_range(
-        "2020-01-01T00:00:00", periods=n_samples, freq="s"
-    )
-    nd_array["frequency"] = np.logspace(-5, 5, 50)
-    nd_array[ch] = np.arange(n_samples) + 1j * np.arange(n_samples)
-    return nd_array
+    for col in df.columns:
+        df[col] = np.complex128(df[col])
+
+    return df.to_xarray()
 
 
-class TestFC(unittest.TestCase):
+class TestFCFromXarray(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.m = MTH5()
@@ -47,19 +58,48 @@ class TestFC(unittest.TestCase):
                 "default"
             )
         )
-        self.decimation_level = self.fc_group.add_decimation_level("1")
-        self.n_samples = 50
+        self.decimation_level = self.fc_group.add_decimation_level("3")
+        self.ds = read_fc_csv(csv_fn)
+        self.expected_start = MTime(self.ds.time[0].values)
+        self.expected_end = MTime(self.ds.time[-1].values)
+        self.expected_window_step = 6144
+        self.expected_sr_decimation_level = 0.015380859375
+        self.decimation_level.from_xarray(self.ds)
+        self.expected_shape = (64, 6)
 
-    def test_np_structured_array_input(self):
-        name = "nd_array"
-        a = create_nd_array(name, self.n_samples)
-        ch = self.decimation_level.add_channel(name, fc_data=a)
+    def test_channel_exists(self):
+        self.assertListEqual(
+            list(self.ds.data_vars.keys()),
+            self.decimation_level.groups_list,
+        )
 
-        with self.subTest("channel_exists"):
-            self.assertIn(name, self.decimation_level.groups_list)
-
-        with self.subTest("channel_name"):
-            self.assertEqual(ch.metadata.name, name)
+    def test_channel_metadata(self):
+        for ch in self.decimation_level.groups_list:
+            fc_ch = self.decimation_level.get_channel(ch)
+            with self.subTest(f"{ch} name"):
+                self.assertEqual(fc_ch.metadata.component, ch)
+            with self.subTest(f"{ch} start"):
+                self.assertEqual(
+                    fc_ch.metadata.time_period.start, self.expected_start
+                )
+            with self.subTest(f"{ch} end"):
+                self.assertEqual(
+                    fc_ch.metadata.time_period.end, self.expected_end
+                )
+            with self.subTest(f"{ch} window_step"):
+                self.assertEqual(
+                    fc_ch.metadata.sample_rate_window_step,
+                    self.expected_window_step,
+                )
+            with self.subTest(f"{ch} window_step"):
+                self.assertEqual(
+                    fc_ch.metadata.sample_rate_decimation_level,
+                    self.expected_sr_decimation_level,
+                )
+            with self.subTest(f"{ch} shape"):
+                self.assertTupleEqual(
+                    fc_ch.hdf5_dataset.shape, self.expected_shape
+                )
 
     @classmethod
     def tearDownClass(self):
