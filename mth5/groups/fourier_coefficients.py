@@ -116,6 +116,56 @@ class FCGroup(BaseGroup):
             group, group_metadata=decimation_level_metadata, **kwargs
         )
 
+    @BaseGroup.metadata.getter
+    def metadata(self):
+        """Overwrite get metadata to include channel information in the runs"""
+
+        self._metadata.channels = []
+        for dl in self.groups_list:
+            dl_group = self.get_decimation_level(dl)
+            self._metadata.levels.append(dl_group.metadata)
+        self._metadata.hdf5_reference = self.hdf5_group.ref
+        return self._metadata
+
+    @property
+    def decimation_level_summary(self):
+        """
+
+         summary of channels in run
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        ch_list = []
+        for key, group in self.hdf5_group.items():
+            try:
+                ch_type = group.attrs["mth5_type"]
+                if ch_type in ["FCDecimation"]:
+                    ch_list.append(
+                        (
+                            group.attrs["decimation_level"],
+                            group.attrs["time_period.start"].split("+")[0],
+                            group.attrs["time_period.end"].split("+")[0],
+                            group.ref,
+                        )
+                    )
+            except KeyError as error:
+                self.logger.debug("Could not find key: ", error)
+        ch_summary = np.array(
+            ch_list,
+            dtype=np.dtype(
+                [
+                    ("component", "U20"),
+                    ("start", "datetime64[ns]"),
+                    ("end", "datetime64[ns]"),
+                    ("hdf5_reference", h5py.ref_dtype),
+                ]
+            ),
+        )
+
+        return pd.DataFrame(ch_summary)
+
     def add_decimation_level(
         self, decimation_level_name, decimation_level_metadata=None
     ):
@@ -163,56 +213,7 @@ class FCGroup(BaseGroup):
 
         self._remove_group(decimation_level_name)
 
-    @property
-    def channel_summary(self):
-        """
-
-         summary of channels in run
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        ch_list = []
-        for key, group in self.hdf5_group.items():
-            try:
-                ch_type = group.attrs["hdf5_type"]
-                if ch_type in ["FCChannel"]:
-                    ch_list.append(
-                        (
-                            group.attrs["component"],
-                            group.attrs["time_period.start"].split("+")[0],
-                            group.attrs["time_period.end"].split("+")[0],
-                            group.size[0],
-                            group.size[1],
-                            group.attrs["sample_rate_decimation_level"],
-                            group.attrs["sample_rate_window_step"],
-                            group.attrs["units"],
-                            group.ref,
-                        )
-                    )
-            except KeyError:
-                pass
-        ch_summary = np.array(
-            ch_list,
-            dtype=np.dtype(
-                [
-                    ("component", "U20"),
-                    ("start", "datetime64[ns]"),
-                    ("end", "datetime64[ns]"),
-                    ("n_frequency", np.int64),
-                    ("n_windows", np.int64),
-                    ("sample_rate_decimation_level", np.float64),
-                    ("sample_rate_window_step", np.float64),
-                    ("units", "U25"),
-                    ("hdf5_reference", h5py.ref_dtype),
-                ]
-            ),
-        )
-
-        return pd.DataFrame(ch_summary)
-
-    def update_fc_metadata(self):
+    def update_metadata(self):
         """
         update metadata from channels
 
@@ -220,17 +221,13 @@ class FCGroup(BaseGroup):
         :rtype: TYPE
 
         """
-        channel_summary = self.channel_summary.copy()
+        decimation_level_summary = self.decimation_level_summary.copy()
 
         self._metadata.time_period.start = (
-            channel_summary.start.min().isoformat()
+            decimation_level_summary.start.min().isoformat()
         )
-        self._metadata.time_period.end = channel_summary.end.max().isoformat()
-        self._metadata.sample_rate_decimation_level = (
-            channel_summary.sample_rate_decimation_level.unique()[0]
-        )
-        self._metadata.sample_rate_window_step = (
-            channel_summary.sample_rate_window_step.unique()[0]
+        self._metadata.time_period.end = (
+            decimation_level_summary.end.max().isoformat()
         )
         self.write_metadata()
 
@@ -279,6 +276,55 @@ class FCDecimationGroup(BaseGroup):
             self._metadata.channels.append(ch_group.metadata)
             self._metadata.hdf5_reference = self.hdf5_group.ref
         return self._metadata
+
+    @property
+    def channel_summary(self):
+        """
+
+         summary of channels in run
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        ch_list = []
+        for key, group in self.hdf5_group.items():
+            try:
+                ch_type = group.attrs["mth5_type"]
+                if ch_type in ["FCChannel"]:
+                    ch_list.append(
+                        (
+                            group.attrs["component"],
+                            group.attrs["time_period.start"].split("+")[0],
+                            group.attrs["time_period.end"].split("+")[0],
+                            group.shape[0],
+                            group.shape[1],
+                            group.attrs["sample_rate_decimation_level"],
+                            group.attrs["sample_rate_window_step"],
+                            group.attrs["units"],
+                            group.ref,
+                        )
+                    )
+            except KeyError as error:
+                self.logger.debug(f"Cannot find a key: {error}")
+        ch_summary = np.array(
+            ch_list,
+            dtype=np.dtype(
+                [
+                    ("component", "U20"),
+                    ("start", "datetime64[ns]"),
+                    ("end", "datetime64[ns]"),
+                    ("n_frequency", np.int64),
+                    ("n_windows", np.int64),
+                    ("sample_rate_decimation_level", np.float64),
+                    ("sample_rate_window_step", np.float64),
+                    ("units", "U25"),
+                    ("hdf5_reference", h5py.ref_dtype),
+                ]
+            ),
+        )
+
+        return pd.DataFrame(ch_summary)
 
     def from_dataframe(
         self, df, channel_key, time_key="time", frequency_key="frequency"
@@ -482,10 +528,10 @@ class FCDecimationGroup(BaseGroup):
             fc_dataset = FCChannelDataset(dataset, dataset_metadata=fc_metadata)
         except (OSError, RuntimeError, ValueError) as error:
             self.logger.error(error)
-            msg = f"estimate {fc_metadata.name} already exists, returning existing group."
+            msg = f"estimate {fc_metadata.component} already exists, returning existing group."
             self.logger.debug(msg)
 
-            fc_dataset = self.get_fc_dataset(fc_metadata.name)
+            fc_dataset = self.get_channel(fc_metadata.component)
         return fc_dataset
 
     def get_channel(self, fc_name):
@@ -544,6 +590,28 @@ class FCDecimationGroup(BaseGroup):
             )
             self.logger.error(msg)
             raise MTH5Error(msg)
+
+    def update_metadata(self):
+        """
+        update metadata from channels
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        channel_summary = self.channel_summary.copy()
+
+        self._metadata.time_period.start = (
+            channel_summary.start.min().isoformat()
+        )
+        self._metadata.time_period.end = channel_summary.end.max().isoformat()
+        self._metadata.sample_rate_decimation_level = (
+            channel_summary.sample_rate_decimation_level.unique()[0]
+        )
+        self._metadata.sample_rate_window_step = (
+            channel_summary.sample_rate_window_step.unique()[0]
+        )
+        self.write_metadata()
 
     def add_weights(
         self,

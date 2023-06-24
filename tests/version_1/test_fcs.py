@@ -58,11 +58,14 @@ class TestFCFromXarray(unittest.TestCase):
         )
         self.decimation_level = self.fc_group.add_decimation_level("3")
         self.ds = read_fc_csv(csv_fn)
+        self.decimation_level.from_xarray(self.ds)
+        self.decimation_level.update_metadata()
+        self.fc_group.update_metadata()
+
         self.expected_start = MTime(self.ds.time[0].values)
         self.expected_end = MTime(self.ds.time[-1].values)
         self.expected_window_step = 6144
         self.expected_sr_decimation_level = 0.015380859375
-        self.decimation_level.from_xarray(self.ds)
         self.expected_shape = (64, 6)
         self.expected_time = np.array(
             [
