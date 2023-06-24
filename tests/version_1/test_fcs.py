@@ -35,9 +35,7 @@ def read_fc_csv(csv_name):
     df = pd.read_csv(
         csv_name,
         index_col=[0, 1],
-        parse_dates=[
-            "time",
-        ],
+        parse_dates=["time"],
         skipinitialspace=True,
     )
     for col in df.columns:

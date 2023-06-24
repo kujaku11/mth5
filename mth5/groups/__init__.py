@@ -7,7 +7,7 @@ from .reports import ReportsGroup
 from .standards import StandardsGroup
 from .filters import FiltersGroup
 from .estimate_dataset import EstimateDataset
-from .fc_dataset import FCDataset
+from .fc_dataset import FCChannelDataset
 from .fourier_coefficients import MasterFCGroup, FCGroup, FCDecimationGroup
 from .transfer_function import TransferFunctionsGroup, TransferFunctionGroup
 from .channel_dataset import (
@@ -31,7 +31,7 @@ __all__ = [
     "MagneticDataset",
     "AuxiliaryDataset",
     "EstimateDataset",
-    "FCDataset",
+    "FCChannelDataset",
     "TransferFunctionGroup",
     "TransferFunctionsGroup",
     "MasterFCGroup",

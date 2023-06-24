@@ -11,8 +11,9 @@ Created on Fri Feb 24 12:49:32 2023
 import numpy as np
 import xarray as xr
 import pandas as pd
+import h5py
 
-from mth5.groups import BaseGroup, FCDataset
+from mth5.groups import BaseGroup, FCChannelDataset
 from mth5.helpers import validate_name
 from mth5.utils.exceptions import MTH5Error
 
@@ -22,7 +23,7 @@ from mt_metadata.transfer_functions.processing.fourier_coefficients import (
 
 
 # =============================================================================
-"""fc -> FCMasterGroup -> FCGroup -> DecimationLevelGroup -> ChannelGroup -> FCDataset"""
+"""fc -> FCMasterGroup -> FCGroup -> DecimationLevelGroup -> ChannelGroup -> FCChannelDataset"""
 
 
 class MasterFCGroup(BaseGroup):
@@ -162,6 +163,77 @@ class FCGroup(BaseGroup):
 
         self._remove_group(decimation_level_name)
 
+    @property
+    def channel_summary(self):
+        """
+
+         summary of channels in run
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        ch_list = []
+        for key, group in self.hdf5_group.items():
+            try:
+                ch_type = group.attrs["hdf5_type"]
+                if ch_type in ["FCChannel"]:
+                    ch_list.append(
+                        (
+                            group.attrs["component"],
+                            group.attrs["time_period.start"].split("+")[0],
+                            group.attrs["time_period.end"].split("+")[0],
+                            group.size[0],
+                            group.size[1],
+                            group.attrs["sample_rate_decimation_level"],
+                            group.attrs["sample_rate_window_step"],
+                            group.attrs["units"],
+                            group.ref,
+                        )
+                    )
+            except KeyError:
+                pass
+        ch_summary = np.array(
+            ch_list,
+            dtype=np.dtype(
+                [
+                    ("component", "U20"),
+                    ("start", "datetime64[ns]"),
+                    ("end", "datetime64[ns]"),
+                    ("n_frequency", np.int64),
+                    ("n_windows", np.int64),
+                    ("sample_rate_decimation_level", np.float64),
+                    ("sample_rate_window_step", np.float64),
+                    ("units", "U25"),
+                    ("hdf5_reference", h5py.ref_dtype),
+                ]
+            ),
+        )
+
+        return pd.DataFrame(ch_summary)
+
+    def update_fc_metadata(self):
+        """
+        update metadata from channels
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        channel_summary = self.channel_summary.copy()
+
+        self._metadata.time_period.start = (
+            channel_summary.start.min().isoformat()
+        )
+        self._metadata.time_period.end = channel_summary.end.max().isoformat()
+        self._metadata.sample_rate_decimation_level = (
+            channel_summary.sample_rate_decimation_level.unique()[0]
+        )
+        self._metadata.sample_rate_window_step = (
+            channel_summary.sample_rate_window_step.unique()[0]
+        )
+        self.write_metadata()
+
 
 class FCDecimationGroup(BaseGroup):
     """
@@ -196,6 +268,17 @@ class FCDecimationGroup(BaseGroup):
         super().__init__(
             group, group_metadata=decimation_level_metadata, **kwargs
         )
+
+    @BaseGroup.metadata.getter
+    def metadata(self):
+        """Overwrite get metadata to include channel information in the runs"""
+
+        self._metadata.channels = []
+        for ch in self.groups_list:
+            ch_group = self.get_channel(ch)
+            self._metadata.channels.append(ch_group.metadata)
+            self._metadata.hdf5_reference = self.hdf5_group.ref
+        return self._metadata
 
     def from_dataframe(
         self, df, channel_key, time_key="time", frequency_key="frequency"
@@ -396,7 +479,7 @@ class FCDecimationGroup(BaseGroup):
                 **self.dataset_options,
             )
 
-            fc_dataset = FCDataset(dataset, dataset_metadata=fc_metadata)
+            fc_dataset = FCChannelDataset(dataset, dataset_metadata=fc_metadata)
         except (OSError, RuntimeError, ValueError) as error:
             self.logger.error(error)
             msg = f"estimate {fc_metadata.name} already exists, returning existing group."
@@ -420,7 +503,7 @@ class FCDecimationGroup(BaseGroup):
         try:
             fc_dataset = self.hdf5_group[fc_name]
             fc_metadata = Channel(**dict(fc_dataset.attrs))
-            return FCDataset(fc_dataset, dataset_metadata=fc_metadata)
+            return FCChannelDataset(fc_dataset, dataset_metadata=fc_metadata)
 
         except (KeyError):
             msg = (

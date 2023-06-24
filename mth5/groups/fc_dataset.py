@@ -27,7 +27,7 @@ from mt_metadata.transfer_functions.processing.fourier_coefficients import (
 # =============================================================================
 
 
-class FCDataset:
+class FCChannelDataset:
     """
     This will hold multi-dimensional set of Fourier Coefficients
 
