@@ -222,14 +222,14 @@ class FCGroup(BaseGroup):
 
         """
         decimation_level_summary = self.decimation_level_summary.copy()
-
-        self._metadata.time_period.start = (
-            decimation_level_summary.start.min().isoformat()
-        )
-        self._metadata.time_period.end = (
-            decimation_level_summary.end.max().isoformat()
-        )
-        self.write_metadata()
+        if not decimation_level_summary.empty:
+            self._metadata.time_period.start = (
+                decimation_level_summary.start.min().isoformat()
+            )
+            self._metadata.time_period.end = (
+                decimation_level_summary.end.max().isoformat()
+            )
+            self.write_metadata()
 
 
 class FCDecimationGroup(BaseGroup):
@@ -601,17 +601,20 @@ class FCDecimationGroup(BaseGroup):
         """
         channel_summary = self.channel_summary.copy()
 
-        self._metadata.time_period.start = (
-            channel_summary.start.min().isoformat()
-        )
-        self._metadata.time_period.end = channel_summary.end.max().isoformat()
-        self._metadata.sample_rate_decimation_level = (
-            channel_summary.sample_rate_decimation_level.unique()[0]
-        )
-        self._metadata.sample_rate_window_step = (
-            channel_summary.sample_rate_window_step.unique()[0]
-        )
-        self.write_metadata()
+        if not channel_summary.empty:
+            self._metadata.time_period.start = (
+                channel_summary.start.min().isoformat()
+            )
+            self._metadata.time_period.end = (
+                channel_summary.end.max().isoformat()
+            )
+            self._metadata.sample_rate_decimation_level = (
+                channel_summary.sample_rate_decimation_level.unique()[0]
+            )
+            self._metadata.sample_rate_window_step = (
+                channel_summary.sample_rate_window_step.unique()[0]
+            )
+            self.write_metadata()
 
     def add_weights(
         self,

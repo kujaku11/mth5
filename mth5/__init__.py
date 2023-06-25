@@ -25,8 +25,7 @@ __version__ = "0.3.1"
 
 
 load_logging_config()
-debug_logger = setup_logger(__name__, fn="mth5_debug", level="info")
-debug_logger.debug("Starting MTH5 Debug Log File")
+debug_logger = setup_logger(__name__, level="info")
 
 # need to set this to make sure attributes of data arrays and data sets
 # are kept when doing xarray computations like merge.
