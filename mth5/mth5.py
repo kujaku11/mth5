@@ -366,7 +366,9 @@ class MTH5:
             self.logger.error(msg)
             raise ValueError(msg)
         if value not in ACCEPTABLE_FILE_TYPES:
-            msg = f"Input file.type is not valid, must be {ACCEPTABLE_FILE_TYPES}"
+            msg = (
+                f"Input file.type is not valid, must be {ACCEPTABLE_FILE_TYPES}"
+            )
             self.logger.error(msg)
             raise ValueError(msg)
         self.__file_type = value
@@ -1407,9 +1409,7 @@ class MTH5:
                 f"Could not find channel, {run_path}/{channel_name}"
             )
 
-    def remove_channel(
-        self, station_name, run_name, channel_name, survey=None
-    ):
+    def remove_channel(self, station_name, run_name, channel_name, survey=None):
         """
         Convenience function to remove a channel using
         ``mth5.stations_group.get_station().get_run().remove_channel()``
@@ -1528,6 +1528,14 @@ class MTH5:
                 station_metadata=tf_object.to_ts_station_metadata(),
             )
         ## need to check for runs and channels
+        if tf_object.station_metadata.transfer_function.runs_processed in [
+            [],
+            [""],
+        ]:
+            tf_object.station_metadata.transfer_function.runs_processed = (
+                tf_object.station_metadata.run_list
+            )
+
         for (
             run_id
         ) in tf_object.station_metadata.transfer_function.runs_processed:
@@ -1539,13 +1547,14 @@ class MTH5:
                 run = tf_object.station_metadata.get_run(run_id)
                 run_group = station_group.add_run(run_id, run_metadata=run)
 
-                for ch in run.channels:
-                    try:
-                        ch_dataset = run_group.get_channel(ch.component)
-                    except MTH5Error:
-                        ch_dataset = run_group.add_channel(
-                            ch.component, ch.type, None, channel_metadata=ch
-                        )
+                if run is not None:
+                    for ch in run.channels:
+                        try:
+                            ch_dataset = run_group.get_channel(ch.component)
+                        except MTH5Error:
+                            ch_dataset = run_group.add_channel(
+                                ch.component, ch.type, None, channel_metadata=ch
+                            )
         try:
             tf_group = (
                 station_group.transfer_functions_group.add_transfer_function(
