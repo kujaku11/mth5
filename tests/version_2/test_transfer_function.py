@@ -32,7 +32,7 @@ class TestTFGroup(unittest.TestCase):
         self.mth5_obj.open_mth5(self.fn, mode="a")
 
         self.tf_obj = TF(TF_XML)
-        self.tf_obj.read_tf_file()
+        self.tf_obj.read()
 
         self.tf_group = self.mth5_obj.add_transfer_function(self.tf_obj)
         self.tf_h5 = self.mth5_obj.get_transfer_function(
