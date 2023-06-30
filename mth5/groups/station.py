@@ -559,7 +559,7 @@ class StationGroup(BaseGroup):
                         comps,
                         group.attrs["data_type"],
                         group.attrs["sample_rate"],
-                        self.hdf5_group.ref,
+                        group.ref,
                     )
                 )
         run_summary = np.array(
