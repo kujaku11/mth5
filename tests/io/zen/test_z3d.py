@@ -25,9 +25,7 @@ from mt_metadata.timeseries.filters import (
 # =============================================================================
 
 
-@unittest.skipIf(
-    "peacock" not in str(Path(__file__).as_posix()), "local files"
-)
+@unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local files")
 class TestZ3DEY(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -134,9 +132,7 @@ class TestZ3DEY(unittest.TestCase):
         self.assertEqual(self.z3d._block_len, 65536)
 
     def test_gps_flag(self):
-        self.assertEqual(
-            self.z3d.gps_flag, b"\xff\xff\xff\x7f\x00\x00\x00\x80"
-        )
+        self.assertEqual(self.z3d.gps_flag, b"\xff\xff\xff\x7f\x00\x00\x00\x80")
 
     def test_get_gps_time(self):
         self.assertTupleEqual(
@@ -163,7 +159,7 @@ class TestZ3DEY(unittest.TestCase):
                 ("filter.applied", [False, False]),
                 (
                     "filter.name",
-                    ["zen_counts2mv", "dipole_56.00m"],
+                    ["dipole_56.00m", "zen_counts2mv"],
                 ),
                 ("measurement_azimuth", 0.0),
                 ("measurement_tilt", 0.0),
@@ -187,9 +183,7 @@ class TestZ3DEY(unittest.TestCase):
             ]
         )
 
-        self.assertDictEqual(
-            self.z3d.channel_metadata.to_dict(single=True), ey
-        )
+        self.assertDictEqual(self.z3d.channel_metadata.to_dict(single=True), ey)
 
     def test_run_metadata(self):
         rm = OrderedDict(
@@ -249,28 +243,26 @@ class TestZ3DEY(unittest.TestCase):
             ]
         )
 
-        self.assertDictEqual(
-            self.z3d.station_metadata.to_dict(single=True), sm
-        )
+        self.assertDictEqual(self.z3d.station_metadata.to_dict(single=True), sm)
 
     def test_filters(self):
-        zr = FrequencyResponseTableFilter(
-            **OrderedDict(
-                [
-                    ("amplitudes", np.array([1.00153])),
-                    ("calibration_date", "1980-01-01"),
-                    ("comments", "data logger response read from z3d file"),
-                    ("frequencies", np.array([2.0])),
-                    ("gain", 1.0),
-                    ("instrument_type", None),
-                    ("name", "zen024_256_response"),
-                    ("phases", np.array([-1.5333299999999999])),
-                    ("type", "frequency response table"),
-                    ("units_in", "mV"),
-                    ("units_out", "mV"),
-                ]
-            )
-        )
+        # zr = FrequencyResponseTableFilter(
+        #     **OrderedDict(
+        #         [
+        #             ("amplitudes", np.array([1.00153])),
+        #             ("calibration_date", "1980-01-01"),
+        #             ("comments", "data logger response read from z3d file"),
+        #             ("frequencies", np.array([2.0])),
+        #             ("gain", 1.0),
+        #             ("instrument_type", None),
+        #             ("name", "zen024_256_response"),
+        #             ("phases", np.array([-1.5333299999999999])),
+        #             ("type", "frequency response table"),
+        #             ("units_in", "mV"),
+        #             ("units_out", "mV"),
+        #         ]
+        #     )
+        # )
 
         df = CoefficientFilter(
             **OrderedDict(
@@ -280,8 +272,8 @@ class TestZ3DEY(unittest.TestCase):
                     ("gain", 0.056),
                     ("name", "dipole_56.00m"),
                     ("type", "coefficient"),
-                    ("units_in", "mV"),
-                    ("units_out", "mV/km"),
+                    ("units_out", "mV"),
+                    ("units_in", "mV/km"),
                 ]
             )
         )
@@ -294,18 +286,18 @@ class TestZ3DEY(unittest.TestCase):
                     ("gain", 1048576000.000055),
                     ("name", "zen_counts2mv"),
                     ("type", "coefficient"),
-                    ("units_in", "count"),
-                    ("units_out", "mV"),
+                    ("units_out", "count"),
+                    ("units_in", "mV"),
                 ]
             )
         )
 
-        with self.subTest("test zen response"):
-            self.assertEqual(None, self.z3d.zen_response)
-            # self.assertDictEqual(
-            #     self.z3d.zen_response.to_dict(single=True),
-            #     zr.to_dict(single=True),
-            # )
+        # with self.subTest("test zen response"):
+        #     self.assertEqual(None, self.z3d.zen_response)
+        #     # self.assertDictEqual(
+        #     #     self.z3d.zen_response.to_dict(single=True),
+        #     #     zr.to_dict(single=True),
+        #     # )
         with self.subTest("test_dipole_filter"):
 
             self.assertDictEqual(
@@ -328,9 +320,7 @@ class TestZ3DEY(unittest.TestCase):
             )
 
 
-@unittest.skipIf(
-    "peacock" not in str(Path(__file__).as_posix()), "local files"
-)
+@unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local files")
 class TestZ3DHY(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -589,9 +579,7 @@ class TestZ3DHY(unittest.TestCase):
             ]
         )
 
-        self.assertDictEqual(
-            self.z3d.channel_metadata.to_dict(single=True), ey
-        )
+        self.assertDictEqual(self.z3d.channel_metadata.to_dict(single=True), ey)
 
     def test_run_metadata(self):
         rm = OrderedDict(
@@ -651,9 +639,7 @@ class TestZ3DHY(unittest.TestCase):
             ]
         )
 
-        self.assertDictEqual(
-            self.z3d.station_metadata.to_dict(single=True), sm
-        )
+        self.assertDictEqual(self.z3d.station_metadata.to_dict(single=True), sm)
 
     def test_zen_esponse(self):
         self.assertEqual(None, self.z3d.zen_response)

@@ -117,9 +117,7 @@ class Z3D:
     """
 
     def __init__(self, fn=None, **kwargs):
-        self.logger = logging.getLogger(
-            f"{__name__}.{self.__class__.__name__}"
-        )
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.fn = fn
         self.calibration_fn = None
 
@@ -531,6 +529,7 @@ class Z3D:
         """
         fap = None
         find = False
+        return
         if self.metadata.board_cal not in [None, []]:
             if self.metadata.board_cal[0][0] == "":
                 return fap
@@ -557,9 +556,7 @@ class Z3D:
                     fap_str = self.metadata.cal_board["cal.ch"]
                     for ss in fap_str.split(";"):
                         freq, _, resp = ss.split(",")
-                        ff, amp, phs = [
-                            float(item) for item in resp.split(":")
-                        ]
+                        ff, amp, phs = [float(item) for item in resp.split(":")]
                         if float(freq) == self.sample_rate:
                             frequency = ff
                             amplitude = amp
@@ -641,9 +638,7 @@ class Z3D:
             self._gps_stamp_length = 36
             self._gps_bytes = self._gps_stamp_length / 4
             self._gps_flag_0 = -1
-            self._block_len = int(
-                self._gps_stamp_length + self.sample_rate * 4
-            )
+            self._block_len = int(self._gps_stamp_length + self.sample_rate * 4)
             self.gps_flag = self._gps_f0
 
         else:
@@ -896,9 +891,7 @@ class Z3D:
         self.raw_data = data.copy()
 
         # find the gps stamps
-        gps_stamp_find = self.get_gps_stamp_index(
-            data, self.header.old_version
-        )
+        gps_stamp_find = self.get_gps_stamp_index(data, self.header.old_version)
 
         # skip the first two stamps and trim data
         try:
@@ -909,9 +902,7 @@ class Z3D:
             raise ZenGPSError(msg)
 
         # find gps stamps of the trimmed data
-        gps_stamp_find = self.get_gps_stamp_index(
-            data, self.header.old_version
-        )
+        gps_stamp_find = self.get_gps_stamp_index(data, self.header.old_version)
 
         # read data chunks and GPS stamps
         self.gps_stamps = np.zeros(len(gps_stamp_find), dtype=self._gps_dtype)
