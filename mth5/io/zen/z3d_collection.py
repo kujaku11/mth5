@@ -134,6 +134,11 @@ class Z3DCollection(Collection):
             entry["file_size"] = z3d_obj.file_size
             entry["n_samples"] = z3d_obj.n_samples
             entry["sequence_number"] = 0
+            entry["dipole"] = z3d_obj.dipole_length
+            entry["coil_number"] = z3d_obj.coil_number
+            entry["latitude"] = z3d_obj.latitude
+            entry["longitude"] = z3d_obj.longitude
+            entry["elevation"] = z3d_obj.elevation
             entry["instrument_id"] = f"ZEN_{int(z3d_obj.header.box_number):03}"
             if cal_obj.has_coil_number(z3d_obj.coil_number):
                 entry["calibration_fn"] = cal_obj.calibration_file

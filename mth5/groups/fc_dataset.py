@@ -183,7 +183,7 @@ class FCChannelDataset:
     @property
     def n_windows(self):
         """number of time windows"""
-        return self.hdf5_dataset.shape[1]
+        return self.hdf5_dataset.shape[0]
 
     @property
     def time(self):
@@ -205,7 +205,7 @@ class FCChannelDataset:
     @property
     def n_frequencies(self):
         """number of frequencies (window size)"""
-        return self.hdf5_dataset.shape[0]
+        return self.hdf5_dataset.shape[1]
 
     @property
     def frequency(self):
@@ -257,11 +257,11 @@ class FCChannelDataset:
 
         return xr.DataArray(
             data=self.hdf5_dataset[()],
-            dims=["frequency", "time"],
+            dims=["time", "frequency"],
             name=self.metadata.component,
             coords=[
-                ("frequency", self.frequency),
                 ("time", self.time),
+                ("frequency", self.frequency),
             ],
             attrs=self.metadata.to_dict(single=True),
         )

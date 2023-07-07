@@ -66,7 +66,7 @@ class TestFCFromXarray(unittest.TestCase):
         self.expected_end = MTime(self.ds.time[-1].values)
         self.expected_window_step = 6144
         self.expected_sr_decimation_level = 0.015380859375
-        self.expected_shape = (64, 6)
+        self.expected_shape = (6, 64)
         self.expected_time = np.array(
             [
                 "1980-01-01T00:00:00.000000000",

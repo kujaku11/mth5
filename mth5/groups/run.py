@@ -205,6 +205,7 @@ class RunGroup(BaseGroup):
         """station metadata"""
 
         meta_dict = dict(self.hdf5_group.parent.attrs)
+        meta_dict["run_list"] = [self.metadata.id]
         for key, value in meta_dict.items():
             meta_dict[key] = from_numpy_type(value)
         station_metadata = metadata.Station()
@@ -228,8 +229,13 @@ class RunGroup(BaseGroup):
 
         self._metadata.channels = []
         for ch in self.groups_list:
-            ch_group = self.get_channel(ch)
-            self._metadata.channels.append(ch_group.metadata)
+            meta_dict = dict(self.hdf5_group[ch].attrs)
+            for key, value in meta_dict.items():
+                meta_dict[key] = from_numpy_type(value)
+            ch_metadata = meta_classes[meta_dict["type"].capitalize()]()
+            ch_metadata.from_dict(meta_dict)
+
+            self._metadata.add_channel(ch_metadata)
         self._metadata.hdf5_reference = self.hdf5_group.ref
         return self._metadata
 
@@ -479,12 +485,9 @@ class RunGroup(BaseGroup):
         try:
             ch_dataset = self.hdf5_group[channel_name]
         except KeyError:
-            msg = (
-                f"{channel_name} does not exist, "
-                + "check groups_list for existing names"
-            )
-            self.logger.debug("Error" + msg)
-            raise MTH5Error(msg)
+            msg = ("%s does not exist, check groups_list for existing names",)
+            self.logger.debug(msg, channel_name)
+            raise MTH5Error(msg % channel_name)
 
         if ch_dataset.attrs["mth5_type"].lower() in ["electric"]:
             ch_metadata = meta_classes["Electric"]()

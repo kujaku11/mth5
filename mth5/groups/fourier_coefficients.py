@@ -394,12 +394,21 @@ class FCDecimationGroup(BaseGroup):
 
         else:
             for ch in data_array.data_vars.keys():
+
                 ch_metadata.component = ch
-                self.add_channel(
-                    ch,
-                    fc_data=data_array[ch].to_numpy(),
-                    fc_metadata=ch_metadata,
-                )
+                # time index should be the first index
+                if data_array[ch].time.size == data_array[ch].shape[0]:
+                    self.add_channel(
+                        ch,
+                        fc_data=data_array[ch].to_numpy(),
+                        fc_metadata=ch_metadata,
+                    )
+                elif data_array[ch].time.size == data_array[ch].shape[1]:
+                    self.add_channel(
+                        ch,
+                        fc_data=data_array[ch].to_numpy().T,
+                        fc_metadata=ch_metadata,
+                    )
 
     def to_xarray(self, channels=None):
         """
