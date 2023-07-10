@@ -31,7 +31,8 @@ helpers.close_open_files()
 # for some reason this dosen't work when using @classmethod def setUpClass
 # keep getting an attribute error in Channel, at least on Git Actions.
 class TestMTH5(unittest.TestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         self.fn = fn_path.joinpath("test.mth5")
         self.mth5_obj = MTH5(file_version="0.2.0")
         self.mth5_obj.open_mth5(self.fn, mode="w")
@@ -87,9 +88,7 @@ class TestMTH5(unittest.TestCase):
     def test_add_station(self):
         new_station = self.mth5_obj.add_station("MT001", survey="test")
         with self.subTest(name="station exists"):
-            self.assertIn(
-                "MT001", self.survey_group.stations_group.groups_list
-            )
+            self.assertIn("MT001", self.survey_group.stations_group.groups_list)
         with self.subTest(name="is station group"):
             self.assertIsInstance(new_station, groups.StationGroup)
         with self.subTest("get channel"):
@@ -102,9 +101,7 @@ class TestMTH5(unittest.TestCase):
         self.assertNotIn("MT001", self.survey_group.stations_group.groups_list)
 
     def test_get_station_fail(self):
-        self.assertRaises(
-            MTH5Error, self.mth5_obj.get_station, "MT020", "test"
-        )
+        self.assertRaises(MTH5Error, self.mth5_obj.get_station, "MT020", "test")
 
     def test_add_run(self):
         new_station = self.mth5_obj.add_station("MT001", survey="test")
@@ -141,9 +138,7 @@ class TestMTH5(unittest.TestCase):
                 ch = self.mth5_obj.get_channel("MT001", "MT001a", "ex", "test")
                 self.assertIsInstance(ch, groups.ElectricDataset)
             except AttributeError:
-                print(
-                    "test_add_channel.get_channel failed with AttributeError"
-                )
+                print("test_add_channel.get_channel failed with AttributeError")
 
     def test_remove_channel(self):
         new_station = self.mth5_obj.add_station("MT001", survey="test")
@@ -274,7 +269,8 @@ class TestMTH5(unittest.TestCase):
             ),
         )
 
-    def tearDown(self):
+    @classmethod
+    def tearDownClass(self):
         self.mth5_obj.close_mth5()
         self.fn.unlink()
 
