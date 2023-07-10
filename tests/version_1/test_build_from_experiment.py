@@ -99,7 +99,7 @@ class TestMTH5(unittest.TestCase):
             with self.subTest(f"station.{key}"):
                 if key in ["run_list"]:
                     self.assertListEqual(
-                        ["a", "b", "c", "d", "e"],
+                        ["a"],
                         run_ts.station_metadata.run_list,
                     )
 

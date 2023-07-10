@@ -238,10 +238,10 @@ class TestTFGroup(unittest.TestCase):
                     self.mth5_obj.tf_summary.array[name][0], true_dict[name]
                 )
 
-    # @classmethod
-    # def tearDownClass(self):
-    #     self.mth5_obj.close_mth5()
-    #     self.fn.unlink()
+    @classmethod
+    def tearDownClass(self):
+        self.mth5_obj.close_mth5()
+        self.fn.unlink()
 
 
 # =============================================================================

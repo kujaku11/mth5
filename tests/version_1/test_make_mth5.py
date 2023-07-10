@@ -89,9 +89,7 @@ class TestMakeMTH5FDSNInventory(unittest.TestCase):
         with self.subTest(name="stations"):
             self.assertListEqual(
                 sorted(self.stations),
-                sorted(
-                    list(set([ss.code for ss in inv.networks[0].stations]))
-                ),
+                sorted(list(set([ss.code for ss in inv.networks[0].stations]))),
             )
         with self.subTest(name="channels_CAS04"):
             self.assertListEqual(
@@ -341,6 +339,7 @@ class TestMakeMTH5(unittest.TestCase):
     def tearDownClass(self):
         self.m.close_mth5()
         self.m.filename.unlink()
+        self.csv_fn.unlink()
 
 
 # =============================================================================

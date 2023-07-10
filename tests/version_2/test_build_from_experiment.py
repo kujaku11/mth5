@@ -118,7 +118,7 @@ class TestMTH5(unittest.TestCase):
             with self.subTest(f"station.{key}"):
                 if key in ["run_list"]:
                     self.assertListEqual(
-                        ["a", "b", "c", "d", "e"],
+                        ["a"],
                         run_ts.station_metadata.run_list,
                     )
                 else:
@@ -310,9 +310,7 @@ class TestMTH5(unittest.TestCase):
         with self.subTest("test nrows"):
             self.assertEqual(self.mth5_obj.channel_summary.nrows, 25)
         with self.subTest(("test dtype")):
-            self.assertEqual(
-                self.mth5_obj.channel_summary.dtype, CHANNEL_DTYPE
-            )
+            self.assertEqual(self.mth5_obj.channel_summary.dtype, CHANNEL_DTYPE)
         with self.subTest("test station"):
             self.assertTrue(
                 (

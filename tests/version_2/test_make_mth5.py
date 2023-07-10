@@ -330,6 +330,7 @@ class TestMakeMTH5(unittest.TestCase):
     def tearDownClass(self):
         self.m.close_mth5()
         self.m.filename.unlink()
+        self.csv_fn.unlink()
 
 
 # =============================================================================
