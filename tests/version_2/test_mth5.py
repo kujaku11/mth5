@@ -126,8 +126,8 @@ class TestMTH5(unittest.TestCase):
         )
 
     def test_add_channel(self):
-        new_station = self.mth5_obj.add_station("MT001", survey="test")
-        new_run = new_station.add_run("MT001a")
+        new_station = self.mth5_obj.add_station("MT002", survey="test")
+        new_run = new_station.add_run("MT002a")
         new_channel = new_run.add_channel("Ex", "electric", None)
         with self.subTest("groups list"):
             self.assertIn("ex", new_run.groups_list)
@@ -135,14 +135,14 @@ class TestMTH5(unittest.TestCase):
             self.assertIsInstance(new_channel, groups.ElectricDataset)
         with self.subTest("get channel"):
             try:
-                ch = self.mth5_obj.get_channel("MT001", "MT001a", "ex", "test")
+                ch = self.mth5_obj.get_channel("MT002", "MT002a", "ex", "test")
                 self.assertIsInstance(ch, groups.ElectricDataset)
             except AttributeError:
                 print("test_add_channel.get_channel failed with AttributeError")
 
     def test_remove_channel(self):
-        new_station = self.mth5_obj.add_station("MT001", survey="test")
-        new_run = new_station.add_run("MT001a")
+        new_station = self.mth5_obj.add_station("MT003", survey="test")
+        new_run = new_station.add_run("MT003a")
         new_channel = new_run.add_channel("Ex", "electric", None)
         new_run.remove_channel("Ex")
         self.assertNotIn("ex", new_run.groups_list)
