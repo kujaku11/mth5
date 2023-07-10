@@ -485,7 +485,7 @@ class RunGroup(BaseGroup):
         try:
             ch_dataset = self.hdf5_group[channel_name]
         except KeyError:
-            msg = ("%s does not exist, check groups_list for existing names",)
+            msg = "%s does not exist, check groups_list for existing names"
             self.logger.debug(msg, channel_name)
             raise MTH5Error(msg % channel_name)
 
