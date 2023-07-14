@@ -96,29 +96,29 @@ class TestMTH5(unittest.TestCase):
             self.assertIsInstance(sg, groups.StationGroup)
 
     def test_remove_station(self):
-        self.mth5_obj.add_station("MT001", survey="test")
-        self.mth5_obj.remove_station("MT001", survey="test")
-        self.assertNotIn("MT001", self.survey_group.stations_group.groups_list)
+        self.mth5_obj.add_station("MT002", survey="test")
+        self.mth5_obj.remove_station("MT002", survey="test")
+        self.assertNotIn("MT002", self.survey_group.stations_group.groups_list)
 
     def test_get_station_fail(self):
         self.assertRaises(MTH5Error, self.mth5_obj.get_station, "MT020", "test")
 
     def test_add_run(self):
-        new_station = self.mth5_obj.add_station("MT001", survey="test")
-        new_run = new_station.add_run("MT001a")
+        new_station = self.mth5_obj.add_station("MT003", survey="test")
+        new_run = new_station.add_run("MT003a")
         with self.subTest("groups list"):
-            self.assertIn("MT001a", new_station.groups_list)
+            self.assertIn("MT003a", new_station.groups_list)
         with self.subTest("isinstance RunGroup"):
             self.assertIsInstance(new_run, groups.RunGroup)
         with self.subTest("get run"):
-            rg = self.mth5_obj.get_run("MT001", "MT001a", survey="test")
+            rg = self.mth5_obj.get_run("MT003", "MT003a", survey="test")
             self.assertIsInstance(rg, groups.RunGroup)
 
     def test_remove_run(self):
-        new_station = self.mth5_obj.add_station("MT001", survey="test")
-        new_station.add_run("MT001a")
-        new_station.remove_run("MT001a")
-        self.assertNotIn("MT001a", new_station.groups_list)
+        new_station = self.mth5_obj.add_station("MT004", survey="test")
+        new_station.add_run("MT004a")
+        new_station.remove_run("MT004a")
+        self.assertNotIn("MT004a", new_station.groups_list)
 
     def test_get_run_fail(self):
         self.assertRaises(
@@ -126,8 +126,8 @@ class TestMTH5(unittest.TestCase):
         )
 
     def test_add_channel(self):
-        new_station = self.mth5_obj.add_station("MT002", survey="test")
-        new_run = new_station.add_run("MT002a")
+        new_station = self.mth5_obj.add_station("MT005", survey="test")
+        new_run = new_station.add_run("MT005a")
         new_channel = new_run.add_channel("Ex", "electric", None)
         with self.subTest("groups list"):
             self.assertIn("ex", new_run.groups_list)
@@ -135,26 +135,26 @@ class TestMTH5(unittest.TestCase):
             self.assertIsInstance(new_channel, groups.ElectricDataset)
         with self.subTest("get channel"):
             try:
-                ch = self.mth5_obj.get_channel("MT002", "MT002a", "ex", "test")
+                ch = self.mth5_obj.get_channel("MT005", "MT005a", "ex", "test")
                 self.assertIsInstance(ch, groups.ElectricDataset)
             except AttributeError:
                 print("test_add_channel.get_channel failed with AttributeError")
 
     def test_remove_channel(self):
-        new_station = self.mth5_obj.add_station("MT003", survey="test")
-        new_run = new_station.add_run("MT003a")
+        new_station = self.mth5_obj.add_station("MT006", survey="test")
+        new_run = new_station.add_run("MT006a")
         new_channel = new_run.add_channel("Ex", "electric", None)
         new_run.remove_channel("Ex")
         self.assertNotIn("ex", new_run.groups_list)
 
     def test_get_channel_fail(self):
-        new_station = self.mth5_obj.add_station("MT001", survey="test")
-        new_station.add_run("MT001a")
+        new_station = self.mth5_obj.add_station("MT007", survey="test")
+        new_station.add_run("MT007a")
         self.assertRaises(
             MTH5Error,
             self.mth5_obj.get_channel,
-            "MT001",
-            "MT001a",
+            "MT007",
+            "MT007a",
             "Ey",
             "test",
         )
@@ -177,8 +177,8 @@ class TestMTH5(unittest.TestCase):
             channel_metadata=meta_dict,
         )
 
-        station = self.mth5_obj.add_station("MT002", survey="test")
-        run = station.add_run("MT002a")
+        station = self.mth5_obj.add_station("MT008", survey="test")
+        run = station.add_run("MT008a")
         ex = run.add_channel("Ex", "electric", None)
         ex.from_channel_ts(channel_ts)
         new_ts = ex.to_channel_ts()
@@ -214,10 +214,10 @@ class TestMTH5(unittest.TestCase):
                 ch_type, data=np.random.rand(4096), channel_metadata=meta_dict
             )
             ts_list.append(channel_ts)
-        run_ts = RunTS(ts_list, {"run": {"id": "MT002a"}})
+        run_ts = RunTS(ts_list, {"run": {"id": "MT009a"}})
 
-        station = self.mth5_obj.add_station("MT002", survey="test")
-        run = station.add_run("MT002a")
+        station = self.mth5_obj.add_station("MT009", survey="test")
+        run = station.add_run("MT009a")
         channel_groups = run.from_runts(run_ts)
 
         with self.subTest("channels"):
