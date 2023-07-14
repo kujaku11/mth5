@@ -129,6 +129,8 @@ class TestMTH5(unittest.TestCase):
         new_station = self.mth5_obj.add_station("MT005", survey="test")
         new_run = new_station.add_run("MT005a")
         new_channel = new_run.add_channel("Ex", "electric", None)
+        new_channel.metadata.mth5_type = "electric"
+        new_channel.write_metadata()
         with self.subTest("groups list"):
             self.assertIn("ex", new_run.groups_list)
         with self.subTest("isinstance ElectricDataset"):
