@@ -54,5 +54,7 @@ def read_phoenix(file_name, **kwargs):
     """
 
     phnx_obj = open_phoenix(file_name, **kwargs)
+    rxcal_fn = kwargs.pop("rxcal_fn", None)
+    scal_fn = kwargs.pop("scal_fn", None)
 
-    return phnx_obj.to_channel_ts()
+    return phnx_obj.to_channel_ts(rxcal_fn=rxcal_fn, scal_fn=scal_fn)
