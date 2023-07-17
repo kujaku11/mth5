@@ -415,8 +415,8 @@ class TSReaderBase(Header):
         if hasattr(ch_metadata, "dipole_length"):
             dp_filter = CoefficientFilter()
             dp_filter.gain = ch_metadata.dipole_length / 1000
-            dp_filter.units_in = "volts"
-            dp_filter.units_out = "volts per kilometer"
+            dp_filter.units_in = "millivolts"
+            dp_filter.units_out = "millivolts per kilometer"
 
             for f_name in ch_metadata.filter.name:
                 if "dipole" in f_name:
@@ -436,6 +436,20 @@ class TSReaderBase(Header):
 
         return
 
+    def get_v_to_mv_filter(self):
+        """
+        the units are in volts, convert to millivolts
+
+        """
+
+        conversion = CoefficientFilter()
+        conversion.units_out = "millivolts"
+        conversion.units_in = "volts"
+        conversion.name = "v_to_mv"
+        conversion.gain = 1e3
+
+        return conversion
+
     def get_channel_response_filter(self, rxcal_fn=None, scal_fn=None):
         """
         Get the channel response filter
@@ -453,6 +467,8 @@ class TSReaderBase(Header):
         filter_list = []
         if rxcal_fn is not None:
             filter_list.append(self.get_receiver_lowpass_filter(rxcal_fn))
+
+        filter_list.append(self.get_v_to_mv_filter())
 
         if ch_metadata.type in ["magnetic"] and scal_fn is not None:
             filter_list.append(self.get_sensor_filter(scal_fn))
