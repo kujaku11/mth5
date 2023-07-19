@@ -80,8 +80,12 @@ class SubHeader:
 
     @property
     def gps_time_stamp(self):
+        """GPS time stamp in UTC"""
+
         if self._has_header():
-            return MTime(self._unpack_value("gps_time_stamp")[0])
+            return MTime(
+                self._unpack_value("gps_time_stamp")[0], gps_time=True
+            )
 
     @property
     def n_samples(self):
@@ -192,6 +196,7 @@ class DecimatedSegmentedReader(TSReaderBase):
         )
 
         self.unpack_header(self.stream)
+        self._channel_metadata = self._update_channel_metadata_from_recmeta()
         self.sub_header = SubHeader()
         self.subheader = {}
 
@@ -235,6 +240,7 @@ class DecimatedSegmentedReader(TSReaderBase):
         segment = self.read_segment()
         ch_metadata = self.channel_metadata
         ch_metadata.time_period.start = segment.segment_start_time.isoformat()
+        ch_metadata.time_period.end = segment.segment_end_time.isoformat()
 
         return ChannelTS(
             channel_type=ch_metadata.type,

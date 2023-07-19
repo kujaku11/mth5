@@ -64,6 +64,8 @@ class TSReaderBase(Header):
         if self.recmeta_file_path is not None:
             self.update_channel_map_from_recmeta()
 
+        self._channel_metadata = None
+
     @property
     def base_path(self):
         """
@@ -308,6 +310,8 @@ class TSReaderBase(Header):
             rx_ch_metadata = self.rx_metadata.get_ch_metadata(self._channel_id)
 
             ch_metadata.update(rx_ch_metadata)
+        ch_metadata.sample_rate = self.sample_rate
+        ch_metadata.time_period.start = self.recording_start_time
         return ch_metadata
 
     def _update_run_metadata_from_recmeta(self):
@@ -352,7 +356,7 @@ class TSReaderBase(Header):
 
         """
 
-        return self._update_channel_metadata_from_recmeta()
+        return self._channel_metadata
 
     @property
     def run_metadata(self):

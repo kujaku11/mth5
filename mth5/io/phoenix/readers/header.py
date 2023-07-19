@@ -198,18 +198,20 @@ class Header:
     def recording_start_time(self):
         """
         The actual data recording starts 1 second after the set start time.
-        This is cause by the data logger starting up and initializing filter.
+        This is caused by the data logger starting up and initializing filter.
         This is taken care of in the segment start time
 
         See https://github.com/kujaku11/PhoenixGeoPy/tree/main/Docs for more
         information.
+
+        The time recorded is GPS time.
 
         :return: DESCRIPTION
         :rtype: TYPE
 
         """
 
-        return MTime(datetime.fromtimestamp(self.recording_id))
+        return MTime(datetime.fromtimestamp(self.recording_id), gps_time=True)
 
     @property
     def channel_id(self):
@@ -448,7 +450,9 @@ class Header:
         # Total of the gain that is selectable by the user (i.e. att * pre * gain)
         if self._has_header():
             return (
-                self.channel_main_gain * self.preamp_gain * self.attenuator_gain
+                self.channel_main_gain
+                * self.preamp_gain
+                * self.attenuator_gain
             )
         return 1.0
 
@@ -652,6 +656,7 @@ class Header:
         r.data_logger.power_source.voltage.start = self.battery_voltage_v
         r.channels.append(self.get_channel_metadata())
         r.id = f"sr{self.sample_rate}_0001"
+        r.update_time_period()
 
         return r
 
@@ -666,5 +671,6 @@ class Header:
         s.location.longitude = self.gps_long
         s.location.elevation = self.gps_elevation
         s.runs.append(self.get_run_metadata())
+        s.update_time_period()
 
         return s

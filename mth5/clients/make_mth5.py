@@ -56,7 +56,7 @@ class MakeMTH5:
         if self.save_path is None:
             self.save_path = Path().cwd()
 
-    def from_fdsn_client(self, request_df, client="IRIS"):
+    def from_fdsn_client(self, request_df, client="IRIS", **kwargs):
         """
         Pull data from an FDSN archive like IRIS.  Uses Obspy.Clients.
 
@@ -99,6 +99,7 @@ class MakeMTH5:
             shuffle=self.shuffle,
             fletcher32=self.fletcher32,
             data_level=self.data_level,
+            **kwargs,
         )
 
         mth5_object = fdsn_client.make_mth5_from_fdsn_client(
@@ -107,7 +108,7 @@ class MakeMTH5:
 
         return mth5_object
 
-    def from_usgs_geomag(self, request_df):
+    def from_usgs_geomag(self, request_df, **kwargs):
         """
         Download geomagnetic observatory data from USGS webservices into an
         MTH5 using a request dataframe or csv file.
@@ -148,6 +149,7 @@ class MakeMTH5:
             fletcher32=self.fletcher32,
             data_level=self.data_level,
             interact=self.interact,
+            **kwargs,
         )
 
         return geomag_client.make_mth5_from_geomag(request_df)
