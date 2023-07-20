@@ -123,8 +123,14 @@ class PhoenixCollection(Collection):
             ] = receiver_metadata
 
             for sr in sample_rates:
-                for fn in folder.rglob(f"*{self._file_extension_map[int(sr)]}"):
-                    phx_obj = open_phoenix(fn)
+                for fn in folder.rglob(
+                    f"*{self._file_extension_map[int(sr)]}"
+                ):
+                    try:
+                        phx_obj = open_phoenix(fn)
+                    except OSError:
+                        self.logger.warning(f"Skipping {fn.name}")
+                        continue
                     if hasattr(phx_obj, "read_segment"):
                         segment = phx_obj.read_segment(metadata_only=True)
                         try:
@@ -160,7 +166,6 @@ class PhoenixCollection(Collection):
                         "calibration_fn": None,
                     }
                     entries.append(entry)
-        # return self._set_df_dtypes(pd.DataFrame(entries))
 
         df = self._sort_df(
             self._set_df_dtypes(pd.DataFrame(entries)), run_name_zeros

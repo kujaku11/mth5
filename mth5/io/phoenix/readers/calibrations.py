@@ -97,7 +97,9 @@ class PhoenixCalibration:
 
         """
 
-        return f"{self.base_filter_name}_{channel}_{max_freq}hz_lowpass".lower()
+        return (
+            f"{self.base_filter_name}_{channel}_{max_freq}hz_lowpass".lower()
+        )
 
     def get_filter_sensor_name(self, channel, sensor):
         """
@@ -153,7 +155,13 @@ class PhoenixCalibration:
                 ch_fap.units_in = "volts"
                 ch_fap.units_out = "volts"
 
-            setattr(self, comp, ch_cal_dict)
+            if "sensor" in self.obj.file_type:
+                ch_fap.units_in = "millivolts"
+                ch_fap.units_out = "nanotesla"
+                setattr(self, comp, ch_fap)
+
+            else:
+                setattr(self, comp, ch_cal_dict)
 
     def get_filter(self, channel, filter_name):
         """
