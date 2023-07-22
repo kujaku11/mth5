@@ -20,9 +20,7 @@ import numpy as np
 import h5py
 import gc
 
-from mth5.utils.mth5_logger import setup_logger
-
-logger = setup_logger(__name__)
+from loguru import logger
 
 # =============================================================================
 # Acceptable compressions
@@ -55,9 +53,7 @@ def validate_compression(compression, level):
     if compression is None:
         return None, None
     if not isinstance(compression, (str, type(None))):
-        msg = "compression type must be a string, not {0}".format(
-            type(compression)
-        )
+        msg = "compression type must be a string, not {0}".format(type(compression))
         logger.error(msg)
         raise TypeError(msg)
     if not compression in COMPRESSION:
@@ -72,8 +68,7 @@ def validate_compression(compression, level):
     elif compression == " gzip":
         if not isinstance(level, (int)):
             msg = "Level type for gzip must be an int, not {0}.".format(
-                type(level)
-                + f" Options are {0}".format(COMPRESSION_LEVELS["gzip"])
+                type(level) + f" Options are {0}".format(COMPRESSION_LEVELS["gzip"])
             )
             logger.error(msg)
             raise TypeError(msg)
@@ -135,9 +130,7 @@ def get_tree(parent):
     """
     lines = ["{0}:".format(parent.name), "=" * 20]
     if not isinstance(parent, (h5py.File, h5py.Group)):
-        raise TypeError(
-            "Provided object is not a h5py.File or h5py.Group " "object"
-        )
+        raise TypeError("Provided object is not a h5py.File or h5py.Group " "object")
 
     def fancy_print(name, obj):
         # lines.append(name)
