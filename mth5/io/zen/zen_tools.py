@@ -15,7 +15,7 @@ import string
 import shutil
 import numpy as np
 
-from mth5.utils.mth5_logger import setup_logger
+from loguru import logger
 from mth5.io.zen import Z3D
 
 try:
@@ -141,12 +141,6 @@ def copy_from_sd(
     drive_names = get_drive_names()
     save_path = Path(save_path).joinpath(station)
 
-    logger = setup_logger(
-        "copy_z3d_from_sd",
-        fn=save_path.joinpath("copy_from_sd.log"),
-        level="debug",
-    )
-
     if not save_path.exists():
         save_path.mkdir()
     if drive_names is None:
@@ -255,11 +249,6 @@ def delete_files_from_sd(
         delete_path = Path(delete_folder)
         if not delete_path.exists():
             delete_path.mkdir()
-    logger = setup_logger(
-        "delete_z3d_from_sd",
-        fn=delete_path.joinpath("delete_from_sd.log"),
-        level="debug",
-    )
     if drive_names is None:
         logger.error("No drives found.")
         raise IOError("No drives to copy from.")
