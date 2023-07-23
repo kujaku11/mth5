@@ -14,13 +14,12 @@ Created on Tue May 11 15:31:31 2021
 from pathlib import Path
 from io import StringIO
 import warnings
-from copy import deepcopy
 
 # supress the future warning from pandas about using datetime parser.
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
 import pandas as pd
-import logging
+from loguru import logger
 from datetime import datetime
 
 from mth5.timeseries import ChannelTS, RunTS
@@ -176,7 +175,7 @@ class LEMI424:
     """
 
     def __init__(self, fn=None, **kwargs):
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = logger
         self.fn = fn
         self.sample_rate = 1.0
         self.chunk_size = 8640
@@ -257,23 +256,19 @@ class LEMI424:
         """
         if not self._has_data():
             raise ValueError("Data is None cannot append to. Read file first")
-
         if isinstance(other, LEMI424):
             new = LEMI424()
             new.__dict__.update(self.__dict__)
             new.data = pd.concat([new.data, other.data])
             return new
-
         elif isinstance(other, pd.DataFrame):
 
             if not other.columns != self.data.columns:
                 raise ValueError("DataFrame columns are not the same.")
-
             new = LEMI424()
             new.__dict__.update(self.__dict__)
             new.data = pd.concat([new.data, other])
             return new
-
         else:
             raise ValueError(f"Cannot add {type(other)} to pd.DataFrame.")
 
@@ -294,7 +289,6 @@ class LEMI424:
 
         if data is None:
             self._data = None
-
         elif isinstance(data, pd.DataFrame):
             if len(data.columns) == len(self.file_column_names):
                 if data.columns != self.file_column_names:
@@ -353,17 +347,13 @@ class LEMI424:
         """median latitude where data have been collected in the LEMI424 file"""
         if self._has_data():
 
-            return (
-                self.data.latitude.median() * self.data.lat_hemisphere.median()
-            )
+            return self.data.latitude.median() * self.data.lat_hemisphere.median()
 
     @property
     def longitude(self):
         """median longitude where data have been collected in the LEMI424 file"""
         if self._has_data():
-            return (
-                self.data.longitude.median() * self.data.lon_hemisphere.median()
-            )
+            return self.data.longitude.median() * self.data.lon_hemisphere.median()
 
     @property
     def elevation(self):
@@ -418,7 +408,6 @@ class LEMI424:
                 r.add_channel(Electric(component=ch_e))
             for ch_h in ["bx", "by", "bz"]:
                 r.add_channel(Magnetic(component=ch_h))
-
         return r
 
     def read(self, fn=None, fast=True):
@@ -440,12 +429,10 @@ class LEMI424:
         """
         if fn is not None:
             self.fn = fn
-
         if not self.fn.exists():
             msg = "Could not find file %s"
             self.logger.error(msg, self.fn)
             raise IOError(msg % self.fn)
-
         if fast:
             try:
                 self.read_metadata()
@@ -487,10 +474,7 @@ class LEMI424:
                     freq="1000000000N",
                 )
                 if time_index.size != data.shape[0]:
-                    raise ValueError(
-                        "Missing a time stamp use read with fast=False"
-                    )
-
+                    raise ValueError("Missing a time stamp use read with fast=False")
                 data.index = time_index
                 self.data = data
                 return
@@ -498,7 +482,6 @@ class LEMI424:
                 self.logger.warning(
                     "Data is missing a time stamp, reading in slow mode"
                 )
-
         # read in chunks, this doesnt really speed up much as most of the
         # compute time is used in the date time parsing.
         if self.n_samples > self.chunk_size:
@@ -533,10 +516,7 @@ class LEMI424:
 
             self.data = pd.concat(dfs)
             et = MTime().now()
-            self.logger.debug(
-                f"Reading {self.fn.name} took {et - st:.2f} seconds"
-            )
-
+            self.logger.debug(f"Reading {self.fn.name} took {et - st:.2f} seconds")
         else:
             st = MTime().now()
             self.data = pd.read_csv(
@@ -564,9 +544,7 @@ class LEMI424:
                 index_col="date",
             )
             et = MTime().now()
-            self.logger.debug(
-                f"Reading {self.fn.name} took {et - st:.2f} seconds"
-            )
+            self.logger.debug(f"Reading {self.fn.name} took {et - st:.2f} seconds")
 
     def read_metadata(self):
         """
@@ -580,7 +558,6 @@ class LEMI424:
             for line in fid:
                 pass  # iterate to the end
             last_line = line
-
         lines = StringIO(f"{first_line}\n{last_line}")
 
         self.data = pd.read_csv(
@@ -630,19 +607,16 @@ class LEMI424:
         ):
             if comp[0] in ["h", "b"]:
                 ch = ChannelTS("magnetic")
-
             elif comp[0] in ["e"]:
                 ch = ChannelTS("electric")
             else:
                 ch = ChannelTS("auxiliary")
-
             ch.sample_rate = self.sample_rate
             ch.start = self.start
             ch.ts = self.data[comp].values
             ch.component = comp
 
             ch_list.append(ch)
-
         return RunTS(
             array_list=ch_list,
             station_metadata=self.station_metadata,
@@ -653,9 +627,7 @@ class LEMI424:
 # =============================================================================
 # define the reader
 # =============================================================================
-def read_lemi424(
-    fn, e_channels=["e1", "e2"], fast=True, logger_file_handler=None
-):
+def read_lemi424(fn, e_channels=["e1", "e2"], fast=True):
     """
     Read a LEMI 424 TXT file.
 
@@ -671,12 +643,8 @@ def read_lemi424(
 
     if not isinstance(fn, (list, tuple)):
         fn = [fn]
-
     txt_obj = LEMI424(fn[0])
     txt_obj.read(fast=fast)
-
-    if logger_file_handler:
-        txt_obj.logger.addHandler(logger_file_handler)
 
     # read a list of files into a single run
     if len(fn) > 1:
@@ -684,5 +652,4 @@ def read_lemi424(
             other = LEMI424(txt_file)
             other.read()
             txt_obj += other
-
     return txt_obj.to_run_ts(e_channels=e_channels)
