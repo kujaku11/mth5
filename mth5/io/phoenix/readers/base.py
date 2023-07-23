@@ -16,7 +16,7 @@ Revised 2022 by J. Peacock
 from pathlib import Path
 from .header import Header
 
-from mth5.utils.mth5_logger import setup_logger
+from loguru import logger
 
 # =============================================================================
 
@@ -41,9 +41,7 @@ class TSReaderBase(Header):
             header_length=header_length, report_hw_sat=report_hw_sat, **kwargs
         )
 
-        self.logger = setup_logger(
-            f"{self.__class__}.{self.__class__.__name__}"
-        )
+        self.logger = logger
         self.base_path = path
         self.last_seq = self.seq + num_files
         self.stream = None

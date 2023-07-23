@@ -19,7 +19,7 @@ from collections import OrderedDict
 
 import numpy as np
 
-from mth5.utils.mth5_logger import setup_logger
+from loguru import logger
 from mt_metadata.timeseries import Magnetic, Electric, Run, Station, Survey
 
 # =============================================================================
@@ -68,7 +68,7 @@ class AsciiMetadata:
 
     def __init__(self, fn=None, **kwargs):
 
-        self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = logger
 
         self.fn = fn
         self.missing_data_flag = np.NaN
@@ -196,20 +196,15 @@ class AsciiMetadata:
         get elevation from national map
         """
         # the url for national map elevation query
-        nm_url = Request(
-            self.national_map_url.format(self.longitude, self.latitude)
-        )
+        nm_url = Request(self.national_map_url.format(self.longitude, self.latitude))
 
         # call the url and get the response
         try:
             response = urlopen(nm_url)
         except HTTPError:
-            self.logger.error(
-                "could not connect to get elevation from national map."
-            )
+            self.logger.error("could not connect to get elevation from national map.")
             self.logger.debug(nm_url.format(self.longitude, self.latitude))
             return self.station_metadata.location.elevation
-
         # read the xml response and convert to a float
         info = json.loads(response.read().decode())
         try:
@@ -250,9 +245,7 @@ class AsciiMetadata:
         try:
             self._chn_num = int(n_channel)
         except ValueError:
-            self.logger.warning(
-                f"{n_channel} is not a number, setting n_channels to 0"
-            )
+            self.logger.warning(f"{n_channel} is not a number, setting n_channels to 0")
 
     @property
     def sample_rate(self):
@@ -279,9 +272,7 @@ class AsciiMetadata:
         if isinstance(value, Survey):
             self._survey_metadata.update(value)
         else:
-            raise TypeError(
-                "Input must be a mt_metadata.timeseries.Survey instance"
-            )
+            raise TypeError("Input must be a mt_metadata.timeseries.Survey instance")
 
     @property
     def station_metadata(self):
@@ -292,9 +283,7 @@ class AsciiMetadata:
         if isinstance(value, Station):
             self._station_metadata.update(value)
         else:
-            raise TypeError(
-                "Input must be a mt_metadata.timeseries.Station instance"
-            )
+            raise TypeError("Input must be a mt_metadata.timeseries.Station instance")
 
     @property
     def run_metadata(self):
@@ -305,9 +294,7 @@ class AsciiMetadata:
         if isinstance(value, Run):
             self._run_metadata.update(value)
         else:
-            raise TypeError(
-                "Input must be a mt_metadata.timeseries.Run instance"
-            )
+            raise TypeError("Input must be a mt_metadata.timeseries.Run instance")
 
     def get_component_info(self, comp):
         """
@@ -322,7 +309,6 @@ class AsciiMetadata:
         for key, kdict in self.channel_dict.items():
             if kdict["ChnID"].lower() == comp.lower():
                 return kdict
-
         return None
 
     def read_metadata(self, fn=None, meta_lines=None):
@@ -342,13 +328,10 @@ class AsciiMetadata:
             self.fn = fn
         if self.fn is not None:
             with self.fn.open("r") as fid:
-                meta_lines = [
-                    fid.readline() for ii in range(self._metadata_len)
-                ]
+                meta_lines = [fid.readline() for ii in range(self._metadata_len)]
         for ii, line in enumerate(meta_lines):
             if "DataSet" in line:
                 break
-
             if line.find(":") > 0:
                 key, value = line.strip().split(":", 1)
                 value = value.strip()
@@ -356,20 +339,15 @@ class AsciiMetadata:
                 if len(value) < 1:
                     chn_find = True
                     continue
-
                 attr = self._key_dict[key]
                 setattr(self, attr, value)
-
             elif "coordinate" in line:
                 self.coordinate_system = " ".join(line.strip().split()[-2:])
             else:
                 if chn_find is True:
                     if "chnnum" in line.lower():
                         ch_keys = dict(
-                            [
-                                (kk, ii)
-                                for ii, kk in enumerate(line.strip().split())
-                            ]
+                            [(kk, ii) for ii, kk in enumerate(line.strip().split())]
                         )
                     else:
                         line_list = line.strip().split()
@@ -380,17 +358,11 @@ class AsciiMetadata:
                             )
 
                             ch.channel_number = line_list[ch_keys["ChnNum"]]
-                            ch.measurement_azimuth = line_list[
-                                ch_keys["Azimuth"]
-                            ]
+                            ch.measurement_azimuth = line_list[ch_keys["Azimuth"]]
                             if ch.type in ["electric"]:
-                                ch.dipole_length = line_list[
-                                    ch_keys["Dipole_Length"]
-                                ]
+                                ch.dipole_length = line_list[ch_keys["Dipole_Length"]]
                             else:
-                                ch.sensor.id = line_list[
-                                    ch_keys["InstrumentID"]
-                                ]
+                                ch.sensor.id = line_list[ch_keys["InstrumentID"]]
                             self.run_metadata.data_logger.id = line_list[
                                 ch_keys["InstrumentID"]
                             ]
@@ -399,10 +371,8 @@ class AsciiMetadata:
                             ch.time_period.end = self.end
                             ch.sample_rate = self.sample_rate
                             self._run_metadata.add_channel(ch)
-
                         else:
                             self.logger.warning("Not sure what line this is")
-
         self._run_metadata.time_period.start = self.start
         self._run_metadata.time_period.end = self.end
         self._run_metadata.sample_rate = self.sample_rate
@@ -438,7 +408,6 @@ class AsciiMetadata:
                             value = 0
                         chn_line.append(f"{value:{self._chn_fmt[comp_key]}}")
                     lines.append("".join(chn_line))
-
             elif key in ["DataSet"]:
                 lines.append("{0}:".format(key))
                 return lines
@@ -448,5 +417,4 @@ class AsciiMetadata:
                     lines.append(f"{key}: {value}")
                 except AttributeError:
                     lines.append(f"{key}")
-
         return lines
