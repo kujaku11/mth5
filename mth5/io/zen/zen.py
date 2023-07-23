@@ -24,7 +24,7 @@ Updated August 2020 (JP)
 import datetime
 import struct
 from pathlib import Path
-import logging
+from loguru import logger
 
 import numpy as np
 
@@ -117,7 +117,7 @@ class Z3D:
     """
 
     def __init__(self, fn=None, **kwargs):
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = logger
         self.fn = fn
         self.calibration_fn = None
 
@@ -159,7 +159,7 @@ class Z3D:
         # '1980, 1, 6, 0, 0, 0, -1, -1, 0
         self._gps_epoch = MTime("1980-01-06T00:00:00")
         self._leap_seconds = 18
-        self._block_len = 2**16
+        self._block_len = 2 ** 16
         # the number in the cac files is for volts, we want mV
         self._counts_to_mv_conversion = 9.5367431640625e-10 * 1e3
         self.num_sec_to_skip = 2
@@ -230,16 +230,12 @@ class Z3D:
             # only ex and ey have xyz2
             if hasattr(self.metadata, "ch_offset_xyz2"):
                 x1, y1, z1 = [
-                    float(offset)
-                    for offset in self.metadata.ch_offset_xyz1.split(":")
+                    float(offset) for offset in self.metadata.ch_offset_xyz1.split(":")
                 ]
                 x2, y2, z2 = [
-                    float(offset)
-                    for offset in self.metadata.ch_offset_xyz2.split(":")
+                    float(offset) for offset in self.metadata.ch_offset_xyz2.split(":")
                 ]
-                length = np.sqrt(
-                    (x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2
-                )
+                length = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2)
                 length = np.round(length, 2)
             else:
                 length = 0
@@ -248,7 +244,6 @@ class Z3D:
             x2, y2 = [float(d) for d in self.metadata.ch_xyz2.split(":")]
             length = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2) * 100.0
             length = np.round(length, 2)
-
         return length
 
     @property
@@ -330,7 +325,6 @@ class Z3D:
 
         if self.header.old_version is True:
             return MTime(self.header.schedule)
-
         return self.schedule.initial_start
 
     @zen_schedule.setter
@@ -340,9 +334,7 @@ class Z3D:
         """
         if not isinstance(schedule_dt, MTime):
             schedule_dt = MTime(schedule_dt)
-            raise TypeError(
-                "New schedule datetime must be type datetime.datetime"
-            )
+            raise TypeError("New schedule datetime must be type datetime.datetime")
         self.schedule.initial_start = schedule_dt
 
     @property
@@ -386,8 +378,7 @@ class Z3D:
                 * self.header.ch_factor
             )
             ch.ac.end = (
-                self.time_series[-int(self.sample_rate) :].std()
-                * self.header.ch_factor
+                self.time_series[-int(self.sample_rate) :].std() * self.header.ch_factor
             )
             ch.dc.start = (
                 self.time_series[0 : int(self.sample_rate)].mean()
@@ -408,18 +399,15 @@ class Z3D:
                 * self.header.ch_factor
             )
             ch.h_field_max.end = (
-                self.time_series[-int(self.sample_rate) :].max()
-                * self.header.ch_factor
+                self.time_series[-int(self.sample_rate) :].max() * self.header.ch_factor
             )
             ch.h_field_min.start = (
                 self.time_series[0 : int(self.sample_rate)].min()
                 * self.header.ch_factor
             )
             ch.h_field_min.end = (
-                self.time_series[-int(self.sample_rate) :].min()
-                * self.header.ch_factor
+                self.time_series[-int(self.sample_rate) :].min() * self.header.ch_factor
             )
-
         ch.time_period.start = self.start.isoformat()
         ch.time_period.end = self.end.isoformat()
         ch.component = self.component
@@ -502,9 +490,7 @@ class Z3D:
                 fap = FrequencyResponseTableFilter()
                 fap.units_in = "nanotesla"
                 fap.units_out = "millivolts"
-                fap.frequencies = (
-                    1 / (2 * np.pi)
-                ) * self.metadata.coil_cal.frequency
+                fap.frequencies = (1 / (2 * np.pi)) * self.metadata.coil_cal.frequency
                 fap.amplitudes = self.metadata.coil_cal.amplitude
                 fap.phases = self.metadata.coil_cal.phase / 1e3
                 fap.name = f"ant4_{self.coil_number}_response"
@@ -513,7 +499,6 @@ class Z3D:
             c = CoilResponse(self.calibration_fn)
             if c.has_coil_number(self.coil_number):
                 fap = c.get_coil_response_fap(self.coil_number)
-
         return fap
 
     @property
@@ -542,7 +527,6 @@ class Z3D:
             amplitude = fap_table.amplitude
             phase = fap_table.phase / 1e3
             find = True
-
         elif self.metadata.cal_board is not None:
 
             try:
@@ -564,7 +548,6 @@ class Z3D:
                     find = True
                 except KeyError:
                     return fap
-
         if find:
             freq = np.logspace(np.log10(6.00000e-04), np.log10(8.19200e03), 48)
             amp = np.ones(48)
@@ -574,17 +557,17 @@ class Z3D:
                 freq[index] = item_f
                 amp[index] = item_a
                 phases[index] = item_p
-
             fap = FrequencyResponseTableFilter()
             fap.units_in = "millivolts"
             fap.units_out = "millivolts"
             fap.frequencies = freq
             fap.amplitudes = amp
             fap.phases = phases
-            fap.name = f"{self.header.data_logger.lower()}_{self.sample_rate:.0f}_response"
+            fap.name = (
+                f"{self.header.data_logger.lower()}_{self.sample_rate:.0f}_response"
+            )
             fap.comments = "data logger response read from z3d file"
             return fap
-
         return None
 
     @property
@@ -597,7 +580,6 @@ class Z3D:
             filter_list.append(self.coil_response)
         elif self.dipole_filter:
             filter_list.append(self.dipole_filter)
-
         filter_list.append(self.counts2mv_filter)
 
         return ChannelResponseFilter(filters_list=filter_list)
@@ -613,7 +595,6 @@ class Z3D:
             dipole.name = f"dipole_{self.dipole_length:.2f}m"
             dipole.gain = self.dipole_length / 1000.0
             dipole.comments = "convert to electric field"
-
         return dipole
 
     def _get_gps_stamp_type(self, old_version=False):
@@ -640,7 +621,6 @@ class Z3D:
             self._gps_flag_0 = -1
             self._block_len = int(self._gps_stamp_length + self.sample_rate * 4)
             self.gps_flag = self._gps_f0
-
         else:
             return
 
@@ -676,7 +656,6 @@ class Z3D:
 
         if fn is not None:
             self.fn = fn
-
         self.header.read_header(fn=self.fn, fid=fid)
         if self.header.old_version:
             if self.header.box_number is None:
@@ -714,12 +693,9 @@ class Z3D:
 
         if fn is not None:
             self.fn = fn
-
         self.schedule.read_schedule(fn=self.fn, fid=fid)
         if self.header.old_version:
-            self.schedule.initial_start = MTime(
-                self.header.schedule, gps_time=True
-            )
+            self.schedule.initial_start = MTime(self.header.schedule, gps_time=True)
 
     # ======================================
     def _read_metadata(self, fn=None, fid=None):
@@ -753,7 +729,6 @@ class Z3D:
 
         if fn is not None:
             self.fn = fn
-
         if self.header.old_version:
             self.metadata._schedule_metadata_len = 0
         self.metadata.read_metadata(fn=self.fn, fid=fid)
@@ -801,7 +776,6 @@ class Z3D:
                 break
             data[data_count : data_count + len(test_str)] = test_str
             data_count += test_str.size
-
         return data
 
     def _unpack_data(self, data, gps_stamp_index):
@@ -816,7 +790,6 @@ class Z3D:
                     f"Failed gps stamp {ii+1} out of {len(gps_stamp_index)}"
                 )
                 break
-
             if (
                 self.header.old_version is True
                 or data[gps_find + 1] == self._gps_flag_1
@@ -825,9 +798,7 @@ class Z3D:
                     "<" + "i" * int(self._gps_bytes),
                     *data[int(gps_find) : int(gps_find + self._gps_bytes)],
                 )
-                self.gps_stamps[ii] = np.frombuffer(
-                    gps_str, dtype=self._gps_dtype
-                )
+                self.gps_stamps[ii] = np.frombuffer(gps_str, dtype=self._gps_dtype)
                 if ii > 0:
                     self.gps_stamps[ii]["block_len"] = (
                         gps_find - gps_stamp_index[ii - 1] - self._gps_bytes
@@ -835,7 +806,6 @@ class Z3D:
                 elif ii == 0:
                     self.gps_stamps[ii]["block_len"] = 0
                 data[int(gps_find) : int(gps_find + self._gps_bytes)] = 0
-
         return data
 
     # ======================================
@@ -870,7 +840,6 @@ class Z3D:
 
         if z3d_fn is not None:
             self.fn = z3d_fn
-
         self.logger.debug(f"Reading {self.fn}")
         st = datetime.datetime.now()
 
@@ -885,9 +854,7 @@ class Z3D:
 
             if self.header.old_version is True:
                 self._get_gps_stamp_type(True)
-
             data = self._read_raw_string(file_id)
-
         self.raw_data = data.copy()
 
         # find the gps stamps
@@ -900,7 +867,6 @@ class Z3D:
             msg = f"Data is too short, cannot open file {self.fn}"
             self.logger.error(msg)
             raise ZenGPSError(msg)
-
         # find gps stamps of the trimmed data
         gps_stamp_find = self.get_gps_stamp_index(data, self.header.old_version)
 
@@ -944,7 +910,6 @@ class Z3D:
                 for gps_find in gps_stamp_find
                 if ts_data[gps_find + 1] == self._gps_flag_1
             ]
-
         return gps_stamp_find
 
     # =================================================
@@ -994,10 +959,7 @@ class Z3D:
         t_diff = np.zeros_like(self.gps_stamps["time"])
 
         for ii in range(len(t_diff) - 1):
-            t_diff[ii] = (
-                self.gps_stamps["time"][ii] - self.gps_stamps["time"][ii + 1]
-            )
-
+            t_diff[ii] = self.gps_stamps["time"][ii] - self.gps_stamps["time"][ii + 1]
         bad_times = np.where(abs(t_diff) > 0.5)[0]
         if len(bad_times) > 0:
             self.logger.warning("BAD GPS TIMES:")
@@ -1011,24 +973,18 @@ class Z3D:
 
         """
         # first check if the gps stamp blocks are of the correct length
-        bad_blocks = np.where(
-            self.gps_stamps["block_len"][1:] != self.header.ad_rate
-        )[0]
+        bad_blocks = np.where(self.gps_stamps["block_len"][1:] != self.header.ad_rate)[
+            0
+        ]
 
         if len(bad_blocks) > 0:
             if bad_blocks.max() < 5:
-                ts_skip = self.gps_stamps["block_len"][
-                    0 : bad_blocks[-1] + 1
-                ].sum()
+                ts_skip = self.gps_stamps["block_len"][0 : bad_blocks[-1] + 1].sum()
                 self.gps_stamps = self.gps_stamps[bad_blocks[-1] :]
                 self.time_series = self.time_series[ts_skip:]
 
-                self.logger.warning(
-                    f"Skipped the first {bad_blocks[-1]} seconds"
-                )
-                self.logger.warning(
-                    f"Skipped first {ts_skip} poins in time series"
-                )
+                self.logger.warning(f"Skipped the first {bad_blocks[-1]} seconds")
+                self.logger.warning(f"Skipped first {ts_skip} poins in time series")
 
     # ==================================================
     def convert_gps_time(self):
@@ -1095,7 +1051,6 @@ class Z3D:
             gps_week += 1
             cc = gps_week * self._week_len
             gps_seconds -= self._week_len
-
         gps_time = np.floor(gps_seconds) + gps_ms + cc
 
         return gps_time, gps_week
@@ -1117,12 +1072,9 @@ class Z3D:
         if gps_time > self._week_len:
             gps_week += 1
             gps_time -= self._week_len
-
         # compute seconds using weeks and gps time
         utc_seconds = (
-            self._gps_epoch.epoch_seconds
-            + (gps_week * self._week_len)
-            + gps_time
+            self._gps_epoch.epoch_seconds + (gps_week * self._week_len) + gps_time
         )
 
         # compute date and time from seconds and return a datetime object
