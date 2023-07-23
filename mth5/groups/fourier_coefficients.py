@@ -60,9 +60,7 @@ class MasterFCGroup(BaseGroup):
 
         """
 
-        return self._add_group(
-            fc_name, FCGroup, group_metadata=fc_metadata, match="id"
-        )
+        return self._add_group(fc_name, FCGroup, group_metadata=fc_metadata, match="id")
 
     def get_fc_group(self, fc_name):
         """
@@ -112,9 +110,7 @@ class FCGroup(BaseGroup):
 
     def __init__(self, group, decimation_level_metadata=None, **kwargs):
 
-        super().__init__(
-            group, group_metadata=decimation_level_metadata, **kwargs
-        )
+        super().__init__(group, group_metadata=decimation_level_metadata, **kwargs)
 
     @BaseGroup.metadata.getter
     def metadata(self):
@@ -151,7 +147,7 @@ class FCGroup(BaseGroup):
                         )
                     )
             except KeyError as error:
-                self.logger.debug("Could not find key: ", error)
+                self.logger.debug(f"Could not find key: {error}")
         ch_summary = np.array(
             ch_list,
             dtype=np.dtype(
@@ -262,9 +258,7 @@ class FCDecimationGroup(BaseGroup):
 
     def __init__(self, group, decimation_level_metadata=None, **kwargs):
 
-        super().__init__(
-            group, group_metadata=decimation_level_metadata, **kwargs
-        )
+        super().__init__(group, group_metadata=decimation_level_metadata, **kwargs)
 
     @BaseGroup.metadata.getter
     def metadata(self):
@@ -346,10 +340,9 @@ class FCDecimationGroup(BaseGroup):
         """
 
         if not isinstance(df, pd.DataFrame):
-            msg = "Must input a pandas dataframe not %s"
-            self.logger.error(msg, type(df))
-            raise TypeError(msg % type(df))
-
+            msg = f"Must input a pandas dataframe not {type(df)}"
+            self.logger.error(msg)
+            raise TypeError(msg)
         for col in df.columns:
             df[col] = np.complex128(df[col])
             xrds = df[col].to_xarray()
@@ -367,10 +360,9 @@ class FCDecimationGroup(BaseGroup):
         """
 
         if not isinstance(data_array, (xr.Dataset, xr.DataArray)):
-            msg = "Must input a xarray Dataset or DataArray not %s"
-            self.logger.error(msg, type(data_array))
-            raise TypeError(msg % type(data_array))
-
+            msg = f"Must input a xarray Dataset or DataArray not {type(data_array)}"
+            self.logger.error(msg)
+            raise TypeError(msg)
         ch_metadata = Channel()
         ch_metadata.time_period.start = data_array.time[0].values
         ch_metadata.time_period.end = data_array.time[-1].values
@@ -384,14 +376,12 @@ class FCDecimationGroup(BaseGroup):
             ch_metadata.units = data_array.units
         except AttributeError:
             self.logger.debug("Could not find 'units' in xarray")
-
         if isinstance(data_array, xr.DataArray):
             self.add_channel(
                 data_array.name,
                 fc_data=data_array.to_numpy(),
                 fc_metadata=ch_metadata,
             )
-
         else:
             for ch in data_array.data_vars.keys():
 
@@ -424,12 +414,10 @@ class FCDecimationGroup(BaseGroup):
 
         if channels is None:
             channels = self.groups_list
-
         ch_dict = {}
         for ch in channels:
             ch_ds = self.get_channel(ch)
             ch_dict[ch] = ch_ds.to_xarray()
-
         return xr.Dataset(ch_dict)
 
     def from_numpy_array(self, nd_array, ch_name):
@@ -446,19 +434,16 @@ class FCDecimationGroup(BaseGroup):
         """
 
         if not isinstance(nd_array, (np.nd_array)):
-            msg = "Must input a numpy ndarray not %s"
-            self.logger.error(msg, type(nd_array))
-            raise TypeError(msg % type(nd_array))
-
+            msg = f"Must input a numpy ndarray not {type(nd_array)}"
+            self.logger.error(msg)
+            raise TypeError(msg)
         if len(nd_array.shape[0]) == 3:
             for index, ch in zip(nd_array.shape[0], ch_name):
                 self.add_channel(ch, fc_data=nd_array[index])
         elif len(nd_array.shape) == 2:
             self.add_channel(ch_name, fc_data=nd_array)
         else:
-            raise ValueError(
-                "input array must be shaped (n_frequencies, n_windows)"
-            )
+            raise ValueError("input array must be shaped (n_frequencies, n_windows)")
 
     def add_channel(
         self,
@@ -509,18 +494,16 @@ class FCDecimationGroup(BaseGroup):
 
         if fc_metadata is None:
             fc_metadata = Channel(name=fc_name)
-
         if fc_data is not None:
             if not isinstance(
                 fc_data, (np.ndarray, xr.DataArray, xr.Dataset, pd.DataFrame)
             ):
                 msg = (
                     "Need to input a numpy.array, xarray.DataArray, "
-                    "xr.Dataset, pd.DataFrame not %s"
+                    f"xr.Dataset, pd.DataFrame not {type(fc_data)}"
                 )
-                self.logger.exception(msg, type(fc_data))
-                raise TypeError(msg % type(fc_data))
-
+                self.logger.exception(msg)
+                raise TypeError(msg)
         else:
             chunks = True
             fc_data = np.zeros((1, 1), dtype=complex)
@@ -559,15 +542,10 @@ class FCDecimationGroup(BaseGroup):
             fc_dataset = self.hdf5_group[fc_name]
             fc_metadata = Channel(**dict(fc_dataset.attrs))
             return FCChannelDataset(fc_dataset, dataset_metadata=fc_metadata)
-
         except (KeyError):
-            msg = (
-                f"{fc_name} does not exist, "
-                + "check groups_list for existing names"
-            )
+            msg = f"{fc_name} does not exist, check groups_list for existing names"
             self.logger.error(msg)
             raise MTH5Error(msg)
-
         except (OSError) as error:
             self.logger.error(error)
             raise MTH5Error(error)
@@ -588,15 +566,12 @@ class FCDecimationGroup(BaseGroup):
             del self.hdf5_group[fc_name]
             self.logger.info(
                 "Deleting a estimate does not reduce the HDF5"
-                + "file size it simply remove the reference. If "
-                + "file size reduction is your goal, simply copy"
-                + " what you want into another file."
+                "file size it simply remove the reference. If "
+                "file size reduction is your goal, simply copy"
+                " what you want into another file."
             )
         except KeyError:
-            msg = (
-                f"{fc_name} does not exist, "
-                + "check groups_list for existing names"
-            )
+            msg = f"{fc_name} does not exist, check groups_list for existing names"
             self.logger.error(msg)
             raise MTH5Error(msg)
 
@@ -611,12 +586,8 @@ class FCDecimationGroup(BaseGroup):
         channel_summary = self.channel_summary.copy()
 
         if not channel_summary.empty:
-            self._metadata.time_period.start = (
-                channel_summary.start.min().isoformat()
-            )
-            self._metadata.time_period.end = (
-                channel_summary.end.max().isoformat()
-            )
+            self._metadata.time_period.start = channel_summary.start.min().isoformat()
+            self._metadata.time_period.end = channel_summary.end.max().isoformat()
             self._metadata.sample_rate_decimation_level = (
                 channel_summary.sample_rate_decimation_level.unique()[0]
             )
