@@ -15,8 +15,6 @@ from .readers import (
     DecimatedSegmentedReader,
 )
 
-from mth5.timeseries import ChannelTS
-
 # =============================================================================
 READERS = {
     "bin": NativeReader,

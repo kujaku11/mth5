@@ -112,8 +112,7 @@ class DecimatedContinuousReader(TSReaderBase):
             ts = self.read()
             data = np.append(data, ts)
             self.seq = ii
-
-        self.logger.debug("Read %s sequences", self.seq + 1)
+        self.logger.debug("Read {self.seq + 1} sequences")
         return data
 
     def to_channel_ts(self):
