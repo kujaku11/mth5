@@ -5,11 +5,9 @@ from pathlib import Path
 
 from mth5.mth5 import MTH5
 from mth5.helpers import close_open_files
-from mth5.utils.mth5_logger import setup_logger
+from loguru import logger
 
 # =============================================================================
-
-logger = setup_logger(__file__)
 
 
 def initialize_mth5(h5_path, mode="a", file_version="0.1.0"):
@@ -37,7 +35,6 @@ def initialize_mth5(h5_path, mode="a", file_version="0.1.0"):
             logger.warning("File exists, removing from file system.")
             close_open_files()
             h5_path.unlink()
-
     mth5_obj = MTH5(file_version=file_version)
     mth5_obj.open_mth5(str(h5_path), mode=mode)
 

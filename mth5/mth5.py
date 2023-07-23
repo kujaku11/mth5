@@ -30,7 +30,7 @@ from mth5 import __version__ as mth5_version
 from mth5 import groups as groups
 from mth5.tables import ChannelSummaryTable, TFSummaryTable
 from mth5 import helpers
-from mth5.utils.mth5_logger import setup_logger
+from loguru import logger
 from mth5 import CHANNEL_DTYPE, TF_DTYPE
 
 from mt_metadata.utils.mttime import get_now_utc
@@ -261,7 +261,7 @@ class MTH5:
         file_version="0.2.0",
     ):
 
-        self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = logger
 
         # make these private so the user cant accidentally change anything.
         self.__hdf5_obj = None
