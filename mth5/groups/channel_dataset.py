@@ -15,6 +15,7 @@ import h5py
 import numpy as np
 import pandas as pd
 import xarray as xr
+from loguru import logger
 
 from mt_metadata import timeseries as metadata
 from mt_metadata.utils.mttime import MTime
@@ -32,7 +33,7 @@ from mth5.helpers import (
 
 from mth5.timeseries import ChannelTS
 from mth5.timeseries.channel_ts import make_dt_coordinates
-from mth5.utils.mth5_logger import setup_logger
+
 
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
 # =============================================================================
@@ -82,14 +83,12 @@ class ChannelDataset:
 
     """
 
-    def __init__(
-        self, dataset, dataset_metadata=None, write_metadata=True, **kwargs
-    ):
+    def __init__(self, dataset, dataset_metadata=None, write_metadata=True, **kwargs):
         for key, value in kwargs.items():
             setattr(self, key, value)
         if dataset is not None and isinstance(dataset, (h5py.Dataset)):
             self.hdf5_dataset = weakref.ref(dataset)()
-        self.logger = setup_logger(f"{__name__}.{self._class_name}")
+        self.logger = logger
 
         # set metadata to the appropriate class.  Standards is not a
         # Base object so should be skipped. If the class name is not
@@ -113,13 +112,12 @@ class ChannelDataset:
         # to the hdf5 dataset
         if dataset_metadata is not None:
             if not isinstance(dataset_metadata, type(self.metadata)):
-                msg = "metadata must be type metadata.%s not %s"
-                self.logger.error(
-                    msg, self._class_name, type(dataset_metadata)
+                msg = (
+                    f"metadata must be type metadata.{self._class_name} not "
+                    f"{type(dataset_metadata)}"
                 )
-                raise MTH5Error(
-                    msg % (self._class_name, type(dataset_metadata))
-                )
+                self.logger.error(msg)
+                raise MTH5Error(msg)
             # load from dict because of the extra attributes for MTH5
             self.metadata.from_dict(dataset_metadata.to_dict())
             self.metadata.hdf5_reference = self.hdf5_dataset.ref
@@ -130,7 +128,6 @@ class ChannelDataset:
                 self.write_metadata()
         else:
             self.read_metadata()
-
         # if the attrs don't have the proper metadata keys yet write them
         if not "mth5_type" in list(self.hdf5_dataset.attrs.keys()):
             self.write_metadata()
@@ -176,25 +173,13 @@ class ChannelDataset:
             lines = ["Channel {0}:".format(self._class_name)]
             lines.append("-" * (len(lines[0]) + 2))
             info_str = "\t{0:<18}{1}"
-            lines.append(
-                info_str.format("component:", self.metadata.component)
-            )
+            lines.append(info_str.format("component:", self.metadata.component))
             lines.append(info_str.format("data type:", self.metadata.type))
-            lines.append(
-                info_str.format("data format:", self.hdf5_dataset.dtype)
-            )
-            lines.append(
-                info_str.format("data shape:", self.hdf5_dataset.shape)
-            )
-            lines.append(
-                info_str.format("start:", self.metadata.time_period.start)
-            )
-            lines.append(
-                info_str.format("end:", self.metadata.time_period.end)
-            )
-            lines.append(
-                info_str.format("sample rate:", self.metadata.sample_rate)
-            )
+            lines.append(info_str.format("data format:", self.hdf5_dataset.dtype))
+            lines.append(info_str.format("data shape:", self.hdf5_dataset.shape))
+            lines.append(info_str.format("start:", self.metadata.time_period.start))
+            lines.append(info_str.format("end:", self.metadata.time_period.end))
+            lines.append(info_str.format("sample rate:", self.metadata.sample_rate))
             return "\n".join(lines)
         except ValueError:
             return "MTH5 file is closed and cannot be accessed."
@@ -257,7 +242,7 @@ class ChannelDataset:
             try:
                 f_list.append(filters_group.to_filter_object(name))
             except KeyError:
-                self.logger.warning("Could not locate filter %s", name)
+                self.logger.warning(f"Could not locate filter {name}")
                 continue
         return ChannelResponseFilter(filters_list=f_list)
 
@@ -303,7 +288,7 @@ class ChannelDataset:
         """
 
         return make_dt_coordinates(
-            self.start, self.sample_rate, self.n_samples, self._logger
+            self.start, self.sample_rate, self.n_samples, self.logger
         )
 
     def read_metadata(self):
@@ -531,14 +516,12 @@ class ChannelDataset:
                         raise MTH5Error(msg)
                     self.logger.info(f"filling data gap with {fill_value}")
                     self.hdf5_dataset[
-                        self.get_index_from_time(
-                            end_time
-                        ) : self.get_index_from_time(old_start)
+                        self.get_index_from_time(end_time) : self.get_index_from_time(
+                            old_start
+                        )
                     ] = fill_value
             else:
-                new_size = (
-                    self.n_samples + int(abs(start_t_diff) * sample_rate),
-                )
+                new_size = (self.n_samples + int(abs(start_t_diff) * sample_rate),)
                 overlap = abs(end_time - self.start)
                 self.logger.warning(
                     f"New data is overlapping by {overlap} s."
@@ -604,9 +587,7 @@ class ChannelDataset:
                             np.array(
                                 [
                                     new_data_array[0:fw].mean(),
-                                    np.mean(
-                                        self.hdf5_dataset[old_index - fw :]
-                                    ),
+                                    np.mean(self.hdf5_dataset[old_index - fw :]),
                                 ]
                             )
                         )
@@ -615,9 +596,7 @@ class ChannelDataset:
                             np.array(
                                 [
                                     np.median(new_data_array[0:fw]),
-                                    np.median(
-                                        self.hdf5_dataset[old_index - fw :]
-                                    ),
+                                    np.median(self.hdf5_dataset[old_index - fw :]),
                                 ]
                             )
                         )
@@ -631,9 +610,9 @@ class ChannelDataset:
                         raise MTH5Error(msg)
                     self.logger.info(f"filling data gap with {fill_value}")
                     self.hdf5_dataset[
-                        self.get_index_from_time(
-                            old_end
-                        ) : self.get_index_from_time(start_time)
+                        self.get_index_from_time(old_end) : self.get_index_from_time(
+                            start_time
+                        )
                     ] = fill_value
             else:
                 # if the new data fits within the extisting time span
@@ -644,14 +623,12 @@ class ChannelDataset:
                         f"{start_time} -- {end_time} " + "will be overwritten."
                     )
                     self.hdf5_dataset[
-                        self.get_index_from_time(
-                            start_time
-                        ) : self.get_index_from_time(end_time)
+                        self.get_index_from_time(start_time) : self.get_index_from_time(
+                            end_time
+                        )
                     ] = new_data_array
                 else:
-                    new_size = (
-                        self.n_samples + int(abs(start_t_diff) * sample_rate),
-                    )
+                    new_size = (self.n_samples + int(abs(start_t_diff) * sample_rate),)
                     overlap = abs(self.end - start_time)
                     self.logger.warning(
                         f"New data is overlapping by {overlap} s."
@@ -716,9 +693,7 @@ class ChannelDataset:
         loads into RAM
         """
 
-        df = pd.DataFrame(
-            {"data": self.hdf5_dataset[()]}, index=self.time_index
-        )
+        df = pd.DataFrame({"data": self.hdf5_dataset[()]}, index=self.time_index)
         df.attrs.update(self.metadata.to_dict(single=True))
 
         return df
@@ -785,9 +760,7 @@ class ChannelDataset:
         """
 
         if not isinstance(channel_ts_obj, ChannelTS):
-            msg = (
-                f"Input must be a ChannelTS object not {type(channel_ts_obj)}"
-            )
+            msg = f"Input must be a ChannelTS object not {type(channel_ts_obj)}"
             self.logger.error(msg)
             raise TypeError(msg)
         if how == "replace":
@@ -857,9 +830,7 @@ class ChannelDataset:
             self.logger.error(msg)
             raise TypeError(msg)
         if how == "replace":
-            self.metadata.from_dict(
-                {self.metadata._class_name: data_array.attrs}
-            )
+            self.metadata.from_dict({self.metadata._class_name: data_array.attrs})
             self.replace_dataset(data_array.values)
             self.write_metadata()
         elif how == "extend":
@@ -932,12 +903,8 @@ class ChannelDataset:
                     self.hdf5_dataset.parent.parent.attrs["id"],
                     self.hdf5_dataset.parent.attrs["id"],
                     self.hdf5_dataset.parent.parent.attrs["location.latitude"],
-                    self.hdf5_dataset.parent.parent.attrs[
-                        "location.longitude"
-                    ],
-                    self.hdf5_dataset.parent.parent.attrs[
-                        "location.elevation"
-                    ],
+                    self.hdf5_dataset.parent.parent.attrs["location.longitude"],
+                    self.hdf5_dataset.parent.parent.attrs["location.elevation"],
                     self.metadata.component,
                     self.metadata.time_period.start,
                     self.metadata.time_period.end,
@@ -1054,17 +1021,13 @@ class ChannelDataset:
             self.logger.warning(msg)
         # create a regional reference that can be used, need +1 to be inclusive
         try:
-            regional_ref = self.hdf5_dataset.regionref[
-                start_index : end_index + 1
-            ]
+            regional_ref = self.hdf5_dataset.regionref[start_index : end_index + 1]
         except (OSError, RuntimeError):
             self.logger.debug(
                 "file is in read mode cannot set an internal reference, using index values"
             )
             regional_ref = slice(start_index, end_index)
-        dt_index = make_dt_coordinates(
-            start, self.sample_rate, npts, self.logger
-        )
+        dt_index = make_dt_coordinates(start, self.sample_rate, npts, self.logger)
 
         meta_dict = self.metadata.to_dict()[self.metadata._class_name]
         meta_dict["time_period.start"] = dt_index[0].isoformat()
