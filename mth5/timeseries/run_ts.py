@@ -22,6 +22,7 @@ import inspect
 
 import xarray as xr
 import numpy as np
+from loguru import logger
 
 from matplotlib import pyplot as plt
 
@@ -35,7 +36,6 @@ from .ts_helpers import (
     make_dt_coordinates,
     get_decimation_sample_rates,
 )
-from mth5.utils.mth5_logger import setup_logger
 
 from obspy.core import Stream
 
@@ -67,7 +67,7 @@ class RunTS:
         survey_metadata=None,
     ):
 
-        self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = logger
         self._survey_metadata = self._initialize_metadata()
         self._dataset = xr.Dataset()
         self._filters = {}
@@ -132,7 +132,6 @@ class RunTS:
         """
         if not isinstance(other, RunTS):
             raise TypeError(f"Cannot combine {type(other)} with RunTS.")
-
         # combine into a data set use override to keep attrs from original
         combined_ds = xr.combine_by_coords(
             [self.dataset, other.dataset], combine_attrs="override"
@@ -140,9 +139,7 @@ class RunTS:
 
         n_samples = (
             self.sample_rate
-            * float(
-                combined_ds.time.max().values - combined_ds.time.min().values
-            )
+            * float(combined_ds.time.max().values - combined_ds.time.min().values)
             / 1e9
         ) + 1
 
@@ -159,9 +156,7 @@ class RunTS:
             survey_metadata=self.survey_metadata,
         )
 
-        new_run.dataset = combined_ds.interp(
-            time=new_dt_index, method="slinear"
-        )
+        new_run.dataset = combined_ds.interp(time=new_dt_index, method="slinear")
 
         new_run.run_metadata.update_time_period()
         new_run.station_metadata.update_time_period()
@@ -203,13 +198,12 @@ class RunTS:
                 self.logger.debug("Loading from metadata dict")
                 return r_metadata
             else:
-                msg = "input metadata must be type %s or dict, not %s"
-                self.logger.error(
-                    msg, type(self.run_metadata), type(run_metadata)
+                msg = (
+                    "input metadata must be type {type(self.run_metadata)} "
+                    "or dict, not {type(run_metadata)}"
                 )
-                raise TypeError(
-                    msg % (type(self.run_metadata), type(run_metadata))
-                )
+                self.logger.error(msg)
+                raise TypeError(msg)
         return run_metadata.copy()
 
     def _validate_station_metadata(self, station_metadata):
@@ -219,22 +213,19 @@ class RunTS:
 
         if not isinstance(station_metadata, metadata.Station):
             if isinstance(station_metadata, dict):
-                if "station" not in [
-                    cc.lower() for cc in station_metadata.keys()
-                ]:
+                if "station" not in [cc.lower() for cc in station_metadata.keys()]:
                     station_metadata = {"Station": station_metadata}
-
                 st_metadata = metadata.Station()
                 st_metadata.from_dict(station_metadata)
                 self.logger.debug("Loading from metadata dict")
                 return st_metadata
             else:
-                msg = "input metadata must be type {0} or dict, not {1}".format(
-                    type(self.station_metadata), type(station_metadata)
+                msg = (
+                    f"input metadata must be type {type(self.station_metadata)} "
+                    "or dict, not {type(station_metadata)}"
                 )
                 self.logger.error(msg)
                 raise TypeError(msg)
-
         return station_metadata.copy()
 
     def _validate_survey_metadata(self, survey_metadata):
@@ -244,22 +235,19 @@ class RunTS:
 
         if not isinstance(survey_metadata, metadata.Survey):
             if isinstance(survey_metadata, dict):
-                if "station" not in [
-                    cc.lower() for cc in survey_metadata.keys()
-                ]:
+                if "station" not in [cc.lower() for cc in survey_metadata.keys()]:
                     survey_metadata = {"Survey": survey_metadata}
-
                 sv_metadata = metadata.Station()
                 sv_metadata.from_dict(survey_metadata)
                 self.logger.debug("Loading from metadata dict")
                 return sv_metadata
             else:
-                msg = "input metadata must be type {0} or dict, not {1}".format(
-                    type(self.survey_metadata), type(survey_metadata)
+                msg = (
+                    f"input metadata must be type {type(self.survey_metadata)} "
+                    "or dict, not {type(survey_metadata)}"
                 )
                 self.logger.error(msg)
                 raise TypeError(msg)
-
         return survey_metadata.copy()
 
     def _validate_array_list(self, array_list):
@@ -269,7 +257,6 @@ class RunTS:
             msg = f"array_list must be a list or tuple, not {type(array_list)}"
             self.logger.error(msg)
             raise TypeError(msg)
-
         valid_list = []
         station_metadata = metadata.Station()
         run_metadata = metadata.Run()
@@ -288,28 +275,22 @@ class RunTS:
 
                 if item.station_metadata.id not in ["0", None]:
                     if station_metadata.id not in ["0", None]:
-                        station_metadata.update(
-                            item.station_metadata, match=["id"]
-                        )
+                        station_metadata.update(item.station_metadata, match=["id"])
                     else:
                         station_metadata.update(item.station_metadata)
-
                 if item.run_metadata.id not in ["0", None]:
                     if run_metadata.id not in ["0", None]:
                         run_metadata.update(item.run_metadata, match=["id"])
                     else:
                         run_metadata.update(item.run_metadata)
-
                 channels.append(item.channel_metadata)
 
                 # get the filters from the channel
                 if item.channel_response_filter.filters_list != []:
                     for ff in item.channel_response_filter.filters_list:
                         self._filters[ff.name] = ff
-
             else:
                 valid_list.append(item)
-
         # need to make sure that the station metadata was actually updated,
         # should have an ID.
         run_metadata.channels = channels
@@ -329,7 +310,6 @@ class RunTS:
         # metadata, then update just the channels.
         else:
             self.run_metadata.channels = channels
-
         # first need to align the time series.
         valid_list = self._align_channels(valid_list)
 
@@ -359,7 +339,6 @@ class RunTS:
                 f"Channels do not have a common end, using latest: {latest_end}"
             )
             reindex = True
-
         if reindex:
             sample_rate = self._check_sample_rate(valid_list)
 
@@ -378,7 +357,6 @@ class RunTS:
                 )
         else:
             aligned_list = valid_list
-
         return aligned_list
 
     def _check_sample_rate(self, valid_list):
@@ -394,7 +372,6 @@ class RunTS:
             msg = f"sample rates are not all the same {sr_test}"
             self.logger.error(msg)
             raise ValueError(msg)
-
         return sr_test[0]
 
     def _check_common_start(self, valid_list):
@@ -407,9 +384,7 @@ class RunTS:
         :rtype: TYPE
 
         """
-        start_list = list(
-            set([item.coords["time"].values[0] for item in valid_list])
-        )
+        start_list = list(set([item.coords["time"].values[0] for item in valid_list]))
         if len(start_list) != 1:
             return False
         return True
@@ -424,9 +399,7 @@ class RunTS:
         :rtype: TYPE
 
         """
-        end_list = list(
-            set([item.coords["time"].values[-1] for item in valid_list])
-        )
+        end_list = list(set([item.coords["time"].values[-1] for item in valid_list]))
         if len(end_list) != 1:
             return False
         return True
@@ -472,10 +445,7 @@ class RunTS:
                 try:
                     filter_list.append(self.filters[filter_name])
                 except KeyError:
-                    self.logger.debug(
-                        f"Could not find {filter_name} in filters"
-                    )
-
+                    self.logger.debug(f"Could not find {filter_name} in filters")
         return ChannelResponseFilter(filters_list=filter_list)
 
     def __getattr__(self, name):
@@ -488,7 +458,6 @@ class RunTS:
             # cause then an empty filters_list will set filter.name to []
             if ch_response_filter.filters_list == []:
                 ch_response_filter = None
-
             return ChannelTS(
                 self.dataset[name].attrs["type"],
                 self.dataset[name],
@@ -578,13 +547,11 @@ class RunTS:
             runs.extend(station_metadata.runs)
             if len(runs) == 0:
                 runs[0] = metadata.Run(id="0")
-
             # be sure there is a level below
             if len(runs[0].channels) == 0:
                 ch_metadata = metadata.Auxiliary()
                 ch_metadata.type = "auxiliary"
                 runs[0].channels.append(ch_metadata)
-
             stations = ListDict()
             stations.append(station_metadata)
             stations[0].runs = runs
@@ -610,9 +577,7 @@ class RunTS:
             run_metadata = self._validate_run_metadata(run_metadata)
             runs = ListDict()
             runs.append(run_metadata)
-            runs.extend(
-                self.station_metadata.runs, skip_keys=[run_metadata.id, "0"]
-            )
+            runs.extend(self.station_metadata.runs, skip_keys=[run_metadata.id, "0"])
             self._survey_metadata.stations[0].runs = runs
 
     def has_data(self):
@@ -635,7 +600,6 @@ class RunTS:
         for comp in self.dataset.data_vars:
             for mkey, mvalue in self.dataset[comp].attrs.items():
                 meta_dict[f"{comp}.{mkey}"] = mvalue
-
         return meta_dict
 
     def validate_metadata(self):
@@ -652,10 +616,7 @@ class RunTS:
         if self.has_data():
             # check start time
             if self.start != self.run_metadata.time_period.start:
-                if (
-                    self.run_metadata.time_period.start
-                    != "1980-01-01T00:00:00+00:00"
-                ):
+                if self.run_metadata.time_period.start != "1980-01-01T00:00:00+00:00":
                     msg = (
                         f"start time of dataset {self.start} does not "
                         f"match metadata start {self.run_metadata.time_period.start} "
@@ -663,13 +624,9 @@ class RunTS:
                     )
                     self.logger.warning(msg)
                 self.run_metadata.time_period.start = self.start.iso_str
-
             # check end time
             if self.end != self.run_metadata.time_period.end:
-                if (
-                    self.run_metadata.time_period.end
-                    != "1980-01-01T00:00:00+00:00"
-                ):
+                if self.run_metadata.time_period.end != "1980-01-01T00:00:00+00:00":
                     msg = (
                         f"end time of dataset {self.end} does not "
                         f"match metadata end {self.run_metadata.time_period.end} "
@@ -688,10 +645,8 @@ class RunTS:
                     )
                     self.logger.warning(msg)
                 self.run_metadata.sample_rate = self.sample_rate
-
             if self.run_metadata.id not in self.station_metadata.runs.keys():
                 self.station_metadata.runs[0].update(self.run_metadata)
-
             self.station_metadata.update_time_period()
             self.survey_metadata.update_time_period()
 
@@ -719,10 +674,8 @@ class RunTS:
             # input as a dictionary
             xdict = dict([(x.component.lower(), x) for x in x_array_list])
             self._dataset = xr.Dataset(xdict)
-
         elif isinstance(array_list, xr.Dataset):
             self._dataset = array_list
-
         self.validate_metadata()
         self._dataset.attrs.update(self.run_metadata.to_dict(single=True))
 
@@ -754,12 +707,8 @@ class RunTS:
             self.run_metadata.channels.append(c.channel_metadata)
             for ff in c.channel_response_filter.filters_list:
                 self._filters[ff.name] = ff
-
         else:
-            raise ValueError(
-                "Input Channel must be type xarray.DataArray or ChannelTS"
-            )
-
+            raise ValueError("Input Channel must be type xarray.DataArray or ChannelTS")
         ### need to validate the channel to make sure sample rate is the same
         if c.sample_rate != self.sample_rate:
             msg = (
@@ -768,7 +717,6 @@ class RunTS:
             )
             self.logger.error(msg)
             raise ValueError(msg)
-
         ### should probably check for other metadata like station and run?
         if len(self.dataset.dims) == 0:
             self.dataset = c._ts.to_dataset()
@@ -826,13 +774,9 @@ class RunTS:
                     0,
                 )
             except AttributeError:
-                self.logger.warning(
-                    "Something weird happend with xarray time indexing"
-                )
+                self.logger.warning("Something weird happend with xarray time indexing")
 
-                raise ValueError(
-                    "Something weird happend with xarray time indexing"
-                )
+                raise ValueError("Something weird happend with xarray time indexing")
         return self.run_metadata.sample_rate
 
     @property
@@ -873,7 +817,6 @@ class RunTS:
         """
         if not isinstance(value, dict):
             raise TypeError("input must be a dictionary")
-
         self._filters = value
 
     def to_obspy_stream(self):
@@ -890,7 +833,6 @@ class RunTS:
         for channel in self.channels:
             ts_obj = getattr(self, channel)
             trace_list.append(ts_obj.to_obspy_trace())
-
         return Stream(traces=trace_list)
 
     def from_obspy_stream(self, obspy_stream, run_metadata=None):
@@ -908,7 +850,6 @@ class RunTS:
             msg = f"Input must be obspy.core.Stream not {type(obspy_stream)}"
             self.logger.error(msg)
             raise TypeError(msg)
-
         array_list = []
         station_list = []
         for obs_trace in obspy_stream:
@@ -933,26 +874,20 @@ class RunTS:
                     ][0]
                     channel_ts.channel_metadata.update(ch)
                 except IndexError:
-                    self.logger.warning(
-                        "could not find %s" % channel_ts.component
-                    )
+                    self.logger.warning(f"could not find {channel_ts.component}")
             # else:
             #     run_metadata = metadata.Run(id="001")
             station_list.append(channel_ts.station_metadata.fdsn.id)
 
             array_list.append(channel_ts)
-
         ### need to merge metadata into something useful, station name is the only
         ### name that is preserved
         try:
-            station = list(set([ss for ss in station_list if ss is not None]))[
-                0
-            ]
+            station = list(set([ss for ss in station_list if ss is not None]))[0]
         except IndexError:
             station = None
             msg = "Could not find station name"
             self.logger.warn(msg)
-
         self.station_metadata.fdsn.id = station
 
         self.set_dataset(array_list)
@@ -961,7 +896,6 @@ class RunTS:
         if run_metadata is not None:
             self.station_metadata.runs = ListDict()
             self.station_metadata.add_run(run_metadata)
-
         self.validate_metadata()
 
     def get_slice(self, start, end=None, n_samples=None):
@@ -999,17 +933,14 @@ class RunTS:
         """
         if not isinstance(start, MTime):
             start = MTime(start)
-
         if n_samples is not None:
             seconds = (n_samples - 1) / self.sample_rate
             end = start + seconds
-
         elif end is not None:
             if not isinstance(end, MTime):
                 end = MTime(end)
         else:
             raise ValueError("Must input n_samples or end")
-
         chunk = self.dataset.indexes["time"].slice_indexer(
             start=np.datetime64(start.iso_no_tz),
             end=np.datetime64(end.iso_no_tz),
@@ -1040,7 +971,6 @@ class RunTS:
             ch_ts = getattr(self, channel)
             calibrated_ch_ts = ch_ts.remove_instrument_response(**kwargs)
             new_run.add_channel(calibrated_ch_ts)
-
         return new_run
 
     def decimate(self, new_sample_rate, inplace=False, max_decimation=8):
@@ -1064,7 +994,6 @@ class RunTS:
         new_ds = self.dataset.fillna(0)
         for step_sr in sr_list:
             new_ds = new_ds.filt.decimate(step_sr)
-
         new_ds.attrs["sample_rate"] = new_sample_rate
         self.run_metadata.sample_rate = new_ds.attrs["sample_rate"]
 
@@ -1092,9 +1021,7 @@ class RunTS:
 
         new_dt_freq = "{0:.0f}N".format(1e9 / (new_sample_rate))
 
-        new_ds = self.dataset.resample(time=new_dt_freq).nearest(
-            tolerance=new_dt_freq
-        )
+        new_ds = self.dataset.resample(time=new_dt_freq).nearest(tolerance=new_dt_freq)
         new_ds.attrs["sample_rate"] = new_sample_rate
         self.run_metadata.sample_rate = new_ds.attrs["sample_rate"]
 
@@ -1133,13 +1060,11 @@ class RunTS:
         else:
             merge_sample_rate = self.sample_rate
             combine_list = [self.dataset]
-
         ts_filters = self.filters
         if isinstance(other, (list, tuple)):
             for run in other:
                 if not isinstance(run, RunTS):
                     raise TypeError(f"Cannot combine {type(run)} with RunTS.")
-
                 if new_sample_rate is not None:
                     run = run.decimate(new_sample_rate)
                 combine_list.append(run.dataset)
@@ -1147,23 +1072,17 @@ class RunTS:
         else:
             if not isinstance(other, RunTS):
                 raise TypeError(f"Cannot combine {type(other)} with RunTS.")
-
             if new_sample_rate is not None:
                 other = other.decimate(new_sample_rate)
             combine_list.append(other.dataset)
             ts_filters.update(other.filters)
-
         # combine into a data set use override to keep attrs from original
 
-        combined_ds = xr.combine_by_coords(
-            combine_list, combine_attrs="override"
-        )
+        combined_ds = xr.combine_by_coords(combine_list, combine_attrs="override")
 
         n_samples = (
             merge_sample_rate
-            * float(
-                combined_ds.time.max().values - combined_ds.time.min().values
-            )
+            * float(combined_ds.time.max().values - combined_ds.time.min().values)
             / 1e9
         ) + 1
 
@@ -1187,15 +1106,12 @@ class RunTS:
         ## intial time index does not exactly match up with the new time index
         ## and then get a bunch of Nan, unless use nearest or pad, but then
         ## gaps are not filled correctly, just do a interp seems easier.
-        new_run.dataset = combined_ds.interp(
-            time=new_dt_index, method=gap_method
-        )
+        new_run.dataset = combined_ds.interp(time=new_dt_index, method=gap_method)
 
         # update channel attributes
         for ch in new_run.channels:
             new_run.dataset[ch].attrs["time_period.start"] = new_run.start
             new_run.dataset[ch].attrs["time_period.end"] = new_run.end
-
         new_run.run_metadata.update_time_period()
         new_run.station_metadata.update_time_period()
         new_run.survey_metadata.update_time_period()
@@ -1224,7 +1140,6 @@ class RunTS:
             ch_list = channel_order()
         else:
             ch_list = self.channels
-
         n_channels = len(self.channels)
 
         fig = plt.figure()
@@ -1245,5 +1160,4 @@ class RunTS:
             ax.set_axisbelow(True)
             if ii != len(ch_list):
                 plt.setp(ax.get_xticklabels(), visible=False)
-
             ax_list.append(ax)
