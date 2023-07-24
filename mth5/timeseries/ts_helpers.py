@@ -9,16 +9,14 @@ Created on Wed Mar 29 14:27:22 2023
 # =============================================================================
 import numpy as np
 import pandas as pd
+from loguru import logger
 
 from mt_metadata.utils.mttime import MTime
-from mth5.utils.mth5_logger import setup_logger
 
 # =============================================================================
 
 
-def get_decimation_sample_rates(
-    old_sample_rate, new_sample_rate, max_decimation
-):
+def get_decimation_sample_rates(old_sample_rate, new_sample_rate, max_decimation):
     """
     get a list of sample rates to decimate from old_sample_rate to
     new_sample_rate without exceeding the max decimation value
@@ -34,10 +32,7 @@ def get_decimation_sample_rates(
     if (old_sample_rate / new_sample_rate) > max_decimation:
         # get the number of entries in a geometric series
         n_levels = int(
-            np.ceil(
-                np.log(old_sample_rate / new_sample_rate)
-                / np.log(max_decimation)
-            )
+            np.ceil(np.log(old_sample_rate / new_sample_rate) / np.log(max_decimation))
         )
         # make a geometric series
         sr_list = [
@@ -71,20 +66,19 @@ def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
     """
 
     if logger is None:
-        logger = setup_logger("mth5.timeseries.ts_helpers.make_dt_coordinates")
-
+        logger = logger
     if sample_rate in [0, None]:
         msg = (
             f"Need to input a valid sample rate. Not {sample_rate}, "
-            + "returning a time index assuming a sample rate of 1"
+            "returning a time index assuming a sample rate of 1"
         )
         logger.warning(msg)
         sample_rate = 1
     if start_time is None:
         msg = (
             f"Need to input a start time. Not {start_time}, "
-            + "returning a time index with start time of "
-            + "1980-01-01T00:00:00"
+            "returning a time index with start time of "
+            "1980-01-01T00:00:00"
         )
         logger.warning(msg)
         start_time = "1980-01-01T00:00:00"
@@ -94,7 +88,6 @@ def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
         raise ValueError(msg)
     if not isinstance(start_time, MTime):
         start_time = MTime(start_time)
-
     # there is something screwy that happens when your sample rate is not a
     # nice value that can easily fit into the 60 base.  For instance if you
     # have a sample rate of 24000 the dt_freq will be '41667N', but that is
@@ -121,7 +114,6 @@ def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
         test_sf = start_sig_figs
     else:
         test_sf = sr_sig_figs
-
     if test_sf < 3:
         dt_index = dt_index.round(freq="ms")
     elif test_sf >= 3 and test_sf < 6:
@@ -130,5 +122,4 @@ def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
         dt_index = dt_index.round(freq="ns")
     else:
         pass
-
     return dt_index

@@ -11,9 +11,8 @@ from scipy import signal
 
 from matplotlib import pyplot as plt
 from matplotlib.lines import Line2D
-from mth5.utils.mth5_logger import setup_logger
+from loguru import logger
 
-logger = setup_logger(__file__)
 # =================================================================
 
 
@@ -46,9 +45,7 @@ def butter_bandpass(lowcut, highcut, fs, order=5):
     elif highcut is None:
         sos = signal.butter(order, low, analog=False, btype="low", output="sos")
     elif lowcut is None:
-        sos = signal.butter(
-            order, high, analog=False, btype="high", output="sos"
-        )
+        sos = signal.butter(order, high, analog=False, btype="high", output="sos")
     return sos
 
 
@@ -90,9 +87,7 @@ def low_pass(data, low_pass_freq, cutoff_freq, sampling_rate):
 
     """
     nyq = 0.5 * sampling_rate
-    filt_order, wn = signal.buttord(
-        low_pass_freq / nyq, cutoff_freq / nyq, 3, 40
-    )
+    filt_order, wn = signal.buttord(low_pass_freq / nyq, cutoff_freq / nyq, 3, 40)
 
     b, a = signal.butter(filt_order, wn, btype="low")
     data_filtered = signal.filtfilt(b, a, data)
@@ -125,7 +120,7 @@ def zero_pad(input_array, power=2, pad_fill=0):
             "Exceeding memory allocation inherent in your computer 2**32. "
             "Limiting the zero pad to 2**32"
         )
-    pad_array = np.zeros(power**npow)
+    pad_array = np.zeros(power ** npow)
     if pad_fill != 0:
         pad_array[:] = pad_fill
     pad_array[0:len_array] = input_array
@@ -192,7 +187,7 @@ class RemoveInstrumentResponse:
         channel_response_filter,
         **kwargs,
     ):
-        self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = logger
         self.ts = ts
         self.time_array = time_array
         self.sample_interval = sample_interval
@@ -516,19 +511,13 @@ class RemoveInstrumentResponse:
         # filter in time domain
         if self.t_window is not None:
             ts = self.apply_t_window(ts)
-            self.logger.debug(
-                f"Step {step}: Applying {self.t_window} Time Window"
-            )
+            self.logger.debug(f"Step {step}: Applying {self.t_window} Time Window")
             step += 1
             if self.plot:
-                wax = self.fig.get_axes()[
-                    self.subplot_dict["t_window"] - 1
-                ].twinx()
+                wax = self.fig.get_axes()[self.subplot_dict["t_window"] - 1].twinx()
                 (tw,) = wax.plot(
                     self.time_array,
-                    self.get_window(
-                        self.t_window, self.t_window_params, ts.size
-                    ),
+                    self.get_window(self.t_window, self.t_window_params, ts.size),
                     color=(0.75, 0.75, 0.75),
                     zorder=0,
                 )
@@ -541,9 +530,7 @@ class RemoveInstrumentResponse:
         f = np.fft.rfftfreq(ts.size, d=self.sample_interval)
 
         if self.channel_response_filter.filters_list is []:
-            raise ValueError(
-                "There are no filters in channel_response to remove"
-            )
+            raise ValueError("There are no filters in channel_response to remove")
         # compute the complex response given the frequency range of the FFT
         # the complex response assumes frequencies are in reverse order and flip them on input
         # so we need to flip the complex reponse so it aligns with the fft.
@@ -560,34 +547,23 @@ class RemoveInstrumentResponse:
         # here we are taking only the real part of the FFT so we cut the window in half
         if self.f_window is not None:
             data = self.apply_f_window(data)
-            self.logger.debug(
-                f"Step {step}: Applying {self.f_window} Frequency Window"
-            )
+            self.logger.debug(f"Step {step}: Applying {self.f_window} Frequency Window")
             step += 1
-
         if operation == "divide":
             # calibrate the time series, compute real part of fft, divide out
             # channel response, inverse fft
             calibrated_ts = np.fft.irfft(data / cr)[0 : self.ts.size]
-            self.logger.debug(
-                f"Step {step}: Removing Calibration by {operation}"
-            )
+            self.logger.debug(f"Step {step}: Removing Calibration by {operation}")
             step += 1
-
         elif operation == "multiply":
             # calibrate the time series, compute real part of fft, multiply out
             # channel response, inverse fft
             calibrated_ts = np.fft.irfft(data * cr)[0 : self.ts.size]
-            self.logger.debug(
-                f"Step {step}: Removing Calibration  by {operation}"
-            )
+            self.logger.debug(f"Step {step}: Removing Calibration  by {operation}")
             step += 1
-
         # If a time window was applied, need to un-apply it to reconstruct the signal.
         if self.t_window is not None:
-            w = self.get_window(
-                self.t_window, self.t_window_params, calibrated_ts.size
-            )
+            w = self.get_window(self.t_window, self.t_window_params, calibrated_ts.size)
             calibrated_ts = calibrated_ts / w
             self.logger.debug(f"Step {step}: Un-applying Time Window")
             step += 1
@@ -603,9 +579,7 @@ class RemoveInstrumentResponse:
                 self.nrows * 2 - 1,
                 "Calibrated",
             )
-            self.fig.get_axes()[-2].set_ylabel(
-                self.channel_response_filter.units_in
-            )
+            self.fig.get_axes()[-2].set_ylabel(self.channel_response_filter.units_in)
             if self.t_window is not None:
                 wax = self.fig.get_axes()[-2].twinx()
                 (tw,) = wax.plot(
@@ -716,19 +690,11 @@ def adaptive_notch_filter(
         else:
             fspot = int(round(notch / dfn))
             nspot = np.where(
-                abs(BX)
-                == max(abs(BX[max([fspot - dfnn, 0]) : min([fspot + dfnn, n])]))
+                abs(BX) == max(abs(BX[max([fspot - dfnn, 0]) : min([fspot + dfnn, n])]))
             )[0][0]
 
             med_bx = np.median(
-                abs(
-                    BX[
-                        max([nspot - dfnn * 10, 0]) : min(
-                            [nspot + dfnn * 10, n]
-                        )
-                    ]
-                )
-                ** 2
+                abs(BX[max([nspot - dfnn * 10, 0]) : min([nspot + dfnn * 10, n])]) ** 2
             )
 
             # calculate difference between peak and surrounding spectra in dB
@@ -739,11 +705,7 @@ def adaptive_notch_filter(
             else:
                 filtlst.append([freq[nspot], dbstop])
                 ws = 2 * np.array([freq[nspot] - fn, freq[nspot] + fn]) / df
-                wp = (
-                    2
-                    * np.array([freq[nspot] - 2 * fn, freq[nspot] + 2 * fn])
-                    / df
-                )
+                wp = 2 * np.array([freq[nspot] - 2 * fn, freq[nspot] + 2 * fn]) / df
                 ford, wn = signal.cheb1ord(wp, ws, 1, dbstop)
                 b, a = signal.cheby1(1, 0.5, wn, btype="bandstop")
                 bx = signal.filtfilt(b, a, bx)
