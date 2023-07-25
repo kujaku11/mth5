@@ -465,7 +465,9 @@ class TransferFunctionGroup(BaseGroup):
         if self.period is not None:
             tf_obj.period = self.period
         else:
-            msg = "Period must not be None to create a transfer function object"
+            msg = (
+                "Period must not be None to create a transfer function object"
+            )
             self.logger.error(msg)
             raise ValueError(msg)
         for estimate_name in self.groups_list:

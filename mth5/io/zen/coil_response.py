@@ -18,6 +18,7 @@ from loguru import logger
 from mt_metadata.timeseries.filters import FrequencyResponseTableFilter
 from mt_metadata.utils.mttime import MTime
 
+
 # =============================================================================
 # Variables
 # =============================================================================
@@ -136,9 +137,9 @@ class CoilResponse:
             fap.frequencies = cal["frequency"]
             fap.amplitudes = cal["amplitude"]
             fap.phases = cal["phase"]
-            fap.units_in = "millivolts"
-            fap.units_out = "nanotesla"
-            fap.name = f"coil_{coil_number}"
+            fap.units_out = "millivolts"
+            fap.units_in = "nanotesla"
+            fap.name = f"ant4_{coil_number}_response"
             fap.instrument_type = "ANT4 induction coil"
             fap.calibration_date = MTime(
                 self.calibration_file.stat().st_mtime
@@ -156,12 +157,6 @@ class CoilResponse:
     def extrapolate(self, fap):
         """
         Extrapolate assuming log-linear relationship
-
-        :param fap: DESCRIPTION
-        :type fap: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
         """
 
         if self._low_frequency_cutoff is not None:
@@ -204,12 +199,14 @@ class CoilResponse:
         :rtype: boolean
 
         """
+        if coil_number is None:
+            return False
         if self.file_exists():
-            coil_number = str(int(coil_number))
+            coil_number = str(int(float(coil_number)))
 
             if coil_number in self.coil_calibrations.keys():
                 return True
-            self.logger.error(
+            self.logger.debug(
                 f"Could not find {coil_number} in {self.calibration_file}"
             )
             return False

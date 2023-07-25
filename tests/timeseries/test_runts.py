@@ -478,9 +478,7 @@ class TestRunTS(unittest.TestCase):
         :return:
         """
 
-        self.assertRaises(
-            NameError, getattr, *(self.run_object, "temperature")
-        )
+        self.assertRaises(NameError, getattr, *(self.run_object, "temperature"))
 
     def test_get_slice(self):
 
@@ -858,8 +856,12 @@ class TestMisalignedRuns(unittest.TestCase):
         )
 
         self.run_ts = RunTS(channel_list)
-        self.ch_list = [self.ey._ts, self.hx._ts]
-        self.bad_ch_list = [self.ey._ts, self.hx._ts, self.bad_ch._ts]
+        self.ch_list = [self.ey.data_array, self.hx.data_array]
+        self.bad_ch_list = [
+            self.ey.data_array,
+            self.hx.data_array,
+            self.bad_ch.data_array,
+        ]
 
     def test_check_sample_rate(self):
         self.assertEqual(
@@ -886,26 +888,24 @@ class TestMisalignedRuns(unittest.TestCase):
         self.assertEqual(False, self.run_ts._check_common_end(self.ch_list))
 
     def test_common_end_fail(self):
-        self.assertEqual(
-            False, self.run_ts._check_common_end(self.bad_ch_list)
-        )
+        self.assertEqual(False, self.run_ts._check_common_end(self.bad_ch_list))
 
     def test_earliest_start(self):
         self.assertEqual(
-            self.ey._ts.coords["time"].values[0],
+            self.ey.data_array.coords["time"].values[0],
             self.run_ts._get_earliest_start(self.ch_list),
         )
 
     def test_latest_end(self):
         self.assertEqual(
-            self.hx._ts.coords["time"].values[-1],
+            self.hx.data_array.coords["time"].values[-1],
             self.run_ts._get_latest_end(self.ch_list),
         )
 
     def test_get_common_time_index(self):
         dt = self.run_ts._get_common_time_index(
-            self.ey._ts.coords["time"].values[0],
-            self.hx._ts.coords["time"].values[-1],
+            self.ey.data_array.coords["time"].values[0],
+            self.hx.data_array.coords["time"].values[-1],
             self.sample_rate,
         )
 

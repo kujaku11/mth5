@@ -365,6 +365,7 @@ class MTH5:
             msg = f"Input file type must be a string not {type(value)}"
             self.logger.error(msg)
             raise ValueError(msg)
+
         if value not in ACCEPTABLE_FILE_TYPES:
             msg = f"Input file.type is not valid, must be {ACCEPTABLE_FILE_TYPES}"
             self.logger.error(msg)
@@ -1510,6 +1511,7 @@ class MTH5:
             tf_object.station_metadata.transfer_function.runs_processed = (
                 tf_object.station_metadata.run_list
             )
+
         for run_id in tf_object.station_metadata.transfer_function.runs_processed:
             if run_id in ["", None, "None"]:
                 continue
@@ -1517,6 +1519,9 @@ class MTH5:
                 run_group = station_group.get_run(run_id)
             except MTH5Error:
                 run = tf_object.station_metadata.get_run(run_id)
+                if run is None:
+                    run = tf_object.station_metadata.runs[0].copy()
+                    run.id = run_id
                 run_group = station_group.add_run(run_id, run_metadata=run)
 
                 if run is not None:

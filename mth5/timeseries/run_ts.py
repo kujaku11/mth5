@@ -364,7 +364,7 @@ class RunTS:
         sr_test = list(
             set(
                 [(item.sample_rate) for item in valid_list]
-                + [np.round(item.filt.fs, 3) for item in valid_list]
+                + [np.round(item.sps_filters.fs, 3) for item in valid_list]
             )
         )
 
@@ -719,9 +719,9 @@ class RunTS:
             raise ValueError(msg)
         ### should probably check for other metadata like station and run?
         if len(self.dataset.dims) == 0:
-            self.dataset = c._ts.to_dataset()
+            self.dataset = c.data_array.to_dataset()
         else:
-            self.dataset = xr.merge([self.dataset, c._ts.to_dataset()])
+            self.dataset = xr.merge([self.dataset, c.data_array.to_dataset()])
 
     @property
     def dataset(self):
@@ -993,7 +993,7 @@ class RunTS:
         # and all becomes nan.
         new_ds = self.dataset.fillna(0)
         for step_sr in sr_list:
-            new_ds = new_ds.filt.decimate(step_sr)
+            new_ds = new_ds.sps_filters.decimate(step_sr)
         new_ds.attrs["sample_rate"] = new_sample_rate
         self.run_metadata.sample_rate = new_ds.attrs["sample_rate"]
 
@@ -1001,6 +1001,38 @@ class RunTS:
             self.dataset = new_ds
         else:
             # return new_ds
+            return RunTS(
+                new_ds,
+                run_metadata=self.run_metadata,
+                station_metadata=self.station_metadata,
+                survey_metadata=self.survey_metadata,
+            )
+
+    def resample_poly(self, new_sample_rate, pad_type="mean", inplace=False):
+        """
+        Use scipy.signal.resample_poly to resample data while using an FIR
+        filter to remove aliasing.
+
+        :param new_sample_rate: DESCRIPTION
+        :type new_sample_rate: TYPE
+        :param pad_type: DESCRIPTION, defaults to "mean"
+        :type pad_type: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        # need to fill nans with 0 otherwise they wipeout the decimation values
+        # and all becomes nan.
+        new_ds = self.dataset.fillna(0)
+        new_ds = new_ds.sps_filters.resample_poly(new_sample_rate, pad_type=pad_type)
+
+        new_ds.attrs["sample_rate"] = new_sample_rate
+        self.run_metadata.sample_rate = new_ds.attrs["sample_rate"]
+
+        if inplace:
+            self.dataset = new_ds
+        else:
             return RunTS(
                 new_ds,
                 run_metadata=self.run_metadata,
@@ -1028,7 +1060,7 @@ class RunTS:
         if inplace:
             self.dataset = new_ds
         else:
-            # return new_ts
+            # return new_ds
             return RunTS(
                 new_ds,
                 run_metadata=self.run_metadata,
@@ -1036,7 +1068,13 @@ class RunTS:
                 survey_metadata=self.survey_metadata,
             )
 
-    def merge(self, other, gap_method="slinear", new_sample_rate=None):
+    def merge(
+        self,
+        other,
+        gap_method="slinear",
+        new_sample_rate=None,
+        resample_method="poly",
+    ):
         """
         merg two runs or list of runs together in the following steps
 
@@ -1056,7 +1094,10 @@ class RunTS:
         """
         if new_sample_rate is not None:
             merge_sample_rate = new_sample_rate
-            combine_list = [self.decimate(new_sample_rate).dataset]
+            if resample_method == "decimate":
+                combine_list = [self.decimate(new_sample_rate).dataset]
+            elif resample_method == "poly":
+                combine_list = [self.resample_poly(new_sample_rate).dataset]
         else:
             merge_sample_rate = self.sample_rate
             combine_list = [self.dataset]
@@ -1066,14 +1107,20 @@ class RunTS:
                 if not isinstance(run, RunTS):
                     raise TypeError(f"Cannot combine {type(run)} with RunTS.")
                 if new_sample_rate is not None:
-                    run = run.decimate(new_sample_rate)
+                    if resample_method == "decimate":
+                        run = run.decimate(new_sample_rate)
+                    elif resample_method == "poly":
+                        run = run.resample_poly(new_sample_rate)
                 combine_list.append(run.dataset)
                 ts_filters.update(run.filters)
         else:
             if not isinstance(other, RunTS):
                 raise TypeError(f"Cannot combine {type(other)} with RunTS.")
             if new_sample_rate is not None:
-                other = other.decimate(new_sample_rate)
+                if resample_method == "decimate":
+                    other = other.decimate(new_sample_rate)
+                elif resample_method == "poly":
+                    other = other.resample_poly(new_sample_rate)
             combine_list.append(other.dataset)
             ts_filters.update(other.filters)
         # combine into a data set use override to keep attrs from original
@@ -1161,3 +1208,60 @@ class RunTS:
             if ii != len(ch_list):
                 plt.setp(ax.get_xticklabels(), visible=False)
             ax_list.append(ax)
+        return fig
+
+    def plot_spectra(
+        self,
+        spectra_type="welch",
+        color_map={
+            "ex": (1, 0.2, 0.2),
+            "ey": (1, 0.5, 0),
+            "hx": (0, 0.5, 1),
+            "hy": (0.5, 0.2, 1),
+            "hz": (0.2, 1, 1),
+        },
+        **kwargs,
+    ):
+        """
+        Plot spectra using spectra type, only 'welch' is supported now.
+
+        :param spectra_type: spectra type, defaults to "welch"
+        :type spectra_type: string, optional
+        :param color_map: colors of channels, defaults to {
+            "ex": (1, 0.2, 0.2),
+            "ey": (1, 0.5, 0),
+            "hx": (0, 0.5, 1),
+            "hy": (0.5, 0.2, 1),
+            "hz": (0.2, 1, 1),
+            }
+        :type color_map: dictionary, optional
+        :param **kwargs: key words for the spectra type
+        :type **kwargs: dictionary
+
+        """
+
+        fig = plt.figure()
+        ax = fig.add_subplot(1, 1, 1)
+        line_list = []
+        label_list = []
+        for comp in self.channels:
+            ch = getattr(self, comp)
+            plot_freq, power = ch.welch_spectra(**kwargs)
+            (l1,) = ax.loglog(1.0 / plot_freq, power, lw=1.5, color=color_map[comp])
+            line_list.append(l1)
+            label_list.append(comp)
+        ax.set_xlabel("Period (s)", fontdict={"size": 10, "weight": "bold"})
+        ax.set_ylabel("Power (dB)", fontdict={"size": 10, "weight": "bold"})
+        ax.axis("tight")
+        ax.grid(which="both")
+
+        ax2 = ax.twiny()
+        ax2.loglog(plot_freq, power, lw=0)
+        ax2.set_xlabel("Frequency (Hz)", fontdict={"size": 10, "weight": "bold"})
+        ax2.set_xlim([1 / cc for cc in ax.get_xlim()])
+
+        ax.legend(line_list, label_list)
+
+        plt.show()
+
+        return fig

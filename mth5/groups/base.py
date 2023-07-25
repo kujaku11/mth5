@@ -18,8 +18,9 @@ Created on Fri May 29 15:09:48 2020
 # =============================================================================
 import inspect
 import weakref
-
+from loguru import logger
 import h5py
+
 
 from mt_metadata import timeseries as metadata
 from mt_metadata.transfer_functions.tf import TransferFunction
@@ -33,7 +34,6 @@ from mt_metadata.base import Base
 from mth5.helpers import get_tree, validate_name
 from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import to_numpy_type, from_numpy_type
-from loguru import logger
 
 # make a dictionary of available metadata classes
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
@@ -243,7 +243,7 @@ class BaseGroup:
 
         for key, value in self.metadata.to_dict(single=True).items():
             value = to_numpy_type(value)
-            self.logger.debug(f"wrote metadata {key} = {format}")
+            self.logger.debug(f"wrote metadata {key} = {value}")
             self.hdf5_group.attrs.create(key, value)
 
     def initialize_group(self, **kwargs):

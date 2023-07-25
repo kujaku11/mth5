@@ -36,6 +36,7 @@ class MTH5Table:
 
     def __init__(self, hdf5_dataset):
         self.logger = logger
+
         self.hdf5_reference = None
         if isinstance(hdf5_dataset, h5py.Dataset):
             self.array = weakref.ref(hdf5_dataset)()
