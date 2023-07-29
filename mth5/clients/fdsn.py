@@ -460,8 +460,12 @@ class FDSN:
                             channel=ch_row.channel,
                             level="response",
                         )
-                        returned_chan = cha_inv.networks[0].stations[0].channels[0]
-                        returned_sta.channels.append(returned_chan)
+                        # 2023-07-28: Try acknowledge multiple channel runs
+                        # See issue mth5 issue #157 and aurora #277
+                        for returned_chan in cha_inv.networks[0].stations[0].channels:
+                            returned_sta.channels.append(returned_chan)
+                        #returned_chan = cha_inv.networks[0].stations[0].channels[0]
+                        #returned_sta.channels.append(returned_chan)
 
                         # -----------------------------
                         # get data if desired
