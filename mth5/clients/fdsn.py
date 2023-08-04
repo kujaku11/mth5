@@ -392,30 +392,7 @@ class FDSN:
         # experiment = translator.drop_runs(m, streams)
 
         m.from_experiment(experiment)
-        #self._process_list(experiment, unique_list, m)
-        if self.mth5_version in ["0.1.0"]:
-            stations_list = unique_list[0]["stations"]
-            self._loop_stations(stations_list, m)
-            for station_id in unique_list[0]["stations"]:
-                self.wrangle_runs_into_containers(m, station_id, survey_group=None)
-
-        # Version 0.2.0 has the ability to store multiple surveys
-        elif self.mth5_version in ["0.2.0"]:
-            # mt_metadata translates mt survey id into survey id if it (which?) is
-            # provided which will be different from the fdsn network id, so we need
-            # to map the fdsn networks onto the survey id.
-            survey_map = dict([(s.fdsn.network, s.id) for s in experiment.surveys])
-
-            for survey_dict in unique_list:
-                # get the mt survey id that maps to the fdsn network
-                fdsn_network = survey_dict["network"]
-                survey_id = survey_map[fdsn_network]
-
-                survey_group = m.get_survey(survey_id)
-                for station_id in survey_dict["stations"]:
-                    self.wrangle_runs_into_containers(
-                        m, station_id, survey_group=survey_group
-                    )
+        self._process_list(experiment, unique_list, m)
 
         if interact:
             return m
