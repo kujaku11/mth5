@@ -79,6 +79,78 @@ class FDSN:
             + "based on the users request."
         )
 
+    def _loop_stations(self, stations, m, survey_group=None):
+        for station_id in stations:
+            self.wrangle_runs_into_containers(m, station_id, survey_group=survey_group)
+
+    def _run_010(self, unique_list, m, **kwargs):
+        """
+        kwargs are supported just to make this a general function that can be kept in a dict
+        and used as in process_list
+
+        Parameters
+        ----------
+        unique_list
+        m
+        kwargs
+
+        Returns
+        -------
+
+        """
+        station_list = unique_list[0]["stations"]
+        self._loop_stations(station_list, m)
+
+
+    def _run_020(self, unique_list, m, experiment=None):
+        """
+        mt_metadata translates mt survey id into survey id if it (which?) is
+        provided which will be different from the fdsn network id, so we need
+        to map the fdsn networks onto the survey id.
+
+        Parameters
+        ----------
+        unique_list
+        m
+        experiment
+
+        Returns
+        -------
+
+        """
+        survey_map = dict([(s.fdsn.network, s.id) for s in experiment.surveys])
+
+        for survey_dict in unique_list:
+            # get the mt survey id that maps to the fdsn network
+            fdsn_network = survey_dict["network"]
+            survey_id = survey_map[fdsn_network]
+            survey_group = m.get_survey(survey_id)
+            stations_list = survey_dict["stations"]
+            self._loop_stations(stations_list, m, survey_group=survey_group)
+
+
+    def _process_list(self, experiment, unique_list, m):
+        """
+        Routs job to correct processing based on mth5_version
+        Maintainable way to handle future file versions and send them to their own processing functions if needed
+        Parameters
+        ----------
+        experiment
+        unique_list
+        m
+
+        Returns
+        -------
+
+        """
+
+        version_dict = {"0.1.0": self._run_010,
+                       "0.2.0": self._run_020}
+
+        process_run = version_dict[self.mth5_version]
+        process_run(unique_list, m, experiment=experiment)
+
+
     def get_run_list_from_station_id(self, m, station_id, survey_id=None):
         """
         ignored_groups created to address issue #153.  This might be better placed
@@ -320,7 +392,10 @@ class FDSN:
         # experiment = translator.drop_runs(m, streams)
 
         m.from_experiment(experiment)
+        #self._process_list(experiment, unique_list, m)
         if self.mth5_version in ["0.1.0"]:
+            stations_list = unique_list[0]["stations"]
+            self._loop_stations(stations_list, m)
             for station_id in unique_list[0]["stations"]:
                 self.wrangle_runs_into_containers(m, station_id, survey_group=None)
 
@@ -460,12 +535,8 @@ class FDSN:
                             channel=ch_row.channel,
                             level="response",
                         )
-                        # 2023-07-28: Try acknowledge multiple channel runs
-                        # See issue mth5 issue #157 and aurora #277
                         for returned_chan in cha_inv.networks[0].stations[0].channels:
                             returned_sta.channels.append(returned_chan)
-                        #returned_chan = cha_inv.networks[0].stations[0].channels[0]
-                        #returned_sta.channels.append(returned_chan)
 
                         # -----------------------------
                         # get data if desired
