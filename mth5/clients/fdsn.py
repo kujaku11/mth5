@@ -12,6 +12,7 @@ Created on Fri Feb  4 15:53:21 2022
 # =============================================================================
 # Imports
 # =============================================================================
+import copy
 from pathlib import Path
 
 import pandas as pd
@@ -400,12 +401,83 @@ class FDSN:
             m.close_mth5()
             return file_name
 
+    def build_network_dict(self, df, client):
+        """
+        Build out a dictionary of networks, keyed by network_id, start_time.
+        We could return this dict and use it as an auxilliary variable, but it seems easier to just add a column to
+        the df.
+
+        Parameters
+        ----------
+        df: pd.DataFrame
+            This is a "request_df"
+
+        Returns
+        -------
+
+        """
+        # Build the dictionary
+        networks = {}
+        for row in df.itertuples():
+            # First for loop builds out networks and stations
+            if row.network not in networks.keys():
+                networks[row.network] = {}
+                net_inv = client.get_stations(row.start, row.end, network=row.network, level="network")
+                networks[row.network][row.start] = net_inv.networks[0]
+            elif networks.get(row.network) is not None:
+                if row.start not in networks[row.network].keys():
+                    net_inv = client.get_stations(row.start, row.end, network=row.network, level="network")
+                    networks[row.network][row.start] = net_inv.networks[0]
+            else:
+                continue
+        return networks
+
+    # def add_network_objects_to_request_df(self, df):
+    #     networks_dict = self.build_network_dict(df, client)
+    #     network_column = [networks[x.netork][x.start] for x in df.itertuples()]
+    #     df["network_object"] = network_column
+    #     return df
+
+    def build_station_dict(self, df, client, networks_dict):
+        """
+        Given the {network-id, starttime}-keyed dict of networks, we build a station layer below this
+
+        Parameters
+        ----------
+        df
+        networks_dict
+
+        Returns
+        -------
+
+        """
+        stations_dict = copy.deepcopy(networks_dict)
+        for network_id in networks_dict.keys():
+            for start_time in networks_dict[network_id].keys():
+                stations_dict[network_id][start_time] = {}
+                cond1 = df.network == network_id
+                cond2 = df.start == start_time
+                sub_df = df[cond1 & cond2]
+                sub_df.drop_duplicates("station", inplace=True)
+                sub_df.reset_index(inplace=True, drop=True)
+
+                for st_row in sub_df.itertuples():
+                    sta_inv = client.get_stations(
+                        st_row.start,
+                        st_row.end,
+                        network=st_row.network,
+                        station=st_row.station,
+                        level="station",
+                    )
+                    stations_dict[network_id][start_time][st_row.station] = sta_inv.networks[0].stations[0]
+        return stations_dict
 
     def get_waveforms_from_request_row(self, client, row):
         """
 
         Parameters
         ----------
+        client
         row
 
         Returns
@@ -419,6 +491,21 @@ class FDSN:
 
     def get_inventory_from_df(self, df, client=None, data=True):
         """
+        20230806: The nested for looping here can make debugging complex, as well as lead to a lot of redundancies.
+        I propose that we build out a dictionary of networks, keyed by network_id, start_time.
+        It may actually be simpler to just add a column to the request_df that has the network_obj
+
+        networks = {}
+        networks[network_id] = {}
+        networks[network_id][start_time_1] = obspy_network_obj
+        networks[network_id][start_time_2] = obspy_network_obj
+        ...
+
+        Then the role of "returned_network" can be replaced by accessing the appropriate element and the second for-loop
+        can move up by a layer of indentation.
+
+
+        Will try to factor i
         Get an :class:`obspy.Inventory` object from a
         :class:`pandas.DataFrame`
 
@@ -463,77 +550,40 @@ class FDSN:
         # sort the values to be logically ordered
         df.sort_values(self.request_columns[:-1])
 
-        used_network = dict()
-        used_station = dict()
-        for row in df.itertuples():
-            # First for loop builds out networks and stations
-            if row.network not in used_network:
-                net_inv = client.get_stations(row.start, row.end, network=row.network, level="network")
-                returned_network = net_inv.networks[0]
-                used_network[row.network] = [row.start]
-            elif used_network.get(row.network) is not None and row.start not in used_network.get(row.network):
-                net_inv = client.get_stations(row.start, row.end, network=row.network, level="network")
-                returned_network = net_inv.networks[0]
-                used_network[row.network].append(row.start)
-            else:
-                continue
-            for st_row in df.itertuples():
-                if row.network != st_row.network:
-                    continue
-                else:
-                    if st_row.station not in used_station:
-                        sta_inv = client.get_stations(
-                            st_row.start,
-                            st_row.end,
-                            network=row.network,
-                            station=st_row.station,
-                            level="station",
-                        )
-                        returned_sta = sta_inv.networks[0].stations[0]
-                        used_station[st_row.station] = [st_row.start]
-                    elif used_station.get(
-                        st_row.station
-                    ) is not None and st_row.start not in used_station.get(
-                        st_row.station
-                    ):
-                        # Checks for epoch
-                        sta_inv = client.get_stations(
-                            st_row.start,
-                            st_row.end,
-                            network=st_row.network,
-                            station=st_row.station,
-                            level="station",
-                        )
-                        returned_sta = sta_inv.networks[0].stations[0]
-                        used_station[st_row.station].append(st_row.start)
-                    else:
-                        continue
-                for ch_row in df.itertuples():
-                    if (
-                        ch_row.network == row.network
-                        and st_row.station == ch_row.station
-                        and ch_row.start == st_row.start
-                    ):
-                        cha_inv = client.get_stations(
-                            ch_row.start,
-                            ch_row.end,
-                            network=ch_row.network,
-                            station=ch_row.station,
-                            loc=ch_row.location,
-                            channel=ch_row.channel,
-                            level="response",
-                        )
-                        for returned_chan in cha_inv.networks[0].stations[0].channels:
-                            returned_sta.channels.append(returned_chan)
+        # Build helper dictionares of networks and stations
+        networks_dict = self.build_network_dict(df, client)
+        stations_dict = self.build_station_dict(df, client, networks_dict)
 
-                        # -----------------------------
-                        # get data if desired
-                        if data:
-                            streams += self.get_waveforms_from_request_row(client, ch_row)
-                    else:
-                        continue
-                returned_network.stations.append(returned_sta)
-            inv.networks.append(returned_network)
+        # Pack channels into stations
+        for ch_row in df.itertuples():
+            station_obj = stations_dict[ch_row.network][ch_row.start][ch_row.station]
+
+            cha_inv = client.get_stations(
+                ch_row.start,
+                ch_row.end,
+                network=ch_row.network,
+                station=ch_row.station,
+                loc=ch_row.location,
+                channel=ch_row.channel,
+                level="response",
+            )
+            for returned_chan in cha_inv.networks[0].stations[0].channels:
+                station_obj.channels.append(returned_chan)
+
+            # -----------------------------
+            # get data if desired
+            if data:
+                streams += self.get_waveforms_from_request_row(client, ch_row)
+
+        # Pack the stations into networks
+        for network_key in stations_dict.keys():
+            for start_key in stations_dict[network_key].keys():
+                for station_id, packed_station in stations_dict[network_key][start_key].items():
+                    networks_dict[network_key][start_key].stations.append(packed_station)
+        # Pack the networks into the inventory
+        for network_key in networks_dict.keys():
+            for start_key in networks_dict[network_key].keys():
+                inv.networks.append(networks_dict[network_key][start_key])
         return inv, streams
 
     def get_df_from_inventory(self, inventory):
