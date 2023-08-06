@@ -400,6 +400,23 @@ class FDSN:
             m.close_mth5()
             return file_name
 
+
+    def get_waveforms_from_request_row(self, client, row):
+        """
+
+        Parameters
+        ----------
+        row
+
+        Returns
+        -------
+
+        """
+        start = UTCDateTime(row.start)
+        end = UTCDateTime(row.end)
+        streams = client.get_waveforms(row.network, row.station, row.location, row.channel, start, end)
+        return streams
+
     def get_inventory_from_df(self, df, client=None, data=True):
         """
         Get an :class:`obspy.Inventory` object from a
@@ -451,17 +468,11 @@ class FDSN:
         for row in df.itertuples():
             # First for loop builds out networks and stations
             if row.network not in used_network:
-                net_inv = client.get_stations(
-                    row.start, row.end, network=row.network, level="network"
-                )
+                net_inv = client.get_stations(row.start, row.end, network=row.network, level="network")
                 returned_network = net_inv.networks[0]
                 used_network[row.network] = [row.start]
-            elif used_network.get(
-                row.network
-            ) is not None and row.start not in used_network.get(row.network):
-                net_inv = client.get_stations(
-                    row.start, row.end, network=row.network, level="network"
-                )
+            elif used_network.get(row.network) is not None and row.start not in used_network.get(row.network):
+                net_inv = client.get_stations(row.start, row.end, network=row.network, level="network")
                 returned_network = net_inv.networks[0]
                 used_network[row.network].append(row.start)
             else:
@@ -518,17 +529,7 @@ class FDSN:
                         # -----------------------------
                         # get data if desired
                         if data:
-                            streams = (
-                                client.get_waveforms(
-                                    ch_row.network,
-                                    ch_row.station,
-                                    ch_row.location,
-                                    ch_row.channel,
-                                    UTCDateTime(ch_row.start),
-                                    UTCDateTime(ch_row.end),
-                                )
-                                + streams
-                            )
+                            streams += self.get_waveforms_from_request_row(client, ch_row)
                     else:
                         continue
                 returned_network.stations.append(returned_sta)
