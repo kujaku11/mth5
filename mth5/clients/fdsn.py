@@ -430,6 +430,10 @@ class FDSN:
                     networks[row.network][row.start] = net_inv.networks[0]
             else:
                 continue
+            if len(net_inv.networks) != 1:
+                msg = f"Expected a unique network associated with {row.start}--{row.end}"
+                msg += f"Instead found {len(net_inv.networks)} networks"
+                raise NotImplementedError(msg)
         return networks
 
     # def add_network_objects_to_request_df(self, df):
