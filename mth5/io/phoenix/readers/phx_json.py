@@ -197,6 +197,11 @@ class ReceiverMetadataJSON:
             else:
                 raise ValueError(f"Could not find {fn}")
 
+    @property
+    def instrument_id(self):
+        if self.has_obj():
+            return self.obj.instid
+
     def read(self, fn=None):
         """
         read a config.json file that is in the Phoenix format
