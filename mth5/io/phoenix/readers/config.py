@@ -13,10 +13,10 @@ Created on Fri Jun 10 07:52:03 2022
 # Imports
 # =============================================================================
 from pathlib import Path
+from loguru import logger
 
 from mt_metadata.timeseries import Station
 
-from mth5.utils.mth5_logger import setup_logger
 from .helpers import read_json_to_object
 
 # =============================================================================
@@ -32,9 +32,7 @@ class PhoenixConfig:
 
         self.fn = fn
         self.obj = None
-        self.logger = setup_logger(
-            f"{self.__class__}.{self.__class__.__name__}"
-        )
+        self.logger = logger
 
     @property
     def fn(self):

@@ -9,10 +9,10 @@ Created on Tue Jun 20 15:06:08 2023
 # Imports
 # =============================================================================
 from pathlib import Path
+from loguru import logger
 
 from mt_metadata.timeseries import Survey, Station, Run, Electric, Magnetic
 
-from mth5.utils.mth5_logger import setup_logger
 from .helpers import read_json_to_object
 
 # =============================================================================
@@ -47,9 +47,7 @@ class PhoenixReceiverMetadata:
             "type": "sensor.type",
             "serial": "sensor.id",
         }
-        self.logger = setup_logger(
-            f"{self.__class__}.{self.__class__.__name__}"
-        )
+        self.logger = logger
 
         if self.fn is not None:
             self.read()

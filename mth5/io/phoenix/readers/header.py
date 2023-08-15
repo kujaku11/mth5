@@ -21,11 +21,10 @@ from datetime import datetime
 
 from struct import unpack_from
 import string
+from loguru import logger
 
 from mt_metadata.timeseries import Station, Run, Electric, Magnetic
 from mt_metadata.utils.mttime import MTime
-
-from mth5.utils.mth5_logger import setup_logger
 
 # =============================================================================
 class Header:
@@ -38,9 +37,7 @@ class Header:
     """
 
     def __init__(self, **kwargs):
-        self.logger = setup_logger(
-            f"{self.__class__}.{self.__class__.__name__}"
-        )
+        self.logger = logger
         self.report_hw_sat = False
         self.header_length = 128
         self.ad_plus_minus_range = 5.0  # differential voltage range that the A/D can measure (Board model dependent)
