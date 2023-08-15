@@ -36,6 +36,8 @@ class TestReadPhoenixNative(unittest.TestCase):
             r"c:\Users\jpeacock\OneDrive - DOI\mt\phoenix_example_data\Sample Data\10128_2021-04-27-025909\0\10128_60877DFD_0_00000001.bin"
         )
         self.original_data = self.original.read_frames(10)
+
+        self.rxcal_fn = Path(__file__).parent.joinpath("example_rxcal.json")
         self.maxDiff = None
 
     def test_readers_match(self):
@@ -65,16 +67,7 @@ class TestReadPhoenixNative(unittest.TestCase):
             "ch_firmware": 65567,
             "channel_id": 0,
             "channel_main_gain": 4.0,
-            "channel_map": {
-                0: "hx",
-                1: "hy",
-                2: "hz",
-                3: "ex",
-                4: "ey",
-                5: "h1",
-                6: "h2",
-                7: "h3",
-            },
+            "channel_map": {0: "h2", 1: "e1", 2: "h1", 3: "h3", 4: "e2"},
             "channel_type": "H",
             "data_footer": 0,
             "data_scaling": 1,
@@ -154,35 +147,51 @@ class TestReadPhoenixNative(unittest.TestCase):
                     self.assertEqual(original_value, new_value)
 
     def test_to_channel_ts(self):
-        ch_ts = self.phx_obj.to_channel_ts()
+        ch_ts = self.phx_obj.to_channel_ts(rxcal_fn=self.rxcal_fn)
 
-        with self.subTest("Channel metadata"):
-            ch_metadata = OrderedDict(
-                [
-                    ("channel_number", 0),
-                    ("component", "hx"),
-                    ("data_quality.rating.value", 0),
-                    ("filter.applied", [False]),
-                    ("filter.name", []),
-                    ("location.elevation", 0.0),
-                    ("location.latitude", 0.0),
-                    ("location.longitude", 0.0),
-                    ("measurement_azimuth", 0.0),
-                    ("measurement_tilt", 0.0),
-                    ("sample_rate", 24000.0),
-                    ("sensor.id", None),
-                    ("sensor.manufacturer", None),
-                    ("sensor.type", None),
-                    ("time_period.end", "2021-04-26T20:00:08.999958333+00:00"),
-                    ("time_period.start", "2021-04-26T19:59:09+00:00"),
-                    ("type", "magnetic"),
-                    ("units", None),
-                ]
-            )
+        ch_metadata = OrderedDict(
+            [
+                ("channel_number", 0),
+                ("component", "h2"),
+                ("data_quality.rating.value", 0),
+                ("filter.applied", [False]),
+                ("filter.name", ["mtu-5c_rmt03-j_666_h2_10000hz_lowpass"]),
+                ("location.elevation", 70.11294555664062),
+                ("location.latitude", 43.69640350341797),
+                ("location.longitude", -79.3936996459961),
+                ("measurement_azimuth", 90.0),
+                ("measurement_tilt", 0.0),
+                ("sample_rate", 24000.0),
+                ("sensor.id", "0"),
+                ("sensor.manufacturer", "Phoenix Geophysics"),
+                ("sensor.model", "MTC-150"),
+                ("sensor.type", "4"),
+                ("time_period.end", "2021-04-27T03:00:08.999958333+00:00"),
+                ("time_period.start", "2021-04-27T02:59:09+00:00"),
+                ("type", "magnetic"),
+                ("units", "volts"),
+            ]
+        )
 
-            self.assertDictEqual(
-                get_compare_dict(ch_ts.channel_metadata.to_dict(single=True)),
-                ch_metadata,
+        for key, value in ch_metadata.items():
+            with self.subTest(key):
+                if isinstance(value, float):
+                    self.assertAlmostEqual(
+                        value, ch_ts.channel_metadata.get_attr_from_name(key), 5
+                    )
+
+                else:
+                    self.assertEqual(
+                        value, ch_ts.channel_metadata.get_attr_from_name(key)
+                    )
+
+        with self.subTest("channel_response_filter_length"):
+            self.assertEqual(1, len(ch_ts.channel_response_filter.filters_list))
+
+        with self.subTest("channel_response_filter_frequency_shape"):
+            self.assertEqual(
+                (69,),
+                ch_ts.channel_response_filter.filters_list[0].frequencies.shape,
             )
 
         with self.subTest("Channel Size"):
