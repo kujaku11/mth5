@@ -14,7 +14,7 @@ from collections import OrderedDict
 
 import numpy as np
 from mth5.io.phoenix import open_phoenix
-from mt_metadata.utils.helpers import get_compare_dict
+from mth5.utils.helpers import get_compare_dict
 
 # =============================================================================
 

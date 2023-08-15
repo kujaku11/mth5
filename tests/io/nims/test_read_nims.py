@@ -15,7 +15,7 @@ from collections import OrderedDict
 
 from mth5.io.nims import NIMS, read_nims
 from mt_metadata.utils.mttime import MTime
-from mt_metadata.utils.helpers import get_compare_dict
+from mth5.utils.helpers import get_compare_dict
 
 # =============================================================================
 

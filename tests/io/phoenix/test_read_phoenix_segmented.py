@@ -13,7 +13,7 @@ from pathlib import Path
 from collections import OrderedDict
 
 from mth5.io.phoenix import open_phoenix
-from mt_metadata.utils.helpers import get_compare_dict
+from mth5.utils.helpers import get_compare_dict
 
 # =============================================================================
 
@@ -186,7 +186,9 @@ class TestReadPhoenixContinuous(unittest.TestCase):
             with self.subTest(key):
                 if isinstance(value, float):
                     self.assertAlmostEqual(
-                        value, ch_ts.channel_metadata.get_attr_from_name(key), 5
+                        value,
+                        ch_ts.channel_metadata.get_attr_from_name(key),
+                        5,
                     )
 
                 else:
@@ -195,12 +197,16 @@ class TestReadPhoenixContinuous(unittest.TestCase):
                     )
 
         with self.subTest("channel_response_filter_length"):
-            self.assertEqual(1, len(ch_ts.channel_response_filter.filters_list))
+            self.assertEqual(
+                1, len(ch_ts.channel_response_filter.filters_list)
+            )
 
         with self.subTest("channel_response_filter_frequency_shape"):
             self.assertEqual(
                 (69,),
-                ch_ts.channel_response_filter.filters_list[0].frequencies.shape,
+                ch_ts.channel_response_filter.filters_list[
+                    0
+                ].frequencies.shape,
             )
 
         with self.subTest("Channel Size"):
