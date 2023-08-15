@@ -15,6 +15,7 @@ from collections import OrderedDict
 
 from mth5.io.nims import NIMS, read_nims
 from mt_metadata.utils.mttime import MTime
+from mt_metadata.utils.helpers import get_compare_dict
 
 # =============================================================================
 
@@ -206,7 +207,8 @@ class TestNIMSToRunTS(unittest.TestCase):
         )
 
         self.assertDictEqual(
-            self.runts.station_metadata.to_dict(single=True), station_metadata
+            get_compare_dict(self.runts.station_metadata.to_dict(single=True)),
+            station_metadata,
         )
 
     def test_run_metadata(self):
@@ -238,7 +240,8 @@ class TestNIMSToRunTS(unittest.TestCase):
         )
 
         self.assertDictEqual(
-            self.runts.run_metadata.to_dict(single=True), run_metadata
+            get_compare_dict(self.runts.run_metadata.to_dict(single=True)),
+            run_metadata,
         )
 
     def test_ex_metadata(self):
@@ -283,7 +286,10 @@ class TestNIMSToRunTS(unittest.TestCase):
         )
 
         self.assertDictEqual(
-            self.runts.ex.channel_metadata.to_dict(single=True), ex_metadata
+            get_compare_dict(
+                self.runts.ex.channel_metadata.to_dict(single=True)
+            ),
+            ex_metadata,
         )
 
     def test_ey_metadata(self):
@@ -328,7 +334,10 @@ class TestNIMSToRunTS(unittest.TestCase):
         )
 
         self.assertDictEqual(
-            self.runts.ey.channel_metadata.to_dict(single=True), ey_metadata
+            get_compare_dict(
+                self.runts.ey.channel_metadata.to_dict(single=True)
+            ),
+            ey_metadata,
         )
 
     def test_hx_metadata(self):
@@ -363,7 +372,10 @@ class TestNIMSToRunTS(unittest.TestCase):
         )
 
         self.assertDictEqual(
-            self.runts.hx.channel_metadata.to_dict(single=True), hx_metadata
+            get_compare_dict(
+                self.runts.hx.channel_metadata.to_dict(single=True)
+            ),
+            hx_metadata,
         )
 
     def test_hy_metadata(self):
@@ -398,7 +410,10 @@ class TestNIMSToRunTS(unittest.TestCase):
         )
 
         self.assertDictEqual(
-            self.runts.hy.channel_metadata.to_dict(single=True), hy_metadata
+            get_compare_dict(
+                self.runts.hy.channel_metadata.to_dict(single=True)
+            ),
+            hy_metadata,
         )
 
     def test_hz_metadata(self):
@@ -433,7 +448,10 @@ class TestNIMSToRunTS(unittest.TestCase):
         )
 
         self.assertDictEqual(
-            self.runts.hz.channel_metadata.to_dict(single=True), hz_metadata
+            get_compare_dict(
+                self.runts.hz.channel_metadata.to_dict(single=True)
+            ),
+            hz_metadata,
         )
 
     def test_temperature_metadata(self):
@@ -461,7 +479,9 @@ class TestNIMSToRunTS(unittest.TestCase):
         )
 
         self.assertDictEqual(
-            self.runts.temperature.channel_metadata.to_dict(single=True),
+            get_compare_dict(
+                self.runts.temperature.channel_metadata.to_dict(single=True)
+            ),
             t_metadata,
         )
 

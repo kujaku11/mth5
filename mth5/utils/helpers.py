@@ -42,7 +42,12 @@ def initialize_mth5(h5_path, mode="a", file_version="0.1.0"):
 
 
 def read_back_data(
-    mth5_path, station_id, run_id, survey=None, close_mth5=True, return_objects=[]
+    mth5_path,
+    station_id,
+    run_id,
+    survey=None,
+    close_mth5=True,
+    return_objects=[],
 ):
     """
     Testing helper function, used to confirm that the h5 file can be accessed
@@ -73,7 +78,9 @@ def read_back_data(
     processing_config["local_station_id"] = station_id
     config = processing_config
     m = initialize_mth5(config["mth5_path"], mode="r")
-    local_run_obj = m.get_run(config["local_station_id"], run_id, survey=survey)
+    local_run_obj = m.get_run(
+        config["local_station_id"], run_id, survey=survey
+    )
     local_run_ts = local_run_obj.to_runts()
     data_array = local_run_ts.dataset.to_array()
     logger.info(f"data shape = {data_array.shape}")
@@ -88,3 +95,21 @@ def read_back_data(
     else:
         return_dict["mth5_obj"] = m
     return return_dict
+
+
+def get_compare_dict(input_dict):
+    """
+    Helper function for removing 2 added attributes to metadata
+
+     - hdf5_reference
+     - mth5_type
+
+    :param input_dict: DESCRIPTION
+    :type input_dict: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+    input_dict.pop("hdf5_reference")
+    input_dict.pop("mth5_type")
+    return input_dict
