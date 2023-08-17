@@ -199,12 +199,9 @@ class PhoenixClient:
                         ch_ts = read_file(row.fn)
 
                         # add channel to the run group
-                        ch_dataset = run_group.from_channel_ts(ch_ts)
+                        run_group.from_channel_ts(ch_ts)
 
                     run_group.update_run_metadata()
 
             station_group.update_station_metadata()
-            station_group.write_metadata()
-
             survey_group.update_survey_metadata()
-            survey_group.write_metadata()

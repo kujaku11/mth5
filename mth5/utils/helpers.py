@@ -110,6 +110,10 @@ def get_compare_dict(input_dict):
     :rtype: TYPE
 
     """
-    input_dict.pop("hdf5_reference")
-    input_dict.pop("mth5_type")
+    for key in ["hdf5_reference", "mth5_type"]:
+        try:
+            input_dict.pop(key)
+        except KeyError:
+            pass
+
     return input_dict
