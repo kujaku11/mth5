@@ -67,7 +67,9 @@ class FCChannelDataset:
 
     """
 
-    def __init__(self, dataset, dataset_metadata=None, write_metadata=True, **kwargs):
+    def __init__(
+        self, dataset, dataset_metadata=None, write_metadata=True, **kwargs
+    ):
 
         if dataset is not None and isinstance(dataset, (h5py.Dataset)):
             self.hdf5_dataset = weakref.ref(dataset)()
@@ -195,7 +197,6 @@ class FCChannelDataset:
             self.metadata.time_period.start,
             1.0 / self.metadata.sample_rate_window_step,
             self.n_windows,
-            self.logger,
         )
 
     @property

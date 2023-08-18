@@ -28,7 +28,9 @@ class TestChannelScipyFilters(unittest.TestCase):
             np.sum(
                 [
                     np.cos(2 * np.pi * w * self.t + phi)
-                    for w, phi in zip(np.logspace(-3, 3, 20), np.random.rand(20))
+                    for w, phi in zip(
+                        np.logspace(-3, 3, 20), np.random.rand(20)
+                    )
                 ],
                 axis=0,
             )
@@ -39,7 +41,7 @@ class TestChannelScipyFilters(unittest.TestCase):
         self.sample_rate = 64
 
         dt_index = make_dt_coordinates(
-            "2020-01-01T00:00:00", self.sample_rate, self.n_samples, None
+            "2020-01-01T00:00:00", self.sample_rate, self.n_samples
         )
 
         self.ch = xr.DataArray(self.data, coords={"time": dt_index}, name="ex")
@@ -74,7 +76,9 @@ class TestChannelScipyFilters(unittest.TestCase):
         self.assertEqual(self.sample_rate, self.ch.sps_filters.fs)
 
     def test_dx(self):
-        self.assertListEqual([1 / self.sample_rate], self.ch.sps_filters.dx.tolist())
+        self.assertListEqual(
+            [1 / self.sample_rate], self.ch.sps_filters.dx.tolist()
+        )
 
 
 # =============================================================================
