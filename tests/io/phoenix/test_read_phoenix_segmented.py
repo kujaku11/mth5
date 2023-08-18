@@ -22,7 +22,7 @@ from mth5.utils.helpers import get_compare_dict
     "peacock" not in str(Path(__file__).as_posix()),
     "Only local files, cannot test in GitActions",
 )
-class TestReadPhoenixContinuous(unittest.TestCase):
+class TestReadPhoenixSegmented(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.phx_obj = open_phoenix(
@@ -39,7 +39,7 @@ class TestReadPhoenixContinuous(unittest.TestCase):
             "channel_id": 0,
             "channel_type": "H",
             "elevation": 140.10263061523438,
-            "gps_time_stamp": "2021-04-27T03:25:00+00:00",
+            "gps_time_stamp": "2021-04-27T03:24:42+00:00",
             "header_length": 32,
             "instrument_serial_number": "10128",
             "instrument_type": "MTU-5C",
@@ -50,8 +50,8 @@ class TestReadPhoenixContinuous(unittest.TestCase):
             "sample_rate": 24000.0,
             "saturation_count": 0,
             "segment": 0,
-            "segment_end_time": "2021-04-27T03:25:02+00:00",
-            "segment_start_time": "2021-04-27T03:25:00+00:00",
+            "segment_end_time": "2021-04-27T03:24:44+00:00",
+            "segment_start_time": "2021-04-27T03:24:42+00:00",
             "value_max": 0.24964138865470886,
             "value_mean": -1.3566585039370693e-05,
             "value_min": 3.4028234663852886e38,
@@ -59,7 +59,7 @@ class TestReadPhoenixContinuous(unittest.TestCase):
 
         for key, original_value in true_dict.items():
             new_value = getattr(self.segment, key)
-            with self.subTest("key"):
+            with self.subTest(f"{key}"):
                 if isinstance(original_value, (list)):
                     self.assertListEqual(original_value, new_value)
                 elif isinstance(original_value, float):
@@ -122,7 +122,7 @@ class TestReadPhoenixContinuous(unittest.TestCase):
             "missing_frames": 0,
             "preamp_gain": 1.0,
             "recording_id": 1619493876,
-            "recording_start_time": "2021-04-26T20:24:36+00:00",
+            "recording_start_time": "2021-04-26T20:24:18+00:00",
             "report_hw_sat": False,
             "sample_rate": 24000,
             "sample_rate_base": 24000,
@@ -147,7 +147,7 @@ class TestReadPhoenixContinuous(unittest.TestCase):
 
         for key, original_value in true_dict.items():
             new_value = getattr(self.phx_obj, key)
-            with self.subTest("key"):
+            with self.subTest(f"{key}"):
                 if isinstance(original_value, (list)):
                     self.assertListEqual(original_value, new_value)
                 elif isinstance(original_value, float):
@@ -163,8 +163,11 @@ class TestReadPhoenixContinuous(unittest.TestCase):
                 ("channel_number", 0),
                 ("component", "h2"),
                 ("data_quality.rating.value", 0),
-                ("filter.applied", [False]),
-                ("filter.name", ["mtu-5c_rmt03-j_666_h2_10000hz_lowpass"]),
+                ("filter.applied", [False, False]),
+                (
+                    "filter.name",
+                    ["mtu-5c_rmt03-j_666_h2_10000hz_lowpass", "v_to_mv"],
+                ),
                 ("location.elevation", 140.10263061523438),
                 ("location.latitude", 43.69625473022461),
                 ("location.longitude", -79.39364624023438),
@@ -175,8 +178,8 @@ class TestReadPhoenixContinuous(unittest.TestCase):
                 ("sensor.manufacturer", "Phoenix Geophysics"),
                 ("sensor.model", "MTC-150"),
                 ("sensor.type", "4"),
-                ("time_period.end", "2021-04-27T03:25:31.999958333+00:00"),
-                ("time_period.start", "2021-04-27T03:25:30+00:00"),
+                ("time_period.end", "2021-04-27T03:25:13.999958333+00:00"),
+                ("time_period.start", "2021-04-27T03:25:12+00:00"),
                 ("type", "magnetic"),
                 ("units", "volts"),
             ]
@@ -197,16 +200,12 @@ class TestReadPhoenixContinuous(unittest.TestCase):
                     )
 
         with self.subTest("channel_response_filter_length"):
-            self.assertEqual(
-                1, len(ch_ts.channel_response_filter.filters_list)
-            )
+            self.assertEqual(2, len(ch_ts.channel_response_filter.filters_list))
 
         with self.subTest("channel_response_filter_frequency_shape"):
             self.assertEqual(
                 (69,),
-                ch_ts.channel_response_filter.filters_list[
-                    0
-                ].frequencies.shape,
+                ch_ts.channel_response_filter.filters_list[0].frequencies.shape,
             )
 
         with self.subTest("Channel Size"):
