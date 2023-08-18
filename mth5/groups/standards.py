@@ -41,7 +41,6 @@ def summarize_metadata_standards():
     for key in ["survey", "station", "run", "electric", "magnetic", "auxiliary"]:
         obj = ts_classes[key.capitalize()]()
         summary_dict.add_dict(obj._attr_dict.copy(), key)
-
     for key in [
         "Coefficient",
         "FIR",
@@ -138,14 +137,12 @@ class StandardsGroup(BaseGroup):
             msg = f"Could not find {attribute_name} in standards."
             self.logger.error(msg)
             raise MTH5TableError(msg)
-
         meta_item = self.summary_table.array[find]
         lines = ["", attribute_name, "-" * (len(attribute_name) + 4)]
         for name, value in zip(meta_item.dtype.names[1:], meta_item.item()[1:]):
             if isinstance(value, (bytes, np.bytes_)):
                 value = value.decode()
             lines.append("\t{0:<14} {1}".format(name + ":", value))
-
         print("\n".join(lines))
 
     def summary_table_from_dict(self, summary_dict):
@@ -167,17 +164,13 @@ class StandardsGroup(BaseGroup):
                 if isinstance(value, list):
                     if len(value) == 0:
                         value = ""
-
                     else:
                         value = ",".join(["{0}".format(ii) for ii in value])
                 if value is None:
                     value = ""
-
                 key_list.append(value)
-
             key_list = np.array([tuple(key_list)], self.summary_table.dtype)
             index = self.summary_table.add_row(key_list)
-
         self.logger.debug(f"Added {index} rows to Standards Group")
 
     def initialize_group(self):
@@ -203,7 +196,6 @@ class StandardsGroup(BaseGroup):
                 dtype=self._defaults_summary_attrs["dtype"],
                 **self.dataset_options,
             )
-
         summary_dataset.attrs.update(
             {
                 "type": "summary table",
@@ -213,14 +205,13 @@ class StandardsGroup(BaseGroup):
         )
 
         self.logger.debug(
-            "Created %s table with max_shape = %s, dtype=%s",
-            self._defaults_summary_attrs["name"],
-            self._defaults_summary_attrs["max_shape"],
-            self._defaults_summary_attrs["dtype"],
+            f"Created {self._defaults_summary_attrs['name']} table with "
+            f"max_shape = {self._defaults_summary_attrs['max_shape']}, "
+            "dtype={self._defaults_summary_attrs['dtype']}"
         )
         self.logger.debug(
             "used options: "
-            + "; ".join(["%s = %s" % (k, v) for k, v in self.dataset_options.items()])
+            "; ".join([f"{k} = {v}" for k, v in self.dataset_options.items()])
         )
 
         self.summary_table_from_dict(summarize_metadata_standards())

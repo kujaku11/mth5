@@ -189,7 +189,8 @@ class TestMTH5(unittest.TestCase):
             self.assertEqual(channel_ts.start, new_ts.start)
         with self.subTest(name="metadata"):
             self.assertDictEqual(
-                channel_ts._ts.time.to_dict(), new_ts._ts.time.to_dict()
+                channel_ts.data_array.time.to_dict(),
+                new_ts.data_array.time.to_dict(),
             )
 
     def test_from_run_ts(self):

@@ -11,6 +11,7 @@ It creates a wrapper for scipy methods for xarray.
 # =============================================================================
 
 import warnings
+from fractions import Fraction
 import xarray as xr
 import scipy.signal
 import numpy as np
@@ -19,7 +20,6 @@ try:
     from scipy.signal import sosfiltfilt
 except ImportError:
     sosfiltfilt = None
-
 # =============================================================================
 
 
@@ -74,7 +74,6 @@ def get_maybe_only_dim(darray, dim):
                 return darray.dims[0]
             elif isinstance(darray, xr.Dataset):
                 return list(darray.dims.keys())[0]
-
         else:
             raise ValueError("Specify the dimension")
     else:
@@ -119,7 +118,6 @@ def get_sampling_step(darray, dim=None, rtol=1e-3):
         t_scale = 1e3
     else:
         t_scale = 1
-
     dt_avg = (
         float(coord[-1] - coord[0]) / (len(coord) - 1)
     ) / t_scale  # N-1 segments
@@ -393,6 +391,19 @@ def bandstop(darray, f_low, f_high, *args, **kwargs):
     return frequency_filter(darray, [f_low, f_high], *args, **kwargs)
 
 
+# def notch(
+#     darray,
+#     notch_freq,
+#     notch_radius=0.5,
+#     frequency_radius=0.9,
+#     ripple=0.1,
+#     db_stop_limit=5.0,
+# ):
+#     ford, wn = signal.cheb1ord(wp, ws, 1, dbstop)
+#     b, a = signal.cheby1(1, 0.5, wn, btype="bandstop")
+#     bx = signal.filtfilt(b, a, bx)
+
+
 def decimate(darray, target_sample_rate, n_order=8, dim=None):
     """
     Decimate data following the method of scipy.signal.decimate.
@@ -442,6 +453,48 @@ def decimate(darray, target_sample_rate, n_order=8, dim=None):
     )
 
     return ret.isel(**{dim: slice(None, None, q)})
+
+
+def resample_poly(darray, new_sample_rate, dim=None, pad_type="mean"):
+    """
+    Use scipy.signal.resample_poly
+
+    In newer versions of scipy, need to cast data types as floats and returned
+    object has data type of float, can change later if desired.
+
+    :param new_sample_rate: DESCRIPTION
+    :type new_sample_rate: TYPE
+    :return: DESCRIPTION
+    :rtype: TYPE
+
+    """
+    dim = get_maybe_only_dim(darray, dim)
+    old_sample_rate = 1.0 / get_sampling_step(darray, dim)
+
+    fraction = Fraction(new_sample_rate / old_sample_rate).limit_denominator()
+
+    # need to resample the time coordinate because it will change and that
+    # is illegal in apply_ufunc.
+    dim = get_maybe_only_dim(darray, dim)
+
+    dt = get_sampling_step(darray, dim)
+    q = int(np.rint(1 / (dt * new_sample_rate)))
+
+    new_dim = darray[dim].values[slice(None, None, q)]
+
+    ret = xr.apply_ufunc(
+        scipy.signal.resample_poly,
+        darray.astype(float),
+        fraction.numerator,
+        fraction.denominator,
+        input_core_dims=[[dim], [], []],
+        output_core_dims=[[dim]],
+        exclude_dims=set([dim]),
+        kwargs={"padtype": pad_type},
+    )
+    ret[dim] = new_dim
+
+    return ret
 
 
 def savgol_filter(
@@ -548,8 +601,8 @@ def detrend(darray, dim=None, trend_type="linear"):
     )
 
 
-@xr.register_dataarray_accessor("filt")
-@xr.register_dataset_accessor("filt")
+@xr.register_dataarray_accessor("sps_filters")
+@xr.register_dataset_accessor("sps_filters")
 class FilterAccessor(object):
     """Accessor exposing common frequency and other filtering methods"""
 
@@ -646,3 +699,9 @@ class FilterAccessor(object):
     def detrend(self, trend_type="linear", dim=None):
         """Detrend data, wraps detrend"""
         return detrend(self.darray, dim, trend_type)
+
+    def resample_poly(self, target_sample_rate, pad_type="mean", dim=None):
+        """Resample using resample_poly"""
+        return resample_poly(
+            self.darray, target_sample_rate, dim=dim, pad_type=pad_type
+        )

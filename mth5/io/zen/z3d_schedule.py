@@ -8,8 +8,8 @@ Created on Wed Aug 24 11:24:57 2022
 # =============================================================================
 # Imports
 # =============================================================================
-import logging
 from mt_metadata.utils.mttime import MTime
+from loguru import logger
 
 # =============================================================================
 class Z3DSchedule:
@@ -60,9 +60,7 @@ class Z3DSchedule:
     """
 
     def __init__(self, fn=None, fid=None, **kwargs):
-        self.logger = logging.getLogger(
-            f"{__name__}.{self.__class__.__name__}"
-        )
+        self.logger = logger
         self.fn = fn
         self.fid = fid
         self.meta_string = None
@@ -97,10 +95,8 @@ class Z3DSchedule:
         """
         if fn is not None:
             self.fn = fn
-
         if fid is not None:
             self.fid = fid
-
         if self.fn is None and self.fid is None:
             self.logger.warning("No Z3D file to read.")
         elif self.fn is None:
@@ -115,7 +111,6 @@ class Z3DSchedule:
             else:
                 self.fid.seek(self._header_len)
                 self.meta_string = self.fid.read(self._header_len)
-
         meta_list = self.meta_string.split(b"\n")
         for m_str in meta_list:
             m_str = m_str.decode()
@@ -125,7 +120,4 @@ class Z3DSchedule:
                 m_key = m_key.replace("/", "")
                 m_value = m_list[1].strip()
                 setattr(self, m_key, m_value)
-
-        self.initial_start = MTime(
-            time=f"{self.Date}T{self.Time}", gps_time=True
-        )
+        self.initial_start = MTime(time=f"{self.Date}T{self.Time}", gps_time=True)

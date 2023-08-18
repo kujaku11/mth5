@@ -24,13 +24,13 @@ from pathlib import Path
 from platform import platform
 
 import h5py
+from loguru import logger
 
 from mth5.utils.exceptions import MTH5Error
 from mth5 import __version__ as mth5_version
 from mth5 import groups
 from mth5.tables import ChannelSummaryTable, TFSummaryTable
 from mth5 import helpers
-from mth5.utils.mth5_logger import setup_logger
 from mth5 import (
     CHANNEL_DTYPE,
     TF_DTYPE,
@@ -261,7 +261,7 @@ class MTH5:
         file_version="0.2.0",
     ):
 
-        self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = logger
 
         # make these private so the user cant accidentally change anything.
         self.__hdf5_obj = None
@@ -323,7 +323,7 @@ class MTH5:
             return Path(self.__hdf5_obj.filename)
         msg = (
             "MTH5 file is not open or has not been created yet. "
-            + "Returning default name"
+            "Returning default name"
         )
         self.logger.warning(msg)
         return self.__filename
@@ -366,9 +366,7 @@ class MTH5:
             self.logger.error(msg)
             raise ValueError(msg)
         if value not in ACCEPTABLE_FILE_TYPES:
-            msg = (
-                f"Input file.type is not valid, must be {ACCEPTABLE_FILE_TYPES}"
-            )
+            msg = f"Input file.type is not valid, must be {ACCEPTABLE_FILE_TYPES}"
             self.logger.error(msg)
             raise ValueError(msg)
         self.__file_type = value
@@ -615,7 +613,7 @@ class MTH5:
                 except OSError as error:
                     msg = (
                         f"{error}. Need to close any references to {self.__filename} first. "
-                        + "Then reopen the file in the preferred mode"
+                        "Then reopen the file in the preferred mode"
                     )
                     self.logger.exception(msg)
             elif mode in ["a", "w-", "x", "r+"]:
@@ -630,14 +628,14 @@ class MTH5:
                 self._set_default_groups()
                 self.validate_file()
             else:
-                msg = "mode {0} is not understood".format(mode)
+                msg = f"mode {mode} is not understood"
                 self.logger.error(msg)
                 raise MTH5Error(msg)
         else:
             if mode in ["a", "w", "w-", "x"]:
                 self._initialize_file(mode=mode)
             else:
-                msg = "Cannot open new file in mode {0} ".format(mode)
+                msg = f"Cannot open new file in mode {mode} "
                 self.logger.error(msg)
                 raise MTH5Error(msg)
         # TODO need to add a validation step to check for version and legit file
@@ -815,14 +813,12 @@ class MTH5:
 
         if self.file_version == "0.1.0":
             h5_path = self._root_path
-
         elif self.file_version == "0.2.0":
             if survey is None:
                 raise ValueError("Survey must be input for file type 0.2.0")
             else:
                 survey = helpers.validate_name(survey)
             h5_path = f"{self._root_path}/Surveys/{survey}"
-
         if station is not None:
             station = helpers.validate_name(station)
             h5_path += f"/Stations/{station}"
@@ -836,7 +832,6 @@ class MTH5:
                 if channel is not None:
                     channel = helpers.validate_name(channel)
                     h5_path += f"/{channel}"
-
         return h5_path
 
     def from_reference(self, h5_reference):
@@ -871,7 +866,7 @@ class MTH5:
         except KeyError:
             self.logger.info(
                 f"Could not identify the MTH5 type {mth5_type}, "
-                + "returning h5 group."
+                "returning h5 group."
             )
             return referenced
 
@@ -970,7 +965,6 @@ class MTH5:
                                 if update:
                                     mt_ch.metadata.update(channel)
                                     mt_ch.write_metadata()
-
                             mt_run.update_run_metadata()
                         mt_station.update_station_metadata()
                     sg.update_survey_metadata()
@@ -1137,9 +1131,9 @@ class MTH5:
             )
         elif self.file_version in ["0.2.0"]:
             if survey is None:
-                msg = "Need to input 'survey' for file version %s"
-                self.logger.error(msg, self.file_version)
-                raise ValueError(msg % self.file_version)
+                msg = f"Need to input 'survey' for file version {self.file_version}"
+                self.logger.error(msg)
+                raise ValueError(msg)
             sg = self.get_survey(survey)
             return sg.stations_group.add_station(
                 station_name, station_metadata=station_metadata
@@ -1198,9 +1192,9 @@ class MTH5:
             return self.stations_group.remove_station(station_name)
         elif self.file_version in ["0.2.0"]:
             if survey is None:
-                msg = "Need to input 'survey' for file version %s"
-                self.logger.error(msg, self.file_version)
-                raise ValueError(msg % self.file_version)
+                msg = f"Need to input 'survey' for file version {self.file_version}"
+                self.logger.error(msg)
+                raise ValueError(msg)
             survey = helpers.validate_name(survey)
             sg = self.get_survey(survey)
             return sg.stations_group.remove_station(station_name)
@@ -1409,7 +1403,9 @@ class MTH5:
                 f"Could not find channel, {run_path}/{channel_name}"
             )
 
-    def remove_channel(self, station_name, run_name, channel_name, survey=None):
+    def remove_channel(
+        self, station_name, run_name, channel_name, survey=None
+    ):
         """
         Convenience function to remove a channel using
         ``mth5.stations_group.get_station().get_run().remove_channel()``
@@ -1455,9 +1451,9 @@ class MTH5:
         """
 
         if not isinstance(tf_object, TF):
-            msg = "Input must be a TF object not %s"
-            self.logger.error(msg, type(tf_object))
-            raise ValueError(msg % type(tf_object))
+            msg = f"Input must be a TF object not {type(tf_object)}"
+            self.logger.error(msg)
+            raise ValueError(msg)
         if self.file_version == "0.2.0":
             try:
                 # need to check survey metadata to make sure it matches,
@@ -1535,7 +1531,6 @@ class MTH5:
             tf_object.station_metadata.transfer_function.runs_processed = (
                 tf_object.station_metadata.run_list
             )
-
         for (
             run_id
         ) in tf_object.station_metadata.transfer_function.runs_processed:
@@ -1545,6 +1540,9 @@ class MTH5:
                 run_group = station_group.get_run(run_id)
             except MTH5Error:
                 run = tf_object.station_metadata.get_run(run_id)
+                if run is None:
+                    run = tf_object.station_metadata.runs[0].copy()
+                    run.id = run_id
                 run_group = station_group.add_run(run_id, run_metadata=run)
 
                 if run is not None:
@@ -1553,7 +1551,10 @@ class MTH5:
                             ch_dataset = run_group.get_channel(ch.component)
                         except MTH5Error:
                             ch_dataset = run_group.add_channel(
-                                ch.component, ch.type, None, channel_metadata=ch
+                                ch.component,
+                                ch.type,
+                                None,
+                                channel_metadata=ch,
                             )
         try:
             tf_group = (

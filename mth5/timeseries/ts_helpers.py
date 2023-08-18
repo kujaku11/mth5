@@ -9,9 +9,9 @@ Created on Wed Mar 29 14:27:22 2023
 # =============================================================================
 import numpy as np
 import pandas as pd
+from loguru import logger
 
 from mt_metadata.utils.mttime import MTime
-from mth5.utils.mth5_logger import setup_logger
 
 # =============================================================================
 
@@ -57,34 +57,29 @@ def _count_decimal_sig_figs(digits):
     return len(fractional.rstrip("0"))
 
 
-def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
+def make_dt_coordinates(start_time, sample_rate, n_samples):
     """
     get the date time index from the data
 
     :param string start_time: start time in time format
     :param float sample_rate: sample rate in samples per seconds
     :param int n_samples: number of samples in time series
-    :param logger: logger class object
-    :type logger: ":class:`logging.logger`
     :return: date-time index
 
     """
 
-    if logger is None:
-        logger = setup_logger("mth5.timeseries.ts_helpers.make_dt_coordinates")
-
     if sample_rate in [0, None]:
         msg = (
             f"Need to input a valid sample rate. Not {sample_rate}, "
-            + "returning a time index assuming a sample rate of 1"
+            "returning a time index assuming a sample rate of 1"
         )
         logger.warning(msg)
         sample_rate = 1
     if start_time is None:
         msg = (
             f"Need to input a start time. Not {start_time}, "
-            + "returning a time index with start time of "
-            + "1980-01-01T00:00:00"
+            "returning a time index with start time of "
+            "1980-01-01T00:00:00"
         )
         logger.warning(msg)
         start_time = "1980-01-01T00:00:00"
@@ -94,7 +89,6 @@ def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
         raise ValueError(msg)
     if not isinstance(start_time, MTime):
         start_time = MTime(start_time)
-
     # there is something screwy that happens when your sample rate is not a
     # nice value that can easily fit into the 60 base.  For instance if you
     # have a sample rate of 24000 the dt_freq will be '41667N', but that is
@@ -121,7 +115,6 @@ def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
         test_sf = start_sig_figs
     else:
         test_sf = sr_sig_figs
-
     if test_sf < 3:
         dt_index = dt_index.round(freq="ms")
     elif test_sf >= 3 and test_sf < 6:
@@ -130,5 +123,4 @@ def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
         dt_index = dt_index.round(freq="ns")
     else:
         pass
-
     return dt_index

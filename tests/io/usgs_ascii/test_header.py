@@ -13,6 +13,7 @@ from collections import OrderedDict
 import numpy as np
 
 from mth5.io.usgs_ascii import AsciiMetadata
+from mth5.utils.helpers import get_compare_dict
 
 # =============================================================================
 
@@ -44,7 +45,7 @@ class TestAsciiMetadata(unittest.TestCase):
 
     def test_ex(self):
         self.assertDictEqual(
-            self.header.ex_metadata.to_dict(single=True),
+            get_compare_dict(self.header.ex_metadata.to_dict(single=True)),
             OrderedDict(
                 [
                     ("channel_number", 32),
@@ -78,7 +79,7 @@ class TestAsciiMetadata(unittest.TestCase):
 
     def test_ey(self):
         self.assertDictEqual(
-            self.header.ey_metadata.to_dict(single=True),
+            get_compare_dict(self.header.ey_metadata.to_dict(single=True)),
             OrderedDict(
                 [
                     ("channel_number", 34),
@@ -112,7 +113,7 @@ class TestAsciiMetadata(unittest.TestCase):
 
     def test_hx(self):
         self.assertDictEqual(
-            self.header.hx_metadata.to_dict(single=True),
+            get_compare_dict(self.header.hx_metadata.to_dict(single=True)),
             OrderedDict(
                 [
                     ("channel_number", 31),
@@ -139,7 +140,7 @@ class TestAsciiMetadata(unittest.TestCase):
 
     def test_hy(self):
         self.assertDictEqual(
-            self.header.hy_metadata.to_dict(single=True),
+            get_compare_dict(self.header.hy_metadata.to_dict(single=True)),
             OrderedDict(
                 [
                     ("channel_number", 33),
@@ -166,7 +167,7 @@ class TestAsciiMetadata(unittest.TestCase):
 
     def test_hz(self):
         self.assertDictEqual(
-            self.header.hz_metadata.to_dict(single=True),
+            get_compare_dict(self.header.hz_metadata.to_dict(single=True)),
             OrderedDict(
                 [
                     ("channel_number", 35),
@@ -302,7 +303,8 @@ class TestAsciiMetadata(unittest.TestCase):
                 continue
             with self.subTest(key):
                 self.assertEqual(
-                    self.header.survey_metadata.get_attr_from_name(key), od[key]
+                    self.header.survey_metadata.get_attr_from_name(key),
+                    od[key],
                 )
 
     def test_write_header(self):

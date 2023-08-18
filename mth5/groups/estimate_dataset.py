@@ -13,12 +13,12 @@ import weakref
 import h5py
 import numpy as np
 import xarray as xr
+from loguru import logger
 
 from mt_metadata.transfer_functions.tf import StatisticalEstimate
 
 from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import to_numpy_type
-from mth5.utils.mth5_logger import setup_logger
 
 # =============================================================================
 
@@ -45,14 +45,11 @@ class EstimateDataset:
 
     """
 
-    def __init__(
-        self, dataset, dataset_metadata=None, write_metadata=True, **kwargs
-    ):
+    def __init__(self, dataset, dataset_metadata=None, write_metadata=True, **kwargs):
 
         if dataset is not None and isinstance(dataset, (h5py.Dataset)):
             self.hdf5_dataset = weakref.ref(dataset)()
-
-        self.logger = setup_logger(f"{__name__}.{self._class_name}")
+        self.logger = logger
 
         # set metadata to the appropriate class.  Standards is not a
         # Base object so should be skipped. If the class name is not
@@ -63,24 +60,22 @@ class EstimateDataset:
             self._add_base_attributes()
             self.metadata.hdf5_reference = self.hdf5_dataset.ref
             self.metadata.mth5_type = self._class_name
-
         # if the input data set already has filled attributes, namely if the
         # channel data already exists then read them in with our writing back
         if "mth5_type" in list(self.hdf5_dataset.attrs.keys()):
             self.metadata.from_dict(
                 {self.hdf5_dataset.attrs["mth5_type"]: self.hdf5_dataset.attrs}
             )
-
         # if metadata is input, make sure that its the same class type amd write
         # to the hdf5 dataset
         if dataset_metadata is not None:
             if not isinstance(dataset_metadata, type(self.metadata)):
-                msg = "metadata must be type metadata.%s not %s"
-                self.logger.error(
-                    msg, self._class_name, type(dataset_metadata)
+                msg = (
+                    f"metadata must be type metadata.{self._class_name} not "
+                    "{type(dataset_metadata)}"
                 )
-                raise MTH5Error(msg % self._class_name, type(dataset_metadata))
-
+                self.logger.error(msg)
+                raise MTH5Error(msg)
             # load from dict because of the extra attributes for MTH5
             self.metadata.from_dict(dataset_metadata.to_dict())
             self.metadata.hdf5_reference = self.hdf5_dataset.ref
@@ -89,7 +84,6 @@ class EstimateDataset:
             # write out metadata to make sure that its in the file.
             if write_metadata:
                 self.write_metadata()
-
         # if the attrs don't have the proper metadata keys yet write them
         if not "mth5_type" in list(self.hdf5_dataset.attrs.keys()):
             self.write_metadata()
@@ -175,10 +169,8 @@ class EstimateDataset:
                 msg = f"{error} Input must be a numpy array not {type(new_data_array)}"
                 self.logger.exception(msg)
                 raise TypeError(msg)
-
         if new_data_array.shape != self.hdf5_dataset.shape:
             self.hdf5_dataset.resize(new_data_array.shape)
-
         self.hdf5_dataset[...] = new_data_array
 
     def to_xarray(self, period):
@@ -233,17 +225,12 @@ class EstimateDataset:
                 msg = f"{error} Input must be a numpy array not {type(new_estimate)}"
                 self.logger.exception(msg)
                 raise TypeError(msg)
-
         if new_estimate.dtype != self.hdf5_dataset.dtype:
-            msg = "Input array must be type %s not %s"
-            self.logger.error(msg, new_estimate.dtype, self.hdf5_dataset.dtype)
-            raise TypeError(
-                msg % (new_estimate.dtype, self.hdf5_dataset.dtype)
-            )
-
+            msg = f"Input array must be type {new_estimate.dtype} not {self.hdf5_dataset.dtype}"
+            self.logger.error(msg)
+            raise TypeError(msg)
         if new_estimate.shape != self.hdf5_dataset.shape:
             self.hdf5_dataset.resize(new_estimate.shape)
-
         self.hdf5_dataset[...] = new_estimate
 
     def from_xarray(self, data):

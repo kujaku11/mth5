@@ -20,9 +20,8 @@ Updated August 2020 (JP)
 """
 
 # ==============================================================================
-import logging
-
 import numpy as np
+from loguru import logger
 
 # ==============================================================================
 class Z3DHeader:
@@ -71,9 +70,7 @@ class Z3DHeader:
     """
 
     def __init__(self, fn=None, fid=None, **kwargs):
-        self.logger = logging.getLogger(
-            f"{__name__}.{self.__class__.__name__}"
-        )
+        self.logger = logger
 
         self.fn = fn
         self.fid = fid
@@ -111,7 +108,7 @@ class Z3DHeader:
     @property
     def data_logger(self):
         """Data logger name as ZEN{box_number}"""
-        return "ZEN{0:03}".format(int(self.box_number))
+        return f"ZEN{int(self.box_number):03}"
 
     def read_header(self, fn=None, fid=None):
         """
@@ -132,10 +129,8 @@ class Z3DHeader:
         """
         if fn is not None:
             self.fn = fn
-
         if fid is not None:
             self.fid = fid
-
         if self.fn is None and self.fid is None:
             self.logger.warning("No Z3D file to read.")
         elif self.fn is None:
@@ -149,16 +144,13 @@ class Z3DHeader:
             else:
                 self.fid.seek(0)
                 self.header_str = self.fid.read(self._header_len)
-
         header_list = self.header_str.split(b"\n")
         for h_str in header_list:
             h_str = h_str.decode()
             if h_str.find("=") > 0:
                 h_list = h_str.split("=")
                 h_key = h_list[0].strip().lower()
-                h_key = (
-                    h_key.replace(" ", "_").replace("/", "").replace(".", "_")
-                )
+                h_key = h_key.replace(" ", "_").replace("/", "").replace(".", "_")
                 h_value = self.convert_value(h_key, h_list[1].strip())
                 setattr(self, h_key, h_value)
             elif len(h_str) == 0:
@@ -171,12 +163,10 @@ class Z3DHeader:
                 for hh in h_str.split(","):
                     if hh.find(";") > 0:
                         m_key, m_value = hh.split(";")[1].split(":")
-
                     elif len(hh.split(":", 1)) == 2:
                         m_key, m_value = hh.split(":", 1)
                     else:
                         self.logger.warning("found %s", hh)
-
                     m_key = (
                         m_key.strip()
                         .lower()
@@ -196,7 +186,6 @@ class Z3DHeader:
             return_value = float(value_string)
         except ValueError:
             return_value = value_string
-
         if key_string.lower() in ["lat", "lon", "long"]:
             return_value = np.rad2deg(float(value_string))
             if "lat" in key_string.lower():
@@ -205,5 +194,4 @@ class Z3DHeader:
             elif "lon" in key_string.lower():
                 if abs(return_value) > 180:
                     return_value = 0.0
-
         return return_value

@@ -18,8 +18,9 @@ Created on Fri May 29 15:09:48 2020
 # =============================================================================
 import inspect
 import weakref
-
+from loguru import logger
 import h5py
+
 
 from mt_metadata import timeseries as metadata
 from mt_metadata.transfer_functions.tf import TransferFunction
@@ -33,7 +34,6 @@ from mt_metadata.base import Base
 from mth5.helpers import get_tree, validate_name
 from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import to_numpy_type, from_numpy_type
-from mth5.utils.mth5_logger import setup_logger
 
 # make a dictionary of available metadata classes
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
@@ -88,13 +88,12 @@ class BaseGroup:
         self.shuffle = False
         self.fletcher32 = False
 
-        self.logger = setup_logger(f"{__name__}.{self._class_name}")
+        self.logger = logger
 
         # make sure the reference to the group is weak so there are no lingering
         # references to a closed HDF5 file.
         if group is not None and isinstance(group, (h5py.Group, h5py.Dataset)):
             self.hdf5_group = weakref.ref(group)()
-
         # initialize metadata
         self._initialize_metadata()
 
@@ -106,7 +105,6 @@ class BaseGroup:
             self.write_metadata()
         else:
             self.read_metadata()
-
         # if any other keywords
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -150,7 +148,6 @@ class BaseGroup:
                 self._metadata = meta_classes[self._class_name]()
             except KeyError:
                 self._metadata = Base()
-
         # add 2 attributes that will help with querying
         # 1) the metadata class name
         self._metadata.add_base_attribute(
@@ -210,7 +207,6 @@ class BaseGroup:
             )
             self.logger.error(msg)
             raise MTH5Error(msg)
-
         self._metadata.from_dict(metadata_object.to_dict())
 
         self._metadata.mth5_type = self._class_name
@@ -247,7 +243,7 @@ class BaseGroup:
 
         for key, value in self.metadata.to_dict(single=True).items():
             value = to_numpy_type(value)
-            self.logger.debug("wrote metadata {0} = {1}".format(key, value))
+            self.logger.debug(f"wrote metadata {key} = {value}")
             self.hdf5_group.attrs.create(key, value)
 
     def initialize_group(self, **kwargs):
@@ -285,30 +281,27 @@ class BaseGroup:
         try:
             if group_metadata is not None:
                 if validate_name(group_metadata.id) != name:
-                    msg = "%s name %s must be the same as group_metadata.%s %s"
-                    self.logger.error(
-                        msg,
-                        group_class.__name__,
-                        name,
-                        match,
-                        group_metadata.id,
+                    msg = (
+                        f"{group_class.__name__} name {name} must be "
+                        f"the same as group_metadata.{match} "
+                        f"{group_metadata.id}"
                     )
-                    raise MTH5Error(
-                        msg
-                        % (group_class.__name__, name, match, group_metadata.id)
-                    )
+                    self.logger.error(msg)
+                    raise MTH5Error(msg)
             new_group = self.hdf5_group.create_group(name)
             return_obj = group_class(new_group, **self.dataset_options)
             if group_metadata is None:
                 return_obj.metadata.set_attr_from_name(match, name)
             else:
                 return_obj.metadata = group_metadata
-
             if hasattr(return_obj, "initialize_group"):
                 return_obj.initialize_group()
         except ValueError:
-            msg = "%s %s already exists, returning existing group."
-            self.logger.info(msg, group_class.__name__, name)
+            msg = (
+                f"{group_class.__name__} {name} already exists, "
+                "returning existing group."
+            )
+            self.logger.info(msg)
             return_obj = self._get_group(name, group_class)
         return return_obj
 
@@ -328,9 +321,10 @@ class BaseGroup:
             return group_class(self.hdf5_group[name], **self.dataset_options)
         except KeyError:
             msg = (
-                f"{name} does not exist, check station_list for existing names"
+                f"Error: {name} does not exist, check station_list for "
+                "existing names"
             )
-            self.logger.debug(f"Error {msg}")
+            self.logger.debug(msg)
             raise MTH5Error(msg)
 
     def _remove_group(self, name):
@@ -356,9 +350,6 @@ class BaseGroup:
                 " what you want into another file."
             )
         except KeyError:
-            msg = (
-                f"{name} does not exist, "
-                "check station_list for existing names"
-            )
-            self.logger.debug(f"Error {msg}")
+            msg = f"{name} does not exist. Check station_list for existing names"
+            self.logger.debug(msg)
             raise MTH5Error(msg)

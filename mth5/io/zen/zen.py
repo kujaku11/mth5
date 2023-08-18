@@ -24,9 +24,9 @@ Updated August 2020 (JP)
 import datetime
 import struct
 from pathlib import Path
-import logging
 
 import numpy as np
+from loguru import logger
 
 from mt_metadata.utils.mttime import MTime
 from mt_metadata.timeseries.filters import (
@@ -37,6 +37,7 @@ from mt_metadata.timeseries.filters import (
 from mt_metadata.timeseries import Station, Run, Electric, Magnetic
 
 from mth5.io.zen import Z3DHeader, Z3DSchedule, Z3DMetadata
+from mth5.io.zen.coil_response import CoilResponse
 from mth5.timeseries import ChannelTS
 
 # ==============================================================================
@@ -116,8 +117,9 @@ class Z3D:
     """
 
     def __init__(self, fn=None, **kwargs):
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = logger
         self.fn = fn
+        self.calibration_fn = None
 
         self.header = Z3DHeader(fn)
         self.schedule = Z3DSchedule(fn)
@@ -167,6 +169,9 @@ class Z3D:
         self.time_series = None
 
         self.ch_dict = {"hx": 1, "hy": 2, "hz": 3, "ex": 4, "ey": 5}
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     @property
     def fn(self):
@@ -243,7 +248,6 @@ class Z3D:
             x2, y2 = [float(d) for d in self.metadata.ch_xyz2.split(":")]
             length = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2) * 100.0
             length = np.round(length, 2)
-
         return length
 
     @property
@@ -325,7 +329,6 @@ class Z3D:
 
         if self.header.old_version is True:
             return MTime(self.header.schedule)
-
         return self.schedule.initial_start
 
     @zen_schedule.setter
@@ -414,12 +417,13 @@ class Z3D:
                 self.time_series[-int(self.sample_rate) :].min()
                 * self.header.ch_factor
             )
-
         ch.time_period.start = self.start.isoformat()
         ch.time_period.end = self.end.isoformat()
         ch.component = self.component
         ch.sample_rate = self.sample_rate
         ch.measurement_azimuth = self.azimuth
+        if ch.component in ["ey", "e2"] and self.azimuth == 0:
+            ch.measurement_azimuth = 90
         ch.units = "digital counts"
         ch.channel_number = self.channel_number
         ch.filter.name = self.channel_response.names
@@ -473,8 +477,8 @@ class Z3D:
         """
 
         c2mv = CoefficientFilter()
-        c2mv.units_in = "digital counts"
-        c2mv.units_out = "millivolts"
+        c2mv.units_in = "millivolts"
+        c2mv.units_out = "digital counts"
         c2mv.name = "zen_counts2mv"
         c2mv.gain = 1.0 / self.header.ch_factor
         c2mv.comments = "digital counts to millivolts"
@@ -489,16 +493,25 @@ class Z3D:
         Phase must be in radians
         """
         fap = None
-        if self.metadata.cal_ant is not None:
-            fap = FrequencyResponseTableFilter()
-            fap.units_in = "millivolts"
-            fap.units_out = "nanotesla"
-            fap.frequencies = self.metadata.coil_cal.frequency
-            fap.amplitudes = self.metadata.coil_cal.amplitude
-            fap.phases = self.metadata.coil_cal.phase / 1e3
-            fap.name = f"ant4_{self.coil_number}_response"
-            fap.comments = "induction coil response read from z3d file"
-
+        # if there is no calibration file get from Z3D file, though it seems
+        # like these are not read in properly.
+        if self.calibration_fn in [None, "None"]:
+            # looks like zen outputs radial frequency
+            if self.metadata.cal_ant is not None:
+                fap = FrequencyResponseTableFilter()
+                fap.units_in = "nanotesla"
+                fap.units_out = "millivolts"
+                fap.frequencies = (
+                    1 / (2 * np.pi)
+                ) * self.metadata.coil_cal.frequency
+                fap.amplitudes = self.metadata.coil_cal.amplitude
+                fap.phases = self.metadata.coil_cal.phase / 1e3
+                fap.name = f"ant4_{self.coil_number}_response"
+                fap.comments = "induction coil response read from z3d file"
+        else:
+            c = CoilResponse(self.calibration_fn)
+            if c.has_coil_number(self.coil_number):
+                fap = c.get_coil_response_fap(self.coil_number)
         return fap
 
     @property
@@ -515,6 +528,7 @@ class Z3D:
         return None
         fap = None
         find = False
+        return
         if self.metadata.board_cal not in [None, []]:
             if self.metadata.board_cal[0][0] == "":
                 return fap
@@ -527,7 +541,6 @@ class Z3D:
             amplitude = fap_table.amplitude
             phase = fap_table.phase / 1e3
             find = True
-
         elif self.metadata.cal_board is not None:
 
             try:
@@ -541,7 +554,9 @@ class Z3D:
                     fap_str = self.metadata.cal_board["cal.ch"]
                     for ss in fap_str.split(";"):
                         freq, _, resp = ss.split(",")
-                        ff, amp, phs = [float(item) for item in resp.split(":")]
+                        ff, amp, phs = [
+                            float(item) for item in resp.split(":")
+                        ]
                         if float(freq) == self.sample_rate:
                             frequency = ff
                             amplitude = amp
@@ -549,7 +564,6 @@ class Z3D:
                     find = True
                 except KeyError:
                     return fap
-
         if find:
             freq = np.logspace(np.log10(6.00000e-04), np.log10(8.19200e03), 48)
             amp = np.ones(48)
@@ -559,7 +573,6 @@ class Z3D:
                 freq[index] = item_f
                 amp[index] = item_a
                 phases[index] = item_p
-
             fap = FrequencyResponseTableFilter()
             fap.units_in = "millivolts"
             fap.units_out = "millivolts"
@@ -569,32 +582,33 @@ class Z3D:
             fap.name = f"{self.header.data_logger.lower()}_{self.sample_rate:.0f}_response"
             fap.comments = "data logger response read from z3d file"
             return fap
-
         return None
 
     @property
     def channel_response(self):
-        filter_list = [self.counts2mv_filter]
-        if self.zen_response:
-            filter_list.append(self.zen_response)
+        filter_list = []
+        # don't have a good handle on the zen response yet.
+        # if self.zen_response:
+        #     filter_list.append(self.zen_response)
         if self.coil_response:
             filter_list.append(self.coil_response)
         elif self.dipole_filter:
             filter_list.append(self.dipole_filter)
 
+        filter_list.append(self.counts2mv_filter)
         return ChannelResponseFilter(filters_list=filter_list)
 
     @property
     def dipole_filter(self):
         dipole = None
+        # needs to be the inverse for processing
         if self.dipole_length != 0:
             dipole = CoefficientFilter()
-            dipole.units_in = "millivolts"
-            dipole.units_out = "millivolts per kilometer"
+            dipole.units_in = "millivolts per kilometer"
+            dipole.units_out = "millivolts"
             dipole.name = f"dipole_{self.dipole_length:.2f}m"
             dipole.gain = self.dipole_length / 1000.0
             dipole.comments = "convert to electric field"
-
         return dipole
 
     def _get_gps_stamp_type(self, old_version=False):
@@ -619,9 +633,10 @@ class Z3D:
             self._gps_stamp_length = 36
             self._gps_bytes = self._gps_stamp_length / 4
             self._gps_flag_0 = -1
-            self._block_len = int(self._gps_stamp_length + self.sample_rate * 4)
+            self._block_len = int(
+                self._gps_stamp_length + self.sample_rate * 4
+            )
             self.gps_flag = self._gps_f0
-
         else:
             return
 
@@ -657,7 +672,6 @@ class Z3D:
 
         if fn is not None:
             self.fn = fn
-
         self.header.read_header(fn=self.fn, fid=fid)
         if self.header.old_version:
             if self.header.box_number is None:
@@ -695,7 +709,6 @@ class Z3D:
 
         if fn is not None:
             self.fn = fn
-
         self.schedule.read_schedule(fn=self.fn, fid=fid)
         if self.header.old_version:
             self.schedule.initial_start = MTime(
@@ -734,7 +747,6 @@ class Z3D:
 
         if fn is not None:
             self.fn = fn
-
         if self.header.old_version:
             self.metadata._schedule_metadata_len = 0
         self.metadata.read_metadata(fn=self.fn, fid=fid)
@@ -782,7 +794,6 @@ class Z3D:
                 break
             data[data_count : data_count + len(test_str)] = test_str
             data_count += test_str.size
-
         return data
 
     def _unpack_data(self, data, gps_stamp_index):
@@ -797,7 +808,6 @@ class Z3D:
                     f"Failed gps stamp {ii+1} out of {len(gps_stamp_index)}"
                 )
                 break
-
             if (
                 self.header.old_version is True
                 or data[gps_find + 1] == self._gps_flag_1
@@ -816,7 +826,6 @@ class Z3D:
                 elif ii == 0:
                     self.gps_stamps[ii]["block_len"] = 0
                 data[int(gps_find) : int(gps_find + self._gps_bytes)] = 0
-
         return data
 
     # ======================================
@@ -851,7 +860,6 @@ class Z3D:
 
         if z3d_fn is not None:
             self.fn = z3d_fn
-
         self.logger.debug(f"Reading {self.fn}")
         st = datetime.datetime.now()
 
@@ -866,13 +874,13 @@ class Z3D:
 
             if self.header.old_version is True:
                 self._get_gps_stamp_type(True)
-
             data = self._read_raw_string(file_id)
-
         self.raw_data = data.copy()
 
         # find the gps stamps
-        gps_stamp_find = self.get_gps_stamp_index(data, self.header.old_version)
+        gps_stamp_find = self.get_gps_stamp_index(
+            data, self.header.old_version
+        )
 
         # skip the first two stamps and trim data
         try:
@@ -881,9 +889,10 @@ class Z3D:
             msg = f"Data is too short, cannot open file {self.fn}"
             self.logger.error(msg)
             raise ZenGPSError(msg)
-
         # find gps stamps of the trimmed data
-        gps_stamp_find = self.get_gps_stamp_index(data, self.header.old_version)
+        gps_stamp_find = self.get_gps_stamp_index(
+            data, self.header.old_version
+        )
 
         # read data chunks and GPS stamps
         self.gps_stamps = np.zeros(len(gps_stamp_find), dtype=self._gps_dtype)
@@ -925,7 +934,6 @@ class Z3D:
                 for gps_find in gps_stamp_find
                 if ts_data[gps_find + 1] == self._gps_flag_1
             ]
-
         return gps_stamp_find
 
     # =================================================
@@ -978,7 +986,6 @@ class Z3D:
             t_diff[ii] = (
                 self.gps_stamps["time"][ii] - self.gps_stamps["time"][ii + 1]
             )
-
         bad_times = np.where(abs(t_diff) > 0.5)[0]
         if len(bad_times) > 0:
             self.logger.warning("BAD GPS TIMES:")
@@ -1076,7 +1083,6 @@ class Z3D:
             gps_week += 1
             cc = gps_week * self._week_len
             gps_seconds -= self._week_len
-
         gps_time = np.floor(gps_seconds) + gps_ms + cc
 
         return gps_time, gps_week
@@ -1098,7 +1104,6 @@ class Z3D:
         if gps_time > self._week_len:
             gps_week += 1
             gps_time -= self._week_len
-
         # compute seconds using weeks and gps time
         utc_seconds = (
             self._gps_epoch.epoch_seconds
@@ -1107,7 +1112,7 @@ class Z3D:
         )
 
         # compute date and time from seconds and return a datetime object
-        # easier to manipulate later
+        # easier to manipulate later, must be in nanoseconds
         return MTime(utc_seconds, gps_time=True)
 
     # =================================================
@@ -1153,12 +1158,12 @@ class ZenInputFileError(Exception):
     pass
 
 
-def read_z3d(fn, logger_file_handler=None):
+def read_z3d(fn, calibration_fn=None, logger_file_handler=None):
     """
     generic tool to read z3d file
     """
 
-    z3d_obj = Z3D(fn)
+    z3d_obj = Z3D(fn, calibration_fn=calibration_fn)
     if logger_file_handler:
         z3d_obj.logger.addHandler(logger_file_handler)
     try:

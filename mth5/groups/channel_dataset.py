@@ -15,6 +15,7 @@ import h5py
 import numpy as np
 import pandas as pd
 import xarray as xr
+from loguru import logger
 
 from mt_metadata import timeseries as metadata
 from mt_metadata.utils.mttime import MTime
@@ -32,7 +33,7 @@ from mth5.helpers import (
 
 from mth5.timeseries import ChannelTS
 from mth5.timeseries.channel_ts import make_dt_coordinates
-from mth5.utils.mth5_logger import setup_logger
+
 
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
 # =============================================================================
@@ -89,7 +90,7 @@ class ChannelDataset:
             setattr(self, key, value)
         if dataset is not None and isinstance(dataset, (h5py.Dataset)):
             self.hdf5_dataset = weakref.ref(dataset)()
-        self.logger = setup_logger(f"{__name__}.{self._class_name}")
+        self.logger = logger
 
         # set metadata to the appropriate class.  Standards is not a
         # Base object so should be skipped. If the class name is not
@@ -113,13 +114,12 @@ class ChannelDataset:
         # to the hdf5 dataset
         if dataset_metadata is not None:
             if not isinstance(dataset_metadata, type(self.metadata)):
-                msg = "metadata must be type metadata.%s not %s"
-                self.logger.error(
-                    msg, self._class_name, type(dataset_metadata)
+                msg = (
+                    f"metadata must be type metadata.{self._class_name} not "
+                    f"{type(dataset_metadata)}"
                 )
-                raise MTH5Error(
-                    msg % (self._class_name, type(dataset_metadata))
-                )
+                self.logger.error(msg)
+                raise MTH5Error(msg)
             # load from dict because of the extra attributes for MTH5
             self.metadata.from_dict(dataset_metadata.to_dict())
             self.metadata.hdf5_reference = self.hdf5_dataset.ref
@@ -130,7 +130,6 @@ class ChannelDataset:
                 self.write_metadata()
         else:
             self.read_metadata()
-
         # if the attrs don't have the proper metadata keys yet write them
         if not "mth5_type" in list(self.hdf5_dataset.attrs.keys()):
             self.write_metadata()
@@ -176,9 +175,7 @@ class ChannelDataset:
             lines = ["Channel {0}:".format(self._class_name)]
             lines.append("-" * (len(lines[0]) + 2))
             info_str = "\t{0:<18}{1}"
-            lines.append(
-                info_str.format("component:", self.metadata.component)
-            )
+            lines.append(info_str.format("component:", self.metadata.component))
             lines.append(info_str.format("data type:", self.metadata.type))
             lines.append(
                 info_str.format("data format:", self.hdf5_dataset.dtype)
@@ -189,9 +186,7 @@ class ChannelDataset:
             lines.append(
                 info_str.format("start:", self.metadata.time_period.start)
             )
-            lines.append(
-                info_str.format("end:", self.metadata.time_period.end)
-            )
+            lines.append(info_str.format("end:", self.metadata.time_period.end))
             lines.append(
                 info_str.format("sample rate:", self.metadata.sample_rate)
             )
@@ -257,7 +252,7 @@ class ChannelDataset:
             try:
                 f_list.append(filters_group.to_filter_object(name))
             except KeyError:
-                self.logger.warning("Could not locate filter %s", name)
+                self.logger.warning(f"Could not locate filter {name}")
                 continue
         return ChannelResponseFilter(filters_list=f_list)
 
@@ -302,9 +297,7 @@ class ChannelDataset:
 
         """
 
-        return make_dt_coordinates(
-            self.start, self.sample_rate, self.n_samples, self._logger
-        )
+        return make_dt_coordinates(self.start, self.sample_rate, self.n_samples)
 
     def read_metadata(self):
         """
@@ -785,9 +778,7 @@ class ChannelDataset:
         """
 
         if not isinstance(channel_ts_obj, ChannelTS):
-            msg = (
-                f"Input must be a ChannelTS object not {type(channel_ts_obj)}"
-            )
+            msg = f"Input must be a ChannelTS object not {type(channel_ts_obj)}"
             self.logger.error(msg)
             raise TypeError(msg)
         if how == "replace":
@@ -932,12 +923,8 @@ class ChannelDataset:
                     self.hdf5_dataset.parent.parent.attrs["id"],
                     self.hdf5_dataset.parent.attrs["id"],
                     self.hdf5_dataset.parent.parent.attrs["location.latitude"],
-                    self.hdf5_dataset.parent.parent.attrs[
-                        "location.longitude"
-                    ],
-                    self.hdf5_dataset.parent.parent.attrs[
-                        "location.elevation"
-                    ],
+                    self.hdf5_dataset.parent.parent.attrs["location.longitude"],
+                    self.hdf5_dataset.parent.parent.attrs["location.elevation"],
                     self.metadata.component,
                     self.metadata.time_period.start,
                     self.metadata.time_period.end,
@@ -1062,9 +1049,7 @@ class ChannelDataset:
                 "file is in read mode cannot set an internal reference, using index values"
             )
             regional_ref = slice(start_index, end_index)
-        dt_index = make_dt_coordinates(
-            start, self.sample_rate, npts, self.logger
-        )
+        dt_index = make_dt_coordinates(start, self.sample_rate, npts)
 
         meta_dict = self.metadata.to_dict()[self.metadata._class_name]
         meta_dict["time_period.start"] = dt_index[0].isoformat()

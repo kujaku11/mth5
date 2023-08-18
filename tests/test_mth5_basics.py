@@ -51,7 +51,6 @@ class TestMTH5Basics(unittest.TestCase):
 
         with self.subTest("bad value"):
             self.assertRaises(ValueError, set_file_type, 10)
-
         with self.subTest("bad file type"):
             self.assertRaises(ValueError, set_file_type, "asdf")
 
@@ -61,7 +60,6 @@ class TestMTH5Basics(unittest.TestCase):
 
         with self.subTest("bad value"):
             self.assertRaises(ValueError, set_file_version, 10)
-
         with self.subTest("bad file version"):
             self.assertRaises(ValueError, set_file_version, "4")
 
@@ -71,7 +69,6 @@ class TestMTH5Basics(unittest.TestCase):
 
         with self.subTest("bad value"):
             self.assertRaises(ValueError, set_data_level, "y")
-
         with self.subTest("bad data level"):
             self.assertRaises(ValueError, set_data_level, "10")
 
@@ -79,7 +76,6 @@ class TestMTH5Basics(unittest.TestCase):
         self.mth5_obj.filename = "filename.txt"
         with self.subTest("isinstance path"):
             self.assertIsInstance(self.mth5_obj.filename, Path)
-
         with self.subTest("extension"):
             self.assertEqual(self.mth5_obj.filename.suffix, ".h5")
 
@@ -95,6 +91,22 @@ class TestMTH5Basics(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         self.mth5_obj.close_mth5()
+
+
+class TestWithMTH5(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.fn = Path().cwd().joinpath("test.h5")
+        with MTH5() as self.m:
+            self.m.open_mth5(self.fn)
+            self.m.add_survey("test")
+
+    def test_validate(self):
+        self.assertEqual(self.m.validate_file(), False)
+
+    @classmethod
+    def tearDownClass(self):
+        self.fn.unlink()
 
 
 # =============================================================================

@@ -106,6 +106,21 @@ class FAPGroup(BaseGroup):
         """
         return self.hdf5_group[name]
 
+    def update_filter(self, fap_object):
+        """
+        update values from fap object
+
+        :param fap_object: DESCRIPTION
+        :type fap_object: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        if fap_object.name in self.groups_list:
+            self.hdf5_group.pop(fap_object.name)
+
+        self.from_object(fap_object)
+
     def from_object(self, fap_object):
         """
         make a filter from a :class:`mt_metadata.timeseries.filters.PoleZeroFilter`
