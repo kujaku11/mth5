@@ -104,14 +104,14 @@ class TestReadPhoenixContinuous(unittest.TestCase):
             "missing_frames": 0,
             "preamp_gain": 1.0,
             "recording_id": 1619493876,
-            "recording_start_time": "2021-04-26T20:24:36+00:00",
+            "recording_start_time": "2021-04-26T20:24:18+00:00",
             "report_hw_sat": False,
             "sample_rate": 150,
             "sample_rate_base": 150,
             "sample_rate_exp": 0,
             "saturated_frames": 0,
-            "segment_end_time": "2021-04-26T20:36:35+00:00",
-            "segment_start_time": "2021-04-26T20:30:36+00:00",
+            "segment_end_time": "2021-04-26T20:36:17+00:00",
+            "segment_start_time": "2021-04-26T20:30:18+00:00",
             "seq": 1,
             "sequence_list": [
                 Path(
@@ -149,20 +149,23 @@ class TestReadPhoenixContinuous(unittest.TestCase):
                 ("channel_number", 0),
                 ("component", "h2"),
                 ("data_quality.rating.value", 0),
-                ("filter.applied", [False]),
-                ("filter.name", ["mtu-5c_rmt03-j_666_h2_10000hz_lowpass"]),
-                ("location.elevation", 181.12939453125),
-                ("location.latitude", 43.696022033691406),
-                ("location.longitude", -79.39376831054688),
+                ("filter.applied", [False, False]),
+                (
+                    "filter.name",
+                    ["mtu-5c_rmt03-j_666_h2_10000hz_lowpass", "v_to_mv"],
+                ),
+                ("location.elevation", 140.10263061523438),
+                ("location.latitude", 43.69625473022461),
+                ("location.longitude", -79.39364624023438),
                 ("measurement_azimuth", 90.0),
                 ("measurement_tilt", 0.0),
-                ("sample_rate", 24000.0),
+                ("sample_rate", 150.0),
                 ("sensor.id", "0"),
                 ("sensor.manufacturer", "Phoenix Geophysics"),
                 ("sensor.model", "MTC-150"),
                 ("sensor.type", "4"),
-                ("time_period.end", "2021-04-27T03:24:38.281208333+00:00"),
-                ("time_period.start", "2021-04-27T03:24:36+00:00"),
+                ("time_period.end", "2021-04-26T20:30:23.993333333+00:00"),
+                ("time_period.start", "2021-04-26T20:24:19+00:00"),
                 ("type", "magnetic"),
                 ("units", "volts"),
             ]
@@ -182,16 +185,12 @@ class TestReadPhoenixContinuous(unittest.TestCase):
                         value, ch_ts.channel_metadata.get_attr_from_name(key)
                     )
         with self.subTest("channel_response_filter_length"):
-            self.assertEqual(
-                1, len(ch_ts.channel_response_filter.filters_list)
-            )
+            self.assertEqual(2, len(ch_ts.channel_response_filter.filters_list))
 
         with self.subTest("channel_response_filter_frequency_shape"):
             self.assertEqual(
                 (69,),
-                ch_ts.channel_response_filter.filters_list[
-                    0
-                ].frequencies.shape,
+                ch_ts.channel_response_filter.filters_list[0].frequencies.shape,
             )
 
         with self.subTest("Channel Size"):

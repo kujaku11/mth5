@@ -27,6 +27,7 @@ class ZenClient:
         sample_rates=[4096, 1024, 256],
         save_path=None,
         calibration_path=None,
+        **kwargs,
     ):
         self.logger = logger
         self.data_path = data_path
@@ -34,6 +35,17 @@ class ZenClient:
         self.mth5_filename = "from_zen.h5"
         self.save_path = save_path
         self.calibration_path = calibration_path
+
+        self.mth5_version = "0.2.0"
+        self.interact = False
+        self.compression = "gzip"
+        self.compression_opts = 4
+        self.shuffle = True
+        self.fletcher32 = True
+        self.data_level = 1
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
         self.collection = Z3DCollection(self.data_path)
 
@@ -193,6 +205,13 @@ class ZenClient:
         runs = self.get_run_dict()
 
         with MTH5() as m:
+            m.file_version = self.file_version
+            m.compression = self.compression
+            m.compression_opts = self.comporession_opts
+            m.shuffle = self.shuffle
+            m.fletcher32 = self.fletcher32
+            m.data_level = self.data_level
+
             m.open_mth5(self.save_path, "w")
             for station_id, station_dict in runs.items():
                 if survey_id is None:

@@ -22,6 +22,8 @@ from pathlib import Path
 
 from . import FDSN
 from . import USGSGeomag
+from . import PhoenixClient
+from . import ZenClient
 
 # =============================================================================
 
@@ -153,3 +155,46 @@ class MakeMTH5:
         )
 
         return geomag_client.make_mth5_from_geomag(request_df)
+
+    def from_zen(
+        self,
+        data_path,
+        sample_rates=[4096, 1024, 256],
+        calibration_path=None,
+        survey_id=None,
+        combine=True,
+        **kwargs
+    ):
+        """
+        Create an MTH5 from zen data.
+
+        :param data_path: DESCRIPTION
+        :type data_path: TYPE
+        :param sample_rates: DESCRIPTION, defaults to [4096, 1024, 256]
+        :type sample_rates: TYPE, optional
+        :param save_path: DESCRIPTION, defaults to None
+        :type save_path: TYPE, optional
+        :param calibration_path: DESCRIPTION, defaults to None
+        :type calibration_path: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        kwargs["compression"] = self.compression
+        kwargs["compression_opts"] = self.compression_opts
+        kwargs["shuffle"] = self.shuffle
+        kwargs["fletcher32"] = self.fletcher32
+        kwargs["data_level"] = self.data_level
+
+        zc = ZenClient(
+            data_path,
+            sample_rates=sample_rates,
+            save_path=self.save_path,
+            calibration_path=calibration_path,
+            **kwargs,
+        )
+
+        return zc.make_mth5_from_zen(
+            survey_id=survey_id, combine=combine, **kwargs
+        )
