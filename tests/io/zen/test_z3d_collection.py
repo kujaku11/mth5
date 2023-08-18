@@ -20,9 +20,7 @@ from mth5.io.zen import Z3DCollection
 # =============================================================================
 
 
-@unittest.skipIf(
-    "peacock" not in str(Path(__file__).as_posix()), "local files"
-)
+@unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local files")
 class TestZ3DCollection(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -49,14 +47,13 @@ class TestZ3DCollection(unittest.TestCase):
         )
 
     def test_df_shape(self):
-        self.assertEqual(self.df.shape, (10, 14))
+        self.assertEqual(self.df.shape, (10, 19))
 
     def test_df_types(self):
         self.df = self.zc._set_df_dtypes(self.df)
         with self.subTest("start"):
             self.assertTrue(
-                self.df.start.dtype.type
-                == pd._libs.tslibs.timestamps.Timestamp
+                self.df.start.dtype.type == pd._libs.tslibs.timestamps.Timestamp
             )
         with self.subTest("end"):
             self.assertTrue(
@@ -89,15 +86,9 @@ class TestZ3DCollection(unittest.TestCase):
         for key, rdf in self.runs[self.station].items():
             with self.subTest(key):
                 test_rdf = self.df[self.df.run == key]
-                self.assertTrue(
-                    (
-                        self.df[self.df.run == key]
-                        .iloc[0:8]
-                        .eq(rdf)
-                        .all(axis=0)
-                        .all()
-                    )
-                )
+                rdf = rdf.fillna(0)
+                test_rdf = test_rdf.fillna(0)
+                self.assertTrue((test_rdf.iloc[0:8].eq(rdf).all(axis=0).all()))
 
 
 # =============================================================================

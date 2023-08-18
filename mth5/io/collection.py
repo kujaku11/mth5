@@ -46,6 +46,11 @@ class Collection:
             "file_size",
             "n_samples",
             "sequence_number",
+            "dipole",
+            "coil_number",
+            "latitude",
+            "longitude",
+            "elevation",
             "instrument_id",
             "calibration_fn",
         ]
@@ -54,7 +59,9 @@ class Collection:
             setattr(self, key, value)
 
     def __str__(self):
-        lines = [f"Collection for file type {self.file_ext} in {self._file_path}"]
+        lines = [
+            f"Collection for file type {self.file_ext} in {self._file_path}"
+        ]
 
         return "\n".join(lines)
 
