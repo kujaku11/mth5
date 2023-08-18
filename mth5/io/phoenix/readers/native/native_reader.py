@@ -52,7 +52,9 @@ class NativeReader(TSReaderBase):
         **kwargs,
     ):
         # Init the base class
-        super().__init__(path, num_files, header_length, report_hw_sat, **kwargs)
+        super().__init__(
+            path, num_files, header_length, report_hw_sat, **kwargs
+        )
 
         self._chunk_size = 4096
 
@@ -88,9 +90,9 @@ class NativeReader(TSReaderBase):
         if self.data_scaling == AD_IN_AD_UNITS:
             return 256
         elif self.data_scaling == AD_INPUT_VOLTS:
-            return self.ad_plus_minus_range / (2 ** 31)
+            return self.ad_plus_minus_range / (2**31)
         elif self.data_scaling == INSTRUMENT_INPUT_VOLTS:
-            return self.input_plusminus_range / (2 ** 31)
+            return self.input_plusminus_range / (2**31)
         else:
             raise LookupError("Invalid scaling requested")
 
@@ -135,7 +137,9 @@ class NativeReader(TSReaderBase):
 
             for ptrSamp in range(0, 60, 3):
                 # unpack expects 4 bytes, but the frames are only 3?
-                value = unpack(">i", dataFrame[ptrSamp : ptrSamp + 3] + b"\x00")[0]
+                value = unpack(
+                    ">i", dataFrame[ptrSamp : ptrSamp + 3] + b"\x00"
+                )[0]
                 _data_buf[_idx_buf] = value * self.scale_factor
                 _idx_buf += 1
             frames_in_buf += 1
@@ -276,7 +280,7 @@ class NativeReader(TSReaderBase):
         :rtype: TYPE
 
         """
-        data, footer = self.read()
+        data, footer = self.read_sequence()
         ch_metadata = self.channel_metadata
         return ChannelTS(
             channel_type=ch_metadata.type,

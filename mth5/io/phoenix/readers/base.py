@@ -358,6 +358,8 @@ class TSReaderBase(Header):
 
         """
 
+        if self._channel_metadata is None:
+            return self._update_channel_metadata_from_recmeta()
         return self._channel_metadata
 
     @property
