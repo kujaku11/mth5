@@ -195,7 +195,6 @@ class MasterSurveyGroup(BaseGroup):
                             ),
                         )
                         ch_list.append(entry)
-
         ch_list = np.array(ch_list)
         return pd.DataFrame(ch_list.flatten())
 
@@ -256,36 +255,31 @@ class MasterSurveyGroup(BaseGroup):
         """
         if survey_name is None:
             raise Exception("survey name is None, do not know what to name it")
-
         survey_name = validate_name(survey_name)
         try:
             survey_group = self.hdf5_group.create_group(survey_name)
-            self.logger.debug("Created group %s", survey_group.name)
+            self.logger.debug(f"Created group {survey_group.name}")
 
             if survey_metadata is None:
                 survey_metadata = Survey(id=survey_name)
-
             else:
                 if validate_name(survey_metadata.id) != survey_name:
                     msg = (
                         f"survey group name {survey_name} must be same as "
-                        + f"survey id {survey_metadata.id.replace(' ', '_')}"
+                        f"survey id {survey_metadata.id.replace(' ', '_')}"
                     )
                     self.logger.error(msg)
                     raise MTH5Error(msg)
-
             survey_obj = SurveyGroup(
                 survey_group,
                 survey_metadata=survey_metadata,
                 **self.dataset_options,
             )
             survey_obj.initialize_group()
-
         except ValueError:
-            msg = "survey %s already exists, returning existing group."
-            self.logger.info(msg, survey_name)
+            msg = f"survey {survey_name} already exists, returning existing group."
+            self.logger.info(msg)
             survey_obj = self.get_survey(survey_name)
-
         return survey_obj
 
     def get_survey(self, survey_name):
@@ -314,9 +308,7 @@ class MasterSurveyGroup(BaseGroup):
         survey_name = validate_name(survey_name)
 
         try:
-            return SurveyGroup(
-                self.hdf5_group[survey_name], **self.dataset_options
-            )
+            return SurveyGroup(self.hdf5_group[survey_name], **self.dataset_options)
         except KeyError:
             msg = (
                 f"{survey_name} does not exist, "
@@ -355,15 +347,12 @@ class MasterSurveyGroup(BaseGroup):
             del self.hdf5_group[survey_name]
             self.logger.info(
                 "Deleting a survey does not reduce the HDF5"
-                + "file size it simply remove the reference. If "
-                + "file size reduction is your goal, simply copy"
-                + " what you want into another file."
+                "file size it simply remove the reference. If "
+                "file size reduction is your goal, simply copy"
+                " what you want into another file."
             )
         except KeyError:
-            msg = (
-                f"{survey_name} does not exist, "
-                + "check survey_list for existing names"
-            )
+            msg = f"{survey_name} does not exist, check survey_list for existing names"
             self.logger.exception(msg)
             raise MTH5Error(msg)
 
@@ -472,9 +461,7 @@ class SurveyGroup(BaseGroup):
     @property
     def standards_group(self):
         """Convenience property for /Survey/Standards group"""
-        return StandardsGroup(
-            self.hdf5_group["Standards"], **self.dataset_options
-        )
+        return StandardsGroup(self.hdf5_group["Standards"], **self.dataset_options)
 
     def update_survey_metadata(self, survey_dict=None):
         """
@@ -483,30 +470,19 @@ class SurveyGroup(BaseGroup):
         """
 
         station_summary = self.stations_group.station_summary.copy()
-        self.logger.debug(
-            "Updating survey metadata from stations summary table"
-        )
+        self.logger.debug("Updating survey metadata from stations summary table")
 
         if survey_dict:
             self.metadata.from_dict(survey_dict, skip_none=True)
-
         self._metadata.time_period.start_date = (
             station_summary.start.min().isoformat().split("T")[0]
         )
         self._metadata.time_period.end_date = (
             station_summary.end.max().isoformat().split("T")[0]
         )
-        self._metadata.northwest_corner.latitude = (
-            station_summary.latitude.max()
-        )
-        self._metadata.northwest_corner.longitude = (
-            station_summary.longitude.min()
-        )
-        self._metadata.southeast_corner.latitude = (
-            station_summary.latitude.min()
-        )
-        self._metadata.southeast_corner.longitude = (
-            station_summary.longitude.max()
-        )
+        self._metadata.northwest_corner.latitude = station_summary.latitude.max()
+        self._metadata.northwest_corner.longitude = station_summary.longitude.min()
+        self._metadata.southeast_corner.latitude = station_summary.latitude.min()
+        self._metadata.southeast_corner.longitude = station_summary.longitude.max()
 
         self.write_metadata()

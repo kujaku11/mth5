@@ -425,12 +425,8 @@ class GeomagClient:
             if "y" in ch_metadata.component:
                 ch_metadata.measurement_azimuth = 90
             ch_metadata.location.latitude = station_metadata.location.latitude
-            ch_metadata.location.longitude = (
-                station_metadata.location.longitude
-            )
-            ch_metadata.location.elevation = (
-                station_metadata.location.elevation
-            )
+            ch_metadata.location.longitude = station_metadata.location.longitude
+            ch_metadata.location.elevation = station_metadata.location.elevation
             ch_metadata.time_period.start = df.index[0]
             ch_metadata.time_period.end = df.index[-1]
             run_metadata.time_period.start = df.index[0]
@@ -479,6 +475,7 @@ class USGSGeomag:
         self.fletcher32 = True
         self.data_level = 1
         self.mth5_version = "0.2.0"
+        self._ch_map = {"x": "hx", "y": "hy", "z": "hz"}
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -637,6 +634,7 @@ class USGSGeomag:
                 start=row.start,
                 end=row.end,
                 sampling_period=row.sampling_period,
+                **{"_ch_map": {"x": "hx", "y": "hy", "z": "hz"}},
             )
 
             run = geomag_client.get_data(run_id=row.run)

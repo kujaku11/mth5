@@ -2,12 +2,13 @@
 # =============================================================================
 # Imports
 # =============================================================================
+import sys
 import numpy as np
 import xarray as xr
 import h5py
+from loguru import logger
 
 from mth5.io.reader import read_file
-from mth5.utils.mth5_logger import setup_logger, load_logging_config
 import mth5.timeseries.scipy_filters
 
 # =============================================================================
@@ -22,10 +23,19 @@ __version__ = "0.3.1"
 # =============================================================================
 # Initialize Loggers
 # =============================================================================
-
-
-load_logging_config()
-debug_logger = setup_logger(__name__, level="info")
+config = {
+    "handlers": [
+        {
+            "sink": sys.stdout,
+            "level": "INFO",
+            "colorize": True,
+            "format": "<level>{time} | {level: <3} | {name} | {function} | {message}</level>",
+        },
+    ],
+    "extra": {"user": "someone"},
+}
+logger.configure(**config)
+# logger.disable("mth5")
 
 # need to set this to make sure attributes of data arrays and data sets
 # are kept when doing xarray computations like merge.

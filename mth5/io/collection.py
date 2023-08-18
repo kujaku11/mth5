@@ -14,8 +14,7 @@ from collections import OrderedDict
 from pathlib import Path
 
 import pandas as pd
-
-from mth5.utils.mth5_logger import setup_logger
+from loguru import logger
 
 
 # =============================================================================
@@ -30,7 +29,7 @@ class Collection:
 
     def __init__(self, file_path=None, **kwargs):
 
-        self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = logger
         self.file_path = file_path
         self.file_ext = "*"
 
@@ -47,6 +46,11 @@ class Collection:
             "file_size",
             "n_samples",
             "sequence_number",
+            "dipole",
+            "coil_number",
+            "latitude",
+            "longitude",
+            "elevation",
             "instrument_id",
             "calibration_fn",
         ]
@@ -84,7 +88,6 @@ class Collection:
             self._file_path = None
         if not isinstance(file_path, Path):
             file_path = Path(file_path)
-
         self._file_path = file_path
 
         if not self._file_path.exists():
@@ -106,10 +109,8 @@ class Collection:
             fn_list = []
             for ext in extension:
                 fn_list += list(self.file_path.rglob(f"*.{ext}"))
-
         else:
             fn_list = list(self.file_path.rglob(f"*.{extension}"))
-
         return sorted(list(set(fn_list)))
 
     def to_dataframe(self):
@@ -241,5 +242,4 @@ class Collection:
             ):
                 run_df = df[(df.station == station) & (df.run == run_id)]
                 run_dict[station][run_id] = run_df
-
         return run_dict

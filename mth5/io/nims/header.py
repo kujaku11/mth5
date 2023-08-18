@@ -10,7 +10,7 @@ Created on Thu Sep  1 12:57:32 2022
 # =============================================================================
 from pathlib import Path
 import dateutil
-import logging
+from loguru import logger
 
 from mt_metadata.utils.mttime import MTime
 
@@ -55,9 +55,7 @@ class NIMSHeader(object):
     """
 
     def __init__(self, fn=None):
-        self.logger = logging.getLogger(
-            f"{__name__}.{self.__class__.__name__}"
-        )
+        self.logger = logger
         self.fn = fn
         self._max_header_length = 1000
         self.header_dict = None
@@ -119,19 +117,16 @@ class NIMSHeader(object):
         """
         if fn is not None:
             self.fn = fn
-
         if not self.fn.exists():
             msg = f"Could not find nims file {self.fn}"
             self.logger.error(msg)
             raise NIMSError(msg)
-
         self.logger.debug(f"Reading NIMS file {self.fn}")
 
         ### load in the entire file, its not too big
         with open(self.fn, "rb") as fid:
             header_str = fid.read(self._max_header_length)
             header_list = header_str.split(b"\r")
-
         self.header_dict = {}
         last_index = len(header_list)
         last_line = header_list[-1]
@@ -141,7 +136,6 @@ class NIMSHeader(object):
             if b"comments" in line.lower():
                 last_line = header_list[ii + 1]
                 last_index = ii + 1
-
             line = line.decode()
             if line.find(">") == 0:
                 continue
@@ -171,7 +165,6 @@ class NIMSHeader(object):
         """
         if header_dict is not None:
             self.header_dict = header_dict
-
         assert isinstance(self.header_dict, dict)
 
         for key, value in self.header_dict.items():
@@ -188,13 +181,9 @@ class NIMSHeader(object):
             elif "gps" in key:
                 gps_list = value.split()
                 self.header_gps_stamp = MTime(
-                    dateutil.parser.parse(
-                        " ".join(gps_list[0:2]), dayfirst=True
-                    )
+                    dateutil.parser.parse(" ".join(gps_list[0:2]), dayfirst=True)
                 )
-                self.header_gps_latitude = self._get_latitude(
-                    gps_list[2], gps_list[3]
-                )
+                self.header_gps_latitude = self._get_latitude(gps_list[2], gps_list[3])
                 self.header_gps_longitude = self._get_longitude(
                     gps_list[4], gps_list[5]
                 )

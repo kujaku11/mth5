@@ -56,9 +56,7 @@ class TransferFunctionsGroup(BaseGroup):
 
             tf_entry["station_hdf5_reference"][:] = self.hdf5_group.parent.ref
             tf_entry["station"][:] = self.hdf5_group.parent.attrs["id"]
-            tf_entry["latitude"][:] = self.hdf5_group.parent.attrs[
-                "location.latitude"
-            ]
+            tf_entry["latitude"][:] = self.hdf5_group.parent.attrs["location.latitude"]
             tf_entry["longitude"][:] = self.hdf5_group.parent.attrs[
                 "location.longitude"
             ]
@@ -123,14 +121,9 @@ class TransferFunctionsGroup(BaseGroup):
 
         tf_id = validate_name(tf_id)
         try:
-            return TransferFunctionGroup(
-                self.hdf5_group[tf_id], **self.dataset_options
-            )
+            return TransferFunctionGroup(self.hdf5_group[tf_id], **self.dataset_options)
         except KeyError:
-            msg = (
-                f"{tf_id} does not exist, "
-                + "check station_list for existing names"
-            )
+            msg = f"{tf_id} does not exist, " + "check station_list for existing names"
             self.logger.debug("Error" + msg)
             raise MTH5Error(msg)
 
@@ -157,15 +150,12 @@ class TransferFunctionsGroup(BaseGroup):
             del self.hdf5_group[tf_id]
             self.logger.info(
                 "Deleting a station does not reduce the HDF5"
-                + "file size it simply remove the reference. If "
-                + "file size reduction is your goal, simply copy"
-                + " what you want into another file."
+                "file size it simply remove the reference. If "
+                "file size reduction is your goal, simply copy"
+                " what you want into another file."
             )
         except KeyError:
-            msg = (
-                f"{tf_id} does not exist, "
-                + "check station_list for existing names"
-            )
+            msg = f"{tf_id} does not exist, " "check station_list for existing names"
             self.logger.debug("Error" + msg)
             raise MTH5Error(msg)
 
@@ -256,11 +246,7 @@ class TransferFunctionGroup(BaseGroup):
                 res = self.get_estimate("residual_covariance")
                 isp = self.get_estimate("inverse_signal_power")
 
-                if res.hdf5_dataset.shape != (
-                    1,
-                    1,
-                    1,
-                ) and isp.hdf5_dataset.shape != (
+                if res.hdf5_dataset.shape != (1, 1, 1,) and isp.hdf5_dataset.shape != (
                     1,
                     1,
                     1,
@@ -377,21 +363,15 @@ class TransferFunctionGroup(BaseGroup):
 
         try:
             estimate_dataset = self.hdf5_group[estimate_name]
-            estimate_metadata = StatisticalEstimate(
-                **dict(estimate_dataset.attrs)
-            )
-            return EstimateDataset(
-                estimate_dataset, dataset_metadata=estimate_metadata
-            )
-
+            estimate_metadata = StatisticalEstimate(**dict(estimate_dataset.attrs))
+            return EstimateDataset(estimate_dataset, dataset_metadata=estimate_metadata)
         except (KeyError):
             msg = (
                 f"{estimate_name} does not exist, "
-                + "check groups_list for existing names"
+                "check groups_list for existing names"
             )
             self.logger.error(msg)
             raise MTH5Error(msg)
-
         except (OSError) as error:
             self.logger.error(error)
             raise MTH5Error(error)
@@ -413,9 +393,9 @@ class TransferFunctionGroup(BaseGroup):
             del self.hdf5_group[estimate_name]
             self.logger.info(
                 "Deleting a estimate does not reduce the HDF5"
-                + "file size it simply remove the reference. If "
-                + "file size reduction is your goal, simply copy"
-                + " what you want into another file."
+                "file size it simply remove the reference. If "
+                "file size reduction is your goal, simply copy"
+                " what you want into another file."
             )
         except KeyError:
             msg = (
@@ -481,13 +461,13 @@ class TransferFunctionGroup(BaseGroup):
                     run_obj.add_channel(ch_obj)
                 tf_obj.station_metadata.add_run(run_obj)
             except KeyError:
-                self.logger.info(
-                    f"Could not get run {run_id} for transfer function"
-                )
+                self.logger.info(f"Could not get run {run_id} for transfer function")
         if self.period is not None:
             tf_obj.period = self.period
         else:
-            msg = "Period must not be None to create a transfer function object"
+            msg = (
+                "Period must not be None to create a transfer function object"
+            )
             self.logger.error(msg)
             raise ValueError(msg)
         for estimate_name in self.groups_list:
@@ -514,9 +494,9 @@ class TransferFunctionGroup(BaseGroup):
         """
 
         if not isinstance(tf_obj, TF):
-            msg = "Input must be a TF object not %s"
-            self.logger.error(msg, type(tf_obj))
-            raise ValueError(msg % type(tf_obj))
+            msg = f"Input must be a TF object not {type(tf_obj)}"
+            self.logger.error(msg)
+            raise ValueError(msg)
         self.period = tf_obj.period
         self.metadata.update(tf_obj.station_metadata.transfer_function)
         self.write_metadata()
@@ -533,10 +513,6 @@ class TransferFunctionGroup(BaseGroup):
                 if estimate is not None:
                     _ = self.add_statistical_estimate(estimate_name, estimate)
                 else:
-                    self.logger.debug(
-                        f"Did not find {estimate_name} in TF. Skipping"
-                    )
+                    self.logger.debug(f"Did not find {estimate_name} in TF. Skipping")
             except AttributeError:
-                self.logger.debug(
-                    f"Did not find {estimate_name} in TF. Skipping"
-                )
+                self.logger.debug(f"Did not find {estimate_name} in TF. Skipping")

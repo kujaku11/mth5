@@ -15,7 +15,7 @@ from collections import OrderedDict
 import numpy as np
 import pandas as pd
 
-from mth5.io.phoenix import open_phoenix, ReceiverMetadataJSON
+from mth5.io.phoenix import open_phoenix, PhoenixReceiverMetadata
 from mth5.io import Collection
 
 # =============================================================================
@@ -65,7 +65,7 @@ class PhoenixCollection(Collection):
         """
 
         if Path(rec_fn).is_file():
-            return ReceiverMetadataJSON(fn=rec_fn)
+            return PhoenixReceiverMetadata(fn=rec_fn)
         else:
             self.logger.warning(
                 f"Could not fine {self._receiver_metadata_name} in {self.file_path}"
@@ -123,11 +123,23 @@ class PhoenixCollection(Collection):
             ] = receiver_metadata
 
             for sr in sample_rates:
-                for fn in folder.rglob(f"*{self._file_extension_map[int(sr)]}"):
-                    phx_obj = open_phoenix(fn)
+                for fn in folder.rglob(
+                    f"*{self._file_extension_map[int(sr)]}"
+                ):
+                    try:
+                        phx_obj = open_phoenix(fn)
+                    except OSError:
+                        self.logger.warning(f"Skipping {fn.name}")
+                        continue
                     if hasattr(phx_obj, "read_segment"):
                         segment = phx_obj.read_segment(metadata_only=True)
-                        start = segment.segment_start_time.isoformat()
+                        try:
+                            start = segment.segment_start_time.isoformat()
+                        except IOError:
+                            self.logger.warning(
+                                f"Could not read file {fn}, SKIPPING"
+                            )
+                            continue
                         end = segment.segment_end_time.isoformat()
                         n_samples = segment.n_samples
 
@@ -154,7 +166,6 @@ class PhoenixCollection(Collection):
                         "calibration_fn": None,
                     }
                     entries.append(entry)
-        # return self._set_df_dtypes(pd.DataFrame(entries))
 
         df = self._sort_df(
             self._set_df_dtypes(pd.DataFrame(entries)), run_name_zeros

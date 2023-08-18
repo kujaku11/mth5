@@ -153,7 +153,6 @@ class USGSascii(AsciiMetadata):
                 station_metadata=self.station_metadata.copy(),
                 survey_metadata=self.survey_metadata.copy(),
             )
-
         return None
 
     def read(self, fn=None):
@@ -173,19 +172,15 @@ class USGSascii(AsciiMetadata):
             skiprows=data_line,
             dtype=np.float32,
         )
-        dt_index = pd.date_range(
-            start=self.start, periods=self.n_samples, end=self.end
-        )
+        dt_index = pd.date_range(start=self.start, periods=self.n_samples, end=self.end)
         self.ts.index = dt_index
         self.ts.columns = self.ts.columns.str.lower()
 
         et = datetime.datetime.now()
         read_time = et - st
-        self.logger.info("Reading took {0}".format(read_time.total_seconds()))
+        self.logger.info(f"Reading took {read_time.total_seconds()}")
 
-    def _make_file_name(
-        self, save_path=None, compression=True, compress_type="zip"
-    ):
+    def _make_file_name(self, save_path=None, compression=True, compress_type="zip"):
         """
         get the file name to save to
 
@@ -219,13 +214,11 @@ class USGSascii(AsciiMetadata):
                     self.AcqSmpFreq,
                 ),
             )
-
         if compression:
             if compress_type == "zip":
                 save_fn = save_fn + ".zip"
             elif compress_type == "gzip":
                 save_fn = save_fn + ".gz"
-
         return save_fn
 
     def write(
@@ -273,9 +266,8 @@ class USGSascii(AsciiMetadata):
         # convert electric fields into mV/km
         if convert_electrics:
             self.convert_electrics()
-
-        self.logger.debug("==> {0}".format(save_fn))
-        self.logger.debug("START --> {0}".format(time.ctime()))
+        self.logger.debug(f"==> {save_fn}")
+        self.logger.debug("START --> {time.ctime()}")
         st = datetime.datetime.now()
 
         # write meta data first
@@ -304,16 +296,13 @@ class USGSascii(AsciiMetadata):
                         ["".join(out[ii, :]) for ii in range(out.shape[0])]
                     )
                     fid.write(lines + "\n")
-                    self.logger.debug("END --> {0}".format(time.ctime()))
+                    self.logger.debug(f"END --> {time.ctime()}")
                     et = datetime.datetime.now()
                     write_time = et - st
                     self.logger.debug(
-                        "Writing took: {0} seconds".format(
-                            write_time.total_seconds()
-                        )
+                        f"Writing took: {write_time.total_seconds()} seconds"
                     )
                     return
-
                 for chunk in range(int(self.ts.shape[0] / chunk_size)):
                     out = np.array(
                         self.ts[chunk * chunk_size : (chunk + 1) * chunk_size]
@@ -324,7 +313,6 @@ class USGSascii(AsciiMetadata):
                         ["".join(out[ii, :]) for ii in range(out.shape[0])]
                     )
                     fid.write(lines + "\n")
-
         else:
             if compress == True and compress_type == "zip":
                 self.logger.debug("ZIPPING")
@@ -351,16 +339,13 @@ class USGSascii(AsciiMetadata):
                         ["".join(out[ii, :]) for ii in range(out.shape[0])]
                     )
                     fid.write(lines + "\n")
-                    self.logger.debug("END --> {0}".format(time.ctime()))
+                    self.logger.debug(f"END --> {time.ctime()}")
                     et = datetime.datetime.now()
                     write_time = et - st
                     self.logger.debug(
-                        "Writing took: {0} seconds".format(
-                            write_time.total_seconds()
-                        )
+                        f"Writing took: {write_time.total_seconds()} seconds"
                     )
                     return
-
                 for chunk in range(int(self.ts.shape[0] / chunk_size)):
                     out = np.array(
                         self.ts[chunk * chunk_size : (chunk + 1) * chunk_size]
@@ -371,16 +356,13 @@ class USGSascii(AsciiMetadata):
                         ["".join(out[ii, :]) for ii in range(out.shape[0])]
                     )
                     fid.write(lines + "\n")
-
         # for some fucking reason, all interal variables don't exist anymore
         # and if you try to do the zipping nothing happens, so have to do
         # it externally.  WTF
-        self.logger.debug("END -->   {0}".format(time.ctime()))
+        self.logger.debug(f"END -->   {time.ctime()}")
         et = datetime.datetime.now()
         write_time = et - st
-        self.logger.debug(
-            "Writing took: {0} seconds".format(write_time.total_seconds())
-        )
+        self.logger.debug("Writing took: {write_time.total_seconds()} seconds")
 
 
 def read_ascii(fn):

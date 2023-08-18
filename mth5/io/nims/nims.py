@@ -119,12 +119,8 @@ class NIMS(NIMSHeader):
         lines.append(f"longitude:       {self.longitude} (degrees)")
         lines.append(f"elevation:       {self.elevation} m")
         lines.append(f"gps stamp:       {self.header_gps_stamp}")
-        lines.append(
-            f"EX: length = {self.ex_length} m; azimuth = {self.ex_azimuth}"
-        )
-        lines.append(
-            f"EY: length = {self.ey_length} m; azimuth = {self.ey_azimuth}"
-        )
+        lines.append(f"EX: length = {self.ex_length} m; azimuth = {self.ex_azimuth}")
+        lines.append(f"EY: length = {self.ey_length} m; azimuth = {self.ey_azimuth}")
         lines.append(f"comments:        {self.comments}")
 
         if self.has_data():
@@ -133,7 +129,6 @@ class NIMS(NIMSHeader):
             lines.append(f"End:        {self.end_time.isoformat()}")
             lines.append(f"Data shape: {self.ts_data.shape}")
             lines.append(f"Found {len(self.stamps)} GPS stamps")
-
         return "\n".join(lines)
 
     def __repr__(self):
@@ -270,7 +265,7 @@ class NIMS(NIMSHeader):
                 station_metadata=self.station_metadata,
             )
             # interpolate temperature onto the same sample rate as the channels.
-            temp._ts = temp._ts.interp_like(self.hx._ts)
+            temp.data_array = temp.data_array.interp_like(self.hx.data_array)
             temp.channel_metadata.sample_rate = self.sample_rate
             temp.channel_metadata.time_period.end = self.end_time.isoformat()
 
@@ -291,9 +286,7 @@ class NIMS(NIMSHeader):
         """
 
         nims_filters = Response(sample_rate=self.sample_rate)
-        return nims_filters.get_channel_response(
-            channel, dipole_length=dipole_length
-        )
+        return nims_filters.get_channel_response(channel, dipole_length=dipole_length)
 
     @property
     def hx_metadata(self):
@@ -439,9 +432,7 @@ class NIMS(NIMSHeader):
                 channel_metadata=self.ex_metadata,
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
-                channel_response_filter=self.get_channel_response(
-                    "ex", self.ex_length
-                ),
+                channel_response_filter=self.get_channel_response("ex", self.ex_length),
             )
         return None
 
@@ -479,11 +470,8 @@ class NIMS(NIMSHeader):
                 channel_metadata=self.ey_metadata,
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
-                channel_response_filter=self.get_channel_response(
-                    "ey", self.ey_length
-                ),
+                channel_response_filter=self.get_channel_response("ey", self.ey_length),
             )
-
         return None
 
     @property
@@ -513,9 +501,7 @@ class NIMS(NIMSHeader):
             )
             for comp in ["hx", "hy", "hz", "ex", "ey"]:
                 run_metadata.channels.append(getattr(self, f"{comp}_metadata"))
-
             return run_metadata
-
         return None
 
     @property
@@ -558,10 +544,8 @@ class NIMS(NIMSHeader):
             )
             if calibrate:
                 return run.calibrate()
-
             else:
                 return run
-
         return None
 
     def _make_index_values(self):
@@ -631,12 +615,9 @@ class NIMS(NIMSHeader):
                 elif gps_obj.gps_type == "GPGGA":
                     gpgga_list.append(gps_obj)
             else:
-                self.logger.debug(
-                    f"GPS Error: file index {index}, stamp number {ii}"
-                )
+                self.logger.debug(f"GPS Error: file index {index}, stamp number {ii}")
                 max_len = min([len(raw_stamp), 15])
                 self.logger.debug(f"GPS Raw Stamp: {raw_stamp[0:max_len]}")
-
         return self._gps_match_gprmc_gpgga_strings(gprmc_list, gpgga_list)
 
     def _gps_match_gprmc_gpgga_strings(self, gprmc_list, gpgga_list):
@@ -663,7 +644,6 @@ class NIMS(NIMSHeader):
                     break
             if not find:
                 gps_match_list.append([gprmc])
-
         return gps_match_list
 
     def _get_gps_stamp_indices_from_status(self, status_array):
@@ -734,10 +714,7 @@ class NIMS(NIMSHeader):
                         del gps_list[ii]
                         break
             if not stamp_find:
-                self.logger.debug(
-                    f"GPS Error: No good GPS stamp at {index} seconds"
-                )
-
+                self.logger.debug(f"GPS Error: No good GPS stamp at {index} seconds")
         return gps_stamps
 
     def find_sequence(self, data_array, block_sequence=None):
@@ -756,7 +733,6 @@ class NIMS(NIMSHeader):
         """
         if block_sequence is not None:
             self.block_sequence = block_sequence
-
         # want to find the index there the test data is equal to the test sequence
         t = np.vstack(
             [
@@ -781,7 +757,6 @@ class NIMS(NIMSHeader):
             unwrapped[ii] = seq + count * 256
             if seq == 255:
                 count += 1
-
         unwrapped -= unwrapped[0]
 
         return unwrapped
@@ -804,9 +779,7 @@ class NIMS(NIMSHeader):
             dup_dict["ts_index_0"] = dup * self.sample_rate
             dup_dict["ts_index_1"] = dup * self.sample_rate + self.sample_rate
             dup_dict["ts_index_2"] = (dup + 1) * self.sample_rate
-            dup_dict["ts_index_3"] = (
-                dup + 1
-            ) * self.sample_rate + self.sample_rate
+            dup_dict["ts_index_3"] = (dup + 1) * self.sample_rate + self.sample_rate
             duplicate_list.append(dup_dict)
         return duplicate_list
 
@@ -847,12 +820,9 @@ class NIMS(NIMSHeader):
 
         """
         ### locate
-        duplicate_test_list = self._locate_duplicate_blocks(
-            self.info_array["sequence"]
-        )
+        duplicate_test_list = self._locate_duplicate_blocks(self.info_array["sequence"])
         if duplicate_test_list is None:
             return info_array, data_array, None
-
         duplicate_list = []
         for d in duplicate_test_list:
             if self._check_duplicate_blocks(
@@ -862,16 +832,12 @@ class NIMS(NIMSHeader):
                 info_array[d["sequence_index"] + 1],
             ):
                 duplicate_list.append(d)
-
         self.logger.debug(f"Deleting {len(duplicate_list)} duplicate blocks")
         ### get the index of the blocks to be removed, namely the 1st duplicate
         ### block
         remove_sequence_index = [d["sequence_index"] for d in duplicate_list]
         remove_data_index = np.array(
-            [
-                np.arange(d["ts_index_0"], d["ts_index_1"], 1)
-                for d in duplicate_list
-            ]
+            [np.arange(d["ts_index_0"], d["ts_index_1"], 1) for d in duplicate_list]
         ).flatten()
         ### remove the data
         return_info_array = np.delete(info_array, remove_sequence_index)
@@ -928,7 +894,6 @@ class NIMS(NIMSHeader):
 
         if fn is not None:
             self.fn = fn
-
         st = datetime.datetime.now()
         ### read in header information and get the location of end of header
         self.read_header(self.fn)
@@ -938,7 +903,6 @@ class NIMS(NIMSHeader):
         with open(self.fn, "rb") as fid:
             fid.seek(self.data_start_seek)
             self._raw_string = fid.read()
-
         ### read in full string as unsigned integers
         data = np.frombuffer(self._raw_string, dtype=np.uint8)
 
@@ -953,13 +917,10 @@ class NIMS(NIMSHeader):
         if (data.size % self.block_size) != 0:
             self.logger.warning(
                 f"odd number of bytes {data.size}, not even blocks "
-                + "cutting down the data by {0} bits".format(
-                    data.size % self.block_size
-                )
+                f"cutting down the data by {data.size % self.block_size} bits"
             )
             end_data = data.size - (data.size % self.block_size)
             data = data[0:end_data]
-
         # resized the data into an even amount of blocks
         data = data.reshape((int(data.size / self.block_size), self.block_size))
 
@@ -991,11 +952,8 @@ class NIMS(NIMSHeader):
             else:
                 value = data[:, index]
             self.info_array[key][:] = value
-
         ### unwrap sequence
-        self.info_array["sequence"] = self.unwrap_sequence(
-            self.info_array["sequence"]
-        )
+        self.info_array["sequence"] = self.unwrap_sequence(self.info_array["sequence"])
 
         ### get data
         data_array = np.zeros(
@@ -1020,12 +978,10 @@ class NIMS(NIMSHeader):
                 value[np.where(value > self._int_max)] -= self._int_factor
                 channel_arr[:, kk] = value
             data_array[comp][:] = channel_arr.flatten()
-
         ### clean things up
         ### I guess that the E channels are opposite phase?
         for comp in ["ex", "ey"]:
             data_array[comp] *= -1
-
         ### remove duplicates
         (
             self.info_array,
@@ -1080,10 +1036,7 @@ class NIMS(NIMSHeader):
             # can only compare those with a date and time.
             if stamp.gps_type == "GPGGA":
                 continue
-
-            time_diff = (
-                stamp.time_stamp - current_stamp.time_stamp
-            ).total_seconds()
+            time_diff = (stamp.time_stamp - current_stamp.time_stamp).total_seconds()
             index_diff = stamp.index - current_stamp.index
 
             time_gap = index_diff - time_diff
@@ -1094,12 +1047,9 @@ class NIMS(NIMSHeader):
                 current_stamp = stamp
                 gap_beginning.append(stamp.index)
                 self.logger.debug(
-                    "GPS tamp at {0} is off from previous time by {1} seconds".format(
-                        stamp.time_stamp.isoformat(),
-                        time_gap,
-                    )
+                    f"GPS tamp at {stamp.time_stamp.isoformat()} is off "
+                    f"from previous time by { time_gap} seconds"
                 )
-
         self.logger.warning(f"Timing is off by {total_gap} seconds")
         return gap_beginning
 
@@ -1127,7 +1077,6 @@ class NIMS(NIMSHeader):
         if difference != 0:
             gaps = self._locate_timing_gaps(stamps)
             return False, gaps, difference
-
         return True, gaps, difference
 
     def align_data(self, data_array, stamps):
@@ -1160,7 +1109,6 @@ class NIMS(NIMSHeader):
                 f"Trimmed {remove_points} points off the end of the time "
                 "series because of timing gaps"
             )
-
         ### first GPS stamp within the data is at a given index that is
         ### assumed to be the number of seconds from the start of the run.
         ### therefore make the start time the first GPS stamp time minus
@@ -1180,9 +1128,7 @@ class NIMS(NIMSHeader):
 
         return pd.DataFrame(data_array, index=dt_index)
 
-    def make_dt_index(
-        self, start_time, sample_rate, stop_time=None, n_samples=None
-    ):
+    def make_dt_index(self, start_time, sample_rate, stop_time=None, n_samples=None):
         """
         make time index array
 
@@ -1214,7 +1160,6 @@ class NIMS(NIMSHeader):
             )
         else:
             raise ValueError("Need to input either stop_time or n_samples")
-
         return dt_index
 
 

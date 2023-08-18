@@ -385,14 +385,12 @@ class RunGroup(BaseGroup):
                 else:
                     estimate_size = (1,)
                     chunks = CHUNK_SIZE
-
-                if estimate_size[0] > 2**31:
+                if estimate_size[0] > 2 ** 31:
                     estimate_size = (1,)
                     self.logger.warning(
                         "Estimated size is too large. Check start and end "
                         "times, initializing with size (1,)"
                     )
-
                 channel_group = self.hdf5_group.create_dataset(
                     channel_name,
                     shape=estimate_size,
@@ -401,7 +399,6 @@ class RunGroup(BaseGroup):
                     chunks=chunks,
                     **self.dataset_options,
                 )
-
             if channel_metadata and channel_metadata.component is None:
                 channel_metadata.component = channel_name
             if channel_type.lower() in ["magnetic"]:
@@ -419,7 +416,7 @@ class RunGroup(BaseGroup):
             else:
                 msg = (
                     "`channel_type` must be in [ electric | magnetic | "
-                    + "auxiliary ]. Input was {0}".format(channel_type)
+                    f"auxiliary ]. Input was {channel_type}"
                 )
                 self.logger.error(msg)
                 raise MTH5Error(msg)
@@ -429,15 +426,13 @@ class RunGroup(BaseGroup):
             channel_obj = self.get_channel(channel_name)
 
             if data is not None:
-                self.logger.debug(
-                    "Replacing data with new shape %s", data.shape
-                )
+                self.logger.debug(f"Replacing data with new shape {data.shape}")
                 channel_obj.replace_dataset(data)
 
                 self.logger.debug("Updating metadata")
                 channel_obj.metadata.update(channel_metadata)
                 channel_obj.write_metadata()
-                self.logger.debug("Done with %s", channel_name)
+                self.logger.debug(f"Done with {channel_name}")
         # need to make sure the channel name is passed.
         if channel_obj.metadata.component is None:
             channel_obj.metadata.component = channel_name
@@ -485,10 +480,12 @@ class RunGroup(BaseGroup):
         try:
             ch_dataset = self.hdf5_group[channel_name]
         except KeyError:
-            msg = "%s does not exist, check groups_list for existing names"
-            self.logger.debug(msg, channel_name)
-            raise MTH5Error(msg % channel_name)
-
+            msg = (
+                f"{channel_name} does not exist, check groups_list "
+                "for existing names"
+            )
+            self.logger.debug(msg)
+            raise MTH5Error(msg)
         if ch_dataset.attrs["mth5_type"].lower() in ["electric"]:
             ch_metadata = meta_classes["Electric"]()
             ch_metadata.from_dict({"Electric": ch_dataset.attrs})
@@ -549,16 +546,16 @@ class RunGroup(BaseGroup):
             del self.hdf5_group[channel_name]
             self.logger.info(
                 "Deleting a channel does not reduce the HDF5"
-                + "file size it simply remove the reference. If "
-                + "file size reduction is your goal, simply copy"
-                + " what you want into another file."
+                "file size it simply remove the reference. If "
+                "file size reduction is your goal, simply copy"
+                " what you want into another file."
             )
         except KeyError:
             msg = (
                 f"{channel_name} does not exist, "
-                + "check groups_list for existing names"
+                "check groups_list for existing names"
             )
-            self.logger.debug("Error" + msg)
+            self.logger.debug("Error: " + msg)
             raise MTH5Error(msg)
 
     def to_runts(self, start=None, end=None, n_samples=None):
@@ -615,18 +612,16 @@ class RunGroup(BaseGroup):
                     if ch.station_metadata.id not in ["0", None]:
                         self.logger.warning(
                             f"Channel station.id {ch.station_metadata.id} != "
-                            + f" group station.id {self.station_metadata.id}"
+                            f" group station.id {self.station_metadata.id}"
                         )
             if ch.run_metadata.id is not None:
                 if ch.run_metadata.id != self.metadata.id:
                     if ch.run_metadata.id not in ["0", None]:
                         self.logger.warning(
                             f"Channel run.id {ch.run_metadata.id} != "
-                            + f" group run.id {self.metadata.id}"
+                            f" group run.id {self.metadata.id}"
                         )
-
             channels.append(self.from_channel_ts(ch))
-
         self.update_run_metadata()
         return channels
 
@@ -646,7 +641,6 @@ class RunGroup(BaseGroup):
             msg = f"Input must be a mth5.timeseries.ChannelTS object not {type(channel_ts_obj)}"
             self.logger.error(msg)
             raise MTH5Error(msg)
-
         ## Need to add in the filters
         if channel_ts_obj.channel_response_filter.filters_list != []:
             from mth5.groups import FiltersGroup
@@ -654,7 +648,6 @@ class RunGroup(BaseGroup):
             fg = FiltersGroup(self.hdf5_group.parent.parent.parent["Filters"])
             for ff in channel_ts_obj.channel_response_filter.filters_list:
                 fg.add_filter(ff)
-
         ch_obj = self.add_channel(
             channel_ts_obj.component,
             channel_ts_obj.channel_metadata.type,
@@ -665,33 +658,25 @@ class RunGroup(BaseGroup):
         # need to update the channels recorded
         if channel_ts_obj.channel_metadata.type == "electric":
             if self.metadata.channels_recorded_electric is None:
-                self.metadata.channels_recorded_electric = [
-                    channel_ts_obj.component
-                ]
+                self.metadata.channels_recorded_electric = [channel_ts_obj.component]
             elif (
-                channel_ts_obj.component
-                not in self.metadata.channels_recorded_electric
+                channel_ts_obj.component not in self.metadata.channels_recorded_electric
             ):
                 self.metadata.channels_recorded_electric.append(
                     channel_ts_obj.component
                 )
         elif channel_ts_obj.channel_metadata.type == "magnetic":
             if self.metadata.channels_recorded_magnetic is None:
-                self.metadata.channels_recorded_magnetic = [
-                    channel_ts_obj.component
-                ]
+                self.metadata.channels_recorded_magnetic = [channel_ts_obj.component]
             elif (
-                channel_ts_obj.component
-                not in self.metadata.channels_recorded_magnetic
+                channel_ts_obj.component not in self.metadata.channels_recorded_magnetic
             ):
                 self.metadata.channels_recorded_magnetic.append(
                     channel_ts_obj.component
                 )
         elif channel_ts_obj.channel_metadata.type == "auxiliary":
             if self.metadata.channels_recorded_auxiliary is None:
-                self.metadata.channels_recorded_auxiliary = [
-                    channel_ts_obj.component
-                ]
+                self.metadata.channels_recorded_auxiliary = [channel_ts_obj.component]
             elif (
                 channel_ts_obj.component
                 not in self.metadata.channels_recorded_auxiliary
@@ -711,9 +696,7 @@ class RunGroup(BaseGroup):
         """
         channel_summary = self.channel_summary.copy()
 
-        self._metadata.time_period.start = (
-            channel_summary.start.min().isoformat()
-        )
+        self._metadata.time_period.start = channel_summary.start.min().isoformat()
         self._metadata.time_period.end = channel_summary.end.max().isoformat()
         self._metadata.sample_rate = channel_summary.sample_rate.unique()[0]
         self.write_metadata()
