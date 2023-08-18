@@ -16,7 +16,9 @@ from mt_metadata.utils.mttime import MTime
 # =============================================================================
 
 
-def get_decimation_sample_rates(old_sample_rate, new_sample_rate, max_decimation):
+def get_decimation_sample_rates(
+    old_sample_rate, new_sample_rate, max_decimation
+):
     """
     get a list of sample rates to decimate from old_sample_rate to
     new_sample_rate without exceeding the max decimation value
@@ -32,7 +34,10 @@ def get_decimation_sample_rates(old_sample_rate, new_sample_rate, max_decimation
     if (old_sample_rate / new_sample_rate) > max_decimation:
         # get the number of entries in a geometric series
         n_levels = int(
-            np.ceil(np.log(old_sample_rate / new_sample_rate) / np.log(max_decimation))
+            np.ceil(
+                np.log(old_sample_rate / new_sample_rate)
+                / np.log(max_decimation)
+            )
         )
         # make a geometric series
         sr_list = [
@@ -52,21 +57,17 @@ def _count_decimal_sig_figs(digits):
     return len(fractional.rstrip("0"))
 
 
-def make_dt_coordinates(start_time, sample_rate, n_samples, logger):
+def make_dt_coordinates(start_time, sample_rate, n_samples):
     """
     get the date time index from the data
 
     :param string start_time: start time in time format
     :param float sample_rate: sample rate in samples per seconds
     :param int n_samples: number of samples in time series
-    :param logger: logger class object
-    :type logger: ":class:`logging.logger`
     :return: date-time index
 
     """
 
-    if logger is None:
-        logger = logger
     if sample_rate in [0, None]:
         msg = (
             f"Need to input a valid sample rate. Not {sample_rate}, "
