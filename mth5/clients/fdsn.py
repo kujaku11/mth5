@@ -244,6 +244,7 @@ class FDSN:
         run_ts_obj = RunTS()
         run_ts_obj.from_obspy_stream(run_stream, run_group.metadata)
         run_group.from_runts(run_ts_obj)
+
         return run_group
 
     def run_timings_match_stream_timing(
@@ -327,22 +328,52 @@ class FDSN:
         # then there is missing metadata that we need to add logically.  Add
         # runs sequentially and use metadata from the first run.
         elif len(run_list) == 1:
-            for run_id, times in enumerate(
+            self.logger.warning(
+                "Only one run in the StationXML, but multiple runs identified "
+                "from the data. Using first run metadata and channel metadata "
+                "for the other channels and runs except time periods."
+            )
+            og_run_group = self.get_run_group(
+                run_group_source, station_id, run_list[0]
+            )
+            for run_num, times in enumerate(
                 zip(trace_start_times, trace_end_times), 1
             ):
                 start = times[0]
                 end = times[1]
-                run_id = f"{run_id:03}"
+                run_id = f"{run_num:03}"
                 run_group = self.get_run_group(
                     run_group_source, station_id, run_id
                 )
+                if run_num > 1:
+                    run_group.metadata.update(og_run_group.metadata)
+                    run_group.write_metadata()
                 run_stream = msstreams.slice(start, end)
-                self.pack_stream_into_run_group(run_group, run_stream)
+                run_group = self.pack_stream_into_run_group(
+                    run_group, run_stream
+                )
+
+                # update channels from run 1 metadata
+                if run_num > 1:
+                    for ch in run_group.groups_list:
+                        og_ch = og_run_group.get_channel(ch)
+                        og_ch_metadata_dict = og_ch.metadata.to_dict(
+                            single=True
+                        )
+                        # skip the start and end times
+                        for key in ["time_period.start", "time_period.end"]:
+                            og_ch_metadata_dict.pop(key)
+
+                        new_ch = run_group.get_channel(ch)
+                        new_ch.metadata.from_dict(og_ch_metadata_dict)
+                        new_ch.write_metadata()
+
+                    run_group.update_run_metadata()
 
         # If the number of runs does not equal the number of streams then
         # there is missing data or metadata.
         elif len(run_list) != num_streams:
-            self.run_list_ne_stream_intervals_message
+            self.logger.warning(self.run_list_ne_stream_intervals_message)
             for run_id, start, end in zip(
                 run_list, trace_start_times, trace_end_times
             ):
