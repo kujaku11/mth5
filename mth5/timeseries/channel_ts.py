@@ -220,10 +220,7 @@ class ChannelTS:
         ) + 1
 
         new_dt_index = make_dt_coordinates(
-            combined_ds.time.min().values,
-            self.sample_rate,
-            n_samples,
-            self.logger,
+            combined_ds.time.min().values, self.sample_rate, n_samples
         )
 
         new_channel = ChannelTS(
@@ -462,9 +459,7 @@ class ChannelTS:
         """
 
         if station_metadata is not None:
-            station_metadata = self._validate_station_metadata(
-                station_metadata
-            )
+            station_metadata = self._validate_station_metadata(station_metadata)
 
             runs = ListDict()
             if self.run_metadata.id not in ["0", 0, None]:
@@ -539,9 +534,7 @@ class ChannelTS:
         """
 
         if channel_metadata is not None:
-            channel_metadata = self._validate_channel_metadata(
-                channel_metadata
-            )
+            channel_metadata = self._validate_channel_metadata(channel_metadata)
             if channel_metadata.component is not None:
                 channels = ListDict()
                 if (
@@ -592,9 +585,7 @@ class ChannelTS:
                     msg = f"Input array must be 1-D array not {ts_arr.shape}"
                     self.logger.error(msg)
                     raise ValueError(msg)
-            dt = make_dt_coordinates(
-                self.start, self.sample_rate, ts_arr.size, self.logger
-            )
+            dt = make_dt_coordinates(self.start, self.sample_rate, ts_arr.size)
             self.data_array = xr.DataArray(
                 ts_arr, coords=[("time", dt)], name=self.component
             )
@@ -606,10 +597,7 @@ class ChannelTS:
                 dt = ts_arr.index
             else:
                 dt = make_dt_coordinates(
-                    self.start,
-                    self.sample_rate,
-                    ts_arr["data"].size,
-                    self.logger,
+                    self.start, self.sample_rate, ts_arr["data"].size
                 )
             try:
                 self.data_array = xr.DataArray(
@@ -630,10 +618,7 @@ class ChannelTS:
                 dt = ts_arr.index
             else:
                 dt = make_dt_coordinates(
-                    self.start,
-                    self.sample_rate,
-                    ts_arr["data"].size,
-                    self.logger,
+                    self.start, self.sample_rate, ts_arr["data"].size
                 )
             self.data_array = xr.DataArray(
                 ts_arr.values, coords=[("time", dt)], name=self.component
@@ -875,7 +860,7 @@ class ChannelTS:
                 f"Resetting sample rate from {self.sample_rate} to {sample_rate}"
             )
             new_dt = make_dt_coordinates(
-                self.start, sample_rate, self.n_samples, self.logger
+                self.start, sample_rate, self.n_samples
             )
             self.data_array.coords["time"] = new_dt
         else:
@@ -939,7 +924,7 @@ class ChannelTS:
                 return
             else:
                 new_dt = make_dt_coordinates(
-                    start_time, self.sample_rate, self.n_samples, self.logger
+                    start_time, self.sample_rate, self.n_samples
                 )
                 self.data_array.coords["time"] = new_dt
         # make a time series that the data can be indexed by
@@ -955,9 +940,7 @@ class ChannelTS:
     def end(self):
         """MTime object"""
         if self.has_data():
-            return MTime(
-                self.data_array.coords.indexes["time"][-1].isoformat()
-            )
+            return MTime(self.data_array.coords.indexes["time"][-1].isoformat())
         else:
             self.logger.debug(
                 "Data not set yet, pulling end time from metadata.time_period.end"
@@ -1297,9 +1280,7 @@ class ChannelTS:
                 combine_list.append(ch.data_array)
         else:
             if not isinstance(other, ChannelTS):
-                raise TypeError(
-                    f"Cannot combine {type(other)} with ChannelTS."
-                )
+                raise TypeError(f"Cannot combine {type(other)} with ChannelTS.")
             if self.component != other.component:
                 raise ValueError(
                     "Cannot combine channels with different components. "
@@ -1326,10 +1307,7 @@ class ChannelTS:
         ) + 1
 
         new_dt_index = make_dt_coordinates(
-            combined_ds.time.min().values,
-            merge_sample_rate,
-            n_samples,
-            self.logger,
+            combined_ds.time.min().values, merge_sample_rate, n_samples
         )
 
         channel_metadata = self.channel_metadata.copy()

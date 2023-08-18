@@ -139,15 +139,14 @@ class RunTS:
 
         n_samples = (
             self.sample_rate
-            * float(combined_ds.time.max().values - combined_ds.time.min().values)
+            * float(
+                combined_ds.time.max().values - combined_ds.time.min().values
+            )
             / 1e9
         ) + 1
 
         new_dt_index = make_dt_coordinates(
-            combined_ds.time.min().values,
-            self.sample_rate,
-            n_samples,
-            self.logger,
+            combined_ds.time.min().values, self.sample_rate, n_samples
         )
 
         new_run = RunTS(
@@ -156,7 +155,9 @@ class RunTS:
             survey_metadata=self.survey_metadata,
         )
 
-        new_run.dataset = combined_ds.interp(time=new_dt_index, method="slinear")
+        new_run.dataset = combined_ds.interp(
+            time=new_dt_index, method="slinear"
+        )
 
         new_run.run_metadata.update_time_period()
         new_run.station_metadata.update_time_period()
@@ -213,7 +214,9 @@ class RunTS:
 
         if not isinstance(station_metadata, metadata.Station):
             if isinstance(station_metadata, dict):
-                if "station" not in [cc.lower() for cc in station_metadata.keys()]:
+                if "station" not in [
+                    cc.lower() for cc in station_metadata.keys()
+                ]:
                     station_metadata = {"Station": station_metadata}
                 st_metadata = metadata.Station()
                 st_metadata.from_dict(station_metadata)
@@ -235,7 +238,9 @@ class RunTS:
 
         if not isinstance(survey_metadata, metadata.Survey):
             if isinstance(survey_metadata, dict):
-                if "station" not in [cc.lower() for cc in survey_metadata.keys()]:
+                if "station" not in [
+                    cc.lower() for cc in survey_metadata.keys()
+                ]:
                     survey_metadata = {"Survey": survey_metadata}
                 sv_metadata = metadata.Station()
                 sv_metadata.from_dict(survey_metadata)
@@ -275,7 +280,9 @@ class RunTS:
 
                 if item.station_metadata.id not in ["0", None]:
                     if station_metadata.id not in ["0", None]:
-                        station_metadata.update(item.station_metadata, match=["id"])
+                        station_metadata.update(
+                            item.station_metadata, match=["id"]
+                        )
                     else:
                         station_metadata.update(item.station_metadata)
                 if item.run_metadata.id not in ["0", None]:
@@ -384,7 +391,9 @@ class RunTS:
         :rtype: TYPE
 
         """
-        start_list = list(set([item.coords["time"].values[0] for item in valid_list]))
+        start_list = list(
+            set([item.coords["time"].values[0] for item in valid_list])
+        )
         if len(start_list) != 1:
             return False
         return True
@@ -399,7 +408,9 @@ class RunTS:
         :rtype: TYPE
 
         """
-        end_list = list(set([item.coords["time"].values[-1] for item in valid_list]))
+        end_list = list(
+            set([item.coords["time"].values[-1] for item in valid_list])
+        )
         if len(end_list) != 1:
             return False
         return True
@@ -425,7 +436,7 @@ class RunTS:
 
         n_samples = int(sample_rate * float(end - start) / 1e9) + 1
 
-        return make_dt_coordinates(start, sample_rate, n_samples, self.logger)
+        return make_dt_coordinates(start, sample_rate, n_samples)
 
     def _get_channel_response_filter(self, ch_name):
         """
@@ -445,7 +456,9 @@ class RunTS:
                 try:
                     filter_list.append(self.filters[filter_name])
                 except KeyError:
-                    self.logger.debug(f"Could not find {filter_name} in filters")
+                    self.logger.debug(
+                        f"Could not find {filter_name} in filters"
+                    )
         return ChannelResponseFilter(filters_list=filter_list)
 
     def __getattr__(self, name):
@@ -577,7 +590,9 @@ class RunTS:
             run_metadata = self._validate_run_metadata(run_metadata)
             runs = ListDict()
             runs.append(run_metadata)
-            runs.extend(self.station_metadata.runs, skip_keys=[run_metadata.id, "0"])
+            runs.extend(
+                self.station_metadata.runs, skip_keys=[run_metadata.id, "0"]
+            )
             self._survey_metadata.stations[0].runs = runs
 
     def has_data(self):
@@ -616,7 +631,10 @@ class RunTS:
         if self.has_data():
             # check start time
             if self.start != self.run_metadata.time_period.start:
-                if self.run_metadata.time_period.start != "1980-01-01T00:00:00+00:00":
+                if (
+                    self.run_metadata.time_period.start
+                    != "1980-01-01T00:00:00+00:00"
+                ):
                     msg = (
                         f"start time of dataset {self.start} does not "
                         f"match metadata start {self.run_metadata.time_period.start} "
@@ -626,7 +644,10 @@ class RunTS:
                 self.run_metadata.time_period.start = self.start.iso_str
             # check end time
             if self.end != self.run_metadata.time_period.end:
-                if self.run_metadata.time_period.end != "1980-01-01T00:00:00+00:00":
+                if (
+                    self.run_metadata.time_period.end
+                    != "1980-01-01T00:00:00+00:00"
+                ):
                     msg = (
                         f"end time of dataset {self.end} does not "
                         f"match metadata end {self.run_metadata.time_period.end} "
@@ -708,7 +729,9 @@ class RunTS:
             for ff in c.channel_response_filter.filters_list:
                 self._filters[ff.name] = ff
         else:
-            raise ValueError("Input Channel must be type xarray.DataArray or ChannelTS")
+            raise ValueError(
+                "Input Channel must be type xarray.DataArray or ChannelTS"
+            )
         ### need to validate the channel to make sure sample rate is the same
         if c.sample_rate != self.sample_rate:
             msg = (
@@ -774,9 +797,13 @@ class RunTS:
                     0,
                 )
             except AttributeError:
-                self.logger.warning("Something weird happend with xarray time indexing")
+                self.logger.warning(
+                    "Something weird happend with xarray time indexing"
+                )
 
-                raise ValueError("Something weird happend with xarray time indexing")
+                raise ValueError(
+                    "Something weird happend with xarray time indexing"
+                )
         return self.run_metadata.sample_rate
 
     @property
@@ -874,7 +901,9 @@ class RunTS:
                     ][0]
                     channel_ts.channel_metadata.update(ch)
                 except IndexError:
-                    self.logger.warning(f"could not find {channel_ts.component}")
+                    self.logger.warning(
+                        f"could not find {channel_ts.component}"
+                    )
             # else:
             #     run_metadata = metadata.Run(id="001")
             station_list.append(channel_ts.station_metadata.fdsn.id)
@@ -883,7 +912,9 @@ class RunTS:
         ### need to merge metadata into something useful, station name is the only
         ### name that is preserved
         try:
-            station = list(set([ss for ss in station_list if ss is not None]))[0]
+            station = list(set([ss for ss in station_list if ss is not None]))[
+                0
+            ]
         except IndexError:
             station = None
             msg = "Could not find station name"
@@ -1025,7 +1056,9 @@ class RunTS:
         # need to fill nans with 0 otherwise they wipeout the decimation values
         # and all becomes nan.
         new_ds = self.dataset.fillna(0)
-        new_ds = new_ds.sps_filters.resample_poly(new_sample_rate, pad_type=pad_type)
+        new_ds = new_ds.sps_filters.resample_poly(
+            new_sample_rate, pad_type=pad_type
+        )
 
         new_ds.attrs["sample_rate"] = new_sample_rate
         self.run_metadata.sample_rate = new_ds.attrs["sample_rate"]
@@ -1053,7 +1086,9 @@ class RunTS:
 
         new_dt_freq = "{0:.0f}N".format(1e9 / (new_sample_rate))
 
-        new_ds = self.dataset.resample(time=new_dt_freq).nearest(tolerance=new_dt_freq)
+        new_ds = self.dataset.resample(time=new_dt_freq).nearest(
+            tolerance=new_dt_freq
+        )
         new_ds.attrs["sample_rate"] = new_sample_rate
         self.run_metadata.sample_rate = new_ds.attrs["sample_rate"]
 
@@ -1125,19 +1160,20 @@ class RunTS:
             ts_filters.update(other.filters)
         # combine into a data set use override to keep attrs from original
 
-        combined_ds = xr.combine_by_coords(combine_list, combine_attrs="override")
+        combined_ds = xr.combine_by_coords(
+            combine_list, combine_attrs="override"
+        )
 
         n_samples = (
             merge_sample_rate
-            * float(combined_ds.time.max().values - combined_ds.time.min().values)
+            * float(
+                combined_ds.time.max().values - combined_ds.time.min().values
+            )
             / 1e9
         ) + 1
 
         new_dt_index = make_dt_coordinates(
-            combined_ds.time.min().values,
-            merge_sample_rate,
-            n_samples,
-            self.logger,
+            combined_ds.time.min().values, merge_sample_rate, n_samples
         )
 
         run_metadata = self.run_metadata.copy()
@@ -1153,7 +1189,9 @@ class RunTS:
         ## intial time index does not exactly match up with the new time index
         ## and then get a bunch of Nan, unless use nearest or pad, but then
         ## gaps are not filled correctly, just do a interp seems easier.
-        new_run.dataset = combined_ds.interp(time=new_dt_index, method=gap_method)
+        new_run.dataset = combined_ds.interp(
+            time=new_dt_index, method=gap_method
+        )
 
         # update channel attributes
         for ch in new_run.channels:
@@ -1247,7 +1285,9 @@ class RunTS:
         for comp in self.channels:
             ch = getattr(self, comp)
             plot_freq, power = ch.welch_spectra(**kwargs)
-            (l1,) = ax.loglog(1.0 / plot_freq, power, lw=1.5, color=color_map[comp])
+            (l1,) = ax.loglog(
+                1.0 / plot_freq, power, lw=1.5, color=color_map[comp]
+            )
             line_list.append(l1)
             label_list.append(comp)
         ax.set_xlabel("Period (s)", fontdict={"size": 10, "weight": "bold"})
@@ -1257,7 +1297,9 @@ class RunTS:
 
         ax2 = ax.twiny()
         ax2.loglog(plot_freq, power, lw=0)
-        ax2.set_xlabel("Frequency (Hz)", fontdict={"size": 10, "weight": "bold"})
+        ax2.set_xlabel(
+            "Frequency (Hz)", fontdict={"size": 10, "weight": "bold"}
+        )
         ax2.set_xlim([1 / cc for cc in ax.get_xlim()])
 
         ax.legend(line_list, label_list)
