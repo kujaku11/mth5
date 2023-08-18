@@ -14,7 +14,7 @@ from pathlib import Path
 
 from mth5.mth5 import MTH5
 from mth5 import read_file
-from mth5.io.phoenix import ReceiverMetadataJSON, PhoenixCollection
+from mth5.io.phoenix import PhoenixCollection
 
 # =============================================================================
 
