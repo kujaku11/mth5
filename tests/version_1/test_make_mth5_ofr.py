@@ -249,13 +249,15 @@ class TestMakeMTH5(unittest.TestCase):
 
     def test_orf08_runs_list(self):
         self.assertListEqual(
-            [
-                "Fourier_Coefficients",
-                "Transfer_Functions",
-                "001",
-                "002",
-            ],
-            self.m.get_station("ORF08").groups_list,
+            sorted(
+                [
+                    "Fourier_Coefficients",
+                    "Transfer_Functions",
+                    "001",
+                    "002",
+                ]
+            ),
+            sorted(self.m.get_station("ORF08").groups_list),
         )
 
     def test_orf08_channels(self):
