@@ -446,30 +446,30 @@ class FDSN:
         file_name = path.joinpath(self.make_filename(df))
 
         # initiate MTH5 file
-        m = MTH5(
+        with MTH5(
             file_version=self.mth5_version,
             compression=self.compression,
             compression_opts=self.compression_opts,
             shuffle=self.shuffle,
             fletcher32=self.fletcher32,
             data_level=self.data_level,
-        )
-        m.open_mth5(file_name, "w")
+        ) as m:
+            m.open_mth5(file_name, "w")
 
-        # read in inventory and streams
-        inv, streams = self.get_inventory_from_df(df, self.client)
-        self._streams = streams
+            # read in inventory and streams
+            inv, streams = self.get_inventory_from_df(df, self.client)
+            self._streams = streams
 
-        # translate obspy.core.Inventory to an mt_metadata.timeseries.Experiment
-        translator = XMLInventoryMTExperiment()
-        experiment = translator.xml_to_mt(inv)
+            # translate obspy.core.Inventory to an mt_metadata.timeseries.Experiment
+            translator = XMLInventoryMTExperiment()
+            experiment = translator.xml_to_mt(inv)
 
-        # Updates expriment information based on time extent of streams
-        # rather than time extent of inventory
-        # experiment = translator.drop_runs(m, streams)
+            # Updates expriment information based on time extent of streams
+            # rather than time extent of inventory
+            # experiment = translator.drop_runs(m, streams)
 
-        m.from_experiment(experiment)
-        self._process_list(experiment, unique_list, m)
+            m.from_experiment(experiment)
+            self._process_list(experiment, unique_list, m)
 
         if interact:
             return m
@@ -505,7 +505,10 @@ class FDSN:
             elif networks.get(row.network) is not None:
                 if row.start not in networks[row.network].keys():
                     net_inv = client.get_stations(
-                        row.start, row.end, network=row.network, level="network"
+                        row.start,
+                        row.end,
+                        network=row.network,
+                        level="network",
                     )
                     networks[row.network][row.start] = net_inv.networks[0]
             else:
@@ -725,7 +728,9 @@ class FDSN:
         for network in networks:
             network_dict = {
                 "network": network,
-                "stations": df[df.network == network].station.unique().tolist(),
+                "stations": df[df.network == network]
+                .station.unique()
+                .tolist(),
             }
             unique_list.append(network_dict)
         return unique_list
