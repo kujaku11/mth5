@@ -101,14 +101,12 @@ class PhoenixCalibration:
             f"{self.base_filter_name}_{channel}_{max_freq}hz_lowpass".lower()
         )
 
-    def get_filter_sensor_name(self, channel, sensor):
+    def get_filter_sensor_name(self, sensor):
         """
         get the filter name as
 
         {instrument_model}_{instrument_type}_{inst_serial}_{sensor}
 
-        :param channel: DESCRIPTION
-        :type channel: TYPE
         :param max_freq: DESCRIPTION
         :type max_freq: TYPE
         :return: DESCRIPTION
@@ -149,7 +147,9 @@ class PhoenixCalibration:
                 if self.obj.file_type in ["receiver calibration"]:
                     ch_fap.name = self.get_filter_lp_name(comp, max_freq)
                 else:
-                    ch_fap.name = self.get_filter_sensor_name(comp, comp)
+                    ch_fap.name = self.get_filter_sensor_name(
+                        self.obj.sensor_serial
+                    )
                 ch_fap.calibration_date = self.obj.timestamp_utc
                 ch_cal_dict[max_freq] = ch_fap
                 ch_fap.units_in = "volts"

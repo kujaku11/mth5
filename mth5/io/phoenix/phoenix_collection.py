@@ -200,9 +200,9 @@ class PhoenixCollection(Collection):
                 run_stem = self._file_extension_map[int(sr)].split("_")[-1]
                 # continuous data
                 if sr < 1000:
-                    sdf = rdf[rdf.station == station].sort_values(
-                        "sequence_number"
-                    )
+                    sdf = rdf.loc[
+                        (rdf.station == station) & (rdf.sample_rate == sr)
+                    ].sort_values("sequence_number")
                     starts = np.sort(
                         sdf.loc[sdf.sample_rate == sr].start.unique()
                     )
@@ -213,10 +213,12 @@ class PhoenixCollection(Collection):
                     diff = diff.astype("timedelta64[s]").astype(float)
 
                     breaks = np.nonzero(diff)[0]
-                    count = 1
+
                     # this logic probably needs some work.  Need to figure
                     # out how to set pandas values
+                    count = 1
                     if len(breaks) > 0:
+
                         start_breaks = starts[breaks]
                         for ii in range(len(start_breaks)):
                             count += 1
@@ -242,7 +244,7 @@ class PhoenixCollection(Collection):
                     ].unique()
                     for ii, s in enumerate(starts, 1):
                         rdf.loc[
-                            rdf.start == s, "run"
+                            (rdf.start == s) & (rdf.sample_rate == sr), "run"
                         ] = f"sr{run_stem}_{ii:0{zeros}}"
 
         return rdf
