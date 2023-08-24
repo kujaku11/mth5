@@ -346,7 +346,17 @@ class FDSN:
                     run_group_source, station_id, run_id
                 )
                 if run_num > 1:
+                    # cleaner, but not working
+                    # og_run_group_metadata_dict = og_run_group.metadata.to_dict()
+                    # for key in ["run_id",]:
+                    #     og_run_group_metadata_dict.pop(key)
+                    # run_group.metadata.from_dict(og_run_group.metadata)
+                    # run_group.write_metadata()
+
+                    # not as general but works
+                    run_id_keep = run_group.metadata.id
                     run_group.metadata.update(og_run_group.metadata)
+                    run_group.metadata.id = run_id_keep
                     run_group.write_metadata()
                 run_stream = msstreams.slice(start, end)
                 run_group = self.pack_stream_into_run_group(
