@@ -238,11 +238,11 @@ class RunTS:
 
         if not isinstance(survey_metadata, metadata.Survey):
             if isinstance(survey_metadata, dict):
-                if "station" not in [
+                if "survey" not in [
                     cc.lower() for cc in survey_metadata.keys()
                 ]:
                     survey_metadata = {"Survey": survey_metadata}
-                sv_metadata = metadata.Station()
+                sv_metadata = metadata.Survey()
                 sv_metadata.from_dict(survey_metadata)
                 self.logger.debug("Loading from metadata dict")
                 return sv_metadata
@@ -552,7 +552,9 @@ class RunTS:
         """
 
         if station_metadata is not None:
-            station_metadata = self._validate_station_metadata(station_metadata)
+            station_metadata = self._validate_station_metadata(
+                station_metadata
+            )
 
             runs = ListDict()
             if self.run_metadata.id not in ["0", 0]:
@@ -772,7 +774,9 @@ class RunTS:
     def end(self):
         """End time UTC"""
         if self.has_data():
-            return MTime(self.dataset.coords["time"].to_index()[-1].isoformat())
+            return MTime(
+                self.dataset.coords["time"].to_index()[-1].isoformat()
+            )
         return self.run_metadata.time_period.end
 
     @property
