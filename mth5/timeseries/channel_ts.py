@@ -375,11 +375,11 @@ class ChannelTS:
 
         if not isinstance(survey_metadata, metadata.Survey):
             if isinstance(survey_metadata, dict):
-                if "station" not in [
+                if "survey" not in [
                     cc.lower() for cc in survey_metadata.keys()
                 ]:
                     survey_metadata = {"Survey": survey_metadata}
-                sv_metadata = metadata.Station()
+                sv_metadata = metadata.Survey()
                 sv_metadata.from_dict(survey_metadata)
                 self.logger.debug("Loading from metadata dict")
                 return sv_metadata
@@ -459,7 +459,9 @@ class ChannelTS:
         """
 
         if station_metadata is not None:
-            station_metadata = self._validate_station_metadata(station_metadata)
+            station_metadata = self._validate_station_metadata(
+                station_metadata
+            )
 
             runs = ListDict()
             if self.run_metadata.id not in ["0", 0, None]:
@@ -534,7 +536,9 @@ class ChannelTS:
         """
 
         if channel_metadata is not None:
-            channel_metadata = self._validate_channel_metadata(channel_metadata)
+            channel_metadata = self._validate_channel_metadata(
+                channel_metadata
+            )
             if channel_metadata.component is not None:
                 channels = ListDict()
                 if (
@@ -940,7 +944,9 @@ class ChannelTS:
     def end(self):
         """MTime object"""
         if self.has_data():
-            return MTime(self.data_array.coords.indexes["time"][-1].isoformat())
+            return MTime(
+                self.data_array.coords.indexes["time"][-1].isoformat()
+            )
         else:
             self.logger.debug(
                 "Data not set yet, pulling end time from metadata.time_period.end"
@@ -1280,7 +1286,9 @@ class ChannelTS:
                 combine_list.append(ch.data_array)
         else:
             if not isinstance(other, ChannelTS):
-                raise TypeError(f"Cannot combine {type(other)} with ChannelTS.")
+                raise TypeError(
+                    f"Cannot combine {type(other)} with ChannelTS."
+                )
             if self.component != other.component:
                 raise ValueError(
                     "Cannot combine channels with different components. "

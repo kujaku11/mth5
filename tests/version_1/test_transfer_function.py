@@ -81,8 +81,14 @@ class TestTFGroup(unittest.TestCase):
         )
 
         h5_meta_dict = self.tf_h5.survey_metadata.to_dict(single=True)
-        h5_meta_dict.pop("mth5_type")
-        h5_meta_dict.pop("hdf5_reference")
+        try:
+            h5_meta_dict.pop("mth5_type")
+        except KeyError:
+            pass
+        try:
+            h5_meta_dict.pop("hdf5_reference")
+        except KeyError:
+            pass
 
         self.assertDictEqual(meta_dict, h5_meta_dict)
 
@@ -110,7 +116,9 @@ class TestTFGroup(unittest.TestCase):
                 ("orientation.angle_to_geographic_north", 0.0),
                 ("orientation.method", None),
                 ("orientation.reference_frame", "geographic"),
+                ("provenance.archive.name", None),
                 ("provenance.creation_time", "2021-03-17T14:47:44+00:00"),
+                ("provenance.creator.name", None),
                 ("provenance.software.author", None),
                 (
                     "provenance.software.name",
@@ -119,6 +127,7 @@ class TestTFGroup(unittest.TestCase):
                 ("provenance.software.version", None),
                 ("provenance.submitter.author", "Anna Kelbert"),
                 ("provenance.submitter.email", "akelbert@usgs.gov"),
+                ("provenance.submitter.name", "Anna Kelbert"),
                 (
                     "provenance.submitter.organization",
                     "U.S. Geological Survey, Geomagnetism Program",
@@ -128,26 +137,34 @@ class TestTFGroup(unittest.TestCase):
                 ("time_period.end", "2020-10-07T20:28:00+00:00"),
                 ("time_period.start", "2020-09-20T19:03:06+00:00"),
                 ("transfer_function.coordinate_system", "geopgraphic"),
+                ("transfer_function.data_quality.good_from_period", 5.0),
+                ("transfer_function.data_quality.good_to_period", 29127.0),
+                ("transfer_function.data_quality.rating.value", 5),
                 ("transfer_function.id", "NMX20"),
-                ("transfer_function.processed_date", None),
                 (
-                    "transfer_function.processing_parameters",
-                    ["{remote_ref.type: Robust Multi-Station Reference}"],
+                    "transfer_function.processed_by.author",
+                    "Jade Crosbie, Paul Bedrosian and Anna Kelbert",
+                ),
+                (
+                    "transfer_function.processed_by.name",
+                    "Jade Crosbie, Paul Bedrosian and Anna Kelbert",
+                ),
+                ("transfer_function.processed_date", "1980-01-01"),
+                ("transfer_function.processing_parameters", []),
+                (
+                    "transfer_function.processing_type",
+                    "Robust Multi-Station Reference",
                 ),
                 (
                     "transfer_function.remote_references",
-                    [
-                        "NMX20b",
-                        "NMX20",
-                        "NMW20",
-                        "COR21",
-                        "NMY21-NMX20b",
-                        "NMX20",
-                        "UTS18",
-                    ],
+                    ["NMW20", "COR21", "UTS18"],
                 ),
                 ("transfer_function.runs_processed", ["NMX20a", "NMX20b"]),
                 ("transfer_function.sign_convention", "exp(+ i\\omega t)"),
+                ("transfer_function.software.author", "Gary Egbert"),
+                ("transfer_function.software.last_updated", "2015-08-26"),
+                ("transfer_function.software.name", "EMTF"),
+                ("transfer_function.software.version", None),
                 ("transfer_function.units", None),
             ]
         )
@@ -164,12 +181,24 @@ class TestTFGroup(unittest.TestCase):
             with self.subTest(run1.id):
                 run1.data_logger.firmware.author = None
                 rd1 = run1.to_dict(single=True)
-                rd1.pop("mth5_type")
-                rd1.pop("hdf5_reference")
+                try:
+                    rd1.pop("mth5_type")
+                except KeyError:
+                    pass
+                try:
+                    rd1.pop("hdf5_reference")
+                except KeyError:
+                    pass
 
                 rd2 = run2.to_dict(single=True)
-                rd2.pop("mth5_type")
-                rd2.pop("hdf5_reference")
+                try:
+                    rd2.pop("mth5_type")
+                except KeyError:
+                    pass
+                try:
+                    rd2.pop("hdf5_reference")
+                except KeyError:
+                    pass
                 self.assertDictEqual(rd1, rd2)
 
     def test_channels(self):
@@ -182,12 +211,24 @@ class TestTFGroup(unittest.TestCase):
                 with self.subTest(f"{run1.id}_{ch1.component}"):
 
                     chd1 = ch1.to_dict(single=True)
-                    chd1.pop("mth5_type")
-                    chd1.pop("hdf5_reference")
+                    try:
+                        chd1.pop("mth5_type")
+                    except KeyError:
+                        pass
+                    try:
+                        chd1.pop("hdf5_reference")
+                    except KeyError:
+                        pass
 
                     chd2 = ch2.to_dict(single=True)
-                    chd2.pop("mth5_type")
-                    chd2.pop("hdf5_reference")
+                    try:
+                        chd2.pop("mth5_type")
+                    except KeyError:
+                        pass
+                    try:
+                        chd2.pop("hdf5_reference")
+                    except KeyError:
+                        pass
                     self.assertDictEqual(chd1, chd2)
 
     def test_estimates(self):
