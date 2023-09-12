@@ -1454,6 +1454,12 @@ class MTH5:
             msg = f"Input must be a TF object not {type(tf_object)}"
             self.logger.error(msg)
             raise ValueError(msg)
+
+        if tf_object.survey_metadata.id == "0":
+            tf_object.survey_metadata.id = "unknown_survey"
+        tf_object.survey_metadata.id = helpers.validate_name(
+            tf_object.survey_metadata.id
+        )
         if self.file_version == "0.2.0":
             try:
                 # need to check survey metadata to make sure it matches,
@@ -1461,11 +1467,7 @@ class MTH5:
                 # when a TF is pulled it gets the proper survey metadata.
                 # this should eventually search over each unknonw survey
                 # for matching metadata so there aren't 100 groups
-                if tf_object.survey_metadata.id == "0":
-                    tf_object.survey_metadata.id = "unknown_survey"
-                tf_object.survey_metadata.id = helpers.validate_name(
-                    tf_object.survey_metadata.id
-                )
+
                 survey_group = self.get_survey(tf_object.survey_metadata.id)
                 if tf_object.survey_metadata.id in ["unknown_survey"]:
                     for sg_id in self.surveys_group.groups_list:

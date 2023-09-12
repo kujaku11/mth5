@@ -60,6 +60,17 @@ class LEMICollection(Collection):
 
         self.station_id = "mt001"
         self.survey_id = "mt"
+        self._entry_columns = [
+            "survey",
+            "station",
+            "start",
+            "end",
+            "component",
+            "fn",
+            "sample_rate",
+            "file_size",
+            "n_samples",
+        ]
 
     def to_dataframe(
         self, sample_rates=[1], run_name_zeros=4, calibration_path=None
@@ -98,10 +109,8 @@ class LEMICollection(Collection):
             entry = {}
             entry["survey"] = self.survey_id
             entry["station"] = self.station_id
-            entry["run"] = None
             entry["start"] = lemi_obj.start.isoformat()
             entry["end"] = lemi_obj.end.isoformat()
-            entry["channel_id"] = 1
             entry["component"] = ",".join(
                 lemi_obj.run_metadata.channels_recorded_all
             )
@@ -109,16 +118,20 @@ class LEMICollection(Collection):
             entry["sample_rate"] = lemi_obj.sample_rate
             entry["file_size"] = lemi_obj.file_size
             entry["n_samples"] = n_samples
-            entry["sequence_number"] = 0
-            entry["instrument_id"] = "LEMI424"
-            entry["calibration_fn"] = None
+
+            for key in self._columns:
+                if key in self._entry_columns:
+                    continue
+                entry[key] = None
 
             entries.append(entry)
 
         # make pandas dataframe and set data types
-        df = self._sort_df(
-            self._set_df_dtypes(pd.DataFrame(entries)), run_name_zeros
-        )
+        df = pd.DataFrame(entries)
+        df.sequence_number.iloc[:] = 0
+        df.instrument_id.iloc[:] = "LEMI424"
+
+        df = self._sort_df(self._set_df_dtypes(df), run_name_zeros)
 
         return df
 
