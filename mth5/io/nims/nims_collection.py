@@ -71,39 +71,34 @@ class NIMSCollection(Collection):
 
         """
 
-        dipole_list = []
         entries = []
         for fn in self.get_files(self.file_ext):
             nims_obj = NIMS(fn)
             nims_obj.read_header()
 
-            entry = {}
+            entry = dict([(key, None) for key in self._columns])
             entry["survey"] = self.survey_id
             entry["station"] = nims_obj.station
             entry["run"] = nims_obj.run_id
             entry["start"] = nims_obj.start_time.isoformat()
             entry["end"] = nims_obj.end_time.isoformat()
-            entry["channel_id"] = 1
-            entry["component"] = ",".join(
-                ["hx", "hy", "hz", "ex", "ey", "temperature"]
-            )
             entry["fn"] = fn
             entry["sample_rate"] = nims_obj.sample_rate
             entry["file_size"] = nims_obj.file_size
             entry["n_samples"] = nims_obj.n_samples
-            entry["sequence_number"] = 0
-            entry["instrument_id"] = "NIMS"
-            entry["calibration_fn"] = None
+            entry["dipole"] = [nims_obj.ex_length, nims_obj.ey_length]
 
             entries.append(entry)
 
-            dipole_list.append(nims_obj.ex_length)
-            dipole_list.append(nims_obj.ey_length)
-
         # make pandas dataframe and set data types
-        df = self._sort_df(
-            self._set_df_dtypes(pd.DataFrame(entries)), run_name_zeros
+        df = pd.DataFrame(entries)
+        df.loc[:, "channel_id"] = 1
+        df.loc[:, "sequence_number"] = 0
+        df.loc[:, "component"] = ",".join(
+            ["hx", "hy", "hz", "ex", "ey", "temperature"]
         )
+        df.loc[:, "instrument_id"] = "NIMS"
+        df = self._sort_df(self._set_df_dtypes(df), run_name_zeros)
 
         return df
 

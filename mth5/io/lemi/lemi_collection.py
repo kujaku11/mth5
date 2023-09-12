@@ -60,17 +60,6 @@ class LEMICollection(Collection):
 
         self.station_id = "mt001"
         self.survey_id = "mt"
-        self._entry_columns = [
-            "survey",
-            "station",
-            "start",
-            "end",
-            "component",
-            "fn",
-            "sample_rate",
-            "file_size",
-            "n_samples",
-        ]
 
     def to_dataframe(
         self, sample_rates=[1], run_name_zeros=4, calibration_path=None
@@ -123,8 +112,8 @@ class LEMICollection(Collection):
 
         # make pandas dataframe and set data types
         df = pd.DataFrame(entries)
-        df.sequence_number[:] = 0
-        df.instrument_id[:] = "LEMI424"
+        df.loc[:, "sequence_number"] = 0
+        df.loc[:, "instrument_id"] = "LEMI424"
 
         df = self._sort_df(self._set_df_dtypes(df), run_name_zeros)
 
