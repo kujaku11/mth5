@@ -248,7 +248,9 @@ class MasterStationGroup(BaseGroup):
 
         """
         if station_name is None:
-            raise Exception("station name is None, do not know what to name it")
+            raise Exception(
+                "station name is None, do not know what to name it"
+            )
 
         return self._add_group(
             station_name, StationGroup, station_metadata, match="id"
@@ -578,6 +580,56 @@ class StationGroup(BaseGroup):
         )
 
         return pd.DataFrame(run_summary)
+
+    # @property
+    # def tf_summary(self):
+    #     """
+    #     Summary of transfer functions in the station
+
+    #     :return: dataframe of transfer functions
+    #     :rtype: :class:`pandas.DataFrame`
+
+    #     """
+
+    #     tf_list = []
+    #     for key, group in self.hdf5_group.items():
+    #         if group.attrs["mth5_type"].lower() in ["run"]:
+    #             comps = ",".join(
+    #                 [
+    #                     ii.decode()
+    #                     for ii in group.attrs[
+    #                         "channels_recorded_auxiliary"
+    #                     ].tolist()
+    #                     + group.attrs["channels_recorded_electric"].tolist()
+    #                     + group.attrs["channels_recorded_magnetic"].tolist()
+    #                 ]
+    #             )
+    #             tf_list.append(
+    #                 (
+    #                     group.attrs["id"],
+    #                     group.attrs["time_period.start"].split("+")[0],
+    #                     group.attrs["time_period.end"].split("+")[0],
+    #                     comps,
+    #                     group.attrs["data_type"],
+    #                     group.attrs["sample_rate"],
+    #                     group.ref,
+    #                 )
+    #             )
+    #     tf_summary = np.array(
+    #         run_list,
+    #         dtype=np.dtype(
+    #             [
+    #                 ("id", "U20"),
+    #                 ("start", "datetime64[ns]"),
+    #                 ("end", "datetime64[ns]"),
+    #                 ("estimates", "U100"),
+    #                 ("processing type", "U12"),
+    #                 ("hdf5_reference", h5py.ref_dtype),
+    #             ]
+    #         ),
+    #     )
+
+    #     return pd.DataFrame(tf_summary)
 
     def make_run_name(self, alphabet=False):
         """
