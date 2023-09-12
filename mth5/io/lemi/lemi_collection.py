@@ -106,7 +106,7 @@ class LEMICollection(Collection):
             n_samples = int(lemi_obj.n_samples)
             lemi_obj.read_metadata()
 
-            entry = {}
+            entry = dict([(key, None) for key in self._columns])
             entry["survey"] = self.survey_id
             entry["station"] = self.station_id
             entry["start"] = lemi_obj.start.isoformat()
@@ -119,17 +119,12 @@ class LEMICollection(Collection):
             entry["file_size"] = lemi_obj.file_size
             entry["n_samples"] = n_samples
 
-            for key in self._columns:
-                if key in self._entry_columns:
-                    continue
-                entry[key] = None
-
             entries.append(entry)
 
         # make pandas dataframe and set data types
         df = pd.DataFrame(entries)
-        df.sequence_number.iloc[:] = 0
-        df.instrument_id.iloc[:] = "LEMI424"
+        df.sequence_number[:] = 0
+        df.instrument_id[:] = "LEMI424"
 
         df = self._sort_df(self._set_df_dtypes(df), run_name_zeros)
 
