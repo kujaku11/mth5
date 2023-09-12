@@ -479,10 +479,10 @@ class FDSN:
             self._process_list(experiment, unique_list, m)
 
         if interact:
-            m.open_mth5(m.file_name)
+            m.open_mth5(m.filename)
             return m
         else:
-            return file_name
+            return m.filename
 
     def build_network_dict(self, df, client):
         """

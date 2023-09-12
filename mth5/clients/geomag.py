@@ -654,7 +654,7 @@ class USGSGeomag:
             survey_group.update_survey_metadata()
 
         if self.interact:
-            m.open_mth5(m.file_name)
+            m.open_mth5(m.filename)
             return m
         else:
             return m.filename
