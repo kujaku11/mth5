@@ -1461,8 +1461,10 @@ class MTH5:
                 # when a TF is pulled it gets the proper survey metadata.
                 # this should eventually search over each unknonw survey
                 # for matching metadata so there aren't 100 groups
+                if tf_object.survey_metadata.id == "0":
+                    tf_object.survey_metadata.id = "unknown_survey"
                 survey_group = self.get_survey(tf_object.survey_metadata.id)
-                if tf_object.survey_metadata.id == "unknown_survey":
+                if tf_object.survey_metadata.id in ["unknown_survey"]:
                     for sg_id in self.surveys_group.groups_list:
                         if "unknown_survey" in sg_id:
                             match = True
