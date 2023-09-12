@@ -347,7 +347,9 @@ class FDSN:
                 )
                 if run_num > 1:
                     # cleaner, but not working
-                    og_run_group_metadata_dict = og_run_group.metadata.to_dict()
+                    og_run_group_metadata_dict = (
+                        og_run_group.metadata.to_dict()
+                    )
                     for key in ["id", "time_period.start", "time_period.end"]:
                         og_run_group_metadata_dict["run"].pop(key)
                     run_group.metadata.from_dict(og_run_group_metadata_dict)
@@ -477,9 +479,9 @@ class FDSN:
             self._process_list(experiment, unique_list, m)
 
         if interact:
+            m.open_mth5(m.file_name)
             return m
         else:
-            m.close_mth5()
             return file_name
 
     def build_network_dict(self, df, client):
