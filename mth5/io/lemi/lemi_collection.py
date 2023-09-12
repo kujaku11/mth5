@@ -112,6 +112,7 @@ class LEMICollection(Collection):
 
         # make pandas dataframe and set data types
         df = pd.DataFrame(entries)
+        df.loc[:, "channel_id"] = 1
         df.loc[:, "sequence_number"] = 0
         df.loc[:, "instrument_id"] = "LEMI424"
 
