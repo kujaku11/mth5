@@ -166,7 +166,7 @@ class TestWithMTH5(unittest.TestCase):
         self.assertEqual(self.m.validate_file(), True)
 
     def test_station_list(self):
-        self.assertListEqual([], self.mth5_obj.station_list)
+        self.assertListEqual([], self.m.station_list)
 
     @classmethod
     def tearDownClass(self):
