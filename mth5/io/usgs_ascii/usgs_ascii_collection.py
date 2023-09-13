@@ -70,7 +70,7 @@ class USGSasciiCollection(Collection):
             asc_obj = USGSascii(fn)
             asc_obj.read_metadata()
 
-            entry = {}
+            entry = dict([(key, None) for key in self._columns])
             entry["survey"] = asc_obj.survey_metadata.id
             entry["station"] = asc_obj.station_metadata.id
             entry["run"] = asc_obj.run_metadata.id

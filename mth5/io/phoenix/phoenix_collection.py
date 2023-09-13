@@ -123,9 +123,7 @@ class PhoenixCollection(Collection):
             ] = receiver_metadata
 
             for sr in sample_rates:
-                for fn in folder.rglob(
-                    f"*{self._file_extension_map[int(sr)]}"
-                ):
+                for fn in folder.rglob(f"*{self._file_extension_map[int(sr)]}"):
                     try:
                         phx_obj = open_phoenix(fn)
                     except OSError:
@@ -147,24 +145,24 @@ class PhoenixCollection(Collection):
                         start = phx_obj.segment_start_time.isoformat()
                         end = phx_obj.segment_end_time.isoformat()
                         n_samples = phx_obj.max_samples
-                    entry = {
-                        "survey": receiver_metadata.survey_metadata.id,
-                        "station": receiver_metadata.station_metadata.id,
-                        "run": None,
-                        "start": start,
-                        "end": end,
-                        "channel_id": phx_obj.channel_id,
-                        "component": receiver_metadata.channel_map[
-                            phx_obj.channel_id
-                        ],
-                        "fn": fn,
-                        "sample_rate": phx_obj.sample_rate,
-                        "file_size": phx_obj.file_size,
-                        "n_samples": n_samples,
-                        "sequence_number": phx_obj.seq,
-                        "instrument_id": phx_obj.recording_id,
-                        "calibration_fn": None,
-                    }
+
+                    entry = dict([(key, None) for key in self._columns])
+                    entry["survey"] = (receiver_metadata.survey_metadata.id,)
+                    entry["station"] = (receiver_metadata.station_metadata.id,)
+                    entry["run"] = (None,)
+                    entry["start"] = (start,)
+                    entry["end"] = (end,)
+                    entry["channel_id"] = (phx_obj.channel_id,)
+                    entry["component"] = (
+                        receiver_metadata.channel_map[phx_obj.channel_id],
+                    )
+                    entry["fn"] = (fn,)
+                    entry["sample_rate"] = (phx_obj.sample_rate,)
+                    entry["file_size"] = (phx_obj.file_size,)
+                    entry["n_samples"] = (n_samples,)
+                    entry["sequence_number"] = (phx_obj.seq,)
+                    entry["instrument_id"] = (phx_obj.recording_id,)
+                    entry["calibration_fn"] = (None,)
                     entries.append(entry)
 
         df = self._sort_df(
