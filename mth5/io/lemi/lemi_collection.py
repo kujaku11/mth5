@@ -95,7 +95,7 @@ class LEMICollection(Collection):
             n_samples = int(lemi_obj.n_samples)
             lemi_obj.read_metadata()
 
-            entry = dict([(key, None) for key in self._columns])
+            entry = self.get_empty_entry_dict()
             entry["survey"] = self.survey_id
             entry["station"] = self.station_id
             entry["start"] = lemi_obj.start.isoformat()

@@ -76,7 +76,7 @@ class NIMSCollection(Collection):
             nims_obj = NIMS(fn)
             nims_obj.read_header()
 
-            entry = dict([(key, None) for key in self._columns])
+            entry = self.get_empty_entry_dict()
             entry["survey"] = self.survey_id
             entry["station"] = nims_obj.station
             entry["run"] = nims_obj.run_id

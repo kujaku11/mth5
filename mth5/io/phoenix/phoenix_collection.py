@@ -146,23 +146,23 @@ class PhoenixCollection(Collection):
                         end = phx_obj.segment_end_time.isoformat()
                         n_samples = phx_obj.max_samples
 
-                    entry = dict([(key, None) for key in self._columns])
-                    entry["survey"] = (receiver_metadata.survey_metadata.id,)
-                    entry["station"] = (receiver_metadata.station_metadata.id,)
+                    entry = self.get_empty_entry_dict()
+                    entry["survey"] = receiver_metadata.survey_metadata.id
+                    entry["station"] = receiver_metadata.station_metadata.id
                     entry["run"] = (None,)
-                    entry["start"] = (start,)
-                    entry["end"] = (end,)
-                    entry["channel_id"] = (phx_obj.channel_id,)
-                    entry["component"] = (
-                        receiver_metadata.channel_map[phx_obj.channel_id],
-                    )
-                    entry["fn"] = (fn,)
-                    entry["sample_rate"] = (phx_obj.sample_rate,)
-                    entry["file_size"] = (phx_obj.file_size,)
-                    entry["n_samples"] = (n_samples,)
-                    entry["sequence_number"] = (phx_obj.seq,)
-                    entry["instrument_id"] = (phx_obj.recording_id,)
-                    entry["calibration_fn"] = (None,)
+                    entry["start"] = start
+                    entry["end"] = end
+                    entry["channel_id"] = phx_obj.channel_id
+                    entry["component"] = receiver_metadata.channel_map[
+                        phx_obj.channel_id
+                    ]
+                    entry["fn"] = fn
+                    entry["sample_rate"] = phx_obj.sample_rate
+                    entry["file_size"] = phx_obj.file_size
+                    entry["n_samples"] = n_samples
+                    entry["sequence_number"] = phx_obj.seq
+                    entry["instrument_id"] = phx_obj.recording_id
+                    entry["calibration_fn"] = None
                     entries.append(entry)
 
         df = self._sort_df(

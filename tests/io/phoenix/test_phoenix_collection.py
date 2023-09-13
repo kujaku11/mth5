@@ -29,6 +29,7 @@ class TestPhoenixCollection(unittest.TestCase):
         )
 
         self.df = self.pc.to_dataframe([150, 24000])
+        self.df = self.df.fillna(0)
         self.runs = self.pc.get_runs([150, 24000])
 
         self.station = self.df.station.unique()[0]
@@ -108,8 +109,8 @@ class TestPhoenixCollection(unittest.TestCase):
 
     def test_run_elements(self):
         for key, rdf in self.runs[self.station].items():
+            rdf = rdf.fillna(0)
             with self.subTest(key):
-                test_rdf = self.df[self.df.run == key]
                 self.assertTrue(
                     (
                         self.df[self.df.run == key]
