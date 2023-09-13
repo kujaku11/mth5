@@ -94,6 +94,10 @@ class TestMTH5(unittest.TestCase):
         with self.subTest("get channel"):
             sg = self.mth5_obj.get_station("MT001", survey="test")
             self.assertIsInstance(sg, groups.StationGroup)
+        with self.subTest("get_station check survey metadata"):
+            self.assertListEqual(
+                new_station.survey_metadata.station_names, ["MT001"]
+            )
 
     def test_remove_station(self):
         self.mth5_obj.add_station("MT002", survey="test")
@@ -113,6 +117,13 @@ class TestMTH5(unittest.TestCase):
         with self.subTest("get run"):
             rg = self.mth5_obj.get_run("MT003", "MT003a", survey="test")
             self.assertIsInstance(rg, groups.RunGroup)
+
+        with self.subTest("check station metadata"):
+            self.assertListEqual(new_run.station_metadata.run_list, ["MT003a"])
+        with self.subTest("check survey metadata"):
+            self.assertListEqual(
+                new_run.survey_metadata.stations[0].run_list, ["MT003a"]
+            )
 
     def test_remove_run(self):
         new_station = self.mth5_obj.add_station("MT004", survey="test")
@@ -142,10 +153,29 @@ class TestMTH5(unittest.TestCase):
             except AttributeError:
                 print("test_add_channel.get_channel failed with AttributeError")
 
+        with self.subTest("check run metadata"):
+            self.assertListEqual(
+                new_channel.run_metadata.channels_recorded_all, ["ex"]
+            )
+        with self.subTest("check station metadata"):
+            self.assertListEqual(
+                new_channel.station_metadata.runs[
+                    "MT005a"
+                ].channels_recorded_all,
+                ["ex"],
+            )
+        with self.subTest("check survey metadata"):
+            self.assertListEqual(
+                new_channel.survey_metadata.stations["MT005"]
+                .runs["MT005a"]
+                .channels_recorded_all,
+                ["ex"],
+            )
+
     def test_remove_channel(self):
         new_station = self.mth5_obj.add_station("MT006", survey="test")
         new_run = new_station.add_run("MT006a")
-        new_channel = new_run.add_channel("Ex", "electric", None)
+        new_run.add_channel("Ex", "electric", None)
         new_run.remove_channel("Ex")
         self.assertNotIn("ex", new_run.groups_list)
 

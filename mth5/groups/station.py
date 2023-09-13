@@ -30,6 +30,7 @@ from mth5.groups import (
     TransferFunctionsGroup,
     MasterFCGroup,
 )
+from mth5.helpers import from_numpy_type
 from mth5.utils.exceptions import MTH5Error
 
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
@@ -164,25 +165,7 @@ class MasterStationGroup(BaseGroup):
     summarized all stations within a survey. To see what names are in the
     summary table:
 
-    >>> stations.summary_table.dtype.descr
-    [('id', ('|S5', {'h5py_encoding': 'ascii'})),
-     ('start', ('|S32', {'h5py_encoding': 'ascii'})),
-     ('end', ('|S32', {'h5py_encoding': 'ascii'})),
-     ('components', ('|S100', {'h5py_encoding': 'ascii'})),
-     ('measurement_type', ('|S12', {'h5py_encoding': 'ascii'})),
-     ('sample_rate', '<f8')]
-
-
-    .. note:: When a station is added an entry is added to the summary table,
-              where the information is pulled from the metadata.
-
-    >>> stations.summary_table
-    index |   id    |            start             |             end
-     | components | measurement_type | sample_rate
-     -------------------------------------------------------------------------
-     --------------------------------------------------
-     0   |  Test_01   |  1980-01-01T00:00:00+00:00 |  1980-01-01T00:00:00+00:00
-     |  Ex,Ey,Hx,Hy,Hz   |  BBMT   | 100
+    >>> stations.station_summary
 
     """
 
@@ -248,9 +231,7 @@ class MasterStationGroup(BaseGroup):
 
         """
         if station_name is None:
-            raise Exception(
-                "station name is None, do not know what to name it"
-            )
+            raise Exception("station name is None, do not know what to name it")
 
         return self._add_group(
             station_name, StationGroup, station_metadata, match="id"
@@ -505,6 +486,18 @@ class StationGroup(BaseGroup):
             self.hdf5_group["Fourier_Coefficients"], **self.dataset_options
         )
 
+    @property
+    def survey_metadata(self):
+        """survey metadata"""
+
+        meta_dict = dict(self.hdf5_group.parent.parent.attrs)
+        for key, value in meta_dict.items():
+            meta_dict[key] = from_numpy_type(value)
+        survey_metadata = metadata.Survey()
+        survey_metadata.from_dict({"survey": meta_dict})
+        survey_metadata.add_station(self.metadata)
+        return survey_metadata
+
     @BaseGroup.metadata.getter
     def metadata(self):
         """Overwrite get metadata to include run information in the station"""
@@ -580,56 +573,6 @@ class StationGroup(BaseGroup):
         )
 
         return pd.DataFrame(run_summary)
-
-    # @property
-    # def tf_summary(self):
-    #     """
-    #     Summary of transfer functions in the station
-
-    #     :return: dataframe of transfer functions
-    #     :rtype: :class:`pandas.DataFrame`
-
-    #     """
-
-    #     tf_list = []
-    #     for key, group in self.hdf5_group.items():
-    #         if group.attrs["mth5_type"].lower() in ["run"]:
-    #             comps = ",".join(
-    #                 [
-    #                     ii.decode()
-    #                     for ii in group.attrs[
-    #                         "channels_recorded_auxiliary"
-    #                     ].tolist()
-    #                     + group.attrs["channels_recorded_electric"].tolist()
-    #                     + group.attrs["channels_recorded_magnetic"].tolist()
-    #                 ]
-    #             )
-    #             tf_list.append(
-    #                 (
-    #                     group.attrs["id"],
-    #                     group.attrs["time_period.start"].split("+")[0],
-    #                     group.attrs["time_period.end"].split("+")[0],
-    #                     comps,
-    #                     group.attrs["data_type"],
-    #                     group.attrs["sample_rate"],
-    #                     group.ref,
-    #                 )
-    #             )
-    #     tf_summary = np.array(
-    #         run_list,
-    #         dtype=np.dtype(
-    #             [
-    #                 ("id", "U20"),
-    #                 ("start", "datetime64[ns]"),
-    #                 ("end", "datetime64[ns]"),
-    #                 ("estimates", "U100"),
-    #                 ("processing type", "U12"),
-    #                 ("hdf5_reference", h5py.ref_dtype),
-    #             ]
-    #         ),
-    #     )
-
-    #     return pd.DataFrame(tf_summary)
 
     def make_run_name(self, alphabet=False):
         """

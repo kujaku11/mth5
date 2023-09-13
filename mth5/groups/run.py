@@ -210,6 +210,8 @@ class RunGroup(BaseGroup):
             meta_dict[key] = from_numpy_type(value)
         station_metadata = metadata.Station()
         station_metadata.from_dict({"station": meta_dict})
+        station_metadata.add_run(self.metadata)
+
         return station_metadata
 
     @property
@@ -221,6 +223,7 @@ class RunGroup(BaseGroup):
             meta_dict[key] = from_numpy_type(value)
         survey_metadata = metadata.Survey()
         survey_metadata.from_dict({"survey": meta_dict})
+        survey_metadata.add_station(self.station_metadata)
         return survey_metadata
 
     @BaseGroup.metadata.getter
@@ -385,7 +388,7 @@ class RunGroup(BaseGroup):
                 else:
                     estimate_size = (1,)
                     chunks = CHUNK_SIZE
-                if estimate_size[0] > 2 ** 31:
+                if estimate_size[0] > 2**31:
                     estimate_size = (1,)
                     self.logger.warning(
                         "Estimated size is too large. Check start and end "
@@ -658,25 +661,33 @@ class RunGroup(BaseGroup):
         # need to update the channels recorded
         if channel_ts_obj.channel_metadata.type == "electric":
             if self.metadata.channels_recorded_electric is None:
-                self.metadata.channels_recorded_electric = [channel_ts_obj.component]
+                self.metadata.channels_recorded_electric = [
+                    channel_ts_obj.component
+                ]
             elif (
-                channel_ts_obj.component not in self.metadata.channels_recorded_electric
+                channel_ts_obj.component
+                not in self.metadata.channels_recorded_electric
             ):
                 self.metadata.channels_recorded_electric.append(
                     channel_ts_obj.component
                 )
         elif channel_ts_obj.channel_metadata.type == "magnetic":
             if self.metadata.channels_recorded_magnetic is None:
-                self.metadata.channels_recorded_magnetic = [channel_ts_obj.component]
+                self.metadata.channels_recorded_magnetic = [
+                    channel_ts_obj.component
+                ]
             elif (
-                channel_ts_obj.component not in self.metadata.channels_recorded_magnetic
+                channel_ts_obj.component
+                not in self.metadata.channels_recorded_magnetic
             ):
                 self.metadata.channels_recorded_magnetic.append(
                     channel_ts_obj.component
                 )
         elif channel_ts_obj.channel_metadata.type == "auxiliary":
             if self.metadata.channels_recorded_auxiliary is None:
-                self.metadata.channels_recorded_auxiliary = [channel_ts_obj.component]
+                self.metadata.channels_recorded_auxiliary = [
+                    channel_ts_obj.component
+                ]
             elif (
                 channel_ts_obj.component
                 not in self.metadata.channels_recorded_auxiliary
@@ -696,7 +707,9 @@ class RunGroup(BaseGroup):
         """
         channel_summary = self.channel_summary.copy()
 
-        self._metadata.time_period.start = channel_summary.start.min().isoformat()
+        self._metadata.time_period.start = (
+            channel_summary.start.min().isoformat()
+        )
         self._metadata.time_period.end = channel_summary.end.max().isoformat()
         self._metadata.sample_rate = channel_summary.sample_rate.unique()[0]
         self.write_metadata()
