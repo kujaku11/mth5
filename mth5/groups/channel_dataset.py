@@ -210,6 +210,7 @@ class ChannelDataset:
             meta_dict[key] = from_numpy_type(value)
         run_metadata = metadata.Run()
         run_metadata.from_dict({"run": meta_dict})
+        run_metadata.add_channel(self.metadata)
         return run_metadata
 
     @property
@@ -221,6 +222,7 @@ class ChannelDataset:
             meta_dict[key] = from_numpy_type(value)
         station_metadata = metadata.Station()
         station_metadata.from_dict({"station": meta_dict})
+        station_metadata.add_run(self.run_metadata)
         return station_metadata
 
     @property
@@ -232,6 +234,7 @@ class ChannelDataset:
             meta_dict[key] = from_numpy_type(value)
         survey_metadata = metadata.Survey()
         survey_metadata.from_dict({"survey": meta_dict})
+        survey_metadata.add_station(self.station_metadata)
         return survey_metadata
 
     @property

@@ -122,7 +122,7 @@ class Z3DCollection(Collection):
                 )
                 return
 
-            entry = {}
+            entry = self.get_empty_entry_dict()
             entry["survey"] = z3d_obj.metadata.job_name
             entry["station"] = z3d_obj.station
             entry["run"] = None

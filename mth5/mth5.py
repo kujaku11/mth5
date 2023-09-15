@@ -571,6 +571,8 @@ class MTH5:
     @property
     def station_list(self):
         """list of existing stations names"""
+        if not self.h5_is_read():
+            return []
         if self.file_version in ["0.1.0"]:
             return self.stations_group.groups_list
         elif self.file_version in ["0.2.0"]:
@@ -1454,6 +1456,12 @@ class MTH5:
             msg = f"Input must be a TF object not {type(tf_object)}"
             self.logger.error(msg)
             raise ValueError(msg)
+
+        if tf_object.survey_metadata.id == "0":
+            tf_object.survey_metadata.id = "unknown_survey"
+        tf_object.survey_metadata.id = helpers.validate_name(
+            tf_object.survey_metadata.id
+        )
         if self.file_version == "0.2.0":
             try:
                 # need to check survey metadata to make sure it matches,
@@ -1461,8 +1469,9 @@ class MTH5:
                 # when a TF is pulled it gets the proper survey metadata.
                 # this should eventually search over each unknonw survey
                 # for matching metadata so there aren't 100 groups
+
                 survey_group = self.get_survey(tf_object.survey_metadata.id)
-                if tf_object.survey_metadata.id == "unknown_survey":
+                if tf_object.survey_metadata.id in ["unknown_survey"]:
                     for sg_id in self.surveys_group.groups_list:
                         if "unknown_survey" in sg_id:
                             match = True
@@ -1562,6 +1571,7 @@ class MTH5:
                     tf_object.station, tf_object=tf_object
                 )
             )
+            # need to update time_period from TF here
         except (OSError, RuntimeError, ValueError):
             msg = f"TF {tf_object.station} already exists, returning existing group."
             self.logger.debug(msg)
@@ -1571,7 +1581,6 @@ class MTH5:
                 )
             )
 
-        station_group.update_station_metadata()
         survey_group.update_survey_metadata()
         return tf_group
 

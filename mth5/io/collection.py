@@ -68,6 +68,16 @@ class Collection:
     def __repr__(self):
         return f"Collection({self.file_path})"
 
+    def get_empty_entry_dict(self):
+        """
+
+        :return: an empty dictionary with the proper keys for an entry into
+         a dataframe
+        :rtype: dict
+
+        """
+        return dict([(key, None) for key in self._columns])
+
     @property
     def file_path(self):
         """
