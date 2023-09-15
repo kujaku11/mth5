@@ -263,6 +263,72 @@ class TestMTH5(unittest.TestCase):
         self.fn.unlink()
 
 
+class TestMTH5AddData(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.fn = fn_path.joinpath("test_02.mth5")
+        self.mth5_obj = MTH5(file_version="0.2.0")
+        self.mth5_obj.open_mth5(self.fn, mode="w")
+        self.survey_group = self.mth5_obj.add_survey("test")
+        self.maxDiff = None
+
+        ts_list = []
+        for comp in ["ex", "ey", "hx", "hy", "hz"]:
+            if comp[0] in ["e"]:
+                ch_type = "electric"
+            elif comp[1] in ["h", "b"]:
+                ch_type = "magnetic"
+            else:
+                ch_type = "auxiliary"
+            meta_dict = {
+                ch_type: {
+                    "component": comp,
+                    "dipole_length": 49.0,
+                    "measurement_azimuth": 12.0,
+                    "type": ch_type,
+                    "units": "counts",
+                    "time_period.start": "2020-01-01T12:00:00",
+                    "sample_rate": 1,
+                }
+            }
+            channel_ts = ChannelTS(
+                ch_type, data=np.random.rand(4096), channel_metadata=meta_dict
+            )
+            ts_list.append(channel_ts)
+        run_ts = RunTS(ts_list, {"run": {"id": "MT009a"}})
+
+        self.station = self.mth5_obj.add_station("MT009", survey="test")
+        self.run = self.station.add_run("MT009a")
+        self.channel_groups = self.run.from_runts(run_ts)
+
+    def test_channels(self):
+        self.assertListEqual(
+            ["ex", "ey", "hx", "hy", "hz"], self.run.groups_list
+        )
+
+        # check to make sure the metadata was transfered
+        for cg in self.channel_groups:
+            with self.subTest(f"{cg.metadata.component}.start"):
+                self.assertEqual(MTime("2020-01-01T12:00:00"), cg.start)
+            with self.subTest(f"{cg.metadata.component}.sample_rate"):
+                self.assertEqual(1, cg.sample_rate)
+            with self.subTest(f"{cg.metadata.component}.n_samples"):
+                self.assertEqual(4096, cg.n_samples)
+
+    def test_slice(self):
+        r_slice = self.run.to_runts(start="2020-01-01T12:00:00", n_samples=256)
+
+        with self.subTest("end time"):
+            self.assertEqual(r_slice.end, "2020-01-01T12:04:15+00:00")
+        with self.subTest("number of samples"):
+            self.assertEqual(256, r_slice.dataset.coords.indexes["time"].size)
+
+    def test_survey_metadata(self):
+        self.assertListEqual(
+            ["MT009"], self.survey_group.metadata.station_names
+        )
+
+
 # =============================================================================
 # Run
 # =============================================================================
