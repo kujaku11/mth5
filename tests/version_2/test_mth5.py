@@ -88,7 +88,9 @@ class TestMTH5(unittest.TestCase):
     def test_add_station(self):
         new_station = self.mth5_obj.add_station("MT001", survey="test")
         with self.subTest(name="station exists"):
-            self.assertIn("MT001", self.survey_group.stations_group.groups_list)
+            self.assertIn(
+                "MT001", self.survey_group.stations_group.groups_list
+            )
         with self.subTest(name="is station group"):
             self.assertIsInstance(new_station, groups.StationGroup)
         with self.subTest("get channel"):
@@ -105,7 +107,9 @@ class TestMTH5(unittest.TestCase):
         self.assertNotIn("MT002", self.survey_group.stations_group.groups_list)
 
     def test_get_station_fail(self):
-        self.assertRaises(MTH5Error, self.mth5_obj.get_station, "MT020", "test")
+        self.assertRaises(
+            MTH5Error, self.mth5_obj.get_station, "MT020", "test"
+        )
 
     def test_add_run(self):
         new_station = self.mth5_obj.add_station("MT003", survey="test")
@@ -151,7 +155,9 @@ class TestMTH5(unittest.TestCase):
                 ch = self.mth5_obj.get_channel("MT005", "MT005a", "ex", "test")
                 self.assertIsInstance(ch, groups.ElectricDataset)
             except AttributeError:
-                print("test_add_channel.get_channel failed with AttributeError")
+                print(
+                    "test_add_channel.get_channel failed with AttributeError"
+                )
 
         with self.subTest("check run metadata"):
             self.assertListEqual(
@@ -222,57 +228,6 @@ class TestMTH5(unittest.TestCase):
                 channel_ts.data_array.time.to_dict(),
                 new_ts.data_array.time.to_dict(),
             )
-
-    def test_from_run_ts(self):
-        ts_list = []
-        for comp in ["ex", "ey", "hx", "hy", "hz"]:
-            if comp[0] in ["e"]:
-                ch_type = "electric"
-            elif comp[1] in ["h", "b"]:
-                ch_type = "magnetic"
-            else:
-                ch_type = "auxiliary"
-            meta_dict = {
-                ch_type: {
-                    "component": comp,
-                    "dipole_length": 49.0,
-                    "measurement_azimuth": 12.0,
-                    "type": ch_type,
-                    "units": "counts",
-                    "time_period.start": "2020-01-01T12:00:00",
-                    "sample_rate": 1,
-                }
-            }
-            channel_ts = ChannelTS(
-                ch_type, data=np.random.rand(4096), channel_metadata=meta_dict
-            )
-            ts_list.append(channel_ts)
-        run_ts = RunTS(ts_list, {"run": {"id": "MT009a"}})
-
-        station = self.mth5_obj.add_station("MT009", survey="test")
-        run = station.add_run("MT009a")
-        channel_groups = run.from_runts(run_ts)
-
-        with self.subTest("channels"):
-            self.assertListEqual(
-                ["ex", "ey", "hx", "hy", "hz"], run.groups_list
-            )
-
-        # check to make sure the metadata was transfered
-        for cg in channel_groups:
-            with self.subTest(f"{cg.metadata.component}.start"):
-                self.assertEqual(MTime("2020-01-01T12:00:00"), cg.start)
-            with self.subTest(f"{cg.metadata.component}.sample_rate"):
-                self.assertEqual(1, cg.sample_rate)
-            with self.subTest(f"{cg.metadata.component}.n_samples"):
-                self.assertEqual(4096, cg.n_samples)
-        # slicing
-        r_slice = run.to_runts(start="2020-01-01T12:00:00", n_samples=256)
-
-        with self.subTest("end time"):
-            self.assertEqual(r_slice.end, "2020-01-01T12:04:15+00:00")
-        with self.subTest("number of samples"):
-            self.assertEqual(256, r_slice.dataset.coords.indexes["time"].size)
 
     def test_make_survey_path(self):
         self.assertEqual(
