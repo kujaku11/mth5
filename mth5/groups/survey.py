@@ -147,9 +147,7 @@ class MasterSurveyGroup(BaseGroup):
         for survey in self.groups_list:
             survey_group = self.get_survey(survey)
             for station in survey_group.stations_group.groups_list:
-                station_group = survey_group.stations_group.get_station(
-                    station
-                )
+                station_group = survey_group.stations_group.get_station(station)
                 for run in station_group.groups_list:
                     run_group = station_group.get_run(run)
                     for ch in run_group.groups_list:
@@ -454,12 +452,18 @@ class SurveyGroup(BaseGroup):
         """Overwrite get metadata to include station information in the survey"""
 
         try:
-            for key in self.stations_group.groups_list:
-                try:
-                    key_group = self.stations_group.get_station(key)
-                    self._metadata.add_station(key_group.metadata)
-                except MTH5Error:
-                    self.logger.warning(f"Could not find station {key}")
+            if self.stations_group.groups_list != self._metadata.station_names:
+                for key in self.stations_group.groups_list:
+                    try:
+                        key_group = self.stations_group.get_station(key)
+                        if (
+                            key_group.metadata.id
+                            in self._metadata.stations.keys()
+                        ):
+                            continue
+                        self._metadata.add_station(key_group.metadata)
+                    except MTH5Error:
+                        self.logger.warning(f"Could not find station {key}")
         except KeyError:
             self.logger.debug(
                 "Stations Group does not exists yet. Metadata contains no station information"
