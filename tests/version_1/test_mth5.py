@@ -210,7 +210,43 @@ class TestMTH5(unittest.TestCase):
                 == new_ts.data_array.time.to_dict()
             )
 
-    def test_from_run_ts(self):
+    def test_make_survey_path(self):
+        self.assertEqual("/Survey", self.mth5_obj._make_h5_path())
+
+    def test_make_station_path(self):
+        self.assertEqual(
+            "/Survey/Stations/mt_001",
+            self.mth5_obj._make_h5_path(station="mt 001"),
+        )
+
+    def test_make_run_path(self):
+        self.assertEqual(
+            "/Survey/Stations/mt_001/a_001",
+            self.mth5_obj._make_h5_path(station="mt 001", run="a 001"),
+        )
+
+    def test_make_channel_path(self):
+        self.assertEqual(
+            "/Survey/Stations/mt_001/a_001/ex",
+            self.mth5_obj._make_h5_path(
+                station="mt 001", run="a 001", channel="ex"
+            ),
+        )
+
+    @classmethod
+    def tearDownClass(self):
+        self.mth5_obj.close_mth5()
+        self.fn.unlink()
+
+
+class TestMTH5AddData(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.fn = fn_path.joinpath("test.mth5")
+        self.mth5_obj = MTH5(file_version="0.1.0")
+        self.mth5_obj.open_mth5(self.fn, mode="w")
+        self.maxDiff = None
+
         ts_list = []
         for comp in ["ex", "ey", "hx", "hy", "hz"]:
             if comp[0] in ["e"]:
@@ -234,48 +270,51 @@ class TestMTH5(unittest.TestCase):
                 ch_type, data=np.random.rand(4096), channel_metadata=meta_dict
             )
             ts_list.append(channel_ts)
-        run_ts = RunTS(ts_list, run_metadata={"run": {"id": "MT002a"}})
+        run_ts = RunTS(ts_list, {"run": {"id": "MT009a"}})
 
-        station = self.mth5_obj.add_station("MT002")
-        run = station.add_run("MT002a")
-        channel_groups = run.from_runts(run_ts)
+        self.station = self.mth5_obj.add_station("MT009", survey="test")
+        self.rg = self.station.add_run("MT009a")
+        self.channel_groups = self.rg.from_runts(run_ts)
 
-        with self.subTest("channels"):
-            self.assertListEqual(
-                ["ex", "ey", "hx", "hy", "hz"], run.groups_list
-            )
+    def test_channels(self):
+        self.assertListEqual(
+            ["ex", "ey", "hx", "hy", "hz"], self.rg.groups_list
+        )
 
         # check to make sure the metadata was transfered
-        for cg in channel_groups:
+        for cg in self.channel_groups:
             with self.subTest(f"{cg.metadata.component}.start"):
                 self.assertEqual(MTime("2020-01-01T12:00:00"), cg.start)
             with self.subTest(f"{cg.metadata.component}.sample_rate"):
                 self.assertEqual(1, cg.sample_rate)
             with self.subTest(f"{cg.metadata.component}.n_samples"):
                 self.assertEqual(4096, cg.n_samples)
-        # check the summary table
 
-    def test_make_survey_path(self):
-        self.assertEqual("/Survey", self.mth5_obj._make_h5_path())
+    def test_slice(self):
+        r_slice = self.rg.to_runts(start="2020-01-01T12:00:00", n_samples=256)
 
-    def test_make_station_path(self):
-        self.assertEqual(
-            "/Survey/Stations/mt_001",
-            self.mth5_obj._make_h5_path(station="mt 001"),
+        with self.subTest("end time"):
+            self.assertEqual(r_slice.end, "2020-01-01T12:04:15+00:00")
+        with self.subTest("number of samples"):
+            self.assertEqual(256, r_slice.dataset.coords.indexes["time"].size)
+
+    def test_station_in_survey_metadata(self):
+        self.assertListEqual(
+            ["MT009"], self.mth5_obj.survey_group.metadata.station_names
         )
 
-    def test_make_run_path(self):
-        self.assertEqual(
-            "/Survey/Stations/mt_001/a_001",
-            self.mth5_obj._make_h5_path(station="mt 001", run="a 001"),
+    def test_run_in_station_metadata(self):
+        self.assertListEqual(
+            ["MT009a"],
+            self.mth5_obj.survey_group.metadata.stations[0].run_list,
         )
 
-    def test_make_channel_path(self):
-        self.assertEqual(
-            "/Survey/Stations/mt_001/a_001/ex",
-            self.mth5_obj._make_h5_path(
-                station="mt 001", run="a 001", channel="ex"
-            ),
+    def test_channel_in_run_metadata(self):
+        self.assertListEqual(
+            ["ex", "ey", "hx", "hy", "hz"],
+            self.mth5_obj.survey_group.metadata.stations[0]
+            .runs[0]
+            .channels_recorded_all,
         )
 
     @classmethod
