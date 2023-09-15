@@ -298,12 +298,12 @@ class TestMTH5AddData(unittest.TestCase):
         run_ts = RunTS(ts_list, {"run": {"id": "MT009a"}})
 
         self.station = self.mth5_obj.add_station("MT009", survey="test")
-        self.run = self.station.add_run("MT009a")
-        self.channel_groups = self.run.from_runts(run_ts)
+        self.rg = self.station.add_run("MT009a")
+        self.channel_groups = self.rg.from_runts(run_ts)
 
     def test_channels(self):
         self.assertListEqual(
-            ["ex", "ey", "hx", "hy", "hz"], self.run.groups_list
+            ["ex", "ey", "hx", "hy", "hz"], self.rg.groups_list
         )
 
         # check to make sure the metadata was transfered
@@ -316,17 +316,35 @@ class TestMTH5AddData(unittest.TestCase):
                 self.assertEqual(4096, cg.n_samples)
 
     def test_slice(self):
-        r_slice = self.run.to_runts(start="2020-01-01T12:00:00", n_samples=256)
+        r_slice = self.rg.to_runts(start="2020-01-01T12:00:00", n_samples=256)
 
         with self.subTest("end time"):
             self.assertEqual(r_slice.end, "2020-01-01T12:04:15+00:00")
         with self.subTest("number of samples"):
             self.assertEqual(256, r_slice.dataset.coords.indexes["time"].size)
 
-    def test_survey_metadata(self):
+    def test_station_in_survey_metadata(self):
         self.assertListEqual(
             ["MT009"], self.survey_group.metadata.station_names
         )
+
+    def test_run_in_station_metadata(self):
+        self.assertListEqual(
+            ["MT009a"], self.survey_group.metadata.stations[0].run_list
+        )
+
+    def test_channel_in_run_metadata(self):
+        self.assertListEqual(
+            ["ex", "ey", "hx", "hy", "hz"],
+            self.survey_group.metadata.stations[0]
+            .runs[0]
+            .channels_recorded_all,
+        )
+
+    @classmethod
+    def tearDownClass(self):
+        self.mth5_obj.close_mth5()
+        self.fn.unlink()
 
 
 # =============================================================================
