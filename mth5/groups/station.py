@@ -231,7 +231,9 @@ class MasterStationGroup(BaseGroup):
 
         """
         if station_name is None:
-            raise Exception("station name is None, do not know what to name it")
+            raise Exception(
+                "station name is None, do not know what to name it"
+            )
 
         return self._add_group(
             station_name, StationGroup, station_metadata, match="id"
@@ -502,7 +504,6 @@ class StationGroup(BaseGroup):
     def metadata(self):
         """Overwrite get metadata to include run information in the station"""
 
-        self._metadata.runs = []
         for key in self.groups_list:
             if key.lower() in [
                 name.lower() for name in self._default_subgroup_names
@@ -510,7 +511,7 @@ class StationGroup(BaseGroup):
                 continue
             try:
                 key_group = self.get_run(key)
-                self._metadata.runs.append(key_group.metadata)
+                self._metadata.add_run(key_group.metadata)
             except MTH5Error:
                 self.logger.warning(f"Could not find run {key}")
         return self._metadata

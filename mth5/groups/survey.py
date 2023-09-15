@@ -147,7 +147,9 @@ class MasterSurveyGroup(BaseGroup):
         for survey in self.groups_list:
             survey_group = self.get_survey(survey)
             for station in survey_group.stations_group.groups_list:
-                station_group = survey_group.stations_group.get_station(station)
+                station_group = survey_group.stations_group.get_station(
+                    station
+                )
                 for run in station_group.groups_list:
                     run_group = station_group.get_run(run)
                     for ch in run_group.groups_list:
@@ -308,7 +310,9 @@ class MasterSurveyGroup(BaseGroup):
         survey_name = validate_name(survey_name)
 
         try:
-            return SurveyGroup(self.hdf5_group[survey_name], **self.dataset_options)
+            return SurveyGroup(
+                self.hdf5_group[survey_name], **self.dataset_options
+            )
         except KeyError:
             msg = (
                 f"{survey_name} does not exist, "
@@ -435,14 +439,32 @@ class SurveyGroup(BaseGroup):
         Initialize group by making a summary table and writing metadata
 
         """
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-        self.write_metadata()
-
+        # need to make groups first because metadata pulls from them.
         for group_name in self._default_subgroup_names:
             self.hdf5_group.create_group(f"{group_name}")
             m5_grp = getattr(self, f"{group_name.lower()}_group")
             m5_grp.initialize_group()
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        self.write_metadata()
+
+    @BaseGroup.metadata.getter
+    def metadata(self):
+        """Overwrite get metadata to include station information in the survey"""
+
+        try:
+            for key in self.stations_group.groups_list:
+                try:
+                    key_group = self.stations_group.get_station(key)
+                    self._metadata.add_station(key_group.metadata)
+                except MTH5Error:
+                    self.logger.warning(f"Could not find station {key}")
+        except KeyError:
+            self.logger.debug(
+                "Stations Group does not exists yet. Metadata contains no station information"
+            )
+        return self._metadata
 
     @property
     def stations_group(self):
@@ -461,7 +483,9 @@ class SurveyGroup(BaseGroup):
     @property
     def standards_group(self):
         """Convenience property for /Survey/Standards group"""
-        return StandardsGroup(self.hdf5_group["Standards"], **self.dataset_options)
+        return StandardsGroup(
+            self.hdf5_group["Standards"], **self.dataset_options
+        )
 
     def update_survey_metadata(self, survey_dict=None):
         """
@@ -470,7 +494,9 @@ class SurveyGroup(BaseGroup):
         """
 
         station_summary = self.stations_group.station_summary.copy()
-        self.logger.debug("Updating survey metadata from stations summary table")
+        self.logger.debug(
+            "Updating survey metadata from stations summary table"
+        )
 
         if survey_dict:
             self.metadata.from_dict(survey_dict, skip_none=True)
@@ -480,9 +506,17 @@ class SurveyGroup(BaseGroup):
         self._metadata.time_period.end_date = (
             station_summary.end.max().isoformat().split("T")[0]
         )
-        self._metadata.northwest_corner.latitude = station_summary.latitude.max()
-        self._metadata.northwest_corner.longitude = station_summary.longitude.min()
-        self._metadata.southeast_corner.latitude = station_summary.latitude.min()
-        self._metadata.southeast_corner.longitude = station_summary.longitude.max()
+        self._metadata.northwest_corner.latitude = (
+            station_summary.latitude.max()
+        )
+        self._metadata.northwest_corner.longitude = (
+            station_summary.longitude.min()
+        )
+        self._metadata.southeast_corner.latitude = (
+            station_summary.latitude.min()
+        )
+        self._metadata.southeast_corner.longitude = (
+            station_summary.longitude.max()
+        )
 
         self.write_metadata()
