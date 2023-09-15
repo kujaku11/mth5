@@ -613,19 +613,21 @@ class RunGroup(BaseGroup):
             if ch.station_metadata.id is not None:
                 if ch.station_metadata.id != self.station_metadata.id:
                     if ch.station_metadata.id not in ["0", None]:
-                        self.logger.debug(
+                        self.logger.warning(
                             f"Channel station.id {ch.station_metadata.id} != "
-                            f" group station.id {self.station_metadata.id}"
+                            f" group station.id {self.station_metadata.id}. "
+                            f"Setting to ch.station_metadata.id to {self.station_metadata.id}"
                         )
                         ch.station_metadata.id = self.station_metadata.id
             if ch.run_metadata.id is not None:
                 if ch.run_metadata.id != self.metadata.id:
                     if ch.run_metadata.id not in ["0", None]:
-                        self.logger.debug(
+                        self.logger.warning(
                             f"Channel run.id {ch.run_metadata.id} != "
-                            f" group run.id {self.metadata.id}"
+                            f" group run.id {self.metadata.id}. "
+                            f"Setting to ch.run_metadata.id to {self.metadata.id}"
                         )
-                        ch.run_metadata = self.metadata.id
+                        ch.run_metadata.id = self.metadata.id
 
             channels.append(self.from_channel_ts(ch))
         self.update_run_metadata()
