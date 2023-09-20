@@ -87,6 +87,7 @@ class BaseGroup:
         self.compression_opts = None
         self.shuffle = False
         self.fletcher32 = False
+        self._has_read_metadata = False
 
         self.logger = logger
 
@@ -103,8 +104,7 @@ class BaseGroup:
 
             # write out metadata to make sure that its in the file.
             self.write_metadata()
-        else:
-            self.read_metadata()
+
         # if any other keywords
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -186,6 +186,9 @@ class BaseGroup:
     @property
     def metadata(self):
         """Metadata for the Group based on mt_metadata.timeseries"""
+        if not self._has_read_metadata:
+            self.read_metadata()
+            self._has_read_metadata = True
         return self._metadata
 
     @metadata.setter
@@ -233,7 +236,7 @@ class BaseGroup:
         meta_dict = dict(self.hdf5_group.attrs)
         for key, value in meta_dict.items():
             meta_dict[key] = from_numpy_type(value)
-        self.metadata.from_dict({self._class_name: meta_dict})
+        self._metadata.from_dict({self._class_name: meta_dict})
 
     def write_metadata(self):
         """
@@ -291,9 +294,10 @@ class BaseGroup:
             new_group = self.hdf5_group.create_group(name)
             return_obj = group_class(new_group, **self.dataset_options)
             if group_metadata is None:
-                return_obj.metadata.set_attr_from_name(match, name)
+                return_obj._metadata.set_attr_from_name(match, name)
             else:
                 return_obj.metadata = group_metadata
+            return_obj.write_metadata()
             if hasattr(return_obj, "initialize_group"):
                 return_obj.initialize_group()
         except ValueError:
@@ -350,6 +354,8 @@ class BaseGroup:
                 " what you want into another file."
             )
         except KeyError:
-            msg = f"{name} does not exist. Check station_list for existing names"
+            msg = (
+                f"{name} does not exist. Check station_list for existing names"
+            )
             self.logger.debug(msg)
             raise MTH5Error(msg)

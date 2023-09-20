@@ -147,7 +147,9 @@ class MasterSurveyGroup(BaseGroup):
         for survey in self.groups_list:
             survey_group = self.get_survey(survey)
             for station in survey_group.stations_group.groups_list:
-                station_group = survey_group.stations_group.get_station(station)
+                station_group = survey_group.stations_group.get_station(
+                    station
+                )
                 for run in station_group.groups_list:
                     run_group = station_group.get_run(run)
                     for ch in run_group.groups_list:
@@ -450,6 +452,10 @@ class SurveyGroup(BaseGroup):
     @BaseGroup.metadata.getter
     def metadata(self):
         """Overwrite get metadata to include station information in the survey"""
+
+        if not self._has_read_metadata:
+            self.read_metadata()
+            self._has_read_metadata = True
 
         try:
             if self.stations_group.groups_list != self._metadata.station_names:

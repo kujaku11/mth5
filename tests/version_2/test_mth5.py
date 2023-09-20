@@ -85,8 +85,27 @@ class TestMTH5(unittest.TestCase):
     def test_validation(self):
         self.assertEqual(self.mth5_obj.validate_file(), True)
 
+    def test_add_survey(self):
+        new_survey = self.mth5_obj.add_survey("other")
+        with self.subTest("has_read_metadata"):
+            self.assertEqual(True, new_survey._has_read_metadata)
+        with self.subTest(name="survey exists"):
+            self.assertIn("other", self.mth5_obj.surveys_group.groups_list)
+        with self.subTest(name="is survey group"):
+            self.assertIsInstance(new_survey, groups.SurveyGroup)
+
+    def test_remove_survey(self):
+        self.mth5_obj.add_survey("remove")
+        self.mth5_obj.remove_survey("remove")
+        self.assertNotIn("remove", self.mth5_obj.surveys_group.groups_list)
+
+    def test_get_survey_fail(self):
+        self.assertRaises(MTH5Error, self.mth5_obj.get_survey, "fail")
+
     def test_add_station(self):
         new_station = self.mth5_obj.add_station("MT001", survey="test")
+        with self.subTest("has_read_metadata"):
+            self.assertEqual(True, new_station._has_read_metadata)
         with self.subTest(name="station exists"):
             self.assertIn(
                 "MT001", self.survey_group.stations_group.groups_list
@@ -114,6 +133,8 @@ class TestMTH5(unittest.TestCase):
     def test_add_run(self):
         new_station = self.mth5_obj.add_station("MT003", survey="test")
         new_run = new_station.add_run("MT003a")
+        with self.subTest("has_read_metadata"):
+            self.assertEqual(True, new_run._has_read_metadata)
         with self.subTest("groups list"):
             self.assertIn("MT003a", new_station.groups_list)
         with self.subTest("isinstance RunGroup"):

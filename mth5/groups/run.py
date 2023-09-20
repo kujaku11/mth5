@@ -230,6 +230,9 @@ class RunGroup(BaseGroup):
     def metadata(self):
         """Overwrite get metadata to include channel information in the runs"""
 
+        if not self._has_read_metadata:
+            self.read_metadata()
+            self._has_read_metadata = True
         self._metadata.channels = []
         for ch in self.groups_list:
             meta_dict = dict(self.hdf5_group[ch].attrs)
@@ -429,7 +432,9 @@ class RunGroup(BaseGroup):
             channel_obj = self.get_channel(channel_name)
 
             if data is not None:
-                self.logger.debug(f"Replacing data with new shape {data.shape}")
+                self.logger.debug(
+                    f"Replacing data with new shape {data.shape}"
+                )
                 channel_obj.replace_dataset(data)
 
                 self.logger.debug("Updating metadata")
@@ -603,7 +608,7 @@ class RunGroup(BaseGroup):
             msg = f"Input must be a mth5.timeseries.RunTS object not {type(run_ts_obj)}"
             self.logger.error(msg)
             raise MTH5Error(msg)
-        self.metadata.update(run_ts_obj.run_metadata)
+        self._metadata.update(run_ts_obj.run_metadata)
 
         channels = []
 
