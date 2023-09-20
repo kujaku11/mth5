@@ -504,6 +504,10 @@ class StationGroup(BaseGroup):
     def metadata(self):
         """Overwrite get metadata to include run information in the station"""
 
+        if not self._has_read_metadata:
+            self.read_metadata()
+            self._has_read_metadata = True
+
         for key in self.groups_list:
             if key.lower() in [
                 name.lower() for name in self._default_subgroup_names

@@ -99,50 +99,50 @@ class TestMTH5(unittest.TestCase):
             )
 
     def test_remove_station(self):
-        self.mth5_obj.add_station("MT001")
-        self.mth5_obj.remove_station("MT001")
-        self.assertNotIn("MT001", self.mth5_obj.stations_group.groups_list)
+        self.mth5_obj.add_station("MT002")
+        self.mth5_obj.remove_station("MT002")
+        self.assertNotIn("MT002", self.mth5_obj.stations_group.groups_list)
 
     def test_get_station_fail(self):
         self.assertRaises(MTH5Error, self.mth5_obj.get_station, "MT010")
 
     def test_add_run(self):
-        new_station = self.mth5_obj.add_station("MT001")
-        new_run = new_station.add_run("MT001a")
+        new_station = self.mth5_obj.add_station("MT003")
+        new_run = new_station.add_run("MT003a")
         with self.subTest("groups list"):
-            self.assertIn("MT001a", new_station.groups_list)
+            self.assertIn("MT003a", new_station.groups_list)
         with self.subTest("isinstance RunGroup"):
             self.assertIsInstance(new_run, groups.RunGroup)
         with self.subTest("get run"):
-            rg = self.mth5_obj.get_run("MT001", "MT001a")
+            rg = self.mth5_obj.get_run("MT003", "MT003a")
             self.assertIsInstance(rg, groups.RunGroup)
 
         with self.subTest("check station metadata"):
-            self.assertListEqual(new_run.station_metadata.run_list, ["MT001a"])
+            self.assertListEqual(new_run.station_metadata.run_list, ["MT003a"])
         with self.subTest("check survey metadata"):
             self.assertListEqual(
-                new_run.survey_metadata.stations[0].run_list, ["MT001a"]
+                new_run.survey_metadata.stations[0].run_list, ["MT003a"]
             )
 
     def test_remove_run(self):
-        new_station = self.mth5_obj.add_station("MT001")
-        new_station.add_run("MT001a")
-        new_station.remove_run("MT001a")
-        self.assertNotIn("MT001a", new_station.groups_list)
+        new_station = self.mth5_obj.add_station("MT004")
+        new_station.add_run("MT004a")
+        new_station.remove_run("MT004a")
+        self.assertNotIn("MT004a", new_station.groups_list)
 
     def test_get_run_fail(self):
         self.assertRaises(MTH5Error, self.mth5_obj.get_run, "MT001", "MT002a")
 
     def test_add_channel(self):
-        new_station = self.mth5_obj.add_station("MT001")
-        new_run = new_station.add_run("MT001a")
+        new_station = self.mth5_obj.add_station("MT005")
+        new_run = new_station.add_run("MT005a")
         new_channel = new_run.add_channel("Ex", "electric", None)
         with self.subTest("groups list"):
             self.assertIn("ex", new_run.groups_list)
         with self.subTest("isinstance ElectricDataset"):
             self.assertIsInstance(new_channel, groups.ElectricDataset)
         with self.subTest("get channel"):
-            ch = self.mth5_obj.get_channel("MT001", "MT001a", "ex")
+            ch = self.mth5_obj.get_channel("MT005", "MT005a", "ex")
             self.assertIsInstance(ch, groups.ElectricDataset)
 
         with self.subTest("check run metadata"):
@@ -152,30 +152,30 @@ class TestMTH5(unittest.TestCase):
         with self.subTest("check station metadata"):
             self.assertListEqual(
                 new_channel.station_metadata.runs[
-                    "MT001a"
+                    "MT005a"
                 ].channels_recorded_all,
                 ["ex"],
             )
         with self.subTest("check survey metadata"):
             self.assertListEqual(
-                new_channel.survey_metadata.stations["MT001"]
-                .runs["MT001a"]
+                new_channel.survey_metadata.stations["MT005"]
+                .runs["MT005a"]
                 .channels_recorded_all,
                 ["ex"],
             )
 
     def test_remove_channel(self):
-        new_station = self.mth5_obj.add_station("MT001")
-        new_run = new_station.add_run("MT001a")
+        new_station = self.mth5_obj.add_station("MT006")
+        new_run = new_station.add_run("MT006a")
         new_run.add_channel("Ex", "electric", None)
         new_run.remove_channel("Ex")
         self.assertNotIn("ex", new_run.groups_list)
 
     def test_get_channel_fail(self):
-        new_station = self.mth5_obj.add_station("MT001")
-        new_station.add_run("MT001a")
+        new_station = self.mth5_obj.add_station("MT007")
+        new_station.add_run("MT007a")
         self.assertRaises(
-            MTH5Error, self.mth5_obj.get_channel, "MT001", "MT001a", "Ey"
+            MTH5Error, self.mth5_obj.get_channel, "MT007", "MT007a", "Ey"
         )
 
     def test_channel_mtts(self):
