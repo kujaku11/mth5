@@ -30,6 +30,7 @@ from mth5.groups import (
     TransferFunctionsGroup,
     MasterFCGroup,
 )
+from mth5.helpers import from_numpy_type
 from mth5.utils.exceptions import MTH5Error
 
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
@@ -164,25 +165,7 @@ class MasterStationGroup(BaseGroup):
     summarized all stations within a survey. To see what names are in the
     summary table:
 
-    >>> stations.summary_table.dtype.descr
-    [('id', ('|S5', {'h5py_encoding': 'ascii'})),
-     ('start', ('|S32', {'h5py_encoding': 'ascii'})),
-     ('end', ('|S32', {'h5py_encoding': 'ascii'})),
-     ('components', ('|S100', {'h5py_encoding': 'ascii'})),
-     ('measurement_type', ('|S12', {'h5py_encoding': 'ascii'})),
-     ('sample_rate', '<f8')]
-
-
-    .. note:: When a station is added an entry is added to the summary table,
-              where the information is pulled from the metadata.
-
-    >>> stations.summary_table
-    index |   id    |            start             |             end
-     | components | measurement_type | sample_rate
-     -------------------------------------------------------------------------
-     --------------------------------------------------
-     0   |  Test_01   |  1980-01-01T00:00:00+00:00 |  1980-01-01T00:00:00+00:00
-     |  Ex,Ey,Hx,Hy,Hz   |  BBMT   | 100
+    >>> stations.station_summary
 
     """
 
@@ -248,7 +231,9 @@ class MasterStationGroup(BaseGroup):
 
         """
         if station_name is None:
-            raise Exception("station name is None, do not know what to name it")
+            raise Exception(
+                "station name is None, do not know what to name it"
+            )
 
         return self._add_group(
             station_name, StationGroup, station_metadata, match="id"
@@ -503,11 +488,26 @@ class StationGroup(BaseGroup):
             self.hdf5_group["Fourier_Coefficients"], **self.dataset_options
         )
 
+    @property
+    def survey_metadata(self):
+        """survey metadata"""
+
+        meta_dict = dict(self.hdf5_group.parent.parent.attrs)
+        for key, value in meta_dict.items():
+            meta_dict[key] = from_numpy_type(value)
+        survey_metadata = metadata.Survey()
+        survey_metadata.from_dict({"survey": meta_dict})
+        survey_metadata.add_station(self.metadata)
+        return survey_metadata
+
     @BaseGroup.metadata.getter
     def metadata(self):
         """Overwrite get metadata to include run information in the station"""
 
-        self._metadata.runs = []
+        if not self._has_read_metadata:
+            self.read_metadata()
+            self._has_read_metadata = True
+
         for key in self.groups_list:
             if key.lower() in [
                 name.lower() for name in self._default_subgroup_names
@@ -515,7 +515,7 @@ class StationGroup(BaseGroup):
                 continue
             try:
                 key_group = self.get_run(key)
-                self._metadata.runs.append(key_group.metadata)
+                self._metadata.add_run(key_group.metadata)
             except MTH5Error:
                 self.logger.warning(f"Could not find run {key}")
         return self._metadata

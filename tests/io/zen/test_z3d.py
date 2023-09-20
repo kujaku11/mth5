@@ -25,7 +25,9 @@ from mt_metadata.timeseries.filters import (
 # =============================================================================
 
 
-@unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local files")
+@unittest.skipIf(
+    "peacock" not in str(Path(__file__).as_posix()), "local files"
+)
 class TestZ3DEY(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -132,7 +134,9 @@ class TestZ3DEY(unittest.TestCase):
         self.assertEqual(self.z3d._block_len, 65536)
 
     def test_gps_flag(self):
-        self.assertEqual(self.z3d.gps_flag, b"\xff\xff\xff\x7f\x00\x00\x00\x80")
+        self.assertEqual(
+            self.z3d.gps_flag, b"\xff\xff\xff\x7f\x00\x00\x00\x80"
+        )
 
     def test_get_gps_time(self):
         self.assertTupleEqual(
@@ -183,7 +187,11 @@ class TestZ3DEY(unittest.TestCase):
             ]
         )
 
-        self.assertDictEqual(self.z3d.channel_metadata.to_dict(single=True), ey)
+        for key, value in ey.items():
+            with self.subTest(key):
+                self.assertEqual(
+                    value, self.z3d.channel_metadata.get_attr_from_name(key)
+                )
 
     def test_run_metadata(self):
         rm = OrderedDict(
@@ -210,9 +218,11 @@ class TestZ3DEY(unittest.TestCase):
             ]
         )
 
-        self.assertDictContainsSubset(
-            self.z3d.run_metadata.to_dict(single=True), rm
-        )
+        for key, value in rm.items():
+            with self.subTest(key):
+                self.assertEqual(
+                    value, self.z3d.run_metadata.get_attr_from_name(key)
+                )
 
     def test_station_metadata(self):
         sm = OrderedDict(
@@ -230,11 +240,14 @@ class TestZ3DEY(unittest.TestCase):
                 ("location.longitude", -116.8211900230401),
                 ("orientation.method", None),
                 ("orientation.reference_frame", "geographic"),
+                ("provenance.archive.name", None),
                 ("provenance.creation_time", "1980-01-01T00:00:00+00:00"),
+                ("provenance.creator.name", None),
                 ("provenance.software.author", None),
                 ("provenance.software.name", None),
                 ("provenance.software.version", None),
                 ("provenance.submitter.email", None),
+                ("provenance.submitter.name", None),
                 ("provenance.submitter.organization", None),
                 ("release_license", "CC0-1.0"),
                 ("run_list", []),
@@ -243,7 +256,11 @@ class TestZ3DEY(unittest.TestCase):
             ]
         )
 
-        self.assertDictEqual(self.z3d.station_metadata.to_dict(single=True), sm)
+        for key, value in sm.items():
+            with self.subTest(key):
+                self.assertEqual(
+                    value, self.z3d.station_metadata.get_attr_from_name(key)
+                )
 
     def test_filters(self):
         # zr = FrequencyResponseTableFilter(
@@ -320,7 +337,9 @@ class TestZ3DEY(unittest.TestCase):
             )
 
 
-@unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local files")
+@unittest.skipIf(
+    "peacock" not in str(Path(__file__).as_posix()), "local files"
+)
 class TestZ3DHY(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -581,7 +600,11 @@ class TestZ3DHY(unittest.TestCase):
             ]
         )
 
-        self.assertDictEqual(self.z3d.channel_metadata.to_dict(single=True), ey)
+        for key, value in ey.items():
+            with self.subTest(key):
+                self.assertEqual(
+                    value, self.z3d.channel_metadata.get_attr_from_name(key)
+                )
 
     def test_run_metadata(self):
         rm = OrderedDict(
@@ -608,9 +631,11 @@ class TestZ3DHY(unittest.TestCase):
             ]
         )
 
-        self.assertDictContainsSubset(
-            self.z3d.run_metadata.to_dict(single=True), rm
-        )
+        for key, value in rm.items():
+            with self.subTest(key):
+                self.assertEqual(
+                    value, self.z3d.run_metadata.get_attr_from_name(key)
+                )
 
     def test_station_metadata(self):
         sm = OrderedDict(
@@ -628,11 +653,14 @@ class TestZ3DHY(unittest.TestCase):
                 ("location.longitude", -116.8211900230401),
                 ("orientation.method", None),
                 ("orientation.reference_frame", "geographic"),
+                ("provenance.archive.name", None),
                 ("provenance.creation_time", "1980-01-01T00:00:00+00:00"),
+                ("provenance.creator.name", None),
                 ("provenance.software.author", None),
                 ("provenance.software.name", None),
                 ("provenance.software.version", None),
                 ("provenance.submitter.email", None),
+                ("provenance.submitter.name", None),
                 ("provenance.submitter.organization", None),
                 ("release_license", "CC0-1.0"),
                 ("run_list", []),
@@ -641,7 +669,11 @@ class TestZ3DHY(unittest.TestCase):
             ]
         )
 
-        self.assertDictEqual(self.z3d.station_metadata.to_dict(single=True), sm)
+        for key, value in sm.items():
+            with self.subTest(key):
+                self.assertEqual(
+                    value, self.z3d.station_metadata.get_attr_from_name(key)
+                )
 
     def test_zen_esponse(self):
         self.assertEqual(None, self.z3d.zen_response)

@@ -95,13 +95,11 @@ class LEMICollection(Collection):
             n_samples = int(lemi_obj.n_samples)
             lemi_obj.read_metadata()
 
-            entry = {}
+            entry = self.get_empty_entry_dict()
             entry["survey"] = self.survey_id
             entry["station"] = self.station_id
-            entry["run"] = None
             entry["start"] = lemi_obj.start.isoformat()
             entry["end"] = lemi_obj.end.isoformat()
-            entry["channel_id"] = 1
             entry["component"] = ",".join(
                 lemi_obj.run_metadata.channels_recorded_all
             )
@@ -109,16 +107,16 @@ class LEMICollection(Collection):
             entry["sample_rate"] = lemi_obj.sample_rate
             entry["file_size"] = lemi_obj.file_size
             entry["n_samples"] = n_samples
-            entry["sequence_number"] = 0
-            entry["instrument_id"] = "LEMI424"
-            entry["calibration_fn"] = None
 
             entries.append(entry)
 
         # make pandas dataframe and set data types
-        df = self._sort_df(
-            self._set_df_dtypes(pd.DataFrame(entries)), run_name_zeros
-        )
+        df = pd.DataFrame(entries)
+        df.loc[:, "channel_id"] = 1
+        df.loc[:, "sequence_number"] = 0
+        df.loc[:, "instrument_id"] = "LEMI424"
+
+        df = self._sort_df(self._set_df_dtypes(df), run_name_zeros)
 
         return df
 

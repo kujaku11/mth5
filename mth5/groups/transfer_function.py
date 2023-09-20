@@ -73,6 +73,52 @@ class TransferFunctionsGroup(BaseGroup):
             return pd.DataFrame(tf_list.flatten())
         return tf_list
 
+    def _update_time_period_from_tf(self, tf_object):
+        """
+
+        :param tf_object: DESCRIPTION
+        :type tf_object: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if "1980" not in tf_object.station_metadata.time_period.start:
+            if "1980" in self.hdf5_group.parent.attrs["time_period.start"]:
+                self.hdf5_group.parent.attrs[
+                    "time_period.start"
+                ] = tf_object.station_metadata.time_period.start
+
+            elif (
+                self.hdf5_group.parent.attrs["time_period.start"]
+                != tf_object.station_metadata.time_period.start
+            ):
+                if (
+                    self.hdf5_group.parent.attrs["time_period.start"]
+                    > tf_object.station_metadata.time_period.start
+                ):
+                    self.hdf5_group.parent.attrs[
+                        "time_period.start"
+                    ] = tf_object.station_metadata.time_period.start
+
+        if "1980" not in tf_object.station_metadata.time_period.end:
+            if "1980" in self.hdf5_group.parent.attrs["time_period.end"]:
+                self.hdf5_group.parent.attrs[
+                    "time_period.end"
+                ] = tf_object.station_metadata.time_period.end
+
+            elif (
+                self.hdf5_group.parent.attrs["time_period.end"]
+                != tf_object.station_metadata.time_period.end
+            ):
+                if (
+                    self.hdf5_group.parent.attrs["time_period.end"]
+                    > tf_object.station_metadata.time_period.end
+                ):
+                    self.hdf5_group.parent.attrs[
+                        "time_period.end"
+                    ] = tf_object.station_metadata.time_period.end
+
     def add_transfer_function(self, name, tf_object=None):
         """
         Add a transfer function to the group
@@ -101,6 +147,8 @@ class TransferFunctionsGroup(BaseGroup):
 
         if tf_object is not None:
             tf_group.from_tf_object(tf_object)
+            self._update_time_period_from_tf(tf_object)
+
         return tf_group
 
     def get_transfer_function(self, tf_id):
@@ -485,7 +533,9 @@ class TransferFunctionGroup(BaseGroup):
         if self.period is not None:
             tf_obj.period = self.period
         else:
-            msg = "Period must not be None to create a transfer function object"
+            msg = (
+                "Period must not be None to create a transfer function object"
+            )
             self.logger.error(msg)
             raise ValueError(msg)
         for estimate_name in self.groups_list:
