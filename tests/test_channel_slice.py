@@ -36,6 +36,11 @@ class TestMTH5ChannelSlice(unittest.TestCase):
     def test_get_index_from_time_start(self):
         self.assertEqual(0, self.ch_ds.get_index_from_time(self.ch_ds.start))
 
+    def test_get_index_from_time_start_too_early(self):
+        self.assertEqual(
+            -5, self.ch_ds.get_index_from_time(self.ch_ds.start - 5)
+        )
+
     def test_get_index_from_time_end(self):
         self.assertEqual(
             self.n_samples, self.ch_ds.get_index_from_end_time(self.ch_ds.end)
