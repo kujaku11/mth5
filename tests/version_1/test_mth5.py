@@ -85,6 +85,8 @@ class TestMTH5(unittest.TestCase):
 
     def test_add_station(self):
         new_station = self.mth5_obj.add_station("MT001")
+        with self.subTest("has_read_metadata"):
+            self.assertEqual(True, new_station._has_read_metadata)
         with self.subTest("groups list"):
             self.assertIn("MT001", self.mth5_obj.stations_group.groups_list)
         with self.subTest("isinstance StationGroup"):
@@ -109,6 +111,8 @@ class TestMTH5(unittest.TestCase):
     def test_add_run(self):
         new_station = self.mth5_obj.add_station("MT003")
         new_run = new_station.add_run("MT003a")
+        with self.subTest("has_read_metadata"):
+            self.assertEqual(True, new_run._has_read_metadata)
         with self.subTest("groups list"):
             self.assertIn("MT003a", new_station.groups_list)
         with self.subTest("isinstance RunGroup"):
