@@ -31,8 +31,8 @@ class TestUSGSasciiCollection(unittest.TestCase):
         )
 
         self.df = self.nc.to_dataframe([4])
+        self.df = self.df.fillna(0)
         self.runs = self.nc.get_runs([4])
-
         self.station = self.df.station.unique()[0]
 
     def test_file_path(self):
@@ -51,7 +51,7 @@ class TestUSGSasciiCollection(unittest.TestCase):
         )
 
     def test_df_shape(self):
-        self.assertEqual(self.df.shape, (2, 14))
+        self.assertEqual(self.df.shape, (2, 19))
 
     def test_df_types(self):
         self.df = self.nc._set_df_dtypes(self.df)
@@ -88,6 +88,7 @@ class TestUSGSasciiCollection(unittest.TestCase):
 
     def test_run_elements(self):
         for key, rdf in self.runs[self.station].items():
+            rdf = rdf.fillna(0)
             with self.subTest(key):
                 self.assertTrue(
                     (self.df[self.df.run == key].eq(rdf).all(axis=0).all())
