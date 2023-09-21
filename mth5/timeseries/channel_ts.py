@@ -595,6 +595,23 @@ class ChannelTS:
             )
             self._update_xarray_metadata()
         elif isinstance(ts_arr, pd.core.frame.DataFrame):
+            if "data" not in ts_arr.columns:
+                msg = (
+                    "Data frame needs to have a column named `data` "
+                    "where the time series data is stored"
+                )
+                self.logger.error(msg)
+                raise ValueError(msg)
+
+            if isinstance(type(ts_arr.data.dtype), type(np.object_)):
+                try:
+                    ts_arr["data"] = ts_arr.data.astype(float)
+                except ValueError:
+                    raise ValueError(
+                        "DataFrame dtype is 'object' and cannot convert "
+                        "data to float values, check data dtype."
+                    )
+
             if isinstance(
                 ts_arr.index[0], pd._libs.tslibs.timestamps.Timestamp
             ):
@@ -603,19 +620,29 @@ class ChannelTS:
                 dt = make_dt_coordinates(
                     self.start, self.sample_rate, ts_arr["data"].size
                 )
-            try:
-                self.data_array = xr.DataArray(
-                    ts_arr["data"], coords=[("time", dt)], name=self.component
-                )
-                self._update_xarray_metadata()
-            except AttributeError:
+
+            self.data_array = xr.DataArray(
+                ts_arr["data"], coords=[("time", dt)], name=self.component
+            )
+            self._update_xarray_metadata()
+
+        elif isinstance(ts_arr, pd.core.series.Series):
+            if "data" not in ts_arr.columns:
                 msg = (
                     "Data frame needs to have a column named `data` "
                     "where the time series data is stored"
                 )
                 self.logger.error(msg)
                 raise ValueError(msg)
-        elif isinstance(ts_arr, pd.core.series.Series):
+
+            if isinstance(type(ts_arr.data.dtype), type(np.object_)):
+                try:
+                    ts_arr["data"] = ts_arr.data.astype(float)
+                except ValueError:
+                    raise ValueError(
+                        "DataFrame dtype is 'object' and cannot convert "
+                        "data to float values, check data dtype."
+                    )
             if isinstance(
                 ts_arr.index[0], pd._libs.tslibs.timestamps.Timestamp
             ):
