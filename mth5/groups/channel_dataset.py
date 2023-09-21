@@ -175,7 +175,9 @@ class ChannelDataset:
             lines = ["Channel {0}:".format(self._class_name)]
             lines.append("-" * (len(lines[0]) + 2))
             info_str = "\t{0:<18}{1}"
-            lines.append(info_str.format("component:", self.metadata.component))
+            lines.append(
+                info_str.format("component:", self.metadata.component)
+            )
             lines.append(info_str.format("data type:", self.metadata.type))
             lines.append(
                 info_str.format("data format:", self.hdf5_dataset.dtype)
@@ -186,7 +188,9 @@ class ChannelDataset:
             lines.append(
                 info_str.format("start:", self.metadata.time_period.start)
             )
-            lines.append(info_str.format("end:", self.metadata.time_period.end))
+            lines.append(
+                info_str.format("end:", self.metadata.time_period.end)
+            )
             lines.append(
                 info_str.format("sample rate:", self.metadata.sample_rate)
             )
@@ -274,7 +278,7 @@ class ChannelDataset:
     @property
     def end(self):
         """return end time based on the data"""
-        return self.start + (self.n_samples / self.sample_rate)
+        return self.start + ((self.n_samples - 1) / self.sample_rate)
 
     @property
     def sample_rate(self):
@@ -300,7 +304,9 @@ class ChannelDataset:
 
         """
 
-        return make_dt_coordinates(self.start, self.sample_rate, self.n_samples)
+        return make_dt_coordinates(
+            self.start, self.sample_rate, self.n_samples
+        )
 
     def read_metadata(self):
         """
@@ -781,7 +787,9 @@ class ChannelDataset:
         """
 
         if not isinstance(channel_ts_obj, ChannelTS):
-            msg = f"Input must be a ChannelTS object not {type(channel_ts_obj)}"
+            msg = (
+                f"Input must be a ChannelTS object not {type(channel_ts_obj)}"
+            )
             self.logger.error(msg)
             raise TypeError(msg)
         if how == "replace":
@@ -926,8 +934,12 @@ class ChannelDataset:
                     self.hdf5_dataset.parent.parent.attrs["id"],
                     self.hdf5_dataset.parent.attrs["id"],
                     self.hdf5_dataset.parent.parent.attrs["location.latitude"],
-                    self.hdf5_dataset.parent.parent.attrs["location.longitude"],
-                    self.hdf5_dataset.parent.parent.attrs["location.elevation"],
+                    self.hdf5_dataset.parent.parent.attrs[
+                        "location.longitude"
+                    ],
+                    self.hdf5_dataset.parent.parent.attrs[
+                        "location.elevation"
+                    ],
                     self.metadata.component,
                     self.metadata.time_period.start,
                     self.metadata.time_period.end,
@@ -1009,44 +1021,34 @@ class ChannelDataset:
 
         """
 
-        if not isinstance(start, MTime):
-            start = MTime(start)
-        if end is not None:
-            if not isinstance(end, MTime):
-                end = MTime(end)
-        if n_samples is not None:
-            n_samples = int(n_samples)
-        if n_samples is None and end is None:
-            msg = "Must input either end_time or n_samples."
-            self.logger.error(msg)
-            raise ValueError(msg)
-        if n_samples is not None and end is not None:
-            msg = "Must input either end_time or n_samples, not both."
-            self.logger.error(msg)
-            raise ValueError(msg)
-        # if end time is given
-        if end is not None and n_samples is None:
-            start_index = self.get_index_from_time(start)
-            end_index = self.get_index_from_time(end)
-            npts = int(end_index - start_index)
-        # if n_samples are given
-        elif end is None and n_samples is not None:
-            start_index = self.get_index_from_time(start)
-            end_index = start_index + (n_samples - 1)
-            npts = n_samples
+        start_index, end_index, npts = self._get_slice_index_values(
+            start, end, n_samples
+        )
         if npts > self.hdf5_dataset.size or end_index > self.hdf5_dataset.size:
+            # leave as +1 to be inclusive
+            end_index = self.hdf5_dataset.size
             msg = (
                 "Requested slice is larger than data.  "
                 f"Slice length = {npts}, data length = {self.hdf5_dataset.shape}. "
-                f"Setting end_index to {self.hdf5_dataset.shape}"
+                f"Setting end_index to {end_index}"
             )
-            end_index = self.hdf5_dataset.size - 1
+
             self.logger.warning(msg)
-        # create a regional reference that can be used, need +1 to be inclusive
+        if start_index < 0:
+            # leave as +1 to be inclusive
+            start_index = 0
+
+            msg = (
+                f"Requested start {start} is before data start {self.start}. "
+                f"Setting start_index to {start_index} and start to {self.start}"
+            )
+
+            self.logger.warning(msg)
+            start = self.start
+
+        # create a regional reference that can be used
         try:
-            regional_ref = self.hdf5_dataset.regionref[
-                start_index : end_index + 1
-            ]
+            regional_ref = self.hdf5_dataset.regionref[start_index:end_index]
         except (OSError, RuntimeError):
             self.logger.debug(
                 "file is in read mode cannot set an internal reference, using index values"
@@ -1103,6 +1105,63 @@ class ChannelDataset:
         ) * self.metadata.sample_rate
 
         return int(round(index))
+
+    def get_index_from_end_time(self, given_time):
+        """
+        get the end index value.  Add one to be inclusive of the found index.
+
+        :param given_time: DESCRIPTION
+        :type given_time: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        return self.get_index_from_time(given_time) + 1
+
+    def _get_slice_index_values(self, start, end=None, n_samples=None):
+        """
+        Get the slice index values given (start, end) or (start, n_samples)
+
+        :param start: DESCRIPTION
+        :type start: TYPE
+        :param end: DESCRIPTION, defaults to None
+        :type end: TYPE, optional
+        :param n_samples: DESCRIPTION, defaults to None
+        :type n_samples: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        start = MTime(start)
+        if end is not None:
+            end = MTime(end)
+        if n_samples is not None:
+            n_samples = int(n_samples)
+
+        if n_samples is None and end is None:
+            msg = "Must input either end_time or n_samples."
+            self.logger.error(msg)
+            raise ValueError(msg)
+
+        if n_samples is not None and end is not None:
+            msg = "Must input either end_time or n_samples, not both."
+            self.logger.error(msg)
+            raise ValueError(msg)
+
+        # if end time is given
+        if end is not None and n_samples is None:
+            start_index = self.get_index_from_time(start)
+            end_index = self.get_index_from_end_time(end)
+            npts = int(end_index - start_index)
+        # if n_samples are given
+        elif end is None and n_samples is not None:
+            start_index = self.get_index_from_time(start)
+            # leave as +1 to be inclusive
+            end_index = start_index + n_samples
+            npts = n_samples
+
+        return start_index, end_index, npts
 
 
 @inherit_doc_string
