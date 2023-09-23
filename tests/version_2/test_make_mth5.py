@@ -21,6 +21,10 @@ from obspy.clients.fdsn.header import FDSNNoDataException
 # =============================================================================
 
 
+@unittest.skipIf(
+    "peacock" not in str(Path(__file__).as_posix()),
+    "Downloading from IRIS takes too long",
+)
 class TestMakeMTH5FDSNInventory(unittest.TestCase):
     """
     test a csv input to get metadata from IRIS
@@ -54,7 +58,9 @@ class TestMakeMTH5FDSNInventory(unittest.TestCase):
         self.channels = ["LQE", "LQN", "LFE", "LFN", "LFZ"]
 
         # Turn list into dataframe
-        self.metadata_df = pd.DataFrame(request_list, columns=self.fdsn.request_columns)
+        self.metadata_df = pd.DataFrame(
+            request_list, columns=self.fdsn.request_columns
+        )
         self.metadata_df.to_csv(self.csv_fn, index=False)
 
         self.metadata_df_fail = pd.DataFrame(
@@ -63,7 +69,9 @@ class TestMakeMTH5FDSNInventory(unittest.TestCase):
         )
 
     def test_df_input_inventory(self):
-        inv, streams = self.fdsn.get_inventory_from_df(self.metadata_df, data=False)
+        inv, streams = self.fdsn.get_inventory_from_df(
+            self.metadata_df, data=False
+        )
         with self.subTest(name="stations"):
             self.assertListEqual(
                 sorted(self.stations),
@@ -73,14 +81,28 @@ class TestMakeMTH5FDSNInventory(unittest.TestCase):
             self.assertListEqual(
                 sorted(self.channels),
                 sorted(
-                    list(set([ss.code for ss in inv.networks[0].stations[0].channels]))
+                    list(
+                        set(
+                            [
+                                ss.code
+                                for ss in inv.networks[0].stations[0].channels
+                            ]
+                        )
+                    )
                 ),
             )
         with self.subTest(name="channels_NVR08"):
             self.assertListEqual(
                 sorted(self.channels),
                 sorted(
-                    list(set([ss.code for ss in inv.networks[0].stations[1].channels]))
+                    list(
+                        set(
+                            [
+                                ss.code
+                                for ss in inv.networks[0].stations[1].channels
+                            ]
+                        )
+                    )
                 ),
             )
 
@@ -95,14 +117,28 @@ class TestMakeMTH5FDSNInventory(unittest.TestCase):
             self.assertListEqual(
                 sorted(self.channels),
                 sorted(
-                    list(set([ss.code for ss in inv.networks[0].stations[0].channels]))
+                    list(
+                        set(
+                            [
+                                ss.code
+                                for ss in inv.networks[0].stations[0].channels
+                            ]
+                        )
+                    )
                 ),
             )
         with self.subTest(name="channels_NVR08"):
             self.assertListEqual(
                 sorted(self.channels),
                 sorted(
-                    list(set([ss.code for ss in inv.networks[0].stations[1].channels]))
+                    list(
+                        set(
+                            [
+                                ss.code
+                                for ss in inv.networks[0].stations[1].channels
+                            ]
+                        )
+                    )
                 ),
             )
 
@@ -201,7 +237,9 @@ class TestMakeMTH5(unittest.TestCase):
         self.channels = ["LQE", "LQN", "LFE", "LFN", "LFZ"]
 
         # Turn list into dataframe
-        self.metadata_df = pd.DataFrame(request_list, columns=self.fdsn.request_columns)
+        self.metadata_df = pd.DataFrame(
+            request_list, columns=self.fdsn.request_columns
+        )
         self.metadata_df.to_csv(self.csv_fn, index=False)
 
         self.metadata_df_fail = pd.DataFrame(
@@ -210,7 +248,9 @@ class TestMakeMTH5(unittest.TestCase):
         )
 
         try:
-            self.m = self.make_mth5.from_fdsn_client(self.metadata_df, client="IRIS")
+            self.m = self.make_mth5.from_fdsn_client(
+                self.metadata_df, client="IRIS"
+            )
         except FDSNNoDataException as error:
             self.logger.warning(
                 "The requested data could not be found on the FDSN IRIS server, check data availability"
@@ -256,7 +296,9 @@ class TestMakeMTH5(unittest.TestCase):
     def test_cas04_channels_to_ts(self):
         for run in ["a", "b", "c", "d"]:
             for ch in ["ex", "ey", "hx", "hy", "hz"]:
-                x = self.m.get_channel("CAS04", run, ch, "CONUS_South").to_channel_ts()
+                x = self.m.get_channel(
+                    "CAS04", run, ch, "CONUS_South"
+                ).to_channel_ts()
                 with self.subTest(name=f"has data CAS04.{run}.{ch}"):
                     self.assertTrue(abs(x.ts.mean()) > 0)
                 with self.subTest(name=f"has metadata CAS04.{run}.{ch}"):
@@ -274,7 +316,9 @@ class TestMakeMTH5(unittest.TestCase):
     def test_nvr08_channels_to_ts(self):
         for run in ["a", "b", "c"]:
             for ch in ["ex", "ey", "hx", "hy", "hz"]:
-                x = self.m.get_channel("NVR08", run, ch, "CONUS_South").to_channel_ts()
+                x = self.m.get_channel(
+                    "NVR08", run, ch, "CONUS_South"
+                ).to_channel_ts()
                 with self.subTest(name=f"has data NVR08.{run}.{ch}"):
                     self.assertTrue(abs(x.ts.mean()) > 0)
                 with self.subTest(name=f"has metadata NVR08.{run}.{ch}"):
