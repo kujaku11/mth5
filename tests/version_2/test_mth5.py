@@ -107,9 +107,7 @@ class TestMTH5(unittest.TestCase):
         with self.subTest("has_read_metadata"):
             self.assertEqual(True, new_station._has_read_metadata)
         with self.subTest(name="station exists"):
-            self.assertIn(
-                "MT001", self.survey_group.stations_group.groups_list
-            )
+            self.assertIn("MT001", self.survey_group.stations_group.groups_list)
         with self.subTest(name="is station group"):
             self.assertIsInstance(new_station, groups.StationGroup)
         with self.subTest("get channel"):
@@ -126,9 +124,7 @@ class TestMTH5(unittest.TestCase):
         self.assertNotIn("MT002", self.survey_group.stations_group.groups_list)
 
     def test_get_station_fail(self):
-        self.assertRaises(
-            MTH5Error, self.mth5_obj.get_station, "MT020", "test"
-        )
+        self.assertRaises(MTH5Error, self.mth5_obj.get_station, "MT020", "test")
 
     def test_add_run(self):
         new_station = self.mth5_obj.add_station("MT003", survey="test")
@@ -164,7 +160,7 @@ class TestMTH5(unittest.TestCase):
     def test_add_channel(self):
         new_station = self.mth5_obj.add_station("MT005", survey="test")
         new_run = new_station.add_run("MT005a")
-        new_channel = new_run.add_channel("Ex", "electric", None)
+        new_channel = new_run.add_channel("Ex", "electric", None, shape=(4096,))
         new_channel.metadata.mth5_type = "electric"
         new_channel.write_metadata()
         with self.subTest("groups list"):
@@ -172,14 +168,8 @@ class TestMTH5(unittest.TestCase):
         with self.subTest("isinstance ElectricDataset"):
             self.assertIsInstance(new_channel, groups.ElectricDataset)
         with self.subTest("get channel"):
-            try:
-                ch = self.mth5_obj.get_channel("MT005", "MT005a", "ex", "test")
-                self.assertIsInstance(ch, groups.ElectricDataset)
-            except AttributeError:
-                print(
-                    "test_add_channel.get_channel failed with AttributeError"
-                )
-
+            ch = self.mth5_obj.get_channel("MT005", "MT005a", "ex", "test")
+            self.assertIsInstance(ch, groups.ElectricDataset)
         with self.subTest("check run metadata"):
             self.assertListEqual(
                 new_channel.run_metadata.channels_recorded_all, ["ex"]
@@ -198,6 +188,8 @@ class TestMTH5(unittest.TestCase):
                 .channels_recorded_all,
                 ["ex"],
             )
+        with self.subTest("check shape"):
+            self.assertTupleEqual(new_channel.hdf5_dataset.shape, (4096,))
 
     def test_remove_channel(self):
         new_station = self.mth5_obj.add_station("MT006", survey="test")

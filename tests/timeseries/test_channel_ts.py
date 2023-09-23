@@ -245,6 +245,36 @@ class TestChannelTS(unittest.TestCase):
 
         self.assertRaises(TypeError, set_ts, 10)
 
+    def test_validate_dataframe_input_fail(self):
+        df = pd.DataFrame({"data": ["s"] * 10})
+        self.assertRaises(ValueError, self.ts._validate_dataframe_input, df)
+
+    def test_validate_series_input_fail(self):
+        df = pd.DataFrame({"data": ["s"] * 10})
+        self.assertRaises(ValueError, self.ts._validate_series_input, df.data)
+
+    def test_check_pd_index(self):
+        df = pd.DataFrame({"data": ["s"] * 10})
+        self.ts.channel_metadata.sample_rate = 1.0
+        self.ts.channel_metadata.time_period.start = "1980-01-01T00:00:00"
+
+        dt = self.ts._check_pd_index(df)
+        dt_true = pd.DatetimeIndex(
+            data=[
+                "1980-01-01 00:00:00",
+                "1980-01-01 00:00:01",
+                "1980-01-01 00:00:02",
+                "1980-01-01 00:00:03",
+                "1980-01-01 00:00:04",
+                "1980-01-01 00:00:05",
+                "1980-01-01 00:00:06",
+                "1980-01-01 00:00:07",
+                "1980-01-01 00:00:08",
+                "1980-01-01 00:00:09",
+            ]
+        )
+        self.assertTrue((dt == dt_true).all())
+
     def test_df_without_index_input(self):
         self.ts.channel_metadata.sample_rate = 1.0
 
