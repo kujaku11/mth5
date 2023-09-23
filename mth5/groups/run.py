@@ -309,11 +309,13 @@ class RunGroup(BaseGroup):
         channel_type,
         data,
         channel_dtype="int32",
+        shape=None,
         max_shape=(None,),
         chunks=True,
         channel_metadata=None,
         **kwargs,
     ):
+
         """
         add a channel to the run
 
@@ -321,12 +323,31 @@ class RunGroup(BaseGroup):
         :type channel_name: string
         :param channel_type: [ electric | magnetic | auxiliary ]
         :type channel_type: string
-        :raises MTH5Error: If channel type is not correct
-
+        :param shape: Set the shape of the array, uses the data if input. Can
+         be useful if you are setting up the file. This will set the size of
+         the dataset, whereas `max_shape` sets the max shape which ends up in
+         different memory size. If you are not sure about the size of the array
+         suggest using `max_shape`, but if you already know and want to start
+         with an array of 0's use `shape`, defaults to None
+        :type shape: tuple, optional
+        :param max_shape: Absolute max shape of the data to be stored, this
+         means the data can be extended up to the given shape. If None is
+         given then the data can be extended infinitely (or until memory runs
+         out), defaults to (None,)
+        :type max_shape: tuple, optional
+        :param chunks: Use chunked storage, defaults to True
+        :type chunks: bool, optional
         :param channel_metadata: metadata container, defaults to None
         :type channel_metadata: [ :class:`mth5.metadata.Electric` |
                                  :class:`mth5.metadata.Magnetic` |
                                  :class:`mth5.metadata.Auxiliary` ], optional
+        :param **kwargs: Key word arguments
+        :type **kwargs: dictionary
+        :raises MTH5Error: If channel type is not correct
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+
         :return: Channel container
         :rtype: [ :class:`mth5.mth5_groups.ElectricDatset` |
                  :class:`mth5.mth5_groups.MagneticDatset` |
@@ -368,35 +389,39 @@ class RunGroup(BaseGroup):
             # size is 1 this causes performance issues and bloating of the
             # hdf5 file.  Set to 8196 for now.
             else:
-                if channel_metadata is not None:
-                    # can estimate a size, this will help with allocating
-                    # and set the chunk size to a realistic value
-                    if (
-                        channel_metadata.time_period.start
-                        != channel_metadata.time_period.end
-                    ):
-                        if channel_metadata.sample_rate > 0:
-                            estimate_size = (
-                                int(
-                                    (
-                                        channel_metadata.time_period._end_dt
-                                        - channel_metadata.time_period._start_dt
-                                    )
-                                    * channel_metadata.sample_rate
-                                ),
-                            )
+                if shape is None:
+                    if channel_metadata is not None:
+                        # can estimate a size, this will help with allocating
+                        # and set the chunk size to a realistic value
+                        if (
+                            channel_metadata.time_period.start
+                            != channel_metadata.time_period.end
+                        ):
+                            if channel_metadata.sample_rate > 0:
+                                estimate_size = (
+                                    int(
+                                        (
+                                            channel_metadata.time_period._end_dt
+                                            - channel_metadata.time_period._start_dt
+                                        )
+                                        * channel_metadata.sample_rate
+                                    ),
+                                )
+                        else:
+                            estimate_size = (1,)
+                            chunks = CHUNK_SIZE
                     else:
                         estimate_size = (1,)
                         chunks = CHUNK_SIZE
+                    if estimate_size[0] > 2**31:
+                        estimate_size = (1,)
+                        self.logger.warning(
+                            "Estimated size is too large. Check start and end "
+                            "times, initializing with size (1,)"
+                        )
                 else:
-                    estimate_size = (1,)
-                    chunks = CHUNK_SIZE
-                if estimate_size[0] > 2**31:
-                    estimate_size = (1,)
-                    self.logger.warning(
-                        "Estimated size is too large. Check start and end "
-                        "times, initializing with size (1,)"
-                    )
+                    estimate_size = shape
+                ## Create the dataset
                 channel_group = self.hdf5_group.create_dataset(
                     channel_name,
                     shape=estimate_size,
@@ -432,9 +457,7 @@ class RunGroup(BaseGroup):
             channel_obj = self.get_channel(channel_name)
 
             if data is not None:
-                self.logger.debug(
-                    f"Replacing data with new shape {data.shape}"
-                )
+                self.logger.debug(f"Replacing data with new shape {data.shape}")
                 channel_obj.replace_dataset(data)
 
                 self.logger.debug("Updating metadata")
