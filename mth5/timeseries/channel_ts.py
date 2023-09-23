@@ -604,7 +604,7 @@ class ChannelTS:
 
         if isinstance(type(ts_arr.dtype), type(np.object_)):
             try:
-                ts_arr["data"] = ts_arr.astype(float)
+                ts_arr = ts_arr.astype(float)
             except ValueError:
                 raise ValueError(
                     "Series dtype is 'object' and cannot convert "
