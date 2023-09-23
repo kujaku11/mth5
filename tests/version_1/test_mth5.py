@@ -140,7 +140,7 @@ class TestMTH5(unittest.TestCase):
     def test_add_channel(self):
         new_station = self.mth5_obj.add_station("MT005")
         new_run = new_station.add_run("MT005a")
-        new_channel = new_run.add_channel("Ex", "electric", None)
+        new_channel = new_run.add_channel("Ex", "electric", None, shape=(4096,))
         with self.subTest("groups list"):
             self.assertIn("ex", new_run.groups_list)
         with self.subTest("isinstance ElectricDataset"):
@@ -167,6 +167,8 @@ class TestMTH5(unittest.TestCase):
                 .channels_recorded_all,
                 ["ex"],
             )
+        with self.subTest("check shape"):
+            self.assertTupleEqual(new_channel.hdf5_dataset.shape, (4096,))
 
     def test_remove_channel(self):
         new_station = self.mth5_obj.add_station("MT006")
