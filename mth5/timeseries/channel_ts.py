@@ -459,9 +459,7 @@ class ChannelTS:
         """
 
         if station_metadata is not None:
-            station_metadata = self._validate_station_metadata(
-                station_metadata
-            )
+            station_metadata = self._validate_station_metadata(station_metadata)
 
             runs = ListDict()
             if self.run_metadata.id not in ["0", 0, None]:
@@ -536,9 +534,7 @@ class ChannelTS:
         """
 
         if channel_metadata is not None:
-            channel_metadata = self._validate_channel_metadata(
-                channel_metadata
-            )
+            channel_metadata = self._validate_channel_metadata(channel_metadata)
             if channel_metadata.component is not None:
                 channels = ListDict()
                 if (
@@ -559,7 +555,7 @@ class ChannelTS:
                 self.run_metadata.channels = channels
                 self.channel_type = self.run_metadata.channels[0].type
             else:
-                raise ValueError("Channel ID cannot be None")
+                raise ValueError("Channel 'component' cannot be None")
 
     def _check_pd_index(self, ts_arr):
         """
@@ -575,7 +571,7 @@ class ChannelTS:
             return ts_arr.index
         else:
             return make_dt_coordinates(
-                self.start, self.sample_rate, ts_arr["data"].size
+                self.start, self.sample_rate, ts_arr.shape[0]
             )
 
     def _validate_dataframe_input(self, ts_arr):
@@ -652,7 +648,7 @@ class ChannelTS:
             )
             self._update_xarray_metadata()
         elif isinstance(ts_arr, pd.core.frame.DataFrame):
-            ts_arr, dt = self._validate_datafram_input(ts_arr)
+            ts_arr, dt = self._validate_dataframe_input(ts_arr)
             self.data_array = xr.DataArray(
                 ts_arr["data"], coords=[("time", dt)], name=self.component
             )
@@ -980,9 +976,7 @@ class ChannelTS:
     def end(self):
         """MTime object"""
         if self.has_data():
-            return MTime(
-                self.data_array.coords.indexes["time"][-1].isoformat()
-            )
+            return MTime(self.data_array.coords.indexes["time"][-1].isoformat())
         else:
             self.logger.debug(
                 "Data not set yet, pulling end time from metadata.time_period.end"
@@ -1322,9 +1316,7 @@ class ChannelTS:
                 combine_list.append(ch.data_array)
         else:
             if not isinstance(other, ChannelTS):
-                raise TypeError(
-                    f"Cannot combine {type(other)} with ChannelTS."
-                )
+                raise TypeError(f"Cannot combine {type(other)} with ChannelTS.")
             if self.component != other.component:
                 raise ValueError(
                     "Cannot combine channels with different components. "
