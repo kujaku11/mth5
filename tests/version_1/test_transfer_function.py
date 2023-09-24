@@ -13,6 +13,7 @@ from pathlib import Path
 from collections import OrderedDict
 
 from mth5.mth5 import MTH5
+from mth5.utils.exceptions import MTH5Error
 
 from mt_metadata.transfer_functions.core import TF
 from mt_metadata import TF_XML
@@ -297,6 +298,32 @@ class TestTFGroup(unittest.TestCase):
                 self.assertEqual(
                     self.mth5_obj.tf_summary.array[name][0], true_dict[name]
                 )
+
+    def test_get_tf_fail(self):
+        self.assertRaises(
+            MTH5Error, self.mth5_obj.get_transfer_function, "a", "a"
+        )
+
+    def test_remove_tf_fail(self):
+        self.assertRaises(
+            MTH5Error, self.mth5_obj.remove_transfer_function, "a", "a"
+        )
+
+    def test_get_tf_object(self):
+        tf_obj = self.mth5_obj.get_transfer_function("NMX20", "NMX20")
+        self.assertEqual(tf_obj, self.tf_obj)
+
+    def test_has_estimate_tf(self):
+        self.assertTrue(self.tf_group.has_estimate("transfer_function"))
+
+    def test_has_estimate_impedance(self):
+        self.assertTrue(self.tf_group.has_estimate("impedance"))
+
+    def test_has_estimate_tipper(self):
+        self.assertTrue(self.tf_group.has_estimate("tipper"))
+
+    def test_has_estimate_covariance(self):
+        self.assertTrue(self.tf_group.has_estimate("covariance"))
 
     @classmethod
     def tearDownClass(self):
