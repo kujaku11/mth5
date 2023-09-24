@@ -180,10 +180,28 @@ class TestChannelTS(unittest.TestCase):
         x = timeseries.ChannelTS(channel_type="electric")
         self.assertFalse(self.ts == x)
 
+    def test_equal_fail(self):
+        self.assertRaises(TypeError, self.ts.__eq__, "a")
+
     def test_less_than(self):
         x = timeseries.ChannelTS(channel_type="electric")
-        x.start = "2020-01-01T12:00:00"
-        self.assertFalse(self.ts < x)
+        x.start = "1970-01-01T12:00:00"
+        self.assertTrue(self.ts < x)
+
+    def test_less_than_data_array_false(self):
+        ts1 = timeseries.ChannelTS(
+            channel_type="electric",
+            channel_metadata={"component": "ex", "sample_rate": 1},
+        )
+        ts2 = timeseries.ChannelTS(
+            channel_type="electric",
+            channel_metadata={"component": "ex", "sample_rate": 1},
+            data=np.arange(10),
+        )
+        self.assertFalse(ts1 < ts2)
+
+    def test_less_than_fail(self):
+        self.assertRaises(TypeError, self.ts.__lt__, "a")
 
     def test_greater_than(self):
         x = timeseries.ChannelTS(channel_type="electric")

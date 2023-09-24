@@ -168,7 +168,7 @@ class ChannelTS:
 
     def __lt__(self, other):
         if not isinstance(other, ChannelTS):
-            raise ValueError(f"Cannot compare ChannelTS with {type(other)}")
+            raise TypeError(f"Cannot compare ChannelTS with {type(other)}")
         self.logger.info("Only testing start time")
         if other.start < self.start and other.sample_rate == self.sample_rate:
             return True
