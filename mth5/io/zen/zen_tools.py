@@ -21,7 +21,10 @@ from mth5.io.zen import Z3D
 try:
     import win32api
 except ImportError:
-    print("WARNING: Cannot find win32api, will not be able to detect" " drive names")
+    print(
+        "WARNING: Cannot find win32api, will not be able to detect"
+        " drive names"
+    )
 # =============================================================================
 
 
@@ -179,9 +182,7 @@ def copy_from_sd(
                         channel = zt.metadata.ch_cmp.upper()
                         st = zt.schedule.Time.replace(":", "")
                         sd = zt.schedule.Date.replace("-", "")
-                        sv_fn = (
-                            f"{station}_{sd}_{st}_{int(zt.sample_rate)}_{channel}.Z3D"
-                        )
+                        sv_fn = f"{station}_{sd}_{st}_{int(zt.sample_rate)}_{channel}.Z3D"
 
                         new_fn = save_path.joinpath(sv_fn)
                         fn_list.append(new_fn)
@@ -191,7 +192,9 @@ def copy_from_sd(
                         logger.info(f"Copied {fn} to {new_fn}")
                         logger.info(f"File size is {file_size}")
                 else:
-                    logger.warning(f"Skipped {fn} because file to small {file_size}")
+                    logger.warning(
+                        f"Skipped {fn} because file to small {file_size}"
+                    )
             except WindowsError:
                 logger.warning(f"Faulty file at {fn}")
     et_test = time.ctime()
@@ -354,19 +357,13 @@ class ZenSchedule(object):
     def __init__(self):
 
         self.verbose = True
-        self.sr_dict = {"256": "0", "512": "1", "1024": "2", "2048": "3", "4096": "4"}
-        self.gain_dict = dict([(mm, 2 ** mm) for mm in range(7)])
-        self.sa_keys = [
-            "date",
-            "time",
-            "resync_yn",
-            "log_yn",
-            "tx_duty",
-            "tx_period",
-            "sr",
-            "gain",
-            "nf_yn",
-        ]
+        self.sr_dict = {
+            "256": "0",
+            "512": "1",
+            "1024": "2",
+            "2048": "3",
+            "4096": "4",
+        }
         self.sa_list = []
         self.ch_cmp_dict = {
             "1": "hx",
@@ -380,21 +377,6 @@ class ZenSchedule(object):
             [(self.ch_cmp_dict[key], key) for key in self.ch_cmp_dict]
         )
 
-        self.meta_keys = ["TX.ID", "RX.STN", "Ch.Cmp", "Ch.Number", "Ch.varAsp"]
-        self.meta_dict = {
-            "TX.ID": "none",
-            "RX.STN": "01",
-            "Ch.Cmp": "HX",
-            "Ch.Number": "1",
-            "Ch.varAsp": 50,
-        }
-        self.light_dict = {
-            "YellowLight": 0,
-            "BlueLight": 1,
-            "RedLight": 0,
-            "GreenLight": 1,
-        }
-
         self.dt_format = "%Y-%m-%d,%H:%M:%S"
         self.initial_dt = "2000-01-01,00:00:00"
         self.dt_offset = time.strftime(self.dt_format, time.gmtime())
@@ -404,38 +386,6 @@ class ZenSchedule(object):
             self.df_list, self.df_time_list, repeat=16
         )
         self._resync_pause = 20
-
-    # ==================================================
-    def read_schedule(self, fn):
-        """
-        read zen schedule file
-        """
-
-        sfid = open(fn, "r")
-        lines = sfid.readlines()
-
-        for line in lines:
-            if line.find("scheduleaction") == 0:
-                line_list = line.strip().split(" ")[1].split(",")
-                sa_dict = {}
-                for ii, key in enumerate(self.sa_keys):
-                    sa_dict[key] = line_list[ii]
-                self.sa_list.append(sa_dict)
-            elif line.find("metadata".upper()) == 0:
-                line_list = line.strip().split(" ")[1].split("|")
-                for md in line_list[:-1]:
-                    md_list = md.strip().split(",")
-                    self.meta_dict[md_list[0]] = md_list[1]
-            elif line.find("offset") == 0:
-                line_str = line.strip().split(" ")
-                self.offset = line_str[1]
-            elif line.find("Light") > 0:
-                line_list = line.strip().split(" ")
-                try:
-                    self.light_dict[line_list[0]]
-                    self.light_dict[line_list[0]] = line_list[1]
-                except KeyError:
-                    pass
 
     # ==================================================
     def add_time(
@@ -449,7 +399,10 @@ class ZenSchedule(object):
         fulldate = datetime.datetime.strptime(date_time, self.dt_format)
 
         fulldate = fulldate + datetime.timedelta(
-            days=add_days, hours=add_hours, minutes=add_minutes, seconds=add_seconds
+            days=add_days,
+            hours=add_hours,
+            minutes=add_minutes,
+            seconds=add_seconds,
         )
         return fulldate
 
@@ -501,20 +454,18 @@ class ZenSchedule(object):
                     add_seconds=dtime.tm_sec,
                 )
                 time_list.append(
-                    {"dt": ndt.strftime(self.dt_format), "df": df_list[jj - ndf + 1]}
+                    {
+                        "dt": ndt.strftime(self.dt_format),
+                        "df": df_list[jj - ndf + 1],
+                    }
                 )
                 ii += 1
         for nn, ns in enumerate(time_list):
             sdate, stime = ns["dt"].split(",")
             ns["date"] = sdate
             ns["time"] = stime
-            ns["log_yn"] = "Y"
-            ns["nf_yn"] = "Y"
             ns["sr"] = self.sr_dict[str(ns["df"])]
-            ns["tx_duty"] = "0"
-            ns["tx_period"] = "0"
-            ns["resync_yn"] = "Y"
-            ns["gain"] = "0"
+
         return time_list
 
     # ==================================================
@@ -559,205 +510,6 @@ class ZenSchedule(object):
                     "df": schedule_time_list[ii - 1]["df"],
                 }
                 return s1
-
-    # ==================================================
-    def write_schedule(
-        self,
-        station,
-        clear_schedule=True,
-        clear_metadata=True,
-        varaspace=100,
-        savename=0,
-        dt_offset=None,
-        df_list=None,
-        df_time_list=None,
-        repeat=8,
-        gain=0,
-    ):
-        """
-        write a zen schedule file
-        **Note**: for the older boxes use 'Zeus3Ini.cfg' for the savename
-        Arguments:
-        ----------
-            **station** : int
-                          station name must be an integer for the Zen, can
-                          be changed later
-            **clear_schedule** : [ True | False ]
-                                 write the line clearschedule in .cfg file
-            **clear_metadata** : [ True | False ]
-                                 write the line metadata clear in .cfg file
-            **varaspace** : electrode spacing in meters, can be changed later
-            **savename** : [ 0 | 1 | 2 | string]
-                           * 0 --> saves as zenini.cfg
-                           * 1 --> saves as Zeus2Ini.cfg
-                           * 2 --> saves as ZEN.cfg
-                           * string --> saves as the string, note the zen
-                                        boxes look for either 0 or 1, so this
-                                        option is useless
-            **dt_offset** : YYYY-MM-DD,hh:mm:ss
-                            date and time off offset to start the scheduling.
-                            if this is none then current time on computer is
-                            used. **In UTC Time**
-                            **Note**: this will shift the starting point to
-                                      match the master schedule, so that all
-                                      stations have the same schedule.
-            **df_list** : list
-                         list of sampling rates in Hz
-            **df_time_list** : list
-                              list of time intervals corresponding to df_list
-                              in hh:mm:ss format
-            **repeat** : int
-                         number of time to repeat the cycle of df_list
-            **gain** : int
-                       gain on instrument, 2 raised to this number.
-        Returns:
-        --------
-            * writes .cfg files to any connected SD card according to channel
-              number and ch_num_dict
-        """
-
-        if dt_offset is not None:
-            self.dt_offset = dt_offset
-        s1_dict = self.get_schedule_offset(
-            self.dt_offset.split(",")[1], self.master_schedule
-        )
-
-        if df_list is not None:
-            self.df_list = df_list
-        if df_time_list is not None:
-            self.df_time_list = df_time_list
-        self.master_schedule = self.make_schedule(
-            self.df_list, self.df_time_list, repeat=repeat * 3
-        )
-
-        self.sa_list = self.make_schedule(
-            self.df_list, self.df_time_list, t1_dict=s1_dict, repeat=repeat
-        )
-
-        drive_names = get_drive_names()
-        self.meta_dict["RX.STN"] = station
-        self.meta_dict["Ch.varAsp"] = "{0}".format(varaspace)
-
-        if savename == 0:
-            save_name = "zenini.cfg"
-        elif savename == 1:
-            save_name = "Zeus3Ini.cfg"
-        elif savename == 2:
-            save_name = "ZEN.cfg"
-            sfid = open(Path("c:\\MT").joinpath(save_name), "w")
-            for sa_dict in self.sa_list:
-                new_time = self.add_time(
-                    self.dt_offset,
-                    add_hours=int(sa_dict["time"][0:2]),
-                    add_minutes=int(sa_dict["time"][3:5]),
-                    add_seconds=int(sa_dict["time"][6:]),
-                )
-                sa_line = ",".join(
-                    [
-                        new_time.strftime(self.dt_format),
-                        sa_dict["resync_yn"],
-                        sa_dict["log_yn"],
-                        "2047",
-                        "1999999999",
-                        sa_dict["sr"],
-                        "0",
-                        "0",
-                        "0",
-                        "y",
-                        "n",
-                        "n",
-                        "n",
-                    ]
-                )
-                sfid.write("scheduleaction ".upper() + sa_line[:-1] + "\n")
-            meta_line = "".join(
-                ["{0},{1}|".format(key, self.meta_dict[key]) for key in self.meta_keys]
-            )
-            sfid.write("METADATA " + meta_line + "\n")
-            for lkey in list(self.light_dict.keys()):
-                sfid.write("{0} {1}\n".format(lkey, self.light_dict[lkey]))
-            sfid.close()
-            # print('Wrote {0}:\{1} to {2} as {3}'.format(dd, save_name, dname,
-            #                                       self.ch_cmp_dict[dname[-1]]))
-
-            for dd in list(drive_names.keys()):
-                dname = drive_names[dd]
-                sfid = open(Path(dd + ":\\").joinpath(save_name), "w")
-                for sa_dict in self.sa_list:
-                    new_time = self.add_time(
-                        self.dt_offset,
-                        add_hours=int(sa_dict["time"][0:2]),
-                        add_minutes=int(sa_dict["time"][3:5]),
-                        add_seconds=int(sa_dict["time"][6:]),
-                    )
-                    sa_line = ",".join(
-                        [
-                            new_time.strftime(self.dt_format),
-                            sa_dict["resync_yn"],
-                            sa_dict["log_yn"],
-                            "2047",
-                            "1999999999",
-                            sa_dict["sr"],
-                            "0",
-                            "0",
-                            "0",
-                            "y",
-                            "n",
-                            "n",
-                            "n",
-                        ]
-                    )
-                    sfid.write("scheduleaction ".upper() + sa_line[:-1] + "\n")
-                self.meta_dict["Ch.Cmp"] = self.ch_cmp_dict[dname[-1]]
-                self.meta_dict["Ch.Number"] = dname[-1]
-                meta_line = "".join(
-                    [
-                        "{0},{1}|".format(key, self.meta_dict[key])
-                        for key in self.meta_keys
-                    ]
-                )
-                sfid.write("METADATA " + meta_line + "\n")
-                for lkey in list(self.light_dict.keys()):
-                    sfid.write("{0} {1}\n".format(lkey, self.light_dict[lkey]))
-                sfid.close()
-
-                print(
-                    "Wrote {0}:\{1} to {2} as {3}".format(
-                        dd, save_name, dname, self.ch_cmp_dict[dname[-1]]
-                    )
-                )
-            return
-        else:
-            save_name = savename
-        for dd in list(drive_names.keys()):
-            dname = drive_names[dd]
-            sfid = open(Path(dd + ":\\").joinpath(save_name), "w")
-            if clear_schedule:
-                sfid.write("clearschedule\n")
-            if clear_metadata:
-                sfid.write("metadata clear\n")
-            for sa_dict in self.sa_list:
-                if gain != 0:
-                    sa_dict["gain"] = gain
-                sa_line = "".join([sa_dict[key] + "," for key in self.sa_keys])
-                sfid.write("scheduleaction " + sa_line[:-1] + "\n")
-            sfid.write("offsetschedule {0}\n".format(self.dt_offset))
-
-            self.meta_dict["Ch.Cmp"] = self.ch_cmp_dict[dname[-1]]
-            self.meta_dict["Ch.Number"] = dname[-1]
-            meta_line = "".join(
-                ["{0},{1}|".format(key, self.meta_dict[key]) for key in self.meta_keys]
-            )
-            sfid.write("METADATA " + meta_line + "\n")
-            for lkey in list(self.light_dict.keys()):
-                sfid.write("{0} {1}\n".format(lkey, self.light_dict[lkey]))
-            sfid.close()
-
-            print(
-                "Wrote {0}:\{1} to {2} as {3}".format(
-                    dd, save_name, dname, self.ch_cmp_dict[dname[-1]]
-                )
-            )
 
     def write_schedule_for_gui(
         self,
@@ -811,11 +563,16 @@ class ZenSchedule(object):
             self.df_list, self.df_time_list, repeat=repeat * 3
         )
         # estimate the first off set time
-        t_offset_dict = self.get_schedule_offset(zen_start, self.master_schedule)
+        t_offset_dict = self.get_schedule_offset(
+            zen_start, self.master_schedule
+        )
 
         # make the schedule with the offset of the first schedule action
         self.sa_list = self.make_schedule(
-            self.df_list, self.df_time_list, t1_dict=t_offset_dict, repeat=repeat
+            self.df_list,
+            self.df_time_list,
+            t1_dict=t_offset_dict,
+            repeat=repeat,
         )
 
         # make a list of lines to write to a file for ZenAcq
@@ -832,11 +589,17 @@ class ZenSchedule(object):
             duration = t1 - t0 - self._resync_pause
             sr = int(self.sr_dict[str(ss["df"])])
             if version >= 4:
-                zacq_list.append(f"$schline{ii+1} = {duration:.0f},{sr:.0f},1,0,0")
+                zacq_list.append(
+                    f"$schline{ii+1} = {duration:.0f},{sr:.0f},1,0,0"
+                )
             elif version < 4:
                 zacq_list.append(f"$schline{ii+1} = {duration:.0f},{sr:.0f},1")
         if version >= 4:
-            zacq_list += ["$DayRepeat=0", "$RelativeOffsetSeconds=0", "$AutoSleep=0"]
+            zacq_list += [
+                "$DayRepeat=0",
+                "$RelativeOffsetSeconds=0",
+                "$AutoSleep=0",
+            ]
         fn = save_path.joinpath(schedule_fn)
         with open(fn, "w") as fid:
             fid.write("\n".join(zacq_list))
