@@ -11,6 +11,7 @@ Created on Sat Sep 23 17:35:56 2023
 import unittest
 from pathlib import Path
 from collections import OrderedDict
+from types import SimpleNamespace
 
 import numpy as np
 from mth5.io.phoenix.readers.base import TSReaderBase
@@ -234,6 +235,120 @@ class TestReadPhoenixContinuous(unittest.TestCase):
             self.assertEqual(len(cr.filters_list), 1)
         with self.subTest("names"):
             self.assertEqual(cr.filters_list[0].name, "v_to_mv")
+
+    def test_rx_metadata_obj(self):
+        self.assertIsInstance(self.phx_obj.rx_metadata.obj, SimpleNamespace)
+
+    def test_rx_metadata_emap(self):
+        self.assertDictEqual(
+            self.phx_obj.rx_metadata._e_map,
+            {
+                "tag": "component",
+                "ty": "type",
+                "ga": "gain",
+                "sampleRate": "sample_rate",
+                "pot_p": "contact_resistance.start",
+                "pot_n": "contact_resistance.end",
+            },
+        )
+
+    def test_rx_metadata_hmap(self):
+        self.assertDictEqual(
+            self.phx_obj.rx_metadata._h_map,
+            {
+                "tag": "component",
+                "ty": "type",
+                "ga": "gain",
+                "sampleRate": "sample_rate",
+                "type_name": "sensor.model",
+                "type": "sensor.type",
+                "serial": "sensor.id",
+            },
+        )
+
+    def test_rx_metadata_fn(self):
+        self.assertEqual(
+            self.phx_obj.rx_metadata.fn,
+            Path(
+                "c:/Users/jpeacock/OneDrive - DOI/mt/phoenix_example_data/Sample Data/10128_2021-04-27-032436/recmeta.json"
+            ),
+        )
+
+    def test_rx_metadata_e_metadata(self):
+        for ch in ["e1", "e2"]:
+            with self.subTest(ch):
+                self.assertEqual(
+                    self.phx_obj.rx_metadata._to_electric_metadata(ch),
+                    getattr(self.phx_obj.rx_metadata, f"{ch}_metadata"),
+                )
+
+    def test_rx_metadata_h_metadata(self):
+        for ch in ["h1", "h2", "h3"]:
+            with self.subTest(ch):
+                self.assertEqual(
+                    self.phx_obj.rx_metadata._to_magnetic_metadata(ch),
+                    getattr(self.phx_obj.rx_metadata, f"{ch}_metadata"),
+                )
+
+    def test_rx_metadata_run_metadata(self):
+        rn = OrderedDict(
+            [
+                ("channels_recorded_auxiliary", []),
+                ("channels_recorded_electric", []),
+                ("channels_recorded_magnetic", []),
+                ("data_logger.firmware.author", None),
+                ("data_logger.firmware.name", None),
+                ("data_logger.firmware.version", "00010036X"),
+                ("data_logger.id", None),
+                ("data_logger.manufacturer", None),
+                ("data_logger.model", "MTU-5C"),
+                ("data_logger.timing_system.drift", -2.0),
+                ("data_logger.timing_system.type", "GPS"),
+                ("data_logger.timing_system.uncertainty", 0.0),
+                ("data_logger.type", "RMT03"),
+                ("data_type", "BBMT"),
+                ("id", None),
+                ("sample_rate", 0.0),
+                ("time_period.end", "1980-01-01T00:00:00+00:00"),
+                ("time_period.start", "1980-01-01T00:00:00+00:00"),
+            ]
+        )
+
+        self.assertDictEqual(self.phx_obj.rx_metadata.run_metadata, rn)
+
+    def test_station_metadata(self):
+        st = OrderedDict(
+            [
+                ("acquired_by.name", "J"),
+                ("acquired_by.organization", "Phoenix Geophysics"),
+                ("channels_recorded", []),
+                ("data_type", "BBMT"),
+                ("geographic_name", None),
+                ("id", "Masked Cordinates"),
+                ("location.declination.model", "WMM"),
+                ("location.declination.value", 0.0),
+                ("location.elevation", 181.129387),
+                ("location.latitude", 43.69602),
+                ("location.longitude", -79.393771),
+                ("orientation.method", None),
+                ("orientation.reference_frame", "geographic"),
+                ("provenance.archive.name", None),
+                ("provenance.creation_time", "1980-01-01T00:00:00+00:00"),
+                ("provenance.creator.name", None),
+                ("provenance.software.author", None),
+                ("provenance.software.name", None),
+                ("provenance.software.version", None),
+                ("provenance.submitter.email", None),
+                ("provenance.submitter.name", None),
+                ("provenance.submitter.organization", None),
+                ("release_license", "CC0-1.0"),
+                ("run_list", []),
+                ("time_period.end", "1980-01-01T00:00:00+00:00"),
+                ("time_period.start", "1980-01-01T00:00:00+00:00"),
+            ]
+        )
+
+        self.assertDictEqual(self.phx_obj.rx_metadata.station_metadata, st)
 
 
 # =============================================================================
