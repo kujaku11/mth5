@@ -13,10 +13,11 @@ is a fancy way of saying f x 6 and f x 8.
 # =============================================================================
 from pathlib import Path
 import numpy as np
+from loguru import logger
 
 from mt_metadata.timeseries.filters import FrequencyResponseTableFilter
 from mt_metadata.utils.mttime import MTime
-from mth5.utils.mth5_logger import setup_logger
+
 
 # =============================================================================
 # Variables
@@ -24,13 +25,18 @@ from mth5.utils.mth5_logger import setup_logger
 class CoilResponse:
     def __init__(self, calibration_file=None, angular_frequency=False):
 
-        self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = logger
         self.coil_calibrations = {}
         self._n_frequencies = 48
         self.calibration_file = calibration_file
         self.angular_frequency = angular_frequency
         if calibration_file:
             self.read_antenna_file()
+        self._extrapolate_values = {
+            "low": {"frequency": 1e-10, "amplitude": 1e-8, "phase": np.pi / 2},
+            "high": {"frequency": 1e5, "amplitude": 1e-4, "phase": np.pi / 6},
+        }
+        self._low_frequency_cutoff = 250
 
     @property
     def calibration_file(self):
@@ -40,7 +46,6 @@ class CoilResponse:
     def calibration_file(self, fn):
         if fn is not None:
             self._calibration_fn = Path(fn)
-
         else:
             self._calibration_fn = None
 
@@ -54,7 +59,6 @@ class CoilResponse:
         """
         if self.calibration_file is None:
             return False
-
         if self.calibration_file.exists():
             return True
         return False
@@ -75,7 +79,6 @@ class CoilResponse:
 
         if antenna_calibration_file is not None:
             self.calibration_file = antenna_calibration_file
-
         cal_dtype = [
             ("frequency", float),
             ("amplitude", float),
@@ -84,7 +87,6 @@ class CoilResponse:
 
         with open(self.calibration_file, "r") as fid:
             lines = fid.readlines()
-
         self.coil_calibrations = {}
         ff = -2
         for line in lines:
@@ -92,7 +94,6 @@ class CoilResponse:
                 f = float(line.split()[2].strip())
                 if self.angular_frequency:
                     f = 2 * np.pi * f
-
                 ff += 2
             elif len(line.strip().split()) == 0:
                 continue
@@ -110,11 +111,10 @@ class CoilResponse:
                     self.coil_calibrations[ant] = np.zeros(
                         self._n_frequencies, dtype=cal_dtype
                     )
-
                 self.coil_calibrations[ant][ff] = (f * 6, amp6, phase6)
                 self.coil_calibrations[ant][ff + 1] = (f * 8, amp8, phase8)
 
-    def get_coil_response_fap(self, coil_number):
+    def get_coil_response_fap(self, coil_number, extrapolate=True):
         """
         Read an amtant.cal file provided by Zonge.
 
@@ -131,30 +131,62 @@ class CoilResponse:
 
         if self.coil_calibrations is {}:
             self.read_antenna_file(self.calibration_file)
-
         if self.has_coil_number(coil_number):
             cal = self.coil_calibrations[str(int(coil_number))]
             fap = FrequencyResponseTableFilter()
             fap.frequencies = cal["frequency"]
             fap.amplitudes = cal["amplitude"]
             fap.phases = cal["phase"]
-            fap.units_in = "millivolts"
-            fap.units_out = "nanotesla"
-            fap.name = f"coil_{coil_number}"
+            fap.units_out = "millivolts"
+            fap.units_in = "nanotesla"
+            fap.name = f"ant4_{coil_number}_response"
             fap.instrument_type = "ANT4 induction coil"
             fap.calibration_date = MTime(
                 self.calibration_file.stat().st_mtime
             ).isoformat()
 
+            if extrapolate:
+                return self.extrapolate(fap)
             return fap
-
         else:
             self.logger.error(
                 f"Could not find {coil_number} in {self.calibration_file}"
             )
-            raise KeyError(
-                f"Could not find {coil_number} in {self.calibration_file}"
-            )
+            raise KeyError(f"Could not find {coil_number} in {self.calibration_file}")
+
+    def extrapolate(self, fap):
+        """
+        Extrapolate assuming log-linear relationship
+        """
+
+        if self._low_frequency_cutoff is not None:
+            index = np.where(fap.frequencies < 1.0 / self._low_frequency_cutoff)[0][-1]
+        else:
+            index = 0
+        new_fap = fap.copy()
+        new_fap.frequencies = np.append(
+            np.append(
+                [self._extrapolate_values["low"]["frequency"]],
+                fap.frequencies[index:],
+            ),
+            self._extrapolate_values["high"]["frequency"],
+        )
+        new_fap.amplitudes = np.append(
+            np.append(
+                [self._extrapolate_values["low"]["amplitude"]],
+                fap.amplitudes[index:],
+            ),
+            self._extrapolate_values["high"]["amplitude"],
+        )
+        new_fap.phases = np.append(
+            np.append(
+                [self._extrapolate_values["low"]["phase"]],
+                fap.phases[index:],
+            ),
+            self._extrapolate_values["high"]["phase"],
+        )
+
+        return new_fap
 
     def has_coil_number(self, coil_number):
         """
@@ -167,12 +199,14 @@ class CoilResponse:
         :rtype: boolean
 
         """
+        if coil_number is None:
+            return False
         if self.file_exists():
-            coil_number = str(int(coil_number))
+            coil_number = str(int(float(coil_number)))
 
             if coil_number in self.coil_calibrations.keys():
                 return True
-            self.logger.error(
+            self.logger.debug(
                 f"Could not find {coil_number} in {self.calibration_file}"
             )
             return False

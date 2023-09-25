@@ -147,7 +147,9 @@ class MasterSurveyGroup(BaseGroup):
         for survey in self.groups_list:
             survey_group = self.get_survey(survey)
             for station in survey_group.stations_group.groups_list:
-                station_group = survey_group.stations_group.get_station(station)
+                station_group = survey_group.stations_group.get_station(
+                    station
+                )
                 for run in station_group.groups_list:
                     run_group = station_group.get_run(run)
                     for ch in run_group.groups_list:
@@ -195,7 +197,6 @@ class MasterSurveyGroup(BaseGroup):
                             ),
                         )
                         ch_list.append(entry)
-
         ch_list = np.array(ch_list)
         return pd.DataFrame(ch_list.flatten())
 
@@ -256,36 +257,31 @@ class MasterSurveyGroup(BaseGroup):
         """
         if survey_name is None:
             raise Exception("survey name is None, do not know what to name it")
-
         survey_name = validate_name(survey_name)
         try:
             survey_group = self.hdf5_group.create_group(survey_name)
-            self.logger.debug("Created group %s", survey_group.name)
+            self.logger.debug(f"Created group {survey_group.name}")
 
             if survey_metadata is None:
                 survey_metadata = Survey(id=survey_name)
-
             else:
                 if validate_name(survey_metadata.id) != survey_name:
                     msg = (
                         f"survey group name {survey_name} must be same as "
-                        + f"survey id {survey_metadata.id.replace(' ', '_')}"
+                        f"survey id {survey_metadata.id.replace(' ', '_')}"
                     )
                     self.logger.error(msg)
                     raise MTH5Error(msg)
-
             survey_obj = SurveyGroup(
                 survey_group,
                 survey_metadata=survey_metadata,
                 **self.dataset_options,
             )
             survey_obj.initialize_group()
-
         except ValueError:
-            msg = "survey %s already exists, returning existing group."
-            self.logger.info(msg, survey_name)
+            msg = f"survey {survey_name} already exists, returning existing group."
+            self.logger.info(msg)
             survey_obj = self.get_survey(survey_name)
-
         return survey_obj
 
     def get_survey(self, survey_name):
@@ -355,15 +351,12 @@ class MasterSurveyGroup(BaseGroup):
             del self.hdf5_group[survey_name]
             self.logger.info(
                 "Deleting a survey does not reduce the HDF5"
-                + "file size it simply remove the reference. If "
-                + "file size reduction is your goal, simply copy"
-                + " what you want into another file."
+                "file size it simply remove the reference. If "
+                "file size reduction is your goal, simply copy"
+                " what you want into another file."
             )
         except KeyError:
-            msg = (
-                f"{survey_name} does not exist, "
-                + "check survey_list for existing names"
-            )
+            msg = f"{survey_name} does not exist, check survey_list for existing names"
             self.logger.exception(msg)
             raise MTH5Error(msg)
 
@@ -446,14 +439,42 @@ class SurveyGroup(BaseGroup):
         Initialize group by making a summary table and writing metadata
 
         """
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-        self.write_metadata()
-
+        # need to make groups first because metadata pulls from them.
         for group_name in self._default_subgroup_names:
             self.hdf5_group.create_group(f"{group_name}")
             m5_grp = getattr(self, f"{group_name.lower()}_group")
             m5_grp.initialize_group()
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        self.write_metadata()
+
+    @BaseGroup.metadata.getter
+    def metadata(self):
+        """Overwrite get metadata to include station information in the survey"""
+
+        if not self._has_read_metadata:
+            self.read_metadata()
+            self._has_read_metadata = True
+
+        try:
+            if self.stations_group.groups_list != self._metadata.station_names:
+                for key in self.stations_group.groups_list:
+                    try:
+                        key_group = self.stations_group.get_station(key)
+                        if (
+                            key_group.metadata.id
+                            in self._metadata.stations.keys()
+                        ):
+                            continue
+                        self._metadata.add_station(key_group.metadata)
+                    except MTH5Error:
+                        self.logger.warning(f"Could not find station {key}")
+        except KeyError:
+            self.logger.debug(
+                "Stations Group does not exists yet. Metadata contains no station information"
+            )
+        return self._metadata
 
     @property
     def stations_group(self):
@@ -489,7 +510,6 @@ class SurveyGroup(BaseGroup):
 
         if survey_dict:
             self.metadata.from_dict(survey_dict, skip_none=True)
-
         self._metadata.time_period.start_date = (
             station_summary.start.min().isoformat().split("T")[0]
         )

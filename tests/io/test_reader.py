@@ -9,13 +9,10 @@ Created on Mon Sep 12 12:30:32 2022
 # Imports
 # =============================================================================
 import unittest
-import logging
 
 from mth5.io import reader
-from mth5.utils.mth5_logger import setup_logger
 
 # =============================================================================
-logger = setup_logger("test_reader")
 
 
 class TestReader(unittest.TestCase):

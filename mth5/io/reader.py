@@ -49,11 +49,10 @@ Created on Wed Aug 26 10:32:45 2020
 # =============================================================================
 
 from pathlib import Path
-import logging
+from loguru import logger
 
 from mth5.io import zen, nims, usgs_ascii, miniseed, lemi, phoenix
 
-logger = logging.getLogger(__name__)
 # =============================================================================
 # generic reader for any file type
 # =============================================================================

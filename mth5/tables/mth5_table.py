@@ -16,9 +16,9 @@ import copy
 import h5py
 import numpy as np
 import pandas as pd
+from loguru import logger
 
 from mth5.utils.exceptions import MTH5TableError
-from mth5.utils.mth5_logger import setup_logger
 
 # =============================================================================
 # MTH5 Table Class
@@ -35,14 +35,14 @@ class MTH5Table:
     """
 
     def __init__(self, hdf5_dataset):
-        self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = logger
 
         self.hdf5_reference = None
         if isinstance(hdf5_dataset, h5py.Dataset):
             self.array = weakref.ref(hdf5_dataset)()
             self.hdf5_reference = hdf5_dataset.ref
         else:
-            msg = "Input must be a h5py.Dataset not {0}".format(type(hdf5_dataset))
+            msg = f"Input must be a h5py.Dataset not {type(hdf5_dataset)}"
             self.logger.error(msg)
             raise MTH5TableError(msg)
 
@@ -68,7 +68,6 @@ class MTH5Table:
             ]
             lines.append("-" * len(lines[0]))
             return "\n".join(lines)
-
         length_dict = dict(
             [
                 (key, max([len(str(b)) for b in self.array[key]]))
@@ -93,19 +92,13 @@ class MTH5Table:
                     element = element.decode()
                 try:
                     line.append("{0:^{1}}".format(element, length_dict[key]))
-
                 except TypeError as error:
                     if isinstance(element, h5py.h5r.Reference):
-                        msg = "{0}: Cannot represent h5 reference as a string"
-                        self.logger.debug(msg.format(error))
-                        line.append(
-                            "{0:^{1}}".format(
-                                "<HDF5 object reference>", length_dict[key]
-                            )
-                        )
+                        msg = f"{error}: Cannot represent h5 reference as a string"
+                        self.logger.debug(msg)
+                        line.append(f"<HDF5 object reference>: {length_dict[key]:^}")
                     else:
                         self.logger.exception(f"{error}")
-
             lines.append(" | ".join(line))
         return "\n".join(lines)
 
@@ -118,7 +111,7 @@ class MTH5Table:
         elif isinstance(other, h5py.Dataset):
             return self.array == other
         else:
-            msg = "Cannot compare type={0}".format(type(other))
+            msg = f"Cannot compare type={type(other)}"
             self.logger.error(msg)
             raise TypeError(msg)
 
@@ -133,7 +126,7 @@ class MTH5Table:
         try:
             return self.array.dtype
         except AttributeError as error:
-            msg = "{0}, dataframe is not initiated yet".format(error)
+            msg = f"{error}, dataframe is not initiated yet"
             self.logger.warning(msg)
             return None
 
@@ -144,7 +137,6 @@ class MTH5Table:
 
         if self.dtype == other_dtype:
             return True
-
         return False
 
     @property
@@ -180,14 +172,12 @@ class MTH5Table:
         """
         if isinstance(value, str):
             value = np.bytes_(value)
-
         # use numpy datetime for testing against time.
         if column in ["start", "end", "start_date", "end_date"]:
             test_array = self.array[column].astype(np.datetime64)
             value = np.datetime64(value)
         else:
             test_array = self.array[column]
-
         if test == "eq":
             index_values = np.where(test_array == value)[0]
         elif test == "lt":
@@ -203,13 +193,11 @@ class MTH5Table:
                 msg = "If testing for between value must be an iterable of length 2."
                 self.logger.error(msg)
                 raise ValueError(msg)
-
             index_values = np.where((test_array > value[0]) & (test_array < value[1]))[
                 0
             ]
         else:
             raise ValueError("Test {0} not understood".format(test))
-
         return index_values
 
     def add_row(self, row, index=None):
@@ -232,15 +220,15 @@ class MTH5Table:
         """
 
         if not isinstance(row, (np.ndarray)):
-            msg = "Input must be an numpy.ndarray" + "not {0}".format(type(row))
+            msg = f"Input must be an numpy.ndarray not {type(row)}"
         if isinstance(row, np.ndarray):
             if not self.check_dtypes(row.dtype):
-                msg = "{0}\nInput dtypes:\n{1}\n\nTable dtypes:\n{2}".format(
-                    "Data types are not equal:", row.dtype, self.dtype
+                msg = (
+                    f"Data types are not equal. Input dtypes: "
+                    f"{row.dtype} Table dtypes: {self.dtype}"
                 )
                 self.logger.error(msg)
                 raise ValueError(msg)
-
         if index is None:
             index = self.nrows
             if self.nrows == 1:
@@ -252,7 +240,6 @@ class MTH5Table:
                     if self.array[name][0] != null_array[name][0]:
                         match = False
                         break
-
                 if match:
                     index = 0
                 else:
@@ -263,7 +250,7 @@ class MTH5Table:
                 self.array.resize(new_shape)
         # add the row
         self.array[index] = row
-        self.logger.debug("Added row as index {0} with values {1}".format(index, row))
+        self.logger.debug(f"Added row as index {index} with values {row}")
 
         return index
 
@@ -283,7 +270,6 @@ class MTH5Table:
         try:
             row_index = self.locate("hdf5_reference", entry["hdf5_reference"])[0]
             return self.add_row(entry, index=row_index)
-
         except IndexError:
             self.logger.debug("Could not find row, adding a new one")
             return self.add_row(entry)
@@ -312,9 +298,8 @@ class MTH5Table:
         null_array = np.empty((1,), dtype=self.dtype)
         try:
             return self.add_row(null_array, index=index)
-
         except IndexError as error:
-            msg = "Could not find index {0} in shape {1}".format(index, self.shape())
+            msg = f"Could not find index {index} in shape {self.shape()}"
             self.logger.exception(msg)
             raise IndexError(f"{error}\n{msg}")
 
@@ -344,8 +329,8 @@ class MTH5Table:
 
     def clear_table(self):
         """
-        clear a table, 
-        
+        clear a table,
+
         Basically delete the table and start over
         :return: DESCRIPTION
         :rtype: TYPE

@@ -130,8 +130,8 @@ class NativeReader(TSReaderBase):
             difCount = frameCount - self.last_frame
             if difCount != 1:
                 self.logger.warning(
-                    "Ch [%s] Missing frames at %d [%d]\n"
-                    % (self.channel_id, frameCount, difCount)
+                    f"Ch [{self.channel_id}] Missing frames at {frameCount} "
+                    f"[{difCount}]"
                 )
             self.last_frame = frameCount
 
@@ -148,8 +148,8 @@ class NativeReader(TSReaderBase):
                 satCount = (dataFooter[0] & self.footer_sat_mask) >> 24
                 if satCount:
                     self.logger.warning(
-                        "Ch [%s] Frame %d has %d saturations"
-                        % (self.ch_id, frameCount, satCount)
+                        f"Ch [{self.ch_id}] Frame {frameCount} has {satCount} "
+                        "saturations"
                     )
         return _data_buf
 
@@ -272,7 +272,7 @@ class NativeReader(TSReaderBase):
         self.last_frame += num_frames
         return True
 
-    def to_channel_ts(self):
+    def to_channel_ts(self, rxcal_fn=None, scal_fn=None):
         """
         convert to a ChannelTS object
 
@@ -280,12 +280,15 @@ class NativeReader(TSReaderBase):
         :rtype: TYPE
 
         """
-        data, footer = self.read()
-        ch_metadata = self.channel_metadata()
+        data, footer = self.read_sequence()
+        ch_metadata = self.channel_metadata
         return ChannelTS(
             channel_type=ch_metadata.type,
             data=data,
             channel_metadata=ch_metadata,
-            run_metadata=self.run_metadata(),
-            station_metadata=self.station_metadata(),
+            run_metadata=self.run_metadata,
+            station_metadata=self.station_metadata,
+            channel_response_filter=self.get_channel_response_filter(
+                rxcal_fn=rxcal_fn, scal_fn=scal_fn
+            ),
         )

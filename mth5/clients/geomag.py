@@ -479,6 +479,7 @@ class USGSGeomag:
         self.fletcher32 = True
         self.data_level = 1
         self.mth5_version = "0.2.0"
+        self._ch_map = {"x": "hx", "y": "hy", "z": "hz"}
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -609,49 +610,51 @@ class USGSGeomag:
 
         fn = self._make_filename(self.save_path, request_df)
 
-        m = MTH5(
+        with MTH5(
             file_version=self.mth5_version,
             compression=self.compression,
             compression_opts=self.compression_opts,
             shuffle=self.shuffle,
             fletcher32=self.fletcher32,
             data_level=self.data_level,
-        )
-        m.open_mth5(fn)
+        ) as m:
+            m.open_mth5(fn)
 
-        if self.mth5_version in ["0.1.0"]:
-            survey_group = m.survey_group
-            survey_group.metadata.id = "USGS-GEOMAG"
-        elif self.mth5_version in ["0.2.0"]:
-            survey_group = m.add_survey("USGS-GEOMAG")
-        else:
-            raise ValueError(
-                f"MTH5 version must be [ '0.1.0' | '0.2.0' ] not {self.mth5_version}"
-            )
+            if self.mth5_version in ["0.1.0"]:
+                survey_group = m.survey_group
+                survey_group.metadata.id = "USGS-GEOMAG"
+            elif self.mth5_version in ["0.2.0"]:
+                survey_group = m.add_survey("USGS-GEOMAG")
+            else:
+                raise ValueError(
+                    f"MTH5 version must be [ '0.1.0' | '0.2.0' ] not {self.mth5_version}"
+                )
 
-        for row in request_df.itertuples():
-            geomag_client = GeomagClient(
-                observatory=row.observatory,
-                type=row.type,
-                elements=row.elements,
-                start=row.start,
-                end=row.end,
-                sampling_period=row.sampling_period,
-            )
+            for row in request_df.itertuples():
+                geomag_client = GeomagClient(
+                    observatory=row.observatory,
+                    type=row.type,
+                    elements=row.elements,
+                    start=row.start,
+                    end=row.end,
+                    sampling_period=row.sampling_period,
+                    **{"_ch_map": {"x": "hx", "y": "hy", "z": "hz"}},
+                )
 
-            run = geomag_client.get_data(run_id=row.run)
-            station_group = survey_group.stations_group.add_station(
-                run.station_metadata.id, station_metadata=run.station_metadata
-            )
-            run_group = station_group.add_run(
-                run.run_metadata.id, run_metadata=run.run_metadata
-            )
-            run_group.from_runts(run)
-            station_group.update_station_metadata()
-        survey_group.update_survey_metadata()
+                run = geomag_client.get_data(run_id=row.run)
+                station_group = survey_group.stations_group.add_station(
+                    run.station_metadata.id,
+                    station_metadata=run.station_metadata,
+                )
+                run_group = station_group.add_run(
+                    run.run_metadata.id, run_metadata=run.run_metadata
+                )
+                run_group.from_runts(run)
+                station_group.update_station_metadata()
+            survey_group.update_survey_metadata()
 
         if self.interact:
+            m.open_mth5(m.filename)
             return m
         else:
-            m.close_mth5()
             return m.filename

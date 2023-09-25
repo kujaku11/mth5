@@ -29,6 +29,7 @@ class TestNIMSCollection(unittest.TestCase):
         self.nc = NIMSCollection(r"c:\Users\jpeacock\OneDrive - DOI\mt\nims")
 
         self.df = self.nc.to_dataframe([8])
+        self.df = self.df.fillna(0)
         self.runs = self.nc.get_runs([8])
 
         self.station = self.df.station.unique()[0]
@@ -49,7 +50,7 @@ class TestNIMSCollection(unittest.TestCase):
         )
 
     def test_df_shape(self):
-        self.assertEqual(self.df.shape, (2, 14))
+        self.assertEqual(self.df.shape, (2, 19))
 
     def test_df_types(self):
         self.df = self.nc._set_df_dtypes(self.df)
@@ -86,6 +87,7 @@ class TestNIMSCollection(unittest.TestCase):
 
     def test_run_elements(self):
         for key, rdf in self.runs[self.station].items():
+            rdf = rdf.fillna(0)
             with self.subTest(key):
                 self.assertTrue(
                     (self.df[self.df.run == key].eq(rdf).all(axis=0).all())

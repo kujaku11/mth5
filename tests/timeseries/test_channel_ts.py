@@ -171,7 +171,7 @@ class TestChannelTS(unittest.TestCase):
         with self.subTest(name="component in metadata"):
             self.assertEqual(self.ts.channel_metadata.component, "ex")
         with self.subTest(name="compnent in attrs"):
-            self.assertEqual(self.ts._ts.attrs["component"], "ex")
+            self.assertEqual(self.ts.data_array.attrs["component"], "ex")
 
     def test_equal(self):
         self.assertTrue(self.ts == self.ts)
@@ -180,10 +180,28 @@ class TestChannelTS(unittest.TestCase):
         x = timeseries.ChannelTS(channel_type="electric")
         self.assertFalse(self.ts == x)
 
+    def test_equal_fail(self):
+        self.assertRaises(TypeError, self.ts.__eq__, "a")
+
     def test_less_than(self):
         x = timeseries.ChannelTS(channel_type="electric")
-        x.start = "2020-01-01T12:00:00"
-        self.assertFalse(self.ts < x)
+        x.start = "1970-01-01T12:00:00"
+        self.assertTrue(self.ts < x)
+
+    def test_less_than_data_array_false(self):
+        ts1 = timeseries.ChannelTS(
+            channel_type="electric",
+            channel_metadata={"component": "ex", "sample_rate": 1},
+        )
+        ts2 = timeseries.ChannelTS(
+            channel_type="electric",
+            channel_metadata={"component": "ex", "sample_rate": 1},
+            data=np.arange(10),
+        )
+        self.assertFalse(ts1 < ts2)
+
+    def test_less_than_fail(self):
+        self.assertRaises(TypeError, self.ts.__lt__, "a")
 
     def test_greater_than(self):
         x = timeseries.ChannelTS(channel_type="electric")
@@ -200,12 +218,13 @@ class TestChannelTS(unittest.TestCase):
         # check to make sure the times align
         with self.subTest(name="is aligned"):
             self.assertEqual(
-                self.ts._ts.coords.to_index()[0].isoformat(),
+                self.ts.data_array.coords.to_index()[0].isoformat(),
                 self.ts.channel_metadata.time_period._start_dt.iso_no_tz,
             )
         with self.subTest(name="has index"):
             self.assertEqual(
-                self.ts._ts.coords.to_index()[-1].isoformat(), end.iso_no_tz
+                self.ts.data_array.coords.to_index()[-1].isoformat(),
+                end.iso_no_tz,
             )
         with self.subTest(name="has n samples"):
             self.assertEqual(self.ts.n_samples, 4096)
@@ -227,12 +246,13 @@ class TestChannelTS(unittest.TestCase):
         # check to make sure the times align
         with self.subTest(name="is aligned"):
             self.assertEqual(
-                self.ts._ts.coords.to_index()[0].isoformat(),
+                self.ts.data_array.coords.to_index()[0].isoformat(),
                 self.ts.channel_metadata.time_period._start_dt.iso_no_tz,
             )
         with self.subTest(name="has index"):
             self.assertEqual(
-                self.ts._ts.coords.to_index()[-1].isoformat(), end.iso_no_tz
+                self.ts.data_array.coords.to_index()[-1].isoformat(),
+                end.iso_no_tz,
             )
         with self.subTest(name="has n samples"):
             self.assertEqual(self.ts.n_samples, 4096)
@@ -242,6 +262,36 @@ class TestChannelTS(unittest.TestCase):
             self.ts.ts = value
 
         self.assertRaises(TypeError, set_ts, 10)
+
+    def test_validate_dataframe_input_fail(self):
+        df = pd.DataFrame({"data": ["s"] * 10})
+        self.assertRaises(ValueError, self.ts._validate_dataframe_input, df)
+
+    def test_validate_series_input_fail(self):
+        df = pd.DataFrame({"data": ["s"] * 10})
+        self.assertRaises(ValueError, self.ts._validate_series_input, df.data)
+
+    def test_check_pd_index(self):
+        df = pd.DataFrame({"data": ["s"] * 10})
+        self.ts.channel_metadata.sample_rate = 1.0
+        self.ts.channel_metadata.time_period.start = "1980-01-01T00:00:00"
+
+        dt = self.ts._check_pd_index(df)
+        dt_true = pd.DatetimeIndex(
+            data=[
+                "1980-01-01 00:00:00",
+                "1980-01-01 00:00:01",
+                "1980-01-01 00:00:02",
+                "1980-01-01 00:00:03",
+                "1980-01-01 00:00:04",
+                "1980-01-01 00:00:05",
+                "1980-01-01 00:00:06",
+                "1980-01-01 00:00:07",
+                "1980-01-01 00:00:08",
+                "1980-01-01 00:00:09",
+            ]
+        )
+        self.assertTrue((dt == dt_true).all())
 
     def test_df_without_index_input(self):
         self.ts.channel_metadata.sample_rate = 1.0
@@ -254,12 +304,13 @@ class TestChannelTS(unittest.TestCase):
         # check to make sure the times align
         with self.subTest(name="is aligned"):
             self.assertEqual(
-                self.ts._ts.coords.to_index()[0].isoformat(),
+                self.ts.data_array.coords.to_index()[0].isoformat(),
                 self.ts.channel_metadata.time_period._start_dt.iso_no_tz,
             )
         with self.subTest(name="has index"):
             self.assertEqual(
-                self.ts._ts.coords.to_index()[-1].isoformat(), end.iso_no_tz
+                self.ts.data_array.coords.to_index()[-1].isoformat(),
+                end.iso_no_tz,
             )
         with self.subTest(name="has n samples"):
             self.assertEqual(self.ts.n_samples, 4096)
@@ -278,13 +329,13 @@ class TestChannelTS(unittest.TestCase):
         # check to make sure the times align
         with self.subTest(name="is aligned"):
             self.assertEqual(
-                self.ts._ts.coords.to_index()[0].isoformat(),
+                self.ts.data_array.coords.to_index()[0].isoformat(),
                 self.ts.channel_metadata.time_period._start_dt.iso_no_tz,
             )
         # check to make sure the times align
         with self.subTest(name="same end"):
             self.assertEqual(
-                self.ts._ts.coords.to_index()[-1].isoformat(),
+                self.ts.data_array.coords.to_index()[-1].isoformat(),
                 self.ts.channel_metadata.time_period._end_dt.iso_no_tz,
             )
         with self.subTest(name="sample rate"):
@@ -318,7 +369,6 @@ class TestChannelTS(unittest.TestCase):
             self.assertEqual(self.ts.sample_rate, 8.0)
         with self.subTest("n_samples"):
             self.assertEqual(self.ts.n_samples, 4096)
-
         with self.subTest(name="sample_interval"):
             self.assertEqual(self.ts.sample_interval, 1.0 / 8.0)
 
@@ -401,15 +451,12 @@ class TestChannelTS(unittest.TestCase):
 
         with self.subTest("metadata"):
             self.assertEqual(new_ts.channel_metadata, new_ts.channel_metadata)
-
         with self.subTest("channel_response"):
             self.assertEqual(
                 new_ts.channel_response_filter, self.ts.channel_response_filter
             )
-
         with self.subTest("run metadata"):
             self.assertEqual(new_ts.run_metadata, new_ts.run_metadata)
-
         with self.subTest("station metadata"):
             self.assertEqual(new_ts.station_metadata, new_ts.station_metadata)
 
@@ -494,9 +541,7 @@ class TestAddChannels(unittest.TestCase):
 
         self.run_metadata = metadata.Run(id="001")
 
-        self.channel_metadata = metadata.Electric(
-            component="ex", sample_rate=1
-        )
+        self.channel_metadata = metadata.Electric(component="ex", sample_rate=1)
         self.channel_metadata.time_period.start = "2020-01-01T00:00:00+00:00"
         self.channel_metadata.time_period.end = "2020-01-01T00:00:59+00:00"
 
@@ -558,7 +603,6 @@ class TestAddChannels(unittest.TestCase):
                     self.station_metadata.get_attr_from_name(key),
                     self.combined_ex.station_metadata.get_attr_from_name(key),
                 )
-
         with self.subTest("start"):
             self.assertEqual(
                 self.combined_start,
@@ -685,7 +729,6 @@ class TestMergeChannels(unittest.TestCase):
                     self.station_metadata.get_attr_from_name(key),
                     self.combined_ex.station_metadata.get_attr_from_name(key),
                 )
-
         with self.subTest("start"):
             self.assertEqual(
                 self.combined_start,
@@ -734,136 +777,136 @@ class TestMergeChannels(unittest.TestCase):
         data = np.array(
             [
                 [
-                    -2.48017593e-03,
-                    9.62617295e-01,
-                    1.92469630e00,
-                    2.88868914e00,
-                    3.84900560e00,
-                    4.81390382e00,
-                    5.77462075e00,
-                    6.73809071e00,
-                    7.70066077e00,
-                    8.66247091e00,
-                    9.62614874e00,
-                    1.05875803e01,
-                    1.15509609e01,
-                    1.25131297e01,
-                    1.34756370e01,
-                    1.44385508e01,
-                    1.54006015e01,
-                    1.63636433e01,
-                    1.73258370e01,
-                    1.82885768e01,
-                    1.92511116e01,
-                    2.02135624e01,
-                    2.11762892e01,
-                    2.21386463e01,
-                    2.31013947e01,
-                    2.40637709e01,
-                    2.50264773e01,
-                    2.59889216e01,
-                    2.69515149e01,
-                    2.79141359e01,
-                    2.88764909e01,
-                    2.98393745e01,
-                    3.08015164e01,
-                    3.17644687e01,
-                    3.27267710e01,
-                    3.36892983e01,
-                    3.46522434e01,
-                    3.56140526e01,
-                    3.65775711e01,
-                    3.75391964e01,
-                    3.85023181e01,
-                    3.94649734e01,
-                    4.04265822e01,
-                    4.13908672e01,
-                    4.23512525e01,
-                    4.33158072e01,
-                    4.42772655e01,
-                    4.52393602e01,
-                    4.62042429e01,
-                    4.71628315e01,
-                    4.81301379e01,
-                    4.90885041e01,
-                    5.00531347e01,
-                    5.10170654e01,
-                    5.19741242e01,
-                    5.29456073e01,
-                    5.38974638e01,
-                    5.48697308e01,
-                    5.58264832e01,
-                    5.67901005e01,
-                    5.78459209e01,
-                    5.89017414e01,
-                    5.99575618e01,
-                    6.10133822e01,
-                    6.20692027e01,
-                    6.31250231e01,
-                    6.41808435e01,
-                    6.52366640e01,
-                    6.62924844e01,
-                    6.73483049e01,
-                    6.84041253e01,
-                    6.93692228e01,
-                    7.03313018e01,
-                    7.12952946e01,
-                    7.22556111e01,
-                    7.32205093e01,
-                    7.41812262e01,
-                    7.51446962e01,
-                    7.61072662e01,
-                    7.70690764e01,
-                    7.80327542e01,
-                    7.89941858e01,
-                    7.99575664e01,
-                    8.09197351e01,
-                    8.18822425e01,
-                    8.28451563e01,
-                    8.38072069e01,
-                    8.47702487e01,
-                    8.57324425e01,
-                    8.66951823e01,
-                    8.76577171e01,
-                    8.86201679e01,
-                    8.95828946e01,
-                    9.05452517e01,
-                    9.15080001e01,
-                    9.24703763e01,
-                    9.34330828e01,
-                    9.43955271e01,
-                    9.53581203e01,
-                    9.63207413e01,
-                    9.72830963e01,
-                    9.82459800e01,
-                    9.92081218e01,
-                    1.00171074e02,
-                    1.01133377e02,
-                    1.02095904e02,
-                    1.03058849e02,
-                    1.04020658e02,
-                    1.04984177e02,
-                    1.05945802e02,
-                    1.06908924e02,
-                    1.07871579e02,
-                    1.08833188e02,
-                    1.09797473e02,
-                    1.10757858e02,
-                    1.11722413e02,
-                    1.12683871e02,
-                    1.13645966e02,
-                    1.14610848e02,
-                    1.15569437e02,
-                    1.16536743e02,
-                    1.17495110e02,
-                    1.18459740e02,
-                    1.19423671e02,
-                    1.20380730e02,
-                    1.21352213e02,
-                    1.22304069e02,
-                    1.23276336e02,
-                    1.24233089e02,
-                    1.25196706e02,
+                    13.37012356,
+                    -1.59113795,
+                    3.25532193,
+                    2.15591533,
+                    4.43129138,
+                    4.59013377,
+                    6.10047005,
+                    6.76437716,
+                    7.93386831,
+                    8.82444153,
+                    9.84974958,
+                    10.83472454,
+                    11.8196995,
+                    12.80467446,
+                    13.78964942,
+                    14.77462437,
+                    15.75959933,
+                    16.74457429,
+                    17.72954925,
+                    18.71452421,
+                    19.69949917,
+                    20.68447412,
+                    21.66944908,
+                    22.65442404,
+                    23.639399,
+                    24.62437396,
+                    25.60934891,
+                    26.59432387,
+                    27.57929883,
+                    28.56427379,
+                    29.54924875,
+                    30.53422371,
+                    31.51919866,
+                    32.50417362,
+                    33.48914858,
+                    34.47412354,
+                    35.4590985,
+                    36.44407346,
+                    37.42904841,
+                    38.41402337,
+                    39.39899833,
+                    40.38397329,
+                    41.36894825,
+                    42.35392321,
+                    43.33889816,
+                    44.32387312,
+                    45.30884808,
+                    46.29382304,
+                    47.278798,
+                    48.26377295,
+                    49.24874791,
+                    50.27418863,
+                    51.16444711,
+                    52.33455077,
+                    52.9973885,
+                    54.50947231,
+                    54.66556339,
+                    56.94523407,
+                    55.83888972,
+                    60.69818618,
+                    62.7592714,
+                    64.82035662,
+                    66.88144183,
+                    68.94252705,
+                    71.00361226,
+                    73.06469748,
+                    75.1257827,
+                    77.18686791,
+                    79.24795313,
+                    81.30903834,
+                    83.37012356,
+                    68.40886205,
+                    73.25532193,
+                    72.15591533,
+                    74.43129138,
+                    74.59013377,
+                    76.10047005,
+                    76.76437716,
+                    77.93386831,
+                    78.82444153,
+                    79.84974958,
+                    80.83472454,
+                    81.8196995,
+                    82.80467446,
+                    83.78964942,
+                    84.77462437,
+                    85.75959933,
+                    86.74457429,
+                    87.72954925,
+                    88.71452421,
+                    89.69949917,
+                    90.68447412,
+                    91.66944908,
+                    92.65442404,
+                    93.639399,
+                    94.62437396,
+                    95.60934891,
+                    96.59432387,
+                    97.57929883,
+                    98.56427379,
+                    99.54924875,
+                    100.53422371,
+                    101.51919866,
+                    102.50417362,
+                    103.48914858,
+                    104.47412354,
+                    105.4590985,
+                    106.44407346,
+                    107.42904841,
+                    108.41402337,
+                    109.39899833,
+                    110.38397329,
+                    111.36894825,
+                    112.35392321,
+                    113.33889816,
+                    114.32387312,
+                    115.30884808,
+                    116.29382304,
+                    117.278798,
+                    118.26377295,
+                    119.24874791,
+                    120.27418863,
+                    121.16444711,
+                    122.33455077,
+                    122.9973885,
+                    124.50947231,
+                    124.66556339,
+                    126.94523407,
+                    125.83888972,
+                    130.69818618,
                 ]
             ]
         )
