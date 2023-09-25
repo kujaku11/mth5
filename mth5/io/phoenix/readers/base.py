@@ -219,6 +219,7 @@ class TSReaderBase(Header):
         if filename.exists():
             self.logger.debug(f"Opening {filename}")
             self.stream = open(filename, "rb")
+            self.unpack_header(self.stream)
             return True
         return False
 

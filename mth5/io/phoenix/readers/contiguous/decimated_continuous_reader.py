@@ -43,7 +43,6 @@ class DecimatedContinuousReader(TSReaderBase):
             **kwargs,
         )
 
-        self.unpack_header(self.stream)
         self._channel_metadata = self._update_channel_metadata_from_recmeta()
         self.subheader = {}
         self._sequence_start = self.segment_start_time
