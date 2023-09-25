@@ -86,8 +86,12 @@ class TSReaderBase(Header):
         :type value: string or :class:`pathlib.Path`
 
         """
-
-        self._base_path = Path(value)
+        try:
+            self._base_path = Path(value)
+        except TypeError:
+            raise TypeError(
+                f"Cannot set path from {value}, bad type {type(value)}"
+            )
 
     @property
     def base_dir(self):
