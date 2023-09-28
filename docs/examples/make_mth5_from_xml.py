@@ -139,17 +139,17 @@ if mth5_filename.exists():
     print(f"--> Rmoved existing file {mth5_filename}")
 
 # initialize mth5 object
-mth5_obj = mth5.MTH5()
-mth5_obj.open_mth5(mth5_filename, mode="a")
+with mth5.MTH5() as mth5_obj:
+    mth5_obj.open_mth5(mth5_filename, mode="a")
 
-### add survey information
-survey_element = read_xml(xml_root.joinpath("survey.xml"))
+    ### add survey information
+    survey_element = read_xml(xml_root.joinpath("survey.xml"))
 
-survey_obj = mth5_obj.survey_group
-survey_obj.metadata.from_xml(survey_element)
-survey_obj.write_metadata()
+    survey_obj = mth5_obj.survey_group
+    survey_obj.metadata.from_xml(survey_element)
+    survey_obj.write_metadata()
 
-for station in ["FL001", "FL002"]:
-    # add station
-    new_station = add_station(station, xml_root, mth5_obj)
-mth5_obj.close_mth5()
+    for station in ["FL001", "FL002"]:
+        # add station
+        new_station = add_station(station, xml_root, mth5_obj)
+
