@@ -18,7 +18,7 @@ requirements = [
     "scipy",
     "xarray",
     "mt_metadata",
-    "concurrent-log-handler",
+    "loguru",
 ]
 
 
