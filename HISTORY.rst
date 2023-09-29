@@ -60,3 +60,16 @@ History
 * Have a single metadata object for ChannelTS and RunTS 
 * Use h5 Paths to get groups and datasets
 * Bump wheel from 0.33.6 to 0.38.1
+
+0.4.0 (2023-09-29)
+------------------------
+
+* Adding __add__ and merge to ChannelTS in https://github.com/kujaku11/mth5/pull/136
+* Added Clients in https://github.com/kujaku11/mth5/pull/82 incuding USGS Geomagnetic client
+* Add Scipy filters to xarray in https://github.com/kujaku11/mth5/pull/139
+* Fix FDSN download with no channel filters in https://github.com/kujaku11/mth5/pull/137
+* Align Channels in RunTS in https://github.com/kujaku11/mth5/pull/141
+* Fix FDSN download without all runs in https://github.com/kujaku11/mth5/pull/154
+* Add ability to store Fouried Coefficients estimated by processing software
+* Updated Phoenix reader
+* Using Loguru now instead of built-in logging module
