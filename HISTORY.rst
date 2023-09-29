@@ -73,3 +73,4 @@ History
 * Add ability to store Fouried Coefficients estimated by processing software
 * Updated Phoenix reader
 * Using Loguru now instead of built-in logging module
+* Fixed slicing of channel dataset
