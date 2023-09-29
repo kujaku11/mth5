@@ -25,8 +25,8 @@ This project is in cooperation with the Incorporated Research Institutes of Seis
 Features
 --------
 
-* Read and write HDF5 files formated for magnetotelluric time series.
-* From MTH5 a user can create an MTH5 file, get/add/remove stations, runs, channels and filters and all associated metadata.
+* Read and write HDF5 files formated for magnetotelluric time series, transefer functions, and Fourier Coefficients.
+* From MTH5 a user can create an MTH5 file, get/add/remove stations, transfer functions, Fourier Coefficients, runs, channels and filters and all associated metadata.
 * Data is contained as an [xarray](http://xarray.pydata.org/en/stable/index.html) which can house the data and metadata together, and data is indexed by time.
 * Readers for some data types are included as plugins, namely
     - Z3D
@@ -74,85 +74,107 @@ MTH5 file version **0.2.0** has `Experiment` as the top level.  This allows for 
 Examples
 -----------
 
-Make a simple MTH5 with one station, 2 runs, and 2 channels (version 0.2.0)
+Make a simple MTH5 with one station, 2 runs, and 2 channels, 1 transfer function, 1 set of Fourier Coefficients (version 0.2.0)
 
 ```
 from mth5.mth5 import MTH5
 
-mth5_object = MTH5()
-mth5_object.open_mth5(r"/home/mt/example_mth5.h5", "a")
+with MTH5() as mth5_object:
+    mth5_object.open_mth5(r"/home/mt/example_mth5.h5", "a")
 
-# add a survey
-survey_group = mth5_object.add_survey("example")
+    # add a survey
+    survey_group = mth5_object.add_survey("example")
 
-# add a station with metadata
-station_group = m.add_station("mt001", survey="example")
-station_group = survey_group.stations_group.add_station("mt002")
-station_group.metadata.location.latitude = "40:05:01"
-station_group.metadata.location.longitude = -122.3432
-station_group.metadata.location.elevation = 403.1
-station_group.metadata.acquired_by.author = "me"
-station_group.metadata.orientation.reference_frame = "geomagnetic"
+    # add a station with metadata
+    station_group = mth5_object.add_station("mt001", survey="example")
+    station_group = survey_group.stations_group.add_station("mt002")
+    station_group.metadata.location.latitude = "40:05:01"
+    station_group.metadata.location.longitude = -122.3432
+    station_group.metadata.location.elevation = 403.1
+    station_group.metadata.acquired_by.author = "me"
+    station_group.metadata.orientation.reference_frame = "geomagnetic"
 
-# IMPORTANT: Must always use the write_metadata method when metadata is updated.
-station_group.write_metadata()
+    # IMPORTANT: Must always use the write_metadata method when metadata is updated.
+    station_group.write_metadata()
 
-# add runs
-run_01 = m.add_run("mt002", "001", survey="example")
-run_02 = station_group.add_run("002")
+    # add runs
+    run_01 = mth5_object.add_run("mt002", "001", survey="example")
+    run_02 = station_group.add_run("002")
 
-# add channels
-ex = m.add_channel("mt002", "001", "ex", "electric", None, survey="example")
-hy = run_01.add_channel("hy", "magnetic", None)
+    # add channels
+    ex = mth5_object.add_channel("mt002", "001", "ex", "electric", None, survey="example")
+    hy = run_01.add_channel("hy", "magnetic", None)
+    
+    # add transfer functions
+    tf = station_group.transfer_functions_group.add_transfer_function("tf01")
+    
+    # add Fourier Coefficients
+    fcs = station_group.fourier_coefficients_group.add_fc_group("fc01")
 
-print(mth5_object)
+    print(mth5_object)
 
-/:
-====================
-    |- Group: Experiment
-    --------------------
-        |- Group: Reports
-        -----------------
-        |- Group: Standards
-        -------------------
-            --> Dataset: summary
-            ......................
-        |- Group: Surveys
-        -----------------
-            |- Group: example
+    /:
+    ====================
+        |- Group: Experiment
+        --------------------
+            |- Group: Reports
             -----------------
-                |- Group: Filters
+            |- Group: Standards
+            -------------------
+                --> Dataset: summary
+                ......................
+            |- Group: Surveys
+            -----------------
+                |- Group: example
                 -----------------
-                    |- Group: coefficient
-                    ---------------------
-                    |- Group: fap
-                    -------------
-                    |- Group: fir
-                    -------------
-                    |- Group: time_delay
-                    --------------------
-                    |- Group: zpk
-                    -------------
-                |- Group: Reports
-                -----------------
-                |- Group: Standards
-                -------------------
-                    --> Dataset: summary
-                    ......................
-                |- Group: Stations
-                ------------------
-                    |- Group: mt001
-                    ---------------
-                    |- Group: mt002
-                    ---------------
-                        |- Group: 001
+                    |- Group: Filters
+                    -----------------
+                        |- Group: coefficient
+                        ---------------------
+                        |- Group: fap
                         -------------
-                            --> Dataset: ex
-                            .................
-                            --> Dataset: hy
-                            .................
-                        |- Group: 002
+                        |- Group: fir
                         -------------
+                        |- Group: time_delay
+                        --------------------
+                        |- Group: zpk
+                        -------------
+                    |- Group: Reports
+                    -----------------
+                    |- Group: Standards
+                    -------------------
+                        --> Dataset: summary
+                        ......................
+                    |- Group: Stations
+                    ------------------
+                        |- Group: mt001
+                        ---------------
+                            |- Group: Fourier_Coefficients
+                            ------------------------------
+                            |- Group: Transfer_Functions
+                            ----------------------------
+                        |- Group: mt002
+                        ---------------
+                            |- Group: 001
+                            -------------
+                                --> Dataset: ex
+                                .................
+                                --> Dataset: hy
+                                .................
+                            |- Group: 002
+                            -------------
+                            |- Group: Fourier_Coefficients
+                            ------------------------------
+                                |- Group: fc01
+                                --------------
+                            |- Group: Transfer_Functions
+                            ----------------------------
+                                |- Group: tf01
+                                --------------
+            --> Dataset: channel_summary
+            ..............................
+            --> Dataset: tf_summary
+            .........................
 ```
 
 Credits
