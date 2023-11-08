@@ -10,15 +10,9 @@ with open("HISTORY.rst") as history_file:
     history = history_file.read()
 requirements = [
     "h5py",
-    "matplotlib",
-    "numpy",
-    "obspy",
-    "pandas<=1.5.3",
     "pyyaml",
     "scipy",
-    "xarray",
     "mt_metadata",
-    "loguru",
 ]
 
 
