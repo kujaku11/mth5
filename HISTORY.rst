@@ -74,3 +74,9 @@ History
 * Updated Phoenix reader
 * Using Loguru now instead of built-in logging module
 * Fixed slicing of channel dataset
+
+0.4.1 (2023-11-08)
+-------------------------
+
+* minor bug fixes
+* removed restriction on pandas < 2
