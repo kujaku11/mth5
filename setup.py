@@ -10,15 +10,9 @@ with open("HISTORY.rst") as history_file:
     history = history_file.read()
 requirements = [
     "h5py",
-    "matplotlib",
-    "numpy",
-    "obspy",
-    "pandas<=1.5.3",
     "pyyaml",
     "scipy",
-    "xarray",
     "mt_metadata",
-    "loguru",
 ]
 
 
@@ -58,6 +52,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/kujaku11/mth5",
-    version="0.4.0",
+    version="0.4.1",
     zip_safe=False,
 )

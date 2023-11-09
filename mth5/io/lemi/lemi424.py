@@ -26,6 +26,7 @@ from mth5.timeseries import ChannelTS, RunTS
 from mt_metadata.timeseries import Station, Run, Electric, Magnetic, Auxiliary
 from mt_metadata.utils.mttime import MTime
 
+
 # =============================================================================
 def lemi_date_parser(year, month, day, hour, minute, second):
     """
@@ -50,17 +51,21 @@ def lemi_date_parser(year, month, day, hour, minute, second):
     :rtype: :class:`pandas.DateTime`
 
     """
-
-    return pd.to_datetime(
-        datetime(
-            int(year),
-            int(month),
-            int(day),
-            int(hour),
-            int(minute),
-            int(second),
-        )
+    dt_df = pd.DataFrame(
+        {
+            "year": year,
+            "month": month,
+            "day": day,
+            "hour": hour,
+            "minute": minute,
+            "second": second,
+        }
     )
+
+    for key in ["year", "month", "day", "hour", "minute", "second"]:
+        dt_df[key] = dt_df[key].astype(int)
+
+    return pd.to_datetime(dt_df)
 
 
 def lemi_position_parser(position):
@@ -262,7 +267,6 @@ class LEMI424:
             new.data = pd.concat([new.data, other.data])
             return new
         elif isinstance(other, pd.DataFrame):
-
             if not other.columns != self.data.columns:
                 raise ValueError("DataFrame columns are not the same.")
             new = LEMI424()
@@ -346,14 +350,18 @@ class LEMI424:
     def latitude(self):
         """median latitude where data have been collected in the LEMI424 file"""
         if self._has_data():
-
-            return self.data.latitude.median() * self.data.lat_hemisphere.median()
+            return (
+                self.data.latitude.median() * self.data.lat_hemisphere.median()
+            )
 
     @property
     def longitude(self):
         """median longitude where data have been collected in the LEMI424 file"""
         if self._has_data():
-            return self.data.longitude.median() * self.data.lon_hemisphere.median()
+            return (
+                self.data.longitude.median()
+                * self.data.lon_hemisphere.median()
+            )
 
     @property
     def elevation(self):
@@ -474,7 +482,9 @@ class LEMI424:
                     freq="1000000000N",
                 )
                 if time_index.size != data.shape[0]:
-                    raise ValueError("Missing a time stamp use read with fast=False")
+                    raise ValueError(
+                        "Missing a time stamp use read with fast=False"
+                    )
                 data.index = time_index
                 self.data = data
                 return
@@ -516,7 +526,9 @@ class LEMI424:
 
             self.data = pd.concat(dfs)
             et = MTime().now()
-            self.logger.debug(f"Reading {self.fn.name} took {et - st:.2f} seconds")
+            self.logger.debug(
+                f"Reading {self.fn.name} took {et - st:.2f} seconds"
+            )
         else:
             st = MTime().now()
             self.data = pd.read_csv(
@@ -544,7 +556,9 @@ class LEMI424:
                 index_col="date",
             )
             et = MTime().now()
-            self.logger.debug(f"Reading {self.fn.name} took {et - st:.2f} seconds")
+            self.logger.debug(
+                f"Reading {self.fn.name} took {et - st:.2f} seconds"
+            )
 
     def read_metadata(self):
         """
@@ -603,7 +617,9 @@ class LEMI424:
         ch_list = []
 
         for comp in (
-            ["bx", "by", "bz"] + e_channels + ["temperature_e", "temperature_h"]
+            ["bx", "by", "bz"]
+            + e_channels
+            + ["temperature_e", "temperature_h"]
         ):
             if comp[0] in ["h", "b"]:
                 ch = ChannelTS("magnetic")
