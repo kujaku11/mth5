@@ -128,7 +128,8 @@ class ChannelTS:
         # input data
         if data is not None:
             self.ts = data
-        self._update_xarray_metadata()
+        else:
+            self._update_xarray_metadata()
 
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
