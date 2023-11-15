@@ -840,18 +840,31 @@ class ChannelTS:
         else:
             return False
 
-    def compute_sample_rate(self):
-        # this is more accurate for high sample rates, the way
-        # pandas.date_range rounds nanoseconds is not consistent between
-        # samples, therefore taking the median provides better results
-        # if the time series is long this can be inefficient so test first
+    def is_high_frequency(self, threshold_dt=1e-4):
+        """
+        Quasi hard-coded condition to check if data are logged at more than 10kHz
+        can be parameterized in future
+        """
         if (
             self.data_array.coords.indexes["time"][1]
             - self.data_array.coords.indexes["time"][0]
-        ).total_seconds() < 1e-4:
-            import time
+        ).total_seconds() < threshold_dt:
+            return True
+        else:
+            return False
 
-            t0 = time.time()
+
+    def compute_sample_rate(self):
+        """
+        Two cases, high_frequency (HF) data and not HF data.
+
+        # Original comment about the HF case:
+        Taking the median(diff(timestamps)) is more accurate for high sample rates, the way pandas.date_range
+        rounds nanoseconds is not consistent between samples, therefore taking the median provides better results
+        if the time series is long this can be inefficient so test first
+
+        """
+        if self.is_high_frequency():
             sr = 1 / (
                 float(
                     np.median(
@@ -860,7 +873,6 @@ class ChannelTS:
                 )
                 / 1e9
             )
-            self.logger.info(f"mediandiff took {time.time() - t0:.3f}s")
         else:
             t_diff = (
                 self.data_array.coords.indexes["time"][-1]
