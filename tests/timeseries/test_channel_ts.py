@@ -2,7 +2,7 @@
 """
 Created on Fri Jan 22 12:32:55 2021
 
-:copyright: 
+:copyright:
     Jared Peacock (jpeacock@usgs.gov)
 
 :license: MIT
@@ -364,7 +364,7 @@ class TestChannelTS(unittest.TestCase):
 
         with self.subTest(name="sample_interval"):
             self.assertEqual(self.ts.sample_interval, 1.0 / 16.0)
-        self.ts.sample_rate = 8
+        self.ts._sample_rate = 8
         with self.subTest("8"):
             self.assertEqual(self.ts.sample_rate, 8.0)
         with self.subTest("n_samples"):
