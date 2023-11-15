@@ -124,7 +124,7 @@ class ChannelTS:
         self.station_metadata = station_metadata
         self.run_metadata = run_metadata
         self.channel_metadata = channel_metadata
-
+        self._sample_rate = None
         # input data
         if data is not None:
             self.ts = data
@@ -840,35 +840,43 @@ class ChannelTS:
         else:
             return False
 
+    def compute_sample_rate(self):
+        # this is more accurate for high sample rates, the way
+        # pandas.date_range rounds nanoseconds is not consistent between
+        # samples, therefore taking the median provides better results
+        # if the time series is long this can be inefficient so test first
+        if (
+            self.data_array.coords.indexes["time"][1]
+            - self.data_array.coords.indexes["time"][0]
+        ).total_seconds() < 1e-4:
+            import time
+
+            t0 = time.time()
+            sr = 1 / (
+                float(
+                    np.median(
+                        np.diff(self.data_array.coords.indexes["time"])
+                    )
+                )
+                / 1e9
+            )
+            self.logger.info(f"mediandiff took {time.time() - t0:.3f}s")
+        else:
+            t_diff = (
+                self.data_array.coords.indexes["time"][-1]
+                - self.data_array.coords.indexes["time"][0]
+            )
+            sr = self.data_array.size / t_diff.total_seconds()
+        return np.round(sr, 0)
+
     # --> sample rate
     @property
     def sample_rate(self):
         """sample rate in samples/second"""
         if self.has_data():
-            # this is more accurate for high sample rates, the way
-            # pandas.date_range rounds nanoseconds is not consistent between
-            # samples, therefore taking the median provides better results
-            # if the time series is long this can be inefficient so test first
-            if (
-                self.data_array.coords.indexes["time"][1]
-                - self.data_array.coords.indexes["time"][0]
-            ).total_seconds() < 1e-4:
-
-                sr = 1 / (
-                    float(
-                        np.median(
-                            np.diff(self.data_array.coords.indexes["time"])
-                        )
-                    )
-                    / 1e9
-                )
-            else:
-                t_diff = (
-                    self.data_array.coords.indexes["time"][-1]
-                    - self.data_array.coords.indexes["time"][0]
-                )
-                sr = self.data_array.size / t_diff.total_seconds()
-
+            if self._sample_rate is None:
+                self._sample_rate = self.compute_sample_rate()
+            return self._sample_rate
         else:
             self.logger.debug(
                 "Data has not been set yet, sample rate is from metadata"
