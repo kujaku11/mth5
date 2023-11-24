@@ -1043,6 +1043,34 @@ class ChannelTS:
                 self.channel_metadata.filter.name
             )
 
+
+    def get_response_correction_operation_and_units(self):
+        """
+        We need to know if the response removal is done by mulitplication or by division.
+        FDSN standards use division.  This boils down to checking
+        whether the filters are being "applied" or "unapplied".
+        Consider changing the attribute "applied", to "correction_applied"
+        :return:
+        """
+        if self.channel_response_filter.units_out == self.channel_metadata.units:
+            calibration_operation = "divide"
+            calibrated_units = self.channel_response_filter.units_in
+        if self.channel_response_filter.units_in == self.channel_metadata.units:
+            calibration_operation = "multiply"
+            calibrated_units = self.channel_response_filter.units_out
+        elif (self.channel_response_filter.units_in == None
+              and self.channel_response_filter.units_out == None):
+            logger.warning("No Units are associated with the channel_response_filter")
+            logger.warning("cannot determine via units if calibration should be applied via multiplication or division")
+            calibration_operation = "divide"
+            calibrated_units = self.channel_metadata.units
+        else:
+            logger.critical("channel response filter units are likely corrupt")
+            calibration_operation = "divide"
+            calibrated_units = self.channel_response_filter.units_in
+        return calibration_operation
+
+
     def remove_instrument_response(self, **kwargs):
         """
         Remove instrument response from the given channel response filter
@@ -1099,39 +1127,18 @@ class ChannelTS:
             **kwargs,
         )
 
-        calibrated_ts.ts = remover.remove_instrument_response()
+        calibration_operation, calibrated_units = self.get_response_correction_operation_and_units()
+        calibrated_ts.ts = remover.remove_instrument_response(operation=calibration_operation)
+
         # change applied booleans
+        applied_filters = calibrated_ts.channel_metadata.filter.applied
         calibrated_ts.channel_metadata.filter.applied = [True] * len(
             self.channel_metadata.filter.applied
         )
 
         # update units
-        # This is a hack for now until we come up with a standard for
-        # setting up the filter list.  Currently it follows the FDSN standard
-        # which has the filter stages starting with physical units to digital
-        # counts.
-        if (
-            self.channel_response_filter.units_out
-            == self.channel_metadata.units
-        ):
-            calibrated_ts.data_array.attrs[
-                "units"
-            ] = self.channel_response_filter.units_in
-            calibrated_ts.channel_metadata.units = (
-                self.channel_response_filter.units_in
-            )
-        elif (
-            self.channel_response_filter.units_out == None
-            and self.channel_response_filter.units_out == None
-        ):
-            calibrated_ts.channel_metadata.units = self.channel_metadata.units
-        else:
-            calibrated_ts.data_array.attrs[
-                "units"
-            ] = self.channel_response_filter.units_in
-            calibrated_ts.channel_metadata.units = (
-                self.channel_response_filter.units_in
-            )
+        calibrated_ts.data_array.attrs["units"] = calibrated_units
+        calibrated_ts.channel_metadata.units = calibrated_units
         calibrated_ts._update_xarray_metadata()
 
         return calibrated_ts
