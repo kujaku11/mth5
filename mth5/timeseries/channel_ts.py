@@ -1065,10 +1065,10 @@ class ChannelTS:
             calibration_operation = "divide"
             calibrated_units = self.channel_metadata.units
         else:
-            logger.critical("channel response filter units are likely corrupt")
+            logger.critical("channel response filter units are likely corrupt or channel_ts has no units")
             calibration_operation = "divide"
             calibrated_units = self.channel_response_filter.units_in
-        return calibration_operation
+        return calibration_operation, calibrated_units
 
 
     def remove_instrument_response(self, **kwargs):
