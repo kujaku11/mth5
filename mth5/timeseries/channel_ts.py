@@ -1046,11 +1046,18 @@ class ChannelTS:
 
     def get_response_correction_operation_and_units(self):
         """
+        This is a hack for now until we come up with a standard for
+        setting up the filter list.  Currently it follows the FDSN standard
+        which has the filter stages starting with physical units to digital
+        counts.
+
         We need to know if the response removal is done by mulitplication or by division.
-        FDSN standards use division.  This boils down to checking
-        whether the filters are being "applied" or "unapplied".
-        Consider changing the attribute "applied", to "correction_applied"
-        :return:
+        FDSN standards use division.  This boils down to checking whether the
+        channel_response_filter units_in or units_out match the input time series.
+
+        Consider changing the attribute "applied", to "response_removed"
+        :return: tuple, calibration_operation, either "mulitply" or divide", and a string for calibrated units
+        :rtype: tuple (of two strings_
         """
         if self.channel_response_filter.units_out == self.channel_metadata.units:
             calibration_operation = "divide"
