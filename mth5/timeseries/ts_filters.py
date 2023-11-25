@@ -531,6 +531,9 @@ class RemoveInstrumentResponse:
 
         if self.channel_response_filter.filters_list is []:
             raise ValueError("There are no filters in channel_response to remove")
+        if self.channel_response_filter.correction_operation == "multiply":
+            inverse_filters = [x.inverse() for x in self.channel_response_filter.filters_list]
+            self.channel_response_filter.filters_list = inverse_filters
         # compute the complex response given the frequency range of the FFT
         # the complex response assumes frequencies are in reverse order and flip them on input
         # so we need to flip the complex reponse so it aligns with the fft.
@@ -549,13 +552,16 @@ class RemoveInstrumentResponse:
             data = self.apply_f_window(data)
             self.logger.debug(f"Step {step}: Applying {self.f_window} Frequency Window")
             step += 1
-        if operation == "divide":
+        if self.channel_response_filter.correction_operation == "divide":
+        #if operation == "divide":
             # calibrate the time series, compute real part of fft, divide out
             # channel response, inverse fft
             calibrated_ts = np.fft.irfft(data / cr)[0 : self.ts.size]
             self.logger.debug(f"Step {step}: Removing Calibration by {operation}")
             step += 1
-        elif operation == "multiply":
+        elif self.channel_response_filter.correction_operation == "multiply":
+        # elif operation == "multiply":
+            logger.warning("It is unusual to apply the instrument response as it should already be in the data")
             # calibrate the time series, compute real part of fft, multiply out
             # channel response, inverse fft
             calibrated_ts = np.fft.irfft(data * cr)[0 : self.ts.size]
