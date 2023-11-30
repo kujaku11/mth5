@@ -124,7 +124,7 @@ class ChannelTS:
         self.station_metadata = station_metadata
         self.run_metadata = run_metadata
         self.channel_metadata = channel_metadata
-        self._sample_rate = None
+        self._sample_rate = self.get_sample_rate_supplied_at_init(channel_metadata)
         # input data
         if data is not None:
             self.ts = data
@@ -133,6 +133,43 @@ class ChannelTS:
 
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
+
+    def get_sample_rate_supplied_at_init(self, channel_metadata):
+        """
+        Interrogate the channel_metadata argument supplied at init
+        to see if sample_rate is specified.
+
+        channel_metadata can be one of 5 types:
+        None,
+        dict
+        mt_metadata.timeseries.Electric,
+        mt_metadata.timeseries.Magnetic,
+        mt_metadata.timeseries.Auxiliary
+        In case it is a dict, we want to allow the sample_rate to
+        be at the top layer, adn one layer down, to support, for exmaple
+        {"electric":{"sample_rate":8.0,}}
+
+
+        """
+        sr = None
+        if channel_metadata is None:
+            sr = None
+        elif isinstance(channel_metadata, dict):
+            #check first two layers for sample_rate key
+            if "sample_rate" in channel_metadata.keys():
+                sr = channel_metadata["sample_rate"]
+            else:
+                for k, v in channel_metadata.items():
+                    if isinstance(v, dict):
+                        if "sample_rate" in v.keys():
+                            sr = v["sample_rate"]
+        else:
+            try:
+                # if an mt_metadata.timeseries access attr
+                sr = channel_metadata.sample_rate
+            except AttributeError:
+                sr = None
+        return sr
 
     def __str__(self):
         lines = [
