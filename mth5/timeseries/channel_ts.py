@@ -926,6 +926,7 @@ class ChannelTS:
                     f"Resetting ChannelTS.channel_metadata.sample_rate to {sample_rate}. "
                 )
             self.channel_metadata.sample_rate = sample_rate
+        self._sample_rate = sample_rate
         self._update_xarray_metadata()
 
     @property
