@@ -160,7 +160,7 @@ class TestZ3DEY(unittest.TestCase):
                 ("dc.end", 0.019371436521409924),
                 ("dc.start", 0.019130984313785026),
                 ("dipole_length", 56.0),
-                ("filter.applied", [False, False]),
+                ("filter.applied", [True, True]),
                 (
                     "filter.name",
                     ["dipole_56.00m", "zen_counts2mv"],
@@ -571,7 +571,7 @@ class TestZ3DHY(unittest.TestCase):
                 ("channel_number", 2),
                 ("component", "hy"),
                 ("data_quality.rating.value", 0),
-                ("filter.applied", [False, False]),
+                ("filter.applied", [True, True]),
                 (
                     "filter.name",
                     [

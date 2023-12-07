@@ -170,7 +170,7 @@ class TestReadPhoenixNativeToChannelTS(unittest.TestCase):
                 ("channel_number", 0),
                 ("component", "h2"),
                 ("data_quality.rating.value", 0),
-                ("filter.applied", [False, False]),
+                ("filter.applied", [True, True]),
                 (
                     "filter.name",
                     ["mtu-5c_rmt03-j_666_h2_10000hz_lowpass", "v_to_mv"],

@@ -1039,7 +1039,7 @@ class ChannelTS:
 
             for f_name in self._channel_response.names:
                 self.channel_metadata.filter.name.append(f_name)
-            self.channel_metadata.filter.applied = [False] * len(
+            self.channel_metadata.filter.applied = [True] * len(
                 self.channel_metadata.filter.name
             )
 
@@ -1137,9 +1137,10 @@ class ChannelTS:
         calibration_operation, calibrated_units = self.get_response_correction_operation_and_units()
         calibrated_ts.ts = remover.remove_instrument_response(operation=calibration_operation)
 
-        # change applied booleans
+        # change applied booleans 
+        # TODO use invert on bool, instead of direct assignement to False
         applied_filters = calibrated_ts.channel_metadata.filter.applied
-        calibrated_ts.channel_metadata.filter.applied = [True] * len(
+        calibrated_ts.channel_metadata.filter.applied = [False] * len(
             self.channel_metadata.filter.applied
         )
 

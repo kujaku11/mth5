@@ -427,7 +427,7 @@ class Z3D:
         ch.units = "digital counts"
         ch.channel_number = self.channel_number
         ch.filter.name = self.channel_response.names
-        ch.filter.applied = [False] * len(self.channel_response.names)
+        ch.filter.applied = [True] * len(self.channel_response.names)
 
         return ch
 

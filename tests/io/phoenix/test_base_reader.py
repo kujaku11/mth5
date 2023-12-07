@@ -120,7 +120,7 @@ class TestReadPhoenixContinuous(unittest.TestCase):
                 ("channel_number", 0),
                 ("component", "h2"),
                 ("data_quality.rating.value", 0),
-                ("filter.applied", [False, False]),
+                ("filter.applied", [True, True]),
                 (
                     "filter.name",
                     ["mtu-5c_rmt03_10128_10000hz_low_pass", "coil_0_response"],
