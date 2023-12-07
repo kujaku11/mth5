@@ -204,6 +204,8 @@ class RemoveInstrumentResponse:
         self.fig = None
         self.nrows = None
         self.subplot_dict = {}
+        self.include_decimation = True
+        self.include_time_delay = False
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -470,7 +472,10 @@ class RemoveInstrumentResponse:
 
         return subplot_dict
 
-    def remove_instrument_response(self, operation="divide"):
+    def remove_instrument_response(self,
+                                   operation="divide",
+                                   include_decimation=None,
+                                   include_time_delay=None):
         """
         Remove instrument response following the recipe provided
 
@@ -478,6 +483,12 @@ class RemoveInstrumentResponse:
         :rtype: np.ndarray
 
         """
+        # if filters to include not specified, get from self
+        if include_decimation is None:
+            include_decimation = self.include_decimation
+        if include_time_delay is None:
+            include_time_delay = self.include_time_delay
+            
         ts = np.copy(self.ts)
         f = np.fft.rfftfreq(ts.size, d=self.sample_interval)
         step = 1
@@ -537,7 +548,9 @@ class RemoveInstrumentResponse:
         # compute the complex response given the frequency range of the FFT
         # the complex response assumes frequencies are in reverse order and flip them on input
         # so we need to flip the complex reponse so it aligns with the fft.
-        cr = self.channel_response_filter.complex_response(f)[::-1]
+        cr = self.channel_response_filter.complex_response(f,
+                                                           include_decimation=include_decimation,
+                                                           include_time_delay=include_time_delay)[::-1]
         # remove the DC term at frequency == 0
         cr[-1] = abs(cr[-2]) + 0.0j
 
