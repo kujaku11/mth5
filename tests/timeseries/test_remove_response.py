@@ -21,16 +21,13 @@ from mth5.timeseries import ChannelTS
 class TestRemoveResponse(unittest.TestCase):
     """
     Test remove response, make a fake signal add some trends,
-    ToDo:
-    - Add more than one filter to the test.
-    - Utilize the is_channel_response attributes
     """
 
     @classmethod
     def setUpClass(self):
         # pole zero filter
         pz1 = PoleZeroFilter(
-            units_in="volts", units_out="nanotesla", name="instrument_response"
+            units_in="nanotesla", units_out="volts", name="instrument_response"
         )
         pz1.poles = [
             (-6.283185 + 10.882477j),
@@ -45,7 +42,8 @@ class TestRemoveResponse(unittest.TestCase):
         self.channel.channel_metadata.filter.applied = [True,]
         self.channel.channel_metadata.filter.name = ["instrument_response",]# "instrument_response2"]
         self.channel.channel_metadata.component = "hx"
-        self.channel.channel_metadata.units = "digital counts"
+        self.channel.channel_metadata.units = "volt"
+        #self.channel.channel_metadata.units = "digital counts"
         self.channel.channel_response_filter.filters_list = [pz1,]
         self.channel.sample_rate = 1
         n_samples = 4096
