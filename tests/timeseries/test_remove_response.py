@@ -39,21 +39,14 @@ class TestRemoveResponse(unittest.TestCase):
         ]
         pz1.zeros = []
         pz1.normalization_factor = 18244400
-        pz2 = PoleZeroFilter(
-            units_in="nanotesla", units_out="volts", name="instrument_response2"
-        )
-        pz2.poles = []
-        pz2.zeros = []
-        pz2.normalization_factor = 10
-        pz2.gain = 12
+
         # channel properties
         self.channel = ChannelTS()
-        self.channel.channel_metadata.filter.applied = [True, ]#False]
+        self.channel.channel_metadata.filter.applied = [True,]
         self.channel.channel_metadata.filter.name = ["instrument_response",]# "instrument_response2"]
         self.channel.channel_metadata.component = "hx"
         self.channel.channel_metadata.units = "digital counts"
-        self.channel.channel_response_filter.filters_list.append(pz1)
-#        self.channel.channel_response_filter.filters_list.append(pz2)
+        self.channel.channel_response_filter.filters_list = [pz1,]
         self.channel.sample_rate = 1
         n_samples = 4096
         self.t = np.arange(n_samples) * self.channel.sample_interval
