@@ -1059,10 +1059,10 @@ class ChannelTS:
         :return: tuple, calibration_operation, either "mulitply" or divide", and a string for calibrated units
         :rtype: tuple (of two strings_
         """
-        if self.channel_response_filter.units_out == self.channel_metadata.units:
+        if self.channel_response_filter.units_out == self.channel_metadata.unit_object.abbreviation:
             calibration_operation = "divide"
             calibrated_units = self.channel_response_filter.units_in
-        if self.channel_response_filter.units_in == self.channel_metadata.units:
+        elif self.channel_response_filter.units_in == self.channel_metadata.unit_object.abbreviation:
             calibration_operation = "multiply"
             calibrated_units = self.channel_response_filter.units_out
         elif (self.channel_response_filter.units_in == None
@@ -1137,8 +1137,9 @@ class ChannelTS:
         calibration_operation, calibrated_units = self.get_response_correction_operation_and_units()
         calibrated_ts.ts = remover.remove_instrument_response(operation=calibration_operation)
 
-        # change applied booleans 
+        # change applied booleans
         # TODO use invert on bool, instead of direct assignement to False
+        # TODO: We need to know which filters were removed, delay and decimation may not have been removed
         applied_filters = calibrated_ts.channel_metadata.filter.applied
         calibrated_ts.channel_metadata.filter.applied = [False] * len(
             self.channel_metadata.filter.applied
