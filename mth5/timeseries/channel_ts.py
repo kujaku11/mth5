@@ -1068,6 +1068,8 @@ class ChannelTS:
         :return: tuple, calibration_operation, either "mulitply" or divide", and a string for calibrated units
         :rtype: tuple (of two strings_
         """
+        from mt_metadata.utils.units import get_unit_object
+
         if self.channel_response_filter.units_out == self.channel_metadata.unit_object.abbreviation:
             calibration_operation = "divide"
             calibrated_units = self.channel_response_filter.units_in
@@ -1084,6 +1086,8 @@ class ChannelTS:
             logger.critical("channel response filter units are likely corrupt or channel_ts has no units")
             calibration_operation = "divide"
             calibrated_units = self.channel_response_filter.units_in
+        unit_object = get_unit_object(calibrated_units)
+        calibrated_units = unit_object.name
         return calibration_operation, calibrated_units
 
 
@@ -1171,7 +1175,6 @@ class ChannelTS:
         calibrated_ts.channel_metadata.filter.applied = applied_filters
 
         # update units
-        # THESE UNITS SHOULD NOT BE ABBREVIATED... USE DF TO GET FULL NAMES
         calibrated_ts.data_array.attrs["units"] = calibrated_units
         calibrated_ts.channel_metadata.units = calibrated_units
         calibrated_ts._update_xarray_metadata()
