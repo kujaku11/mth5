@@ -1076,10 +1076,13 @@ class ChannelTS:
         elif self.channel_response_filter.units_in == self.channel_metadata.unit_object.abbreviation:
             calibration_operation = "multiply"
             calibrated_units = self.channel_response_filter.units_out
+            self.logger.warning("Unexpected Inverse Filter is being corrected -- something maybe wrong here ")
         elif (self.channel_response_filter.units_in == None
               and self.channel_response_filter.units_out == None):
-            logger.warning("No Units are associated with the channel_response_filter")
-            logger.warning("cannot determine via units if calibration should be applied via multiplication or division")
+            msg = "No Units are associated with the channel_response_filter"
+            self.logger.warning(msg)
+            msg = "cannot determine multiply or divide via units -- setting to divide:/"
+            self.logger.warning(msg)
             calibration_operation = "divide"
             calibrated_units = self.channel_metadata.units
         else:
