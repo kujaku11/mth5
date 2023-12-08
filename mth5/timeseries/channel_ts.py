@@ -1046,10 +1046,19 @@ class ChannelTS:
 
     def get_response_correction_operation_and_units(self):
         """
-        This is a hack for now until we come up with a standard for
-        setting up the filter list.  Currently it follows the FDSN standard
-        which has the filter stages starting with physical units to digital
-        counts.
+        Follows the FDSN standard which has the filter stages starting with physical units to digital counts.
+
+        The channel_response_filter is expected to have a list of filter "stages" of which the first stage
+        has input units corresponding to the the physical quantity that the instrument measures, and the last is
+        normally counts.
+
+        channel_response_filter can be viewed as the chaining together of all of these filters.
+
+        Thus it is normal for channel_response_filter.units_out will be in the same units as the archived raw
+        time series, and for the units after the response is corrected for will be the units_in of
+
+        The units of the channel metadata are compared to the input and output units of the channel_resposne_filter.
+
 
         We need to know if the response removal is done by mulitplication or by division.
         FDSN standards use division.  This boils down to checking whether the
@@ -1155,15 +1164,14 @@ class ChannelTS:
         calibrated_ts.ts = remover.remove_instrument_response(filters_to_remove=filters_to_remove,
                                                               operation=calibration_operation)
 
-        # change applied booleans
-        # TODO use invert on bool, instead of direct assignement to False
-        # TODO: We need to know which filters were removed, delay and decimation may not have been removed
+        # update "applied" booleans
         applied_filters = calibrated_ts.channel_metadata.filter.applied
-        calibrated_ts.channel_metadata.filter.applied = [False] * len(
-            self.channel_metadata.filter.applied
-        )
+        for idx in indices_to_flip:
+            applied_filters[idx] = bool_flip(applied_filters[idx])
+        calibrated_ts.channel_metadata.filter.applied = applied_filters
 
         # update units
+        # THESE UNITS SHOULD NOT BE ABBREVIATED... USE DF TO GET FULL NAMES
         calibrated_ts.data_array.attrs["units"] = calibrated_units
         calibrated_ts.channel_metadata.units = calibrated_units
         calibrated_ts._update_xarray_metadata()
