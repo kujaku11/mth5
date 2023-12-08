@@ -1078,7 +1078,10 @@ class ChannelTS:
         return calibration_operation, calibrated_units
 
 
-    def remove_instrument_response(self, **kwargs):
+    def remove_instrument_response(self,
+                                   include_decimation=True,
+                                   include_delay=False,
+                                   **kwargs):
         """
         Remove instrument response from the given channel response filter
 
@@ -1092,6 +1095,13 @@ class ChannelTS:
             6) remove response
             7) undo time window
             8) bandpass
+
+        :param include_decimation: Include decimation in response,
+         defaults to True
+        :type include_decimation: bool, optional
+        :param include_delay: include delay in complex response,
+         defaults to False
+        :type include_delay: bool, optional
 
         **kwargs**
 
@@ -1117,6 +1127,8 @@ class ChannelTS:
         :type bandpass: dictionary
 
         """
+        def bool_flip(x):
+            return bool(int(x)-1)
 
         calibrated_ts = ChannelTS()
         calibrated_ts.__dict__.update(self.__dict__)
@@ -1126,6 +1138,11 @@ class ChannelTS:
                 "No filters to apply to calibrate time series data"
             )
             return calibrated_ts
+
+        # Make a list of the filters whose response will be removed.
+        # We make the list here so that we have access to the indices to flip
+        filters_to_remove, indices_to_flip = self.channel_response_filter.get_list_of_filters_to_remove(include_decimation=include_decimation, include_delay=include_delay)
+
         remover = RemoveInstrumentResponse(
             self.ts,
             self.time_index,
@@ -1135,7 +1152,8 @@ class ChannelTS:
         )
 
         calibration_operation, calibrated_units = self.get_response_correction_operation_and_units()
-        calibrated_ts.ts = remover.remove_instrument_response(operation=calibration_operation)
+        calibrated_ts.ts = remover.remove_instrument_response(filters_to_remove=filters_to_remove,
+                                                              operation=calibration_operation)
 
         # change applied booleans
         # TODO use invert on bool, instead of direct assignement to False

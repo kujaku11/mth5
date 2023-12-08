@@ -187,6 +187,15 @@ class RemoveInstrumentResponse:
         channel_response_filter,
         **kwargs,
     ):
+        """
+
+        :param ts:
+        :param time_array:
+        :param sample_interval:
+        :param channel_response_filter:
+        :param filters_to_remove: optional list of specific filters to remove.  If not provided, filters will be
+        taken from channel_response_filter.
+        """
         self.logger = logger
         self.ts = ts
         self.time_array = time_array
@@ -205,7 +214,7 @@ class RemoveInstrumentResponse:
         self.nrows = None
         self.subplot_dict = {}
         self.include_decimation = True
-        self.include_time_delay = False
+        self.include_delay = False
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -475,7 +484,8 @@ class RemoveInstrumentResponse:
     def remove_instrument_response(self,
                                    operation="divide",
                                    include_decimation=None,
-                                   include_time_delay=None):
+                                   include_delay=None,
+                                   filters_to_remove=[]):
         """
         Remove instrument response following the recipe provided
 
@@ -484,11 +494,20 @@ class RemoveInstrumentResponse:
 
         """
         # if filters to include not specified, get from self
-        if include_decimation is None:
-            include_decimation = self.include_decimation
-        if include_time_delay is None:
-            include_time_delay = self.include_time_delay
-            
+        if not filters_to_remove:
+            self.logger.debug("No explicit list of filters was passed to remove")
+            self.logger.debug("Will determine filters to remove ... ")
+            if include_decimation is None:
+                include_decimation = self.include_decimation
+            if include_delay is None:
+                include_delay = self.include_delay
+            filters_to_remove, _ = self.channel_response_filter.get_list_of_filters_to_remove(
+                include_decimation=include_decimation, include_delay=include_delay)
+            if filters_to_remove is []:
+                raise ValueError("There are no filters in channel_response to remove")
+
+
+
         ts = np.copy(self.ts)
         f = np.fft.rfftfreq(ts.size, d=self.sample_interval)
         step = 1
@@ -537,20 +556,15 @@ class RemoveInstrumentResponse:
             ts = self.apply_zero_pad(ts)
             self.logger.debug(f"Step {step}: Applying Zero Padding")
             step += 1
-        # get the real frequencies of the FFT
+        # get the real frequencies of the FFT -- zero pad may have changed ts.size
         f = np.fft.rfftfreq(ts.size, d=self.sample_interval)
 
-        if self.channel_response_filter.filters_list is []:
-            raise ValueError("There are no filters in channel_response to remove")
-        if self.channel_response_filter.correction_operation == "multiply":
-            inverse_filters = [x.inverse() for x in self.channel_response_filter.filters_list]
-            self.channel_response_filter.filters_list = inverse_filters
         # compute the complex response given the frequency range of the FFT
         # the complex response assumes frequencies are in reverse order and flip them on input
         # so we need to flip the complex reponse so it aligns with the fft.
         cr = self.channel_response_filter.complex_response(f,
-                                                           include_decimation=include_decimation,
-                                                           include_time_delay=include_time_delay)[::-1]
+                                                           filters_list=filters_to_remove,
+                                                           )[::-1]
         # remove the DC term at frequency == 0
         cr[-1] = abs(cr[-2]) + 0.0j
 
