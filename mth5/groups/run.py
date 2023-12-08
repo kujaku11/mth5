@@ -744,7 +744,12 @@ class RunGroup(BaseGroup):
             channel_summary.start.min().isoformat()
         )
         self._metadata.time_period.end = channel_summary.end.max().isoformat()
-        self._metadata.sample_rate = channel_summary.sample_rate.unique()[0]
+        try:
+            self._metadata.sample_rate = channel_summary.sample_rate.unique()[0]
+        except IndexError:
+            msg = "There maybe no channels associated with this run -- setting sample_rate to 0"
+            self.logger.critical(msg)
+            self._metadata.sample_rate = 0
         self.write_metadata()
 
     def plot(self, start=None, end=None, n_samples=None):
