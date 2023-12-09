@@ -27,7 +27,7 @@ from loguru import logger
 from scipy import signal
 
 import mt_metadata.timeseries as metadata
-from mt_metadata.timeseries.filters import ChannelResponseFilter
+from mt_metadata.timeseries.filters import ChannelResponse
 from mt_metadata.utils.mttime import MTime
 from mt_metadata.utils.list_dict import ListDict
 
@@ -118,7 +118,7 @@ class ChannelTS:
         self._survey_metadata = self._initialize_metadata()
 
         self.data_array = xr.DataArray([1], coords=[("time", [1])], name="ts")
-        self._channel_response = ChannelResponseFilter()
+        self._channel_response = ChannelResponse()
 
         self.survey_metadata = survey_metadata
         self.station_metadata = station_metadata
@@ -1005,7 +1005,7 @@ class ChannelTS:
         Full channel response filter
 
         :return: full channel response filter
-        :rtype: :class:`mt_metadata.timeseries.filters.ChannelResponseFilter`
+        :rtype: :class:`mt_metadata.timeseries.filters.ChannelResponse`
 
         """
 
@@ -1016,16 +1016,16 @@ class ChannelTS:
         """
 
         :param value: channel response filter
-        :type value: :class:`mt_metadata.timeseries.filters.ChannelResponseFilter`
+        :type value: :class:`mt_metadata.timeseries.filters.`
 
 
         """
         if value is None:
             return
-        if not isinstance(value, ChannelResponseFilter):
+        if not isinstance(value, ChannelResponse):
             msg = (
                 "channel response must be a "
-                "mt_metadata.timeseries.filters.ChannelResponseFilter object "
+                "mt_metadata.timeseries.filters.ChannelResponse object "
                 f"not {type(value)}."
             )
             self.logger.error(msg)

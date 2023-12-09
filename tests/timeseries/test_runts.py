@@ -6,10 +6,10 @@ Created on Tue Jun 30 16:38:27 2020
 
 :copyright:
     author: Jared Peacock
-    
+
 :license:
     MIT
-    
+
 """
 # =============================================================================
 # imports
@@ -24,7 +24,7 @@ from mt_metadata.utils.mttime import MTime
 import mt_metadata.timeseries as metadata
 from mt_metadata.timeseries.filters import (
     PoleZeroFilter,
-    ChannelResponseFilter,
+    ChannelResponse,
 )
 
 # =============================================================================
@@ -313,7 +313,7 @@ class TestRunTS(unittest.TestCase):
         pz.zeros = []
         pz.normalization_factor = 18244400
 
-        self.cr = ChannelResponseFilter(filters_list=[pz])
+        self.cr = ChannelResponse(filters_list=[pz])
 
         self.ex = ChannelTS(
             "electric",
@@ -566,8 +566,8 @@ class TestMergeRunTS(unittest.TestCase):
         self.pz2 = self.pz1.copy()
         self.pz2.name = "filter_2"
 
-        self.cr_01 = ChannelResponseFilter(filters_list=[self.pz1])
-        self.cr_02 = ChannelResponseFilter(filters_list=[self.pz2])
+        self.cr_01 = ChannelResponse(filters_list=[self.pz1])
+        self.cr_02 = ChannelResponse(filters_list=[self.pz2])
 
         self.run_object_01 = RunTS()
         self.ey_01 = ChannelTS(

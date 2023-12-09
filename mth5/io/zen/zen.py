@@ -7,7 +7,7 @@ Zen
     * Tools for reading and writing files for Zen and processing software
     * Tools for copying data from SD cards
     * Tools for copying schedules to SD cards
-    
+
 Created on Tue Jun 11 10:53:23 2013
 Updated August 2020 (JP)
 
@@ -30,7 +30,7 @@ from loguru import logger
 
 from mt_metadata.utils.mttime import MTime
 from mt_metadata.timeseries.filters import (
-    ChannelResponseFilter,
+    ChannelResponse,
     FrequencyResponseTableFilter,
     CoefficientFilter,
 )
@@ -596,7 +596,7 @@ class Z3D:
             filter_list.append(self.dipole_filter)
 
         filter_list.append(self.counts2mv_filter)
-        return ChannelResponseFilter(filters_list=filter_list)
+        return ChannelResponse(filters_list=filter_list)
 
     @property
     def dipole_filter(self):

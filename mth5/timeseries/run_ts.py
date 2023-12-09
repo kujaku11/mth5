@@ -29,7 +29,7 @@ from matplotlib import pyplot as plt
 from mt_metadata import timeseries as metadata
 from mt_metadata.utils.mttime import MTime
 from mt_metadata.utils.list_dict import ListDict
-from mt_metadata.timeseries.filters import ChannelResponseFilter
+from mt_metadata.timeseries.filters import ChannelResponse
 
 from .channel_ts import ChannelTS
 from .ts_helpers import (
@@ -459,7 +459,7 @@ class RunTS:
                     self.logger.debug(
                         f"Could not find {filter_name} in filters"
                     )
-        return ChannelResponseFilter(filters_list=filter_list)
+        return ChannelResponse(filters_list=filter_list)
 
     def __getattr__(self, name):
         # change to look for keys directly and use type to set channel type
@@ -949,10 +949,10 @@ class RunTS:
         """
         """
         Get just a chunk of data from the run, this will attempt to find the
-        closest points to the given parameters.  
-        
+        closest points to the given parameters.
+
         .. note:: We use pandas `slice_indexer` because xarray slice does not
-        seem to work as well, even though they should be based on the same 
+        seem to work as well, even though they should be based on the same
         code.
 
         :param start: start time of the slice

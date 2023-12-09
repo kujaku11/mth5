@@ -149,9 +149,9 @@ class RemoveInstrumentResponse:
     :type time_array: np.ndarray((N,) , dtype=np.datetime[ns])
     :param sample_interval: seconds per sample (time interval between samples)
     :type sample_interval: float
-    :param channel_response_filter: Channel response filter with all filters
+    :param channel_response: Channel response filter with all filters
     included to convert from counts to physical units
-    :type channel_response_filter: `class`:mt_metadata.timeseries.filters.ChannelResponseFilter`
+    :type channel_response: `class`:mt_metadata.timeseries.filters.ChannelResponse`
 
     **kwargs**
 

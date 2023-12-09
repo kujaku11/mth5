@@ -1,5 +1,5 @@
 """
-Module to read and parse native Phoenix Geophysics data formats of the 
+Module to read and parse native Phoenix Geophysics data formats of the
 MTU-5C Family.
 
 This module implements Streamed readers for segmented-decimated continuus-decimated
@@ -7,7 +7,7 @@ and native sampling rate time series formats of the MTU-5C family.
 
 :author: Jorge Torres-Solis
 
-Revised 2022 by J. Peacock 
+Revised 2022 by J. Peacock
 """
 
 # =============================================================================
@@ -21,7 +21,7 @@ from .receiver_metadata import PhoenixReceiverMetadata
 
 from mt_metadata.timeseries.filters import (
     CoefficientFilter,
-    ChannelResponseFilter,
+    ChannelResponse,
 )
 
 from loguru import logger
@@ -489,4 +489,4 @@ class TSReaderBase(Header):
         if ch_metadata.type in ["electric"]:
             filter_list.append(self.get_dipole_filter())
 
-        return ChannelResponseFilter(filters_list=filter_list)
+        return ChannelResponse(filters_list=filter_list)

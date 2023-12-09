@@ -20,7 +20,7 @@ from loguru import logger
 from mt_metadata import timeseries as metadata
 from mt_metadata.utils.mttime import MTime
 from mt_metadata.base import Base
-from mt_metadata.timeseries.filters import ChannelResponseFilter
+from mt_metadata.timeseries.filters import ChannelResponse
 
 from mth5 import CHANNEL_DTYPE
 from mth5.utils.exceptions import MTH5Error
@@ -261,7 +261,7 @@ class ChannelDataset:
             except KeyError:
                 self.logger.warning(f"Could not locate filter {name}")
                 continue
-        return ChannelResponseFilter(filters_list=f_list)
+        return ChannelResponse(filters_list=f_list)
 
     @property
     def start(self):
