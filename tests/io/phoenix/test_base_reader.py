@@ -228,8 +228,8 @@ class TestReadPhoenixContinuous(unittest.TestCase):
             self.phx_obj.get_v_to_mv_filter().to_dict(single=True), f
         )
 
-    def test_get_channel_response_filter(self):
-        cr = self.phx_obj.get_channel_response_filter()
+    def test_get_channel_response(self):
+        cr = self.phx_obj.get_channel_response()
 
         with self.subTest("length"):
             self.assertEqual(len(cr.filters_list), 1)

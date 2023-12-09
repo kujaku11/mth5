@@ -184,7 +184,7 @@ class RemoveInstrumentResponse:
         ts,
         time_array,
         sample_interval,
-        channel_response_filter,
+        channel_response,
         **kwargs,
     ):
         """
@@ -192,15 +192,15 @@ class RemoveInstrumentResponse:
         :param ts:
         :param time_array:
         :param sample_interval:
-        :param channel_response_filter:
+        :param channel_response:
         :param filters_to_remove: optional list of specific filters to remove.  If not provided, filters will be
-        taken from channel_response_filter.
+        taken from channel_response.
         """
         self.logger = logger
         self.ts = ts
         self.time_array = time_array
         self.sample_interval = sample_interval
-        self.channel_response_filter = channel_response_filter
+        self.channel_response = channel_response
         self.plot = False
         self.detrend = True
         self.zero_mean = True
@@ -501,7 +501,7 @@ class RemoveInstrumentResponse:
                 include_decimation = self.include_decimation
             if include_delay is None:
                 include_delay = self.include_delay
-            filters_to_remove, _ = self.channel_response_filter.get_list_of_filters_to_remove(
+            filters_to_remove, _ = self.channel_response.get_list_of_filters_to_remove(
                 include_decimation=include_decimation, include_delay=include_delay)
             if filters_to_remove is []:
                 raise ValueError("There are no filters in channel_response to remove")
@@ -562,7 +562,7 @@ class RemoveInstrumentResponse:
         # compute the complex response given the frequency range of the FFT
         # the complex response assumes frequencies are in reverse order and flip them on input
         # so we need to flip the complex reponse so it aligns with the fft.
-        cr = self.channel_response_filter.complex_response(f,
+        cr = self.channel_response.complex_response(f,
                                                            filters_list=filters_to_remove,
                                                            )[::-1]
         # remove the DC term at frequency == 0
@@ -579,14 +579,14 @@ class RemoveInstrumentResponse:
             data = self.apply_f_window(data)
             self.logger.debug(f"Step {step}: Applying {self.f_window} Frequency Window")
             step += 1
-        if self.channel_response_filter.correction_operation == "divide":
+        if self.channel_response.correction_operation == "divide":
         #if operation == "divide":
             # calibrate the time series, compute real part of fft, divide out
             # channel response, inverse fft
             calibrated_ts = np.fft.irfft(data / cr)[0 : self.ts.size]
             self.logger.debug(f"Step {step}: Removing Calibration by {operation}")
             step += 1
-        elif self.channel_response_filter.correction_operation == "multiply":
+        elif self.channel_response.correction_operation == "multiply":
         # elif operation == "multiply":
             logger.warning("It is unusual to apply the instrument response as it should already be in the data")
             # calibrate the time series, compute real part of fft, multiply out
@@ -612,7 +612,7 @@ class RemoveInstrumentResponse:
                 self.nrows * 2 - 1,
                 "Calibrated",
             )
-            self.fig.get_axes()[-2].set_ylabel(self.channel_response_filter.units_in)
+            self.fig.get_axes()[-2].set_ylabel(self.channel_response.units_in)
             if self.t_window is not None:
                 wax = self.fig.get_axes()[-2].twinx()
                 (tw,) = wax.plot(

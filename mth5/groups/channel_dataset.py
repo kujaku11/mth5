@@ -248,7 +248,7 @@ class ChannelDataset:
         return self.hdf5_dataset.parent.parent.parent.parent.attrs["id"]
 
     @property
-    def channel_response_filter(self):
+    def channel_response(self):
         # get the filters to make a channel response
         filters_group = FiltersGroup(
             self.hdf5_dataset.parent.parent.parent.parent["Filters"]
@@ -686,7 +686,7 @@ class ChannelDataset:
             run_metadata=self.run_metadata.copy(),
             station_metadata=self.station_metadata.copy(),
             survey_metadata=self.survey_metadata.copy(),
-            channel_response_filter=self.channel_response_filter,
+            channel_response=self.channel_response,
         )
 
     def to_xarray(self):
@@ -1079,7 +1079,7 @@ class ChannelDataset:
                 self.metadata.type,
                 data=self.hdf5_dataset[regional_ref],
                 channel_metadata={self.metadata.type: meta_dict},
-                channel_response_filter=self.channel_response_filter,
+                channel_response=self.channel_response,
             )
         else:
             msg = "return_type not understood, must be [ pandas | numpy | channel_ts ]"

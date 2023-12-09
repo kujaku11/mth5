@@ -1127,7 +1127,7 @@ class Z3D:
             channel_metadata=self.channel_metadata,
             station_metadata=self.station_metadata,
             run_metadata=self.run_metadata,
-            channel_response_filter=self.channel_response,
+            channel_response=self.channel_response,
         )
 
 

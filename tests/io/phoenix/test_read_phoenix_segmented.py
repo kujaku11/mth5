@@ -199,13 +199,13 @@ class TestReadPhoenixSegmented(unittest.TestCase):
                         value, ch_ts.channel_metadata.get_attr_from_name(key)
                     )
 
-        with self.subTest("channel_response_filter_length"):
-            self.assertEqual(2, len(ch_ts.channel_response_filter.filters_list))
+        with self.subTest("channel_response_length"):
+            self.assertEqual(2, len(ch_ts.channel_response.filters_list))
 
-        with self.subTest("channel_response_filter_frequency_shape"):
+        with self.subTest("channel_response_frequency_shape"):
             self.assertEqual(
                 (69,),
-                ch_ts.channel_response_filter.filters_list[0].frequencies.shape,
+                ch_ts.channel_response.filters_list[0].frequencies.shape,
             )
 
         with self.subTest("Channel Size"):

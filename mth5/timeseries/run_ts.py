@@ -293,8 +293,8 @@ class RunTS:
                 channels.append(item.channel_metadata)
 
                 # get the filters from the channel
-                if item.channel_response_filter.filters_list != []:
-                    for ff in item.channel_response_filter.filters_list:
+                if item.channel_response.filters_list != []:
+                    for ff in item.channel_response.filters_list:
                         self._filters[ff.name] = ff
             else:
                 valid_list.append(item)
@@ -438,7 +438,7 @@ class RunTS:
 
         return make_dt_coordinates(start, sample_rate, n_samples)
 
-    def _get_channel_response_filter(self, ch_name):
+    def _get_channel_response(self, ch_name):
         """
         Get the channel response filter from the filter dictionary
 
@@ -465,7 +465,7 @@ class RunTS:
         # change to look for keys directly and use type to set channel type
         if name in self.dataset.keys():
 
-            ch_response_filter = self._get_channel_response_filter(name)
+            ch_response_filter = self._get_channel_response(name)
             # if cannot get filters, but the filters name indicates that
             # filters should be there don't input the channel response filter
             # cause then an empty filters_list will set filter.name to []
@@ -476,7 +476,7 @@ class RunTS:
                 self.dataset[name],
                 run_metadata=self.run_metadata.copy(),
                 station_metadata=self.station_metadata.copy(),
-                channel_response_filter=ch_response_filter,
+                channel_response=ch_response_filter,
             )
         else:
             # this is a hack for now until figure out who is calling shape, size
@@ -728,7 +728,7 @@ class RunTS:
         elif isinstance(channel, ChannelTS):
             c = channel
             self.run_metadata.channels.append(c.channel_metadata)
-            for ff in c.channel_response_filter.filters_list:
+            for ff in c.channel_response.filters_list:
                 self._filters[ff.name] = ff
         else:
             raise ValueError(

@@ -44,7 +44,7 @@ class TestRemoveResponse(unittest.TestCase):
         self.channel.channel_metadata.component = "hx"
         self.channel.channel_metadata.units = "volt"
         #self.channel.channel_metadata.units = "digital counts"
-        self.channel.channel_response_filter.filters_list = [pz1,]
+        self.channel.channel_response.filters_list = [pz1,]
         self.channel.sample_rate = 1
         n_samples = 4096
         self.t = np.arange(n_samples) * self.channel.sample_interval

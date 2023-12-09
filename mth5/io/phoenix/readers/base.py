@@ -463,7 +463,7 @@ class TSReaderBase(Header):
 
         return conversion
 
-    def get_channel_response_filter(self, rxcal_fn=None, scal_fn=None):
+    def get_channel_response(self, rxcal_fn=None, scal_fn=None):
         """
         Get the channel response filter
 
