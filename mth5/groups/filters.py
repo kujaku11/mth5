@@ -5,7 +5,7 @@ Created on Wed Dec 23 17:08:40 2020
 Need to make a group for FAP and FIR filters.
 
 
-:copyright: 
+:copyright:
     Jared Peacock (jpeacock@usgs.gov)
 
 :license: MIT
@@ -143,8 +143,8 @@ class FiltersGroup(BaseGroup):
         try:
             f_type = self.filter_dict[name]["type"]
         except KeyError:
-            msg = "Could not find %s in the filter dictionary"
-            self.logger.error(msg, name)
+            msg = f"Could not find {name} in the filter dictionary"
+            self.logger.error(msg)
             raise KeyError(msg, name)
         if f_type in ["zpk"]:
             return self.zpk_group.to_object(name)
