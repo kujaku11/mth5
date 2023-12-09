@@ -1157,7 +1157,9 @@ class ChannelTS:
 
         # Make a list of the filters whose response will be removed.
         # We make the list here so that we have access to the indices to flip
-        filters_to_remove, indices_to_flip = self.channel_response.get_list_of_filters_to_remove(include_decimation=include_decimation, include_delay=include_delay)
+        indices_to_flip = self.channel_response.get_indices_of_filters_to_remove(include_decimation=include_decimation,
+                                                                              include_delay=include_delay)
+        filters_to_remove = [self.channel_response.filters_list[i] for i in indices_to_flip]
 
         remover = RemoveInstrumentResponse(
             self.ts,

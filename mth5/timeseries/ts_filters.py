@@ -501,7 +501,7 @@ class RemoveInstrumentResponse:
                 include_decimation = self.include_decimation
             if include_delay is None:
                 include_delay = self.include_delay
-            filters_to_remove, _ = self.channel_response.get_list_of_filters_to_remove(
+            filters_to_remove = self.channel_response.get_list_of_filters_to_remove(
                 include_decimation=include_decimation, include_delay=include_delay)
             if filters_to_remove is []:
                 raise ValueError("There are no filters in channel_response to remove")
