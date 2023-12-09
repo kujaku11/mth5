@@ -482,7 +482,6 @@ class RemoveInstrumentResponse:
         return subplot_dict
 
     def remove_instrument_response(self,
-                                   operation="divide",
                                    include_decimation=None,
                                    include_delay=None,
                                    filters_to_remove=[]):
@@ -579,20 +578,13 @@ class RemoveInstrumentResponse:
             data = self.apply_f_window(data)
             self.logger.debug(f"Step {step}: Applying {self.f_window} Frequency Window")
             step += 1
-        if operation == "divide":
-            # calibrate the time series, compute real part of fft, divide out
-            # channel response, inverse fft
-            calibrated_ts = np.fft.irfft(data / cr)[0 : self.ts.size]
-            self.logger.debug(f"Step {step}: Removing Calibration by {operation}")
-            step += 1
-        elif operation == "multiply":
-            msg = "It is unusual to apply the instrument response as it should already be in the data"
-            logger.warning("msg")
-            # calibrate the time series, compute real part of fft, multiply out
-            # channel response, inverse fft
-            calibrated_ts = np.fft.irfft(data * cr)[0 : self.ts.size]
-            self.logger.debug(f"Step {step}: Removing Calibration  by {operation}")
-            step += 1
+
+        # calibrate the time series, compute real part of fft, divide out
+        # channel response, inverse fft
+        calibrated_ts = np.fft.irfft(data / cr)[0 : self.ts.size]
+        self.logger.debug(f"Step {step}: Removing Calibration via divide channel response")
+        step += 1
+
         # If a time window was applied, need to un-apply it to reconstruct the signal.
         if self.t_window is not None:
             w = self.get_window(self.t_window, self.t_window_params, calibrated_ts.size)
