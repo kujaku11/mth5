@@ -1044,6 +1044,18 @@ class ChannelTS:
             )
 
 
+    def get_calibration_operation(self):
+        if self.channel_response.units_out == self.channel_metadata.unit_object.abbreviation:
+            calibration_operation = "divide"
+        elif self.channel_response.units_in == self.channel_metadata.unit_object.abbreviation:
+            calibration_operation = "multiply"
+            self.logger.warning("Unexpected Inverse Filter is being corrected -- something maybe wrong here ")
+        else:
+            msg = "cannot determine multiply or divide via units -- setting to divide"
+            self.logger.warning(msg)
+            calibration_operation = "divide"
+        return calibration_operation
+
     def get_calibrated_units(self):
         """
         Follows the FDSN standard which has the filter stages starting with physical units to digital counts.
@@ -1157,8 +1169,10 @@ class ChannelTS:
             **kwargs,
         )
 
-
-        calibrated_ts.ts = remover.remove_instrument_response(filters_to_remove=filters_to_remove)
+        calibration_operation = self.get_calibration_operation()
+        calibrated_ts.ts = remover.remove_instrument_response(filters_to_remove=filters_to_remove,
+                                                              operation=calibration_operation,
+                                                              )
 
         # update "applied" booleans
         applied_filters = calibrated_ts.channel_metadata.filter.applied

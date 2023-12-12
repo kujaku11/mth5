@@ -482,6 +482,7 @@ class RemoveInstrumentResponse:
         return subplot_dict
 
     def remove_instrument_response(self,
+                                   operation="divide",
                                    include_decimation=None,
                                    include_delay=None,
                                    filters_to_remove=[]):
@@ -581,9 +582,20 @@ class RemoveInstrumentResponse:
 
         # calibrate the time series, compute real part of fft, divide out
         # channel response, inverse fft
-        calibrated_ts = np.fft.irfft(data / cr)[0 : self.ts.size]
-        self.logger.debug(f"Step {step}: Removing Calibration via divide channel response")
-        step += 1
+        if operation == "divide":
+            calibrated_ts = np.fft.irfft(data / cr)[0 : self.ts.size]
+            self.logger.debug(f"Step {step}: Removing Calibration via divide channel response")
+            step += 1
+        elif operation == "multiply":
+            calibrated_ts = np.fft.irfft(data * cr)[0: self.ts.size]
+            self.logger.warning(f"Instrument response being applied rather that expected "
+                                f"operation of removing the response")
+            step += 1
+        else:
+            msg = f"Operation {operation} not recognized method of instrument response correction"
+            logger.error(msg)
+            raise Exception
+
 
         # If a time window was applied, need to un-apply it to reconstruct the signal.
         if self.t_window is not None:
