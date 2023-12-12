@@ -563,8 +563,8 @@ class RemoveInstrumentResponse:
         # the complex response assumes frequencies are in reverse order and flip them on input
         # so we need to flip the complex reponse so it aligns with the fft.
         cr = self.channel_response.complex_response(f,
-                                                           filters_list=filters_to_remove,
-                                                           )[::-1]
+                                                    filters_list=filters_to_remove,
+                                                    )[::-1]
         # remove the DC term at frequency == 0
         cr[-1] = abs(cr[-2]) + 0.0j
 
@@ -579,21 +579,24 @@ class RemoveInstrumentResponse:
             data = self.apply_f_window(data)
             self.logger.debug(f"Step {step}: Applying {self.f_window} Frequency Window")
             step += 1
-        if self.channel_response.correction_operation == "divide":
-        #if operation == "divide":
-            # calibrate the time series, compute real part of fft, divide out
-            # channel response, inverse fft
+
+        # calibrate the time series, compute real part of fft, divide out
+        # channel response, inverse fft
+        if operation == "divide":
             calibrated_ts = np.fft.irfft(data / cr)[0 : self.ts.size]
-            self.logger.debug(f"Step {step}: Removing Calibration by {operation}")
+            self.logger.debug(f"Step {step}: Removing Calibration via divide channel response")
             step += 1
-        elif self.channel_response.correction_operation == "multiply":
-        # elif operation == "multiply":
-            logger.warning("It is unusual to apply the instrument response as it should already be in the data")
-            # calibrate the time series, compute real part of fft, multiply out
-            # channel response, inverse fft
-            calibrated_ts = np.fft.irfft(data * cr)[0 : self.ts.size]
-            self.logger.debug(f"Step {step}: Removing Calibration  by {operation}")
+        elif operation == "multiply":
+            calibrated_ts = np.fft.irfft(data * cr)[0: self.ts.size]
+            self.logger.warning(f"Instrument response being applied rather that expected "
+                                f"operation of removing the response")
             step += 1
+        else:
+            msg = f"Operation {operation} not recognized method of instrument response correction"
+            logger.error(msg)
+            raise Exception
+
+
         # If a time window was applied, need to un-apply it to reconstruct the signal.
         if self.t_window is not None:
             w = self.get_window(self.t_window, self.t_window_params, calibrated_ts.size)

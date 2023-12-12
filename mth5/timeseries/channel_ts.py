@@ -1044,7 +1044,19 @@ class ChannelTS:
             )
 
 
-    def get_response_correction_operation_and_units(self):
+    def get_calibration_operation(self):
+        if self.channel_response.units_out == self.channel_metadata.unit_object.abbreviation:
+            calibration_operation = "divide"
+        elif self.channel_response.units_in == self.channel_metadata.unit_object.abbreviation:
+            calibration_operation = "multiply"
+            self.logger.warning("Unexpected Inverse Filter is being corrected -- something maybe wrong here ")
+        else:
+            msg = "cannot determine multiply or divide via units -- setting to divide"
+            self.logger.warning(msg)
+            calibration_operation = "divide"
+        return calibration_operation
+
+    def get_calibrated_units(self):
         """
         Follows the FDSN standard which has the filter stages starting with physical units to digital counts.
 
@@ -1060,38 +1072,26 @@ class ChannelTS:
         The units of the channel metadata are compared to the input and output units of the channel_response.
 
 
-        We need to know if the response removal is done by mulitplication or by division.
-        FDSN standards use division.  This boils down to checking whether the
-        channel_response units_in or units_out match the input time series.
-
-        Consider changing the attribute "applied", to "response_removed"
         :return: tuple, calibration_operation, either "mulitply" or divide", and a string for calibrated units
         :rtype: tuple (of two strings_
         """
         from mt_metadata.utils.units import get_unit_object
 
         if self.channel_response.units_out == self.channel_metadata.unit_object.abbreviation:
-            calibration_operation = "divide"
             calibrated_units = self.channel_response.units_in
-        elif self.channel_response.units_in == self.channel_metadata.unit_object.abbreviation:
-            calibration_operation = "multiply"
-            calibrated_units = self.channel_response.units_out
-            self.logger.warning("Unexpected Inverse Filter is being corrected -- something maybe wrong here ")
         elif (self.channel_response.units_in == None
               and self.channel_response.units_out == None):
             msg = "No Units are associated with the channel_response"
             self.logger.warning(msg)
             msg = "cannot determine multiply or divide via units -- setting to divide:/"
             self.logger.warning(msg)
-            calibration_operation = "divide"
             calibrated_units = self.channel_metadata.units
         else:
             logger.critical("channel response filter units are likely corrupt or channel_ts has no units")
-            calibration_operation = "divide"
             calibrated_units = self.channel_response.units_in
         unit_object = get_unit_object(calibrated_units)
         calibrated_units = unit_object.name
-        return calibration_operation, calibrated_units
+        return calibrated_units
 
 
     def remove_instrument_response(self,
@@ -1169,9 +1169,10 @@ class ChannelTS:
             **kwargs,
         )
 
-        calibration_operation, calibrated_units = self.get_response_correction_operation_and_units()
+        calibration_operation = self.get_calibration_operation()
         calibrated_ts.ts = remover.remove_instrument_response(filters_to_remove=filters_to_remove,
-                                                              operation=calibration_operation)
+                                                              operation=calibration_operation,
+                                                              )
 
         # update "applied" booleans
         applied_filters = calibrated_ts.channel_metadata.filter.applied
@@ -1180,6 +1181,7 @@ class ChannelTS:
         calibrated_ts.channel_metadata.filter.applied = applied_filters
 
         # update units
+        calibrated_units = self.get_calibrated_units()
         calibrated_ts.data_array.attrs["units"] = calibrated_units
         calibrated_ts.channel_metadata.units = calibrated_units
         calibrated_ts._update_xarray_metadata()
