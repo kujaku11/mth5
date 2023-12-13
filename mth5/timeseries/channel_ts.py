@@ -290,36 +290,37 @@ class ChannelTS:
     def _validate_channel_metadata(self, channel_metadata):
         """
         validate input channel metadata
+        If input is not an object of type: [metadata.Electric, metadata.Magnetic, metadata.Auxiliary],
+        then input must be dict. Try to figure out which (Electric, Magnetic, Auxiliary) it should be,
+        cast to object and return.
         """
+        expected_types = (metadata.Electric, metadata.Magnetic, metadata.Auxiliary)
+        if isinstance(channel_metadata, expected_types):
+            return channel_metadata.copy()
 
-        if not isinstance(
-            channel_metadata,
-            (metadata.Electric, metadata.Magnetic, metadata.Auxiliary),
-        ):
-            if isinstance(channel_metadata, dict):
-                if self.channel_type.lower() not in [
-                    cc.lower() for cc in channel_metadata.keys()
-                ]:
-                    try:
-                        self.channel_type = channel_metadata["type"]
-                    except KeyError:
-                        pass
-                    channel_metadata = {self.channel_type: channel_metadata}
-                self.channel_type = list(channel_metadata.keys())[0]
-                ch_metadata = meta_classes[self.channel_type]()
-                ch_metadata.from_dict(channel_metadata)
-                channel_metadata = ch_metadata.copy()
-                self.logger.debug("Loading from metadata dict")
-                return channel_metadata
-            else:
-                msg = (
-                    f"input metadata must be type {type(self.channel_metadata)}"
-                    f" or dict, not {type(channel_metadata)}"
-                )
-                self.logger.error(msg)
-                raise TypeError(msg)
+        if not isinstance(channel_metadata, dict):
+            msg = (
+                f"input metadata must be type {type(self.channel_metadata)}"
+                f" or dict, not {type(channel_metadata)}"
+            )
+            self.logger.error(msg)
+            raise TypeError(msg)
 
-        return channel_metadata.copy()
+        channel_metadata_lower_keys = [x.lower() for x in channel_metadata.keys()]
+        if self.channel_type.lower() not in channel_metadata_lower_keys:
+            try:
+                self.channel_type = channel_metadata["type"]
+            except KeyError:
+                pass
+            channel_metadata = {self.channel_type: channel_metadata}
+        self.channel_type = list(channel_metadata.keys())[0]
+        ch_metadata = meta_classes[self.channel_type]()
+        self.logger.debug("Loading from metadata dict")
+        ch_metadata.from_dict(channel_metadata)
+        channel_metadata = ch_metadata.copy()
+        return channel_metadata
+
+
 
     def _validate_run_metadata(self, run_metadata):
         """
