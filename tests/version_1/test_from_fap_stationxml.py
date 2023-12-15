@@ -78,14 +78,14 @@ class TestFAPMTH5(unittest.TestCase):
 
     def test_get_channel(self):
         self.hx = self.m.get_channel("FL001", "a", "hx")
-        fnames = [f.name for f in self.hx.channel_response_filter.filters_list]
+        fnames = [f.name for f in self.hx.channel_response.filters_list]
 
         self.assertIn("frequency response table_00", fnames)
         self.assertIn("v to counts (electric)", fnames)
 
     def test_fap(self):
         self.hx = self.m.get_channel("FL001", "a", "hx")
-        fap = self.hx.channel_response_filter.filters_list[0]
+        fap = self.hx.channel_response.filters_list[0]
         fap_exp = self.experiment.surveys[0].filters[
             "frequency response table_00"
         ]
@@ -103,7 +103,7 @@ class TestFAPMTH5(unittest.TestCase):
 
     def test_coefficient(self):
         self.hx = self.m.get_channel("FL001", "a", "hx")
-        coeff = self.hx.channel_response_filter.filters_list[1]
+        coeff = self.hx.channel_response.filters_list[1]
         coeff_exp = self.experiment.surveys[0].filters[
             "v to counts (electric)"
         ]

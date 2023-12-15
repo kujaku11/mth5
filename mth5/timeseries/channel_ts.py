@@ -27,7 +27,7 @@ from loguru import logger
 from scipy import signal
 
 import mt_metadata.timeseries as metadata
-from mt_metadata.timeseries.filters import ChannelResponseFilter
+from mt_metadata.timeseries.filters import ChannelResponse
 from mt_metadata.utils.mttime import MTime
 from mt_metadata.utils.list_dict import ListDict
 
@@ -118,7 +118,7 @@ class ChannelTS:
         self._survey_metadata = self._initialize_metadata()
 
         self.data_array = xr.DataArray([1], coords=[("time", [1])], name="ts")
-        self._channel_response = ChannelResponseFilter()
+        self._channel_response = ChannelResponse()
 
         self.survey_metadata = survey_metadata
         self.station_metadata = station_metadata
@@ -267,7 +267,7 @@ class ChannelTS:
             run_metadata=self.run_metadata,
             station_metadata=self.station_metadata,
             survey_metadata=self.survey_metadata,
-            channel_response_filter=self.channel_response_filter,
+            channel_response=self.channel_response,
         )
 
         new_channel.data_array = combined_ds.interp(
@@ -328,36 +328,37 @@ class ChannelTS:
     def _validate_channel_metadata(self, channel_metadata):
         """
         validate input channel metadata
+        If input is not an object of type: [metadata.Electric, metadata.Magnetic, metadata.Auxiliary],
+        then input must be dict. Try to figure out which (Electric, Magnetic, Auxiliary) it should be,
+        cast to object and return.
         """
+        expected_types = (metadata.Electric, metadata.Magnetic, metadata.Auxiliary)
+        if isinstance(channel_metadata, expected_types):
+            return channel_metadata.copy()
 
-        if not isinstance(
-            channel_metadata,
-            (metadata.Electric, metadata.Magnetic, metadata.Auxiliary),
-        ):
-            if isinstance(channel_metadata, dict):
-                if self.channel_type.lower() not in [
-                    cc.lower() for cc in channel_metadata.keys()
-                ]:
-                    try:
-                        self.channel_type = channel_metadata["type"]
-                    except KeyError:
-                        pass
-                    channel_metadata = {self.channel_type: channel_metadata}
-                self.channel_type = list(channel_metadata.keys())[0]
-                ch_metadata = meta_classes[self.channel_type]()
-                ch_metadata.from_dict(channel_metadata)
-                channel_metadata = ch_metadata.copy()
-                self.logger.debug("Loading from metadata dict")
-                return channel_metadata
-            else:
-                msg = (
-                    f"input metadata must be type {type(self.channel_metadata)}"
-                    f" or dict, not {type(channel_metadata)}"
-                )
-                self.logger.error(msg)
-                raise TypeError(msg)
+        if not isinstance(channel_metadata, dict):
+            msg = (
+                f"input metadata must be type {type(self.channel_metadata)}"
+                f" or dict, not {type(channel_metadata)}"
+            )
+            self.logger.error(msg)
+            raise TypeError(msg)
 
-        return channel_metadata.copy()
+        channel_metadata_lower_keys = [x.lower() for x in channel_metadata.keys()]
+        if self.channel_type.lower() not in channel_metadata_lower_keys:
+            try:
+                self.channel_type = channel_metadata["type"]
+            except KeyError:
+                pass
+            channel_metadata = {self.channel_type: channel_metadata}
+        self.channel_type = list(channel_metadata.keys())[0]
+        ch_metadata = meta_classes[self.channel_type]()
+        self.logger.debug("Loading from metadata dict")
+        ch_metadata.from_dict(channel_metadata)
+        channel_metadata = ch_metadata.copy()
+        return channel_metadata
+
+
 
     def _validate_run_metadata(self, run_metadata):
         """
@@ -448,7 +449,7 @@ class ChannelTS:
                 run_metadata=self.run_metadata.copy(),
                 station_metadata=self.station_metadata.copy(),
                 survey_metadata=self.survey_metadata.copy(),
-                channel_response_filter=self.channel_response_filter.copy(),
+                channel_response=self.channel_response.copy(),
             )
         else:
             return ChannelTS(
@@ -458,7 +459,7 @@ class ChannelTS:
                 run_metadata=self.run_metadata.copy(),
                 station_metadata=self.station_metadata.copy(),
                 survey_metadata=self.survey_metadata.copy(),
-                channel_response_filter=self.channel_response_filter.copy(),
+                channel_response=self.channel_response.copy(),
             )
 
     ### Properties ------------------------------------------------------------
@@ -1059,32 +1060,32 @@ class ChannelTS:
         )
 
     @property
-    def channel_response_filter(self):
+    def channel_response(self):
         """
         Full channel response filter
 
         :return: full channel response filter
-        :rtype: :class:`mt_metadata.timeseries.filters.ChannelResponseFilter`
+        :rtype: :class:`mt_metadata.timeseries.filters.ChannelResponse`
 
         """
 
         return self._channel_response
 
-    @channel_response_filter.setter
-    def channel_response_filter(self, value):
+    @channel_response.setter
+    def channel_response(self, value):
         """
 
         :param value: channel response filter
-        :type value: :class:`mt_metadata.timeseries.filters.ChannelResponseFilter`
+        :type value: :class:`mt_metadata.timeseries.filters.`
 
 
         """
         if value is None:
             return
-        if not isinstance(value, ChannelResponseFilter):
+        if not isinstance(value, ChannelResponse):
             msg = (
                 "channel response must be a "
-                "mt_metadata.timeseries.filters.ChannelResponseFilter object "
+                "mt_metadata.timeseries.filters.ChannelResponse object "
                 f"not {type(value)}."
             )
             self.logger.error(msg)
@@ -1098,11 +1099,65 @@ class ChannelTS:
 
             for f_name in self._channel_response.names:
                 self.channel_metadata.filter.name.append(f_name)
-            self.channel_metadata.filter.applied = [False] * len(
+            self.channel_metadata.filter.applied = [True] * len(
                 self.channel_metadata.filter.name
             )
 
-    def remove_instrument_response(self, **kwargs):
+
+    def get_calibration_operation(self):
+        if self.channel_response.units_out == self.channel_metadata.unit_object.abbreviation:
+            calibration_operation = "divide"
+        elif self.channel_response.units_in == self.channel_metadata.unit_object.abbreviation:
+            calibration_operation = "multiply"
+            self.logger.warning("Unexpected Inverse Filter is being corrected -- something maybe wrong here ")
+        else:
+            msg = "cannot determine multiply or divide via units -- setting to divide"
+            self.logger.warning(msg)
+            calibration_operation = "divide"
+        return calibration_operation
+
+    def get_calibrated_units(self):
+        """
+        Follows the FDSN standard which has the filter stages starting with physical units to digital counts.
+
+        The channel_response is expected to have a list of filter "stages" of which the first stage
+        has input units corresponding to the the physical quantity that the instrument measures, and the last is
+        normally counts.
+
+        channel_response can be viewed as the chaining together of all of these filters.
+
+        Thus it is normal for channel_response.units_out will be in the same units as the archived raw
+        time series, and for the units after the response is corrected for will be the units_in of
+
+        The units of the channel metadata are compared to the input and output units of the channel_response.
+
+
+        :return: tuple, calibration_operation, either "mulitply" or divide", and a string for calibrated units
+        :rtype: tuple (of two strings_
+        """
+        from mt_metadata.utils.units import get_unit_object
+
+        if self.channel_response.units_out == self.channel_metadata.unit_object.abbreviation:
+            calibrated_units = self.channel_response.units_in
+        elif (self.channel_response.units_in == None
+              and self.channel_response.units_out == None):
+            msg = "No Units are associated with the channel_response"
+            self.logger.warning(msg)
+            msg = "cannot determine multiply or divide via units -- setting to divide:/"
+            self.logger.warning(msg)
+            calibrated_units = self.channel_metadata.units
+        else:
+            logger.critical("channel response filter units are likely corrupt or channel_ts has no units")
+            calibrated_units = self.channel_response.units_in
+        unit_object = get_unit_object(calibrated_units)
+        calibrated_units = unit_object.name
+        return calibrated_units
+
+
+    def remove_instrument_response(self,
+                                   include_decimation=True,
+                                   include_delay=False,
+                                   **kwargs):
         """
         Remove instrument response from the given channel response filter
 
@@ -1116,6 +1171,13 @@ class ChannelTS:
             6) remove response
             7) undo time window
             8) bandpass
+
+        :param include_decimation: Include decimation in response,
+         defaults to True
+        :type include_decimation: bool, optional
+        :param include_delay: include delay in complex response,
+         defaults to False
+        :type include_delay: bool, optional
 
         **kwargs**
 
@@ -1141,6 +1203,8 @@ class ChannelTS:
         :type bandpass: dictionary
 
         """
+        def bool_flip(x):
+            return bool(int(x)-1)
 
         calibrated_ts = ChannelTS()
         calibrated_ts.__dict__.update(self.__dict__)
@@ -1150,47 +1214,36 @@ class ChannelTS:
                 "No filters to apply to calibrate time series data"
             )
             return calibrated_ts
+
+        # Make a list of the filters whose response will be removed.
+        # We make the list here so that we have access to the indices to flip
+        indices_to_flip = self.channel_response.get_indices_of_filters_to_remove(include_decimation=include_decimation,
+                                                                              include_delay=include_delay)
+        filters_to_remove = [self.channel_response.filters_list[i] for i in indices_to_flip]
+
         remover = RemoveInstrumentResponse(
             self.ts,
             self.time_index,
             self.sample_interval,
-            self.channel_response_filter,
+            self.channel_response,
             **kwargs,
         )
 
-        calibrated_ts.ts = remover.remove_instrument_response()
-        # change applied booleans
-        calibrated_ts.channel_metadata.filter.applied = [True] * len(
-            self.channel_metadata.filter.applied
-        )
+        calibration_operation = self.get_calibration_operation()
+        calibrated_ts.ts = remover.remove_instrument_response(filters_to_remove=filters_to_remove,
+                                                              operation=calibration_operation,
+                                                              )
+
+        # update "applied" booleans
+        applied_filters = calibrated_ts.channel_metadata.filter.applied
+        for idx in indices_to_flip:
+            applied_filters[idx] = bool_flip(applied_filters[idx])
+        calibrated_ts.channel_metadata.filter.applied = applied_filters
 
         # update units
-        # This is a hack for now until we come up with a standard for
-        # setting up the filter list.  Currently it follows the FDSN standard
-        # which has the filter stages starting with physical units to digital
-        # counts.
-        if (
-            self.channel_response_filter.units_out
-            == self.channel_metadata.units
-        ):
-            calibrated_ts.data_array.attrs[
-                "units"
-            ] = self.channel_response_filter.units_in
-            calibrated_ts.channel_metadata.units = (
-                self.channel_response_filter.units_in
-            )
-        elif (
-            self.channel_response_filter.units_out == None
-            and self.channel_response_filter.units_out == None
-        ):
-            calibrated_ts.channel_metadata.units = self.channel_metadata.units
-        else:
-            calibrated_ts.data_array.attrs[
-                "units"
-            ] = self.channel_response_filter.units_in
-            calibrated_ts.channel_metadata.units = (
-                self.channel_response_filter.units_in
-            )
+        calibrated_units = self.get_calibrated_units()
+        calibrated_ts.data_array.attrs["units"] = calibrated_units
+        calibrated_ts.channel_metadata.units = calibrated_units
         calibrated_ts._update_xarray_metadata()
 
         return calibrated_ts
@@ -1240,7 +1293,7 @@ class ChannelTS:
             channel_type=self.channel_type,
             data=new_ts,
             survey_metadata=self.survey_metadata,
-            channel_response_filter=self.channel_response_filter,
+            channel_response=self.channel_response,
         )
 
         return new_ch_ts
@@ -1416,7 +1469,7 @@ class ChannelTS:
             run_metadata=self.run_metadata,
             station_metadata=self.station_metadata,
             survey_metadata=self.survey_metadata,
-            channel_response_filter=self.channel_response_filter,
+            channel_response=self.channel_response,
         )
 
         new_channel.data_array = combined_ds.interp(

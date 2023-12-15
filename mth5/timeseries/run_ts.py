@@ -29,7 +29,7 @@ from matplotlib import pyplot as plt
 from mt_metadata import timeseries as metadata
 from mt_metadata.utils.mttime import MTime
 from mt_metadata.utils.list_dict import ListDict
-from mt_metadata.timeseries.filters import ChannelResponseFilter
+from mt_metadata.timeseries.filters import ChannelResponse
 
 from .channel_ts import ChannelTS
 from .ts_helpers import (
@@ -293,8 +293,8 @@ class RunTS:
                 channels.append(item.channel_metadata)
 
                 # get the filters from the channel
-                if item.channel_response_filter.filters_list != []:
-                    for ff in item.channel_response_filter.filters_list:
+                if item.channel_response.filters_list != []:
+                    for ff in item.channel_response.filters_list:
                         self._filters[ff.name] = ff
             else:
                 valid_list.append(item)
@@ -438,7 +438,7 @@ class RunTS:
 
         return make_dt_coordinates(start, sample_rate, n_samples)
 
-    def _get_channel_response_filter(self, ch_name):
+    def _get_channel_response(self, ch_name):
         """
         Get the channel response filter from the filter dictionary
 
@@ -459,13 +459,13 @@ class RunTS:
                     self.logger.debug(
                         f"Could not find {filter_name} in filters"
                     )
-        return ChannelResponseFilter(filters_list=filter_list)
+        return ChannelResponse(filters_list=filter_list)
 
     def __getattr__(self, name):
         # change to look for keys directly and use type to set channel type
         if name in self.dataset.keys():
 
-            ch_response_filter = self._get_channel_response_filter(name)
+            ch_response_filter = self._get_channel_response(name)
             # if cannot get filters, but the filters name indicates that
             # filters should be there don't input the channel response filter
             # cause then an empty filters_list will set filter.name to []
@@ -476,7 +476,7 @@ class RunTS:
                 self.dataset[name],
                 run_metadata=self.run_metadata.copy(),
                 station_metadata=self.station_metadata.copy(),
-                channel_response_filter=ch_response_filter,
+                channel_response=ch_response_filter,
             )
         else:
             # this is a hack for now until figure out who is calling shape, size
@@ -728,7 +728,7 @@ class RunTS:
         elif isinstance(channel, ChannelTS):
             c = channel
             self.run_metadata.channels.append(c.channel_metadata)
-            for ff in c.channel_response_filter.filters_list:
+            for ff in c.channel_response.filters_list:
                 self._filters[ff.name] = ff
         else:
             raise ValueError(
@@ -925,6 +925,9 @@ class RunTS:
             self.logger.warn(msg)
         self.station_metadata.fdsn.id = station
 
+        if len(run_metadata.channels) != len(array_list):
+            msg = f"Possible Leap Second Bug -- see issue #169"
+            self.logger.warning(msg)
         self.set_dataset(array_list)
 
         # need to be sure update any input metadata.
@@ -949,10 +952,10 @@ class RunTS:
         """
         """
         Get just a chunk of data from the run, this will attempt to find the
-        closest points to the given parameters.  
-        
+        closest points to the given parameters.
+
         .. note:: We use pandas `slice_indexer` because xarray slice does not
-        seem to work as well, even though they should be based on the same 
+        seem to work as well, even though they should be based on the same
         code.
 
         :param start: start time of the slice

@@ -321,7 +321,7 @@ class NIMS(NIMSHeader):
                 channel_metadata=self.hx_metadata,
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
-                channel_response_filter=self.get_channel_response("hx"),
+                channel_response=self.get_channel_response("hx"),
             )
         return None
 
@@ -357,7 +357,7 @@ class NIMS(NIMSHeader):
                 channel_metadata=self.hy_metadata,
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
-                channel_response_filter=self.get_channel_response("hy"),
+                channel_response=self.get_channel_response("hy"),
             )
         return None
 
@@ -394,7 +394,7 @@ class NIMS(NIMSHeader):
                 channel_metadata=self.hz_metadata,
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
-                channel_response_filter=self.get_channel_response("hz"),
+                channel_response=self.get_channel_response("hz"),
             )
         return None
 
@@ -432,7 +432,7 @@ class NIMS(NIMSHeader):
                 channel_metadata=self.ex_metadata,
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
-                channel_response_filter=self.get_channel_response("ex", self.ex_length),
+                channel_response=self.get_channel_response("ex", self.ex_length),
             )
         return None
 
@@ -470,7 +470,7 @@ class NIMS(NIMSHeader):
                 channel_metadata=self.ey_metadata,
                 run_metadata=self.run_metadata,
                 station_metadata=self.station_metadata,
-                channel_response_filter=self.get_channel_response("ey", self.ey_length),
+                channel_response=self.get_channel_response("ey", self.ey_length),
             )
         return None
 

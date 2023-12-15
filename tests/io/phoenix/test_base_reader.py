@@ -120,7 +120,7 @@ class TestReadPhoenixContinuous(unittest.TestCase):
                 ("channel_number", 0),
                 ("component", "h2"),
                 ("data_quality.rating.value", 0),
-                ("filter.applied", [False, False]),
+                ("filter.applied", [True, True]),
                 (
                     "filter.name",
                     ["mtu-5c_rmt03_10128_10000hz_low_pass", "coil_0_response"],
@@ -228,8 +228,8 @@ class TestReadPhoenixContinuous(unittest.TestCase):
             self.phx_obj.get_v_to_mv_filter().to_dict(single=True), f
         )
 
-    def test_get_channel_response_filter(self):
-        cr = self.phx_obj.get_channel_response_filter()
+    def test_get_channel_response(self):
+        cr = self.phx_obj.get_channel_response()
 
         with self.subTest("length"):
             self.assertEqual(len(cr.filters_list), 1)

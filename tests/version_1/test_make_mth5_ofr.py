@@ -282,7 +282,7 @@ class TestMakeMTH5(unittest.TestCase):
                     self.assertEqual(x.component, ch)
                 with self.subTest(name=f"has filters ORF08.{run}.{ch}"):
                     self.assertTrue(
-                        len(x.channel_response_filter.filters_list) >= 1
+                        len(x.channel_response.filters_list) >= 1
                     )
 
     @classmethod

@@ -678,11 +678,11 @@ class RunGroup(BaseGroup):
             self.logger.error(msg)
             raise MTH5Error(msg)
         ## Need to add in the filters
-        if channel_ts_obj.channel_response_filter.filters_list != []:
+        if channel_ts_obj.channel_response.filters_list != []:
             from mth5.groups import FiltersGroup
 
             fg = FiltersGroup(self.hdf5_group.parent.parent.parent["Filters"])
-            for ff in channel_ts_obj.channel_response_filter.filters_list:
+            for ff in channel_ts_obj.channel_response.filters_list:
                 fg.add_filter(ff)
         ch_obj = self.add_channel(
             channel_ts_obj.component,

@@ -140,7 +140,7 @@ class PhoenixReceiverMetadata:
                 f"{self.lp_filter_base_name}_{int(ch.lp)}hz_low_pass",
                 f"dipole_{int(c.dipole_length)}m",
             ]
-            c.filter.applied = [False, False]
+            c.filter.applied = [True, True]
         return c
 
     def _to_magnetic_metadata(self, tag):
@@ -167,10 +167,10 @@ class PhoenixReceiverMetadata:
             c.filter.name = [
                 f"{self.lp_filter_base_name}_{int(ch.lp)}hz_low_pass"
             ]
-            c.filter.applied = [False]
+            c.filter.applied = [True]
             if c.sensor.id is not None:
                 c.filter.name.append(f"coil_{c.sensor.id}_response")
-                c.filter.applied.append(False)
+                c.filter.applied.append(True)
 
         return c
 
