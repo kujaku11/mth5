@@ -925,6 +925,9 @@ class RunTS:
             self.logger.warn(msg)
         self.station_metadata.fdsn.id = station
 
+        if len(run_metadata.channels) != len(array_list):
+            msg = f"Possible Leap Second Bug -- see issue #169"
+            self.logger.warning(msg)
         self.set_dataset(array_list)
 
         # need to be sure update any input metadata.
