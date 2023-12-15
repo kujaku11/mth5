@@ -124,14 +124,52 @@ class ChannelTS:
         self.station_metadata = station_metadata
         self.run_metadata = run_metadata
         self.channel_metadata = channel_metadata
-
+        self._sample_rate = self.get_sample_rate_supplied_at_init(channel_metadata)
         # input data
         if data is not None:
             self.ts = data
-        self._update_xarray_metadata()
+        else:
+            self._update_xarray_metadata()
 
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
+
+    def get_sample_rate_supplied_at_init(self, channel_metadata):
+        """
+        Interrogate the channel_metadata argument supplied at init
+        to see if sample_rate is specified.
+
+        channel_metadata can be one of 5 types:
+        None,
+        dict
+        mt_metadata.timeseries.Electric,
+        mt_metadata.timeseries.Magnetic,
+        mt_metadata.timeseries.Auxiliary
+        In case it is a dict, we want to allow the sample_rate to
+        be at the top layer, adn one layer down, to support, for exmaple
+        {"electric":{"sample_rate":8.0,}}
+
+
+        """
+        sr = None
+        if channel_metadata is None:
+            sr = None
+        elif isinstance(channel_metadata, dict):
+            #check first two layers for sample_rate key
+            if "sample_rate" in channel_metadata.keys():
+                sr = channel_metadata["sample_rate"]
+            else:
+                for k, v in channel_metadata.items():
+                    if isinstance(v, dict):
+                        if "sample_rate" in v.keys():
+                            sr = v["sample_rate"]
+        else:
+            try:
+                # if an mt_metadata.timeseries access attr
+                sr = channel_metadata.sample_rate
+            except AttributeError:
+                sr = None
+        return sr
 
     def __str__(self):
         lines = [
@@ -840,35 +878,55 @@ class ChannelTS:
         else:
             return False
 
+    def is_high_frequency(self, threshold_dt=1e-4):
+        """
+        Quasi hard-coded condition to check if data are logged at more than 10kHz
+        can be parameterized in future
+        """
+        if (
+            self.data_array.coords.indexes["time"][1]
+            - self.data_array.coords.indexes["time"][0]
+        ).total_seconds() < threshold_dt:
+            return True
+        else:
+            return False
+
+
+    def compute_sample_rate(self):
+        """
+        Two cases, high_frequency (HF) data and not HF data.
+
+        # Original comment about the HF case:
+        Taking the median(diff(timestamps)) is more accurate for high sample rates, the way pandas.date_range
+        rounds nanoseconds is not consistent between samples, therefore taking the median provides better results
+        if the time series is long this can be inefficient so test first
+
+        """
+        if self.is_high_frequency():
+            sr = 1 / (
+                float(
+                    np.median(
+                        np.diff(self.data_array.coords.indexes["time"])
+                    )
+                )
+                / 1e9
+            )
+        else:
+            t_diff = (
+                self.data_array.coords.indexes["time"][-1]
+                - self.data_array.coords.indexes["time"][0]
+            )
+            sr = self.data_array.size / t_diff.total_seconds()
+        return np.round(sr, 0)
+
     # --> sample rate
     @property
     def sample_rate(self):
         """sample rate in samples/second"""
         if self.has_data():
-            # this is more accurate for high sample rates, the way
-            # pandas.date_range rounds nanoseconds is not consistent between
-            # samples, therefore taking the median provides better results
-            # if the time series is long this can be inefficient so test first
-            if (
-                self.data_array.coords.indexes["time"][1]
-                - self.data_array.coords.indexes["time"][0]
-            ).total_seconds() < 1e-4:
-
-                sr = 1 / (
-                    float(
-                        np.median(
-                            np.diff(self.data_array.coords.indexes["time"])
-                        )
-                    )
-                    / 1e9
-                )
-            else:
-                t_diff = (
-                    self.data_array.coords.indexes["time"][-1]
-                    - self.data_array.coords.indexes["time"][0]
-                )
-                sr = self.data_array.size / t_diff.total_seconds()
-
+            if self._sample_rate is None:
+                self._sample_rate = self.compute_sample_rate()
+            return self._sample_rate
         else:
             self.logger.debug(
                 "Data has not been set yet, sample rate is from metadata"
@@ -906,6 +964,7 @@ class ChannelTS:
                     f"Resetting ChannelTS.channel_metadata.sample_rate to {sample_rate}. "
                 )
             self.channel_metadata.sample_rate = sample_rate
+        self._sample_rate = sample_rate
         self._update_xarray_metadata()
 
     @property
