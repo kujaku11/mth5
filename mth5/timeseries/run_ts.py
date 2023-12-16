@@ -866,6 +866,17 @@ class RunTS:
             trace_list.append(ts_obj.to_obspy_trace())
         return Stream(traces=trace_list)
 
+    def wrangle_leap_seconds_from_obspy(self, array_list):
+        """
+        Experimental handling, not 100% clear what obspy is doing,
+        but there are runs with only one sample (numerically identical
+        to the adjacent sample) so try removing these.
+        """
+        msg = f"Possible Leap Second Bug -- see issue #169"
+        self.logger.warning(msg)
+        return [x for x in array_list if x.n_samples != 1]
+
+
     def from_obspy_stream(self, obspy_stream, run_metadata=None):
         """
         Get a run from an :class:`obspy.core.stream` which is a list of
@@ -926,8 +937,7 @@ class RunTS:
         self.station_metadata.fdsn.id = station
 
         if len(run_metadata.channels) != len(array_list):
-            msg = f"Possible Leap Second Bug -- see issue #169"
-            self.logger.warning(msg)
+            array_list = self.wrangle_leap_seconds_from_obspy(array_list)
         self.set_dataset(array_list)
 
         # need to be sure update any input metadata.
