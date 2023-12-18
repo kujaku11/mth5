@@ -34,7 +34,7 @@ jobs:
         conda install pytest=7.1.2
         conda install pytest-cov
         conda install pytest-subtests
-        pip install git+https://github.com/kujaku11/mt_metadata.git@patches
+        pip install git+https://github.com/kujaku11/mt_metadata.git
         
     - name: Install Our Package
       shell: bash

@@ -156,7 +156,7 @@ class DecimatedContinuousReader(TSReaderBase):
             channel_metadata=self.channel_metadata,
             run_metadata=self.run_metadata,
             station_metadata=self.station_metadata,
-            channel_response_filter=self.get_channel_response_filter(
+            channel_response=self.get_channel_response(
                 rxcal_fn=rxcal_fn, scal_fn=scal_fn
             ),
         )

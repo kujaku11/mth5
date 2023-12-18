@@ -6,10 +6,10 @@ Created on Tue Jun 30 16:38:27 2020
 
 :copyright:
     author: Jared Peacock
-    
+
 :license:
     MIT
-    
+
 """
 # =============================================================================
 # imports
@@ -24,7 +24,7 @@ from mt_metadata.utils.mttime import MTime
 import mt_metadata.timeseries as metadata
 from mt_metadata.timeseries.filters import (
     PoleZeroFilter,
-    ChannelResponseFilter,
+    ChannelResponse,
 )
 
 # =============================================================================
@@ -313,7 +313,7 @@ class TestRunTS(unittest.TestCase):
         pz.zeros = []
         pz.normalization_factor = 18244400
 
-        self.cr = ChannelResponseFilter(filters_list=[pz])
+        self.cr = ChannelResponse(filters_list=[pz])
 
         self.ex = ChannelTS(
             "electric",
@@ -325,7 +325,7 @@ class TestRunTS(unittest.TestCase):
                     "time_period.start": self.start,
                 }
             },
-            channel_response_filter=self.cr,
+            channel_response=self.cr,
         )
         self.ey = ChannelTS(
             "electric",
@@ -337,7 +337,7 @@ class TestRunTS(unittest.TestCase):
                     "time_period.start": self.start,
                 }
             },
-            channel_response_filter=self.cr,
+            channel_response=self.cr,
         )
         self.hx = ChannelTS(
             "magnetic",
@@ -349,7 +349,7 @@ class TestRunTS(unittest.TestCase):
                     "time_period.start": self.start,
                 }
             },
-            channel_response_filter=self.cr,
+            channel_response=self.cr,
         )
         self.hy = ChannelTS(
             "magnetic",
@@ -361,7 +361,7 @@ class TestRunTS(unittest.TestCase):
                     "time_period.start": self.start,
                 }
             },
-            channel_response_filter=self.cr,
+            channel_response=self.cr,
         )
         self.hz = ChannelTS(
             "magnetic",
@@ -373,7 +373,7 @@ class TestRunTS(unittest.TestCase):
                     "time_period.start": self.start,
                 }
             },
-            channel_response_filter=self.cr,
+            channel_response=self.cr,
         )
 
         self.run_object.set_dataset(
@@ -469,7 +469,7 @@ class TestRunTS(unittest.TestCase):
             with self.subTest(msg=f"{comp} filters"):
                 self.assertListEqual(
                     self.cr.filters_list,
-                    ch.channel_response_filter.filters_list,
+                    ch.channel_response.filters_list,
                 )
 
     def test_get_channel_fail(self):
@@ -566,8 +566,8 @@ class TestMergeRunTS(unittest.TestCase):
         self.pz2 = self.pz1.copy()
         self.pz2.name = "filter_2"
 
-        self.cr_01 = ChannelResponseFilter(filters_list=[self.pz1])
-        self.cr_02 = ChannelResponseFilter(filters_list=[self.pz2])
+        self.cr_01 = ChannelResponse(filters_list=[self.pz1])
+        self.cr_02 = ChannelResponse(filters_list=[self.pz2])
 
         self.run_object_01 = RunTS()
         self.ey_01 = ChannelTS(
@@ -580,7 +580,7 @@ class TestMergeRunTS(unittest.TestCase):
                     "time_period.start": self.start_01,
                 }
             },
-            channel_response_filter=self.cr_01,
+            channel_response=self.cr_01,
         )
         self.hx_01 = ChannelTS(
             "magnetic",
@@ -592,7 +592,7 @@ class TestMergeRunTS(unittest.TestCase):
                     "time_period.start": self.start_01,
                 }
             },
-            channel_response_filter=self.cr_01,
+            channel_response=self.cr_01,
         )
 
         self.run_object_01.set_dataset([self.ey_01, self.hx_01])
@@ -608,7 +608,7 @@ class TestMergeRunTS(unittest.TestCase):
                     "time_period.start": self.start_02,
                 }
             },
-            channel_response_filter=self.cr_02,
+            channel_response=self.cr_02,
         )
         self.hx_02 = ChannelTS(
             "magnetic",
@@ -620,7 +620,7 @@ class TestMergeRunTS(unittest.TestCase):
                     "time_period.start": self.start_02,
                 }
             },
-            channel_response_filter=self.cr_02,
+            channel_response=self.cr_02,
         )
 
         self.run_object_02.set_dataset([self.ey_02, self.hx_02])

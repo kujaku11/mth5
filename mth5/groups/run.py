@@ -678,11 +678,11 @@ class RunGroup(BaseGroup):
             self.logger.error(msg)
             raise MTH5Error(msg)
         ## Need to add in the filters
-        if channel_ts_obj.channel_response_filter.filters_list != []:
+        if channel_ts_obj.channel_response.filters_list != []:
             from mth5.groups import FiltersGroup
 
             fg = FiltersGroup(self.hdf5_group.parent.parent.parent["Filters"])
-            for ff in channel_ts_obj.channel_response_filter.filters_list:
+            for ff in channel_ts_obj.channel_response.filters_list:
                 fg.add_filter(ff)
         ch_obj = self.add_channel(
             channel_ts_obj.component,
@@ -744,7 +744,12 @@ class RunGroup(BaseGroup):
             channel_summary.start.min().isoformat()
         )
         self._metadata.time_period.end = channel_summary.end.max().isoformat()
-        self._metadata.sample_rate = channel_summary.sample_rate.unique()[0]
+        try:
+            self._metadata.sample_rate = channel_summary.sample_rate.unique()[0]
+        except IndexError:
+            msg = "There maybe no channels associated with this run -- setting sample_rate to 0"
+            self.logger.critical(msg)
+            self._metadata.sample_rate = 0
         self.write_metadata()
 
     def plot(self, start=None, end=None, n_samples=None):

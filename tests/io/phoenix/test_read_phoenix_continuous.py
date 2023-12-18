@@ -149,7 +149,7 @@ class TestReadPhoenixContinuous(unittest.TestCase):
                 ("channel_number", 0),
                 ("component", "h2"),
                 ("data_quality.rating.value", 0),
-                ("filter.applied", [False, False]),
+                ("filter.applied", [True, True]),
                 (
                     "filter.name",
                     ["mtu-5c_rmt03-j_666_h2_10000hz_lowpass", "v_to_mv"],
@@ -184,13 +184,13 @@ class TestReadPhoenixContinuous(unittest.TestCase):
                     self.assertEqual(
                         value, ch_ts.channel_metadata.get_attr_from_name(key)
                     )
-        with self.subTest("channel_response_filter_length"):
-            self.assertEqual(2, len(ch_ts.channel_response_filter.filters_list))
+        with self.subTest("channel_response_length"):
+            self.assertEqual(2, len(ch_ts.channel_response.filters_list))
 
-        with self.subTest("channel_response_filter_frequency_shape"):
+        with self.subTest("channel_response_frequency_shape"):
             self.assertEqual(
                 (69,),
-                ch_ts.channel_response_filter.filters_list[0].frequencies.shape,
+                ch_ts.channel_response.filters_list[0].frequencies.shape,
             )
 
         with self.subTest("Channel Size"):

@@ -254,7 +254,7 @@ class TestNIMSToRunTS(unittest.TestCase):
                 ("component", "ex"),
                 ("data_quality.rating.value", 0),
                 ("dipole_length", 109.0),
-                ("filter.applied", [False, False, False, False, False, False]),
+                ("filter.applied", [True, True, True, True, True, True]),
                 (
                     "filter.name",
                     [
@@ -302,7 +302,7 @@ class TestNIMSToRunTS(unittest.TestCase):
                 ("component", "ey"),
                 ("data_quality.rating.value", 0),
                 ("dipole_length", 101.0),
-                ("filter.applied", [False, False, False, False, False, False]),
+                ("filter.applied", [True, True, True, True, True, True]),
                 (
                     "filter.name",
                     [
@@ -349,7 +349,7 @@ class TestNIMSToRunTS(unittest.TestCase):
                 ("channel_number", 1),
                 ("component", "hx"),
                 ("data_quality.rating.value", 0),
-                ("filter.applied", [False, False, False]),
+                ("filter.applied", [True, True, True]),
                 (
                     "filter.name",
                     [
@@ -387,7 +387,7 @@ class TestNIMSToRunTS(unittest.TestCase):
                 ("channel_number", 2),
                 ("component", "hy"),
                 ("data_quality.rating.value", 0),
-                ("filter.applied", [False, False, False]),
+                ("filter.applied", [True, True, True]),
                 (
                     "filter.name",
                     [
@@ -425,7 +425,7 @@ class TestNIMSToRunTS(unittest.TestCase):
                 ("channel_number", 3),
                 ("component", "hz"),
                 ("data_quality.rating.value", 0),
-                ("filter.applied", [False, False, False]),
+                ("filter.applied", [True, True, True]),
                 (
                     "filter.name",
                     [
@@ -463,7 +463,7 @@ class TestNIMSToRunTS(unittest.TestCase):
                 ("channel_number", 6),
                 ("component", "temperature"),
                 ("data_quality.rating.value", 0),
-                ("filter.applied", [False]),
+                ("filter.applied", [True]),
                 ("filter.name", []),
                 ("location.elevation", 0.0),
                 ("location.latitude", 0.0),
@@ -500,7 +500,7 @@ class TestNIMSToRunTS(unittest.TestCase):
                 self.assertEqual(ch.channel_metadata.units, "nT")
             with self.subTest("applied"):
                 self.assertListEqual(
-                    ch.channel_metadata.filter.applied, [True, True, True]
+                    ch.channel_metadata.filter.applied, [False, False, False]
                 )
 
         for comp in ["ex", "ey"]:
@@ -510,7 +510,7 @@ class TestNIMSToRunTS(unittest.TestCase):
             with self.subTest("applied"):
                 self.assertListEqual(
                     ch.channel_metadata.filter.applied,
-                    [True, True, True, True, True, True],
+                    [False, False, False, False, False, False],
                 )
 
         ch = getattr(calibrated_run, "temperature")
@@ -519,7 +519,7 @@ class TestNIMSToRunTS(unittest.TestCase):
         with self.subTest("applied"):
             self.assertListEqual(
                 ch.channel_metadata.filter.applied,
-                [True],
+                [False],
             )
 
 
