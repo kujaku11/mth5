@@ -106,8 +106,12 @@ class FCChannelDataset:
             self.metadata.mth5_type = self._class_name
 
             # write out metadata to make sure that its in the file.
-            if write_metadata:
+            try:
                 self.write_metadata()
+            except RuntimeError:
+                # file is read only
+                pass
+
         # if the attrs don't have the proper metadata keys yet write them
         if not "mth5_type" in list(self.hdf5_dataset.attrs.keys()):
             self.write_metadata()
