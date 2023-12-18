@@ -246,10 +246,13 @@ class BaseGroup:
 
         """
 
-        for key, value in self.metadata.to_dict(single=True).items():
-            value = to_numpy_type(value)
-            self.logger.debug(f"wrote metadata {key} = {value}")
-            self.hdf5_group.attrs.create(key, value)
+        try:
+            for key, value in self.metadata.to_dict(single=True).items():
+                value = to_numpy_type(value)
+                self.logger.debug(f"wrote metadata {key} = {value}")
+                self.hdf5_group.attrs.create(key, value)
+        except ValueError:
+            self.logger.warning("File is in write mode, cannot write metadata.")
 
     def initialize_group(self, **kwargs):
         """
@@ -302,13 +305,19 @@ class BaseGroup:
             return_obj.write_metadata()
             if hasattr(return_obj, "initialize_group"):
                 return_obj.initialize_group()
-        except ValueError:
-            msg = (
-                f"{group_class.__name__} {name} already exists, "
-                "returning existing group."
-            )
-            self.logger.info(msg)
-            return_obj = self._get_group(name, group_class)
+        except ValueError as error:
+            if "Unable to synchronously open object" in str(error):
+                self.logger.info(
+                    f"File is in read-only mode, cannot create {name}"
+                )
+                return
+            else:
+                msg = (
+                    f"{group_class.__name__} {name} already exists, "
+                    "returning existing group."
+                )
+                self.logger.info(msg)
+                return_obj = self._get_group(name, group_class)
         return return_obj
 
     def _get_group(self, name, group_class):

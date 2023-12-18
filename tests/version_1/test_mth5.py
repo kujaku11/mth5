@@ -332,6 +332,37 @@ class TestMTH5AddData(unittest.TestCase):
         self.fn.unlink()
 
 
+class TestMTH5GetMethods(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.fn = fn_path.joinpath("test.mth5")
+        self.mth5_obj = MTH5(file_version="0.1.0")
+        self.mth5_obj.open_mth5(self.fn, mode="r")
+        self.maxDiff = None
+
+        self.station_group = self.mth5_obj.add_station("mt01")
+        self.station_group.metadata.location.latitude = 40
+        self.station_group.metadata.location.longitude = -120
+
+        self.run_group = self.station_group.add_run("a")
+        self.run_group.metadata.time_period.start = "2020-01-01T00:00:00"
+        self.run_group.metadata.time_period.end = "2020-01-01T12:00:00"
+
+        self.channel_dataset = self.run_group.add_channel(
+            "ex", "electric", None
+        )
+        self.channel_dataset.metadata.time_period.start = "2020-01-01T00:00:00"
+        self.channel_dataset.metadata.time_period.end = "2020-01-01T12:00:00"
+
+        self.run_group.update_run_metadata()
+        self.station_group.update_station_metadata()
+
+    @classmethod
+    def tearDownClass(self):
+        self.mth5_obj.close_mth5()
+        self.fn.unlink()
+
+
 # =============================================================================
 # Run
 # =============================================================================
