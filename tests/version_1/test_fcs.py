@@ -226,22 +226,24 @@ class TestFCFromXarray(unittest.TestCase):
         with self.subTest("ex shape"):
             self.assertTupleEqual(ch_da.shape, self.expected_shape)
 
-
     def test_can_update_decimation_level_metadata(self):
-
         window_type = "hamming"
         # set the window typw
         self.decimation_level.metadata.window.type = window_type
         # assert that the updated value is true
-        assert self.decimation_level.metadata.window.type == window_type
-        self.decimation_level.write_metadata()
+        with self.subTest("window.type is set"):
+            self.assertEqual(
+                self.decimation_level.metadata.window.type, window_type
+            )
         self.decimation_level.update_metadata()
-        self.fc_group.write_metadata()
+        self.decimation_level.write_metadata()
+
         self.fc_group.update_metadata()
+        self.fc_group.write_metadata()
+
         tmp = self.fc_group.get_decimation_level("3")
-
-        assert tmp.decimation_level.metadata.window.type == window_type
-
+        with self.subTest("get_decimation_level.metadata.window.type"):
+            self.assertEqual(tmp.metadata.window.type, window_type)
 
     @classmethod
     def tearDownClass(self):

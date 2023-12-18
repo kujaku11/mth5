@@ -41,6 +41,8 @@ meta_classes["TransferFunction"] = TransferFunction
 meta_classes["FCDecimation"] = Decimation
 meta_classes["FCChannel"] = Channel
 meta_classes["FC"] = FC
+
+
 # =============================================================================
 #
 # =============================================================================
@@ -188,7 +190,6 @@ class BaseGroup:
         """Metadata for the Group based on mt_metadata.timeseries"""
         if not self._has_read_metadata:
             self.read_metadata()
-            self._has_read_metadata = True
         return self._metadata
 
     @metadata.setter
@@ -237,6 +238,7 @@ class BaseGroup:
         for key, value in meta_dict.items():
             meta_dict[key] = from_numpy_type(value)
         self._metadata.from_dict({self._class_name: meta_dict})
+        self._has_read_metadata = True
 
     def write_metadata(self):
         """
@@ -322,10 +324,13 @@ class BaseGroup:
         """
         name = validate_name(name)
         try:
-            return group_class(self.hdf5_group[name], **self.dataset_options)
+            # get the group and be sure to read the metadata
+            group = group_class(self.hdf5_group[name], **self.dataset_options)
+            group.read_metadata()
+            return group
         except KeyError:
             msg = (
-                f"Error: {name} does not exist, check station_list for "
+                f"Error: {name} does not exist, check groups_list for "
                 "existing names"
             )
             self.logger.debug(msg)

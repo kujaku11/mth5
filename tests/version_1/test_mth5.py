@@ -95,6 +95,9 @@ class TestMTH5(unittest.TestCase):
             sg = self.mth5_obj.get_station("MT001")
             self.assertIsInstance(sg, groups.StationGroup)
 
+        with self.subTest("get station read meatadata"):
+            self.assertEqual(True, sg._has_read_metadata)
+
         with self.subTest("get_station check survey metadata"):
             self.assertListEqual(
                 new_station.survey_metadata.station_names, ["MT001"]
