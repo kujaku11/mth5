@@ -332,12 +332,15 @@ class TestMTH5AddData(unittest.TestCase):
         self.fn.unlink()
 
 
+# test in-read mode.
+
+
 class TestMTH5GetMethods(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.fn = fn_path.joinpath("test.mth5")
         self.mth5_obj = MTH5(file_version="0.1.0")
-        self.mth5_obj.open_mth5(self.fn, mode="r")
+        self.mth5_obj.open_mth5(self.fn, mode="w")
         self.maxDiff = None
 
         self.station_group = self.mth5_obj.add_station("mt01")
