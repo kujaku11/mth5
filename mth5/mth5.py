@@ -260,7 +260,6 @@ class MTH5:
         data_level=1,
         file_version="0.2.0",
     ):
-
         self.logger = logger
 
         # make these private so the user cant accidentally change anything.
@@ -443,7 +442,6 @@ class MTH5:
         """get the default groups based on file version"""
 
         if self.file_version in ["0.1.0"]:
-
             self._default_root_name = "Survey"
             self._default_subgroup_names = [
                 "Stations",
@@ -939,7 +937,6 @@ class MTH5:
                 for k, v in experiment.surveys[0].filters.items():
                     self.filters_group.add_filter(v)
             elif self.file_version in ["0.2.0"]:
-
                 for survey in experiment.surveys:
                     sg = self.add_survey(survey.id, survey_metadata=survey)
 
@@ -1045,10 +1042,12 @@ class MTH5:
 
         survey_path = self._make_h5_path(survey=survey_name)
         try:
-            return groups.SurveyGroup(
+            group = groups.SurveyGroup(
                 self.__hdf5_obj[survey_path],
                 **self.dataset_options,
             )
+            group.read_metadata()
+            return group
         except KeyError:
             msg = (
                 f"{survey_path} does not exist, check survey_list for "
@@ -1166,7 +1165,11 @@ class MTH5:
 
         station_path = self._make_h5_path(survey=survey, station=station_name)
         try:
-            return groups.StationGroup(self.__hdf5_obj[station_path])
+            group = groups.StationGroup(
+                self.__hdf5_obj[station_path], **self.dataset_options
+            )
+            group.read_metadata()
+            return group
         except KeyError:
             raise MTH5Error(f"Could not find station {station_name}")
 
@@ -1258,7 +1261,11 @@ class MTH5:
             survey=survey, station=station_name, run=run_name
         )
         try:
-            return groups.RunGroup(self.__hdf5_obj[run_path])
+            group = groups.RunGroup(
+                self.__hdf5_obj[run_path], **self.dataset_options
+            )
+            group.read_metadata()
+            return group
         except KeyError:
             raise MTH5Error(f"Could not find {run_path}")
 
@@ -1399,7 +1406,8 @@ class MTH5:
         run_path = self._make_h5_path(
             survey=survey, station=station_name, run=run_name
         )
-        rg = groups.RunGroup(self.__hdf5_obj[run_path])
+        rg = groups.RunGroup(self.__hdf5_obj[run_path], **self.dataset_options)
+        rg.read_metadata()
         try:
             return rg.get_channel(helpers.validate_name(channel_name))
         except (AttributeError, KeyError):
@@ -1616,7 +1624,10 @@ class MTH5:
                 survey=survey, station=station_id, tf_id=tf_id
             )
             try:
-                tg = groups.TransferFunctionGroup(self.__hdf5_obj[tf_path])
+                tg = groups.TransferFunctionGroup(
+                    self.__hdf5_obj[tf_path], **self.dataset_options
+                )
+                tg.read_metadata()
                 return tg.to_tf_object()
             except KeyError:
                 raise MTH5Error(f"Could not find {tf_path}")
