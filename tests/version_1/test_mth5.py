@@ -356,9 +356,23 @@ class TestMTH5GetMethods(unittest.TestCase):
         )
         self.channel_dataset.metadata.time_period.start = "2020-01-01T00:00:00"
         self.channel_dataset.metadata.time_period.end = "2020-01-01T12:00:00"
+        self.channel_dataset.write_metadata()
 
         self.run_group.update_run_metadata()
         self.station_group.update_station_metadata()
+
+    def test_get_station_mth5(self):
+        sg = self.mth5_obj.get_station("mt01")
+
+        with self.subTest("has read metadata"):
+            self.assertEqual(True, sg._has_read_metadata)
+
+        og_dict = self.station_group.metadata.to_dict(single=True)
+        get_dict = sg.metadata.to_dict(single=True)
+        for key, original in og_dict.items():
+            if "hdf5_reference" != key:
+                with self.subTest(key):
+                    self.assertEqual(original, get_dict[key])
 
     @classmethod
     def tearDownClass(self):
