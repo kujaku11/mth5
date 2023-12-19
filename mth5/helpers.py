@@ -6,8 +6,8 @@ Created on Tue Jun  2 12:37:50 2020
 
 :copyright:
     Jared Peacock (jpeacock@usgs.gov)
-    
-:license: 
+
+:license:
     MIT
 
 """
@@ -243,6 +243,7 @@ def from_numpy_type(value):
             bool,
             complex,
             np.int_,
+            np.int32,
             np.float_,
             np.bool_,
             np.complex_,
