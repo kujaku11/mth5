@@ -43,9 +43,10 @@ class TestMakeMTH5FDSNInventory(unittest.TestCase):
         channels = ["LFE", "LFN", "LFZ", "LQE", "LQN"]
         CAS04 = ["8P", "CAS04", "2020-06-02T18:00:00", "2020-07-13T19:00:00"]
         NVR08 = ["8P", "NVR08", "2020-06-02T18:00:00", "2020-07-13T19:00:00"]
+        ALW49 = ["4P", "ALW49", "2015-06-30T20:00:00", "2020-07-01T04:00:00"]
 
         request_list = []
-        for entry in [CAS04, NVR08]:
+        for entry in [CAS04, NVR08, ALW49]:
             for channel in channels:
                 request_list.append(
                     [entry[0], entry[1], "", channel, entry[2], entry[3]]
@@ -54,7 +55,7 @@ class TestMakeMTH5FDSNInventory(unittest.TestCase):
         self.csv_fn = Path().cwd().joinpath("test_inventory.csv")
         self.mth5_path = Path().cwd()
 
-        self.stations = ["CAS04", "NVR08"]
+        self.stations = ["CAS04", "NVR08", "ALW49"]
         self.channels = ["LQE", "LQN", "LFE", "LFN", "LFZ"]
 
         # Turn list into dataframe
@@ -222,9 +223,10 @@ class TestMakeMTH5(unittest.TestCase):
         channels = ["LFE", "LFN", "LFZ", "LQE", "LQN"]
         CAS04 = ["8P", "CAS04", "2020-06-02T18:00:00", "2020-07-13T19:00:00"]
         NVR08 = ["8P", "NVR08", "2020-06-02T18:00:00", "2020-07-13T19:00:00"]
+        ALW49 = ["4P", "ALW49", "2015-06-30T20:00:00", "2020-07-01T04:00:00"]
 
         request_list = []
-        for entry in [CAS04, NVR08]:
+        for entry in [CAS04, NVR08, ALW49]:
             for channel in channels:
                 request_list.append(
                     [entry[0], entry[1], "", channel, entry[2], entry[3]]
@@ -233,7 +235,7 @@ class TestMakeMTH5(unittest.TestCase):
         self.csv_fn = Path().cwd().joinpath("test_inventory.csv")
         self.mth5_path = Path().cwd()
 
-        self.stations = ["CAS04", "NVR08"]
+        self.stations = ["CAS04", "NVR08", "ALW49"]
         self.channels = ["LQE", "LQN", "LFE", "LFN", "LFZ"]
 
         # Turn list into dataframe
