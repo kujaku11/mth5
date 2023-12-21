@@ -252,7 +252,7 @@ class BaseGroup:
                 self.logger.debug(f"wrote metadata {key} = {value}")
                 self.hdf5_group.attrs.create(key, value)
         except KeyError as key_error:
-            if "Unable to delete attribute" in str(key_error):
+            if "no write intent" in str(key_error):
                 self.logger.warning(
                     "File is in read-only mode, cannot write metadata."
                 )
@@ -318,12 +318,12 @@ class BaseGroup:
             if hasattr(return_obj, "initialize_group"):
                 return_obj.initialize_group()
         except ValueError as error:
-            if "Unable to synchronously" in str(error):
+            if "no write intent" in str(error):
                 self.logger.warning(
                     f"File is in read-only mode, cannot create group {name}"
                 )
                 return
-            else:
+            elif "name already exists" in str(error):
                 msg = (
                     f"{group_class.__name__} {name} already exists, "
                     "returning existing group."
