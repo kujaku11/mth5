@@ -374,6 +374,46 @@ class TestMTH5GetMethods(unittest.TestCase):
                 with self.subTest(key):
                     self.assertEqual(original, get_dict[key])
 
+    def test_get_station_from_stations_group(self):
+        sg = self.mth5_obj.survey_group.stations_group.get_station("mt01")
+
+        with self.subTest("has read metadata"):
+            self.assertEqual(True, sg._has_read_metadata)
+
+        og_dict = self.station_group.metadata.to_dict(single=True)
+        get_dict = sg.metadata.to_dict(single=True)
+        for key, original in og_dict.items():
+            if "hdf5_reference" != key:
+                with self.subTest(key):
+                    self.assertEqual(original, get_dict[key])
+
+    def test_get_run_mth5(self):
+        rg = self.mth5_obj.get_run("mt01", "a")
+
+        with self.subTest("has read metadata"):
+            self.assertEqual(True, rg._has_read_metadata)
+
+        og_dict = self.run_group.metadata.to_dict(single=True)
+        get_dict = rg.metadata.to_dict(single=True)
+        for key, original in og_dict.items():
+            if "hdf5_reference" != key:
+                with self.subTest(key):
+                    self.assertEqual(original, get_dict[key])
+
+    def test_get_run_from_stations_group(self):
+        sg = self.mth5_obj.survey_group.stations_group.get_station("mt01")
+        rg = sg.get_run("a")
+
+        with self.subTest("has read metadata"):
+            self.assertEqual(True, sg._has_read_metadata)
+
+        og_dict = self.run_group.metadata.to_dict(single=True)
+        get_dict = rg.metadata.to_dict(single=True)
+        for key, original in og_dict.items():
+            if "hdf5_reference" != key:
+                with self.subTest(key):
+                    self.assertEqual(original, get_dict[key])
+
     @classmethod
     def tearDownClass(self):
         self.mth5_obj.close_mth5()
