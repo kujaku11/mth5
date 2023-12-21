@@ -658,7 +658,7 @@ class RunGroup(BaseGroup):
                         ch.run_metadata.id = self.metadata.id
 
             channels.append(self.from_channel_ts(ch))
-        self.update_run_metadata()
+        self.update_metadata()
         return channels
 
     def from_channel_ts(self, channel_ts_obj):
