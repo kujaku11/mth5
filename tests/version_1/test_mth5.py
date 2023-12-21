@@ -332,9 +332,6 @@ class TestMTH5AddData(unittest.TestCase):
         self.fn.unlink()
 
 
-# test in-read mode.
-
-
 class TestMTH5GetMethods(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -358,8 +355,8 @@ class TestMTH5GetMethods(unittest.TestCase):
         self.channel_dataset.metadata.time_period.end = "2020-01-01T12:00:00"
         self.channel_dataset.write_metadata()
 
-        self.run_group.update_run_metadata()
-        self.station_group.update_station_metadata()
+        self.run_group.update_metadata()
+        self.station_group.update_metadata()
 
     def test_get_station_mth5(self):
         sg = self.mth5_obj.get_station("mt01")
@@ -413,6 +410,55 @@ class TestMTH5GetMethods(unittest.TestCase):
             if "hdf5_reference" != key:
                 with self.subTest(key):
                     self.assertEqual(original, get_dict[key])
+
+    def test_deprecation_update_survey_metadata(self):
+        self.assertRaises(
+            DeprecationWarning,
+            self.mth5_obj.survey_group.update_survey_metadata,
+        )
+
+    def test_deprecation_update_station_metadata(self):
+        self.assertRaises(
+            DeprecationWarning, self.station_group.update_station_metadata
+        )
+
+    def test_deprecation_update_run_metadata(self):
+        self.assertRaises(
+            DeprecationWarning, self.run_group.update_run_metadata
+        )
+
+    @classmethod
+    def tearDownClass(self):
+        self.mth5_obj.close_mth5()
+        self.fn.unlink()
+
+
+class TestMTH5InReadMode(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.fn = fn_path.joinpath("test.mth5")
+        self.mth5_obj = MTH5(file_version="0.1.0")
+        self.mth5_obj.open_mth5(self.fn, mode="w")
+        self.maxDiff = None
+
+        station_group = self.mth5_obj.add_station("mt01")
+        station_group.metadata.location.latitude = 40
+        station_group.metadata.location.longitude = -120
+        station_group.update_metadata()
+        self.mth5_obj.close_mth5()
+
+    def test_get_station(self):
+        m = MTH5()
+        m.open_mth5(self.fn, mode="r")
+
+        sg = m.get_station("mt01")
+
+        sg.metadata.location.latitude = 50
+        sg.write_metadata()
+
+        sg = m.get_station("mt01")
+
+        self.assertEqual(sg.metadata.location.latitude, 40)
 
     @classmethod
     def tearDownClass(self):

@@ -755,8 +755,8 @@ class MTH5:
             if self.h5_is_write():
                 self.channel_summary.summarize()
                 self.tf_summary.summarize()
+                self.__hdf5_obj.flush()
             self.logger.info(f"Flushing and closing {str(self.filename)}")
-            self.__hdf5_obj.flush()
             self.__hdf5_obj.close()
         except (AttributeError, ValueError):
             helpers.close_open_files()
@@ -931,9 +931,9 @@ class MTH5:
                                 mt_ch.write_metadata()
                         ### need to update from input metadata for time period
                         ### and channels, runs, stations.
-                        mt_run.update_run_metadata()
-                    mt_station.update_station_metadata()
-                sg.update_survey_metadata()
+                        mt_run.update_metadata()
+                    mt_station.update_metadata()
+                sg.update_metadata()
                 for k, v in experiment.surveys[0].filters.items():
                     self.filters_group.add_filter(v)
             elif self.file_version in ["0.2.0"]:
@@ -966,9 +966,9 @@ class MTH5:
                                 if update:
                                     mt_ch.metadata.update(channel)
                                     mt_ch.write_metadata()
-                            mt_run.update_run_metadata()
-                        mt_station.update_station_metadata()
-                    sg.update_survey_metadata()
+                            mt_run.update_metadata()
+                        mt_station.update_metadata()
+                    sg.update_metadata()
                     for k, v in survey.filters.items():
                         sg.filters_group.add_filter(v)
 
@@ -1589,7 +1589,7 @@ class MTH5:
                 )
             )
 
-        survey_group.update_survey_metadata()
+        survey_group.update_metadata()
         return tf_group
 
     def get_transfer_function(self, station_id, tf_id, survey=None):

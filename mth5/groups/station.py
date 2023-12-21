@@ -170,7 +170,6 @@ class MasterStationGroup(BaseGroup):
     """
 
     def __init__(self, group, **kwargs):
-
         super().__init__(group, **kwargs)
 
     @property
@@ -231,9 +230,7 @@ class MasterStationGroup(BaseGroup):
 
         """
         if station_name is None:
-            raise Exception(
-                "station name is None, do not know what to name it"
-            )
+            raise Exception("station name is None, do not know what to name it")
 
         return self._add_group(
             station_name, StationGroup, station_metadata, match="id"
@@ -465,9 +462,17 @@ class StationGroup(BaseGroup):
         self.write_metadata()
 
         for group_name in self._default_subgroup_names:
-            self.hdf5_group.create_group(f"{group_name}")
-            m5_grp = getattr(self, f"{group_name.lower()}_group")
-            m5_grp.initialize_group()
+            try:
+                self.hdf5_group.create_group(f"{group_name}")
+                m5_grp = getattr(self, f"{group_name.lower()}_group")
+                m5_grp.initialize_group()
+            except ValueError as value_error:
+                if "Unable to synchronously create group" in str(value_error):
+                    self.logger.warning(
+                        "File is in write mode, cannot create group."
+                    )
+                else:
+                    raise ValueError(value_error)
 
     @property
     def master_station_group(self):
@@ -704,6 +709,18 @@ class StationGroup(BaseGroup):
         self._remove_group(run_name)
 
     def update_station_metadata(self):
+        """
+        Check metadata from the runs and make sure it matches the station metadata
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        raise DeprecationWarning(
+            "'update_station_metadata' has been deprecated use 'update_metadata()'"
+        )
+
+    def update_metadata(self):
         """
         Check metadata from the runs and make sure it matches the station metadata
 
