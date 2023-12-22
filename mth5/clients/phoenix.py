@@ -201,7 +201,7 @@ class PhoenixClient:
                         # add channel to the run group
                         run_group.from_channel_ts(ch_ts)
 
-                    run_group.update_run_metadata()
+                    run_group.update_metadata()
 
-            station_group.update_station_metadata()
-            survey_group.update_survey_metadata()
+            station_group.update_metadata()
+            survey_group.update_metadata()

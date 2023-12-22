@@ -95,6 +95,9 @@ class TestMTH5(unittest.TestCase):
             sg = self.mth5_obj.get_station("MT001")
             self.assertIsInstance(sg, groups.StationGroup)
 
+        with self.subTest("get station read meatadata"):
+            self.assertEqual(True, sg._has_read_metadata)
+
         with self.subTest("get_station check survey metadata"):
             self.assertListEqual(
                 new_station.survey_metadata.station_names, ["MT001"]
@@ -322,6 +325,140 @@ class TestMTH5AddData(unittest.TestCase):
             .runs[0]
             .channels_recorded_all,
         )
+
+    @classmethod
+    def tearDownClass(self):
+        self.mth5_obj.close_mth5()
+        self.fn.unlink()
+
+
+class TestMTH5GetMethods(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.fn = fn_path.joinpath("test.mth5")
+        self.mth5_obj = MTH5(file_version="0.1.0")
+        self.mth5_obj.open_mth5(self.fn, mode="w")
+        self.maxDiff = None
+
+        self.station_group = self.mth5_obj.add_station("mt01")
+        self.station_group.metadata.location.latitude = 40
+        self.station_group.metadata.location.longitude = -120
+
+        self.run_group = self.station_group.add_run("a")
+        self.run_group.metadata.time_period.start = "2020-01-01T00:00:00"
+        self.run_group.metadata.time_period.end = "2020-01-01T12:00:00"
+
+        self.channel_dataset = self.run_group.add_channel(
+            "ex", "electric", None
+        )
+        self.channel_dataset.metadata.time_period.start = "2020-01-01T00:00:00"
+        self.channel_dataset.metadata.time_period.end = "2020-01-01T12:00:00"
+        self.channel_dataset.write_metadata()
+
+        self.run_group.update_metadata()
+        self.station_group.update_metadata()
+
+    def test_get_station_mth5(self):
+        sg = self.mth5_obj.get_station("mt01")
+
+        with self.subTest("has read metadata"):
+            self.assertEqual(True, sg._has_read_metadata)
+
+        og_dict = self.station_group.metadata.to_dict(single=True)
+        get_dict = sg.metadata.to_dict(single=True)
+        for key, original in og_dict.items():
+            if "hdf5_reference" != key:
+                with self.subTest(key):
+                    self.assertEqual(original, get_dict[key])
+
+    def test_get_station_from_stations_group(self):
+        sg = self.mth5_obj.survey_group.stations_group.get_station("mt01")
+
+        with self.subTest("has read metadata"):
+            self.assertEqual(True, sg._has_read_metadata)
+
+        og_dict = self.station_group.metadata.to_dict(single=True)
+        get_dict = sg.metadata.to_dict(single=True)
+        for key, original in og_dict.items():
+            if "hdf5_reference" != key:
+                with self.subTest(key):
+                    self.assertEqual(original, get_dict[key])
+
+    def test_get_run_mth5(self):
+        rg = self.mth5_obj.get_run("mt01", "a")
+
+        with self.subTest("has read metadata"):
+            self.assertEqual(True, rg._has_read_metadata)
+
+        og_dict = self.run_group.metadata.to_dict(single=True)
+        get_dict = rg.metadata.to_dict(single=True)
+        for key, original in og_dict.items():
+            if "hdf5_reference" != key:
+                with self.subTest(key):
+                    self.assertEqual(original, get_dict[key])
+
+    def test_get_run_from_stations_group(self):
+        sg = self.mth5_obj.survey_group.stations_group.get_station("mt01")
+        rg = sg.get_run("a")
+
+        with self.subTest("has read metadata"):
+            self.assertEqual(True, sg._has_read_metadata)
+
+        og_dict = self.run_group.metadata.to_dict(single=True)
+        get_dict = rg.metadata.to_dict(single=True)
+        for key, original in og_dict.items():
+            if "hdf5_reference" != key:
+                with self.subTest(key):
+                    self.assertEqual(original, get_dict[key])
+
+    def test_deprecation_update_survey_metadata(self):
+        self.assertRaises(
+            DeprecationWarning,
+            self.mth5_obj.survey_group.update_survey_metadata,
+        )
+
+    def test_deprecation_update_station_metadata(self):
+        self.assertRaises(
+            DeprecationWarning, self.station_group.update_station_metadata
+        )
+
+    def test_deprecation_update_run_metadata(self):
+        self.assertRaises(
+            DeprecationWarning, self.run_group.update_run_metadata
+        )
+
+    @classmethod
+    def tearDownClass(self):
+        self.mth5_obj.close_mth5()
+        self.fn.unlink()
+
+
+class TestMTH5InReadMode(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.fn = fn_path.joinpath("test.mth5")
+        self.mth5_obj = MTH5(file_version="0.1.0")
+        self.mth5_obj.open_mth5(self.fn, mode="w")
+        self.maxDiff = None
+
+        station_group = self.mth5_obj.add_station("mt01")
+        station_group.metadata.location.latitude = 40
+        station_group.metadata.location.longitude = -120
+        station_group.update_metadata()
+        self.mth5_obj.close_mth5()
+
+    def test_get_station(self):
+        m = MTH5()
+        m.open_mth5(self.fn, mode="r")
+
+        sg = m.get_station("mt01")
+
+        sg.metadata.location.latitude = 50
+        sg.write_metadata()
+
+        sg = m.get_station("mt01")
+
+        self.assertEqual(sg.metadata.location.latitude, 40)
 
     @classmethod
     def tearDownClass(self):
