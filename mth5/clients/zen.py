@@ -234,7 +234,7 @@ class ZenClient:
                             calibration_fn=row.calibration_fn,
                         )
                         run_group.from_channel_ts(ch_ts)
-                    run_group.update_run_metadata()
+                    run_group.update_metadata()
                     if combine:
                         run_list.append(run_group.to_runts())
                 if combine:
@@ -245,9 +245,9 @@ class ZenClient:
                     combined_run.run_metadata.id = "sr1_0001"
                     combined_run_group = station_group.add_run("sr1_0001")
                     combined_run_group.from_runts(combined_run)
-                    combined_run_group.update_run_metadata()
-                station_group.update_station_metadata()
-            survey_group.update_survey_metadata()
+                    combined_run_group.update_metadata()
+                station_group.update_metadata()
+            survey_group.update_metadata()
 
         self.logger.info(f"Wrote MTH5 file to: {self.save_path}")
 

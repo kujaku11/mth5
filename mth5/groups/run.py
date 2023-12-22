@@ -36,6 +36,7 @@ from mth5.timeseries import ChannelTS, RunTS
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
 # =============================================================================
 
+
 # =============================================================================
 # Run Group
 # =============================================================================
@@ -315,7 +316,6 @@ class RunGroup(BaseGroup):
         channel_metadata=None,
         **kwargs,
     ):
-
         """
         add a channel to the run
 
@@ -658,7 +658,7 @@ class RunGroup(BaseGroup):
                         ch.run_metadata.id = self.metadata.id
 
             channels.append(self.from_channel_ts(ch))
-        self.update_run_metadata()
+        self.update_metadata()
         return channels
 
     def from_channel_ts(self, channel_ts_obj):
@@ -731,6 +731,19 @@ class RunGroup(BaseGroup):
         return ch_obj
 
     def update_run_metadata(self):
+        """
+        Update metadata and table entries to ensure consistency
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        raise DeprecationWarning(
+            "'update_run_metadata' has been deprecated use 'update_metadata()'"
+        )
+
+    def update_metadata(self):
         """
         Update metadata and table entries to ensure consistency
 

@@ -41,6 +41,8 @@ meta_classes["TransferFunction"] = TransferFunction
 meta_classes["FCDecimation"] = Decimation
 meta_classes["FCChannel"] = Channel
 meta_classes["FC"] = FC
+
+
 # =============================================================================
 #
 # =============================================================================
@@ -188,7 +190,6 @@ class BaseGroup:
         """Metadata for the Group based on mt_metadata.timeseries"""
         if not self._has_read_metadata:
             self.read_metadata()
-            self._has_read_metadata = True
         return self._metadata
 
     @metadata.setter
@@ -237,6 +238,7 @@ class BaseGroup:
         for key, value in meta_dict.items():
             meta_dict[key] = from_numpy_type(value)
         self._metadata.from_dict({self._class_name: meta_dict})
+        self._has_read_metadata = True
 
     def write_metadata(self):
         """
@@ -244,10 +246,25 @@ class BaseGroup:
 
         """
 
-        for key, value in self.metadata.to_dict(single=True).items():
-            value = to_numpy_type(value)
-            self.logger.debug(f"wrote metadata {key} = {value}")
-            self.hdf5_group.attrs.create(key, value)
+        try:
+            for key, value in self.metadata.to_dict(single=True).items():
+                value = to_numpy_type(value)
+                self.logger.debug(f"wrote metadata {key} = {value}")
+                self.hdf5_group.attrs.create(key, value)
+        except KeyError as key_error:
+            if "no write intent" in str(key_error):
+                self.logger.warning(
+                    "File is in read-only mode, cannot write metadata."
+                )
+            else:
+                raise KeyError(key_error)
+        except ValueError as value_error:
+            if "Unable to synchronously create group" in str(value_error):
+                self.logger.warning(
+                    "File is in read-only mode, cannot write metadata."
+                )
+            else:
+                raise ValueError(value_error)
 
     def initialize_group(self, **kwargs):
         """
@@ -300,13 +317,19 @@ class BaseGroup:
             return_obj.write_metadata()
             if hasattr(return_obj, "initialize_group"):
                 return_obj.initialize_group()
-        except ValueError:
-            msg = (
-                f"{group_class.__name__} {name} already exists, "
-                "returning existing group."
-            )
-            self.logger.info(msg)
-            return_obj = self._get_group(name, group_class)
+        except ValueError as error:
+            if "no write intent" in str(error):
+                self.logger.warning(
+                    f"File is in read-only mode, cannot create group {name}"
+                )
+                return
+            elif "name already exists" in str(error):
+                msg = (
+                    f"{group_class.__name__} {name} already exists, "
+                    "returning existing group."
+                )
+                self.logger.info(msg)
+                return_obj = self._get_group(name, group_class)
         return return_obj
 
     def _get_group(self, name, group_class):
@@ -322,10 +345,13 @@ class BaseGroup:
         """
         name = validate_name(name)
         try:
-            return group_class(self.hdf5_group[name], **self.dataset_options)
+            # get the group and be sure to read the metadata
+            group = group_class(self.hdf5_group[name], **self.dataset_options)
+            group.read_metadata()
+            return group
         except KeyError:
             msg = (
-                f"Error: {name} does not exist, check station_list for "
+                f"Error: {name} does not exist, check groups_list for "
                 "existing names"
             )
             self.logger.debug(msg)
@@ -353,9 +379,12 @@ class BaseGroup:
                 "file size reduction is your goal, simply copy"
                 " what you want into another file."
             )
-        except KeyError:
-            msg = (
-                f"{name} does not exist. Check station_list for existing names"
-            )
-            self.logger.debug(msg)
-            raise MTH5Error(msg)
+        except KeyError as key_error:
+            if "Couldn't delete link" in str(key_error):
+                self.logger.warning(
+                    f"File is in read-only mode, cannot delete {name}"
+                )
+            else:
+                msg = f"{name} does not exist. Check station_list for existing names"
+                self.logger.debug(msg)
+                raise MTH5Error(msg)
