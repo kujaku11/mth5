@@ -53,11 +53,11 @@ def butter_bandpass(lowcut, highcut, sample_rate, order=5):
     msg = f"Butterworth bandpass requested with edges ({lowcut}, {highcut})\n"
     if highcut is None:
         msg += "Upper band edge not defined, will treat as a High Pass Filter\n"
-        logger.warning(msg)
+        logger.info(msg)
         return signal.butter(order, low, analog=False, btype="highpass", output="sos")
     elif lowcut is None:
         msg += "Lower band edge not defined, will treat as a Low Pass Filter\n"
-        logger.warning(msg)
+        logger.info(msg)
         return signal.butter(order, high, analog=False, btype="lowpass", output="sos")
 
 
