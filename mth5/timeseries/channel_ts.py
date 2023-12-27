@@ -1206,14 +1206,13 @@ class ChannelTS:
         def bool_flip(x):
             return bool(int(x)-1)
 
-        calibrated_ts = ChannelTS()
-        calibrated_ts.__dict__.update(self.__dict__)
-
         if self.channel_metadata.filter.name is []:
             self.logger.warning(
                 "No filters to apply to calibrate time series data"
             )
-            return calibrated_ts
+            return self.copy()
+
+        calibrated_ts = self.copy(data=False)
 
         # Make a list of the filters whose response will be removed.
         # We make the list here so that we have access to the indices to flip
