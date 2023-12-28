@@ -79,8 +79,15 @@ def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
     :rtype: np.ndarray
 
     """
+    if (highcut is None) and (lowcut is None):
+        msg = f"Butterworth bandpass undefined with edges ({lowcut}, {highcut})\n"
+        msg = f"{msg}  Returning original data"
+        logger.warning(msg)
+        return np.copy(data)
+
     sos = butter_bandpass(lowcut, highcut, fs, order=order)
     y = signal.sosfiltfilt(sos, data)
+
     return y
 
 
