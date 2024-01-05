@@ -447,12 +447,16 @@ class RemoveInstrumentResponse:
         :rtype: np.ndarray
 
         """
+        try:
+            filter_order = self.bandpass["order"]
+        except KeyError:
+            filter_order = 5
         ts = butter_bandpass_filter(
             ts,
             self.bandpass["low"],
             self.bandpass["high"],
             1./self.sample_interval,
-            order=self.bandpass["order"],
+            order=filter_order,
         )
 
         if self.plot:
