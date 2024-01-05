@@ -168,6 +168,18 @@ class TestWithMTH5(unittest.TestCase):
     def test_station_list(self):
         self.assertListEqual([], self.m.station_list)
 
+    def test_other_syntax(self):
+        with MTH5().open_mth5(self.fn) as m:
+            m.add_survey("test2")
+        m.open_mth5(self.fn)
+
+        # test_validate
+        self.assertEqual(m.validate_file(), True)
+
+        # test_station_list
+        self.assertListEqual([], m.station_list)
+        m.close_mth5()
+
     @classmethod
     def tearDownClass(self):
         self.m.close_mth5()
