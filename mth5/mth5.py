@@ -12,7 +12,7 @@ large tables of data to warrant using pytables.
 Created on Sun Dec  9 20:50:41 2018
 
 :copyright: Jared Peacock (jpeacock@usgs.gov)
-    
+
 :license: MIT
 
 """
@@ -643,6 +643,7 @@ class MTH5:
         # TODO need to add a validation step to check for version and legit file
         if not "channel_summary" in self.__hdf5_obj[self._root_path].keys():
             self._initialize_summary()
+        return self
 
     def _initialize_file(self, mode="w"):
         """
