@@ -16,37 +16,50 @@ from loguru import logger
 # =================================================================
 
 
-def butter_bandpass(lowcut, highcut, fs, order=5):
+def butter_bandpass(lowcut, highcut, sample_rate, order=5):
     """
     Butterworth bandpass filter using scipy.signal
 
-    :param lowcut: low cut frequency in Hz
+    Transforms band corners to angular frequencies
+
+    :param lowcut: low cut frequency in Hz (3dB point)
     :type lowcut: float
-    :param highcut: high cut frequency in Hz
+    :param highcut: high cut frequency in Hz (3dB point)
     :type highcut: float
-    :param fs: Sample rate
-    :type fs: float
+    :param sample_rate: Sample rate
+    :type sample_rate: float
     :param order: Butterworth order, defaults to 5
     :type order: int, optional
     :return: SOS scipy.signal format
     :rtype: scipy.signal.SOS?
 
     """
-    nyq = 0.5 * fs
+    nyq = 0.5 * sample_rate
+    if (highcut is None) and (lowcut is None):
+        msg = f"Butterworth bandpass undefined with edges ({lowcut}, {highcut})\n"
+        raise ValueError(msg)
 
+    # Transforms band corners to angular frequencies
     if lowcut is not None:
         low = lowcut / nyq
     if highcut is not None:
         high = highcut / nyq
     if lowcut and highcut:
         sos = signal.butter(
-            order, [low, high], analog=False, btype="band", output="sos"
+            order, [low, high], analog=False, btype="bandpass", output="sos"
         )
-    elif highcut is None:
-        sos = signal.butter(order, low, analog=False, btype="low", output="sos")
+        return sos
+
+    msg = f"Butterworth bandpass requested with edges ({lowcut}, {highcut})\n"
+    if highcut is None:
+        msg += "Upper band edge not defined, will treat as a High Pass Filter\n"
+        logger.info(msg)
+        return signal.butter(order, low, analog=False, btype="highpass", output="sos")
     elif lowcut is None:
-        sos = signal.butter(order, high, analog=False, btype="high", output="sos")
-    return sos
+        msg += "Lower band edge not defined, will treat as a Low Pass Filter\n"
+        logger.info(msg)
+        return signal.butter(order, high, analog=False, btype="lowpass", output="sos")
+
 
 
 def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
@@ -66,12 +79,19 @@ def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
     :rtype: np.ndarray
 
     """
+    if (highcut is None) and (lowcut is None):
+        msg = f"Butterworth bandpass undefined with edges ({lowcut}, {highcut})\n"
+        msg = f"{msg}  Returning original data"
+        logger.warning(msg)
+        return np.copy(data)
+
     sos = butter_bandpass(lowcut, highcut, fs, order=order)
     y = signal.sosfiltfilt(sos, data)
+
     return y
 
 
-def low_pass(data, low_pass_freq, cutoff_freq, sampling_rate):
+def low_pass(data, low_pass_freq, cutoff_freq, sample_rate):
     """
 
     :param data: 1D time series data
@@ -86,7 +106,8 @@ def low_pass(data, low_pass_freq, cutoff_freq, sampling_rate):
     :rtype: np.ndarray
 
     """
-    nyq = 0.5 * sampling_rate
+    nyq = 0.5 * sample_rate
+
     filt_order, wn = signal.buttord(low_pass_freq / nyq, cutoff_freq / nyq, 3, 40)
 
     b, a = signal.butter(filt_order, wn, btype="low")
@@ -163,17 +184,17 @@ class RemoveInstrumentResponse:
     :type zero_mean: boolean, default True
     :param zero_pad: pad the time series to the next power of 2 for efficiency
     :type zero_pad: boolean, default True
-    :param t_window: Time domain windown name see `scipy.signal.windows` for options
+    :param t_window: Time domain window name see `scipy.signal.windows` for options
     :type t_window: string, default None
     :param t_window_params: Time domain window parameters, parameters can be
     found in `scipy.signal.windows`
     :type t_window_params: dictionary
-    :param f_window: Frequency domain windown name see `scipy.signal.windows` for options
-    :type f_window: string, defualt None
+    :param f_window: Frequency domain window name see `scipy.signal.windows` for options
+    :type f_window: string, default None
     :param f_window_params: Frequency window parameters, parameters can be
     found in `scipy.signal.windows`
     :type f_window_params: dictionary
-    :param bandpass: bandpass freequency and order {"low":, "high":, "order":,}
+    :param bandpass: bandpass frequency and order {"low":, "high":, "order":,}
     :type bandpass: dictionary
 
 
@@ -426,12 +447,16 @@ class RemoveInstrumentResponse:
         :rtype: np.ndarray
 
         """
+        try:
+            filter_order = self.bandpass["order"]
+        except KeyError:
+            filter_order = 5
         ts = butter_bandpass_filter(
             ts,
             self.bandpass["low"],
             self.bandpass["high"],
-            self.sample_interval,
-            order=self.bandpass["order"],
+            1./self.sample_interval,
+            order=filter_order,
         )
 
         if self.plot:
@@ -505,8 +530,6 @@ class RemoveInstrumentResponse:
                 include_decimation=include_decimation, include_delay=include_delay)
             if filters_to_remove is []:
                 raise ValueError("There are no filters in channel_response to remove")
-
-
 
         ts = np.copy(self.ts)
         f = np.fft.rfftfreq(ts.size, d=self.sample_interval)
