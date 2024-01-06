@@ -1,14 +1,61 @@
 # =============================================================================
 # Imports
 # =============================================================================
-from pathlib import Path
-from loguru import logger
+import functools
 
-from mth5.mth5 import MTH5
+from loguru import logger
+from pathlib import Path
+
 from mth5.helpers import close_open_files
+from mth5.mth5 import MTH5
 
 # =============================================================================
 
+
+
+def path_or_mth5_object(func):
+    """
+    Decorator to allow functions to be written as if an mth5_object was passed as first argument.
+
+    Parameters
+    ----------
+    func: function
+        A function that takes as first argument an mth5.mth5.MTH5 object
+
+    Returns
+    -------
+
+    """
+    @functools.wraps(func)
+    def wrapper_decorator(*args, **kwargs):
+        def call_function(func, *args, **kwargs):
+            if isinstance(func, staticmethod):
+                callable_func = func.__get__(None, object)
+                result = callable_func(*args, **kwargs)
+            else:
+                result = func(*args, **kwargs)
+            return result
+
+        if isinstance(args[0], (pathlib.Path, str)):
+            mode = kwargs.get("mode", "a")
+            #with MTH5().open_mth5(args[0], mode=mode) as m:
+            with MTH5() as m:
+                m.open_mth5(args[0], mode=mode)
+                new_args = [x for x in args]
+                new_args[0] = m
+                new_args = tuple(new_args)
+                result = call_function(func, *new_args, **kwargs)
+
+        elif isinstance(args[0], mth5.mth5.MTH5):
+            result = call_function(func, *args, **kwargs)
+        else:
+            msg = f"expected h5, got {type(args[0])}"
+            mt_log.error(msg)
+            raise TypeError(msg)
+
+        return result
+
+    return wrapper_decorator
 
 def initialize_mth5(h5_path, mode="a", file_version="0.1.0"):
     """
