@@ -2,9 +2,9 @@
 # Imports
 # =============================================================================
 import functools
+import pathlib
 
 from loguru import logger
-from pathlib import Path
 
 from mth5.helpers import close_open_files
 from mth5.mth5 import MTH5
@@ -12,10 +12,11 @@ from mth5.mth5 import MTH5
 # =============================================================================
 
 
-
 def path_or_mth5_object(func):
     """
     Decorator to allow functions to be written as if an mth5_object was passed as first argument.
+
+    TODO: add support for file_version in kwargs
 
     Parameters
     ----------
@@ -37,10 +38,11 @@ def path_or_mth5_object(func):
             return result
 
         if isinstance(args[0], (pathlib.Path, str)):
+            h5_path = args[0]
             mode = kwargs.get("mode", "a")
-            #with MTH5().open_mth5(args[0], mode=mode) as m:
+            #with MTH5().open_mth5(h5_path, mode=mode) as m:
             with MTH5() as m:
-                m.open_mth5(args[0], mode=mode)
+                m.open_mth5(h5_path, mode=mode)
                 new_args = [x for x in args]
                 new_args[0] = m
                 new_args = tuple(new_args)
@@ -56,6 +58,11 @@ def path_or_mth5_object(func):
         return result
 
     return wrapper_decorator
+
+@path_or_mth5_object
+def get_version(m):
+    return m.file_version
+
 
 def initialize_mth5(h5_path, mode="a", file_version="0.1.0"):
     """
@@ -76,10 +83,12 @@ def initialize_mth5(h5_path, mode="a", file_version="0.1.0"):
 
 
     """
-    h5_path = Path(h5_path)
+    h5_path = pathlib.Path(h5_path)
     if mode == "w":
         if h5_path.exists():
-            logger.warning("File exists, removing from file system.")
+            msg = f"File {h5_path} exists, removing from file system."
+            msg = f"{msg}\n closing all open h5 files before removal"
+            logger.warning(f"{msg}")
             close_open_files()
             h5_path.unlink()
     mth5_obj = MTH5(file_version=file_version)
@@ -102,7 +111,7 @@ def read_back_data(
 
     :param mth5_path: the full path the the mth5 that this method is going to
      try to read
-    :type mth5_path: Path or string
+    :type mth5_path: pathlib.Path or string
     :param station_id: the label for the station, e.g. "PKD"
     :type station_id: string
     :param run_id: The label for the run to read.  e.g. "001"

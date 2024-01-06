@@ -213,6 +213,11 @@ class TestFileVersionStability(unittest.TestCase):
         m.close_mth5()
         assert (m.file_version == "0.1.0")
 
+    def test_get_version(self):
+        from mth5.utils.helpers import get_version
+        file_version = get_version(self.fn1)
+        assert (file_version == "0.1.0")
+
     @classmethod
     def tearDownClass(self):
         self.fn1.unlink()
