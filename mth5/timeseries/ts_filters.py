@@ -234,7 +234,7 @@ class RemoveInstrumentResponse:
         self.fig = None
         self.nrows = None
         self.subplot_dict = {}
-        self.include_decimation = True
+        self.include_decimation = False
         self.include_delay = False
 
         for key, value in kwargs.items():
