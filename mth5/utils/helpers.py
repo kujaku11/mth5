@@ -63,6 +63,45 @@ def path_or_mth5_object(func):
 def get_version(m):
     return m.file_version
 
+@path_or_mth5_object
+def get_channel_summary(m, show=True):
+    """
+    :param mth5_path:
+    :return:
+    """
+    logger.info(f"{m.filename} channel summary")
+    df = m.channel_summary.to_dataframe()
+    if show:
+        logger.info(f"{df}")
+    return df
+
+
+@path_or_mth5_object
+def add_filters(m, filters_list, survey_id=""):
+    """
+
+    Parameters
+    ----------
+    active_filters: list of filters
+    m: mth5.mth5.MTH5
+    survey_id: string
+
+    Returns
+    -------
+
+    """
+    if m.file_version == "0.1.0":
+        fg = m.filters_group
+    else:
+        # m.file_version == "0.2.0":
+        survey = m.get_survey(survey_id)
+        fg = survey.filters_group
+
+    for filt3r in filters_list:
+        if filt3r.name not in fg.filter_dict.keys():
+            fg.add_filter(filt3r)
+    return
+
 
 def initialize_mth5(h5_path, mode="a", file_version="0.1.0"):
     """
@@ -106,6 +145,7 @@ def read_back_data(
     return_objects=[],
 ):
     """
+    TODO: add path_or_mth5_decorater to this function
     Testing helper function, used to confirm that the h5 file can be accessed
     and that the data size is as expected.
 
