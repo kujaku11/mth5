@@ -48,11 +48,11 @@ def path_or_mth5_object(func):
                 new_args = tuple(new_args)
                 result = call_function(func, *new_args, **kwargs)
 
-        elif isinstance(args[0], mth5.mth5.MTH5):
+        elif isinstance(args[0], MTH5):
             result = call_function(func, *args, **kwargs)
         else:
             msg = f"expected h5, got {type(args[0])}"
-            mt_log.error(msg)
+            logger.error(msg)
             raise TypeError(msg)
 
         return result
