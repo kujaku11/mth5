@@ -1155,7 +1155,7 @@ class ChannelTS:
 
 
     def remove_instrument_response(self,
-                                   include_decimation=True,
+                                   include_decimation=False,
                                    include_delay=False,
                                    **kwargs):
         """
