@@ -108,7 +108,7 @@ class FCChannelDataset:
             # write out metadata to make sure that its in the file.
             try:
                 self.write_metadata()
-            except RuntimeError:
+            except (RuntimeError, KeyError):
                 # file is read only
                 pass
 
