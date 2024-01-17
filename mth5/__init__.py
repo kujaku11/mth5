@@ -68,25 +68,25 @@ TF_DTYPE = np.dtype(
     ]
 )
 
-CHANNEL_DTYPE = dtype = np.dtype(
-    [
-        ("survey", "S30"),
-        ("station", "S30"),
-        ("run", "S20"),
-        ("latitude", float),
-        ("longitude", float),
-        ("elevation", float),
-        ("component", "S20"),
-        ("start", "S36"),
-        ("end", "S36"),
-        ("n_samples", int),
-        ("sample_rate", float),
-        ("measurement_type", "S30"),
-        ("azimuth", float),
-        ("tilt", float),
-        ("units", "S60"),
-        ("hdf5_reference", h5py.ref_dtype),
-        ("run_hdf5_reference", h5py.ref_dtype),
-        ("station_hdf5_reference", h5py.ref_dtype),
-    ]
-)
+CHANNEL_DTYPE_LIST = [
+    ("survey", "S30"),
+    ("station", "S30"),
+    ("run", "S20"),
+    ("latitude", float),
+    ("longitude", float),
+    ("elevation", float),
+    ("component", "S20"),
+    ("start", "S36"),
+    ("end", "S36"),
+    ("n_samples", int),
+    ("sample_rate", float),
+    ("measurement_type", "S30"),
+    ("azimuth", float),
+    ("tilt", float),
+    ("units", "S60"),
+    ("hdf5_reference", h5py.ref_dtype),
+    ("run_hdf5_reference", h5py.ref_dtype),
+    ("station_hdf5_reference", h5py.ref_dtype),
+]
+
+CHANNEL_DTYPE = np.dtype(CHANNEL_DTYPE_LIST)
