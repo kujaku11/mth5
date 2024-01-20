@@ -267,6 +267,11 @@ class FCDecimationGroup(BaseGroup):
     """
     Holds a single decimation level
 
+    FCDecimationGroup assumes two conditions on the data array (spectrogram):
+        1. The data are uniformly sampled in frequency domain
+        2. The data are uniformly sampled in time.
+        (i.e. the FFT moving window has a uniform step size)
+
     Attributes
 
         - start time
@@ -383,7 +388,7 @@ class FCDecimationGroup(BaseGroup):
             xrds = df[col].to_xarray()
             self.add_channel(col, fc_data=xrds.to_numpy())
 
-    def from_xarray(self, data_array):
+    def from_xarray(self, data_array, sample_rate_decimation_level):
         """
         can input a dataarray or dataset
 
@@ -401,12 +406,11 @@ class FCDecimationGroup(BaseGroup):
         ch_metadata = Channel()
         ch_metadata.time_period.start = data_array.time[0].values
         ch_metadata.time_period.end = data_array.time[-1].values
-        ch_metadata.sample_rate_decimation_level = (
-            data_array.coords["frequency"].values.max() * 2
-        )
-        ch_metadata.sample_rate_window_step = np.median(
-            np.diff(data_array.coords["time"].values)
-        ) / np.timedelta64(1, "s")
+        ch_metadata.sample_rate_decimation_level = sample_rate_decimation_level
+        ch_metadata.frequency_min = data_array.coords["frequency"].data.min()
+        ch_metadata.frequency_max = data_array.coords["frequency"].data.max()
+        step_size = data_array.coords["time"].data[1] - data_array.coords["time"].data[0]
+        ch_metadata.sample_rate_window_step = step_size / np.timedelta64(1, "s")
         try:
             ch_metadata.units = data_array.units
         except AttributeError:
