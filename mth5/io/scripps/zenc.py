@@ -8,9 +8,13 @@ Created on Thu Jan 25 11:36:55 2024
 # =============================================================================
 # Imports
 # =============================================================================
+from collections import OrderedDict
 import numpy as np
 
 from mth5.mth5 import MTH5
+from mth5.timeseries import RunTS
+
+from loguru import logger
 
 # =============================================================================
 
@@ -50,7 +54,8 @@ class ZENC:
 
     """
 
-    def __init__(self, mth5_file, channel_map):
+    def __init__(self, channel_map):
+        self.logger = logger
         self._channel_map_keys = [
             "survey",
             "station",
@@ -58,7 +63,7 @@ class ZENC:
             "channel",
             "channel_number",
         ]
-        self.mth5_file = mth5_file
+        self._expected_channel_order = ["hx", "hy", "hz", "ex", "ey"]
         self.channel_map = channel_map
 
     @property
@@ -90,4 +95,59 @@ class ZENC:
                     f"Keys of channel dictionary must be {self._channel_map_keys} "
                     f"not {kdict.keys()}."
                 )
-        self._channel_map = value
+        self._channel_map = self._sort_channel_map(value)
+
+    def _sort_channel_map(self, channel_map):
+        """
+        sort by channel number
+
+        :param channel_map: DESCRIPTION
+        :type channel_map: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        sorted_channel_map = OrderedDict()
+
+        for ch in self._expected_channel_order:
+            try:
+                sorted_channel_map[ch] = channel_map[ch]
+            except KeyError:
+                self.logger.info(
+                    f"Could not find {ch} in channel_map, skipping"
+                )
+
+        return sorted_channel_map
+
+    def to_zenc(self, mth5_file, channel_map=None):
+        """
+        write out a .zenc file
+
+        :param mth5_file: DESCRIPTION
+        :type mth5_file: TYPE
+        :param channel_map: DESCRIPTION, defaults to None
+        :type channel_map: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if channel_map is not None:
+            self.channel_map = channel_map
+
+        with MTH5() as m:
+            m.open_mth5(mth5_file, mode="r")
+            ch_list = []
+            for key, ch_dict in self.channel_map.items():
+                ch = m.get_channel(
+                    ch_dict["station"],
+                    ch_dict["run"],
+                    ch_dict["channel"],
+                    survey=ch_dict["survey"],
+                )
+                ch_list.append(ch.to_channel_ts())
+            run = RunTS(ch_list)
+
+        # write out file
+        # write metadata
+        # write data as (hx, hy, hz, ex, ey, ...)
