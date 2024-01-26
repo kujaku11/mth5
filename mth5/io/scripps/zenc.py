@@ -138,6 +138,7 @@ class ZENC:
         with MTH5() as m:
             m.open_mth5(mth5_file, mode="r")
             ch_list = []
+            ch_metadata_list = []
             for key, ch_dict in self.channel_map.items():
                 ch = m.get_channel(
                     ch_dict["station"],
@@ -146,6 +147,7 @@ class ZENC:
                     survey=ch_dict["survey"],
                 ).to_channel_ts()
                 ch_list.append(ch)
+                ch_metadata_list.append(self._get_ch_metadata(ch))
 
             run = RunTS(ch_list)
 
@@ -191,6 +193,36 @@ class ZENC:
         """
 
         pass
+
+    def get_run_metadata(self, run_ts):
+        """
+        get run metadata from RunTS object
+
+        4096
+        version: 1.0
+        boxNumber: 74
+        samplingFrequency: 4096
+        timeDataStart: 2021-07-23 08:00:14
+        timeDataEnd: 2021-07-23 08:14:58
+        latitude: 58.22444
+        longitude: -155.66579
+        altitude: 251.30000
+        rx_stn: 1
+        TxFreq: 0
+        TxDuty: inf
+        numChans: 5
+
+        :param run_ts: DESCRIPTION
+        :type run_ts: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        run_dict = OrderedDict()
+        run_dict["version"] = 1.0
+        run_dict["boxNumber"] = run_ts.run_metadata.data_logger.id
+        run_dict["samplingFrequency"] = run_ts.sample_rate
 
     def _get_ch_metadata(self, ch):
         """

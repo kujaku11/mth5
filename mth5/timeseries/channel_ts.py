@@ -876,11 +876,12 @@ class ChannelTS:
         """
         data_sr = self.compute_sample_rate()
         if not np.isclose(data_sr, self.sample_rate, atol=0.1):
-            self.logger.warning(
+            self.logger.critical(
                 f"metadata sample_rate {self.sample_rate} != "
                 f"data sample_rate {data_sr}. Setting to data sample_rate"
             )
             self._sample_rate = data_sr
+            self.channel_metadata.sample_rate = self._sample_rate
 
     def is_high_frequency(self, threshold_dt=1e-4):
         """
