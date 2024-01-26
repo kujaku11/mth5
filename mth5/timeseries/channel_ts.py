@@ -130,13 +130,7 @@ class ChannelTS:
         if data is not None:
             self.ts = data
 
-            data_sr = self.compute_sample_rate()
-            if not np.isclose(data_sr, self.sample_rate, atol=0.1):
-                self.logger.warning(
-                    f"metadata sample_rate {self.sample_rate} != "
-                    f"data sample_rate {data_sr}. Setting to data sample_rate"
-                )
-                self._sample_rate = data_sr
+            self._validate_sample_rate()
 
         else:
             self._update_xarray_metadata()
@@ -682,6 +676,7 @@ class ChannelTS:
             self.data_array = xr.DataArray(
                 ts_arr["data"], coords=[("time", dt)], name=self.component
             )
+            self._validate_sample_rate()
             self._update_xarray_metadata()
 
         elif isinstance(ts_arr, pd.core.series.Series):
@@ -689,6 +684,7 @@ class ChannelTS:
             self.data_array = xr.DataArray(
                 ts_arr.values, coords=[("time", dt)], name=self.component
             )
+            self._validate_sample_rate()
             self._update_xarray_metadata()
         elif isinstance(ts_arr, xr.DataArray):
             # TODO: need to validate the input xarray
@@ -715,6 +711,7 @@ class ChannelTS:
             self.station_metadata.from_dict({"station": station_dict})
             self.run_metadata.from_dict({"run": run_dict})
             self.channel_metadata = ch_metadata
+            self._validate_sample_rate()
             # need to run this incase things are different.
             self._update_xarray_metadata()
         else:
@@ -868,6 +865,22 @@ class ChannelTS:
             return False
         else:
             return False
+
+    def _validate_sample_rate(self):
+        """
+        check to make sure sample rates are correct.
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        data_sr = self.compute_sample_rate()
+        if not np.isclose(data_sr, self.sample_rate, atol=0.1):
+            self.logger.warning(
+                f"metadata sample_rate {self.sample_rate} != "
+                f"data sample_rate {data_sr}. Setting to data sample_rate"
+            )
+            self._sample_rate = data_sr
 
     def is_high_frequency(self, threshold_dt=1e-4):
         """
