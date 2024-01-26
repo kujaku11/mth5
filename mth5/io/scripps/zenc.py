@@ -144,10 +144,91 @@ class ZENC:
                     ch_dict["run"],
                     ch_dict["channel"],
                     survey=ch_dict["survey"],
-                )
-                ch_list.append(ch.to_channel_ts())
+                ).to_channel_ts()
+                ch_list.append(ch)
+
             run = RunTS(ch_list)
 
         # write out file
         # write metadata
         # write data as (hx, hy, hz, ex, ey, ...)
+
+    def _write_metadata(self, run_ts):
+        """
+        write metadata for the zenc file.
+
+        of the form
+
+        4096
+        version: 1.0
+        boxNumber: 74
+        samplingFrequency: 4096
+        timeDataStart: 2021-07-23 08:00:14
+        timeDataEnd: 2021-07-23 08:14:58
+        latitude: 58.22444
+        longitude: -155.66579
+        altitude: 251.30000
+        rx_stn: 1
+        TxFreq: 0
+        TxDuty: inf
+        numChans: 5
+        channel: 1
+        component: Hx
+        length:
+        sensorID: 4044
+        azimuth: 0
+        xyz1: 0:0:0
+        xyz2: 0:0:0
+        units: V
+        countconversion: 9.5367431640625e-10
+        next channel
+
+        :param run_ts: DESCRIPTION
+        :type run_ts: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        pass
+
+    def _get_ch_metadata(self, ch):
+        """
+        get channel metadata from ChannelTS
+
+        channel: 1
+        component: Hx
+        length:
+        sensorID: 4044
+        azimuth: 0
+        xyz1: 0:0:0
+        xyz2: 0:0:0
+        units: V
+        countconversion: 9.5367431640625e-10
+
+        :param ch: DESCRIPTION
+        :type ch: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        ch_dict = OrderedDict()
+        ch_dict["channel"] = ch.channel_metadata.channel_number
+        ch_dict["compnent"] = ch.channel_metadata.component
+        if hasattr(ch.channel_metadata, "dipole_length"):
+            ch_dict["length"] = ch.channel_metadata.dipole_length
+        else:
+            ch_dict["length"] = None
+
+        if ch.channel_metadata.type.lower() in ["magnetic"]:
+            ch_dict["sensorID"] = ch.channel_metadata.sensor.id
+        else:
+            ch_dict["sensorID"] = None
+        ch_dict["azimuth"] = ch.channel_metadata.measurement_azimuth
+        ch_dict["xyz1"] = "0:0:0"
+        ch_dict["xyz2"] = "0:0:0"
+        ch_dict["units"] = ch.channel_metadata.units
+        ch_dict["countconversion"] = 9.5367431640625e-10
+
+        return ch_dict

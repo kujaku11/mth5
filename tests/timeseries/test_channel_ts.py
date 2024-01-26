@@ -452,12 +452,55 @@ class TestChannelTS(unittest.TestCase):
         with self.subTest("metadata"):
             self.assertEqual(new_ts.channel_metadata, new_ts.channel_metadata)
         with self.subTest("channel_response"):
-            self.assertEqual(
-                new_ts.channel_response, self.ts.channel_response)
+            self.assertEqual(new_ts.channel_response, self.ts.channel_response)
         with self.subTest("run metadata"):
             self.assertEqual(new_ts.run_metadata, new_ts.run_metadata)
         with self.subTest("station metadata"):
             self.assertEqual(new_ts.station_metadata, new_ts.station_metadata)
+
+
+class TestChannelTSSampleRate(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.sample_rate = 10
+
+    def test_input_dict(self):
+        ts = timeseries.ChannelTS(
+            "electric",
+            channel_metadata={
+                "sample_rate": self.sample_rate,
+                "component": "ex",
+            },
+        )
+
+        self.assertEqual(ts.sample_rate, self.sample_rate)
+
+    def test_input_channel_metadata(self):
+        ts = timeseries.ChannelTS(
+            "electric",
+            channel_metadata=metadata.Electric(
+                component="ex", sample_rate=self.sample_rate
+            ),
+        )
+
+        self.assertEqual(ts.sample_rate, self.sample_rate)
+
+    def test_input_data_with_different_sample_rate(self):
+        data = timeseries.ChannelTS(
+            "electric",
+            data=np.arange(48),
+            channel_metadata=metadata.Electric(component="ex", sample_rate=1),
+        )
+
+        ts = timeseries.ChannelTS(
+            "electric",
+            data=data.data_array,
+            channel_metadata=metadata.Electric(
+                component="ex", sample_rate=self.sample_rate
+            ),
+        )
+
+        self.assertEqual(ts.sample_rate, data.sample_rate)
 
 
 class TestChannelTS2ObspyTrace(unittest.TestCase):
