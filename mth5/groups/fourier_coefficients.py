@@ -425,6 +425,8 @@ class FCDecimationGroup(BaseGroup):
             for ch in data_array.data_vars.keys():
 
                 ch_metadata.component = ch
+                if ch in self.channel_summary.component.to_list():
+                    self.remove_channel(ch)
                 # time index should be the first index
                 if data_array[ch].time.size == data_array[ch].shape[0]:
                     self.add_channel(
