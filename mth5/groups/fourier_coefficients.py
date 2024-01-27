@@ -440,6 +440,7 @@ class FCDecimationGroup(BaseGroup):
                         fc_data=data_array[ch].to_numpy().T,
                         fc_metadata=ch_metadata,
                     )
+        return 
 
     def to_xarray(self, channels=None):
         """
