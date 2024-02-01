@@ -12,5 +12,6 @@
   "repositoryURL": "https://github.com/kujaku11/mth5.git",
   "tags": null,
   "languages": "Python",
-  "date.metadataLastUpdated": "2022-02-01T12:00:00"
+  "contact": "Jared Peacock, jpeacock@usgs.gov",
+  "date": {"metadataLastUpdated": "2022-02-01T12:00:00"}
 }
