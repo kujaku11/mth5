@@ -153,6 +153,8 @@ class ZENC:
 
         # write out file
         # write metadata
+        lines = self._write_metadata(run)
+
         # write data as (hx, hy, hz, ex, ey, ...)
 
     def _write_metadata(self, run_ts):
@@ -192,7 +194,15 @@ class ZENC:
 
         """
 
-        pass
+        lines = [run_ts.sample_rate]
+        for key, value in self.get_run_metadata(run_ts):
+            lines.append(f"{key}: {value}")
+
+        for ch in run_ts.channels:
+            for key, value in self.get_ch_metadata(run_ts[ch]):
+                lines.append(f"{key}: {value}")
+
+        return lines
 
     def get_run_metadata(self, run_ts):
         """
@@ -223,6 +233,17 @@ class ZENC:
         run_dict["version"] = 1.0
         run_dict["boxNumber"] = run_ts.run_metadata.data_logger.id
         run_dict["samplingFrequency"] = run_ts.sample_rate
+        run_dict["timeDataStart"] = run_ts.start
+        run_dict["timeDataEnd"] = run_ts.end
+        run_dict["latitude"] = run_ts.station_metadata.location.latitude
+        run_dict["longitude"] = run_ts.station_metadata.location.longitude
+        run_dict["altitude"] = run_ts.station_metadata.location.elevation
+        run_dict["rx_stn"] = run_ts.station_metadata.id
+        run_dict["TxFreq"] = 0
+        run_dict["TxDuty"] = "inf"
+        run_dict["numChans"] = len(run_ts.channels)
+
+        return run_dict
 
     def _get_ch_metadata(self, ch):
         """
