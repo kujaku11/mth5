@@ -26,7 +26,7 @@ class ChannelSummaryTable(MTH5Table):
     """
 
     def __init__(self, hdf5_dataset):
-        super().__init__(hdf5_dataset)
+        super().__init__(hdf5_dataset,dtype=CHANNEL_DTYPE)
         self._dtype = CHANNEL_DTYPE
 
     def to_dataframe(self):
