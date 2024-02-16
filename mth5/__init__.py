@@ -49,6 +49,7 @@ ACCEPTABLE_FILE_TYPES = ["mth5", "MTH5", "h5", "H5"]
 ACCEPTABLE_FILE_VERSIONS = ["0.1.0", "0.2.0"]
 ACCEPTABLE_DATA_LEVELS = [0, 1, 2, 3]
 
+### transfer function summary table dtype
 TF_DTYPE_LIST = [
     ("station", "S30"),
     ("survey", "S50"),
@@ -68,6 +69,7 @@ TF_DTYPE_LIST = [
 
 TF_DTYPE = np.dtype(TF_DTYPE_LIST)
 
+### Channel summary table dtype
 CHANNEL_DTYPE_LIST = [
     ("survey", "S30"),
     ("station", "S30"),
@@ -90,3 +92,18 @@ CHANNEL_DTYPE_LIST = [
 ]
 
 CHANNEL_DTYPE = np.dtype(CHANNEL_DTYPE_LIST)
+
+### Standards dtype list
+STANDARDS_DTYPE_LIST = [
+    ("attribute", "S72"),
+    ("type", "S15"),
+    ("required", bool),
+    ("style", "S72"),
+    ("units", "S32"),
+    ("description", "S300"),
+    ("options", "S150"),
+    ("alias", "S72"),
+    ("example", "S72"),
+    ("default", "S72"),
+]
+STANDARDS_DTYPE = np.dtype(STANDARDS_DTYPE_LIST)
