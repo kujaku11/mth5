@@ -36,7 +36,7 @@ class MTH5Table:
 
     def __init__(self, hdf5_dataset, default_dtype):
         self.logger = logger
-        self._default_dtype = default_dtype
+        self._default_dtype = self._validate_dtype(default_dtype)
 
         # validate dtype with dataset
         if isinstance(hdf5_dataset, h5py.Dataset):
@@ -122,14 +122,16 @@ class MTH5Table:
 
         """
         if not isinstance(value, np.dtype):
-            raise TypeError(
-                f"Input dtype must be np.dtype not type {type(value)}"
-            )
+            msg = f"Input dtype must be np.dtype not type {type(value)}"
+            self.logger.exception(msg)
+            raise TypeError(msg)
+        return value
 
+    def _validate_dtype_names(self, value):
         if self.dtype.names != value.names:
-            raise ValueError(
-                f"New dtype must have the same names: {self.dtype.names}"
-            )
+            msg = f"New dtype must have the same names: {self.dtype.names}"
+            self.logger.exception(msg)
+            raise TypeError(msg)
 
         return value
 
@@ -323,16 +325,10 @@ class MTH5Table:
         """
 
         df = pd.DataFrame(self.array[()])
-        for key in [
-            "station",
-            "run",
-            "component",
-            "measurement_type",
-            "units",
-        ]:
-            setattr(df, key, getattr(df, key).str.decode("utf-8"))
-        df.start = pd.to_datetime(df.start.str.decode("utf-8"))
-        df.end = pd.to_datetime(df.end.str.decode("utf-8"))
+        for key in self.dtype.names:
+            dtype_kind = self.dtype.fields[key][0].kind
+            if dtype_kind in ["S", "U"]:
+                setattr(df, key, getattr(df, key).str.decode("utf-8"))
 
         return df
 
@@ -368,7 +364,7 @@ class MTH5Table:
         Must have the same keys.
         """
 
-        new_dtype = self._validate_dtype(new_dtype)
+        new_dtype = self._validate_dtype_names(self._validate_dtype(new_dtype))
 
         new_array = self.array[()].astype(new_dtype)
 
@@ -390,3 +386,5 @@ class MTH5Table:
             dtype=new_dtype,
             **ds_options,
         )
+
+        self._default_dtype = new_dtype

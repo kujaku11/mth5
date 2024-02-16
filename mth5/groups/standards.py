@@ -36,8 +36,7 @@ def summarize_metadata_standards():
     """
     Summarize metadata standards into a dictionary
     """
-    # need to be sure to make copies otherwise things will get
-    # added in not great places.
+
     # need to be sure to make copies otherwise things will get
     # added in not great places.
     summary_dict = BaseDict()

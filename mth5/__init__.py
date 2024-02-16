@@ -93,7 +93,7 @@ CHANNEL_DTYPE_LIST = [
 
 CHANNEL_DTYPE = np.dtype(CHANNEL_DTYPE_LIST)
 
-### Standards dtype list
+### Standards dtype
 STANDARDS_DTYPE_LIST = [
     ("attribute", "S72"),
     ("type", "S15"),
