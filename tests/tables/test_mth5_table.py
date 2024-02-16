@@ -122,6 +122,9 @@ class TestMTH5Table(unittest.TestCase):
 
         self.assertRaises(TypeError, set_dtype, "a")
 
+    def test_add_row_fail(self):
+        self.assertRaises(TypeError, self.mth5_table.add_row, "fail")
+
     @classmethod
     def tearDownClass(self):
         self.h5.flush()
@@ -183,6 +186,38 @@ class TestMTH5TableSetDtype(unittest.TestCase):
 
     def test_nrows(self):
         self.assertEqual(self.data.shape[0], self.mth5_table.nrows)
+
+    @classmethod
+    def tearDownClass(self):
+        self.h5.flush()
+        self.h5.close()
+        self.fn.unlink()
+
+
+class TestMTH5TableAddRow(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.fn = fn_path.joinpath("test_dtype.h5")
+        self.h5 = h5py.File(self.fn, mode="a")
+        self.dtype = np.dtype([("a", float), ("b", np.int32)])
+        self.new_dtype = np.dtype([("a", complex), ("b", np.int64)])
+        self.data = np.zeros(2, dtype=self.dtype)
+        self.dataset = self.h5.create_dataset(
+            "table", data=self.data, dtype=self.dtype, maxshape=((None,))
+        )
+        self.mth5_table = MTH5Table(self.dataset, self.dtype)
+        self.mth5_table.dtype = self.new_dtype
+
+    def test_add_row(self):
+        row = np.ones(1, dtype=self.dtype)
+        self.mth5_table.add_row(row)
+
+        with self.subTest("len"):
+            self.assertEqual(3, len(self.mth5_table))
+
+    def test_add_row_bad_dtype(self):
+        row = np.ones(1, dtype=np.dtype([("d", float), ("e", np.int32)]))
+        self.assertRaises(ValueError, self.mth5_table.add_row, row)
 
     @classmethod
     def tearDownClass(self):

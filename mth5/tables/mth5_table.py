@@ -140,6 +140,10 @@ class MTH5Table:
         Check to make sure datatypes match
         """
         other_dtype = self._validate_dtype(other_dtype)
+        try:
+            other_dtype = self._validate_dtype_names(other_dtype)
+        except TypeError:
+            return False
         if self.dtype == other_dtype:
             return True
         return False
@@ -226,14 +230,19 @@ class MTH5Table:
 
         if not isinstance(row, (np.ndarray)):
             msg = f"Input must be an numpy.ndarray not {type(row)}"
+            self.logger.exception(msg)
+            raise TypeError(msg)
         if isinstance(row, np.ndarray):
             if not self.check_dtypes(row.dtype):
-                msg = (
-                    f"Data types are not equal. Input dtypes: "
-                    f"{row.dtype} Table dtypes: {self.dtype}"
-                )
-                self.logger.error(msg)
-                raise ValueError(msg)
+                if row.dtype.names == self.dtype.names:
+                    row = row.astype(self.dtype)
+                else:
+                    msg = (
+                        f"Data types are not equal. Input dtypes: "
+                        f"{row.dtype} Table dtypes: {self.dtype}"
+                    )
+                    self.logger.error(msg)
+                    raise ValueError(msg)
         if index is None:
             index = self.nrows
             if self.nrows == 1:
