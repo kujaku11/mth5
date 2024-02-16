@@ -139,7 +139,7 @@ class MTH5Table:
         """
         Check to make sure datatypes match
         """
-
+        other_dtype = self._validate_dtype(other_dtype)
         if self.dtype == other_dtype:
             return True
         return False

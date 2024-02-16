@@ -62,6 +62,60 @@ class TestMTH5Table(unittest.TestCase):
             self.dataset.ref.typesize, self.mth5_table.hdf5_reference.typesize
         )
 
+    def test_locate_eq(self):
+        self.assertTrue(
+            (
+                self.mth5_table.locate("a", 0, "eq")
+                == np.array([0, 1], dtype=np.int64)
+            ).all(),
+        )
+
+    def test_locate_le(self):
+        self.assertTrue(
+            (
+                self.mth5_table.locate("a", 0, "le")
+                == np.array([0, 1], dtype=np.int64)
+            ).all(),
+        )
+
+    def test_locate_lt(self):
+        self.assertTrue(
+            (
+                self.mth5_table.locate("a", 0, "lt")
+                == np.array([], dtype=np.int64)
+            ).all(),
+        )
+
+    def test_locate_ge(self):
+        self.assertTrue(
+            (
+                self.mth5_table.locate("a", 0, "ge")
+                == np.array([0, 1], dtype=np.int64)
+            ).all(),
+        )
+
+    def test_locate_gt(self):
+        self.assertTrue(
+            (
+                self.mth5_table.locate("a", 0, "gt")
+                == np.array([], dtype=np.int64)
+            ).all(),
+        )
+
+    def test_locate_be_fail(self):
+        self.assertRaises(ValueError, self.mth5_table.locate, "a", 0, "be")
+
+    def test_locate_be(self):
+        self.assertTrue(
+            (
+                self.mth5_table.locate("a", [-1, 1], "be")
+                == np.array([0, 1], dtype=np.int64)
+            ).all(),
+        )
+
+    def test_locate_fail(self):
+        self.assertRaises(ValueError, self.mth5_table.locate, "a", 0, "fail")
+
     def test_set_dtype_fail(self):
         def set_dtype(self, value):
             self.mth5_table.dtype = value
@@ -90,6 +144,9 @@ class TestMTH5TableChangeDtype(unittest.TestCase):
 
     def test_dtype_equal(self):
         self.assertTrue(self.mth5_table.check_dtypes(self.new_dtype))
+
+    def test_dtype_not_equal(self):
+        self.assertFalse(self.mth5_table.check_dtypes(self.dtype))
 
     def test_shape(self):
         self.assertEqual(self.data.shape, self.mth5_table.shape)
