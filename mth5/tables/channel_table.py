@@ -22,18 +22,17 @@ class ChannelSummaryTable(MTH5Table):
     """
     Object to hold the channel summary and provide some convenience functions
     like fill, to_dataframe ...
-    
+
     """
 
     def __init__(self, hdf5_dataset):
-        super().__init__(hdf5_dataset)
-        self._dtype = CHANNEL_DTYPE
+        super().__init__(hdf5_dataset, CHANNEL_DTYPE)
 
     def to_dataframe(self):
         """
         Create a pandas DataFrame from the table for easier querying.
-        
-        :return: Channel Summary 
+
+        :return: Channel Summary
         :rtype: :class:`pandas.DataFrame`
 
         """
@@ -55,13 +54,41 @@ class ChannelSummaryTable(MTH5Table):
 
     def summarize(self):
         """
-        
+
         :return: DESCRIPTION
         :rtype: TYPE
 
         """
 
         self.clear_table()
+
+        def get_channel_entry(group, dtype=CHANNEL_DTYPE):
+            ch_entry = np.array(
+                [
+                    (
+                        group.parent.parent.parent.parent.attrs["id"],
+                        group.parent.parent.attrs["id"],
+                        group.parent.attrs["id"],
+                        group.parent.parent.attrs["location.latitude"],
+                        group.parent.parent.attrs["location.longitude"],
+                        group.parent.parent.attrs["location.elevation"],
+                        group.attrs["component"],
+                        group.attrs["time_period.start"],
+                        group.attrs["time_period.end"],
+                        group.size,
+                        group.attrs["sample_rate"],
+                        group.attrs["type"],
+                        group.attrs["measurement_azimuth"],
+                        group.attrs["measurement_tilt"],
+                        group.attrs["units"],
+                        group.ref,
+                        group.parent.ref,
+                        group.parent.parent.ref,
+                    )
+                ],
+                dtype=dtype,
+            )
+            return ch_entry
 
         def recursive_get_channel_entry(group):
             """
@@ -74,32 +101,15 @@ class ChannelSummaryTable(MTH5Table):
                 try:
                     ch_type = group.attrs["type"]
                     if ch_type in ["electric", "magnetic", "auxiliary"]:
-                        ch_entry = np.array(
-                            [
-                                (
-                                    group.parent.parent.parent.parent.attrs["id"],
-                                    group.parent.parent.attrs["id"],
-                                    group.parent.attrs["id"],
-                                    group.parent.parent.attrs["location.latitude"],
-                                    group.parent.parent.attrs["location.longitude"],
-                                    group.parent.parent.attrs["location.elevation"],
-                                    group.attrs["component"],
-                                    group.attrs["time_period.start"],
-                                    group.attrs["time_period.end"],
-                                    group.size,
-                                    group.attrs["sample_rate"],
-                                    group.attrs["type"],
-                                    group.attrs["measurement_azimuth"],
-                                    group.attrs["measurement_tilt"],
-                                    group.attrs["units"],
-                                    group.ref,
-                                    group.parent.ref,
-                                    group.parent.parent.ref,
-                                )
-                            ],
-                            dtype=CHANNEL_DTYPE,
-                        )
-                        self.add_row(ch_entry)
+                        ch_entry = get_channel_entry(group)
+                        try:
+                            self.add_row(ch_entry)
+                        except ValueError as error:
+                            msg = (
+                                f"{error}. "
+                                "it is possible that the OS that made the table is not the OS operating on it."
+                            )
+                            self.logger.warning(msg)
 
                 except KeyError:
                     pass

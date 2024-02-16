@@ -256,6 +256,13 @@ def from_numpy_type(value):
         ),
     ):
         return value
+    # if isinstance(
+    #     value,
+    #     (
+    #         np.int32,
+    #     )
+    # ):
+    #     return np.int64(value)
     if isinstance(value, Iterable):
         if np.any([type(x) in [bytes, np.bytes_] for x in value]):
             return np.array(value, dtype="U").tolist()

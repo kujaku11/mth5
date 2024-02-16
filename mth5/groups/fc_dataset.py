@@ -31,6 +31,12 @@ class FCChannelDataset:
     """
     This will hold multi-dimensional set of Fourier Coefficients
 
+    FCDataset assumes two conditions on the data array (spectrogram):
+        1. The data are uniformly sampled in frequency domain
+        2. The data are uniformly sampled in time.
+        (i.e. the FFT moving window has a uniform step size)
+
+
     Columns
 
         - time
@@ -108,7 +114,7 @@ class FCChannelDataset:
             # write out metadata to make sure that its in the file.
             try:
                 self.write_metadata()
-            except RuntimeError:
+            except (RuntimeError, KeyError, OSError):
                 # file is read only
                 pass
 
@@ -217,10 +223,9 @@ class FCChannelDataset:
         :rtype: TYPE
 
         """
-
         return np.linspace(
-            0,
-            self.metadata.sample_rate_decimation_level / 2,
+            self.metadata.frequency_min,
+            self.metadata.frequency_max,
             self.n_frequencies,
         )
 
@@ -305,8 +310,10 @@ class FCChannelDataset:
             self.hdf5_dataset.resize(new_estimate.shape)
         self.hdf5_dataset[...] = new_estimate
 
-    def from_xarray(self, data):
+    def from_xarray(self, data, sample_rate_decimation_level,):
         """
+
+
         :return: an xarray DataArray with appropriate metadata and the
          appropriate coordinates base on the metadata.
         :rtype: :class:`xarray.DataArray`
@@ -317,12 +324,12 @@ class FCChannelDataset:
         """
         self.metadata.time_period.start = data.time[0].values
         self.metadata.time_period.end = data.time[-1].values
-        self.metadata.sample_rate_decimation_level = (
-            data.coords["frequency"].values.max() * 2
-        )
-        self.metadata.sample_rate_window_step = np.median(
-            np.diff(data.coords["time"].values)
-        ) / np.timedelta64(1, "s")
+
+        self.metadata.sample_rate_decimation_level = sample_rate_decimation_level
+        self.metadata.frequency_min = data.coords["frequency"].data.min()
+        self.metadata.frequency_max = data.coords["frequency"].data.max()
+        step_size = data.coords["time"].data[1] - data.coords["time"].data[0]
+        self.metadata.sample_rate_window_step = step_size / np.timedelta64(1, "s")
         self.metadata.component = data.name
         try:
             self.metadata.units = data.units
