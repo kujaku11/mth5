@@ -26,8 +26,7 @@ class ChannelSummaryTable(MTH5Table):
     """
 
     def __init__(self, hdf5_dataset):
-        super().__init__(hdf5_dataset,dtype=CHANNEL_DTYPE)
-        self._dtype = CHANNEL_DTYPE
+        super().__init__(hdf5_dataset, dtype=CHANNEL_DTYPE)
 
     def to_dataframe(self):
         """
@@ -62,32 +61,35 @@ class ChannelSummaryTable(MTH5Table):
         """
 
         self.clear_table()
-        def get_electric_magnetic_aux_channel_entry(group, dtype=CHANNEL_DTYPE):
+
+        def get_electric_magnetic_aux_channel_entry(
+            group, dtype=CHANNEL_DTYPE
+        ):
             ch_entry = np.array(
-                            [
-                                (
-                                    group.parent.parent.parent.parent.attrs["id"],
-                                    group.parent.parent.attrs["id"],
-                                    group.parent.attrs["id"],
-                                    group.parent.parent.attrs["location.latitude"],
-                                    group.parent.parent.attrs["location.longitude"],
-                                    group.parent.parent.attrs["location.elevation"],
-                                    group.attrs["component"],
-                                    group.attrs["time_period.start"],
-                                    group.attrs["time_period.end"],
-                                    group.size,
-                                    group.attrs["sample_rate"],
-                                    group.attrs["type"],
-                                    group.attrs["measurement_azimuth"],
-                                    group.attrs["measurement_tilt"],
-                                    group.attrs["units"],
-                                    group.ref,
-                                    group.parent.ref,
-                                    group.parent.parent.ref,
-                                )
-                            ],
-                            dtype=dtype,
-                        )
+                [
+                    (
+                        group.parent.parent.parent.parent.attrs["id"],
+                        group.parent.parent.attrs["id"],
+                        group.parent.attrs["id"],
+                        group.parent.parent.attrs["location.latitude"],
+                        group.parent.parent.attrs["location.longitude"],
+                        group.parent.parent.attrs["location.elevation"],
+                        group.attrs["component"],
+                        group.attrs["time_period.start"],
+                        group.attrs["time_period.end"],
+                        group.size,
+                        group.attrs["sample_rate"],
+                        group.attrs["type"],
+                        group.attrs["measurement_azimuth"],
+                        group.attrs["measurement_tilt"],
+                        group.attrs["units"],
+                        group.ref,
+                        group.parent.ref,
+                        group.parent.parent.ref,
+                    )
+                ],
+                dtype=dtype,
+            )
             return ch_entry
 
         def triage_windows_32bit_int(expected_dtype):
@@ -98,11 +100,15 @@ class ChannelSummaryTable(MTH5Table):
             """
             import copy
             from mth5 import CHANNEL_DTYPE_LIST
+
             workaround_channel_dtype_list = copy.deepcopy(CHANNEL_DTYPE_LIST)
             for i, ch_dtype in enumerate(workaround_channel_dtype_list):
                 if CHANNEL_DTYPE[i] != expected_dtype[i]:
                     if CHANNEL_DTYPE_LIST[i][1] == int:
-                        workaround_channel_dtype_list[i] = (CHANNEL_DTYPE_LIST[i][0], np.int32)
+                        workaround_channel_dtype_list[i] = (
+                            CHANNEL_DTYPE_LIST[i][0],
+                            np.int32,
+                        )
             workaround_dtype = np.dtype(workaround_channel_dtype_list)
             return workaround_dtype
 
@@ -117,16 +123,23 @@ class ChannelSummaryTable(MTH5Table):
                 try:
                     ch_type = group.attrs["type"]
                     if ch_type in ["electric", "magnetic", "auxiliary"]:
-                        ch_entry = get_electric_magnetic_aux_channel_entry(group)
+                        ch_entry = get_electric_magnetic_aux_channel_entry(
+                            group
+                        )
                         try:
                             self.add_row(ch_entry)
                         except ValueError as e:
                             msg = "it is possible that the OS that made the table is not the OS operating on it"
                             self.logger.warning(msg)
-                            workaround_dtype = triage_windows_32bit_int(self.dtype)
-                            ch_entry = get_electric_magnetic_aux_channel_entry(group, dtype=workaround_dtype)
+                            workaround_dtype = triage_windows_32bit_int(
+                                self.dtype
+                            )
+                            ch_entry = get_electric_magnetic_aux_channel_entry(
+                                group, dtype=workaround_dtype
+                            )
                             self.add_row(ch_entry)
 
                 except KeyError:
                     pass
+
         recursive_get_channel_entry(self.array.parent)
