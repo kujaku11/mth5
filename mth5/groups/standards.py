@@ -2,7 +2,7 @@
 """
 Created on Wed Dec 23 17:05:33 2020
 
-:copyright: 
+:copyright:
     Jared Peacock (jpeacock@usgs.gov)
 
 :license: MIT
@@ -15,6 +15,7 @@ Created on Wed Dec 23 17:05:33 2020
 import inspect
 import numpy as np
 
+from mth5 import CHANNEL_DTYPE
 from mth5.groups.base import BaseGroup
 from mth5.tables import MTH5Table
 from mth5.utils.exceptions import MTH5TableError
@@ -102,7 +103,7 @@ class StandardsGroup(BaseGroup):
 
     @property
     def summary_table(self):
-        return MTH5Table(self.hdf5_group["summary"])
+        return MTH5Table(self.hdf5_group["summary"], dtype=CHANNEL_DTYPE)
 
     def get_attribute_information(self, attribute_name):
         """
