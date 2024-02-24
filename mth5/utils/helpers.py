@@ -213,15 +213,3 @@ def get_compare_dict(input_dict):
             pass
 
     return input_dict
-
-@path_or_mth5_object
-def get_set_survey_id(m):
-    if m.file_version == "0.1.0":
-        survey_id = None
-    elif m.file_version == "0.2.0":
-        survey_id = "EMTF Synthetic"
-        m.add_survey(survey_id)
-    else:
-        msg = f"unexpected MTH5 file_version = {m.file_version}"
-        raise NotImplementedError(msg)
-    return m, survey_id
