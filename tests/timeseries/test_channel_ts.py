@@ -2,7 +2,7 @@
 """
 Created on Fri Jan 22 12:32:55 2021
 
-:copyright: 
+:copyright:
     Jared Peacock (jpeacock@usgs.gov)
 
 :license: MIT
@@ -444,7 +444,7 @@ class TestChannelTS(unittest.TestCase):
         self.ts.start = "2020-01-01T12:00:00"
         self.ts.ts = np.arange(4096)
         self.ts.channel_metadata.filter.name = "example_filter"
-        self.ts.channel_response_filter.filters_list.append(
+        self.ts.channel_response.filters_list.append(
             CoefficientFilter(name="example_filter", gain=10)
         )
         new_ts = self.ts.get_slice("2020-01-01T12:00:00", n_samples=48)
@@ -453,8 +453,7 @@ class TestChannelTS(unittest.TestCase):
             self.assertEqual(new_ts.channel_metadata, new_ts.channel_metadata)
         with self.subTest("channel_response"):
             self.assertEqual(
-                new_ts.channel_response_filter, self.ts.channel_response_filter
-            )
+                new_ts.channel_response, self.ts.channel_response)
         with self.subTest("run metadata"):
             self.assertEqual(new_ts.run_metadata, new_ts.run_metadata)
         with self.subTest("station metadata"):

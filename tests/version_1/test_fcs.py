@@ -47,25 +47,28 @@ def read_fc_csv(csv_name):
 class TestFCFromXarray(unittest.TestCase):
     @classmethod
     def setUpClass(self):
+        self.h5_filename = fn_path.joinpath("fc_test.h5")
         self.m = MTH5()
         self.m.file_version = "0.1.0"
-        self.m.open_mth5(fn_path.joinpath("fc_test.h5"))
+        self.m.open_mth5(self.h5_filename)
         self.station_group = self.m.add_station("mt01")
         self.fc_group = (
             self.station_group.fourier_coefficients_group.add_fc_group(
                 "processing_run_01"
             )
         )
+
+
         self.decimation_level = self.fc_group.add_decimation_level("3")
         self.ds = read_fc_csv(csv_fn)
-        self.decimation_level.from_xarray(self.ds)
+        self.expected_sr_decimation_level = 0.015380859375
+        self.decimation_level.from_xarray(self.ds, self.expected_sr_decimation_level)
         self.decimation_level.update_metadata()
         self.fc_group.update_metadata()
 
         self.expected_start = MTime(self.ds.time[0].values)
         self.expected_end = MTime(self.ds.time[-1].values)
         self.expected_window_step = 6144
-        self.expected_sr_decimation_level = 0.015380859375
         self.expected_shape = (6, 64)
         self.expected_time = np.array(
             [
@@ -188,6 +191,10 @@ class TestFCFromXarray(unittest.TestCase):
                 self.assertTrue(
                     np.isclose(fc_ch.frequency, self.expected_frequency).all()
                 )
+            with self.subTest("metadata and table sample rates agree"):
+                df = self.decimation_level.channel_summary
+                assert (df.sample_rate_decimation_level.iloc[0] == self.expected_sr_decimation_level)
+                
 
     def test_to_xarray(self):
         da = self.decimation_level.to_xarray()
@@ -225,6 +232,25 @@ class TestFCFromXarray(unittest.TestCase):
             )
         with self.subTest("ex shape"):
             self.assertTupleEqual(ch_da.shape, self.expected_shape)
+
+    def test_can_update_decimation_level_metadata(self):
+        window_type = "hann"
+        # set the window typw
+        self.decimation_level.metadata.window.type = window_type
+        # assert that the updated value is true
+        with self.subTest("window.type is set"):
+            self.assertEqual(
+                self.decimation_level.metadata.window.type, window_type
+            )
+        self.decimation_level.update_metadata()
+        self.decimation_level.write_metadata()
+
+        self.fc_group.update_metadata()
+        self.fc_group.write_metadata()
+
+        tmp = self.fc_group.get_decimation_level("3")
+        with self.subTest("get_decimation_level.metadata.window.type"):
+            self.assertEqual(tmp.metadata.window.type, window_type)
 
     @classmethod
     def tearDownClass(self):

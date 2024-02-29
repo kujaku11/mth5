@@ -17,7 +17,7 @@ import numpy as np
 from mth5.io.zen import Z3D
 
 from mt_metadata.timeseries.filters import (
-    ChannelResponseFilter,
+    ChannelResponse,
     FrequencyResponseTableFilter,
     CoefficientFilter,
 )
@@ -160,7 +160,7 @@ class TestZ3DEY(unittest.TestCase):
                 ("dc.end", 0.019371436521409924),
                 ("dc.start", 0.019130984313785026),
                 ("dipole_length", 56.0),
-                ("filter.applied", [False, False]),
+                ("filter.applied", [True, True]),
                 (
                     "filter.name",
                     ["dipole_56.00m", "zen_counts2mv"],
@@ -331,7 +331,7 @@ class TestZ3DEY(unittest.TestCase):
 
         with self.subTest("channel_response"):
 
-            cr = ChannelResponseFilter(filters_list=[df, cf])
+            cr = ChannelResponse(filters_list=[df, cf])
             self.assertListEqual(
                 cr.filters_list, self.z3d.channel_response.filters_list
             )
@@ -571,7 +571,7 @@ class TestZ3DHY(unittest.TestCase):
                 ("channel_number", 2),
                 ("component", "hy"),
                 ("data_quality.rating.value", 0),
-                ("filter.applied", [False, False]),
+                ("filter.applied", [True, True]),
                 (
                     "filter.name",
                     [
@@ -712,7 +712,7 @@ class TestZ3DHY(unittest.TestCase):
 
     def channel_response(self):
 
-        cr = ChannelResponseFilter(filters_list=[self.cf, self.cr])
+        cr = ChannelResponse(filters_list=[self.cf, self.cr])
 
         self.assertListEqual(
             cr.filters_list, self.z3d.channel_response.filters_list

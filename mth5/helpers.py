@@ -6,8 +6,8 @@ Created on Tue Jun  2 12:37:50 2020
 
 :copyright:
     Jared Peacock (jpeacock@usgs.gov)
-    
-:license: 
+
+:license:
     MIT
 
 """
@@ -132,7 +132,9 @@ def get_tree(parent):
     """
     lines = ["{0}:".format(parent.name), "=" * 20]
     if not isinstance(parent, (h5py.File, h5py.Group)):
-        raise TypeError("Provided object is not a h5py.File or h5py.Group " "object")
+        raise TypeError(
+            "Provided object is not a h5py.File or h5py.Group " "object"
+        )
 
     def fancy_print(name, obj):
         # lines.append(name)
@@ -141,10 +143,14 @@ def get_tree(parent):
 
         if isinstance(obj, h5py.Group):
             lines.append(f"{spacing}|- Group: {group_name}")
-            lines.append("{0}{1}".format(spacing, (len(group_name) + 10) * "-"))
+            lines.append(
+                "{0}{1}".format(spacing, (len(group_name) + 10) * "-")
+            )
         elif isinstance(obj, h5py.Dataset):
             lines.append(f"{spacing}--> Dataset: {group_name}")
-            lines.append("{0}{1}".format(spacing, (len(group_name) + 15) * "."))
+            lines.append(
+                "{0}{1}".format(spacing, (len(group_name) + 15) * ".")
+            )
 
     # lines.append(parent.name)
     parent.visititems(fancy_print)
@@ -223,6 +229,7 @@ def from_numpy_type(value):
 
     if value is None:
         return "none"
+
     # For now turn references into a generic string
     if isinstance(value, h5py.h5r.Reference):
         value = str(value)
@@ -236,12 +243,26 @@ def from_numpy_type(value):
             bool,
             complex,
             np.int_,
+            np.int32,
             np.float_,
             np.bool_,
             np.complex_,
+            np.intp,
+            type(np.int_),
+            type(np.float_),
+            type(np.bool_),
+            type(np.complex_),
+            type(np.intp),
         ),
     ):
         return value
+    # if isinstance(
+    #     value,
+    #     (
+    #         np.int32,
+    #     )
+    # ):
+    #     return np.int64(value)
     if isinstance(value, Iterable):
         if np.any([type(x) in [bytes, np.bytes_] for x in value]):
             return np.array(value, dtype="U").tolist()

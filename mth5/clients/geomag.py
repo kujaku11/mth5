@@ -48,7 +48,6 @@ class GeomagClient:
     """
 
     def __init__(self, **kwargs):
-
         self._base_url = r"https://geomag.usgs.gov/ws/data/"
         self._timeout = 120
         self._max_length = 172800
@@ -425,12 +424,8 @@ class GeomagClient:
             if "y" in ch_metadata.component:
                 ch_metadata.measurement_azimuth = 90
             ch_metadata.location.latitude = station_metadata.location.latitude
-            ch_metadata.location.longitude = (
-                station_metadata.location.longitude
-            )
-            ch_metadata.location.elevation = (
-                station_metadata.location.elevation
-            )
+            ch_metadata.location.longitude = station_metadata.location.longitude
+            ch_metadata.location.elevation = station_metadata.location.elevation
             ch_metadata.time_period.start = df.index[0]
             ch_metadata.time_period.end = df.index[-1]
             run_metadata.time_period.start = df.index[0]
@@ -650,8 +645,8 @@ class USGSGeomag:
                     run.run_metadata.id, run_metadata=run.run_metadata
                 )
                 run_group.from_runts(run)
-                station_group.update_station_metadata()
-            survey_group.update_survey_metadata()
+                station_group.update_metadata()
+            survey_group.update_metadata()
 
         if self.interact:
             m.open_mth5(m.filename)

@@ -29,6 +29,7 @@ from mth5.helpers import validate_name
 
 from mt_metadata.timeseries import Survey
 
+
 # =============================================================================
 # Survey Group
 # =============================================================================
@@ -135,7 +136,6 @@ class MasterSurveyGroup(BaseGroup):
     """
 
     def __init__(self, group, **kwargs):
-
         super().__init__(group, **kwargs)
 
     @property
@@ -147,9 +147,7 @@ class MasterSurveyGroup(BaseGroup):
         for survey in self.groups_list:
             survey_group = self.get_survey(survey)
             for station in survey_group.stations_group.groups_list:
-                station_group = survey_group.stations_group.get_station(
-                    station
-                )
+                station_group = survey_group.stations_group.get_station(station)
                 for run in station_group.groups_list:
                     run_group = station_group.get_run(run)
                     for ch in run_group.groups_list:
@@ -424,7 +422,6 @@ class SurveyGroup(BaseGroup):
     """
 
     def __init__(self, group, survey_metadata=None, **kwargs):
-
         super().__init__(group, group_metadata=survey_metadata, **kwargs)
 
         self._default_subgroup_names = [
@@ -498,6 +495,16 @@ class SurveyGroup(BaseGroup):
         )
 
     def update_survey_metadata(self, survey_dict=None):
+        """
+        update start end dates and location corners from stations_group.summary_table
+
+        """
+
+        raise DeprecationWarning(
+            "'update_survey_metadata' has been deprecated use 'update_metadata()"
+        )
+
+    def update_metadata(self, survey_dict=None):
         """
         update start end dates and location corners from stations_group.summary_table
 

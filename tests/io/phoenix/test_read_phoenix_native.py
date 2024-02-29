@@ -170,7 +170,7 @@ class TestReadPhoenixNativeToChannelTS(unittest.TestCase):
                 ("channel_number", 0),
                 ("component", "h2"),
                 ("data_quality.rating.value", 0),
-                ("filter.applied", [False, False]),
+                ("filter.applied", [True, True]),
                 (
                     "filter.name",
                     ["mtu-5c_rmt03-j_666_h2_10000hz_lowpass", "v_to_mv"],
@@ -207,15 +207,15 @@ class TestReadPhoenixNativeToChannelTS(unittest.TestCase):
                         self.ch_ts.channel_metadata.get_attr_from_name(key),
                     )
 
-    def test_channel_response_filter_length(self):
+    def test_channel_response_length(self):
         self.assertEqual(
-            2, len(self.ch_ts.channel_response_filter.filters_list)
+            2, len(self.ch_ts.channel_response.filters_list)
         )
 
-    def test_channel_response_filter_frequency_shape(self):
+    def test_channel_response_frequency_shape(self):
         self.assertEqual(
             (69,),
-            self.ch_ts.channel_response_filter.filters_list[
+            self.ch_ts.channel_response.filters_list[
                 0
             ].frequencies.shape,
         )
