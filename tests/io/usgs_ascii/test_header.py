@@ -13,6 +13,7 @@ from collections import OrderedDict
 import numpy as np
 
 from mth5.io.usgs_ascii import AsciiMetadata
+from mth5.utils.helpers import get_compare_dict
 
 # =============================================================================
 
@@ -44,14 +45,14 @@ class TestAsciiMetadata(unittest.TestCase):
 
     def test_ex(self):
         self.assertDictEqual(
-            self.header.ex_metadata.to_dict(single=True),
+            get_compare_dict(self.header.ex_metadata.to_dict(single=True)),
             OrderedDict(
                 [
                     ("channel_number", 32),
                     ("component", "ex"),
                     ("data_quality.rating.value", 0),
                     ("dipole_length", 100.0),
-                    ("filter.applied", [False]),
+                    ("filter.applied", [True]),
                     ("filter.name", []),
                     ("measurement_azimuth", 9.0),
                     ("measurement_tilt", 0.0),
@@ -78,14 +79,14 @@ class TestAsciiMetadata(unittest.TestCase):
 
     def test_ey(self):
         self.assertDictEqual(
-            self.header.ey_metadata.to_dict(single=True),
+            get_compare_dict(self.header.ey_metadata.to_dict(single=True)),
             OrderedDict(
                 [
                     ("channel_number", 34),
                     ("component", "ey"),
                     ("data_quality.rating.value", 0),
                     ("dipole_length", 102.0),
-                    ("filter.applied", [False]),
+                    ("filter.applied", [True]),
                     ("filter.name", []),
                     ("measurement_azimuth", 99.0),
                     ("measurement_tilt", 0.0),
@@ -112,13 +113,13 @@ class TestAsciiMetadata(unittest.TestCase):
 
     def test_hx(self):
         self.assertDictEqual(
-            self.header.hx_metadata.to_dict(single=True),
+            get_compare_dict(self.header.hx_metadata.to_dict(single=True)),
             OrderedDict(
                 [
                     ("channel_number", 31),
                     ("component", "hx"),
                     ("data_quality.rating.value", 0),
-                    ("filter.applied", [False]),
+                    ("filter.applied", [True]),
                     ("filter.name", []),
                     ("location.elevation", 0.0),
                     ("location.latitude", 0.0),
@@ -139,13 +140,13 @@ class TestAsciiMetadata(unittest.TestCase):
 
     def test_hy(self):
         self.assertDictEqual(
-            self.header.hy_metadata.to_dict(single=True),
+            get_compare_dict(self.header.hy_metadata.to_dict(single=True)),
             OrderedDict(
                 [
                     ("channel_number", 33),
                     ("component", "hy"),
                     ("data_quality.rating.value", 0),
-                    ("filter.applied", [False]),
+                    ("filter.applied", [True]),
                     ("filter.name", []),
                     ("location.elevation", 0.0),
                     ("location.latitude", 0.0),
@@ -166,13 +167,13 @@ class TestAsciiMetadata(unittest.TestCase):
 
     def test_hz(self):
         self.assertDictEqual(
-            self.header.hz_metadata.to_dict(single=True),
+            get_compare_dict(self.header.hz_metadata.to_dict(single=True)),
             OrderedDict(
                 [
                     ("channel_number", 35),
                     ("component", "hz"),
                     ("data_quality.rating.value", 0),
-                    ("filter.applied", [False]),
+                    ("filter.applied", [True]),
                     ("filter.name", []),
                     ("location.elevation", 0.0),
                     ("location.latitude", 0.0),
@@ -207,30 +208,34 @@ class TestAsciiMetadata(unittest.TestCase):
         self.assertEqual(self.header.run_id, "rgr003a")
 
     def test_run_metadata(self):
-        self.assertDictEqual(
-            self.header.run_metadata.to_dict(single=True),
-            OrderedDict(
-                [
-                    ("channels_recorded_auxiliary", []),
-                    ("channels_recorded_electric", ["ex", "ey"]),
-                    ("channels_recorded_magnetic", ["hx", "hy", "hz"]),
-                    ("data_logger.firmware.author", None),
-                    ("data_logger.firmware.name", None),
-                    ("data_logger.firmware.version", None),
-                    ("data_logger.id", "2311-11"),
-                    ("data_logger.manufacturer", None),
-                    ("data_logger.timing_system.drift", 0.0),
-                    ("data_logger.timing_system.type", "GPS"),
-                    ("data_logger.timing_system.uncertainty", 0.0),
-                    ("data_logger.type", None),
-                    ("data_type", "BBMT"),
-                    ("id", "rgr003a"),
-                    ("sample_rate", 4.0),
-                    ("time_period.end", "2012-08-24T16:25:26+00:00"),
-                    ("time_period.start", "2012-08-21T22:02:27+00:00"),
-                ]
-            ),
+        od = OrderedDict(
+            [
+                ("channels_recorded_auxiliary", []),
+                ("channels_recorded_electric", ["ex", "ey"]),
+                ("channels_recorded_magnetic", ["hx", "hy", "hz"]),
+                ("data_logger.firmware.author", None),
+                ("data_logger.firmware.name", None),
+                ("data_logger.firmware.version", None),
+                ("data_logger.id", "2311-11"),
+                ("data_logger.manufacturer", None),
+                ("data_logger.timing_system.drift", 0.0),
+                ("data_logger.timing_system.type", "GPS"),
+                ("data_logger.timing_system.uncertainty", 0.0),
+                ("data_logger.type", None),
+                ("data_type", "BBMT"),
+                ("id", "rgr003a"),
+                ("sample_rate", 4.0),
+                ("time_period.end", "2012-08-24T16:25:26+00:00"),
+                ("time_period.start", "2012-08-21T22:02:27+00:00"),
+            ]
         )
+
+        for key in od.keys():
+            with self.subTest(key):
+                self.assertEqual(
+                    self.header.run_metadata.get_attr_from_name(key),
+                    od[key],
+                )
 
     def test_sample_rate(self):
         self.assertEqual(self.header.sample_rate, 4.0)
@@ -242,35 +247,42 @@ class TestAsciiMetadata(unittest.TestCase):
         self.assertEqual(self.header.start, "2012-08-21T22:02:27+00:00")
 
     def test_station_metadata(self):
-        self.assertDictEqual(
-            self.header.station_metadata.to_dict(single=True),
-            OrderedDict(
-                [
-                    ("acquired_by.name", None),
-                    ("channels_recorded", ["ex", "ey", "hx", "hy", "hz"]),
-                    ("data_type", "BBMT"),
-                    ("geographic_name", None),
-                    ("id", "003"),
-                    ("location.declination.model", "WMM"),
-                    ("location.declination.value", 0.0),
-                    ("location.elevation", 1803.07),
-                    ("location.latitude", 39.282),
-                    ("location.longitude", -108.1582),
-                    ("orientation.method", None),
-                    ("orientation.reference_frame", "geographic"),
-                    ("provenance.creation_time", "1980-01-01T00:00:00+00:00"),
-                    ("provenance.software.author", None),
-                    ("provenance.software.name", None),
-                    ("provenance.software.version", None),
-                    ("provenance.submitter.email", None),
-                    ("provenance.submitter.organization", None),
-                    ("release_license", "CC0-1.0"),
-                    ("run_list", ["rgr003a"]),
-                    ("time_period.end", "2012-08-24T16:25:26+00:00"),
-                    ("time_period.start", "2012-08-21T22:02:27+00:00"),
-                ]
-            ),
+        od = OrderedDict(
+            [
+                ("acquired_by.name", None),
+                ("channels_recorded", ["ex", "ey", "hx", "hy", "hz"]),
+                ("data_type", "BBMT"),
+                ("geographic_name", None),
+                ("id", "003"),
+                ("location.declination.model", "WMM"),
+                ("location.declination.value", 0.0),
+                ("location.elevation", 1803.07),
+                ("location.latitude", 39.282),
+                ("location.longitude", -108.1582),
+                ("orientation.method", None),
+                ("orientation.reference_frame", "geographic"),
+                ("provenance.archive.name", None),
+                ("provenance.creation_time", "1980-01-01T00:00:00+00:00"),
+                ("provenance.creator.name", None),
+                ("provenance.software.author", None),
+                ("provenance.software.name", None),
+                ("provenance.software.version", None),
+                ("provenance.submitter.email", None),
+                ("provenance.submitter.name", None),
+                ("provenance.submitter.organization", None),
+                ("release_license", "CC0-1.0"),
+                ("run_list", ["rgr003a"]),
+                ("time_period.end", "2012-08-24T16:25:26+00:00"),
+                ("time_period.start", "2012-08-21T22:02:27+00:00"),
+            ]
         )
+
+        for key in od.keys():
+            with self.subTest(key):
+                self.assertEqual(
+                    self.header.station_metadata.get_attr_from_name(key),
+                    od[key],
+                )
 
     def test_survey_id(self):
         self.assertEqual(self.header.survey_id, "RGR")
@@ -297,12 +309,11 @@ class TestAsciiMetadata(unittest.TestCase):
                 ("time_period.start_date", "1980-01-01"),
             ]
         )
-        for key in self.header.survey_metadata.to_dict(single=True).keys():
-            if "mth5" in key:
-                continue
+        for key in od.keys():
             with self.subTest(key):
                 self.assertEqual(
-                    self.header.survey_metadata.get_attr_from_name(key), od[key]
+                    self.header.survey_metadata.get_attr_from_name(key),
+                    od[key],
                 )
 
     def test_write_header(self):

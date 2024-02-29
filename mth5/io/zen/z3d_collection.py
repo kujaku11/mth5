@@ -17,7 +17,8 @@ Created on Sat Apr  4 12:40:40 2020
 import pandas as pd
 
 from mth5.io.collection import Collection
-from mth5.io.zen import CoilResponse, Z3D
+from mth5.io.zen import Z3D
+from mth5.io.zen.coil_response import CoilResponse
 
 from mt_metadata.timeseries import Station
 
@@ -105,17 +106,23 @@ class Z3DCollection(Collection):
         station_metadata = []
         cal_obj = self.get_calibrations(calibration_path)
         entries = []
-        for z3d_fn in self.get_files(
-            [self.file_ext, self.file_ext.lower(), self.file_ext.upper()]
+        for z3d_fn in set(
+            self.get_files(
+                [self.file_ext, self.file_ext.lower(), self.file_ext.upper()]
+            )
         ):
             z3d_obj = Z3D(z3d_fn)
             z3d_obj.read_all_info()
-            station_metadata.append(z3d_obj.station_metadata.to_dict(single=True))
+            station_metadata.append(
+                z3d_obj.station_metadata.to_dict(single=True)
+            )
             if not int(z3d_obj.sample_rate) in sample_rates:
-                self.logger.warning(f"{z3d_obj.sample_rate} not in {sample_rates}")
+                self.logger.warning(
+                    f"{z3d_obj.sample_rate} not in {sample_rates}"
+                )
                 return
 
-            entry = {}
+            entry = self.get_empty_entry_dict()
             entry["survey"] = z3d_obj.metadata.job_name
             entry["station"] = z3d_obj.station
             entry["run"] = None
@@ -128,7 +135,13 @@ class Z3DCollection(Collection):
             entry["file_size"] = z3d_obj.file_size
             entry["n_samples"] = z3d_obj.n_samples
             entry["sequence_number"] = 0
+            entry["dipole"] = z3d_obj.dipole_length
+            entry["coil_number"] = z3d_obj.coil_number
+            entry["latitude"] = z3d_obj.latitude
+            entry["longitude"] = z3d_obj.longitude
+            entry["elevation"] = z3d_obj.elevation
             entry["instrument_id"] = f"ZEN_{int(z3d_obj.header.box_number):03}"
+            entry["coil_number"] = z3d_obj.coil_number
             if cal_obj.has_coil_number(z3d_obj.coil_number):
                 entry["calibration_fn"] = cal_obj.calibration_file
             else:
@@ -136,9 +149,13 @@ class Z3DCollection(Collection):
 
             entries.append(entry)
         # make pandas dataframe and set data types
-        df = self._sort_df(self._set_df_dtypes(pd.DataFrame(entries)), run_name_zeros)
+        df = self._sort_df(
+            self._set_df_dtypes(pd.DataFrame(entries)), run_name_zeros
+        )
 
-        self.station_metadata_dict = self._sort_station_metadata(station_metadata)
+        self.station_metadata_dict = self._sort_station_metadata(
+            station_metadata
+        )
 
         return df
 

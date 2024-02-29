@@ -17,7 +17,7 @@ import numpy as np
 from mth5.io.zen import Z3D
 
 from mt_metadata.timeseries.filters import (
-    ChannelResponseFilter,
+    ChannelResponse,
     FrequencyResponseTableFilter,
     CoefficientFilter,
 )
@@ -25,7 +25,9 @@ from mt_metadata.timeseries.filters import (
 # =============================================================================
 
 
-@unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local files")
+@unittest.skipIf(
+    "peacock" not in str(Path(__file__).as_posix()), "local files"
+)
 class TestZ3DEY(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -132,7 +134,9 @@ class TestZ3DEY(unittest.TestCase):
         self.assertEqual(self.z3d._block_len, 65536)
 
     def test_gps_flag(self):
-        self.assertEqual(self.z3d.gps_flag, b"\xff\xff\xff\x7f\x00\x00\x00\x80")
+        self.assertEqual(
+            self.z3d.gps_flag, b"\xff\xff\xff\x7f\x00\x00\x00\x80"
+        )
 
     def test_get_gps_time(self):
         self.assertTupleEqual(
@@ -156,12 +160,12 @@ class TestZ3DEY(unittest.TestCase):
                 ("dc.end", 0.019371436521409924),
                 ("dc.start", 0.019130984313785026),
                 ("dipole_length", 56.0),
-                ("filter.applied", [False, False]),
+                ("filter.applied", [True, True]),
                 (
                     "filter.name",
-                    ["zen_counts2mv", "dipole_56.00m"],
+                    ["dipole_56.00m", "zen_counts2mv"],
                 ),
-                ("measurement_azimuth", 0.0),
+                ("measurement_azimuth", 90.0),
                 ("measurement_tilt", 0.0),
                 ("negative.elevation", 0.0),
                 ("negative.id", None),
@@ -183,7 +187,11 @@ class TestZ3DEY(unittest.TestCase):
             ]
         )
 
-        self.assertDictEqual(self.z3d.channel_metadata.to_dict(single=True), ey)
+        for key, value in ey.items():
+            with self.subTest(key):
+                self.assertEqual(
+                    value, self.z3d.channel_metadata.get_attr_from_name(key)
+                )
 
     def test_run_metadata(self):
         rm = OrderedDict(
@@ -203,16 +211,18 @@ class TestZ3DEY(unittest.TestCase):
                 ("data_logger.timing_system.uncertainty", 0.0),
                 ("data_logger.type", None),
                 ("data_type", "MTBB"),
-                ("id", None),
+                ("id", "sr256_001"),
                 ("sample_rate", 256.0),
                 ("time_period.end", "2022-05-17T15:54:42+00:00"),
                 ("time_period.start", "2022-05-17T13:09:58+00:00"),
             ]
         )
 
-        self.assertDictContainsSubset(
-            self.z3d.run_metadata.to_dict(single=True), rm
-        )
+        for key, value in rm.items():
+            with self.subTest(key):
+                self.assertEqual(
+                    value, self.z3d.run_metadata.get_attr_from_name(key)
+                )
 
     def test_station_metadata(self):
         sm = OrderedDict(
@@ -230,11 +240,14 @@ class TestZ3DEY(unittest.TestCase):
                 ("location.longitude", -116.8211900230401),
                 ("orientation.method", None),
                 ("orientation.reference_frame", "geographic"),
+                ("provenance.archive.name", None),
                 ("provenance.creation_time", "1980-01-01T00:00:00+00:00"),
+                ("provenance.creator.name", None),
                 ("provenance.software.author", None),
                 ("provenance.software.name", None),
                 ("provenance.software.version", None),
                 ("provenance.submitter.email", None),
+                ("provenance.submitter.name", None),
                 ("provenance.submitter.organization", None),
                 ("release_license", "CC0-1.0"),
                 ("run_list", []),
@@ -243,26 +256,30 @@ class TestZ3DEY(unittest.TestCase):
             ]
         )
 
-        self.assertDictEqual(self.z3d.station_metadata.to_dict(single=True), sm)
+        for key, value in sm.items():
+            with self.subTest(key):
+                self.assertEqual(
+                    value, self.z3d.station_metadata.get_attr_from_name(key)
+                )
 
     def test_filters(self):
-        zr = FrequencyResponseTableFilter(
-            **OrderedDict(
-                [
-                    ("amplitudes", np.array([1.00153])),
-                    ("calibration_date", "1980-01-01"),
-                    ("comments", "data logger response read from z3d file"),
-                    ("frequencies", np.array([2.0])),
-                    ("gain", 1.0),
-                    ("instrument_type", None),
-                    ("name", "zen024_256_response"),
-                    ("phases", np.array([-1.5333299999999999])),
-                    ("type", "frequency response table"),
-                    ("units_in", "mV"),
-                    ("units_out", "mV"),
-                ]
-            )
-        )
+        # zr = FrequencyResponseTableFilter(
+        #     **OrderedDict(
+        #         [
+        #             ("amplitudes", np.array([1.00153])),
+        #             ("calibration_date", "1980-01-01"),
+        #             ("comments", "data logger response read from z3d file"),
+        #             ("frequencies", np.array([2.0])),
+        #             ("gain", 1.0),
+        #             ("instrument_type", None),
+        #             ("name", "zen024_256_response"),
+        #             ("phases", np.array([-1.5333299999999999])),
+        #             ("type", "frequency response table"),
+        #             ("units_in", "mV"),
+        #             ("units_out", "mV"),
+        #         ]
+        #     )
+        # )
 
         df = CoefficientFilter(
             **OrderedDict(
@@ -272,8 +289,8 @@ class TestZ3DEY(unittest.TestCase):
                     ("gain", 0.056),
                     ("name", "dipole_56.00m"),
                     ("type", "coefficient"),
-                    ("units_in", "mV"),
-                    ("units_out", "mV/km"),
+                    ("units_out", "mV"),
+                    ("units_in", "mV/km"),
                 ]
             )
         )
@@ -286,18 +303,18 @@ class TestZ3DEY(unittest.TestCase):
                     ("gain", 1048576000.000055),
                     ("name", "zen_counts2mv"),
                     ("type", "coefficient"),
-                    ("units_in", "count"),
-                    ("units_out", "mV"),
+                    ("units_out", "count"),
+                    ("units_in", "mV"),
                 ]
             )
         )
 
-        with self.subTest("test zen response"):
-            self.assertEqual(None, self.z3d.zen_response)
-            # self.assertDictEqual(
-            #     self.z3d.zen_response.to_dict(single=True),
-            #     zr.to_dict(single=True),
-            # )
+        # with self.subTest("test zen response"):
+        #     self.assertEqual(None, self.z3d.zen_response)
+        #     # self.assertDictEqual(
+        #     #     self.z3d.zen_response.to_dict(single=True),
+        #     #     zr.to_dict(single=True),
+        #     # )
         with self.subTest("test_dipole_filter"):
 
             self.assertDictEqual(
@@ -314,13 +331,15 @@ class TestZ3DEY(unittest.TestCase):
 
         with self.subTest("channel_response"):
 
-            cr = ChannelResponseFilter(filters_list=[cf, df])
+            cr = ChannelResponse(filters_list=[df, cf])
             self.assertListEqual(
                 cr.filters_list, self.z3d.channel_response.filters_list
             )
 
 
-@unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local files")
+@unittest.skipIf(
+    "peacock" not in str(Path(__file__).as_posix()), "local files"
+)
 class TestZ3DHY(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -396,54 +415,56 @@ class TestZ3DHY(unittest.TestCase):
                         "frequencies",
                         np.array(
                             [
-                                7.32422e-04,
-                                9.76563e-04,
-                                1.46484e-03,
-                                1.95313e-03,
-                                2.92969e-03,
-                                3.90625e-03,
-                                5.85938e-03,
-                                7.81250e-03,
-                                1.17188e-02,
-                                1.56250e-02,
-                                2.34375e-02,
-                                3.12500e-02,
-                                4.68750e-02,
-                                6.25000e-02,
-                                9.37500e-02,
-                                1.25000e-01,
-                                1.87500e-01,
-                                2.50000e-01,
-                                3.75000e-01,
-                                5.00000e-01,
-                                7.50000e-01,
-                                1.00000e00,
-                                1.50000e00,
-                                2.00000e00,
-                                3.00000e00,
-                                4.00000e00,
-                                6.00000e00,
-                                8.00000e00,
-                                1.20000e01,
-                                1.60000e01,
-                                2.40000e01,
-                                3.20000e01,
-                                4.80000e01,
-                                6.40000e01,
-                                9.60000e01,
-                                1.28000e02,
-                                1.92000e02,
-                                2.56000e02,
-                                3.84000e02,
-                                5.12000e02,
-                                7.68000e02,
-                                1.02400e03,
-                                1.53600e03,
-                                2.04800e03,
-                                3.07200e03,
-                                4.09600e03,
-                                6.14400e03,
-                                8.19200e03,
+                                [
+                                    1.16568582e-04,
+                                    1.55424829e-04,
+                                    2.33136527e-04,
+                                    3.10850294e-04,
+                                    4.66274645e-04,
+                                    6.21698996e-04,
+                                    9.32549290e-04,
+                                    1.24339799e-03,
+                                    1.86510495e-03,
+                                    2.48679599e-03,
+                                    3.73019398e-03,
+                                    4.97359197e-03,
+                                    7.46038796e-03,
+                                    9.94718394e-03,
+                                    1.49207759e-02,
+                                    1.98943679e-02,
+                                    2.98415518e-02,
+                                    3.97887358e-02,
+                                    5.96831037e-02,
+                                    7.95774715e-02,
+                                    1.19366207e-01,
+                                    1.59154943e-01,
+                                    2.38732415e-01,
+                                    3.18309886e-01,
+                                    4.77464829e-01,
+                                    6.36619772e-01,
+                                    9.54929659e-01,
+                                    1.27323954e00,
+                                    1.90985932e00,
+                                    2.54647909e00,
+                                    3.81971863e00,
+                                    5.09295818e00,
+                                    7.63943727e00,
+                                    1.01859164e01,
+                                    1.52788745e01,
+                                    2.03718327e01,
+                                    3.05577491e01,
+                                    4.07436654e01,
+                                    6.11154981e01,
+                                    8.14873309e01,
+                                    1.22230996e02,
+                                    1.62974662e02,
+                                    2.44461993e02,
+                                    3.25949323e02,
+                                    4.88923985e02,
+                                    6.51898647e02,
+                                    9.77847970e02,
+                                    1.30379729e03,
+                                ]
                             ]
                         ),
                     ),
@@ -538,8 +559,8 @@ class TestZ3DHY(unittest.TestCase):
                     ("gain", 1048576000.000055),
                     ("name", "zen_counts2mv"),
                     ("type", "coefficient"),
-                    ("units_in", "count"),
-                    ("units_out", "mV"),
+                    ("units_out", "count"),
+                    ("units_in", "mV"),
                 ]
             )
         )
@@ -550,12 +571,12 @@ class TestZ3DHY(unittest.TestCase):
                 ("channel_number", 2),
                 ("component", "hy"),
                 ("data_quality.rating.value", 0),
-                ("filter.applied", [False, False]),
+                ("filter.applied", [True, True]),
                 (
                     "filter.name",
                     [
-                        "zen_counts2mv",
                         "ant4_2324_response",
+                        "zen_counts2mv",
                     ],
                 ),
                 ("h_field_max.end", 0.02879215431213228),
@@ -579,7 +600,11 @@ class TestZ3DHY(unittest.TestCase):
             ]
         )
 
-        self.assertDictEqual(self.z3d.channel_metadata.to_dict(single=True), ey)
+        for key, value in ey.items():
+            with self.subTest(key):
+                self.assertEqual(
+                    value, self.z3d.channel_metadata.get_attr_from_name(key)
+                )
 
     def test_run_metadata(self):
         rm = OrderedDict(
@@ -599,16 +624,18 @@ class TestZ3DHY(unittest.TestCase):
                 ("data_logger.timing_system.uncertainty", 0.0),
                 ("data_logger.type", None),
                 ("data_type", "MTBB"),
-                ("id", None),
+                ("id", "sr256_001"),
                 ("sample_rate", 256.0),
                 ("time_period.end", "2022-05-17T15:54:42+00:00"),
                 ("time_period.start", "2022-05-17T13:09:58+00:00"),
             ]
         )
 
-        self.assertDictContainsSubset(
-            self.z3d.run_metadata.to_dict(single=True), rm
-        )
+        for key, value in rm.items():
+            with self.subTest(key):
+                self.assertEqual(
+                    value, self.z3d.run_metadata.get_attr_from_name(key)
+                )
 
     def test_station_metadata(self):
         sm = OrderedDict(
@@ -626,11 +653,14 @@ class TestZ3DHY(unittest.TestCase):
                 ("location.longitude", -116.8211900230401),
                 ("orientation.method", None),
                 ("orientation.reference_frame", "geographic"),
+                ("provenance.archive.name", None),
                 ("provenance.creation_time", "1980-01-01T00:00:00+00:00"),
+                ("provenance.creator.name", None),
                 ("provenance.software.author", None),
                 ("provenance.software.name", None),
                 ("provenance.software.version", None),
                 ("provenance.submitter.email", None),
+                ("provenance.submitter.name", None),
                 ("provenance.submitter.organization", None),
                 ("release_license", "CC0-1.0"),
                 ("run_list", []),
@@ -639,7 +669,11 @@ class TestZ3DHY(unittest.TestCase):
             ]
         )
 
-        self.assertDictEqual(self.z3d.station_metadata.to_dict(single=True), sm)
+        for key, value in sm.items():
+            with self.subTest(key):
+                self.assertEqual(
+                    value, self.z3d.station_metadata.get_attr_from_name(key)
+                )
 
     def test_zen_esponse(self):
         self.assertEqual(None, self.z3d.zen_response)
@@ -678,7 +712,7 @@ class TestZ3DHY(unittest.TestCase):
 
     def channel_response(self):
 
-        cr = ChannelResponseFilter(filters_list=[self.cf, self.cr])
+        cr = ChannelResponse(filters_list=[self.cf, self.cr])
 
         self.assertListEqual(
             cr.filters_list, self.z3d.channel_response.filters_list

@@ -18,6 +18,7 @@ import numpy as np
 from mth5.groups.base import BaseGroup
 from mth5.tables import MTH5Table
 from mth5.utils.exceptions import MTH5TableError
+from mth5 import STANDARDS_DTYPE
 
 from mt_metadata.base import BaseDict
 from mt_metadata import timeseries
@@ -26,6 +27,8 @@ from mt_metadata.utils.validators import validate_attribute
 
 ts_classes = dict(inspect.getmembers(timeseries, inspect.isclass))
 flt_classes = dict(inspect.getmembers(filters, inspect.isclass))
+
+
 # =============================================================================
 # Summarize standards
 # =============================================================================
@@ -33,15 +36,20 @@ def summarize_metadata_standards():
     """
     Summarize metadata standards into a dictionary
     """
-    # need to be sure to make copies otherwise things will get
-    # added in not great places.
+
     # need to be sure to make copies otherwise things will get
     # added in not great places.
     summary_dict = BaseDict()
-    for key in ["survey", "station", "run", "electric", "magnetic", "auxiliary"]:
+    for key in [
+        "survey",
+        "station",
+        "run",
+        "electric",
+        "magnetic",
+        "auxiliary",
+    ]:
         obj = ts_classes[key.capitalize()]()
         summary_dict.add_dict(obj._attr_dict.copy(), key)
-
     for key in [
         "Coefficient",
         "FIR",
@@ -79,31 +87,17 @@ class StandardsGroup(BaseGroup):
     """
 
     def __init__(self, group, **kwargs):
-
         super().__init__(group, **kwargs)
 
         self._defaults_summary_attrs = {
             "name": "summary",
             "max_shape": (500,),
-            "dtype": np.dtype(
-                [
-                    ("attribute", "S72"),
-                    ("type", "S15"),
-                    ("required", np.bool_),
-                    ("style", "S72"),
-                    ("units", "S32"),
-                    ("description", "S300"),
-                    ("options", "S150"),
-                    ("alias", "S72"),
-                    ("example", "S72"),
-                    ("default", "S72"),
-                ]
-            ),
+            "dtype": STANDARDS_DTYPE,
         }
 
     @property
     def summary_table(self):
-        return MTH5Table(self.hdf5_group["summary"])
+        return MTH5Table(self.hdf5_group["summary"], STANDARDS_DTYPE)
 
     def get_attribute_information(self, attribute_name):
         """
@@ -138,14 +132,14 @@ class StandardsGroup(BaseGroup):
             msg = f"Could not find {attribute_name} in standards."
             self.logger.error(msg)
             raise MTH5TableError(msg)
-
         meta_item = self.summary_table.array[find]
         lines = ["", attribute_name, "-" * (len(attribute_name) + 4)]
-        for name, value in zip(meta_item.dtype.names[1:], meta_item.item()[1:]):
+        for name, value in zip(
+            meta_item.dtype.names[1:], meta_item.item()[1:]
+        ):
             if isinstance(value, (bytes, np.bytes_)):
                 value = value.decode()
             lines.append("\t{0:<14} {1}".format(name + ":", value))
-
         print("\n".join(lines))
 
     def summary_table_from_dict(self, summary_dict):
@@ -167,17 +161,13 @@ class StandardsGroup(BaseGroup):
                 if isinstance(value, list):
                     if len(value) == 0:
                         value = ""
-
                     else:
                         value = ",".join(["{0}".format(ii) for ii in value])
                 if value is None:
                     value = ""
-
                 key_list.append(value)
-
             key_list = np.array([tuple(key_list)], self.summary_table.dtype)
             index = self.summary_table.add_row(key_list)
-
         self.logger.debug(f"Added {index} rows to Standards Group")
 
     def initialize_group(self):
@@ -203,7 +193,6 @@ class StandardsGroup(BaseGroup):
                 dtype=self._defaults_summary_attrs["dtype"],
                 **self.dataset_options,
             )
-
         summary_dataset.attrs.update(
             {
                 "type": "summary table",
@@ -213,14 +202,13 @@ class StandardsGroup(BaseGroup):
         )
 
         self.logger.debug(
-            "Created %s table with max_shape = %s, dtype=%s",
-            self._defaults_summary_attrs["name"],
-            self._defaults_summary_attrs["max_shape"],
-            self._defaults_summary_attrs["dtype"],
+            f"Created {self._defaults_summary_attrs['name']} table with "
+            f"max_shape = {self._defaults_summary_attrs['max_shape']}, "
+            "dtype={self._defaults_summary_attrs['dtype']}"
         )
         self.logger.debug(
             "used options: "
-            + "; ".join(["%s = %s" % (k, v) for k, v in self.dataset_options.items()])
+            "; ".join([f"{k} = {v}" for k, v in self.dataset_options.items()])
         )
 
         self.summary_table_from_dict(summarize_metadata_standards())

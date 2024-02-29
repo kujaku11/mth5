@@ -15,6 +15,7 @@ from collections import OrderedDict
 
 from mth5.io.nims import NIMS, read_nims
 from mt_metadata.utils.mttime import MTime
+from mth5.utils.helpers import get_compare_dict
 
 # =============================================================================
 
@@ -192,11 +193,14 @@ class TestNIMSToRunTS(unittest.TestCase):
                 ("location.longitude", -115.73501166666667),
                 ("orientation.method", None),
                 ("orientation.reference_frame", "geomagnetic"),
+                ("provenance.archive.name", None),
                 ("provenance.creation_time", "1980-01-01T00:00:00+00:00"),
+                ("provenance.creator.name", None),
                 ("provenance.software.author", None),
                 ("provenance.software.name", None),
                 ("provenance.software.version", None),
                 ("provenance.submitter.email", None),
+                ("provenance.submitter.name", None),
                 ("provenance.submitter.organization", None),
                 ("release_license", "CC0-1.0"),
                 ("run_list", ["mnp300a"]),
@@ -206,7 +210,8 @@ class TestNIMSToRunTS(unittest.TestCase):
         )
 
         self.assertDictEqual(
-            self.runts.station_metadata.to_dict(single=True), station_metadata
+            get_compare_dict(self.runts.station_metadata.to_dict(single=True)),
+            station_metadata,
         )
 
     def test_run_metadata(self):
@@ -238,7 +243,8 @@ class TestNIMSToRunTS(unittest.TestCase):
         )
 
         self.assertDictEqual(
-            self.runts.run_metadata.to_dict(single=True), run_metadata
+            get_compare_dict(self.runts.run_metadata.to_dict(single=True)),
+            run_metadata,
         )
 
     def test_ex_metadata(self):
@@ -248,7 +254,7 @@ class TestNIMSToRunTS(unittest.TestCase):
                 ("component", "ex"),
                 ("data_quality.rating.value", 0),
                 ("dipole_length", 109.0),
-                ("filter.applied", [False, False, False, False, False, False]),
+                ("filter.applied", [True, True, True, True, True, True]),
                 (
                     "filter.name",
                     [
@@ -283,7 +289,10 @@ class TestNIMSToRunTS(unittest.TestCase):
         )
 
         self.assertDictEqual(
-            self.runts.ex.channel_metadata.to_dict(single=True), ex_metadata
+            get_compare_dict(
+                self.runts.ex.channel_metadata.to_dict(single=True)
+            ),
+            ex_metadata,
         )
 
     def test_ey_metadata(self):
@@ -293,7 +302,7 @@ class TestNIMSToRunTS(unittest.TestCase):
                 ("component", "ey"),
                 ("data_quality.rating.value", 0),
                 ("dipole_length", 101.0),
-                ("filter.applied", [False, False, False, False, False, False]),
+                ("filter.applied", [True, True, True, True, True, True]),
                 (
                     "filter.name",
                     [
@@ -328,7 +337,10 @@ class TestNIMSToRunTS(unittest.TestCase):
         )
 
         self.assertDictEqual(
-            self.runts.ey.channel_metadata.to_dict(single=True), ey_metadata
+            get_compare_dict(
+                self.runts.ey.channel_metadata.to_dict(single=True)
+            ),
+            ey_metadata,
         )
 
     def test_hx_metadata(self):
@@ -337,7 +349,7 @@ class TestNIMSToRunTS(unittest.TestCase):
                 ("channel_number", 1),
                 ("component", "hx"),
                 ("data_quality.rating.value", 0),
-                ("filter.applied", [False, False, False]),
+                ("filter.applied", [True, True, True]),
                 (
                     "filter.name",
                     [
@@ -363,7 +375,10 @@ class TestNIMSToRunTS(unittest.TestCase):
         )
 
         self.assertDictEqual(
-            self.runts.hx.channel_metadata.to_dict(single=True), hx_metadata
+            get_compare_dict(
+                self.runts.hx.channel_metadata.to_dict(single=True)
+            ),
+            hx_metadata,
         )
 
     def test_hy_metadata(self):
@@ -372,7 +387,7 @@ class TestNIMSToRunTS(unittest.TestCase):
                 ("channel_number", 2),
                 ("component", "hy"),
                 ("data_quality.rating.value", 0),
-                ("filter.applied", [False, False, False]),
+                ("filter.applied", [True, True, True]),
                 (
                     "filter.name",
                     [
@@ -398,7 +413,10 @@ class TestNIMSToRunTS(unittest.TestCase):
         )
 
         self.assertDictEqual(
-            self.runts.hy.channel_metadata.to_dict(single=True), hy_metadata
+            get_compare_dict(
+                self.runts.hy.channel_metadata.to_dict(single=True)
+            ),
+            hy_metadata,
         )
 
     def test_hz_metadata(self):
@@ -407,7 +425,7 @@ class TestNIMSToRunTS(unittest.TestCase):
                 ("channel_number", 3),
                 ("component", "hz"),
                 ("data_quality.rating.value", 0),
-                ("filter.applied", [False, False, False]),
+                ("filter.applied", [True, True, True]),
                 (
                     "filter.name",
                     [
@@ -433,7 +451,10 @@ class TestNIMSToRunTS(unittest.TestCase):
         )
 
         self.assertDictEqual(
-            self.runts.hz.channel_metadata.to_dict(single=True), hz_metadata
+            get_compare_dict(
+                self.runts.hz.channel_metadata.to_dict(single=True)
+            ),
+            hz_metadata,
         )
 
     def test_temperature_metadata(self):
@@ -442,7 +463,7 @@ class TestNIMSToRunTS(unittest.TestCase):
                 ("channel_number", 6),
                 ("component", "temperature"),
                 ("data_quality.rating.value", 0),
-                ("filter.applied", [False]),
+                ("filter.applied", [True]),
                 ("filter.name", []),
                 ("location.elevation", 0.0),
                 ("location.latitude", 0.0),
@@ -461,7 +482,9 @@ class TestNIMSToRunTS(unittest.TestCase):
         )
 
         self.assertDictEqual(
-            self.runts.temperature.channel_metadata.to_dict(single=True),
+            get_compare_dict(
+                self.runts.temperature.channel_metadata.to_dict(single=True)
+            ),
             t_metadata,
         )
 
@@ -477,7 +500,7 @@ class TestNIMSToRunTS(unittest.TestCase):
                 self.assertEqual(ch.channel_metadata.units, "nT")
             with self.subTest("applied"):
                 self.assertListEqual(
-                    ch.channel_metadata.filter.applied, [True, True, True]
+                    ch.channel_metadata.filter.applied, [False, False, False]
                 )
 
         for comp in ["ex", "ey"]:
@@ -487,7 +510,7 @@ class TestNIMSToRunTS(unittest.TestCase):
             with self.subTest("applied"):
                 self.assertListEqual(
                     ch.channel_metadata.filter.applied,
-                    [True, True, True, True, True, True],
+                    [False, False, False, False, False, False],
                 )
 
         ch = getattr(calibrated_run, "temperature")
@@ -496,7 +519,7 @@ class TestNIMSToRunTS(unittest.TestCase):
         with self.subTest("applied"):
             self.assertListEqual(
                 ch.channel_metadata.filter.applied,
-                [True],
+                [False],
             )
 
 

@@ -16,7 +16,9 @@ import unittest
 from pathlib import Path
 import numpy as np
 
-from mth5 import mth5, CHANNEL_DTYPE
+from mth5 import CHANNEL_DTYPE
+from mth5.mth5 import MTH5
+from mth5 import helpers
 from mth5.helpers import validate_name
 from mt_metadata.timeseries import Experiment
 from mt_metadata import MT_EXPERIMENT_SINGLE_STATION
@@ -25,7 +27,7 @@ fn_path = Path(__file__).parent
 # =============================================================================
 #
 # =============================================================================
-mth5.helpers.close_open_files()
+helpers.close_open_files()
 
 
 class TestMTH5(unittest.TestCase):
@@ -33,7 +35,7 @@ class TestMTH5(unittest.TestCase):
     def setUpClass(self):
         self.maxDiff = None
         self.fn = fn_path.joinpath("test.mth5")
-        self.mth5_obj = mth5.MTH5(file_version="0.2.0")
+        self.mth5_obj = MTH5(file_version="0.2.0")
         self.mth5_obj.open_mth5(self.fn, mode="w")
         self.experiment = Experiment()
         self.experiment.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)
@@ -116,7 +118,7 @@ class TestMTH5(unittest.TestCase):
             with self.subTest(f"station.{key}"):
                 if key in ["run_list"]:
                     self.assertListEqual(
-                        ["a", "b", "c", "d", "e"],
+                        ["a"],
                         run_ts.station_metadata.run_list,
                     )
                 else:
@@ -327,7 +329,7 @@ class TestUpdateFromExperiment(unittest.TestCase):
     def setUpClass(self):
         self.maxDiff = None
         self.fn = fn_path.joinpath("test.h5")
-        self.mth5_obj = mth5.MTH5(file_version="0.1.0")
+        self.mth5_obj = MTH5(file_version="0.1.0")
         self.mth5_obj.open_mth5(self.fn, mode="w")
         self.experiment = Experiment()
         self.experiment.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)

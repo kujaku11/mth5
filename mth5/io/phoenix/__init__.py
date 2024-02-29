@@ -1,11 +1,11 @@
-from .readers import ReceiverMetadataJSON, ConfigJSON
+from .readers import PhoenixReceiverMetadata, PhoenixConfig
 from .read import read_phoenix, open_phoenix
 from .phoenix_collection import PhoenixCollection
 
 
 __all__ = [
-    "ReceiverMetadataJSON",
-    "ConfigJSON",
+    "PhoenixReceiverMetadata",
+    "PhoenixConfig",
     "read_phoenix",
     "open_phoenix",
     "PhoenixCollection",

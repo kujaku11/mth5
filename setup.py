@@ -10,13 +10,8 @@ with open("HISTORY.rst") as history_file:
     history = history_file.read()
 requirements = [
     "h5py",
-    "matplotlib",
-    "numpy",
-    "obspy",
-    "pandas",
     "pyyaml",
     "scipy",
-    "xarray",
     "mt_metadata",
 ]
 
@@ -32,17 +27,17 @@ test_requirements = [
 setup(
     author="Jared Peacock",
     author_email="jpeacock@usgs.gov",
-    python_requires=">=3.5",
+    python_requires=">=3.7",
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.5",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
     ],
     description="Archivable and exchangeable format for magnetotelluric data",
     install_requires=requirements,
@@ -57,6 +52,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/kujaku11/mth5",
-    version="0.3.1",
+    version="0.4.1",
     zip_safe=False,
 )

@@ -8,7 +8,7 @@ Created on Thu Sep  1 11:43:56 2022
 # Imports
 # =============================================================================
 import dateutil
-import logging
+from loguru import logger
 
 
 # =============================================================================
@@ -31,9 +31,7 @@ class GPS(object):
 
     def __init__(self, gps_string, index=0):
 
-        self.logger = logging.getLogger(
-            f"{__name__}.{self.__class__.__name__}"
-        )
+        self.logger = logger
 
         self.gps_string = gps_string
         self.index = index
@@ -137,29 +135,24 @@ class GPS(object):
         if isinstance(gps_string, bytes):
             for replace_str in [b"\xd9", b"\xc7", b"\xcc"]:
                 gps_string = gps_string.replace(replace_str, b"")
-
             ### sometimes the end is set with a zero for some reason
             gps_string = gps_string.replace(b"\x00", b"*")
 
             if gps_string.find(b"*") < 0:
-                logging.debug(f"GPSError: No end to stamp {gps_string}")
+                logger.debug(f"GPSError: No end to stamp {gps_string}")
                 return None
             else:
                 try:
                     gps_string = gps_string[0 : gps_string.find(b"*")].decode()
                     return gps_string
                 except UnicodeDecodeError:
-                    logging.debug(
-                        f"GPSError: stamp not correct format, {gps_string}"
-                    )
+                    logger.debug(f"GPSError: stamp not correct format, {gps_string}")
                     return None
         elif isinstance(gps_string, str):
             if "*" not in gps_string:
-                logging.debug(f"GPSError: No end to stamp {gps_string}")
+                logger.debug(f"GPSError: No end to stamp {gps_string}")
                 return None
-
             return gps_string[0 : gps_string.find("*")]
-
         else:
             raise TypeError(
                 f"input must be a string or bytes object, not {type(gps_string)}"
@@ -186,31 +179,25 @@ class GPS(object):
         if gps_list == []:
             self.logger.debug(f"GPS string is invalid, {gps_string}")
             return
-
         if len(gps_list) > 1:
             if len(gps_list[1]) > 6:
                 self.logger.debug(
                     "GPS time and lat missing a comma adding one, check time"
                 )
                 gps_list = (
-                    gps_list[0:1]
-                    + [gps_list[1][0:6], gps_list[1][6:]]
-                    + gps_list[2:]
+                    gps_list[0:1] + [gps_list[1][0:6], gps_list[1][6:]] + gps_list[2:]
                 )
-
         ### validate the gps list to make sure it is usable
         gps_list, error_list = self.validate_gps_list(gps_list)
         if len(error_list) > 0:
             for error in error_list:
-                logging.debug("GPSError: " + error)
+                logger.debug("GPSError: " + error)
         if gps_list is None:
             return
-
         attr_dict = self.type_dict[gps_list[0].lower()]
 
         for index, value in enumerate(gps_list):
             setattr(self, "_" + attr_dict[index], value)
-
         if None not in gps_list:
             self.valid = True
             self.gps_string = gps_string
@@ -230,7 +217,6 @@ class GPS(object):
         except GPSError as error:
             error_list.append(error.args[0])
             return None, error_list
-
         ### get the string type
         g_type = gps_list[0].lower()
 
@@ -241,7 +227,6 @@ class GPS(object):
         except GPSError as error:
             error_list.append(error.args[0])
             return None, error_list
-
         try:
             gps_list[self.type_dict[g_type]["time"]] = self._validate_time(
                 gps_list[self.type_dict[g_type]["time"]]
@@ -249,40 +234,30 @@ class GPS(object):
         except GPSError as error:
             error_list.append(error.args[0])
             gps_list[self.type_dict[g_type]["time"]] = None
-
         try:
-            gps_list[
-                self.type_dict[g_type]["latitude"]
-            ] = self._validate_latitude(
+            gps_list[self.type_dict[g_type]["latitude"]] = self._validate_latitude(
                 gps_list[self.type_dict[g_type]["latitude"]],
                 gps_list[self.type_dict[g_type]["latitude_hemisphere"]],
             )
         except GPSError as error:
             error_list.append(error.args[0])
             gps_list[self.type_dict[g_type]["latitude"]] = None
-
         try:
-            gps_list[
-                self.type_dict[g_type]["longitude"]
-            ] = self._validate_longitude(
+            gps_list[self.type_dict[g_type]["longitude"]] = self._validate_longitude(
                 gps_list[self.type_dict[g_type]["longitude"]],
                 gps_list[self.type_dict[g_type]["longitude_hemisphere"]],
             )
         except GPSError as error:
             error_list.append(error.args[0])
             gps_list[self.type_dict[g_type]["longitude"]] = None
-
         if g_type == "gprmc":
             try:
-                gps_list[
-                    self.type_dict["gprmc"]["date"]
-                ] = self._validate_date(
+                gps_list[self.type_dict["gprmc"]["date"]] = self._validate_date(
                     gps_list[self.type_dict["gprmc"]["date"]]
                 )
             except GPSError as error:
                 error_list.append(error.args[0])
                 gps_list[self.type_dict[g_type]["date"]] = None
-
         elif g_type == "gpgga":
             try:
                 gps_list[
@@ -293,7 +268,6 @@ class GPS(object):
             except GPSError as error:
                 error_list.append(error.args[0])
                 gps_list[self.type_dict["gpgga"]["elevation"]] = None
-
         return gps_list, error_list
 
     def _validate_gps_type(self, gps_list):
@@ -309,14 +283,12 @@ class GPS(object):
                 gps_list = ["GPRMC", gps_type[-6:]] + gps_list[1:]
             elif len(gps_type) < 5:
                 gps_list[0] = "GPRMC"
-
         gps_type = gps_list[0].lower()
         if gps_type not in ["gpgga", "gprmc"]:
             raise GPSError(
                 "GPS String type not correct.  "
                 f"Expect GPGGA or GPRMC, got {gps_type.upper()}"
             )
-
         return gps_list
 
     def _validate_list_length(self, gps_list):
@@ -342,7 +314,6 @@ class GPS(object):
             int(time_str)
         except ValueError:
             raise GPSError(f"Could not convert time string {time_str}")
-
         return time_str
 
     def _validate_date(self, date_str):
@@ -356,7 +327,6 @@ class GPS(object):
             int(date_str)
         except ValueError:
             raise GPSError(f"Could not convert date string {date_str}")
-
         return date_str
 
     def _validate_latitude(self, latitude_str, hemisphere_str):
@@ -380,7 +350,6 @@ class GPS(object):
             float(latitude_str)
         except ValueError:
             raise GPSError(f"Could not convert latitude string {latitude_str}")
-
         return latitude_str
 
     def _validate_longitude(self, longitude_str, hemisphere_str):
@@ -403,10 +372,7 @@ class GPS(object):
         try:
             float(longitude_str)
         except ValueError:
-            raise GPSError(
-                f"Could not convert longitude string {longitude_str}"
-            )
-
+            raise GPSError(f"Could not convert longitude string {longitude_str}")
         return longitude_str
 
     def _validate_elevation(self, elevation_str):
@@ -418,7 +384,6 @@ class GPS(object):
             elevation_str = f"{float(elevation_str)}"
         except ValueError:
             raise GPSError(f"Elevation could not be converted {elevation_str}")
-
         return elevation_str
 
     @property
@@ -426,15 +391,9 @@ class GPS(object):
         """
         Latitude in decimal degrees, WGS84
         """
-        if (
-            self._latitude is not None
-            and self._latitude_hemisphere is not None
-        ):
+        if self._latitude is not None and self._latitude_hemisphere is not None:
             index = len(self._latitude) - 7
-            lat = (
-                float(self._latitude[0:index])
-                + float(self._latitude[index:]) / 60
-            )
+            lat = float(self._latitude[0:index]) + float(self._latitude[index:]) / 60
             if "s" in self._latitude_hemisphere.lower():
                 lat *= -1
             return lat
@@ -445,15 +404,9 @@ class GPS(object):
         """
         Latitude in decimal degrees, WGS84
         """
-        if (
-            self._longitude is not None
-            and self._longitude_hemisphere is not None
-        ):
+        if self._longitude is not None and self._longitude_hemisphere is not None:
             index = len(self._longitude) - 7
-            lon = (
-                float(self._longitude[0:index])
-                + float(self._longitude[index:]) / 60
-            )
+            lon = float(self._longitude[0:index]) + float(self._longitude[index:]) / 60
             if "w" in self._longitude_hemisphere.lower():
                 lon *= -1
             return lon
@@ -470,7 +423,7 @@ class GPS(object):
             except ValueError:
                 self.logger.error(
                     "GPSError: Could not get elevation GPS string"
-                    + f"not complete {self.gps_string}"
+                    f"not complete {self.gps_string}"
                 )
         return 0.0
 
@@ -498,7 +451,6 @@ class GPS(object):
         """
         if self._declination is None or self._declination_hemisphere is None:
             return None
-
         dec = float(self._declination)
         if "w" in self._declination_hemisphere.lower():
             dec *= -1

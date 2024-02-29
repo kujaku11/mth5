@@ -11,45 +11,55 @@ from scipy import signal
 
 from matplotlib import pyplot as plt
 from matplotlib.lines import Line2D
-from mth5.utils.mth5_logger import setup_logger
+from loguru import logger
 
-logger = setup_logger(__file__)
 # =================================================================
 
 
-def butter_bandpass(lowcut, highcut, fs, order=5):
+def butter_bandpass(lowcut, highcut, sample_rate, order=5):
     """
     Butterworth bandpass filter using scipy.signal
 
-    :param lowcut: low cut frequency in Hz
+    Transforms band corners to angular frequencies
+
+    :param lowcut: low cut frequency in Hz (3dB point)
     :type lowcut: float
-    :param highcut: high cut frequency in Hz
+    :param highcut: high cut frequency in Hz (3dB point)
     :type highcut: float
-    :param fs: Sample rate
-    :type fs: float
+    :param sample_rate: Sample rate
+    :type sample_rate: float
     :param order: Butterworth order, defaults to 5
     :type order: int, optional
     :return: SOS scipy.signal format
     :rtype: scipy.signal.SOS?
 
     """
-    nyq = 0.5 * fs
+    nyq = 0.5 * sample_rate
+    if (highcut is None) and (lowcut is None):
+        msg = f"Butterworth bandpass undefined with edges ({lowcut}, {highcut})\n"
+        raise ValueError(msg)
 
+    # Transforms band corners to angular frequencies
     if lowcut is not None:
         low = lowcut / nyq
     if highcut is not None:
         high = highcut / nyq
     if lowcut and highcut:
         sos = signal.butter(
-            order, [low, high], analog=False, btype="band", output="sos"
+            order, [low, high], analog=False, btype="bandpass", output="sos"
         )
-    elif highcut is None:
-        sos = signal.butter(order, low, analog=False, btype="low", output="sos")
+        return sos
+
+    msg = f"Butterworth bandpass requested with edges ({lowcut}, {highcut})\n"
+    if highcut is None:
+        msg += "Upper band edge not defined, will treat as a High Pass Filter\n"
+        logger.info(msg)
+        return signal.butter(order, low, analog=False, btype="highpass", output="sos")
     elif lowcut is None:
-        sos = signal.butter(
-            order, high, analog=False, btype="high", output="sos"
-        )
-    return sos
+        msg += "Lower band edge not defined, will treat as a Low Pass Filter\n"
+        logger.info(msg)
+        return signal.butter(order, high, analog=False, btype="lowpass", output="sos")
+
 
 
 def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
@@ -69,12 +79,19 @@ def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
     :rtype: np.ndarray
 
     """
+    if (highcut is None) and (lowcut is None):
+        msg = f"Butterworth bandpass undefined with edges ({lowcut}, {highcut})\n"
+        msg = f"{msg}  Returning original data"
+        logger.warning(msg)
+        return np.copy(data)
+
     sos = butter_bandpass(lowcut, highcut, fs, order=order)
     y = signal.sosfiltfilt(sos, data)
+
     return y
 
 
-def low_pass(data, low_pass_freq, cutoff_freq, sampling_rate):
+def low_pass(data, low_pass_freq, cutoff_freq, sample_rate):
     """
 
     :param data: 1D time series data
@@ -89,10 +106,9 @@ def low_pass(data, low_pass_freq, cutoff_freq, sampling_rate):
     :rtype: np.ndarray
 
     """
-    nyq = 0.5 * sampling_rate
-    filt_order, wn = signal.buttord(
-        low_pass_freq / nyq, cutoff_freq / nyq, 3, 40
-    )
+    nyq = 0.5 * sample_rate
+
+    filt_order, wn = signal.buttord(low_pass_freq / nyq, cutoff_freq / nyq, 3, 40)
 
     b, a = signal.butter(filt_order, wn, btype="low")
     data_filtered = signal.filtfilt(b, a, data)
@@ -125,7 +141,7 @@ def zero_pad(input_array, power=2, pad_fill=0):
             "Exceeding memory allocation inherent in your computer 2**32. "
             "Limiting the zero pad to 2**32"
         )
-    pad_array = np.zeros(power**npow)
+    pad_array = np.zeros(power ** npow)
     if pad_fill != 0:
         pad_array[:] = pad_fill
     pad_array[0:len_array] = input_array
@@ -154,9 +170,9 @@ class RemoveInstrumentResponse:
     :type time_array: np.ndarray((N,) , dtype=np.datetime[ns])
     :param sample_interval: seconds per sample (time interval between samples)
     :type sample_interval: float
-    :param channel_response_filter: Channel response filter with all filters
+    :param channel_response: Channel response filter with all filters
     included to convert from counts to physical units
-    :type channel_response_filter: `class`:mt_metadata.timeseries.filters.ChannelResponseFilter`
+    :type channel_response: `class`:mt_metadata.timeseries.filters.ChannelResponse`
 
     **kwargs**
 
@@ -168,17 +184,17 @@ class RemoveInstrumentResponse:
     :type zero_mean: boolean, default True
     :param zero_pad: pad the time series to the next power of 2 for efficiency
     :type zero_pad: boolean, default True
-    :param t_window: Time domain windown name see `scipy.signal.windows` for options
+    :param t_window: Time domain window name see `scipy.signal.windows` for options
     :type t_window: string, default None
     :param t_window_params: Time domain window parameters, parameters can be
     found in `scipy.signal.windows`
     :type t_window_params: dictionary
-    :param f_window: Frequency domain windown name see `scipy.signal.windows` for options
-    :type f_window: string, defualt None
+    :param f_window: Frequency domain window name see `scipy.signal.windows` for options
+    :type f_window: string, default None
     :param f_window_params: Frequency window parameters, parameters can be
     found in `scipy.signal.windows`
     :type f_window_params: dictionary
-    :param bandpass: bandpass freequency and order {"low":, "high":, "order":,}
+    :param bandpass: bandpass frequency and order {"low":, "high":, "order":,}
     :type bandpass: dictionary
 
 
@@ -189,14 +205,23 @@ class RemoveInstrumentResponse:
         ts,
         time_array,
         sample_interval,
-        channel_response_filter,
+        channel_response,
         **kwargs,
     ):
-        self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
+        """
+
+        :param ts:
+        :param time_array:
+        :param sample_interval:
+        :param channel_response:
+        :param filters_to_remove: optional list of specific filters to remove.  If not provided, filters will be
+        taken from channel_response.
+        """
+        self.logger = logger
         self.ts = ts
         self.time_array = time_array
         self.sample_interval = sample_interval
-        self.channel_response_filter = channel_response_filter
+        self.channel_response = channel_response
         self.plot = False
         self.detrend = True
         self.zero_mean = True
@@ -209,6 +234,8 @@ class RemoveInstrumentResponse:
         self.fig = None
         self.nrows = None
         self.subplot_dict = {}
+        self.include_decimation = False
+        self.include_delay = False
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -420,12 +447,16 @@ class RemoveInstrumentResponse:
         :rtype: np.ndarray
 
         """
+        try:
+            filter_order = self.bandpass["order"]
+        except KeyError:
+            filter_order = 5
         ts = butter_bandpass_filter(
             ts,
             self.bandpass["low"],
             self.bandpass["high"],
-            self.sample_interval,
-            order=self.bandpass["order"],
+            1./self.sample_interval,
+            order=filter_order,
         )
 
         if self.plot:
@@ -475,7 +506,11 @@ class RemoveInstrumentResponse:
 
         return subplot_dict
 
-    def remove_instrument_response(self, operation="divide"):
+    def remove_instrument_response(self,
+                                   operation="divide",
+                                   include_decimation=None,
+                                   include_delay=None,
+                                   filters_to_remove=[]):
         """
         Remove instrument response following the recipe provided
 
@@ -483,6 +518,19 @@ class RemoveInstrumentResponse:
         :rtype: np.ndarray
 
         """
+        # if filters to include not specified, get from self
+        if not filters_to_remove:
+            self.logger.debug("No explicit list of filters was passed to remove")
+            self.logger.debug("Will determine filters to remove ... ")
+            if include_decimation is None:
+                include_decimation = self.include_decimation
+            if include_delay is None:
+                include_delay = self.include_delay
+            filters_to_remove = self.channel_response.get_list_of_filters_to_remove(
+                include_decimation=include_decimation, include_delay=include_delay)
+            if filters_to_remove is []:
+                raise ValueError("There are no filters in channel_response to remove")
+
         ts = np.copy(self.ts)
         f = np.fft.rfftfreq(ts.size, d=self.sample_interval)
         step = 1
@@ -516,19 +564,13 @@ class RemoveInstrumentResponse:
         # filter in time domain
         if self.t_window is not None:
             ts = self.apply_t_window(ts)
-            self.logger.debug(
-                f"Step {step}: Applying {self.t_window} Time Window"
-            )
+            self.logger.debug(f"Step {step}: Applying {self.t_window} Time Window")
             step += 1
             if self.plot:
-                wax = self.fig.get_axes()[
-                    self.subplot_dict["t_window"] - 1
-                ].twinx()
+                wax = self.fig.get_axes()[self.subplot_dict["t_window"] - 1].twinx()
                 (tw,) = wax.plot(
                     self.time_array,
-                    self.get_window(
-                        self.t_window, self.t_window_params, ts.size
-                    ),
+                    self.get_window(self.t_window, self.t_window_params, ts.size),
                     color=(0.75, 0.75, 0.75),
                     zorder=0,
                 )
@@ -537,17 +579,15 @@ class RemoveInstrumentResponse:
             ts = self.apply_zero_pad(ts)
             self.logger.debug(f"Step {step}: Applying Zero Padding")
             step += 1
-        # get the real frequencies of the FFT
+        # get the real frequencies of the FFT -- zero pad may have changed ts.size
         f = np.fft.rfftfreq(ts.size, d=self.sample_interval)
 
-        if self.channel_response_filter.filters_list is []:
-            raise ValueError(
-                "There are no filters in channel_response to remove"
-            )
         # compute the complex response given the frequency range of the FFT
         # the complex response assumes frequencies are in reverse order and flip them on input
         # so we need to flip the complex reponse so it aligns with the fft.
-        cr = self.channel_response_filter.complex_response(f)[::-1]
+        cr = self.channel_response.complex_response(f,
+                                                    filters_list=filters_to_remove,
+                                                    )[::-1]
         # remove the DC term at frequency == 0
         cr[-1] = abs(cr[-2]) + 0.0j
 
@@ -560,34 +600,29 @@ class RemoveInstrumentResponse:
         # here we are taking only the real part of the FFT so we cut the window in half
         if self.f_window is not None:
             data = self.apply_f_window(data)
-            self.logger.debug(
-                f"Step {step}: Applying {self.f_window} Frequency Window"
-            )
+            self.logger.debug(f"Step {step}: Applying {self.f_window} Frequency Window")
             step += 1
 
+        # calibrate the time series, compute real part of fft, divide out
+        # channel response, inverse fft
         if operation == "divide":
-            # calibrate the time series, compute real part of fft, divide out
-            # channel response, inverse fft
             calibrated_ts = np.fft.irfft(data / cr)[0 : self.ts.size]
-            self.logger.debug(
-                f"Step {step}: Removing Calibration by {operation}"
-            )
+            self.logger.debug(f"Step {step}: Removing Calibration via divide channel response")
             step += 1
-
         elif operation == "multiply":
-            # calibrate the time series, compute real part of fft, multiply out
-            # channel response, inverse fft
-            calibrated_ts = np.fft.irfft(data * cr)[0 : self.ts.size]
-            self.logger.debug(
-                f"Step {step}: Removing Calibration  by {operation}"
-            )
+            calibrated_ts = np.fft.irfft(data * cr)[0: self.ts.size]
+            self.logger.warning(f"Instrument response being applied rather that expected "
+                                f"operation of removing the response")
             step += 1
+        else:
+            msg = f"Operation {operation} not recognized method of instrument response correction"
+            logger.error(msg)
+            raise Exception
+
 
         # If a time window was applied, need to un-apply it to reconstruct the signal.
         if self.t_window is not None:
-            w = self.get_window(
-                self.t_window, self.t_window_params, calibrated_ts.size
-            )
+            w = self.get_window(self.t_window, self.t_window_params, calibrated_ts.size)
             calibrated_ts = calibrated_ts / w
             self.logger.debug(f"Step {step}: Un-applying Time Window")
             step += 1
@@ -603,9 +638,7 @@ class RemoveInstrumentResponse:
                 self.nrows * 2 - 1,
                 "Calibrated",
             )
-            self.fig.get_axes()[-2].set_ylabel(
-                self.channel_response_filter.units_in
-            )
+            self.fig.get_axes()[-2].set_ylabel(self.channel_response.units_in)
             if self.t_window is not None:
                 wax = self.fig.get_axes()[-2].twinx()
                 (tw,) = wax.plot(
@@ -716,19 +749,11 @@ def adaptive_notch_filter(
         else:
             fspot = int(round(notch / dfn))
             nspot = np.where(
-                abs(BX)
-                == max(abs(BX[max([fspot - dfnn, 0]) : min([fspot + dfnn, n])]))
+                abs(BX) == max(abs(BX[max([fspot - dfnn, 0]) : min([fspot + dfnn, n])]))
             )[0][0]
 
             med_bx = np.median(
-                abs(
-                    BX[
-                        max([nspot - dfnn * 10, 0]) : min(
-                            [nspot + dfnn * 10, n]
-                        )
-                    ]
-                )
-                ** 2
+                abs(BX[max([nspot - dfnn * 10, 0]) : min([nspot + dfnn * 10, n])]) ** 2
             )
 
             # calculate difference between peak and surrounding spectra in dB
@@ -739,11 +764,7 @@ def adaptive_notch_filter(
             else:
                 filtlst.append([freq[nspot], dbstop])
                 ws = 2 * np.array([freq[nspot] - fn, freq[nspot] + fn]) / df
-                wp = (
-                    2
-                    * np.array([freq[nspot] - 2 * fn, freq[nspot] + 2 * fn])
-                    / df
-                )
+                wp = 2 * np.array([freq[nspot] - 2 * fn, freq[nspot] + 2 * fn]) / df
                 ford, wn = signal.cheb1ord(wp, ws, 1, dbstop)
                 b, a = signal.cheby1(1, 0.5, wn, btype="bandstop")
                 bx = signal.filtfilt(b, a, bx)

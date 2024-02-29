@@ -33,7 +33,9 @@ class TestLEMICollection(unittest.TestCase):
         self.lc.survey_id = "test"
 
         self.df = self.lc.to_dataframe()
+        self.df = self.df.fillna(0)
         self.runs = self.lc.get_runs([1])
+        self.maxDiff = None
 
     def test_file_path(self):
         self.assertIsInstance(self.lc.file_path, Path)
@@ -64,7 +66,7 @@ class TestLEMICollection(unittest.TestCase):
         )
 
     def test_df_shape(self):
-        self.assertEqual(self.df.shape, (12, 14))
+        self.assertEqual(self.df.shape, (12, 19))
 
     def test_df_types(self):
         self.df = self.lc._set_df_dtypes(self.df)
@@ -117,6 +119,7 @@ class TestLEMICollection(unittest.TestCase):
 
     def test_run_elements(self):
         for key, rdf in self.runs[self.lc.station_id].items():
+            rdf = rdf.fillna(0)
             with self.subTest(key):
                 self.assertTrue(
                     (self.df[self.df.run == key].eq(rdf).all(axis=0).all())

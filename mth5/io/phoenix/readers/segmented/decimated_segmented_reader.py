@@ -69,16 +69,21 @@ class SubHeader:
 
     def _unpack_value(self, key):
         if self._has_header():
-            return unpack_from(
-                self._unpack_dict[key]["dtype"],
-                self._header,
-                self._unpack_dict[key]["index"],
-            )
+            try:
+                return unpack_from(
+                    self._unpack_dict[key]["dtype"],
+                    self._header,
+                    self._unpack_dict[key]["index"],
+                )
+            except Exception as error:
+                raise IOError(error)
 
     @property
     def gps_time_stamp(self):
+        """GPS time stamp in UTC"""
+
         if self._has_header():
-            return MTime(self._unpack_value("gps_time_stamp")[0])
+            return MTime(self._unpack_value("gps_time_stamp")[0], gps_time=True)
 
     @property
     def n_samples(self):
@@ -188,7 +193,7 @@ class DecimatedSegmentedReader(TSReaderBase):
             **kwargs,
         )
 
-        self.unpack_header(self.stream)
+        self._channel_metadata = self._update_channel_metadata_from_recmeta()
         self.sub_header = SubHeader()
         self.subheader = {}
 
@@ -220,7 +225,7 @@ class DecimatedSegmentedReader(TSReaderBase):
 
         return segment
 
-    def to_channel_ts(self):
+    def to_channel_ts(self, rxcal_fn=None, scal_fn=None):
         """
         convert to a ChannelTS object
 
@@ -230,15 +235,19 @@ class DecimatedSegmentedReader(TSReaderBase):
         """
 
         segment = self.read_segment()
-        ch_metadata = self.channel_metadata()
+        ch_metadata = self.channel_metadata
         ch_metadata.time_period.start = segment.segment_start_time.isoformat()
+        ch_metadata.time_period.end = segment.segment_end_time.isoformat()
 
         return ChannelTS(
             channel_type=ch_metadata.type,
             data=segment.data,
             channel_metadata=ch_metadata,
-            run_metadata=self.run_metadata(),
-            station_metadata=self.station_metadata(),
+            run_metadata=self.run_metadata,
+            station_metadata=self.station_metadata,
+            channel_response=self.get_channel_response(
+                rxcal_fn=rxcal_fn, scal_fn=scal_fn
+            ),
         )
 
 
@@ -301,7 +310,7 @@ class DecimatedSegmentCollection(TSReaderBase):
 
         return segments
 
-    def to_channel_ts(self):
+    def to_channel_ts(self, rxcal_fn=None, scal_fn=None):
         """
         convert to a ChannelTS object
 
@@ -312,7 +321,7 @@ class DecimatedSegmentCollection(TSReaderBase):
 
         seq_list = []
         for seq in self.read_segments():
-            ch_metadata = self.channel_metadata()
+            ch_metadata = self.channel_metadata
             ch_metadata.time_period.start = seq.gps_time_stamp.isoformat()
 
             seq_list.append(
@@ -320,8 +329,11 @@ class DecimatedSegmentCollection(TSReaderBase):
                     channel_type=ch_metadata.type,
                     data=seq.data,
                     channel_metadata=ch_metadata,
-                    run_metadata=self.run_metadata(),
-                    station_metadata=self.station_metadata(),
+                    run_metadata=self.run_metadata,
+                    station_metadata=self.station_metadata,
+                    channel_response=self.get_channel_response(
+                        rxcal_fn=rxcal_fn, scal_fn=scal_fn
+                    ),
                 )
             )
         return seq_list

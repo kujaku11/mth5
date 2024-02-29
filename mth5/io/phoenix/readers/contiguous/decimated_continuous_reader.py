@@ -19,6 +19,7 @@ import numpy as np
 
 from mth5.io.phoenix.readers import TSReaderBase
 from mth5.timeseries import ChannelTS
+from mt_metadata.utils.mttime import MTime
 
 # =============================================================================
 
@@ -42,8 +43,10 @@ class DecimatedContinuousReader(TSReaderBase):
             **kwargs,
         )
 
-        self.unpack_header(self.stream)
+        self._channel_metadata = self._update_channel_metadata_from_recmeta()
         self.subheader = {}
+        self._sequence_start = self.segment_start_time
+        self.data_size = None
 
     @property
     def segment_start_time(self):
@@ -80,6 +83,21 @@ class DecimatedContinuousReader(TSReaderBase):
 
         return self.segment_start_time + (self.max_samples / self.sample_rate)
 
+    @property
+    def sequence_start(self):
+        return self._sequence_start
+
+    @sequence_start.setter
+    def sequence_start(self, value):
+        self._sequence_start = MTime(value)
+
+    @property
+    def sequence_end(self):
+        if self.data_size is not None:
+            return self.sequence_start + self.data_size / self.sample_rate
+        else:
+            return self.sequence_start + self.max_sample / self.sample_rate
+
     # need a read and read sequence
     def read(self):
         """
@@ -109,14 +127,16 @@ class DecimatedContinuousReader(TSReaderBase):
         for ii, fn in enumerate(self.sequence_list[slice(start, end)], start):
             self._open_file(fn)
             self.unpack_header(self.stream)
+            if ii == start:
+                self.sequence_start = self.segment_start_time
             ts = self.read()
             data = np.append(data, ts)
             self.seq = ii
-
-        self.logger.debug("Read %s sequences", self.seq + 1)
+        self.logger.debug(f"Read {self.seq + 1} sequences")
+        self.data_size = data.size
         return data
 
-    def to_channel_ts(self):
+    def to_channel_ts(self, rxcal_fn=None, scal_fn=None):
         """
         convert to a ChannelTS object
 
@@ -125,11 +145,18 @@ class DecimatedContinuousReader(TSReaderBase):
 
         """
         data = self.read_sequence()
-        ch_metadata = self.channel_metadata()
+
+        # need to update the start and end times here
+        self._channel_metadata.time_period.start = self.sequence_start
+        self._channel_metadata.time_period.end = self.sequence_end
+
         return ChannelTS(
-            channel_type=ch_metadata.type,
+            channel_type=self.channel_metadata.type,
             data=data,
-            channel_metadata=ch_metadata,
-            run_metadata=self.run_metadata(),
-            station_metadata=self.station_metadata(),
+            channel_metadata=self.channel_metadata,
+            run_metadata=self.run_metadata,
+            station_metadata=self.station_metadata,
+            channel_response=self.get_channel_response(
+                rxcal_fn=rxcal_fn, scal_fn=scal_fn
+            ),
         )

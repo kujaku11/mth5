@@ -15,10 +15,10 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest"]
-        python-version: [3.7, 3.8]
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Setup Conda
       uses: s-weigand/setup-conda@v1
       with:
@@ -31,7 +31,7 @@ jobs:
         python --version
         conda create -n mth5-test python=${{ matrix.python-version }}
         source activate mth5-test
-        conda install pytest
+        conda install pytest=7.1.2
         conda install pytest-cov
         conda install pytest-subtests
         pip install git+https://github.com/kujaku11/mt_metadata.git
@@ -47,9 +47,11 @@ jobs:
       shell: bash
       run: |
         source activate mth5-test
-        pytest -v --cov=./ --cov-report=xml --cov=mth5
+        pytest -rA --cov=./ --cov-report=xml --cov=mth5
         
     - name: "Upload coverage to Codecov"
-      uses: codecov/codecov-action@v1
+      uses: codecov/codecov-action@v3
       with:
+        flags: tests
         fail_ci_if_error: true
+        verbose: true

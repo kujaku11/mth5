@@ -21,6 +21,7 @@ from datetime import datetime
 
 from struct import unpack_from
 import string
+from loguru import logger
 
 from mt_metadata.timeseries import Station, Run, Electric, Magnetic
 from mt_metadata.utils.mttime import MTime
@@ -36,6 +37,7 @@ class Header:
     """
 
     def __init__(self, **kwargs):
+        self.logger = logger
         self.report_hw_sat = False
         self.header_length = 128
         self.ad_plus_minus_range = 5.0  # differential voltage range that the A/D can measure (Board model dependent)
@@ -44,14 +46,25 @@ class Header:
         self._channel_id = None
 
         self.channel_map = {
-            0: "hx",
-            1: "hy",
-            2: "hz",
-            3: "ex",
-            4: "ey",
+            0: "h1",
+            1: "h2",
+            2: "h3",
+            3: "e1",
+            4: "e2",
             5: "h1",
             6: "h2",
             7: "h3",
+        }
+
+        self.channel_azimuths = {
+            "h1": 0,
+            "h2": 90,
+            "h3": 0,
+            "h4": 0,
+            "h5": 90,
+            "h6": 0,
+            "e1": 0,
+            "e2": 90,
         }
 
         for key, value in kwargs.items():
@@ -185,18 +198,20 @@ class Header:
     def recording_start_time(self):
         """
         The actual data recording starts 1 second after the set start time.
-        This is cause by the data logger starting up and initializing filter.
+        This is caused by the data logger starting up and initializing filter.
         This is taken care of in the segment start time
 
         See https://github.com/kujaku11/PhoenixGeoPy/tree/main/Docs for more
         information.
+
+        The time recorded is GPS time.
 
         :return: DESCRIPTION
         :rtype: TYPE
 
         """
 
-        return MTime(datetime.fromtimestamp(self.recording_id))
+        return MTime(datetime.fromtimestamp(self.recording_id), gps_time=True)
 
     @property
     def channel_id(self):
@@ -435,7 +450,9 @@ class Header:
         # Total of the gain that is selectable by the user (i.e. att * pre * gain)
         if self._has_header():
             return (
-                self.channel_main_gain * self.preamp_gain * self.attenuator_gain
+                self.channel_main_gain
+                * self.preamp_gain
+                * self.attenuator_gain
             )
         return 1.0
 
@@ -593,7 +610,7 @@ class Header:
         else:
             return
 
-    def channel_metadata(self):
+    def get_channel_metadata(self):
         """
         translate metadata to channel metadata
         :return: DESCRIPTION
@@ -603,19 +620,25 @@ class Header:
 
         if self.channel_type.lower() in ["h"]:
             ch = Magnetic()
+            ch.location.latitude = self.gps_lat
+            ch.location.longitude = self.gps_long
+            ch.location.elevation = self.gps_elevation
         elif self.channel_type.lower() in ["e"]:
             ch = Electric()
         try:
             ch.component = self.channel_map[self.channel_id]
         except KeyError:
-            print(f"Could not find {self.channel_id} in channel_map")
+            self.logger.error(
+                f"Could not find {self.channel_id} in channel_map"
+            )
         ch.channel_number = self.channel_id
         ch.time_period.start = self.recording_start_time
         ch.sample_rate = self.sample_rate
+        ch.measurement_azimuth = self.channel_azimuths[ch.component]
 
         return ch
 
-    def run_metadata(self):
+    def get_run_metadata(self):
         """
         translate to run metadata
 
@@ -631,11 +654,13 @@ class Header:
         r.data_logger.timing_system.uncertainty = self.timing_stability
         r.sample_rate = self.sample_rate
         r.data_logger.power_source.voltage.start = self.battery_voltage_v
-        r.channels.append(self.channel_metadata())
+        r.channels.append(self.get_channel_metadata())
+        r.id = f"sr{self.sample_rate}_0001"
+        r.update_time_period()
 
         return r
 
-    def station_metadata(self):
+    def get_station_metadata(self):
         """
         translate to station metadata
 
@@ -645,6 +670,7 @@ class Header:
         s.location.latitude = self.gps_lat
         s.location.longitude = self.gps_long
         s.location.elevation = self.gps_elevation
-        s.runs.append(self.run_metadata())
+        s.runs.append(self.get_run_metadata())
+        s.update_time_period()
 
         return s

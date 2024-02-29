@@ -1,155 +1,24 @@
 # -*- coding: utf-8 -*-
 """
+Created on Tue Jun 20 15:06:08 2023
 
-Created on Fri Jun 10 07:52:03 2022
-
-:author: Jared Peacock
-
-:license: MIT
-
+@author: jpeacock
 """
 
 # =============================================================================
 # Imports
 # =============================================================================
-import json
 from pathlib import Path
-from types import SimpleNamespace
+from loguru import logger
 
 from mt_metadata.timeseries import Survey, Station, Run, Electric, Magnetic
+
+from .helpers import read_json_to_object
 
 # =============================================================================
 
 
-def read_json_to_object(fn):
-    """
-    read a json file directly into an object
-
-    :param fn: DESCRIPTION
-    :type fn: TYPE
-    :return: DESCRIPTION
-    :rtype: TYPE
-
-    """
-
-    with open(fn, "r") as fid:
-        obj = json.load(fid, object_hook=lambda d: SimpleNamespace(**d))
-    return obj
-
-
-class ConfigJSON:
-    """
-    A container for the config.json file used to control the recording
-
-    """
-
-    def __init__(self, fn=None, **kwargs):
-
-        self.fn = fn
-        self.obj = None
-
-    @property
-    def fn(self):
-        return self._fn
-
-    @fn.setter
-    def fn(self, fn):
-        if fn is None:
-            self._fn = None
-        else:
-            fn = Path(fn)
-            if fn.exists():
-                self._fn = Path(fn)
-            else:
-                raise ValueError(f"Could not find {fn}")
-
-    def read(self, fn=None):
-        """
-        read a config.json file that is in the Phoenix format
-
-        :param fn: DESCRIPTION, defaults to None
-        :type fn: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        if fn is not None:
-            self.fn = fn
-        self.obj = read_json_to_object(self.fn)
-
-    def has_obj(self):
-        if self.obj is not None:
-            return True
-        return False
-
-    @property
-    def auto_power_enabled(self):
-        if self.has_obj():
-            return self.obj.auto_power_enabled
-
-    @property
-    def config(self):
-        if self.has_obj():
-            return self.obj.config[0]
-
-    @property
-    def empower_version(self):
-        if self.has_obj():
-            return self.obj.empower_version
-
-    @property
-    def mtc150_reset(self):
-        if self.has_obj():
-            return self.obj.mtc150_reset
-
-    @property
-    def network(self):
-        if self.has_obj():
-            return self.obj.network
-
-    @property
-    def receiver(self):
-        if self.has_obj():
-            return self.obj.receiver
-
-    @property
-    def schedule(self):
-        if self.has_obj():
-            return self.obj.schedule
-
-    @property
-    def surveyTechnique(self):
-        if self.has_obj():
-            return self.obj.surveyTechnique
-
-    @property
-    def timezone(self):
-        if self.has_obj():
-            return self.obj.timezone
-
-    @property
-    def timezone_offset(self):
-        if self.has_obj():
-            return self.obj.timezone_offset
-
-    @property
-    def version(self):
-        if self.has_obj():
-            return self.obj.version
-
-    def station_metadata(self):
-        s = Station()
-
-        s.id = self.config.layout.Station_Name
-        s.acquired_by.name = self.config.layout.Operator
-        s.acquired_by.organization = self.config.layout.Company_Name
-        s.comments = self.config.layout.Notes
-
-        return s
-
-
-class ReceiverMetadataJSON:
+class PhoenixReceiverMetadata:
     """
     A container for the recmeta.json file used to control the recording
 
@@ -178,6 +47,7 @@ class ReceiverMetadataJSON:
             "type": "sensor.type",
             "serial": "sensor.id",
         }
+        self.logger = logger
 
         if self.fn is not None:
             self.read()
@@ -196,6 +66,11 @@ class ReceiverMetadataJSON:
                 self._fn = Path(fn)
             else:
                 raise ValueError(f"Could not find {fn}")
+
+    @property
+    def instrument_id(self):
+        if self.has_obj():
+            return self.obj.instid
 
     def read(self, fn=None):
         """
@@ -219,7 +94,18 @@ class ReceiverMetadataJSON:
 
     @property
     def channel_map(self):
-        return dict([(d.idx, d.tag) for d in self.obj.channel_map.mapping])
+        return dict(
+            [(d.idx, d.tag.lower()) for d in self.obj.channel_map.mapping]
+        )
+
+    @property
+    def lp_filter_base_name(self):
+        if self.has_obj():
+            return (
+                f"{self.obj.receiver_commercial_name}_"
+                f"{self.obj.receiver_model}_"
+                f"{self.obj.instid}"
+            ).lower()
 
     def get_ch_index(self, tag):
         if self.has_obj():
@@ -247,9 +133,14 @@ class ReceiverMetadataJSON:
                 c.set_attr_from_name(m_value, getattr(ch, p_key))
             c.channel_number = self.get_ch_index(tag)
             c.dipole_length = ch.length1 + ch.length2
-            c.units = "millivolts"
+            c.units = "volts"
             c.time_period.start = self.obj.start
             c.time_period.end = self.obj.stop
+            c.filter.name = [
+                f"{self.lp_filter_base_name}_{int(ch.lp)}hz_low_pass",
+                f"dipole_{int(c.dipole_length)}m",
+            ]
+            c.filter.applied = [True, True]
         return c
 
     def _to_magnetic_metadata(self, tag):
@@ -261,15 +152,29 @@ class ReceiverMetadataJSON:
             for p_key, m_value in self._h_map.items():
                 if p_key == "ty":
                     m_value = "magnetic"
-                c.set_attr_from_name(m_value, getattr(ch, p_key))
+                try:
+                    c.set_attr_from_name(m_value, getattr(ch, p_key))
+                except AttributeError:
+                    self.logger.error(
+                        f"recmeta.json does not contain attribute '{p_key}' for "
+                        f"channel '{ch.tag}'."
+                    )
             c.channel_number = self.get_ch_index(tag)
             c.sensor.manufacturer = "Phoenix Geophysics"
-            c.units = "millivolts"
+            c.units = "volts"
             c.time_period.start = self.obj.start
             c.time_period.end = self.obj.stop
+            c.filter.name = [
+                f"{self.lp_filter_base_name}_{int(ch.lp)}hz_low_pass"
+            ]
+            c.filter.applied = [True]
+            if c.sensor.id is not None:
+                c.filter.name.append(f"coil_{c.sensor.id}_response")
+                c.filter.applied.append(True)
+
         return c
 
-    ### should think about putting this part in set_attr
+    ### should think about putting this part in get_attr
     @property
     def e1_metadata(self):
         return self._to_electric_metadata("e1")

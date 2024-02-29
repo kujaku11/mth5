@@ -6,8 +6,8 @@ Created on Tue Jun  2 12:37:50 2020
 
 :copyright:
     Jared Peacock (jpeacock@usgs.gov)
-    
-:license: 
+
+:license:
     MIT
 
 """
@@ -19,10 +19,7 @@ import inspect
 import numpy as np
 import h5py
 import gc
-
-from mth5.utils.mth5_logger import setup_logger
-
-logger = setup_logger(__name__)
+from loguru import logger
 
 # =============================================================================
 # Acceptable compressions
@@ -55,15 +52,13 @@ def validate_compression(compression, level):
     if compression is None:
         return None, None
     if not isinstance(compression, (str, type(None))):
-        msg = "compression type must be a string, not {0}".format(
-            type(compression)
-        )
+        msg = f"compression type must be a string, not {type(compression)}"
         logger.error(msg)
         raise TypeError(msg)
     if not compression in COMPRESSION:
         msg = (
             f"Compression type {compression} not supported. "
-            + f"Supported options are {COMPRESSION}"
+            f"Supported options are {COMPRESSION}"
         )
         logger.error(msg)
         raise ValueError(msg)
@@ -71,24 +66,26 @@ def validate_compression(compression, level):
         level = COMPRESSION_LEVELS["lzf"][0]
     elif compression == " gzip":
         if not isinstance(level, (int)):
-            msg = "Level type for gzip must be an int, not {0}.".format(
-                type(level)
-                + f" Options are {0}".format(COMPRESSION_LEVELS["gzip"])
+            msg = (
+                f"Level type for gzip must be an int, not {type(level)}. "
+                f"Options are {COMPRESSION_LEVELS['gzip']}"
             )
             logger.error(msg)
             raise TypeError(msg)
     elif compression == " szip":
         if not isinstance(level, (str)):
-            msg = "Level type for szip must be an str, not {0}.".format(
-                type(level)
-            ) + " Options are {0}".format(COMPRESSION_LEVELS["szip"])
+            msg = (
+                f"Level type for szip must be an str, not {type(level)}. "
+                f"Options are {COMPRESSION_LEVELS['szip']}"
+            )
             logger.error(msg)
             raise TypeError(msg)
     if not level in COMPRESSION_LEVELS[compression]:
         msg = (
-            f"compression level {level} not supported for {compression}."
-            + " Options are {0}".format(COMPRESSION_LEVELS[compression])
+            f"compression level {level} not supported for {compression}. "
+            f"Options are {COMPRESSION_LEVELS[compression]}"
         )
+
         logger.error(msg)
         raise ValueError(msg)
     return compression, level
@@ -97,11 +94,11 @@ def validate_compression(compression, level):
 def recursive_hdf5_tree(group, lines=[]):
     if isinstance(group, (h5py._hl.group.Group, h5py._hl.files.File)):
         for key, value in group.items():
-            lines.append("-{0}: {1}".format(key, value))
+            lines.append(f"-{key}: {value}")
             recursive_hdf5_tree(value, lines)
     elif isinstance(group, h5py._hl.dataset.Dataset):
         for key, value in group.attrs.items():
-            lines.append("\t-{0}: {1}".format(key, value))
+            lines.append(f"\t-{key}: {value}")
     return "\n".join(lines)
 
 
@@ -145,11 +142,15 @@ def get_tree(parent):
         group_name = name[name.rfind("/") + 1 :]
 
         if isinstance(obj, h5py.Group):
-            lines.append("{0}|- Group: {1}".format(spacing, group_name))
-            lines.append("{0}{1}".format(spacing, (len(group_name) + 10) * "-"))
+            lines.append(f"{spacing}|- Group: {group_name}")
+            lines.append(
+                "{0}{1}".format(spacing, (len(group_name) + 10) * "-")
+            )
         elif isinstance(obj, h5py.Dataset):
-            lines.append("{0}--> Dataset: {1}".format(spacing, group_name))
-            lines.append("{0}{1}".format(spacing, (len(group_name) + 15) * "."))
+            lines.append(f"{spacing}--> Dataset: {group_name}")
+            lines.append(
+                "{0}{1}".format(spacing, (len(group_name) + 15) * ".")
+            )
 
     # lines.append(parent.name)
     parent.visititems(fancy_print)
@@ -228,6 +229,7 @@ def from_numpy_type(value):
 
     if value is None:
         return "none"
+
     # For now turn references into a generic string
     if isinstance(value, h5py.h5r.Reference):
         value = str(value)
@@ -241,12 +243,26 @@ def from_numpy_type(value):
             bool,
             complex,
             np.int_,
+            np.int32,
             np.float_,
             np.bool_,
             np.complex_,
+            np.intp,
+            type(np.int_),
+            type(np.float_),
+            type(np.bool_),
+            type(np.complex_),
+            type(np.intp),
         ),
     ):
         return value
+    # if isinstance(
+    #     value,
+    #     (
+    #         np.int32,
+    #     )
+    # ):
+    #     return np.int64(value)
     if isinstance(value, Iterable):
         if np.any([type(x) in [bytes, np.bytes_] for x in value]):
             return np.array(value, dtype="U").tolist()

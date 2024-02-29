@@ -20,29 +20,31 @@ from mth5.timeseries import ChannelTS
 
 class TestRemoveResponse(unittest.TestCase):
     """
-    Test remove response, make a fake signal add some trends, 
+    Test remove response, make a fake signal add some trends,
     """
 
     @classmethod
     def setUpClass(self):
         # pole zero filter
-        pz = PoleZeroFilter(
-            units_in="volts", units_out="nanotesla", name="instrument_response"
+        pz1 = PoleZeroFilter(
+            units_in="nanotesla", units_out="volts", name="instrument_response"
         )
-        pz.poles = [
+        pz1.poles = [
             (-6.283185 + 10.882477j),
             (-6.283185 - 10.882477j),
             (-12.566371 + 0j),
         ]
-        pz.zeros = []
-        pz.normalization_factor = 18244400
+        pz1.zeros = []
+        pz1.normalization_factor = 18244400
 
         # channel properties
         self.channel = ChannelTS()
-        self.channel.channel_metadata.filter.applied = [False]
-        self.channel.channel_metadata.filter.name = ["instrument_response"]
+        self.channel.channel_metadata.filter.applied = [True,]
+        self.channel.channel_metadata.filter.name = ["instrument_response",]# "instrument_response2"]
         self.channel.channel_metadata.component = "hx"
-        self.channel.channel_response_filter.filters_list.append(pz)
+        self.channel.channel_metadata.units = "volt"
+        #self.channel.channel_metadata.units = "digital counts"
+        self.channel.channel_response.filters_list = [pz1,]
         self.channel.sample_rate = 1
         n_samples = 4096
         self.t = np.arange(n_samples) * self.channel.sample_interval
@@ -61,7 +63,7 @@ class TestRemoveResponse(unittest.TestCase):
         # multiply by filter response
         f = np.fft.rfftfreq(self.t.size, self.channel.sample_interval)
         response_ts = np.fft.irfft(
-            np.fft.rfft(self.example_ts) * pz.complex_response(f)[::-1]
+            np.fft.rfft(self.example_ts) * pz1.complex_response(f)[::-1]
         )
 
         # add in a linear trend
@@ -74,7 +76,7 @@ class TestRemoveResponse(unittest.TestCase):
 
     def test_applied(self):
         self.assertTrue(
-            (np.array(self.calibrated_ts.channel_metadata.filter.applied) == True).all()
+            (np.array(self.calibrated_ts.channel_metadata.filter.applied) == False).all()
         )
 
     def test_returned_metadata(self):

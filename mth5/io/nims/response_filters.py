@@ -12,7 +12,7 @@ from mt_metadata.timeseries.filters import (
     PoleZeroFilter,
     TimeDelayFilter,
     CoefficientFilter,
-    ChannelResponseFilter,
+    ChannelResponse,
 )
 
 # =============================================================================
@@ -273,12 +273,12 @@ class Response(object):
         """
 
         if channel[0] in ["e"]:
-            return ChannelResponseFilter(
+            return ChannelResponse(
                 filters_list=self._get_electric_filter(channel, dipole_length)
             )
 
         elif channel[0] in ["b", "h"]:
-            return ChannelResponseFilter(
+            return ChannelResponse(
                 filters_list=self._get_magnetic_filter(channel)
             )
 

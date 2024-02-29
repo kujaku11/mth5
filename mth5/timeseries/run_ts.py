@@ -22,16 +22,20 @@ import inspect
 
 import xarray as xr
 import numpy as np
+from loguru import logger
 
 from matplotlib import pyplot as plt
 
 from mt_metadata import timeseries as metadata
 from mt_metadata.utils.mttime import MTime
 from mt_metadata.utils.list_dict import ListDict
-from mt_metadata.timeseries.filters import ChannelResponseFilter
+from mt_metadata.timeseries.filters import ChannelResponse
 
 from .channel_ts import ChannelTS
-from mth5.utils.mth5_logger import setup_logger
+from .ts_helpers import (
+    make_dt_coordinates,
+    get_decimation_sample_rates,
+)
 
 from obspy.core import Stream
 
@@ -63,7 +67,7 @@ class RunTS:
         survey_metadata=None,
     ):
 
-        self.logger = setup_logger(f"{__name__}.{self.__class__.__name__}")
+        self.logger = logger
         self._survey_metadata = self._initialize_metadata()
         self._dataset = xr.Dataset()
         self._filters = {}
@@ -90,6 +94,78 @@ class RunTS:
 
     def __repr__(self):
         return self.__str__()
+
+    def __eq__(self, other):
+
+        if not isinstance(other, RunTS):
+            raise TypeError(f"Cannot compare RunTS with {type(other)}.")
+        if not other.survey_metadata == self.survey_metadata:
+            return False
+        if not other.station_metadata == self.station_metadata:
+            return False
+        if not other.run_metadata == self.run_metadata:
+            return False
+        if self.dataset.equals(other.dataset) is False:
+            return False
+        return True
+
+    def __neq__(self, other):
+        return not self.__eq__(other)
+
+    def __add__(self, other):
+        """
+        Add two runs together in the following steps
+
+        1. xr.combine_by_coords([original, other])
+        2. compute monotonic time index
+        3. reindex(new_time_index, method='nearest')
+
+        If you want a different method or more control use merge
+
+        :param other: Another run
+        :type other: :class:`mth5.timeseries.RunTS`
+        :raises TypeError: If input is not a RunTS
+        :raises ValueError: if the components are different
+        :return: Combined channel with monotonic time index and same metadata
+        :rtype: :class:`mth5.timeseries.RunTS`
+
+        """
+        if not isinstance(other, RunTS):
+            raise TypeError(f"Cannot combine {type(other)} with RunTS.")
+        # combine into a data set use override to keep attrs from original
+        combined_ds = xr.combine_by_coords(
+            [self.dataset, other.dataset], combine_attrs="override"
+        )
+
+        n_samples = (
+            self.sample_rate
+            * float(
+                combined_ds.time.max().values - combined_ds.time.min().values
+            )
+            / 1e9
+        ) + 1
+
+        new_dt_index = make_dt_coordinates(
+            combined_ds.time.min().values, self.sample_rate, n_samples
+        )
+
+        new_run = RunTS(
+            run_metadata=self.run_metadata,
+            station_metadata=self.station_metadata,
+            survey_metadata=self.survey_metadata,
+        )
+
+        new_run.dataset = combined_ds.interp(
+            time=new_dt_index, method="slinear"
+        )
+
+        new_run.run_metadata.update_time_period()
+        new_run.station_metadata.update_time_period()
+        new_run.survey_metadata.update_time_period()
+        new_run.filters = self.filters
+        new_run.filters.update(other.filters)
+
+        return new_run
 
     def _initialize_metadata(self):
         """
@@ -123,13 +199,12 @@ class RunTS:
                 self.logger.debug("Loading from metadata dict")
                 return r_metadata
             else:
-                msg = "input metadata must be type %s or dict, not %s"
-                self.logger.error(
-                    msg, type(self.run_metadata), type(run_metadata)
+                msg = (
+                    "input metadata must be type {type(self.run_metadata)} "
+                    "or dict, not {type(run_metadata)}"
                 )
-                raise TypeError(
-                    msg % (type(self.run_metadata), type(run_metadata))
-                )
+                self.logger.error(msg)
+                raise TypeError(msg)
         return run_metadata.copy()
 
     def _validate_station_metadata(self, station_metadata):
@@ -143,18 +218,17 @@ class RunTS:
                     cc.lower() for cc in station_metadata.keys()
                 ]:
                     station_metadata = {"Station": station_metadata}
-
                 st_metadata = metadata.Station()
                 st_metadata.from_dict(station_metadata)
                 self.logger.debug("Loading from metadata dict")
                 return st_metadata
             else:
-                msg = "input metadata must be type {0} or dict, not {1}".format(
-                    type(self.station_metadata), type(station_metadata)
+                msg = (
+                    f"input metadata must be type {type(self.station_metadata)} "
+                    "or dict, not {type(station_metadata)}"
                 )
                 self.logger.error(msg)
                 raise TypeError(msg)
-
         return station_metadata.copy()
 
     def _validate_survey_metadata(self, survey_metadata):
@@ -164,22 +238,21 @@ class RunTS:
 
         if not isinstance(survey_metadata, metadata.Survey):
             if isinstance(survey_metadata, dict):
-                if "station" not in [
+                if "survey" not in [
                     cc.lower() for cc in survey_metadata.keys()
                 ]:
                     survey_metadata = {"Survey": survey_metadata}
-
-                sv_metadata = metadata.Station()
+                sv_metadata = metadata.Survey()
                 sv_metadata.from_dict(survey_metadata)
                 self.logger.debug("Loading from metadata dict")
                 return sv_metadata
             else:
-                msg = "input metadata must be type {0} or dict, not {1}".format(
-                    type(self.survey_metadata), type(survey_metadata)
+                msg = (
+                    f"input metadata must be type {type(self.survey_metadata)} "
+                    "or dict, not {type(survey_metadata)}"
                 )
                 self.logger.error(msg)
                 raise TypeError(msg)
-
         return survey_metadata.copy()
 
     def _validate_array_list(self, array_list):
@@ -189,7 +262,6 @@ class RunTS:
             msg = f"array_list must be a list or tuple, not {type(array_list)}"
             self.logger.error(msg)
             raise TypeError(msg)
-
         valid_list = []
         station_metadata = metadata.Station()
         run_metadata = metadata.Run()
@@ -213,23 +285,19 @@ class RunTS:
                         )
                     else:
                         station_metadata.update(item.station_metadata)
-
                 if item.run_metadata.id not in ["0", None]:
                     if run_metadata.id not in ["0", None]:
                         run_metadata.update(item.run_metadata, match=["id"])
                     else:
                         run_metadata.update(item.run_metadata)
-
                 channels.append(item.channel_metadata)
 
                 # get the filters from the channel
-                if item.channel_response_filter.filters_list != []:
-                    for ff in item.channel_response_filter.filters_list:
+                if item.channel_response.filters_list != []:
+                    for ff in item.channel_response.filters_list:
                         self._filters[ff.name] = ff
-
             else:
                 valid_list.append(item)
-
         # need to make sure that the station metadata was actually updated,
         # should have an ID.
         run_metadata.channels = channels
@@ -249,20 +317,128 @@ class RunTS:
         # metadata, then update just the channels.
         else:
             self.run_metadata.channels = channels
-
-        # probably should test for sampling rate.
-        sr_test = dict(
-            [(item.component, (item.sample_rate)) for item in valid_list]
-        )
-
-        if len(set([v for k, v in sr_test.items()])) != 1:
-            msg = f"sample rates are not all the same {sr_test}"
-            self.logger.error(msg)
-            raise ValueError(msg)
+        # first need to align the time series.
+        valid_list = self._align_channels(valid_list)
 
         return valid_list
 
-    def _get_channel_response_filter(self, ch_name):
+    def _align_channels(self, valid_list):
+        """
+        check for common start and end times, if not resample each.
+
+        :param valid_list: DESCRIPTION
+        :type valid_list: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        earliest_start = self._get_earliest_start(valid_list)
+        latest_end = self._get_latest_end(valid_list)
+        reindex = False
+        if not self._check_common_start(valid_list):
+            self.logger.info(
+                f"Channels do not have a common start, using earliest: {earliest_start}"
+            )
+            reindex = True
+        if not self._check_common_end(valid_list):
+            self.logger.info(
+                f"Channels do not have a common end, using latest: {latest_end}"
+            )
+            reindex = True
+        if reindex:
+            sample_rate = self._check_sample_rate(valid_list)
+
+            new_time_index = self._get_common_time_index(
+                earliest_start, latest_end, sample_rate
+            )
+            tolerance = f"{(1e9 / sample_rate):.0f}N"
+            aligned_list = []
+            for ch in valid_list:
+                aligned_list.append(
+                    ch.reindex(
+                        time=new_time_index,
+                        method="nearest",
+                        tolerance=tolerance,
+                    )
+                )
+        else:
+            aligned_list = valid_list
+        return aligned_list
+
+    def _check_sample_rate(self, valid_list):
+        # probably should test for sampling rate.
+        sr_test = list(
+            set(
+                [(item.sample_rate) for item in valid_list]
+                + [np.round(item.sps_filters.fs, 3) for item in valid_list]
+            )
+        )
+
+        if len(sr_test) != 1:
+            msg = f"sample rates are not all the same {sr_test}"
+            self.logger.error(msg)
+            raise ValueError(msg)
+        return sr_test[0]
+
+    def _check_common_start(self, valid_list):
+        """
+        check to see if there are different starting times
+
+        :param valid_list: DESCRIPTION
+        :type valid_list: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        start_list = list(
+            set([item.coords["time"].values[0] for item in valid_list])
+        )
+        if len(start_list) != 1:
+            return False
+        return True
+
+    def _check_common_end(self, valid_list):
+        """
+        check to see if there are different end times
+
+        :param valid_list: DESCRIPTION
+        :type valid_list: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        end_list = list(
+            set([item.coords["time"].values[-1] for item in valid_list])
+        )
+        if len(end_list) != 1:
+            return False
+        return True
+
+    def _get_earliest_start(self, valid_list):
+        """
+        get the earliest start time
+        """
+
+        return min([item.coords["time"].values[0] for item in valid_list])
+
+    def _get_latest_end(self, valid_list):
+        """
+        get the earliest start time
+        """
+
+        return max([item.coords["time"].values[-1] for item in valid_list])
+
+    def _get_common_time_index(self, start, end, sample_rate):
+        """
+        get common time index
+        """
+
+        n_samples = int(sample_rate * float(end - start) / 1e9) + 1
+
+        return make_dt_coordinates(start, sample_rate, n_samples)
+
+    def _get_channel_response(self, ch_name):
         """
         Get the channel response filter from the filter dictionary
 
@@ -283,26 +459,24 @@ class RunTS:
                     self.logger.debug(
                         f"Could not find {filter_name} in filters"
                     )
-
-        return ChannelResponseFilter(filters_list=filter_list)
+        return ChannelResponse(filters_list=filter_list)
 
     def __getattr__(self, name):
         # change to look for keys directly and use type to set channel type
         if name in self.dataset.keys():
 
-            ch_response_filter = self._get_channel_response_filter(name)
+            ch_response_filter = self._get_channel_response(name)
             # if cannot get filters, but the filters name indicates that
             # filters should be there don't input the channel response filter
             # cause then an empty filters_list will set filter.name to []
             if ch_response_filter.filters_list == []:
                 ch_response_filter = None
-
             return ChannelTS(
                 self.dataset[name].attrs["type"],
                 self.dataset[name],
                 run_metadata=self.run_metadata.copy(),
                 station_metadata=self.station_metadata.copy(),
-                channel_response_filter=ch_response_filter,
+                channel_response=ch_response_filter,
             )
         else:
             # this is a hack for now until figure out who is calling shape, size
@@ -315,6 +489,30 @@ class RunTS:
                     msg = f"RunTS has no attribute {name}"
                     self.logger.error(msg)
                     raise NameError(msg)
+
+    def copy(self, data=True):
+        """
+
+        :param data: DESCRIPTION, defaults to True
+        :type data: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if not data:
+            return RunTS(
+                run_metadata=self.run_metadata.copy(),
+                station_metadata=self.station_metadata.copy(),
+                survey_metadata=self.survey_metadata.copy(),
+            )
+        else:
+            return RunTS(
+                array_list=self.dataset,
+                run_metadata=self.run_metadata.copy(),
+                station_metadata=self.station_metadata.copy(),
+                survey_metadata=self.survey_metadata.copy(),
+            )
 
     ### Properties ------------------------------------------------------------
     @property
@@ -354,7 +552,9 @@ class RunTS:
         """
 
         if station_metadata is not None:
-            station_metadata = self._validate_station_metadata(station_metadata)
+            station_metadata = self._validate_station_metadata(
+                station_metadata
+            )
 
             runs = ListDict()
             if self.run_metadata.id not in ["0", 0]:
@@ -362,13 +562,11 @@ class RunTS:
             runs.extend(station_metadata.runs)
             if len(runs) == 0:
                 runs[0] = metadata.Run(id="0")
-
             # be sure there is a level below
             if len(runs[0].channels) == 0:
                 ch_metadata = metadata.Auxiliary()
                 ch_metadata.type = "auxiliary"
                 runs[0].channels.append(ch_metadata)
-
             stations = ListDict()
             stations.append(station_metadata)
             stations[0].runs = runs
@@ -419,7 +617,6 @@ class RunTS:
         for comp in self.dataset.data_vars:
             for mkey, mvalue in self.dataset[comp].attrs.items():
                 meta_dict[f"{comp}.{mkey}"] = mvalue
-
         return meta_dict
 
     def validate_metadata(self):
@@ -447,7 +644,6 @@ class RunTS:
                     )
                     self.logger.warning(msg)
                 self.run_metadata.time_period.start = self.start.iso_str
-
             # check end time
             if self.end != self.run_metadata.time_period.end:
                 if (
@@ -472,10 +668,8 @@ class RunTS:
                     )
                     self.logger.warning(msg)
                 self.run_metadata.sample_rate = self.sample_rate
-
             if self.run_metadata.id not in self.station_metadata.runs.keys():
                 self.station_metadata.runs[0].update(self.run_metadata)
-
             self.station_metadata.update_time_period()
             self.survey_metadata.update_time_period()
 
@@ -500,16 +694,11 @@ class RunTS:
         if isinstance(array_list, (list, tuple)):
             x_array_list = self._validate_array_list(array_list)
 
-            # first need to align the time series.
-            x_array_list = xr.align(*x_array_list, join=align_type)
-
             # input as a dictionary
             xdict = dict([(x.component.lower(), x) for x in x_array_list])
             self._dataset = xr.Dataset(xdict)
-
         elif isinstance(array_list, xr.Dataset):
             self._dataset = array_list
-
         self.validate_metadata()
         self._dataset.attrs.update(self.run_metadata.to_dict(single=True))
 
@@ -539,14 +728,12 @@ class RunTS:
         elif isinstance(channel, ChannelTS):
             c = channel
             self.run_metadata.channels.append(c.channel_metadata)
-            for ff in c.channel_response_filter.filters_list:
+            for ff in c.channel_response.filters_list:
                 self._filters[ff.name] = ff
-
         else:
             raise ValueError(
                 "Input Channel must be type xarray.DataArray or ChannelTS"
             )
-
         ### need to validate the channel to make sure sample rate is the same
         if c.sample_rate != self.sample_rate:
             msg = (
@@ -555,12 +742,11 @@ class RunTS:
             )
             self.logger.error(msg)
             raise ValueError(msg)
-
         ### should probably check for other metadata like station and run?
         if len(self.dataset.dims) == 0:
-            self.dataset = c._ts.to_dataset()
+            self.dataset = c.data_array.to_dataset()
         else:
-            self.dataset = xr.merge([self.dataset, c._ts.to_dataset()])
+            self.dataset = xr.merge([self.dataset, c.data_array.to_dataset()])
 
     @property
     def dataset(self):
@@ -588,7 +774,9 @@ class RunTS:
     def end(self):
         """End time UTC"""
         if self.has_data():
-            return MTime(self.dataset.coords["time"].to_index()[-1].isoformat())
+            return MTime(
+                self.dataset.coords["time"].to_index()[-1].isoformat()
+            )
         return self.run_metadata.time_period.end
 
     @property
@@ -660,7 +848,6 @@ class RunTS:
         """
         if not isinstance(value, dict):
             raise TypeError("input must be a dictionary")
-
         self._filters = value
 
     def to_obspy_stream(self):
@@ -675,16 +862,20 @@ class RunTS:
 
         trace_list = []
         for channel in self.channels:
-            if channel[0] in ["e"]:
-                ch_type = "electric"
-            elif channel[0] in ["h", "b"]:
-                ch_type = "magnetic"
-            else:
-                ch_type = "auxiliary"
-            ts_obj = ChannelTS(ch_type, self.dataset[channel])
+            ts_obj = getattr(self, channel)
             trace_list.append(ts_obj.to_obspy_trace())
-
         return Stream(traces=trace_list)
+
+    def wrangle_leap_seconds_from_obspy(self, array_list):
+        """
+        Experimental handling, not 100% clear what obspy is doing,
+        but there are runs with only one sample (numerically identical
+        to the adjacent sample) so try removing these.
+        """
+        msg = f"Possible Leap Second Bug -- see issue #169"
+        self.logger.warning(msg)
+        return [x for x in array_list if x.n_samples != 1]
+
 
     def from_obspy_stream(self, obspy_stream, run_metadata=None):
         """
@@ -701,7 +892,6 @@ class RunTS:
             msg = f"Input must be obspy.core.Stream not {type(obspy_stream)}"
             self.logger.error(msg)
             raise TypeError(msg)
-
         array_list = []
         station_list = []
         for obs_trace in obspy_stream:
@@ -727,12 +917,13 @@ class RunTS:
                     channel_ts.channel_metadata.update(ch)
                 except IndexError:
                     self.logger.warning(
-                        "could not find %s" % channel_ts.component
+                        f"could not find {channel_ts.component}"
                     )
+            # else:
+            #     run_metadata = metadata.Run(id="001")
             station_list.append(channel_ts.station_metadata.fdsn.id)
 
             array_list.append(channel_ts)
-
         ### need to merge metadata into something useful, station name is the only
         ### name that is preserved
         try:
@@ -743,16 +934,16 @@ class RunTS:
             station = None
             msg = "Could not find station name"
             self.logger.warn(msg)
-
         self.station_metadata.fdsn.id = station
 
+        if len(run_metadata.channels) != len(array_list):
+            array_list = self.wrangle_leap_seconds_from_obspy(array_list)
         self.set_dataset(array_list)
 
         # need to be sure update any input metadata.
         if run_metadata is not None:
             self.station_metadata.runs = ListDict()
             self.station_metadata.add_run(run_metadata)
-
         self.validate_metadata()
 
     def get_slice(self, start, end=None, n_samples=None):
@@ -771,10 +962,10 @@ class RunTS:
         """
         """
         Get just a chunk of data from the run, this will attempt to find the
-        closest points to the given parameters.  
-        
+        closest points to the given parameters.
+
         .. note:: We use pandas `slice_indexer` because xarray slice does not
-        seem to work as well, even though they should be based on the same 
+        seem to work as well, even though they should be based on the same
         code.
 
         :param start: start time of the slice
@@ -790,17 +981,14 @@ class RunTS:
         """
         if not isinstance(start, MTime):
             start = MTime(start)
-
         if n_samples is not None:
             seconds = (n_samples - 1) / self.sample_rate
             end = start + seconds
-
         elif end is not None:
             if not isinstance(end, MTime):
                 end = MTime(end)
         else:
             raise ValueError("Must input n_samples or end")
-
         chunk = self.dataset.indexes["time"].slice_indexer(
             start=np.datetime64(start.iso_no_tz),
             end=np.datetime64(end.iso_no_tz),
@@ -831,6 +1019,205 @@ class RunTS:
             ch_ts = getattr(self, channel)
             calibrated_ch_ts = ch_ts.remove_instrument_response(**kwargs)
             new_run.add_channel(calibrated_ch_ts)
+        return new_run
+
+    def decimate(self, new_sample_rate, inplace=False, max_decimation=8):
+        """
+        decimate data to new sample rate.
+
+        :param new_sample_rate: DESCRIPTION
+        :type new_sample_rate: TYPE
+        :param inplace: DESCRIPTION, defaults to False
+        :type inplace: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        sr_list = get_decimation_sample_rates(
+            self.sample_rate, new_sample_rate, max_decimation
+        )
+        # need to fill nans with 0 otherwise they wipeout the decimation values
+        # and all becomes nan.
+        new_ds = self.dataset.fillna(0)
+        for step_sr in sr_list:
+            new_ds = new_ds.sps_filters.decimate(step_sr)
+        new_ds.attrs["sample_rate"] = new_sample_rate
+        self.run_metadata.sample_rate = new_ds.attrs["sample_rate"]
+
+        if inplace:
+            self.dataset = new_ds
+        else:
+            # return new_ds
+            return RunTS(
+                new_ds,
+                run_metadata=self.run_metadata,
+                station_metadata=self.station_metadata,
+                survey_metadata=self.survey_metadata,
+            )
+
+    def resample_poly(self, new_sample_rate, pad_type="mean", inplace=False):
+        """
+        Use scipy.signal.resample_poly to resample data while using an FIR
+        filter to remove aliasing.
+
+        :param new_sample_rate: DESCRIPTION
+        :type new_sample_rate: TYPE
+        :param pad_type: DESCRIPTION, defaults to "mean"
+        :type pad_type: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        # need to fill nans with 0 otherwise they wipeout the decimation values
+        # and all becomes nan.
+        new_ds = self.dataset.fillna(0)
+        new_ds = new_ds.sps_filters.resample_poly(
+            new_sample_rate, pad_type=pad_type
+        )
+
+        new_ds.attrs["sample_rate"] = new_sample_rate
+        self.run_metadata.sample_rate = new_ds.attrs["sample_rate"]
+
+        if inplace:
+            self.dataset = new_ds
+        else:
+            return RunTS(
+                new_ds,
+                run_metadata=self.run_metadata,
+                station_metadata=self.station_metadata,
+                survey_metadata=self.survey_metadata,
+            )
+
+    def resample(self, new_sample_rate, inplace=False):
+        """
+        Resample data to new sample rate.
+        :param new_sample_rate: DESCRIPTION
+        :type new_sample_rate: TYPE
+        :param inplace: DESCRIPTION, defaults to False
+        :type inplace: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+        """
+
+        new_dt_freq = "{0:.0f}N".format(1e9 / (new_sample_rate))
+
+        new_ds = self.dataset.resample(time=new_dt_freq).nearest(
+            tolerance=new_dt_freq
+        )
+        new_ds.attrs["sample_rate"] = new_sample_rate
+        self.run_metadata.sample_rate = new_ds.attrs["sample_rate"]
+
+        if inplace:
+            self.dataset = new_ds
+        else:
+            # return new_ds
+            return RunTS(
+                new_ds,
+                run_metadata=self.run_metadata,
+                station_metadata=self.station_metadata,
+                survey_metadata=self.survey_metadata,
+            )
+
+    def merge(
+        self,
+        other,
+        gap_method="slinear",
+        new_sample_rate=None,
+        resample_method="poly",
+    ):
+        """
+        merg two runs or list of runs together in the following steps
+
+        1. xr.combine_by_coords([original, other])
+        2. compute monotonic time index
+        3. reindex(new_time_index, method=gap_method)
+
+        If you want a different method or more control use merge
+
+        :param other: Another run
+        :type other: :class:`mth5.timeseries.RunTS`
+        :raises TypeError: If input is not a RunTS
+        :raises ValueError: if the components are different
+        :return: Combined run with monotonic time index and same metadata
+        :rtype: :class:`mth5.timeseries.RunTS`
+
+        """
+        if new_sample_rate is not None:
+            merge_sample_rate = new_sample_rate
+            if resample_method == "decimate":
+                combine_list = [self.decimate(new_sample_rate).dataset]
+            elif resample_method == "poly":
+                combine_list = [self.resample_poly(new_sample_rate).dataset]
+        else:
+            merge_sample_rate = self.sample_rate
+            combine_list = [self.dataset]
+        ts_filters = self.filters
+        if isinstance(other, (list, tuple)):
+            for run in other:
+                if not isinstance(run, RunTS):
+                    raise TypeError(f"Cannot combine {type(run)} with RunTS.")
+                if new_sample_rate is not None:
+                    if resample_method == "decimate":
+                        run = run.decimate(new_sample_rate)
+                    elif resample_method == "poly":
+                        run = run.resample_poly(new_sample_rate)
+                combine_list.append(run.dataset)
+                ts_filters.update(run.filters)
+        else:
+            if not isinstance(other, RunTS):
+                raise TypeError(f"Cannot combine {type(other)} with RunTS.")
+            if new_sample_rate is not None:
+                if resample_method == "decimate":
+                    other = other.decimate(new_sample_rate)
+                elif resample_method == "poly":
+                    other = other.resample_poly(new_sample_rate)
+            combine_list.append(other.dataset)
+            ts_filters.update(other.filters)
+        # combine into a data set use override to keep attrs from original
+
+        combined_ds = xr.combine_by_coords(
+            combine_list, combine_attrs="override"
+        )
+
+        n_samples = (
+            merge_sample_rate
+            * float(
+                combined_ds.time.max().values - combined_ds.time.min().values
+            )
+            / 1e9
+        ) + 1
+
+        new_dt_index = make_dt_coordinates(
+            combined_ds.time.min().values, merge_sample_rate, n_samples
+        )
+
+        run_metadata = self.run_metadata.copy()
+        run_metadata.sample_rate = merge_sample_rate
+
+        new_run = RunTS(
+            run_metadata=self.run_metadata,
+            station_metadata=self.station_metadata,
+            survey_metadata=self.survey_metadata,
+        )
+
+        ## tried reindex then interpolate_na, but that has issues if the
+        ## intial time index does not exactly match up with the new time index
+        ## and then get a bunch of Nan, unless use nearest or pad, but then
+        ## gaps are not filled correctly, just do a interp seems easier.
+        new_run.dataset = combined_ds.interp(
+            time=new_dt_index, method=gap_method
+        )
+
+        # update channel attributes
+        for ch in new_run.channels:
+            new_run.dataset[ch].attrs["time_period.start"] = new_run.start
+            new_run.dataset[ch].attrs["time_period.end"] = new_run.end
+        new_run.run_metadata.update_time_period()
+        new_run.station_metadata.update_time_period()
+        new_run.survey_metadata.update_time_period()
+        new_run.filters = ts_filters
 
         return new_run
 
@@ -855,7 +1242,6 @@ class RunTS:
             ch_list = channel_order()
         else:
             ch_list = self.channels
-
         n_channels = len(self.channels)
 
         fig = plt.figure()
@@ -876,5 +1262,65 @@ class RunTS:
             ax.set_axisbelow(True)
             if ii != len(ch_list):
                 plt.setp(ax.get_xticklabels(), visible=False)
-
             ax_list.append(ax)
+        return fig
+
+    def plot_spectra(
+        self,
+        spectra_type="welch",
+        color_map={
+            "ex": (1, 0.2, 0.2),
+            "ey": (1, 0.5, 0),
+            "hx": (0, 0.5, 1),
+            "hy": (0.5, 0.2, 1),
+            "hz": (0.2, 1, 1),
+        },
+        **kwargs,
+    ):
+        """
+        Plot spectra using spectra type, only 'welch' is supported now.
+
+        :param spectra_type: spectra type, defaults to "welch"
+        :type spectra_type: string, optional
+        :param color_map: colors of channels, defaults to {
+            "ex": (1, 0.2, 0.2),
+            "ey": (1, 0.5, 0),
+            "hx": (0, 0.5, 1),
+            "hy": (0.5, 0.2, 1),
+            "hz": (0.2, 1, 1),
+            }
+        :type color_map: dictionary, optional
+        :param **kwargs: key words for the spectra type
+        :type **kwargs: dictionary
+
+        """
+
+        fig = plt.figure()
+        ax = fig.add_subplot(1, 1, 1)
+        line_list = []
+        label_list = []
+        for comp in self.channels:
+            ch = getattr(self, comp)
+            plot_freq, power = ch.welch_spectra(**kwargs)
+            (l1,) = ax.loglog(
+                1.0 / plot_freq, power, lw=1.5, color=color_map[comp]
+            )
+            line_list.append(l1)
+            label_list.append(comp)
+        ax.set_xlabel("Period (s)", fontdict={"size": 10, "weight": "bold"})
+        ax.set_ylabel("Power (dB)", fontdict={"size": 10, "weight": "bold"})
+        ax.axis("tight")
+        ax.grid(which="both")
+
+        ax2 = ax.twiny()
+        ax2.loglog(plot_freq, power, lw=0)
+        ax2.set_xlabel(
+            "Frequency (Hz)", fontdict={"size": 10, "weight": "bold"}
+        )
+        ax2.set_xlim([1 / cc for cc in ax.get_xlim()])
+
+        ax.legend(line_list, label_list)
+
+        plt.show()
+
+        return fig

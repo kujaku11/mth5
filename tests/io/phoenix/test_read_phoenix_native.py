@@ -14,6 +14,7 @@ from collections import OrderedDict
 
 import numpy as np
 from mth5.io.phoenix import open_phoenix
+from mth5.utils.helpers import get_compare_dict
 
 # =============================================================================
 
@@ -35,6 +36,8 @@ class TestReadPhoenixNative(unittest.TestCase):
             r"c:\Users\jpeacock\OneDrive - DOI\mt\phoenix_example_data\Sample Data\10128_2021-04-27-025909\0\10128_60877DFD_0_00000001.bin"
         )
         self.original_data = self.original.read_frames(10)
+
+        self.rxcal_fn = Path(__file__).parent.joinpath("example_rxcal.json")
         self.maxDiff = None
 
     def test_readers_match(self):
@@ -64,16 +67,7 @@ class TestReadPhoenixNative(unittest.TestCase):
             "ch_firmware": 65567,
             "channel_id": 0,
             "channel_main_gain": 4.0,
-            "channel_map": {
-                0: "hx",
-                1: "hy",
-                2: "hz",
-                3: "ex",
-                4: "ey",
-                5: "h1",
-                6: "h2",
-                7: "h3",
-            },
+            "channel_map": {0: "h2", 1: "e1", 2: "h1", 3: "h3", 4: "e2"},
             "channel_type": "H",
             "data_footer": 0,
             "data_scaling": 1,
@@ -115,7 +109,7 @@ class TestReadPhoenixNative(unittest.TestCase):
             "npts_per_frame": 20,
             "preamp_gain": 1.0,
             "recording_id": 1619492349,
-            "recording_start_time": "2021-04-26T19:59:09+00:00",
+            "recording_start_time": "2021-04-26T19:58:51+00:00",
             "report_hw_sat": False,
             "sample_rate": 24000,
             "sample_rate_base": 24000,
@@ -152,36 +146,86 @@ class TestReadPhoenixNative(unittest.TestCase):
                 else:
                     self.assertEqual(original_value, new_value)
 
-    def test_to_channel_ts(self):
-        ch_ts = self.phx_obj.to_channel_ts()
 
-        with self.subTest("Channel metadata"):
-            ch_metadata = OrderedDict(
-                [
-                    ("channel_number", 0),
-                    ("component", "hx"),
-                    ("data_quality.rating.value", 0),
-                    ("filter.applied", [False]),
-                    ("filter.name", []),
-                    ("location.elevation", 0.0),
-                    ("location.latitude", 0.0),
-                    ("location.longitude", 0.0),
-                    ("measurement_azimuth", 0.0),
-                    ("measurement_tilt", 0.0),
-                    ("sample_rate", 24000.0),
-                    ("sensor.id", None),
-                    ("sensor.manufacturer", None),
-                    ("sensor.type", None),
-                    ("time_period.end", "2021-04-26T20:00:08.999958+00:00"),
-                    ("time_period.start", "2021-04-26T19:59:09+00:00"),
-                    ("type", "magnetic"),
-                    ("units", None),
-                ]
-            )
+@unittest.skipIf(
+    "peacock" not in str(Path(__file__).as_posix()),
+    "Only local files, cannot test in GitActions",
+)
+class TestReadPhoenixNativeToChannelTS(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.phx_obj = open_phoenix(
+            r"c:\Users\jpeacock\OneDrive - DOI\mt\phoenix_example_data\Sample Data\10128_2021-04-27-025909\0\10128_60877DFD_0_00000001.bin"
+        )
 
-            self.assertDictEqual(
-                ch_ts.channel_metadata.to_dict(single=True), ch_metadata
-            )
+        self.rxcal_fn = Path(__file__).parent.joinpath("example_rxcal.json")
+        self.maxDiff = None
 
-        with self.subTest("Channel Size"):
-            self.assertEqual(1440000, ch_ts.ts.size)
+        self.ch_ts = self.phx_obj.to_channel_ts(rxcal_fn=self.rxcal_fn)
+
+    def test_metadata(self):
+
+        ch_metadata = OrderedDict(
+            [
+                ("channel_number", 0),
+                ("component", "h2"),
+                ("data_quality.rating.value", 0),
+                ("filter.applied", [True, True]),
+                (
+                    "filter.name",
+                    ["mtu-5c_rmt03-j_666_h2_10000hz_lowpass", "v_to_mv"],
+                ),
+                ("location.elevation", 70.11294555664062),
+                ("location.latitude", 43.69640350341797),
+                ("location.longitude", -79.3936996459961),
+                ("measurement_azimuth", 90.0),
+                ("measurement_tilt", 0.0),
+                ("sample_rate", 24000.0),
+                ("sensor.id", "0"),
+                ("sensor.manufacturer", "Phoenix Geophysics"),
+                ("sensor.model", "MTC-150"),
+                ("sensor.type", "4"),
+                ("time_period.end", "2021-04-26T20:01:50.999958333+00:00"),
+                ("time_period.start", "2021-04-26T19:58:51+00:00"),
+                ("type", "magnetic"),
+                ("units", "volts"),
+            ]
+        )
+
+        for key, value in ch_metadata.items():
+            with self.subTest(key):
+                if isinstance(value, float):
+                    self.assertAlmostEqual(
+                        value,
+                        self.ch_ts.channel_metadata.get_attr_from_name(key),
+                        5,
+                    )
+
+                else:
+                    self.assertEqual(
+                        value,
+                        self.ch_ts.channel_metadata.get_attr_from_name(key),
+                    )
+
+    def test_channel_response_length(self):
+        self.assertEqual(
+            2, len(self.ch_ts.channel_response.filters_list)
+        )
+
+    def test_channel_response_frequency_shape(self):
+        self.assertEqual(
+            (69,),
+            self.ch_ts.channel_response.filters_list[
+                0
+            ].frequencies.shape,
+        )
+
+    def test_channel_size(self):
+        self.assertEqual(4320000, self.ch_ts.ts.size)
+
+
+# =============================================================================
+# run
+# =============================================================================
+if __name__ == "__main__":
+    unittest.main()

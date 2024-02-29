@@ -10,7 +10,7 @@ Created on Thu Mar 10 08:22:33 2022
 # =============================================================================
 import numpy as np
 import xarray as xr
-import h5py
+import pandas as pd
 
 from mth5.groups import BaseGroup, EstimateDataset
 from mth5.helpers import validate_name, from_numpy_type
@@ -25,6 +25,223 @@ from mt_metadata.transfer_functions.tf import (
 )
 
 # =============================================================================
+# Transfer Functions Group
+# =============================================================================
+class TransferFunctionsGroup(BaseGroup):
+    """
+    Object to hold transfer functions
+
+    The is the high level group, all transfer functions for the station are
+    held here and each one will have its own TransferFunctionGroup.
+
+    This has add, get, remove_transfer_function.
+    """
+
+    def __init__(self, group, **kwargs):
+        super().__init__(group, **kwargs)
+
+    def tf_summary(self, as_dataframe=True):
+        """
+        Summary of all transfer functions in this group
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        tf_list = []
+        for tf_id in self.groups_list:
+            tf_group = self.get_transfer_function(tf_id)
+            tf_entry = tf_group.tf_entry
+
+            tf_entry["station_hdf5_reference"][:] = self.hdf5_group.parent.ref
+            tf_entry["station"][:] = self.hdf5_group.parent.attrs["id"]
+            tf_entry["latitude"][:] = self.hdf5_group.parent.attrs[
+                "location.latitude"
+            ]
+            tf_entry["longitude"][:] = self.hdf5_group.parent.attrs[
+                "location.longitude"
+            ]
+            tf_entry["elevation"][:] = self.hdf5_group.parent.attrs[
+                "location.elevation"
+            ]
+
+            tf_list.append(tf_entry)
+        tf_list = np.array(tf_list)
+
+        if as_dataframe:
+            return pd.DataFrame(tf_list.flatten())
+        return tf_list
+
+    def _update_time_period_from_tf(self, tf_object):
+        """
+
+        :param tf_object: DESCRIPTION
+        :type tf_object: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if "1980" not in tf_object.station_metadata.time_period.start:
+            if "1980" in self.hdf5_group.parent.attrs["time_period.start"]:
+                self.hdf5_group.parent.attrs[
+                    "time_period.start"
+                ] = tf_object.station_metadata.time_period.start
+
+            elif (
+                self.hdf5_group.parent.attrs["time_period.start"]
+                != tf_object.station_metadata.time_period.start
+            ):
+                if (
+                    self.hdf5_group.parent.attrs["time_period.start"]
+                    > tf_object.station_metadata.time_period.start
+                ):
+                    self.hdf5_group.parent.attrs[
+                        "time_period.start"
+                    ] = tf_object.station_metadata.time_period.start
+
+        if "1980" not in tf_object.station_metadata.time_period.end:
+            if "1980" in self.hdf5_group.parent.attrs["time_period.end"]:
+                self.hdf5_group.parent.attrs[
+                    "time_period.end"
+                ] = tf_object.station_metadata.time_period.end
+
+            elif (
+                self.hdf5_group.parent.attrs["time_period.end"]
+                != tf_object.station_metadata.time_period.end
+            ):
+                if (
+                    self.hdf5_group.parent.attrs["time_period.end"]
+                    > tf_object.station_metadata.time_period.end
+                ):
+                    self.hdf5_group.parent.attrs[
+                        "time_period.end"
+                    ] = tf_object.station_metadata.time_period.end
+
+    def add_transfer_function(self, name, tf_object=None):
+        """
+        Add a transfer function to the group
+
+        :param name: name of the transfer function
+        :type name: string
+        :param tf_object: Transfer Function object
+        :type tf_object: :class:`mt_metadata.transfer_function.core.TF`
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        >>> from mth5.mth5 import MTH5
+        >>> m = MTH5()
+        >>> m.open_mth5("example.h5", "a")
+        >>> station_group = m.get_station("mt01", survey="test")
+        >>> tf_group = station_group.transfer_functions_group
+        >>> tf_group.add_transfer_function("mt01_4096", tf_object)
+
+
+        """
+        name = validate_name(name)
+
+        tf_group = TransferFunctionGroup(
+            self.hdf5_group.create_group(name), **self.dataset_options
+        )
+
+        if tf_object is not None:
+            tf_group.from_tf_object(tf_object)
+            self._update_time_period_from_tf(tf_object)
+
+        return tf_group
+
+    def get_transfer_function(self, tf_id):
+        """
+        Get transfer function from id
+
+        :param tf_id: name of transfer function
+        :type tf_id: string
+        :return: Transfer function group
+        :rtype: :class:`mth5.groups.TransferFunctionGroup`
+
+        >>> from mth5.mth5 import MTH5
+        >>> m = MTH5()
+        >>> m.open_mth5("example.h5", "a")
+        >>> station_group = m.get_station("mt01", survey="test")
+        >>> tf_group = station_group.transfer_functions_group.get_transfer_function("mt01_4096")
+
+
+        """
+
+        tf_id = validate_name(tf_id)
+        try:
+            return TransferFunctionGroup(
+                self.hdf5_group[tf_id], **self.dataset_options
+            )
+        except KeyError:
+            msg = (
+                f"{tf_id} does not exist, "
+                + "check station_list for existing names"
+            )
+            self.logger.debug("Error" + msg)
+            raise MTH5Error(msg)
+
+    def remove_transfer_function(self, tf_id):
+        """
+        Remove a transfer function from the group
+
+        :param tf_id: DESCRIPTION
+        :type tf_id: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        >>> from mth5.mth5 import MTH5
+        >>> m = MTH5()
+        >>> m.open_mth5("example.h5", "a")
+        >>> station_group = m.get_station("mt01", survey="test")
+        >>> tf_group = station_group.transfer_functions_group
+        >>> tf_group.remove_transfer_function("mt01_4096")
+
+        """
+
+        tf_id = validate_name(tf_id)
+        try:
+            del self.hdf5_group[tf_id]
+            self.logger.info(
+                "Deleting a station does not reduce the HDF5"
+                "file size it simply remove the reference. If "
+                "file size reduction is your goal, simply copy"
+                " what you want into another file."
+            )
+        except KeyError:
+            msg = (
+                f"{tf_id} does not exist, "
+                "check station_list for existing names"
+            )
+            self.logger.debug("Error" + msg)
+            raise MTH5Error(msg)
+
+    def get_tf_object(self, tf_id):
+        """
+        This is the function you want to use to get a proper
+        :class:`mt_metadata.transfer_functions.core.TF` object with all the
+        appropriate metadata.
+
+
+        :param tf_id: name of the transfer function to get
+        :type tf_id: string
+        :return: Full transfer function with appropriate metadata
+        :rtype: :class:`mt_metadata.transfer_functions.core.TF`
+
+        >>> from mth5.mth5 import MTH5
+        >>> m = MTH5()
+        >>> m.open_mth5("example.h5", "a")
+        >>> station_group = m.get_station("mt01", survey="test")
+        >>> tf_group = station_group.transfer_functions_group
+        >>> tf_object = tf_group.get_tf_object("mt01_4096")
+
+
+        """
+
+        tf_group = self.get_transfer_function(tf_id)
+
+        return tf_group.to_tf_object()
 
 
 class TransferFunctionGroup(BaseGroup):
@@ -214,15 +431,13 @@ class TransferFunctionGroup(BaseGroup):
             return EstimateDataset(
                 estimate_dataset, dataset_metadata=estimate_metadata
             )
-
         except (KeyError):
             msg = (
                 f"{estimate_name} does not exist, "
-                + "check groups_list for existing names"
+                "check groups_list for existing names"
             )
             self.logger.error(msg)
             raise MTH5Error(msg)
-
         except (OSError) as error:
             self.logger.error(error)
             raise MTH5Error(error)
@@ -244,9 +459,9 @@ class TransferFunctionGroup(BaseGroup):
             del self.hdf5_group[estimate_name]
             self.logger.info(
                 "Deleting a estimate does not reduce the HDF5"
-                + "file size it simply remove the reference. If "
-                + "file size reduction is your goal, simply copy"
-                + " what you want into another file."
+                "file size it simply remove the reference. If "
+                "file size reduction is your goal, simply copy"
+                " what you want into another file."
             )
         except KeyError:
             msg = (
@@ -318,7 +533,9 @@ class TransferFunctionGroup(BaseGroup):
         if self.period is not None:
             tf_obj.period = self.period
         else:
-            msg = "Period must not be None to create a transfer function object"
+            msg = (
+                "Period must not be None to create a transfer function object"
+            )
             self.logger.error(msg)
             raise ValueError(msg)
         for estimate_name in self.groups_list:
@@ -330,6 +547,10 @@ class TransferFunctionGroup(BaseGroup):
                 setattr(tf_obj, estimate_name, estimate.to_numpy())
             except AttributeError as error:
                 self.logger.exception(error)
+
+        # need to update time periods
+        tf_obj.station_metadata.update_time_period()
+        tf_obj.survey_metadata.update_time_period()
         return tf_obj
 
     def from_tf_object(self, tf_obj):
@@ -345,9 +566,9 @@ class TransferFunctionGroup(BaseGroup):
         """
 
         if not isinstance(tf_obj, TF):
-            msg = "Input must be a TF object not %s"
-            self.logger.error(msg, type(tf_obj))
-            raise ValueError(msg % type(tf_obj))
+            msg = f"Input must be a TF object not {type(tf_obj)}"
+            self.logger.error(msg)
+            raise ValueError(msg)
         self.period = tf_obj.period
         self.metadata.update(tf_obj.station_metadata.transfer_function)
         self.write_metadata()
