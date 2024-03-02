@@ -45,6 +45,7 @@ jobs:
 
     - name: Install Jupyter and dependencies
       run: |
+        source activate mth5-test
         pip install jupyter
         pip install ipykernel
         python -m ipykernel install --user --name mth5-test
