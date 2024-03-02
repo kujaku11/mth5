@@ -10,4 +10,5 @@ recursive-exclude * *.py[co]
 
 recursive-include docs *.rst conf.py Makefile make.bat *.jpg *.png *.gif
 recursive-include mth5/utils/*.yaml
+recursive-include mth5/data/*.asc
 recursive-include docs/examples/notebooks/*.TXT
