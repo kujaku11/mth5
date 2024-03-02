@@ -52,6 +52,7 @@ jobs:
 
     - name: Execute Jupyter Notebooks
       run: |
+        source activate mth5-test
         jupyter nbconvert --to notebook --execute docs/examples/notebooks/make_mth5_driver_v0.2.0.ipynb
 
 
