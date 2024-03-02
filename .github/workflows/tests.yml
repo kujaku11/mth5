@@ -35,7 +35,7 @@ jobs:
         conda install pytest-cov
         conda install pytest-subtests
         pip install git+https://github.com/kujaku11/mt_metadata.git
-        
+
     - name: Install Our Package
       shell: bash
       run: |
@@ -43,12 +43,24 @@ jobs:
         pip install -e .
         conda list
 
+    - name: Install Jupyter and dependencies
+      run: |
+        pip install jupyter
+        pip install ipykernel
+        python -m ipykernel install --user --name mth5-test
+        # Install any other dependencies you need
+
+    - name: Execute Jupyter Notebooks
+      run: |
+        jupyter nbconvert --to notebook --execute docs/examples/notebooks/make_mth5_driver_v0.2.0.ipynb
+
+
     - name: Run Tests
       shell: bash
       run: |
         source activate mth5-test
         pytest -rA --cov=./ --cov-report=xml --cov=mth5
-        
+
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v3
       with:
