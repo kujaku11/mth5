@@ -48,6 +48,7 @@ jobs:
         source activate mth5-test
         pip install jupyter
         pip install ipykernel
+        pip install ipympl
         python -m ipykernel install --user --name mth5-test
         # Install any other dependencies you need
 
