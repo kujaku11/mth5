@@ -49,8 +49,10 @@ jobs:
         source activate mth5-test
         pytest -rA --cov=./ --cov-report=xml --cov=mth5
 
-    - name: "Upload coverage to Codecov"
-      uses: codecov/codecov-action@v3
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4-beta
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       with:
         flags: tests
         fail_ci_if_error: true
