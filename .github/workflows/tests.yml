@@ -50,7 +50,7 @@ jobs:
         pytest -rA --cov=./ --cov-report=xml --cov=mth5
 
     - name: "Upload coverage to Codecov"
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v3
       with:
         flags: tests
         fail_ci_if_error: true
