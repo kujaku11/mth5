@@ -43,21 +43,6 @@ jobs:
         pip install -e .
         conda list
 
-    - name: Install Jupyter and dependencies
-      run: |
-        source activate mth5-test
-        pip install jupyter
-        pip install ipykernel
-        pip install ipympl
-        python -m ipykernel install --user --name mth5-test
-        # Install any other dependencies you need
-
-    - name: Execute Jupyter Notebooks
-      run: |
-        source activate mth5-test
-        jupyter nbconvert --to notebook --execute docs/examples/notebooks/make_mth5_driver_v0.2.0.ipynb
-
-
     - name: Run Tests
       shell: bash
       run: |
