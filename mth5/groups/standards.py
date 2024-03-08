@@ -2,7 +2,7 @@
 """
 Created on Wed Dec 23 17:05:33 2020
 
-:copyright: 
+:copyright:
     Jared Peacock (jpeacock@usgs.gov)
 
 :license: MIT

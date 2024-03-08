@@ -18,9 +18,9 @@ jobs:
         python-version: ["3.8", "3.9", "3.10", "3.11"]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Setup Conda
-      uses: s-weigand/setup-conda@v1
+      uses: s-weigand/setup-conda@v1.2.1
       with:
         update-conda: false
         python-version: ${{ matrix.python-version }}
@@ -35,7 +35,7 @@ jobs:
         conda install pytest-cov
         conda install pytest-subtests
         pip install git+https://github.com/kujaku11/mt_metadata.git
-        
+
     - name: Install Our Package
       shell: bash
       run: |
@@ -48,10 +48,13 @@ jobs:
       run: |
         source activate mth5-test
         pytest -rA --cov=./ --cov-report=xml --cov=mth5
-        
-    - name: "Upload coverage to Codecov"
-      uses: codecov/codecov-action@v3
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
       with:
         flags: tests
         fail_ci_if_error: true
         verbose: true
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      
