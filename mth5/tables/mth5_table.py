@@ -11,7 +11,6 @@ Created on Wed Dec 23 16:53:55 2020
 # Imports
 # =============================================================================
 import weakref
-import copy
 
 import h5py
 import numpy as np
