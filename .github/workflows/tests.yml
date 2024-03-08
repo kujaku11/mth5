@@ -50,10 +50,11 @@ jobs:
         pytest -rA --cov=./ --cov-report=xml --cov=mth5
 
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3.15
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      uses: codecov/codecov-action@v4
       with:
         flags: tests
         fail_ci_if_error: true
         verbose: true
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      
