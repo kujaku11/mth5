@@ -34,6 +34,7 @@ from mth5 import helpers
 from mth5 import (
     CHANNEL_DTYPE,
     TF_DTYPE,
+    ACCEPTABLE_FILE_EXTENSIONS,
     ACCEPTABLE_FILE_TYPES,
     ACCEPTABLE_FILE_VERSIONS,
     ACCEPTABLE_DATA_LEVELS,
@@ -334,7 +335,7 @@ class MTH5:
         if value is not None:
             if not isinstance(value, Path):
                 value = Path(value)
-            if value.suffix not in ACCEPTABLE_FILE_TYPES:
+            if value.suffix not in ACCEPTABLE_FILE_EXTENSIONS:
                 msg = (
                     f"file extension {value.suffix} is not correct. "
                     "Changing to default .h5"
