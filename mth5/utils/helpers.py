@@ -71,6 +71,10 @@ def get_channel_summary(m, show=True):
     """
     logger.info(f"{m.filename} channel summary")
     df = m.channel_summary.to_dataframe()
+    if len(df) <= 1:
+        logger.warning("channel summary smaller than expected -- re-summarizing")
+        m.channel_summary.summarize()
+        df = m.channel_summary.to_dataframe()
     if show:
         logger.info(f"{df}")
     return df
