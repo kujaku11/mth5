@@ -37,6 +37,7 @@ class TestNIMSResponse(unittest.TestCase):
                     ("type", "zpk"),
                     ("units_in", "V"),
                     ("units_out", "V"),
+                    ("user_applied", False),
                     ("zeros", np.array([0.0 + 0.0j])),
                 ]
             )
@@ -55,6 +56,7 @@ class TestNIMSResponse(unittest.TestCase):
                     ("type", "zpk"),
                     ("units_in", "V"),
                     ("units_out", "V"),
+                    ("user_applied", False),
                     ("zeros", np.array([0.0 + 0.0j])),
                 ]
             )
@@ -71,6 +73,7 @@ class TestNIMSResponse(unittest.TestCase):
                 ("type", "coefficient"),
                 ("units_in", "V/m"),
                 ("units_out", "V"),
+                ("user_applied", False),
             ]
         )
 
