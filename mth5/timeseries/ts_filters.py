@@ -236,6 +236,7 @@ class RemoveInstrumentResponse:
         self.subplot_dict = {}
         self.include_decimation = False
         self.include_delay = False
+        self.include_user_applied = False
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -510,6 +511,7 @@ class RemoveInstrumentResponse:
                                    operation="divide",
                                    include_decimation=None,
                                    include_delay=None,
+                                   include_user_applied=None,
                                    filters_to_remove=[]):
         """
         Remove instrument response following the recipe provided
@@ -526,8 +528,13 @@ class RemoveInstrumentResponse:
                 include_decimation = self.include_decimation
             if include_delay is None:
                 include_delay = self.include_delay
+            if include_user_applied is None:
+                include_user_applied = self.include_user_applied
             filters_to_remove = self.channel_response.get_list_of_filters_to_remove(
-                include_decimation=include_decimation, include_delay=include_delay)
+                include_decimation=include_decimation,
+                include_delay=include_delay,
+                include_user_applied=include_user_applied
+            )
             if filters_to_remove is []:
                 raise ValueError("There are no filters in channel_response to remove")
 
