@@ -440,7 +440,7 @@ class FCDecimationGroup(BaseGroup):
                         fc_data=data_array[ch].to_numpy().T,
                         fc_metadata=ch_metadata,
                     )
-        return 
+        return
 
     def to_xarray(self, channels=None):
         """
@@ -558,9 +558,25 @@ class FCDecimationGroup(BaseGroup):
                 maxshape=max_shape,
                 **self.dataset_options,
             )
-
             fc_dataset = FCChannelDataset(dataset, dataset_metadata=fc_metadata)
-        except (OSError, RuntimeError, ValueError) as error:
+        except OSError as error:
+            try:
+                self.remove_channel(fc_name)
+            except MTH5Error:
+                del self.hdf5_group[fc_name]
+            except KeyError:
+                self.logger.warning("not sure if the h5 dataset was created/deleted ")
+            
+            dataset = self.hdf5_group.create_dataset(
+                fc_name,
+                data=fc_data,
+                dtype=float,
+                chunks=chunks,
+                maxshape=max_shape,
+                **self.dataset_options,
+            )
+            fc_dataset = FCChannelDataset(dataset, dataset_metadata=fc_metadata)
+        except (RuntimeError, ValueError) as error:
             self.logger.error(error)
             msg = f"estimate {fc_metadata.component} already exists, returning existing group."
             self.logger.debug(msg)
