@@ -433,12 +433,14 @@ class FCDecimationGroup(BaseGroup):
                         ch,
                         fc_data=data_array[ch].to_numpy(),
                         fc_metadata=ch_metadata,
+                        dtype=data_array[ch].dtype,
                     )
                 elif data_array[ch].time.size == data_array[ch].shape[1]:
                     self.add_channel(
                         ch,
                         fc_data=data_array[ch].to_numpy().T,
                         fc_metadata=ch_metadata,
+                        dtype=data_array[ch].dtype,
                     )
         return
 
