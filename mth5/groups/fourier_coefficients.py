@@ -494,7 +494,7 @@ class FCDecimationGroup(BaseGroup):
         fc_metadata=None,
         max_shape=(None, None),
         chunks=True,
-        dtype=complex
+        dtype=complex,
         **kwargs,
     ):
         """
