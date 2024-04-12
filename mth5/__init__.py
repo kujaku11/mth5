@@ -17,7 +17,7 @@ import mth5.timeseries.scipy_filters
 
 __author__ = """Jared Peacock"""
 __email__ = "jpeacock@usgs.gov"
-__version__ = "0.4.2"
+__version__ = "0.4.3"
 
 
 # =============================================================================
@@ -46,6 +46,7 @@ xr.set_options(keep_attrs=True)
 # =============================================================================
 CHUNK_SIZE = 8196
 ACCEPTABLE_FILE_TYPES = ["mth5", "MTH5", "h5", "H5"]
+ACCEPTABLE_FILE_SUFFIXES = [f".{x}" for x in ACCEPTABLE_FILE_TYPES]
 ACCEPTABLE_FILE_VERSIONS = ["0.1.0", "0.2.0"]
 ACCEPTABLE_DATA_LEVELS = [0, 1, 2, 3]
 

@@ -118,12 +118,19 @@ class PhoenixCollection(Collection):
         for folder in station_folders:
             rec_fn = folder.joinpath(self._receiver_metadata_name)
             receiver_metadata = self._read_receiver_metadata_json(rec_fn)
-            self.metadata_dict[
-                receiver_metadata.station_metadata.id
-            ] = receiver_metadata
+            self.metadata_dict[receiver_metadata.station_metadata.id] = (
+                receiver_metadata
+            )
 
             for sr in sample_rates:
-                for fn in folder.rglob(f"*{self._file_extension_map[int(sr)]}"):
+                for fn in folder.rglob(
+                    f"*{self._file_extension_map[int(sr)]}"
+                ):
+                    if "calibration" in fn.as_posix().lower():
+                        self.logger.debug(
+                            f"skipping calibration time series {fn}"
+                        )
+                        continue
                     try:
                         phx_obj = open_phoenix(fn)
                     except OSError:
@@ -204,7 +211,9 @@ class PhoenixCollection(Collection):
                     starts = np.sort(
                         sdf.loc[sdf.sample_rate == sr].start.unique()
                     )
-                    ends = np.sort(sdf.loc[sdf.sample_rate == sr].end.unique())
+                    ends = np.sort(
+                        sdf.loc[sdf.sample_rate == sr].end.unique()
+                    )
 
                     # find any breaks in the data
                     diff = ends[0:-1] - starts[1:]
@@ -229,7 +238,8 @@ class PhoenixCollection(Collection):
 
                     else:
                         rdf.loc[
-                            (rdf.station == station) & (rdf.sample_rate == sr),
+                            (rdf.station == station)
+                            & (rdf.sample_rate == sr),
                             "run",
                         ] = f"sr{run_stem}_{count:0{zeros}}"
 

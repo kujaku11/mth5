@@ -433,14 +433,16 @@ class FCDecimationGroup(BaseGroup):
                         ch,
                         fc_data=data_array[ch].to_numpy(),
                         fc_metadata=ch_metadata,
+                        dtype=data_array[ch].dtype,
                     )
                 elif data_array[ch].time.size == data_array[ch].shape[1]:
                     self.add_channel(
                         ch,
                         fc_data=data_array[ch].to_numpy().T,
                         fc_metadata=ch_metadata,
+                        dtype=data_array[ch].dtype,
                     )
-        return 
+        return
 
     def to_xarray(self, channels=None):
         """
@@ -494,6 +496,7 @@ class FCDecimationGroup(BaseGroup):
         fc_metadata=None,
         max_shape=(None, None),
         chunks=True,
+        dtype=complex,
         **kwargs,
     ):
         """
@@ -548,12 +551,12 @@ class FCDecimationGroup(BaseGroup):
                 raise TypeError(msg)
         else:
             chunks = True
-            fc_data = np.zeros((1, 1), dtype=complex)
+            fc_data = np.zeros((1, 1), dtype=dtype)
         try:
             dataset = self.hdf5_group.create_dataset(
                 fc_name,
                 data=fc_data,
-                dtype=complex,
+                dtype=dtype,
                 chunks=chunks,
                 maxshape=max_shape,
                 **self.dataset_options,
