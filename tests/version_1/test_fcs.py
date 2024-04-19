@@ -9,9 +9,11 @@ Created on Sat May 27 13:59:26 2023
 # Imports
 # =============================================================================
 from pathlib import Path
-import unittest
-import pandas as pd
 import numpy as np
+import pandas as pd
+# import pytest
+import unittest
+import xarray as xr
 
 from mth5.mth5 import MTH5
 
@@ -20,7 +22,48 @@ from mt_metadata.utils.mttime import MTime
 # =============================================================================
 fn_path = Path(__file__).parent
 csv_fn = fn_path.joinpath("test1_dec_level_3.csv")
+h5_filename = fn_path.joinpath("fc_test.h5")
 
+
+#@pytest.fixture
+def create_mth5_with_some_test_data():
+    m = MTH5()
+    m.file_version = "0.1.0"
+    m.open_mth5(h5_filename)
+    station_group = m.add_station("mt01")
+    fc_group = (
+        station_group.fourier_coefficients_group.add_fc_group(
+            "processing_run_01"
+        )
+    )
+
+    decimation_level = fc_group.add_decimation_level("3")
+    ds = read_fc_csv(csv_fn)
+    expected_sr_decimation_level = 0.015380859375
+    decimation_level.from_xarray(ds, expected_sr_decimation_level)
+    decimation_level.update_metadata()
+    fc_group.update_metadata()
+    m.close_mth5()
+
+
+def create_xarray_test_dataset_with_various_dtypes():
+    t0 = pd.Timestamp("now")
+    t1 = t0 + pd.Timedelta(seconds=1)
+    t2 = t1 + pd.Timedelta(seconds=1)
+
+    j = np.complex128(0 + 1j)
+    d = {
+
+        "time": {"dims": ("time"), "data": [t0, t1, t2]},
+        "bools": {"dims": ("time"), "data": [True, True, False]},
+        "ints": {"dims": ("time"), "data": [10, 20, 30]},
+        "floats": {"dims": ("time"), "data": [10., 20., 30.]},
+        "complexs": {"dims": ("time"), "data": [j * 10., j * 20., j * 30.]},
+    }
+    xrds = xr.Dataset.from_dict(d)
+    freq = np.array([0.667])
+    xrds = xrds.expand_dims({"frequency": freq})
+    return xrds
 
 def read_fc_csv(csv_name):
     """
@@ -45,27 +88,23 @@ def read_fc_csv(csv_name):
 
 
 class TestFCFromXarray(unittest.TestCase):
+
     @classmethod
     def setUpClass(self):
-        self.h5_filename = fn_path.joinpath("fc_test.h5")
-        self.m = MTH5()
-        self.m.file_version = "0.1.0"
-        self.m.open_mth5(self.h5_filename)
-        self.station_group = self.m.add_station("mt01")
-        self.fc_group = (
-            self.station_group.fourier_coefficients_group.add_fc_group(
-                "processing_run_01"
-            )
-        )
+        """
+        This should only build the file and then close it.
+        Don't want to bake in self.station_group, self.dec_level etc. here,
+        because if close and reopen the file these are not valid anymore.
 
+        Returns
+        -------
 
-        self.decimation_level = self.fc_group.add_decimation_level("3")
+        """
+        create_mth5_with_some_test_data()
+
+        # Expected properties of the test dataset stored as csv
         self.ds = read_fc_csv(csv_fn)
         self.expected_sr_decimation_level = 0.015380859375
-        self.decimation_level.from_xarray(self.ds, self.expected_sr_decimation_level)
-        self.decimation_level.update_metadata()
-        self.fc_group.update_metadata()
-
         self.expected_start = MTime(self.ds.time[0].values)
         self.expected_end = MTime(self.ds.time[-1].values)
         self.expected_window_step = 6144
@@ -151,6 +190,22 @@ class TestFCFromXarray(unittest.TestCase):
             ]
         )
 
+    def setUp(self) -> None:
+        self.h5_filename = h5_filename# fn_path.joinpath("fc_test.h5")
+        self.m = MTH5()
+        self.m.file_version = "0.1.0"
+        self.m.open_mth5(self.h5_filename)
+        self.station_group = self.m.get_station("mt01")
+        self.fc_group = (
+            self.station_group.fourier_coefficients_group.add_fc_group(
+                "processing_run_01"
+            )
+        )
+        self.decimation_level = self.fc_group.get_decimation_level("3")
+
+    def tearDown(self) -> None:
+        self.m.close_mth5()
+        
     def test_channel_exists(self):
         self.assertListEqual(
             list(self.ds.data_vars.keys()),
@@ -194,7 +249,6 @@ class TestFCFromXarray(unittest.TestCase):
             with self.subTest("metadata and table sample rates agree"):
                 df = self.decimation_level.channel_summary
                 assert (df.sample_rate_decimation_level.iloc[0] == self.expected_sr_decimation_level)
-                
 
     def test_to_xarray(self):
         da = self.decimation_level.to_xarray()
@@ -252,10 +306,55 @@ class TestFCFromXarray(unittest.TestCase):
         with self.subTest("get_decimation_level.metadata.window.type"):
             self.assertEqual(tmp.metadata.window.type, window_type)
 
+    def test_from_xarray_dtypes(self):
+        """
+        Intialize a dummy h5 and create an FC level
+        - in that fc level we will create a container (say "features")
+        - within that level we will store channels
+            - bool_channel
+            - int
+            - float_ch
+            - complex_channel
+        - Then update metadata/close file
+        - Then open file and check that dtypes are expected
+        Returns
+        -------
+
+        """
+        dec_level_name = "ringo"
+        fc_metadata = self.decimation_level.metadata.copy()
+        fc_metadata.id = dec_level_name
+        fc_decimation_level = self.fc_group.add_decimation_level(dec_level_name, decimation_level_metadata=fc_metadata)
+        xrds = create_xarray_test_dataset_with_various_dtypes()
+
+        fc_decimation_level.from_xarray(xrds, fc_metadata.sample_rate)
+        fc_decimation_level.update_metadata()
+        self.fc_group.update_metadata()
+        self.m.close_mth5()
+        self.setUp()
+        # self.m.open_mth5(self.h5_filename)
+        # station_group = self.m.get_station("mt01")
+        # fc_group = station_group.fourier_coefficients_group.get_fc_group(
+        #     "processing_run_01"
+        #     )
+        #
+        # decimation_level = fc_group.get_decimation_level("3")
+        reopened_dec_level = self.fc_group.get_decimation_level(dec_level_name)
+        xrds2 = reopened_dec_level.to_xarray()
+        assert xrds2.bools.dtype == bool
+        assert xrds2.ints.dtype == int
+        assert xrds2.floats.dtype == np.float64
+        assert xrds2.complexs.dtype == np.complex128
+
+
+        print(type(self.fc_group))
+        assert True #TODO
+        pass
+
     @classmethod
     def tearDownClass(self):
-        self.m.close_mth5()
-        self.m.filename.unlink()
+        # self.m.close_mth5()
+        h5_filename.unlink()
 
 
 # =============================================================================

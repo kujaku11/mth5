@@ -23,15 +23,17 @@ class PhoenixClient:
     def __init__(
         self,
         data_path,
-        sample_rates=[130, 24000],
+        sample_rates=[150, 24000],
         save_path=None,
-        calibration_path=None,
+        receiver_calibration_dict={},
+        sensor_calibration_dict={},
     ):
         self.data_path = data_path
         self.sample_rates = sample_rates
         self.save_path = save_path
         self.mth5_filename = "from_phoenix.h5"
-        self.calibration_path = calibration_path
+        self.receiver_calibration_dict = receiver_calibration_dict
+        self.sensor_calibration_dict = sensor_calibration_dict
 
         self.collection = PhoenixCollection(self.data_path)
 
@@ -62,12 +64,38 @@ class PhoenixClient:
             raise ValueError("data_path cannot be None")
 
     @property
-    def calibration_path(self):
-        """Path to calibration data"""
-        return self._calibration_path
+    def receiver_calibration_dict(self):
+        """receiver calibrations"""
+        return self._receiver_calibration_dict
 
-    @calibration_path.setter
-    def calibration_path(self, value):
+    @receiver_calibration_dict.setter
+    def receiver_calibration_dict(self, value):
+        if isinstance(value, dict):
+            self._receiver_calibration_dict = value
+
+        elif isinstance(value, (str, Path)):
+            receiver_path = Path(value)
+            if receiver_path.is_dir():
+                self._receiver_calibration_dict = {}
+                for fn in receiver_path.glob("*.rx_cal.json"):
+                    self._receiver_calibration_dict[fn.stem.split("_")[0]] = (
+                        fn
+                    )
+            elif receiver_path.is_file():
+                self._receiver_calibration_dict = {}
+                self._receiver_calibration_dict[fn.stem.split("_")[0]] = (
+                    receiver_path
+                )
+        else:
+            raise TypeError(f"type {type(value)} not supported.")
+
+    @property
+    def sensor_calibration_dict(self):
+        """Path to calibration data"""
+        return self._sensor_calibration_dict
+
+    @sensor_calibration_dict.setter
+    def sensor_calibration_dict(self, value):
         """
 
         :param value: DESCRIPTION
@@ -77,7 +105,14 @@ class PhoenixClient:
 
         """
 
-        if value is not None:
+        if isinstance(value, dict):
+            self._sensor_calibration_dict = value
+        elif isinstance(value, (str, Path)):
+            self._sensor_calibration_dict = {}
+            cal_path = Path(value)
+            if cal_path.is_dir():
+                for fn in cal_path.glob("*scal.json"):
+                    self._sensor_calibration_dict[fn.stem.split("_")[0]]
             self._calibration_path = Path(value)
             if not self._calibration_path.exists():
                 raise IOError(f"Could not find {self._calibration_path}")
