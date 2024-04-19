@@ -1622,6 +1622,26 @@ class ChannelTS:
             plot_frequency, power = self.welch_spectra(
                 window_length=window_length, **kwargs
             )
+        # fig = plt.figure()
+        # ax = fig.add_subplot(1, 1, 1)
+        # ax.loglog(1.0 / plot_frequency, power, lw=1.5)
+        # ax.set_xlabel("Period (s)", fontdict={"size": 10, "weight": "bold"})
+        # ax.set_ylabel("Power (dB)", fontdict={"size": 10, "weight": "bold"})
+        # ax.axis("tight")
+        # ax.grid(which="both")
+        
+        # # Flip the x-axis
+        # ax.set_xlim(ax.get_xlim()[::-1])
+        
+        # ax2 = ax.twiny()
+        # ax2.loglog(plot_frequency, power, lw=0)
+        # ax2.set_xlabel("Frequency (Hz)", fontdict={"size": 10, "weight": "bold"})
+        
+        # # Flip the x-axis for the twin axis
+        # ax2.set_xlim(ax.get_xlim()[::-1])
+        
+        # plt.show()
+    
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
         ax.loglog(1.0 / plot_frequency, power, lw=1.5)
@@ -1629,10 +1649,18 @@ class ChannelTS:
         ax.set_ylabel("Power (dB)", fontdict={"size": 10, "weight": "bold"})
         ax.axis("tight")
         ax.grid(which="both")
+        
+        # Flip the x-axis
+        ax.set_xlim(ax.get_xlim()[::-1])
+        
         ax2 = ax.twiny()
         ax2.loglog(plot_frequency, power, lw=0)
-        ax2.set_xlabel(
-            "Frequency (Hz)", fontdict={"size": 10, "weight": "bold"}
-        )
-        ax2.set_xlim([1 / cc for cc in ax.get_xlim()])
+        ax2.set_xlabel("Frequency (Hz)", fontdict={"size": 10, "weight": "bold"})
+        
+        # Flip the x-axis for the twin axis
+        ax2.set_xlim(ax2.get_xlim()[::-1])
+        
         plt.show()
+
+
+

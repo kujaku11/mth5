@@ -1294,7 +1294,29 @@ class RunTS:
         :type **kwargs: dictionary
 
         """
-
+        if self.channels == ['e1', 'e2', 'h1', 'h2', 'h3']:
+            color_map = {
+            "e1": (0.8, 0.4, 0.4),  # Light red
+            "e2": (0.9, 0.6, 0.2),  # Orange
+            "h1": (0.2, 0.4, 0.8),  # Light blue
+            "h2": (0.2, 0.3, 0.6),  # Dark blue
+            "h3": (0.1, 0.2, 0.4),  # Very dark blue
+        }
+        #     color_map = {
+        #     "e1": (1, 0.2, 0.2),
+        #     "e2": (1, 0.5, 0),
+        #     "h1": (0, 0.5, 1),
+        #     "h2": (0.5, 0.2, 1),
+        #     "h3": (0.2, 1, 1),
+        # }
+        if self.channels == ['e1', 'e2', 'h1', 'h2']:
+            color_map = {
+            "e1": (0.8, 0.4, 0.4),  # Light red
+            "e2": (0.9, 0.6, 0.2),  # Orange
+            "h1": (0.2, 0.4, 0.8),  # Light blue
+            "h2": (0.2, 0.3, 0.6),  # Dark blue
+        }
+        
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
         line_list = []
@@ -1311,6 +1333,10 @@ class RunTS:
         ax.set_ylabel("Power (dB)", fontdict={"size": 10, "weight": "bold"})
         ax.axis("tight")
         ax.grid(which="both")
+        # ax.title(f"Specta of site {station_name} from {start} to {end}" ) # i added this 4/19/24
+
+        # Flip the x-axis
+        ax.set_xlim(ax.get_xlim()[::-1])
 
         ax2 = ax.twiny()
         ax2.loglog(plot_freq, power, lw=0)
@@ -1318,6 +1344,9 @@ class RunTS:
             "Frequency (Hz)", fontdict={"size": 10, "weight": "bold"}
         )
         ax2.set_xlim([1 / cc for cc in ax.get_xlim()])
+
+        # # Flip the x-axis for the twin axis
+        # ax2.set_xlim(ax2.get_xlim()[::-1])
 
         ax.legend(line_list, label_list)
 

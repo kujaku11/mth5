@@ -213,7 +213,7 @@ def frequency_filter(
         apply_kwargs = {}
     dim = get_maybe_only_dim(darray, dim)
 
-    f_crit_norm = np.asarray(f_crit, dtype=np.float)
+    f_crit_norm = np.asarray(f_crit, dtype=float)
     if not in_nyq:  # normalize by Nyquist frequency
         f_crit_norm *= 2 * get_sampling_step(darray, dim)
     if np.any(
