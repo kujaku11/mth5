@@ -508,18 +508,11 @@ class FDSN:
             # First for loop builds out networks and stations
             if row.network not in networks.keys():
                 networks[row.network] = {}
-                net_inv = client.get_stations(
-                    row.start, row.end, network=row.network, level="network"
-                )
+                net_inv = _fdsn_client_get_inventory(client, row, response_level="network")
                 networks[row.network][row.start] = net_inv.networks[0]
             elif networks.get(row.network) is not None:
                 if row.start not in networks[row.network].keys():
-                    net_inv = client.get_stations(
-                        row.start,
-                        row.end,
-                        network=row.network,
-                        level="network",
-                    )
+                    net_inv = _fdsn_client_get_inventory(client, row, response_level="network")
                     networks[row.network][row.start] = net_inv.networks[0]
             else:
                 continue
@@ -788,7 +781,7 @@ def _fdsn_client_get_inventory(client, row, response_level, max_tries=10):
         obspy helper to get data from FDSN (e.g. EarthScope)
     row: pandas.core.frame.Pandas
         A row of a dataframe specifying the start and end times, station and network
-    response_level: ["station", "response"]
+    response_level: ["network", "station", "response"]
 
     Returns
     -------
@@ -816,7 +809,7 @@ def _fdsn_client_get_inventory(client, row, response_level, max_tries=10):
                 )
                 i_try += max_tries
             except BadGzipFile:
-                msg = f"Failed to get Station {ch_row.network}-{ch_row.station} inventory try {i_try} of {max_tries}"
+                msg = f"Failed to get Station {row.network}-{row.station} inventory try {i_try} of {max_tries}"
                 logger.warning(msg)
                 sleep_random_time()
                 i_try += 1
@@ -835,10 +828,25 @@ def _fdsn_client_get_inventory(client, row, response_level, max_tries=10):
                 )
                 i_try += max_tries
             except BadGzipFile:
-                msg = f"Failed to get Channel {ch_row.network}-{ch_row.station}-{ch_row.channel} inventory try {i_try} of {max_tries}"
+                msg = f"Failed to get Channel {row.network}-{row.station}-{row.channel} inventory try {i_try} of {max_tries}"
                 logger.warning(msg)
                 sleep_random_time()
                 i_try += 1
+
+    if response_level =="network":
+        try:
+            inventory = client.get_stations(
+                row.start,
+                row.end,
+                network=row.network,
+                level=response_level,
+            )
+            i_try += max_tries
+        except BadGzipFile:
+            msg = f"Failed to get Network {row.network}-{row.station}-{row.channel} inventory try {i_try} of {max_tries}"
+            logger.warning(msg)
+            sleep_random_time()
+            i_try += 1
 
 
     return inventory
