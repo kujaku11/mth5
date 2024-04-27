@@ -781,7 +781,7 @@ class FDSN:
 
 def _fdsn_client_get_inventory(client, row, response_level, max_tries=10):
     """
-    Allows a few tries to get invemtory, in case server is not very responsive
+    Allows a few tries to get inventory, in case server is not very responsive
     Parameters
     ----------
     client: obspy.clients.fdsn.Client
@@ -804,7 +804,6 @@ def _fdsn_client_get_inventory(client, row, response_level, max_tries=10):
         return
 
     i_try = 0
-    print("HIHIH")
     if response_level == "station":
         while i_try < max_tries:
             try:
