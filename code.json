@@ -9,17 +9,20 @@
     "licenses": [
       {
         "name": "MIT",
-        "URL": "https://code.chs.usgs.gov/jpeacock/mth5/LICENSE.md"
+        "URL": "https://code.usgs.gov/gmeg/mth5/LICENSE.md"
       }
     ]
   },
-  "homepageURL": "https://code.chs.usgs.gov/jpeacock/mth5",
-  "downloadURL": "https://code.chs.usgs.gov/jpeacock/mth5-master.zip",
-  "disclaimerURL": "https://code.chs.usgs.gov/jpeacock/mth5/DISCLAIMER.md",
-  "repositoryURL": "https://code.chs.usgs.gov/jpeacock/mth5.git",
+  "homepageURL": "https://code.usgs.gov/gmeg/mth5",
+  "downloadURL": "https://code.usgs.gov/gmeg/mth5-master.zip",
+  "disclaimerURL": "https://code.usgs.gov/gmeg/mth5/DISCLAIMER.md",
+  "repositoryURL": "https://code.usgs.gov/gmeg/mth5.git",
   "tags": [
     "magnetotellurics",
-     "hdf5"
+     "hdf5",
+	 "time series",
+	 "transfer functions",
+	 "Fourier coefficients"
   ],
   "languages": [
     "Python"
@@ -29,6 +32,6 @@
     "email": "jpeacock@usgs.gov"
   },
   "date": {
-    "metadataLastUpdated": "2022-02-01T12:00:00"
+    "metadataLastUpdated": "2024-04-30T12:00:00"
     }
 }
