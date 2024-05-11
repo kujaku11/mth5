@@ -14,20 +14,19 @@ Created on Fri Feb  4 15:53:21 2022
 # =============================================================================
 import copy
 import numpy as np
-import time
-from gzip import BadGzipFile
-from pathlib import Path
-
 import pandas as pd
-from loguru import logger
+import time
 
+from gzip import BadGzipFile
+from loguru import logger
+from lxml.etree import XMLSyntaxError
 from obspy.clients import fdsn
 from obspy import UTCDateTime
 from obspy import read as obsread
 from obspy.core.inventory import Inventory
+from pathlib import Path
 
 from mt_metadata.timeseries.stationxml import XMLInventoryMTExperiment
-
 from mth5.mth5 import MTH5
 from mth5.timeseries import RunTS
 
@@ -789,6 +788,7 @@ def _fdsn_client_get_inventory(client, row, response_level, max_tries=10):
     # TODO: Maybe these two cases can be the same call to client.get_stations?
 
     """
+    from lxml.etree import XMLSyntaxError
     def sleep_random_time():
         """ Sleep for a fraction of a second before trying again"""
         sleep_time = np.random.randint(0, 100) * 0.01
@@ -827,7 +827,8 @@ def _fdsn_client_get_inventory(client, row, response_level, max_tries=10):
                     level=response_level,
                 )
                 i_try += max_tries
-            except BadGzipFile:
+            except (BadGzipFile, XMLSyntaxError) as e:
+                logger.error(f"{e}")
                 msg = f"Failed to get Channel {row.network}-{row.station}-{row.channel} inventory try {i_try} of {max_tries}"
                 logger.warning(msg)
                 sleep_random_time()
@@ -842,7 +843,8 @@ def _fdsn_client_get_inventory(client, row, response_level, max_tries=10):
                 level=response_level,
             )
             i_try += max_tries
-        except BadGzipFile:
+        except (BadGzipFile, XMLSyntaxError) as e:
+            logger.error(f"{e}")
             msg = f"Failed to get Network {row.network}-{row.station}-{row.channel} inventory try {i_try} of {max_tries}"
             logger.warning(msg)
             sleep_random_time()
