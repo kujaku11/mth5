@@ -808,7 +808,8 @@ def _fdsn_client_get_inventory(client, row, response_level, max_tries=10):
                     level=response_level,
                 )
                 i_try += max_tries
-            except BadGzipFile:
+            except (BadGzipFile, XMLSyntaxError, ValueError) as e:
+                logger.error(f"{e}")
                 msg = f"Failed to get Station {row.network}-{row.station} inventory try {i_try} of {max_tries}"
                 logger.warning(msg)
                 sleep_random_time()
@@ -827,7 +828,7 @@ def _fdsn_client_get_inventory(client, row, response_level, max_tries=10):
                     level=response_level,
                 )
                 i_try += max_tries
-            except (BadGzipFile, XMLSyntaxError) as e:
+            except (BadGzipFile, XMLSyntaxError, ValueError) as e:
                 logger.error(f"{e}")
                 msg = f"Failed to get Channel {row.network}-{row.station}-{row.channel} inventory try {i_try} of {max_tries}"
                 logger.warning(msg)
@@ -843,7 +844,7 @@ def _fdsn_client_get_inventory(client, row, response_level, max_tries=10):
                 level=response_level,
             )
             i_try += max_tries
-        except (BadGzipFile, XMLSyntaxError) as e:
+        except (BadGzipFile, XMLSyntaxError, ValueError) as e:
             logger.error(f"{e}")
             msg = f"Failed to get Network {row.network}-{row.station}-{row.channel} inventory try {i_try} of {max_tries}"
             logger.warning(msg)
