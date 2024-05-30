@@ -28,7 +28,6 @@ class Collection:
     """
 
     def __init__(self, file_path=None, **kwargs):
-
         self.logger = logger
         self.file_path = file_path
         self.file_ext = "*"
@@ -253,3 +252,32 @@ class Collection:
                 run_df = df[(df.station == station) & (df.run == run_id)]
                 run_dict[station][run_id] = run_df
         return run_dict
+
+    def get_remote_reference_list(self, df, max_hours=6, min_hours=1.5):
+        """
+        get remote reference pairs
+
+        :param max_hours: DESCRIPTION, defaults to 6
+        :type max_hours: TYPE, optional
+        :param min_hours: DESCRIPTION, defaults to 1.5
+        :type min_hours: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        a = df.groupby("station", as_index=False).first()
+        station_list = []
+        for row in a.itertuples():
+            td = a.copy()
+            td.dt = abs(row.start - a.start)
+            remote = (
+                td[
+                    (td.dt < pd.Timedelta(f"{max_hours}h"))
+                    & (td.dt > pd.Timedelta(f"{min_hours}h"))
+                ]
+                .iloc[0]
+                .station
+            )
+            station_list.append({"local": row.station, "remote": remote})
+        return station_list
