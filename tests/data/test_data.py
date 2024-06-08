@@ -69,6 +69,7 @@ class TestMetadataValuesSetCorrect(unittest.TestCase):
 
 
 def main():
+    TestMetadataValuesSetCorrect()
     unittest.main()
 
 

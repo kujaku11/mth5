@@ -27,19 +27,20 @@ import pandas as pd
 import pathlib
 import scipy.signal as ssig
 
-from aurora.test_utils.synthetic.paths import SyntheticTestPaths
-from aurora.test_utils.synthetic.station_config import make_filters
-from aurora.test_utils.synthetic.station_config import make_station_01
-from aurora.test_utils.synthetic.station_config import make_station_02
-from aurora.test_utils.synthetic.station_config import make_station_03
-from aurora.test_utils.synthetic.station_config import make_station_04
 from loguru import logger
+from mth5.data.paths import SyntheticTestPaths
+from mth5.data.station_config import make_filters
+from mth5.data.station_config import make_station_01
+from mth5.data.station_config import make_station_02
+from mth5.data.station_config import make_station_03
+from mth5.data.station_config import make_station_04
 from mth5.mth5 import MTH5
 from mth5.timeseries import ChannelTS, RunTS
+from mth5.utils.helpers import add_filters
 from mt_metadata.transfer_functions.processing.aurora import ChannelNomenclature
 from mt_metadata.timeseries import Electric
 from mt_metadata.timeseries import Magnetic
-from mth5.utils.helpers import add_filters
+
 
 np.random.seed(0)
 
@@ -55,7 +56,7 @@ def create_run_ts_from_synthetic_run(run, df, channel_nomenclature="default"):
 
     Parameters
     ----------
-    run: aurora.test_utils.synthetic.station_config.SyntheticRun
+    run: mth5.data.station_config.SyntheticRun
         One-off data structure with information mth5 needs to initialize
         Specifically sample_rate, filters,
     df : pandas.DataFrame
@@ -80,6 +81,7 @@ def create_run_ts_from_synthetic_run(run, df, channel_nomenclature="default"):
             channel_metadata = Electric()
             channel_metadata.component = col
             channel_metadata.units = "millivolts per kilometer"
+            channel_metadata.time_period.start = run.start
             chts = ChannelTS(
                 channel_type="electric",
                 data=data,
@@ -97,6 +99,7 @@ def create_run_ts_from_synthetic_run(run, df, channel_nomenclature="default"):
             channel_metadata.component = col
             channel_metadata.channel_number = 0
             channel_metadata.sample_rate = 1.0
+            channel_metadata.time_period.start = run.start
             # channel_obj.time_period.start = str(ats_metadata["start_date_datetime"])
             # channel_obj.time_period.end = str(ats_metadata["end_date_datetime"])
             # channel_metadata = {"magnetic": channel_metadata.to_dict()}
