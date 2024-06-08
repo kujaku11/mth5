@@ -1,8 +1,6 @@
 """
 Sets up paths for synthetic data testing.
 
-The DATA_PATH from general_helper_functions has traditionally had the
-synthetic ascii data, but this is now stored in MTH5.
 """
 import pathlib
 
@@ -20,8 +18,6 @@ class SyntheticTestPaths:
     Here we have a ascii_data_path which points at the ascii files (which may be read only), but we
     also accept a kwarg for "sandbox_path" which is writable and this is where the mth5 and etc. will
     get built.
-
-    TODO: consider creating a symlink in aurora's legacy data path that points at the mth5 ascii files.
 
     """
 

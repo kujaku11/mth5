@@ -15,18 +15,16 @@ Run level: 'run_id', name of the run
 Run level: 'sample_rate', 1.0
 
 """
+import pathlib
 from typing import Dict, List, Union
 
-from aurora.general_helper_functions import get_mth5_ascii_data_path
-from aurora.test_utils.synthetic.paths import SyntheticTestPaths
+# from mth5.data.paths import SyntheticTestPaths
 from mt_metadata.timeseries.filters.helper_functions import make_coefficient_filter
 from mt_metadata.timeseries import Run
 from mt_metadata.timeseries import Station
 from mt_metadata.transfer_functions.processing.aurora import ChannelNomenclature
 
-ASCII_DATA_PATH = get_mth5_ascii_data_path()
-synthetic_test_paths = SyntheticTestPaths()
-
+ASCII_DATA_PATH = pathlib.Path(__file__).parent.resolve()
 
 def make_filters(as_list=False):
     """
