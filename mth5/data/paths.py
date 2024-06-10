@@ -32,9 +32,6 @@ class SyntheticTestPaths:
         ivars:
         - ascii_data_path: where the ascii data are stored
         - mth5_path: this is where the mth5 files get written to.
-        - config_path: this is where the config files get saved while tests are running
-        - aurora_results_path: this is where the processing results get saved during test execution
-        - emtf_results_path: stores some legacy results from EMTF processing for tests/comparison.
 
         """
         # READ ONLY OK
