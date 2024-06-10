@@ -35,7 +35,6 @@ class Z3DCollection(Collection):
     """
 
     def __init__(self, file_path=None, **kwargs):
-
         super().__init__(file_path=file_path, **kwargs)
         self.station_metadata_dict = {}
         self.file_ext = "z3d"
@@ -160,7 +159,6 @@ class Z3DCollection(Collection):
         return df
 
     def assign_run_names(self, df, zeros=3):
-
         # assign run names
         for station in df.station.unique():
             starts = sorted(df[df.station == station].start.unique())
