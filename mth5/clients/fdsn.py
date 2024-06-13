@@ -377,7 +377,7 @@ class FDSN:
                         new_ch.metadata.from_dict(og_ch_metadata_dict)
                         new_ch.write_metadata()
 
-                    run_group.update_run_metadata()
+                    run_group.update_metadata()
 
         # If the number of runs does not equal the number of streams then
         # there is missing data or metadata.
@@ -473,7 +473,7 @@ class FDSN:
             translator = XMLInventoryMTExperiment()
             experiment = translator.xml_to_mt(inv)
 
-            # Updates expriment information based on time extent of streams
+            # Updates experiment information based on time extent of streams
             # rather than time extent of inventory
             # experiment = translator.drop_runs(m, streams)
 
