@@ -193,8 +193,12 @@ class MasterStationGroup(BaseGroup):
             st_list.append(entry)
 
         df = pd.DataFrame(st_list)
-        df.start = pd.to_datetime(df.start)
-        df.end = pd.to_datetime(df.end)
+        try:
+            df.start = pd.to_datetime(df.start, format="mixed")
+            df.end = pd.to_datetime(df.end, format="mixed")
+        except ValueError:
+            df.start = pd.to_datetime(df.start)
+            df.end = pd.to_datetime(df.end)
 
         return df
 
