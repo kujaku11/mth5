@@ -25,7 +25,6 @@ class PhoenixReceiverMetadata:
     """
 
     def __init__(self, fn=None, **kwargs):
-
         self.fn = fn
         self.obj = None
 
@@ -65,7 +64,7 @@ class PhoenixReceiverMetadata:
             if fn.exists():
                 self._fn = Path(fn)
             else:
-                raise ValueError(f"Could not find {fn}")
+                raise IOError(f"Could not find {fn}")
 
     @property
     def instrument_id(self):

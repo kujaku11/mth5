@@ -13,18 +13,20 @@ Created on Fri Feb  4 15:53:21 2022
 # Imports
 # =============================================================================
 import copy
-from pathlib import Path
-
+import numpy as np
 import pandas as pd
-from loguru import logger
+import time
 
+from gzip import BadGzipFile
+from loguru import logger
+from lxml.etree import XMLSyntaxError
 from obspy.clients import fdsn
 from obspy import UTCDateTime
 from obspy import read as obsread
 from obspy.core.inventory import Inventory
+from pathlib import Path
 
 from mt_metadata.timeseries.stationxml import XMLInventoryMTExperiment
-
 from mth5.mth5 import MTH5
 from mth5.timeseries import RunTS
 
@@ -375,7 +377,7 @@ class FDSN:
                         new_ch.metadata.from_dict(og_ch_metadata_dict)
                         new_ch.write_metadata()
 
-                    run_group.update_run_metadata()
+                    run_group.update_metadata()
 
         # If the number of runs does not equal the number of streams then
         # there is missing data or metadata.
@@ -471,7 +473,7 @@ class FDSN:
             translator = XMLInventoryMTExperiment()
             experiment = translator.xml_to_mt(inv)
 
-            # Updates expriment information based on time extent of streams
+            # Updates experiment information based on time extent of streams
             # rather than time extent of inventory
             # experiment = translator.drop_runs(m, streams)
 
@@ -505,18 +507,11 @@ class FDSN:
             # First for loop builds out networks and stations
             if row.network not in networks.keys():
                 networks[row.network] = {}
-                net_inv = client.get_stations(
-                    row.start, row.end, network=row.network, level="network"
-                )
+                net_inv = _fdsn_client_get_inventory(client, row, response_level="network")
                 networks[row.network][row.start] = net_inv.networks[0]
             elif networks.get(row.network) is not None:
                 if row.start not in networks[row.network].keys():
-                    net_inv = client.get_stations(
-                        row.start,
-                        row.end,
-                        network=row.network,
-                        level="network",
-                    )
+                    net_inv = _fdsn_client_get_inventory(client, row, response_level="network")
                     networks[row.network][row.start] = net_inv.networks[0]
             else:
                 continue
@@ -555,16 +550,11 @@ class FDSN:
                 sub_df.drop_duplicates("station", inplace=True)
                 sub_df.reset_index(inplace=True, drop=True)
 
-                for st_row in sub_df.itertuples():
-                    sta_inv = client.get_stations(
-                        st_row.start,
-                        st_row.end,
-                        network=st_row.network,
-                        station=st_row.station,
-                        level="station",
-                    )
+                for station_row in sub_df.itertuples():
+                    sta_inv = _fdsn_client_get_inventory(client, station_row, response_level="station", max_tries=10)
+
                     stations_dict[network_id][start_time][
-                        st_row.station
+                        station_row.station
                     ] = sta_inv.networks[0].stations[0]
         return stations_dict
 
@@ -587,7 +577,7 @@ class FDSN:
         )
         return streams
 
-    def get_inventory_from_df(self, df, client=None, data=True):
+    def get_inventory_from_df(self, df, client=None, data=True, max_tries=10):
         """
         20230806: The nested for looping here can make debugging complex, as well as lead to a lot of redundancies.
         I propose that we build out a dictionary of networks, keyed by network_id, start_time.
@@ -657,16 +647,8 @@ class FDSN:
             station_obj = stations_dict[ch_row.network][ch_row.start][
                 ch_row.station
             ]
+            cha_inv = _fdsn_client_get_inventory(client, ch_row, response_level="response", max_tries=10)
 
-            cha_inv = client.get_stations(
-                ch_row.start,
-                ch_row.end,
-                network=ch_row.network,
-                station=ch_row.station,
-                loc=ch_row.location,
-                channel=ch_row.channel,
-                level="response",
-            )
             for returned_chan in cha_inv.networks[0].stations[0].channels:
                 station_obj.channels.append(returned_chan)
 
@@ -787,3 +769,87 @@ class FDSN:
         FDSN_CHANNEL_MAP["LQE"] = "LQ1"
         FDSN_CHANNEL_MAP["LQN"] = "LQ2"
         return FDSN_CHANNEL_MAP
+
+
+def _fdsn_client_get_inventory(client, row, response_level, max_tries=10):
+    """
+    Allows a few tries to get inventory, in case server is not very responsive
+    Parameters
+    ----------
+    client: obspy.clients.fdsn.Client
+        obspy helper to get data from FDSN (e.g. EarthScope)
+    row: pandas.core.frame.Pandas
+        A row of a dataframe specifying the start and end times, station and network
+    response_level: ["network", "station", "response"]
+
+    Returns
+    -------
+
+    # TODO: Maybe these two cases can be the same call to client.get_stations?
+
+    """
+    from lxml.etree import XMLSyntaxError
+    def sleep_random_time():
+        """ Sleep for a fraction of a second before trying again"""
+        sleep_time = np.random.randint(0, 100) * 0.01
+        logger.info(f"Sleeping for {sleep_time}s")
+        time.sleep(sleep_time)
+        return
+
+    i_try = 0
+    if response_level == "station":
+        while i_try < max_tries:
+            try:
+                inventory = client.get_stations(
+                    row.start,
+                    row.end,
+                    network=row.network,
+                    station=row.station,
+                    level=response_level,
+                )
+                i_try += max_tries
+            except (BadGzipFile, XMLSyntaxError, ValueError) as e:
+                logger.error(f"{e}")
+                msg = f"Failed to get Station {row.network}-{row.station} inventory try {i_try} of {max_tries}"
+                logger.warning(msg)
+                sleep_random_time()
+                i_try += 1
+
+    if response_level == "response": #channel level
+        while i_try < max_tries:
+            try:
+                inventory = client.get_stations(
+                    row.start,
+                    row.end,
+                    network=row.network,
+                    station=row.station,
+                    loc=row.location,
+                    channel=row.channel,
+                    level=response_level,
+                )
+                i_try += max_tries
+            except (BadGzipFile, XMLSyntaxError, ValueError) as e:
+                logger.error(f"{e}")
+                msg = f"Failed to get Channel {row.network}-{row.station}-{row.channel} inventory try {i_try} of {max_tries}"
+                logger.warning(msg)
+                sleep_random_time()
+                i_try += 1
+
+    if response_level =="network":
+        try:
+            inventory = client.get_stations(
+                row.start,
+                row.end,
+                network=row.network,
+                level=response_level,
+            )
+            i_try += max_tries
+        except (BadGzipFile, XMLSyntaxError, ValueError) as e:
+            logger.error(f"{e}")
+            msg = f"Failed to get Network {row.network}-{row.station}-{row.channel} inventory try {i_try} of {max_tries}"
+            logger.warning(msg)
+            sleep_random_time()
+            i_try += 1
+
+
+    return inventory

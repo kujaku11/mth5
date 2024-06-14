@@ -36,7 +36,6 @@ class FiltersGroup(BaseGroup):
     """
 
     def __init__(self, group, **kwargs):
-
         super().__init__(group, **kwargs)
 
         try:
@@ -48,13 +47,17 @@ class FiltersGroup(BaseGroup):
                 self.hdf5_group.create_group("coefficient")
             )
         except ValueError:
-            self.coefficient_group = CoefficientGroup(self.hdf5_group["coefficient"])
+            self.coefficient_group = CoefficientGroup(
+                self.hdf5_group["coefficient"]
+            )
         try:
             self.time_delay_group = TimeDelayGroup(
                 self.hdf5_group.create_group("time_delay")
             )
         except ValueError:
-            self.time_delay_group = TimeDelayGroup(self.hdf5_group["time_delay"])
+            self.time_delay_group = TimeDelayGroup(
+                self.hdf5_group["time_delay"]
+            )
         try:
             self.fap_group = FAPGroup(self.hdf5_group.create_group("fap"))
         except ValueError:
@@ -89,6 +92,7 @@ class FiltersGroup(BaseGroup):
         :type filter_object: :class:`mt_metadata.timeseries.filters`
 
         """
+        self.logger.info(f"Type of filter {type(filter_object)}")
         filter_object.name = filter_object.name.replace("/", " per ")
 
         if filter_object.type in ["zpk", "poles_zeros"]:
