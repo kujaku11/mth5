@@ -1,37 +1,39 @@
-{
-  "name": "mth5",
-  "organization": "U.S. Geological Survey",
-  "description": "MTH5 is a Python module built to read/write/interact with MTH5 files, a data container for magnetotelluric data.",
-  "version": "0.2.4",
-  "status": "Release Candidate",
-  "permission": {
-    "usageType": "openSource",
-    "licenses": [
-      {
-        "name": "MIT",
-        "URL": "https://code.usgs.gov/gmeg/mth5/LICENSE.md"
+[
+  {
+    "name": "mth5",
+    "organization": "U.S. Geological Survey",
+    "description": "MTH5 is a Python module built to read/write/interact with MTH5 files, a data container for magnetotelluric data.",
+    "version": "v0.4.4",
+    "status": "Production",
+    "permissions": {
+      "usageType": "openSource",
+      "licenses": [
+        {
+          "name": "MIT",
+          "URL": "https://code.usgs.gov/gmeg/mth5/-/raw/v0.4.4/LICENSE.md"
+        }
+      ]
+    },
+    "homepageURL": "https://code.usgs.gov/gmeg/mth5",
+    "downloadURL": "https://code.usgs.gov/gmeg/mth5/-/archive/v0.4.4/mth5-v0.4.4.zip",
+    "disclaimerURL": "https://code.usgs.gov/gmeg/mth5/-/raw/v0.4.4/DISCLAIMER.md",
+    "repositoryURL": "https://code.usgs.gov/gmeg/mth5.git",
+    "tags": [
+      "magnetotellurics",
+      "hdf5",
+      "time series",
+      "transfer functions",
+      "Fourier coefficients"
+    ],
+    "languages": [
+      "Python"
+    ],
+    "contact": {
+      "name": "Jared Peacock",
+      "email": "jpeacock@usgs.gov"
+    },
+    "date": {
+      "metadataLastUpdated": "2024-05-22"
       }
-    ]
-  },
-  "homepageURL": "https://code.usgs.gov/gmeg/mth5",
-  "downloadURL": "https://code.usgs.gov/gmeg/mth5-master.zip",
-  "disclaimerURL": "https://code.usgs.gov/gmeg/mth5/DISCLAIMER.md",
-  "repositoryURL": "https://code.usgs.gov/gmeg/mth5.git",
-  "tags": [
-    "magnetotellurics",
-     "hdf5",
-	 "time series",
-	 "transfer functions",
-	 "Fourier coefficients"
-  ],
-  "languages": [
-    "Python"
-  ],
-  "contact": {
-    "name": "Jared Peacock",
-    "email": "jpeacock@usgs.gov"
-  },
-  "date": {
-    "metadataLastUpdated": "2024-04-30T12:00:00"
-    }
-}
+  }
+]
