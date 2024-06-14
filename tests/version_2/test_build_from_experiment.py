@@ -341,7 +341,6 @@ class TestUpdateFromExperiment(unittest.TestCase):
         self.experiment_02.surveys[0].stations[0].location.latitude = 10
 
     def test_update_from_new_experiment(self):
-
         self.mth5_obj.from_experiment(self.experiment_02, update=True)
 
         with self.subTest("new_survey"):
@@ -360,3 +359,10 @@ class TestUpdateFromExperiment(unittest.TestCase):
     def tearDownClass(self):
         self.mth5_obj.close_mth5()
         self.fn.unlink()
+
+
+# =============================================================================
+# run
+# =============================================================================
+if __name__ == "__main__":
+    unittest.main()
