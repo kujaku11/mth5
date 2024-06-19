@@ -187,7 +187,7 @@ def to_numpy_type(value):
             np.int_,
             np.float64,
             np.bool_,
-            np.complex_,
+            np.complex128,
         ),
     ):
         return value
@@ -246,12 +246,12 @@ def from_numpy_type(value):
             np.int32,
             np.float64,
             np.bool_,
-            np.complex_,
+            np.complex128,
             np.intp,
             type(np.int_),
             type(np.float64),
             type(np.bool_),
-            type(np.complex_),
+            type(np.complex128),
             type(np.intp),
         ),
     ):
