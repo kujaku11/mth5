@@ -436,7 +436,7 @@ def _add_survey(m, survey_metadata):
     """
     if m.file_version == "0.1.0":
         # "no need to pass survey id in v 0.1.0 -- just the metadata"
-        m.survey_group.metadata = survey_metadata
+        m.survey_group.update_metadata(survey_metadata.to_dict())
     elif m.file_version == "0.2.0":
         m.add_survey(survey_metadata.id, survey_metadata)
     else:
@@ -455,5 +455,5 @@ def main(file_version="0.1.0"):
 
 
 if __name__ == "__main__":
-    main()
     main(file_version="0.2.0")
+    main(file_version="0.1.0")
