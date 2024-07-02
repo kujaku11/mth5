@@ -12,6 +12,7 @@ from mth5.data.make_mth5_from_asc import create_test3_h5
 from mth5.mth5 import MTH5
 from mth5.timeseries import ChannelTS
 from mth5.timeseries import RunTS
+from mth5.utils.helpers import add_filters
 from mth5.utils.helpers import get_channel_summary
 from mth5.utils.helpers import station_in_mth5
 from mth5.utils.helpers import survey_in_mth5
@@ -101,6 +102,21 @@ def extract_subset(source_file, target_file, subset_df):
         else:
             print(f"Survey {survey_id} already in target mth5")
 
+        # Add filters
+        # TODO: make this only get the filters from the relevant channels
+        all_filters = []
+        if m_source.file_version == "0.1.0":
+            filter_names = m_source.filters_group.filter_dict.keys()
+#            for filter_group in m_source.filters_group.groups_list:
+            for filter_name in filter_names:
+                filter_instance = m_source.filters_group.to_filter_object(filter_name)
+                all_filters.append(filter_instance)
+            add_filters(m_target, all_filters)
+        elif m_source.file_version == "0.2.0":
+            msg = "May Need to access v0.2.0 filters different -- get survey group first --"
+            raise NotImplementedError(msg)
+        # filters_dict = {x: m.filters_group.to_filter_object(x) for x in channel_metadata.filter.name}
+        
         source_station_obj = m_source.get_station(station_id, survey_id)
         if not station_in_mth5(m_target, station_id, survey_id):
             print(f"Need to make station {station_id}")
