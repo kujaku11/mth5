@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-This code is pulled from the main branch of xr-scipy 
-https://github.com/fujiisoup/xr-scipy/tree/master 
+This code is pulled from the main branch of xr-scipy
+https://github.com/fujiisoup/xr-scipy/tree/master
 
-It creates a wrapper for scipy methods for xarray.   
- 
+It creates a wrapper for scipy methods for xarray.
+
 """
 # =============================================================================
 # Imports
@@ -12,6 +12,7 @@ It creates a wrapper for scipy methods for xarray.
 
 import warnings
 from fractions import Fraction
+from loguru import logger
 import xarray as xr
 import scipy.signal
 import numpy as np
@@ -462,8 +463,8 @@ def resample_poly(darray, new_sample_rate, dim=None, pad_type="mean"):
     In newer versions of scipy, need to cast data types as floats and returned
     object has data type of float, can change later if desired.
 
-    :param new_sample_rate: DESCRIPTION
-    :type new_sample_rate: TYPE
+    :param new_sample_rate: The sample rate of the returned data
+    :type new_sample_rate: float
     :return: DESCRIPTION
     :rtype: TYPE
 
@@ -480,6 +481,7 @@ def resample_poly(darray, new_sample_rate, dim=None, pad_type="mean"):
     dt = get_sampling_step(darray, dim)
     q = int(np.rint(1 / (dt * new_sample_rate)))
 
+    # directly downsample without AAF on dimension
     new_dim = darray[dim].values[slice(None, None, q)]
 
     ret = xr.apply_ufunc(
@@ -492,6 +494,17 @@ def resample_poly(darray, new_sample_rate, dim=None, pad_type="mean"):
         exclude_dims=set([dim]),
         kwargs={"padtype": pad_type},
     )
+
+    n_samples_data = len(ret[dim])
+    n_samples_axis = len(new_dim)
+    if n_samples_data != n_samples_axis:
+        msg = f"conflicting axes sizes {n_samples_data} data and {n_samples_axis} axes after resampling"
+        logger.warning(msg)
+        new_dim = new_dim[:n_samples_data]
+        msg = f"trimming {dim} axis from {n_samples_axis} to {n_samples_data}"
+        logger.info(msg)
+        new_dim = new_dim[:n_samples_data]
+
     ret[dim] = new_dim
 
     return ret
