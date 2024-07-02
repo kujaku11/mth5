@@ -5,7 +5,7 @@ Created on Wed Dec 23 17:18:29 2020
 .. note:: Need to keep these groups together, if you split them into files you
  get a circular import.
 
-:copyright: 
+:copyright:
     Jared Peacock (jpeacock@usgs.gov)
 
 :license: MIT
@@ -193,12 +193,13 @@ class MasterStationGroup(BaseGroup):
             st_list.append(entry)
 
         df = pd.DataFrame(st_list)
-        try:
-            df.start = pd.to_datetime(df.start, format="mixed")
-            df.end = pd.to_datetime(df.end, format="mixed")
-        except ValueError:
-            df.start = pd.to_datetime(df.start)
-            df.end = pd.to_datetime(df.end)
+        if len(df):
+            try:
+                df.start = pd.to_datetime(df.start, format="mixed")
+                df.end = pd.to_datetime(df.end, format="mixed")
+            except ValueError:
+                df.start = pd.to_datetime(df.start)
+                df.end = pd.to_datetime(df.end)
 
         return df
 
