@@ -177,6 +177,8 @@ class MasterStationGroup(BaseGroup):
         """
         Summary of stations in the file
 
+        TODO: consider returning None instead of empty df
+
         :return: DESCRIPTION
         :rtype: TYPE
 
