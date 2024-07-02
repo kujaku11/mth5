@@ -8,6 +8,7 @@ from mt_metadata.timeseries import Magnetic
 from mt_metadata.timeseries import Survey
 from mth5.data.paths import SyntheticTestPaths
 from mth5.data.make_mth5_from_asc import _add_survey
+from mth5.data.make_mth5_from_asc import create_test3_h5
 from mth5.mth5 import MTH5
 from mth5.timeseries import ChannelTS
 from mth5.timeseries import RunTS
@@ -19,6 +20,7 @@ import pathlib
 
 synthetic_test_paths = SyntheticTestPaths()
 MTH5_PATH = synthetic_test_paths.mth5_path
+FILE_VERSION = "0.1.0"
 
 def _select_source_file():
     """
@@ -37,8 +39,11 @@ def _select_source_file():
     mth5_files = list(MTH5_PATH.glob("*h5"))
     logger.info(f"mth5_files: {mth5_files}")
     source_file = MTH5_PATH.joinpath("test3.h5")
-    assert source_file.exists()
-    # source_file = mth5_files[4]
+    try:
+        assert source_file.exists()
+    except AssertionError:
+        create_test3_h5(file_version=FILE_VERSION)
+
     return source_file
 
 def _select_target_file():
