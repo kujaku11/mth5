@@ -517,6 +517,11 @@ class SurveyGroup(BaseGroup):
 
         if survey_dict:
             self.metadata.from_dict(survey_dict, skip_none=True)
+
+        if not len(station_summary):  # if station info is empty df, skip parsing
+            self.write_metadata()
+            return
+
         self._metadata.time_period.start_date = (
             station_summary.start.min().isoformat().split("T")[0]
         )
