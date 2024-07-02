@@ -43,7 +43,9 @@ def extract_subset(source_file, target_file, subset_df):
     logger.info(f"Testing file_version {m_source.file_version}")
     for (survey_id, station_id, run_id), run_df in subset_df.groupby(groupby):
         survey = m_source.get_survey(survey_id)
-        assert survey.metadata.id == survey_id
+        # TODO: Thhe following assert is a nice-to-have, but needs to be robust to survey_id None
+        # assert survey.metadata.id == survey_id
+
         # Check if survey already in mth5, don't add again (its cleaner but won't actually matter in results)
         if not survey_in_mth5(m_target, survey.metadata.id):
             logger.info(f"Survey {survey_id} not in mth5 -- Adding")
