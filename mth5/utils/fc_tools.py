@@ -58,7 +58,7 @@ def make_multistation_spectrogram(m, fc_run_chunks):
 
     Returns
     -------
-
+    output: xarray.core.dataset.Dataset'
     """
     for i_fcrc, fcrc in enumerate(fc_run_chunks):
         station_obj = m.get_station(fcrc.station_id, fcrc.survey_id)
@@ -103,4 +103,8 @@ def make_multistation_spectrogram(m, fc_run_chunks):
             fc_dec_level_xrds = fc_dec_level_xrds.rename_vars(name_dict=name_dict)
             output = output.merge(fc_dec_level_xrds)
 
+    # TODO: add a check that no nan came about as a result of the merge
+    if bool(output.to_array().isnull().any()):
+        msg = "Nan detected in multistation spectrogram"
+        logger.warning(msg)
     return output
