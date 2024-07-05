@@ -132,6 +132,7 @@ class ChannelDataset:
             self.read_metadata()
         # if the attrs don't have the proper metadata keys yet write them
         if not "mth5_type" in list(self.hdf5_dataset.attrs.keys()):
+            self.hdf5_dataset.attrs["mth5_type"] = self._class_name
             self.write_metadata()
 
     def _add_base_attributes(self):
