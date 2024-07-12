@@ -8,7 +8,7 @@ from loguru import logger
 
 from mth5.helpers import close_open_files
 from mth5.mth5 import MTH5
-
+from typing import Union
 # =============================================================================
 
 
@@ -217,3 +217,61 @@ def get_compare_dict(input_dict):
             pass
 
     return input_dict
+
+
+@path_or_mth5_object
+def station_in_mth5(m: Union[str, pathlib.Path, MTH5], station_id: str, survey_id: str = None):
+    """
+        Use groups list to check for station
+        Another way to do this is with channel_summary_df = m.channel_summary.to_dataframe()
+
+        :param m: mth5 object
+        :type m: Union[str, pathlib.Path, mth5.mth5.MTH5]
+        :param survey_id: the survey id
+        :type survey_id: str
+        :param station_id: the station id
+        :type station_id: str
+
+        :return station_exists: True or False if station is in h5
+        :rtype station_exists: bool
+
+    """
+    file_version = m.file_version  # type: ignore # decorated by path_or_mth5_object
+    if file_version == "0.1.0":
+        station_exists = station_id in m.stations_group.groups_list  # type: ignore # decorated by path_or_mth5_object
+    elif file_version == "0.2.0":
+        survey = m.get_survey(survey_id)  # type: ignore # decorated by path_or_mth5_object
+        station_exists = station_id in survey.stations_group.groups_list
+    else:
+        msg = f"MTH5 file_version {file_version} not understood"
+        logger.error(msg)
+        raise NotImplementedError(msg)
+    return station_exists
+
+
+@path_or_mth5_object
+def survey_in_mth5(m: Union[str, pathlib.Path, MTH5], survey_id: str = None):
+    """
+        Use groups list to check for survey
+        Another way to do this is with channel_summary_df = m.channel_summary.to_dataframe()
+
+        :param m: mth5 object
+        :type m: Union[str, pathlib.Path, mth5.mth5.MTH5]
+        :param survey_id: the survey id
+        :type survey_id: str
+
+        :return survey_exists: True or False if station is in h5
+        :rtype survey_exists: bool
+
+    """
+    file_version = m.file_version  # type: ignore # decorated by path_or_mth5_object
+    if file_version == "0.1.0":
+        survey_metadata = m.survey_group.metadata
+        survey_exists = survey_metadata.id == survey_id
+    elif file_version == "0.2.0":
+        survey_exists = survey_id in m.surveys_group.groups_list
+    else:
+        msg = f"MTH5 file_version {file_version} not understood"
+        logger.error(msg)
+        raise NotImplementedError(msg)
+    return survey_exists

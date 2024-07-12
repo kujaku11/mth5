@@ -40,7 +40,8 @@ from mth5.utils.helpers import add_filters
 from mt_metadata.transfer_functions.processing.aurora import ChannelNomenclature
 from mt_metadata.timeseries import Electric
 from mt_metadata.timeseries import Magnetic
-
+from mt_metadata.timeseries import Survey
+from typing import Union
 
 np.random.seed(0)
 
@@ -187,6 +188,7 @@ def create_mth5_synthetic_file(
     file_version="0.1.0",
     channel_nomenclature="default",
     force_make_mth5=True,
+    survey_metadata=None
 ):
     """
 
@@ -249,10 +251,16 @@ def create_mth5_synthetic_file(
         if mth5_path.exists():
             return mth5_path
 
+    # create survey metadata:
+    if not survey_metadata:
+        survey_id = "EMTF Synthetic"
+        survey_metadata = Survey()
+        survey_metadata.id = survey_id
+
     # open output h5
     m = MTH5(file_version=file_version)
     m.open_mth5(mth5_path, mode="w")
-    m, survey_id = _get_set_survey_id(m)
+    _add_survey(m, survey_metadata)
 
     for station_cfg in station_cfgs:
         station_group = m.add_station(station_cfg.id, survey=survey_id)
@@ -418,27 +426,34 @@ def create_test4_h5(
     return mth5_path
 
 
-def _get_set_survey_id(m):
+def _add_survey(m, survey_metadata):
+    """
+    :type m: mth5.mth5.MTH5
+    :param m: The mth5 object to get/set survey_id with
+    :type survey_metadata: mt_metadata.timeseries.Survey
+    :param survey_metadata: The survey metadata in mt_metadata container
+
+    """
     if m.file_version == "0.1.0":
-        survey_id = None
+        # "no need to pass survey id in v 0.1.0 -- just the metadata"
+        m.survey_group.update_metadata(survey_metadata.to_dict())
     elif m.file_version == "0.2.0":
-        survey_id = "EMTF Synthetic"
-        m.add_survey(survey_id)
+        m.add_survey(survey_metadata.id, survey_metadata)
     else:
         msg = f"unexpected MTH5 file_version = {m.file_version}"
         raise NotImplementedError(msg)
-    return m, survey_id
+    return
 
 
 def main(file_version="0.1.0"):
-    file_version = "0.2.0"
-    #    create_test1_h5(file_version=file_version)
-    #     create_test1_h5_with_nan(file_version=file_version)
-    #     create_test2_h5(file_version=file_version)
-    #     create_test12rr_h5(file_version=file_version, channel_nomenclature="lemi12")
-    #     create_test3_h5(file_version=file_version)
+    create_test1_h5(file_version=file_version)
+    create_test1_h5_with_nan(file_version=file_version)
+    create_test2_h5(file_version=file_version)
+    create_test12rr_h5(file_version=file_version, channel_nomenclature="lemi12")
+    create_test3_h5(file_version=file_version)
     create_test4_h5(file_version=file_version)
 
 
 if __name__ == "__main__":
-    main()
+    main(file_version="0.2.0")
+    main(file_version="0.1.0")

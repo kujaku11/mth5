@@ -83,6 +83,16 @@ class TestMTH5(unittest.TestCase):
     def test_validation(self):
         self.assertEqual(self.mth5_obj.validate_file(), True)
 
+    def test_set_survey_metadata_attr(self):
+        """ Test that we can change a value in the survey metadata and this is written to mth5"""
+        survey_metadata = self.mth5_obj.survey_group.metadata
+        assert survey_metadata.id is None
+        new_survey_id = "MT Survey"
+        survey_metadata.id = new_survey_id
+        assert survey_metadata.id == new_survey_id
+        self.mth5_obj.survey_group.update_metadata(survey_metadata.to_dict())
+        assert self.mth5_obj.survey_group.metadata.id == new_survey_id
+
     def test_add_station(self):
         new_station = self.mth5_obj.add_station("MT001")
         with self.subTest("has_read_metadata"):
