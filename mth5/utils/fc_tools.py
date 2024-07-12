@@ -6,8 +6,8 @@ import pandas as pd
 @dataclass
 class FCRunChunk():
     """
-    Just a container to formalize the elements of the Tuple needed.  This may become formalizec in mt_metadata,
-    for now just use a dataclass.
+    Just a container to formalize the elements of the Tuple needed in order to specify a chunk of a timeseries
+    of Fourier coefficients.  This may become formalized in mt_metadata, for now just use a dataclass.
     """
     survey_id: str = "none"
     station_id: str = ""
@@ -25,6 +25,9 @@ class FCRunChunk():
     def end_timestamp(self):
         return pd.Timestamp(self.end)
 
+    @property
+    def duration(self):
+        return self.end_timestamp - self.start_timestamp
 
 
 def make_multistation_spectrogram(m, fc_run_chunks):
@@ -58,7 +61,7 @@ def make_multistation_spectrogram(m, fc_run_chunks):
 
     Returns
     -------
-
+    output: xarray.core.dataset.Dataset'
     """
     for i_fcrc, fcrc in enumerate(fc_run_chunks):
         station_obj = m.get_station(fcrc.station_id, fcrc.survey_id)
@@ -75,7 +78,7 @@ def make_multistation_spectrogram(m, fc_run_chunks):
         fc_dec_level_xrds = fc_dec_level.to_xarray(channels=channels)
         # could create name mapper dict from run_fc_group.channel_summary here if we wanted to.
         if fcrc.start:
-            # TODO: Push this into the to_xarray command so we only access what we want
+            # TODO: Push slicing into the to_xarray() command so we only access what we need
             cond = fc_dec_level_xrds.time >= fcrc.start_timestamp
             msg = (
                 f"trimming  {sum(~cond.data)} samples to {fcrc.start} "
@@ -85,7 +88,7 @@ def make_multistation_spectrogram(m, fc_run_chunks):
             fc_dec_level_xrds = fc_dec_level_xrds.dropna(dim="time")
 
         if fcrc.end:
-            # TODO: Push this into the to_xarray command so we only access what we want
+            # TODO: Push slicing into the to_xarray() command so we only access what we need
             cond = fc_dec_level_xrds.time <= fcrc.end_timestamp
             msg = (
                 f"trimming  {sum(~cond.data)} samples to {fcrc.end} "
@@ -103,4 +106,8 @@ def make_multistation_spectrogram(m, fc_run_chunks):
             fc_dec_level_xrds = fc_dec_level_xrds.rename_vars(name_dict=name_dict)
             output = output.merge(fc_dec_level_xrds)
 
+    # Check that no nan came about as a result of the merge
+    if bool(output.to_array().isnull().any()):
+        msg = "Nan detected in multistation spectrogram"
+        logger.warning(msg)
     return output

@@ -92,7 +92,7 @@ class FiltersGroup(BaseGroup):
         :type filter_object: :class:`mt_metadata.timeseries.filters`
 
         """
-        self.logger.info(f"Type of filter {type(filter_object)}")
+        self.logger.debug(f"Type of filter {type(filter_object)}")
         filter_object.name = filter_object.name.replace("/", " per ")
 
         if filter_object.type in ["zpk", "poles_zeros"]:
