@@ -402,7 +402,7 @@ class TestFCFromXarray(unittest.TestCase):
 
         total_channels = 0
         for station_id in mvds.stations:
-            total_channels += len(mvds.stations(station_id))
+            total_channels += len(mvds.station_channels(station_id))
         assert total_channels == len(mvds.channels)
 
         # print("OK")
