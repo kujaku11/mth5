@@ -302,6 +302,14 @@ class TestMTH5(unittest.TestCase):
         with self.subTest("shape"):
             self.assertEqual(run_summary.shape, (5, 12))
 
+    def test_run_summary_property(self):
+        self.mth5_obj.channel_summary.summarize()
+        run_summary = self.mth5_obj.run_summary
+        with self.subTest("is dataframe"):
+            self.assertIsInstance(run_summary, pd.DataFrame)
+        with self.subTest("shape"):
+            self.assertEqual(run_summary.shape, (5, 12))
+
     @classmethod
     def tearDownClass(self):
         self.mth5_obj.close_mth5()
