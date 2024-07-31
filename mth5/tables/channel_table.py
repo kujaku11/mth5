@@ -15,6 +15,11 @@ import h5py
 from mth5 import CHANNEL_DTYPE
 from mth5.tables import MTH5Table
 
+from mt_metadata.transfer_functions import (
+    ALLOWED_INPUT_CHANNELS,
+    ALLOWED_OUTPUT_CHANNELS,
+)
+
 # =============================================================================
 
 
@@ -48,7 +53,9 @@ class ChannelSummaryTable(MTH5Table):
         ]:
             setattr(df, key, getattr(df, key).str.decode("utf-8"))
         try:
-            df.start = pd.to_datetime(df.start.str.decode("utf-8"), format="mixed")
+            df.start = pd.to_datetime(
+                df.start.str.decode("utf-8"), format="mixed"
+            )
             df.end = pd.to_datetime(df.end.str.decode("utf-8"), format="mixed")
         except ValueError:
             df.start = pd.to_datetime(df.start.str.decode("utf-8"))
@@ -119,3 +126,127 @@ class ChannelSummaryTable(MTH5Table):
                     pass
 
         recursive_get_channel_entry(self.array.parent)
+
+    def to_run_summary(
+        self,
+        allowed_input_channels=ALLOWED_INPUT_CHANNELS,
+        allowed_output_channels=ALLOWED_OUTPUT_CHANNELS,
+        sortby=["station", "start"],
+    ):
+        """
+        Method for compressing an mth5 channel_summary into a "run summary" which
+        has one row per run (not one row per channel)
+
+        Devlopment Notes:
+        TODO: replace station_id with station, and run_id with run
+        Note will need to modify: aurora/tests/config$ more test_dataset_dataframe.py
+        TODO: Add logic for handling input and output channels based on channel
+        summary.  Specifically, consider the case where there is no vertical magnetic
+        field, this information is available via ch_summary, and output channels should
+        then not include hz.
+        TODO: Just inherit all the run-level and higher el'ts of the channel_summary,
+        including n_samples?
+
+        When creating the dataset dataframe, make it have these columns:
+        [
+                "station_id",
+                "run_id",
+                "start",
+                "end",
+                "mth5_path",
+                "sample_rate",
+                "input_channels",
+                "output_channels",
+                "remote",
+                "channel_scale_factors",
+            ]
+
+        Parameters
+        ----------
+        ch_summary: mth5.tables.channel_table.ChannelSummaryTable or pandas DataFrame
+           If its a dataframe it is a representation of an mth5 channel_summary.
+            Maybe restricted to only have certain stations and runs before being passed to
+            this method
+        allowed_input_channels: list of strings
+            Normally ["hx", "hy", ]
+            These are the allowable input channel names for the processing.  See further
+            note under allowed_output_channels.
+        allowed_output_channels: list of strings
+            Normally ["ex", "ey", "hz", ]
+            These are the allowable output channel names for the processing.
+            A global list of these is kept at the top of this module.  The purpose of
+            this is to distinguish between runs that have different layouts, for example
+            some runs will have hz and some will not, and we cannot process for hz the
+            runs that do not have it.  By making this a kwarg we sort of prop the door
+            open for more general names (see issue #74).
+        sortby: bool or list
+            Default: ["station_id", "start"]
+
+        Returns
+        -------
+        run_summary_df: pd.Dataframe
+            A table with one row per "acquistion run" that was in the input channel
+            summary table
+        """
+
+        ch_summary_df = self.to_dataframe()
+
+        group_by_columns = ["survey", "station", "run"]
+        grouper = ch_summary_df.groupby(group_by_columns)
+        n_station_runs = len(grouper)
+        survey_ids = n_station_runs * [None]
+        station_ids = n_station_runs * [None]
+        run_ids = n_station_runs * [None]
+        start_times = n_station_runs * [None]
+        end_times = n_station_runs * [None]
+        sample_rates = n_station_runs * [None]
+        n_samples = n_station_runs * [None]
+        input_channels = n_station_runs * [None]
+        output_channels = n_station_runs * [None]
+        channel_scale_factors = n_station_runs * [None]
+        i = 0
+        for group_values, group in grouper:
+            group_info = dict(zip(group_by_columns, group_values))
+            survey_ids[i] = group_info["survey"]
+            station_ids[i] = group_info["station"]
+            run_ids[i] = group_info["run"]
+            start_times[i] = group.start.iloc[0]
+            end_times[i] = group.end.iloc[0]
+            sample_rates[i] = group.sample_rate.iloc[0]
+            n_samples[i] = group.n_samples.iloc[0]
+            channels_list = group.component.to_list()
+            num_channels = len(channels_list)
+            input_channels[i] = [
+                x for x in channels_list if x in allowed_input_channels
+            ]
+            output_channels[i] = [
+                x for x in channels_list if x in allowed_output_channels
+            ]
+            channel_scale_factors[i] = dict(
+                zip(channels_list, num_channels * [1.0])
+            )
+            i += 1
+
+        data_dict = {}
+        data_dict["survey"] = survey_ids
+        data_dict["station"] = station_ids
+        data_dict["run"] = run_ids
+        data_dict["start"] = start_times
+        data_dict["end"] = end_times
+        data_dict["sample_rate"] = sample_rates
+        data_dict["n_samples"] = n_samples
+        data_dict["input_channels"] = input_channels
+        data_dict["output_channels"] = output_channels
+        data_dict["channel_scale_factors"] = channel_scale_factors
+        data_dict["valid"] = True
+
+        run_summary_df = pd.DataFrame(data=data_dict)
+        if sortby:
+            run_summary_df.sort_values(by=sortby, inplace=True)
+
+        # add durations
+        timedeltas = run_summary_df.end - run_summary_df.start
+        durations = [x.total_seconds() for x in timedeltas]
+        run_summary_df["duration"] = durations
+
+        return run_summary_df

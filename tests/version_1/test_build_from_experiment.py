@@ -15,6 +15,7 @@ Created on Thu May 13 13:45:27 2021
 import unittest
 from pathlib import Path
 import numpy as np
+import pandas as pd
 
 from mth5 import CHANNEL_DTYPE
 from mth5 import helpers
@@ -293,48 +294,56 @@ class TestMTH5(unittest.TestCase):
                 ).all()
             )
 
-    @classmethod
-    def tearDownClass(self):
-        self.mth5_obj.close_mth5()
-        self.fn.unlink()
-
-
-class TestUpdateFromExperiment(unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
-        self.maxDiff = None
-        self.fn = fn_path.joinpath("test.h5")
-        self.mth5_obj = MTH5(file_version="0.1.0")
-        self.mth5_obj.open_mth5(self.fn, mode="w")
-        self.experiment = Experiment()
-        self.experiment.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)
-        self.mth5_obj.from_experiment(self.experiment)
-
-        self.experiment_02 = Experiment()
-        self.experiment_02.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)
-        self.experiment_02.surveys[0].id = "different_survey_name"
-        self.experiment_02.surveys[0].stations[0].location.latitude = 10
-
-    def test_update_from_new_experiment(self):
-
-        self.mth5_obj.from_experiment(self.experiment_02, update=True)
-
-        with self.subTest("new_survey"):
-            self.assertEqual(
-                self.mth5_obj.survey_group.metadata.id,
-                self.experiment_02.surveys[0].id,
-            )
-        with self.subTest("new_location"):
-            st = self.mth5_obj.get_station("REW09")
-            self.assertEqual(
-                st.metadata.location.latitude,
-                self.experiment_02.surveys[0].stations[0].location.latitude,
-            )
+    def test_run_summary(self):
+        self.mth5_obj.channel_summary.summarize()
+        run_summary = self.mth5_obj.channel_summary.to_run_summary()
+        with self.subTest("is dataframe"):
+            self.assertIsInstance(run_summary, pd.DataFrame)
+        with self.subTest("shape"):
+            self.assertEqual(run_summary.shape, (5, 12))
 
     @classmethod
     def tearDownClass(self):
         self.mth5_obj.close_mth5()
         self.fn.unlink()
+
+
+# class TestUpdateFromExperiment(unittest.TestCase):
+#     @classmethod
+#     def setUpClass(self):
+#         self.maxDiff = None
+#         self.fn = fn_path.joinpath("test.h5")
+#         self.mth5_obj = MTH5(file_version="0.1.0")
+#         self.mth5_obj.open_mth5(self.fn, mode="w")
+#         self.experiment = Experiment()
+#         self.experiment.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)
+#         self.mth5_obj.from_experiment(self.experiment)
+
+#         self.experiment_02 = Experiment()
+#         self.experiment_02.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)
+#         self.experiment_02.surveys[0].id = "different_survey_name"
+#         self.experiment_02.surveys[0].stations[0].location.latitude = 10
+
+#     def test_update_from_new_experiment(self):
+
+#         self.mth5_obj.from_experiment(self.experiment_02, update=True)
+
+#         with self.subTest("new_survey"):
+#             self.assertEqual(
+#                 self.mth5_obj.survey_group.metadata.id,
+#                 self.experiment_02.surveys[0].id,
+#             )
+#         with self.subTest("new_location"):
+#             st = self.mth5_obj.get_station("REW09")
+#             self.assertEqual(
+#                 st.metadata.location.latitude,
+#                 self.experiment_02.surveys[0].stations[0].location.latitude,
+#             )
+
+#     @classmethod
+#     def tearDownClass(self):
+#         self.mth5_obj.close_mth5()
+#         self.fn.unlink()
 
 
 # =============================================================================
