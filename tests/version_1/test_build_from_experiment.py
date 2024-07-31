@@ -308,42 +308,42 @@ class TestMTH5(unittest.TestCase):
         self.fn.unlink()
 
 
-# class TestUpdateFromExperiment(unittest.TestCase):
-#     @classmethod
-#     def setUpClass(self):
-#         self.maxDiff = None
-#         self.fn = fn_path.joinpath("test.h5")
-#         self.mth5_obj = MTH5(file_version="0.1.0")
-#         self.mth5_obj.open_mth5(self.fn, mode="w")
-#         self.experiment = Experiment()
-#         self.experiment.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)
-#         self.mth5_obj.from_experiment(self.experiment)
+class TestUpdateFromExperiment(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.maxDiff = None
+        self.fn = fn_path.joinpath("test.h5")
+        self.mth5_obj = MTH5(file_version="0.1.0")
+        self.mth5_obj.open_mth5(self.fn, mode="w")
+        self.experiment = Experiment()
+        self.experiment.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)
+        self.mth5_obj.from_experiment(self.experiment)
 
-#         self.experiment_02 = Experiment()
-#         self.experiment_02.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)
-#         self.experiment_02.surveys[0].id = "different_survey_name"
-#         self.experiment_02.surveys[0].stations[0].location.latitude = 10
+        self.experiment_02 = Experiment()
+        self.experiment_02.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)
+        self.experiment_02.surveys[0].id = "different_survey_name"
+        self.experiment_02.surveys[0].stations[0].location.latitude = 10
 
-#     def test_update_from_new_experiment(self):
+    def test_update_from_new_experiment(self):
 
-#         self.mth5_obj.from_experiment(self.experiment_02, update=True)
+        self.mth5_obj.from_experiment(self.experiment_02, update=True)
 
-#         with self.subTest("new_survey"):
-#             self.assertEqual(
-#                 self.mth5_obj.survey_group.metadata.id,
-#                 self.experiment_02.surveys[0].id,
-#             )
-#         with self.subTest("new_location"):
-#             st = self.mth5_obj.get_station("REW09")
-#             self.assertEqual(
-#                 st.metadata.location.latitude,
-#                 self.experiment_02.surveys[0].stations[0].location.latitude,
-#             )
+        with self.subTest("new_survey"):
+            self.assertEqual(
+                self.mth5_obj.survey_group.metadata.id,
+                self.experiment_02.surveys[0].id,
+            )
+        with self.subTest("new_location"):
+            st = self.mth5_obj.get_station("REW09")
+            self.assertEqual(
+                st.metadata.location.latitude,
+                self.experiment_02.surveys[0].stations[0].location.latitude,
+            )
 
-#     @classmethod
-#     def tearDownClass(self):
-#         self.mth5_obj.close_mth5()
-#         self.fn.unlink()
+    @classmethod
+    def tearDownClass(self):
+        self.mth5_obj.close_mth5()
+        self.fn.unlink()
 
 
 # =============================================================================
