@@ -73,6 +73,15 @@ class ChannelSummaryTable(MTH5Table):
 
         self.clear_table()
 
+        def has_data(h5_dataset):
+            """check to see if has data"""
+            if len(h5_dataset) > 0:
+                if len(np.nonzero(h5_dataset)[0]) > 0:
+                    return True
+                else:
+                    return False
+            return False
+
         def get_channel_entry(group, dtype=CHANNEL_DTYPE):
             ch_entry = np.array(
                 [
@@ -92,7 +101,7 @@ class ChannelSummaryTable(MTH5Table):
                         group.attrs["measurement_azimuth"],
                         group.attrs["measurement_tilt"],
                         group.attrs["units"],
-                        group.has_data(),
+                        has_data(group),
                         group.ref,
                         group.parent.ref,
                         group.parent.parent.ref,
