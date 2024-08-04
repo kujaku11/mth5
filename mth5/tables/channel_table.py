@@ -159,16 +159,19 @@ class ChannelSummaryTable(MTH5Table):
 
         When creating the dataset dataframe, make it have these columns:
         [
-                "station_id",
-                "run_id",
-                "start",
-                "end",
-                "mth5_path",
-                "sample_rate",
-                "input_channels",
-                "output_channels",
-                "remote",
                 "channel_scale_factors",
+                "duration",
+                "end",
+                "has_data",
+                "input_channels",
+                "mth5_path",
+                "n_samples",
+                "output_channels",
+                "run",
+                "sample_rate",
+                "start",
+                "station",
+                "survey",
             ]
 
         Parameters
