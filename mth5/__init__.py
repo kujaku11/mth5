@@ -1,4 +1,5 @@
 """Top-level package for MTH5."""
+
 # =============================================================================
 # Imports
 # =============================================================================
@@ -87,6 +88,7 @@ CHANNEL_DTYPE_LIST = [
     ("azimuth", float),
     ("tilt", float),
     ("units", "S60"),
+    ("has_data", bool),
     ("hdf5_reference", h5py.ref_dtype),
     ("run_hdf5_reference", h5py.ref_dtype),
     ("station_hdf5_reference", h5py.ref_dtype),

@@ -92,6 +92,7 @@ class ChannelSummaryTable(MTH5Table):
                         group.attrs["measurement_azimuth"],
                         group.attrs["measurement_tilt"],
                         group.attrs["units"],
+                        group.has_data(),
                         group.ref,
                         group.parent.ref,
                         group.parent.parent.ref,
@@ -204,28 +205,33 @@ class ChannelSummaryTable(MTH5Table):
         input_channels = n_station_runs * [None]
         output_channels = n_station_runs * [None]
         channel_scale_factors = n_station_runs * [None]
-        i = 0
+        valids = n_station_runs * [None]
+        index = 0
         for group_values, group in grouper:
             group_info = dict(zip(group_by_columns, group_values))
-            survey_ids[i] = group_info["survey"]
-            station_ids[i] = group_info["station"]
-            run_ids[i] = group_info["run"]
-            start_times[i] = group.start.iloc[0]
-            end_times[i] = group.end.iloc[0]
-            sample_rates[i] = group.sample_rate.iloc[0]
-            n_samples[i] = group.n_samples.iloc[0]
+            survey_ids[index] = group_info["survey"]
+            station_ids[index] = group_info["station"]
+            run_ids[index] = group_info["run"]
+            start_times[index] = group.start.iloc[0]
+            end_times[index] = group.end.iloc[0]
+            sample_rates[index] = group.sample_rate.iloc[0]
+            n_samples[index] = group.n_samples.iloc[0]
             channels_list = group.component.to_list()
             num_channels = len(channels_list)
-            input_channels[i] = [
+            input_channels[index] = [
                 x for x in channels_list if x in allowed_input_channels
             ]
-            output_channels[i] = [
+            output_channels[index] = [
                 x for x in channels_list if x in allowed_output_channels
             ]
-            channel_scale_factors[i] = dict(
+            channel_scale_factors[index] = dict(
                 zip(channels_list, num_channels * [1.0])
             )
-            i += 1
+            valids[index] = True
+            if False in group.has_data.values:
+                valids[index] = False
+
+            index += 1
 
         data_dict = {}
         data_dict["survey"] = survey_ids
@@ -238,7 +244,7 @@ class ChannelSummaryTable(MTH5Table):
         data_dict["input_channels"] = input_channels
         data_dict["output_channels"] = output_channels
         data_dict["channel_scale_factors"] = channel_scale_factors
-        data_dict["valid"] = True
+        data_dict["has_data"] = valids
 
         run_summary_df = pd.DataFrame(data=data_dict)
         if sortby:
