@@ -42,6 +42,8 @@ class TestFAPMTH5(unittest.TestCase):
         self.m.open_mth5(self.fn, mode="a")
         self.m.from_experiment(self.experiment, 0)
 
+        self.initial_has_entries = self.m.channel_summary._has_entries()
+
     def test_has_survey(self):
         self.assertEqual(self.m.has_group("Survey"), True)
 
@@ -129,9 +131,14 @@ class TestFAPMTH5(unittest.TestCase):
             coeff.to_dict(single=True), coeff_exp.to_dict(single=True)
         )
 
+    def test_has_entries(self):
+        self.assertEqual(False, self.initial_has_entries)
+
     def test_run_summary_has_data(self):
         run_summary = self.m.run_summary
-        self.assertEqual(run_summary.has_data.values, [False])
+        self.assertListEqual(
+            run_summary.has_data.values.tolist(), [False, False]
+        )
 
     @classmethod
     def tearDownClass(self):

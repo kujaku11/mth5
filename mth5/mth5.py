@@ -986,11 +986,7 @@ class MTH5:
     def run_summary(self):
         """return a dataframe of channels"""
 
-        channel_summary = ChannelSummaryTable(
-            self.__hdf5_obj[f"{self._root_path}/channel_summary"]
-        )
-
-        return channel_summary.to_run_summary()
+        return self.channel_summary.to_run_summary()
 
     @property
     def tf_summary(self):
