@@ -989,6 +989,7 @@ class MTH5:
         channel_summary = ChannelSummaryTable(
             self.__hdf5_obj[f"{self._root_path}/channel_summary"]
         )
+
         return channel_summary.to_run_summary()
 
     @property

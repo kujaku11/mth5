@@ -96,6 +96,25 @@ CHANNEL_DTYPE_LIST = [
 
 CHANNEL_DTYPE = np.dtype(CHANNEL_DTYPE_LIST)
 
+### Run summary table dtype
+RUN_SUMMARY_COLUMNS = [
+    "channel_scale_factors",
+    "duration",
+    "end",
+    "has_data",
+    "input_channels",
+    "mth5_path",
+    "n_samples",
+    "output_channels",
+    "run",
+    "sample_rate",
+    "start",
+    "station",
+    "survey",
+    "run_hdf5_reference",
+    "station_hdf5_reference",
+]
+
 ### Standards dtype
 STANDARDS_DTYPE_LIST = [
     ("attribute", "S72"),

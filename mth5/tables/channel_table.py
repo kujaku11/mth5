@@ -12,7 +12,7 @@ import pandas as pd
 import numpy as np
 import h5py
 
-from mth5 import CHANNEL_DTYPE
+from mth5 import CHANNEL_DTYPE, RUN_SUMMARY_COLUMNS
 from mth5.tables import MTH5Table
 
 from mt_metadata.transfer_functions import (
@@ -32,6 +32,16 @@ class ChannelSummaryTable(MTH5Table):
 
     def __init__(self, hdf5_dataset):
         super().__init__(hdf5_dataset, CHANNEL_DTYPE)
+
+    def _has_entries(self):
+        """
+        check if table has been summarized yet
+        """
+
+        if len(self.array) == 1:
+            if self.array[0][0] == b"" and self.array[0][1] == b"":
+                return False
+        return True
 
     def to_dataframe(self):
         """
@@ -172,6 +182,9 @@ class ChannelSummaryTable(MTH5Table):
                 "start",
                 "station",
                 "survey",
+                "hdf5_reference",
+                "run_hdf5_reference",
+                "station_hdf5_reference",
             ]
 
         Parameters
@@ -202,63 +215,45 @@ class ChannelSummaryTable(MTH5Table):
             summary table
         """
 
+        if not self._has_entries():
+            self.summarize()
         ch_summary_df = self.to_dataframe()
 
         group_by_columns = ["survey", "station", "run"]
         grouper = ch_summary_df.groupby(group_by_columns)
-        n_station_runs = len(grouper)
-        survey_ids = n_station_runs * [None]
-        station_ids = n_station_runs * [None]
-        run_ids = n_station_runs * [None]
-        start_times = n_station_runs * [None]
-        end_times = n_station_runs * [None]
-        sample_rates = n_station_runs * [None]
-        n_samples = n_station_runs * [None]
-        input_channels = n_station_runs * [None]
-        output_channels = n_station_runs * [None]
-        channel_scale_factors = n_station_runs * [None]
-        valids = n_station_runs * [None]
-        index = 0
+        row_list = []
         for group_values, group in grouper:
-            group_info = dict(zip(group_by_columns, group_values))
-            survey_ids[index] = group_info["survey"]
-            station_ids[index] = group_info["station"]
-            run_ids[index] = group_info["run"]
-            start_times[index] = group.start.iloc[0]
-            end_times[index] = group.end.iloc[0]
-            sample_rates[index] = group.sample_rate.iloc[0]
-            n_samples[index] = group.n_samples.iloc[0]
+            # for entry in group.itertuples():
+            row = dict([(key, None) for key in RUN_SUMMARY_COLUMNS])
+            row["survey"] = group.survey.iloc[0]
+            row["station"] = group.station.iloc[0]
+            row["run"] = group.run.iloc[0]
+            row["start"] = group.start.iloc[0]
+            row["end"] = group.end.iloc[0]
+            row["sample_rate"] = group.sample_rate.iloc[0]
+            # max
+            row["n_samples"] = group.n_samples.max()
             channels_list = group.component.to_list()
             num_channels = len(channels_list)
-            input_channels[index] = [
+            row["input_channels"] = [
                 x for x in channels_list if x in allowed_input_channels
             ]
-            output_channels[index] = [
+            row["output_channels"] = [
                 x for x in channels_list if x in allowed_output_channels
             ]
-            channel_scale_factors[index] = dict(
+            row["channel_scale_factors"] = dict(
                 zip(channels_list, num_channels * [1.0])
             )
-            valids[index] = True
+            row["has_data"] = True
             if False in group.has_data.values:
-                valids[index] = False
+                row["has_data"] = False
 
-            index += 1
+            row["run_hdf5_reference"] = group.run_hdf5_reference.iloc[0]
+            row["station_hdf5_reference"] = group.station_hdf5_reference.iloc[0]
 
-        data_dict = {}
-        data_dict["survey"] = survey_ids
-        data_dict["station"] = station_ids
-        data_dict["run"] = run_ids
-        data_dict["start"] = start_times
-        data_dict["end"] = end_times
-        data_dict["sample_rate"] = sample_rates
-        data_dict["n_samples"] = n_samples
-        data_dict["input_channels"] = input_channels
-        data_dict["output_channels"] = output_channels
-        data_dict["channel_scale_factors"] = channel_scale_factors
-        data_dict["has_data"] = valids
+            row_list.append(row)
 
-        run_summary_df = pd.DataFrame(data=data_dict)
+        run_summary_df = pd.DataFrame(data=row_list)
         if sortby:
             run_summary_df.sort_values(by=sortby, inplace=True)
 
