@@ -17,7 +17,7 @@ Also created are some files with the same data but other channel_nomenclature sc
 data/test12rr_LEMI34.h5
 data/test1_LEMI12.h5
 
-- 20231103: Added an 8Hz upsampled version of test1.  No spectral content was added
+- 20231103: Added an 8Hz up-sampled version of test1.  No spectral content was added
 so the band between the old and new Nyquist frequencies is bogus.
 
 """
@@ -49,11 +49,9 @@ synthetic_test_paths = SyntheticTestPaths()
 MTH5_PATH = synthetic_test_paths.mth5_path
 
 
-def create_run_ts_from_synthetic_run(run, df, channel_nomenclature="default"):
+def create_run_ts_from_synthetic_run(run, df, channel_nomenclature="default") -> RunTS:
     """
-    Loop over stations and make ChannelTS objects.
-    Need to add a tag in the channels
-    so that when you call a run it will get all the filters with it.
+    Loop over channels of synthetic data in df and make ChannelTS objects.
 
     Parameters
     ----------
@@ -69,7 +67,8 @@ def create_run_ts_from_synthetic_run(run, df, channel_nomenclature="default"):
 
     Returns
     -------
-
+    runts: RunTS
+        MTH5 run time series object, data and metadata bound into one.
     """
 
     channel_nomenclature_obj = ChannelNomenclature()
@@ -131,12 +130,17 @@ def create_run_ts_from_synthetic_run(run, df, channel_nomenclature="default"):
 
 def get_time_series_dataframe(run, source_folder, add_nan_values):
     """
+    Returns time series data in a dataframe with columns named for EM field component.
+
     Parameters
     ----------
     run: aurora.test_utils.synthetic.station_config.SyntheticRun
         Information needed to define/create the run
 
     source_folder: pathlib.Path, or null
+        Where to load the ascii time series from
+    add_nan_values: bool
+        If True, add some NaN, if False, do not add Nan.
 
     Up-samples data to run.sample_rate, which is treated as in integer.
     Only tested for 8, to make 8Hz data for testing.  If run.sample_rate is default (1.0)
@@ -145,7 +149,7 @@ def get_time_series_dataframe(run, source_folder, add_nan_values):
     Returns
     -------
     df: pandas.DataFrame
-    The time series data for the synthetic run
+        The time series data for the synthetic run
     """
     # point to the ascii time series
     if source_folder:
@@ -191,6 +195,7 @@ def create_mth5_synthetic_file(
     survey_metadata=None
 ):
     """
+    Creates an MTH5 from synthetic data
 
     Parameters
     ----------
@@ -295,6 +300,21 @@ def create_test1_h5(
     source_folder="",
     force_make_mth5=True,
 ):
+    """
+    Creates an MTH5 file for a single station named "test1".
+
+    Parameters
+    ----------
+    file_version
+    channel_nomenclature
+    target_folder
+    source_folder
+    force_make_mth5
+
+    Returns
+    -------
+
+    """
     station_01_params = make_station_01(channel_nomenclature=channel_nomenclature)
     mth5_name = station_01_params.mth5_name
     station_params = [
@@ -320,6 +340,9 @@ def create_test2_h5(
     target_folder=MTH5_PATH,
     source_folder="",
 ):
+    """
+    Creates an MTH5 file for a single station named "test2".
+    """
     station_02_params = make_station_02(channel_nomenclature=channel_nomenclature)
     mth5_name = station_02_params.mth5_name
     station_params = [
@@ -343,6 +366,9 @@ def create_test1_h5_with_nan(
     target_folder=MTH5_PATH,
     source_folder="",
 ):
+    """
+    Creates an MTH5 file for a single station named "test1" with some nan values.
+    """
     station_01_params = make_station_01(channel_nomenclature=channel_nomenclature)
     mth5_name = station_01_params.mth5_name
     station_params = [
@@ -366,6 +392,9 @@ def create_test12rr_h5(
     target_folder=MTH5_PATH,
     source_folder=None,
 ):
+    """
+    Creates an MTH5 file with data from two stations station named "test1" and "test2".
+    """
     station_01_params = make_station_01(channel_nomenclature=channel_nomenclature)
     station_02_params = make_station_02(channel_nomenclature=channel_nomenclature)
     station_params = [station_01_params, station_02_params]
@@ -389,6 +418,10 @@ def create_test3_h5(
     target_folder=MTH5_PATH,
     source_folder="",
 ):
+    """
+    Creates an MTH5 file for a single station named "test3".
+    This example has several runs and can be used to test looping over runs.
+    """
     station_03_params = make_station_03(channel_nomenclature=channel_nomenclature)
     station_params = [
         station_03_params,
@@ -410,7 +443,13 @@ def create_test4_h5(
     target_folder=MTH5_PATH,
     source_folder="",
 ):
-    """8Hz data kluged from the 1Hz ... only freqs below 0.5Hz will make sense (100 Ohmm and 45deg)"""
+    """
+    Creates an MTH5 file for a single station named "test1", data are up-sampled to 8Hz from
+    original 1 Hz.
+
+    Note: Because the 8Hz data are derived from the 1Hz, only frequencies below 0.5Hz
+    will have valid TFs that yield the apparent resistivity of the synthetic data (100 Ohm-m).
+    """
     station_04_params = make_station_04(channel_nomenclature=channel_nomenclature)
     mth5_path = create_mth5_synthetic_file(
         [
