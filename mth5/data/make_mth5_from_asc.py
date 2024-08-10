@@ -23,7 +23,6 @@ data/test1_LEMI12.h5
 Notes: Work in progress -- this module is being migrated to MTH5.
 
 """
-# import inspect
 import numpy as np
 import pandas as pd
 import pathlib
@@ -36,6 +35,7 @@ from mth5.data.station_config import make_station_01
 from mth5.data.station_config import make_station_02
 from mth5.data.station_config import make_station_03
 from mth5.data.station_config import make_station_04
+from mth5.data.station_config import SyntheticRun
 from mth5.mth5 import MTH5
 from mth5.timeseries import ChannelTS, RunTS
 from mth5.utils.helpers import add_filters
@@ -52,7 +52,7 @@ MTH5_PATH = synthetic_test_paths.mth5_path
 
 
 def create_run_ts_from_synthetic_run(
-    run: mth5.data.station_config.SyntheticRun,
+    run: SyntheticRun,
     df: pd.DataFrame,
     channel_nomenclature: str = "default"
 ):
@@ -131,7 +131,7 @@ def create_run_ts_from_synthetic_run(
 
 
 def get_time_series_dataframe(
-    run: mth5.data.station_config.SyntheticRun,
+    run: SyntheticRun,
     source_folder: Optional[Union[pathlib.Path, str]] = "",
     add_nan_values: Optional[bool] = False
 ):
@@ -194,7 +194,7 @@ def create_mth5_synthetic_file(
     file_version: Optional[str] = "0.1.0",
     channel_nomenclature: Optional[str] = "default",
     force_make_mth5: Optional[bool] = True,
-    survey_metadata:Optional[Survey, None] = None
+    survey_metadata: Optional[Union[Survey, None]] = None
 ):
     """
     Creates an MTH5 from synthetic data
