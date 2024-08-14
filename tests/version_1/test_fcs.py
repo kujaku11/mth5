@@ -13,11 +13,14 @@ import numpy as np
 import pandas as pd
 # import pytest
 import unittest
+
+import xarray
 import xarray as xr
 
 from mth5.mth5 import MTH5
 from mth5.utils.fc_tools import make_multistation_spectrogram
 from mth5.utils.fc_tools import FCRunChunk
+from mth5.utils.fc_tools import MultivariateDataset
 
 from mt_metadata.utils.mttime import MTime
 
@@ -385,7 +388,24 @@ class TestFCFromXarray(unittest.TestCase):
             )
             fc_run_chunks.append(fcrc)
 
-        mss = make_multistation_spectrogram(self.m, fc_run_chunks)
+        # TODO: These tests should go in their own module, but need test dataset (issue #227)
+        xrds = make_multistation_spectrogram(self.m, fc_run_chunks, rtype="xrds")
+        assert isinstance(xrds, xarray.Dataset)
+        mvds = make_multistation_spectrogram(self.m, fc_run_chunks, rtype=None)
+        assert isinstance(mvds, MultivariateDataset)
+
+        # Test that channels method is unpacking the right number of valuesl
+        assert len(mvds.channels) == len(xrds.data_vars)
+        # TODO : add tests for Multivariate Data
+
+        assert len(mvds.stations) != 0
+
+        total_channels = 0
+        for station_id in mvds.stations:
+            total_channels += len(mvds.station_channels(station_id))
+        assert total_channels == len(mvds.channels)
+
+        # print("OK")
 
 
     @classmethod
