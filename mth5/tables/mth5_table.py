@@ -374,7 +374,10 @@ class MTH5Table:
 
         new_dtype = self._validate_dtype_names(self._validate_dtype(new_dtype))
 
-        new_array = self.array[()].astype(new_dtype)
+        # need to do this manually otherwise get an error of not safe
+        new_array = np.ones(self.array.shape, dtype=new_dtype)
+        for key in self.array.dtype.fields.keys():
+            new_array[key] = self.array[key][()]
 
         root = self.array.parent
         name = self.array.name.split("/")[-1]
