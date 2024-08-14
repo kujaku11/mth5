@@ -21,7 +21,6 @@ data/test1_LEMI12.h5
 so the band between the old and new Nyquist frequencies is bogus.
 
 """
-# import inspect
 import numpy as np
 import pandas as pd
 import pathlib
@@ -34,6 +33,7 @@ from mth5.data.station_config import make_station_01
 from mth5.data.station_config import make_station_02
 from mth5.data.station_config import make_station_03
 from mth5.data.station_config import make_station_04
+from mth5.data.station_config import SyntheticRun
 from mth5.mth5 import MTH5
 from mth5.timeseries import ChannelTS, RunTS
 from mth5.utils.helpers import add_filters
@@ -41,7 +41,7 @@ from mt_metadata.transfer_functions.processing.aurora import ChannelNomenclature
 from mt_metadata.timeseries import Electric
 from mt_metadata.timeseries import Magnetic
 from mt_metadata.timeseries import Survey
-from typing import Union
+from typing import Optional, Union
 
 np.random.seed(0)
 
@@ -49,26 +49,26 @@ synthetic_test_paths = SyntheticTestPaths()
 MTH5_PATH = synthetic_test_paths.mth5_path
 
 
-def create_run_ts_from_synthetic_run(run, df, channel_nomenclature="default") -> RunTS:
+def create_run_ts_from_synthetic_run(
+    run: SyntheticRun,
+    df: pd.DataFrame,
+    channel_nomenclature: str = "default"
+):
     """
     Loop over channels of synthetic data in df and make ChannelTS objects.
 
-    Parameters
-    ----------
-    run: mth5.data.station_config.SyntheticRun
-        One-off data structure with information mth5 needs to initialize
-        Specifically sample_rate, filters,
-    df : pandas.DataFrame
-        time series data in columns labelled from ["ex", "ey", "hx", "hy", "hz"]
-    channel_nomenclature : string
-        Keyword corresponding to channel nomenclature mapping in CHANNEL_MAPS variable
-        from channel_nomenclature.py module in mt_metadata.
-        Supported values include ['default', 'lemi12', 'lemi34', 'phoenix123']
+    :type run: mth5.data.station_config.SyntheticRun
+    :param run: One-off data structure with information mth5 needs to initialize. Specifically sample_rate, filters.
+    :type df: pandas.DataFrame
+    :param df: time series data in columns labelled from ["ex", "ey", "hx", "hy", "hz"]
+    :type channel_nomenclature : string
+    :param channel_nomenclature : Keyword corresponding to channel nomenclature mapping
+    in CHANNEL_MAPS variable from channel_nomenclature.py module in mt_metadata.
+    Supported values include ['default', 'lemi12', 'lemi34', 'phoenix123']
 
-    Returns
-    -------
-    runts: RunTS
-        MTH5 run time series object, data and metadata bound into one.
+    :rtype runts: RunTS
+    :return runts: MTH5 run time series object, data and metadata bound into one.
+
     """
 
     channel_nomenclature_obj = ChannelNomenclature()
@@ -132,24 +132,19 @@ def get_time_series_dataframe(run, source_folder, add_nan_values):
     """
     Returns time series data in a dataframe with columns named for EM field component.
 
-    Parameters
-    ----------
-    run: aurora.test_utils.synthetic.station_config.SyntheticRun
-        Information needed to define/create the run
-
-    source_folder: pathlib.Path, or null
-        Where to load the ascii time series from
-    add_nan_values: bool
-        If True, add some NaN, if False, do not add Nan.
-
     Up-samples data to run.sample_rate, which is treated as in integer.
     Only tested for 8, to make 8Hz data for testing.  If run.sample_rate is default (1.0)
     then no up-sampling takes place.
 
-    Returns
-    -------
-    df: pandas.DataFrame
-        The time series data for the synthetic run
+    :type run: aurora.test_utils.synthetic.station_config.SyntheticRun
+    :param run: Information needed to define/create the run
+    :type source_folder: Optional[Union[pathlib.Path, str]]
+    :param source_folder: Where to load the ascii time series from
+    :type add_nan_values: bool
+    :param add_nan_values: If True, add some NaN, if False, do not add Nan.
+    :rtype df: pandas.DataFrame
+    :return df: The time series data for the synthetic run
+
     """
     # point to the ascii time series
     if source_folder:
@@ -183,61 +178,54 @@ def get_time_series_dataframe(run, source_folder, add_nan_values):
 
 
 def create_mth5_synthetic_file(
-    station_cfgs,
-    mth5_name,
-    target_folder="",
-    source_folder="",
-    plot=False,
-    add_nan_values=False,
-    file_version="0.1.0",
-    channel_nomenclature="default",
-    force_make_mth5=True,
-    survey_metadata=None
+    station_cfgs: list,
+    mth5_name: Union[pathlib.Path, str],
+    target_folder: Optional[Union[pathlib.Path, str]] = "",
+    source_folder: Optional[Union[pathlib.Path, str]] = "",
+    plot: Optional[bool] = False,
+    add_nan_values: Optional[bool] = False,
+    file_version: Optional[str] = "0.1.0",
+    channel_nomenclature: Optional[str] = "default",
+    force_make_mth5: Optional[bool] = True,
+    survey_metadata: Optional[Union[Survey, None]] = None
 ):
     """
     Creates an MTH5 from synthetic data
 
-    Parameters
-    ----------
-    station_cfgs: list of dicts
-        The dicts are one-off data structure used to hold information mth5 needs to
-        initialize, specifically sample_rate, filters, etc.
-    mth5_name: string or pathlib.Path()
-        Where the mth5 will be stored.  This is generated by the station_config,
-        but may change in this method based on add_nan_values or channel_nomenclature
-    target_folder: str or path, optional
-    plot: bool
-        Set to false unless you want to look at a plot of the time series
-    add_nan_values: bool
-        If true, some np.nan are sprinkled into the time series.  Intended to be used for tests.
-    file_version: string
-        One of ["0.1.0", "0.2.0"], corresponding to the version of mth5 to create
-    channel_nomenclature : string
-        Keyword corresponding to channel nomenclature mapping in CHANNEL_MAPS variable
-        from channel_nomenclature.py module in mt_metadata.
-        Supported values are ['default', 'lemi12', 'lemi34', 'phoenix123']
-    force_make_mth5: bool
-        If set to true, the file will be made, even if it already exists.
-        If false, and file already exists, skip the make job.
-
-    Returns
-    -------
-    mth5_path: pathlib.Path
-        The path to the stored h5 file.
+    :type station_cfgs: list
+    :param station_cfgs: Elements of the list are each dicts. The dicts are one-off
+    data structure used to hold information mth5 needs to initialize, specifically
+    sample_rate, filters, etc.
+    :type mth5_name: Union[pathlib.Path, str]
+    :param mth5_name: Where the mth5 will be stored.  This is generated by the station_config,
+    but may change in this method based on add_nan_values or channel_nomenclature
+    :type target_folder: Optional[Union[pathlib.Path, str]]
+    :param target_folder: Where the mth5 file will be stored
+    :type source_folder: Optional[Union[pathlib.Path, str]] = "",
+    :param source_folder:  Where the ascii source data are stored
+    :type plot: bool
+    :param plot: Set to false unless you want to look at a plot of the time series
+    :type add_nan_values: bool
+    :param add_nan_values: If true, some np.nan are sprinkled into the time series.  Intended to be used for tests.
+    :type file_version: str
+    :param file_version: One of ["0.1.0", "0.2.0"], corresponding to the version of mth5 to create
+    :type channel_nomenclature: str
+    :param channel_nomenclature: Keyword corresponding to channel nomenclature mapping in CHANNEL_MAPS variable
+    from channel_nomenclature.py module in mt_metadata. Supported values are ['default', 'lemi12', 'lemi34', 'phoenix123']
+    A full list is in mt_metadata/transfer_functions/processing/aurora/standards/channel_nomenclatures.json
+    :type force_make_mth5: bool
+    :param force_make_mth5: str
+    :param force_make_mth5: If set to true, the file will be made, even if it already exists.
+    If false, and file already exists, skip the make job.
+    :type survey_metadata: Survey
+    :param survey_metadata: Option to provide survey metadata, otherwise it will be created.
+    :rtype: mth5_path: pathlib.Path
+    :return: The path to the stored h5 file.
     """
-
-    def update_mth5_path(mth5_path, add_nan_values, channel_nomenclature):
-        """set name for output h5 file"""
-        path_str = mth5_path.__str__()
-        if add_nan_values:
-            path_str = path_str.replace(".h5", "_nan.h5")
-        if channel_nomenclature != "default":
-            path_str = path_str.replace(".h5", f"_{channel_nomenclature}.h5")
-        return pathlib.Path(path_str)
 
     if not target_folder:
         msg = f"No target folder provided for making {mth5_name}"
-        logger.warning("No target folder provided for making {}")
+        logger.warning(msg)
         msg = f"Setting target folder to {MTH5_PATH}"
         logger.info(msg)
         target_folder = MTH5_PATH
@@ -250,7 +238,7 @@ def create_mth5_synthetic_file(
         logger.error(msg)
 
     mth5_path = target_folder.joinpath(mth5_name)
-    mth5_path = update_mth5_path(mth5_path, add_nan_values, channel_nomenclature)
+    mth5_path = _update_mth5_path(mth5_path, add_nan_values, channel_nomenclature)
 
     if not force_make_mth5:
         if mth5_path.exists():
@@ -294,25 +282,30 @@ def create_mth5_synthetic_file(
 
 
 def create_test1_h5(
-    file_version="0.1.0",
-    channel_nomenclature="default",
-    target_folder=MTH5_PATH,
-    source_folder="",
-    force_make_mth5=True,
-):
+    file_version: Optional[str] = "0.1.0",
+    channel_nomenclature: Optional[str] = "default",
+    target_folder: Optional[Union[str, pathlib.Path]] = MTH5_PATH,
+    source_folder: Optional[Union[str, pathlib.Path]] = "",
+    force_make_mth5: Optional[bool] = True,
+) -> pathlib.Path:
     """
     Creates an MTH5 file for a single station named "test1".
 
-    Parameters
-    ----------
-    file_version
-    channel_nomenclature
-    target_folder
-    source_folder
-    force_make_mth5
-
-    Returns
-    -------
+    :type file_version: str
+    :param file_version: One of ["0.1.0", "0.2.0"], corresponding to the version of mth5 to create
+    :type channel_nomenclature: Optional[str]
+    :param channel_nomenclature: Keyword corresponding to channel nomenclature mapping in CHANNEL_MAPS variable
+    from channel_nomenclature.py module in mt_metadata. Supported values are ['default', 'lemi12', 'lemi34', 'phoenix123']
+    A full list is in mt_metadata/transfer_functions/processing/aurora/standards/channel_nomenclatures.json
+    :type target_folder: Optional[Union[str, pathlib.Path]]
+    :param target_folder: Where the mth5 file will be stored
+    :type source_folder: Optional[Union[str, pathlib.Path]]
+    :param source_folder:  Where the ascii source data are stored
+    :type force_make_mth5: bool
+    :param force_make_mth5: If set to true, the file will be made, even if it already exists.
+    If false, and file already exists, skip the make job.
+    :rtype: pathlib.Path
+    :return: the path to the mth5 file
 
     """
     station_01_params = make_station_01(channel_nomenclature=channel_nomenclature)
@@ -334,14 +327,30 @@ def create_test1_h5(
 
 
 def create_test2_h5(
-    file_version="0.1.0",
-    channel_nomenclature="default",
-    force_make_mth5=True,
-    target_folder=MTH5_PATH,
-    source_folder="",
-):
+    file_version: Optional[str] = "0.1.0",
+    channel_nomenclature: Optional[str] = "default",
+    target_folder: Optional[Union[str, pathlib.Path]] = MTH5_PATH,
+    source_folder: Optional[Union[str, pathlib.Path]] = "",
+    force_make_mth5: Optional[bool] = True,
+) -> pathlib.Path:
     """
     Creates an MTH5 file for a single station named "test2".
+
+    :type file_version: str
+    :param file_version: One of ["0.1.0", "0.2.0"], corresponding to the version of mth5 to create
+    :type channel_nomenclature: Optional[str]
+    :param channel_nomenclature: Keyword corresponding to channel nomenclature mapping in CHANNEL_MAPS variable
+    from channel_nomenclature.py module in mt_metadata. Supported values are ['default', 'lemi12', 'lemi34', 'phoenix123']
+    A full list is in mt_metadata/transfer_functions/processing/aurora/standards/channel_nomenclatures.json
+    :type target_folder: Optional[str, pathlib.Path]
+    :param target_folder: Where the mth5 file will be stored
+    :type source_folder: Optional[str, pathlib.Path]
+    :param source_folder:  Where the ascii source data are stored
+    :type force_make_mth5: bool
+    :param force_make_mth5: If set to true, the file will be made, even if it already exists.
+    If false, and file already exists, skip the make job.
+    :rtype: pathlib.Path
+    :return: the path to the mth5 file
     """
     station_02_params = make_station_02(channel_nomenclature=channel_nomenclature)
     mth5_name = station_02_params.mth5_name
@@ -361,13 +370,26 @@ def create_test2_h5(
 
 
 def create_test1_h5_with_nan(
-    file_version="0.1.0",
-    channel_nomenclature="default",
-    target_folder=MTH5_PATH,
-    source_folder="",
-):
+    file_version: Optional[str] = "0.1.0",
+    channel_nomenclature: Optional[str] = "default",
+    target_folder: Optional[Union[str, pathlib.Path]] = MTH5_PATH,
+    source_folder: Optional[Union[str, pathlib.Path]] = "",
+) -> pathlib.Path:
     """
     Creates an MTH5 file for a single station named "test1" with some nan values.
+
+    :type file_version: str
+    :param file_version: One of ["0.1.0", "0.2.0"], corresponding to the version of mth5 to create
+    :type channel_nomenclature: Optional[str]
+    :param channel_nomenclature: Keyword corresponding to channel nomenclature mapping in CHANNEL_MAPS variable
+    from channel_nomenclature.py module in mt_metadata. Supported values are ['default', 'lemi12', 'lemi34', 'phoenix123']
+    A full list is in mt_metadata/transfer_functions/processing/aurora/standards/channel_nomenclatures.json
+    :type target_folder: Optional[str, pathlib.Path]
+    :param target_folder: Where the mth5 file will be stored
+    :type source_folder: Optional[str, pathlib.Path]
+    :param source_folder:  Where the ascii source data are stored
+    :rtype: pathlib.Path
+    :return: the path to the mth5 file
     """
     station_01_params = make_station_01(channel_nomenclature=channel_nomenclature)
     mth5_name = station_01_params.mth5_name
@@ -387,13 +409,26 @@ def create_test1_h5_with_nan(
 
 
 def create_test12rr_h5(
-    file_version="0.1.0",
-    channel_nomenclature="default",
-    target_folder=MTH5_PATH,
-    source_folder=None,
-):
+    file_version: Optional[str] = "0.1.0",
+    channel_nomenclature: Optional[str] = "default",
+    target_folder: Optional[Union[str, pathlib.Path]] = MTH5_PATH,
+    source_folder: Optional[Union[str, pathlib.Path]] = "",
+) -> pathlib.Path:
     """
     Creates an MTH5 file with data from two stations station named "test1" and "test2".
+
+    :type file_version: str
+    :param file_version: One of ["0.1.0", "0.2.0"], corresponding to the version of mth5 to create
+    :type channel_nomenclature: Optional[str]
+    :param channel_nomenclature: Keyword corresponding to channel nomenclature mapping in CHANNEL_MAPS variable
+    from channel_nomenclature.py module in mt_metadata. Supported values are ['default', 'lemi12', 'lemi34', 'phoenix123']
+    A full list is in mt_metadata/transfer_functions/processing/aurora/standards/channel_nomenclatures.json
+    :type target_folder: Optional[str, pathlib.Path]
+    :param target_folder: Where the mth5 file will be stored
+    :type source_folder: Optional[str, pathlib.Path]
+    :param source_folder:  Where the ascii source data are stored
+    :rtype: pathlib.Path
+    :return: the path to the mth5 file
     """
     station_01_params = make_station_01(channel_nomenclature=channel_nomenclature)
     station_02_params = make_station_02(channel_nomenclature=channel_nomenclature)
@@ -412,15 +447,31 @@ def create_test12rr_h5(
 
 
 def create_test3_h5(
-    file_version="0.1.0",
-    channel_nomenclature="default",
-    force_make_mth5=True,
-    target_folder=MTH5_PATH,
-    source_folder="",
-):
+    file_version: Optional[str] = "0.1.0",
+    channel_nomenclature: Optional[str] = "default",
+    target_folder: Optional[Union[str, pathlib.Path]] = MTH5_PATH,
+    source_folder: Optional[Union[str, pathlib.Path]] = "",
+    force_make_mth5: Optional[bool] = True,
+) -> pathlib.Path:
     """
     Creates an MTH5 file for a single station named "test3".
     This example has several runs and can be used to test looping over runs.
+
+    :type file_version: str
+    :param file_version: One of ["0.1.0", "0.2.0"], corresponding to the version of mth5 to create
+    :type channel_nomenclature: Optional[str]
+    :param channel_nomenclature: Keyword corresponding to channel nomenclature mapping in CHANNEL_MAPS variable
+    from channel_nomenclature.py module in mt_metadata. Supported values are ['default', 'lemi12', 'lemi34', 'phoenix123']
+    A full list is in mt_metadata/transfer_functions/processing/aurora/standards/channel_nomenclatures.json
+    :type target_folder: Optional[str, pathlib.Path]
+    :param target_folder: Where the mth5 file will be stored
+    :type source_folder: Optional[str, pathlib.Path]
+    :param source_folder:  Where the ascii source data are stored
+    :type force_make_mth5: bool
+    :param force_make_mth5: If set to true, the file will be made, even if it already exists.
+    If false, and file already exists, skip the make job.
+    :rtype: pathlib.Path
+    :return: the path to the mth5 file
     """
     station_03_params = make_station_03(channel_nomenclature=channel_nomenclature)
     station_params = [
@@ -438,17 +489,30 @@ def create_test3_h5(
 
 
 def create_test4_h5(
-    file_version="0.1.0",
-    channel_nomenclature="default",
-    target_folder=MTH5_PATH,
-    source_folder="",
-):
+    file_version: Optional[str] = "0.1.0",
+    channel_nomenclature: Optional[str] = "default",
+    target_folder: Optional[Union[str, pathlib.Path]] = MTH5_PATH,
+    source_folder: Optional[Union[str, pathlib.Path]] = "",
+) -> pathlib.Path:
     """
     Creates an MTH5 file for a single station named "test1", data are up-sampled to 8Hz from
     original 1 Hz.
 
     Note: Because the 8Hz data are derived from the 1Hz, only frequencies below 0.5Hz
     will have valid TFs that yield the apparent resistivity of the synthetic data (100 Ohm-m).
+
+    :type file_version: str
+    :param file_version: One of ["0.1.0", "0.2.0"], corresponding to the version of mth5 to create
+    :type channel_nomenclature: Optional[str]
+    :param channel_nomenclature: Keyword corresponding to channel nomenclature mapping in CHANNEL_MAPS variable
+    from channel_nomenclature.py module in mt_metadata. Supported values are ['default', 'lemi12', 'lemi34', 'phoenix123']
+    A full list is in mt_metadata/transfer_functions/processing/aurora/standards/channel_nomenclatures.json
+    :type target_folder: Optional[str, pathlib.Path]
+    :param target_folder: Where the mth5 file will be stored
+    :type source_folder: Optional[str, pathlib.Path]
+    :param source_folder:  Where the ascii source data are stored
+    :rtype: pathlib.Path
+    :return: the path to the mth5 file
     """
     station_04_params = make_station_04(channel_nomenclature=channel_nomenclature)
     mth5_path = create_mth5_synthetic_file(
@@ -465,7 +529,7 @@ def create_test4_h5(
     return mth5_path
 
 
-def _add_survey(m, survey_metadata):
+def _add_survey(m: MTH5, survey_metadata: Survey) -> None:
     """
     :type m: mth5.mth5.MTH5
     :param m: The mth5 object to get/set survey_id with
@@ -483,8 +547,21 @@ def _add_survey(m, survey_metadata):
         raise NotImplementedError(msg)
     return
 
+def _update_mth5_path(
+    mth5_path,
+    add_nan_values,
+    channel_nomenclature
+) -> pathlib.Path:
+    """set name for output h5 file"""
+    path_str = mth5_path.__str__()
+    if add_nan_values:
+        path_str = path_str.replace(".h5", "_nan.h5")
+    if channel_nomenclature != "default":
+        path_str = path_str.replace(".h5", f"_{channel_nomenclature}.h5")
+    return pathlib.Path(path_str)
 
 def main(file_version="0.1.0"):
+    """Allow the module to be called from the command line"""
     create_test1_h5(file_version=file_version)
     create_test1_h5_with_nan(file_version=file_version)
     create_test2_h5(file_version=file_version)
