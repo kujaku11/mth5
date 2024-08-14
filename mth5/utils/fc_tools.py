@@ -11,8 +11,10 @@
 """
 
 from dataclasses import dataclass
+
 from loguru import logger
 from typing import Optional, Tuple , Union
+import mth5.mth5
 import pandas as pd
 import xarray
 
@@ -61,52 +63,46 @@ class MultivariateLabelScheme():
     In the event that we wind up with station names that have underscores in them, then we could,
     for example, set the join character to "__".
 
-     TODO: Consider rename default to ("station", "data_var")
+    TODO: Consider rename default to ("station", "data_var") instead of ("station", "component")
 
     Parameters
     ----------
-    label_elements: tuple
-        This is meant to tell what information is being concatenated into an MV channel label.
-        Note that concatenation is used is an assumtion (that could change one day).
-    join_chan: str
-        The string that is used to join the label elements.
+    :type label_elements: tuple
+    :param label_elements: This is meant to tell what information is being concatenated into an MV channel label.
+    :type join_chan: str
+    :param join_chan: The string that is used to join the label elements.
 
     """
     label_elements: tuple = "station", "component",
     join_char: str = "_"
 
     @property
-    def id(self):
+    def id(self) -> str:
        return self.join(self.label_elements)
 
-    def join(self, elements: tuple) -> str:
+    def join(self, elements: Union[list, tuple]) -> str:
         """
+
         Join the label elements to a string
 
-        Parameters
-        ----------
-        elements: tuple
-            expected to be the label elements
-            Default (station, component)
+        :type elements:  tuple
+        :param elements: Expected to be the label elements, default are (station, component)
 
-        Returns
-        -------
-        str
-            The name of the MV channel.
+        :return: The name of the MV channel.
+        :rtype: str
+
         """
         return self.join_char.join(elements)
 
-    def split(self, mv_channel_name):
+    def split(self, mv_channel_name) -> dict:
         """
-        Splits a MV channel name and returns a dict of strings, keyed by self.label_elements
-        - Basically the reverse of Join
 
-        Parameters
-        ----------
-        mv_channel_name
+        Splits a MV channel name and returns a dict of strings, keyed by self.label_elements.
+        This method is basically the reverse of self.join
 
-        Returns
-        -------
+        :type mv_channel_name: str
+        :param mv_channel_name: a multivariate channel name string
+        :return:
 
         """
         splitted = mv_channel_name.split(self.join_char)
@@ -140,7 +136,7 @@ class MultivariateDataset():
         self._station_channels = None
 
     @property
-    def label_scheme(self):
+    def label_scheme(self) -> MultivariateLabelScheme:
         if self._label_scheme is None:
             msg = f"No label scheme found for {self.__class__} -- setting to default"
             logger.warning(msg)
@@ -148,11 +144,11 @@ class MultivariateDataset():
         return self._label_scheme
 
     @property
-    def dataset(self):
+    def dataset(self) -> xarray.Dataset:
         return self._xrds
 
     @property
-    def dataarray(self):
+    def dataarray(self) -> xarray.DataArray:
         return self._xrds.to_array()
 
     @property
@@ -170,7 +166,7 @@ class MultivariateDataset():
         return len(self.channels)
 
     @property
-    def stations(self):
+    def stations(self) -> list:
         """
         Parses the channel names, extracts the station names
 
@@ -188,8 +184,14 @@ class MultivariateDataset():
 
         return self._stations
 
-    def station_channels(self, station):
-        """returns a dict with the noise model per station"""
+    def station_channels(self, station) -> dict:
+        """
+        This is a utility function that provides a way to look up all channels in a multivariate array associated
+         with a particular station.
+
+        :rtype: dict
+        :returns: Dict keyed by station_id.  Values are the "full multivariate" channel names.
+        """
         if self._station_channels is None:
             station_channels = {}
             for station_id in self.stations:
@@ -203,13 +205,14 @@ class MultivariateDataset():
 
 
 def make_multistation_spectrogram(
-    m,
-    fc_run_chunks,
-    label_scheme = MultivariateLabelScheme(),
+    m: mth5.mth5.MTH5,
+    fc_run_chunks: list,
+    label_scheme: Optional[MultivariateLabelScheme] = MultivariateLabelScheme(),
     rtype: Optional[Union[str, None]] = None
 ) -> Union[xarray.Dataset, MultivariateDataset]:
     """
-    see notes in mth5 issue #209.  Takes a list of FCRunChunks and returns the largest contiguous
+
+    See notes in mth5 issue #209.  Takes a list of FCRunChunks and returns the largest contiguous
     block of multichannel FC data available.
 
     |----------Station 1 ------------|
@@ -228,17 +231,19 @@ def make_multistation_spectrogram(
 
     Station IDs must be unique.
 
+    :param m:  The mth5 object to get the FCs from.
+    :type m: mth5.mth5.MTH5
+    :param fc_run_chunks: Each element of this describes a chunk of a run to loac from stored FCs.
+    :type fc_run_chunks: list
+    :param label_scheme: Specifies how the channels are to be named in the multivariate xarray.
+    :type label_scheme: Optional[MultivariateLabelScheme]
+    :param rtype: Specifies whether to return an xarray or a MultivariateDataset.  Currently only supports "xrds",
+    otherwise will return MultivariateDataset.
+    :type rtype: Optional[Union[str, None]]
 
-    Parameters
-    ----------
-    m: mth5.mth5.MTH5
-        The mth5 object to get the FCs from.
-    fc_run_chunks: iterable
-        Each element of this describes the run chunk to load.
+    :rtype: Union[xarray.Dataset, MultivariateDataset]:
+    :return: The multivariate dataset, either as an xarray or as a MultivariateDataset
 
-    Returns
-    -------
-    output: xarray.core.dataset.Dataset'
     """
     for i_fcrc, fcrc in enumerate(fc_run_chunks):
         station_obj = m.get_station(fcrc.station_id, fcrc.survey_id)
