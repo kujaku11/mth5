@@ -11,8 +11,8 @@
 """
 
 from dataclasses import dataclass
-
 from loguru import logger
+from mth5.utils.exceptions import MTH5Error
 from typing import Optional, Tuple , Union
 import mth5.mth5
 import pandas as pd
@@ -248,8 +248,17 @@ def make_multistation_spectrogram(
     for i_fcrc, fcrc in enumerate(fc_run_chunks):
         station_obj = m.get_station(fcrc.station_id, fcrc.survey_id)
         station_fc_group = station_obj.fourier_coefficients_group
-        logger.info(f"Available FC Groups for station {fcrc.station_id}: {station_fc_group.groups_list}")
-        run_fc_group = station_obj.fourier_coefficients_group.get_fc_group(fcrc.run_id)
+        try:
+            run_fc_group = station_obj.fourier_coefficients_group.get_fc_group(fcrc.run_id)
+        except MTH5Error as e:
+            error_msg = f"Failed to get fc group {fcrc.run_id}"
+            logger.error(error_msg)
+            msg = f"Available FC Groups for station {fcrc.station_id}: "
+            msg = f"{msg} {station_fc_group.groups_list}"
+            logger.error(msg)
+            logger.error(f"Maybe try adding FCs for {fcrc.run_id}")
+            raise e #MTH5Error(error_msg)
+
         # print(run_fc_group)
         fc_dec_level = run_fc_group.get_decimation_level(fcrc.decimation_level_id)
         if fcrc.channels:
