@@ -18,6 +18,7 @@ import xarray
 import xarray as xr
 
 from mth5.mth5 import MTH5
+from mth5.utils.exceptions import MTH5Error
 from mth5.utils.fc_tools import make_multistation_spectrogram
 from mth5.utils.fc_tools import FCRunChunk
 from mth5.utils.fc_tools import MultivariateDataset
@@ -390,6 +391,8 @@ class TestFCFromXarray(unittest.TestCase):
 
         # TODO: These tests should go in their own module, but need test dataset (issue #227)
         xrds = make_multistation_spectrogram(self.m, fc_run_chunks, rtype="xrds")
+
+
         assert isinstance(xrds, xarray.Dataset)
         mvds = make_multistation_spectrogram(self.m, fc_run_chunks, rtype=None)
         assert isinstance(mvds, MultivariateDataset)
@@ -405,7 +408,11 @@ class TestFCFromXarray(unittest.TestCase):
             total_channels += len(mvds.station_channels(station_id))
         assert total_channels == len(mvds.channels)
 
-        # print("OK")
+        # Now assert MTH5 error when making a multistation spectrogram and no data available
+        with self.assertRaises(MTH5Error):
+            fc_run_chunks[0].run_id = "wont find this run name"
+            mvds = make_multistation_spectrogram(self.m, fc_run_chunks, rtype=None)
+        print("OK")
 
 
     @classmethod
