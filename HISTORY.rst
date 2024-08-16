@@ -100,7 +100,7 @@ History
 * Update tests.yml by @kujaku11 in https://github.com/kujaku11/mth5/pull/196
 * Run ipynb on tests by @kujaku11 in https://github.com/kujaku11/mth5/pull/200
 
-0.4.4
+0.4.5
 ------------------------
 
 * Wtf by @kujaku11 in https://github.com/kujaku11/mth5/pull/205
