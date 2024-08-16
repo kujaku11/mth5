@@ -42,7 +42,7 @@ jobs:
         source activate mth5-test
         pip install -e .
         conda list
-        
+
     - name: Install Jupyter and dependencies
       run: |
         source activate mth5-test
@@ -69,4 +69,4 @@ jobs:
         flags: tests
         fail_ci_if_error: false
         verbose: true
-      
+
