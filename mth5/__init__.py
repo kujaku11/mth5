@@ -18,7 +18,7 @@ import mth5.timeseries.scipy_filters
 
 __author__ = """Jared Peacock"""
 __email__ = "jpeacock@usgs.gov"
-__version__ = "0.4.4"
+__version__ = "0.4.5"
 
 
 # =============================================================================

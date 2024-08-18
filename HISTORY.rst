@@ -80,3 +80,40 @@ History
 
 * minor bug fixes
 * removed restriction on pandas < 2
+
+0.4.3
+-------------------------
+
+* Fix issue 171 by @kkappler in https://github.com/kujaku11/mth5/pull/172
+* Add try except for runs with no channels by @kkappler in https://github.com/kujaku11/mth5/pull/176
+* remove references to filter correction operation by @kkappler in https://github.com/kujaku11/mth5/pull/177
+* Fix mt metadata issue 173 by @kkappler in https://github.com/kujaku11/mth5/pull/174
+* Notebook updates by @kujaku11 in https://github.com/kujaku11/mth5/pull/178
+* add (failing) test that fc_metadata updates as expected by @kkappler in https://github.com/kujaku11/mth5/pull/173
+* Add return self to open_mth5() by @kkappler in https://github.com/kujaku11/mth5/pull/183
+* Patches by @kkappler in https://github.com/kujaku11/mth5/pull/181
+* Patches by @kkappler in https://github.com/kujaku11/mth5/pull/184
+* Update how MTH5Tables handles dtype by @kujaku11 in https://github.com/kujaku11/mth5/pull/192
+* Patches by @kkappler in https://github.com/kujaku11/mth5/pull/190
+* add synthetic time series by @kkappler in https://github.com/kujaku11/mth5/pull/194
+* Patches by @kujaku11 in https://github.com/kujaku11/mth5/pull/195
+* Update tests.yml by @kujaku11 in https://github.com/kujaku11/mth5/pull/196
+* Run ipynb on tests by @kujaku11 in https://github.com/kujaku11/mth5/pull/200
+
+0.4.5
+------------------------
+
+* Wtf by @kujaku11 in https://github.com/kujaku11/mth5/pull/205
+* Fix issue 191 by @kkappler in https://github.com/kujaku11/mth5/pull/208
+* Fix issue 191 by @kkappler in https://github.com/kujaku11/mth5/pull/211
+* Fix issue 209 by @kkappler in https://github.com/kujaku11/mth5/pull/210
+* Update station.py by @kujaku11 in https://github.com/kujaku11/mth5/pull/215
+* Patches by @kkappler in https://github.com/kujaku11/mth5/pull/206
+* Fix issue 219 by @kkappler in https://github.com/kujaku11/mth5/pull/222
+* Fix issue 217 by @kkappler in https://github.com/kujaku11/mth5/pull/218
+* try fix #223 by @kkappler in https://github.com/kujaku11/mth5/pull/224
+* Add some more multivariate functionality by @kkappler in https://github.com/kujaku11/mth5/pull/228
+* Fix issue 209a by @kkappler in https://github.com/kujaku11/mth5/pull/231
+* Minor multivariate updates by @kkappler in https://github.com/kujaku11/mth5/pull/232
+* Updating bugs and Adding functionality by @kujaku11 in https://github.com/kujaku11/mth5/pull/226
+* bump v0.4.3 --> v0.4.4 by @kujaku11 in https://github.com/kujaku11/mth5/pull/216
