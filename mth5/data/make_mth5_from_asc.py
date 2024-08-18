@@ -57,9 +57,7 @@ MTH5_PATH = synthetic_test_paths.mth5_path
 
 
 def create_run_ts_from_synthetic_run(
-    run: SyntheticRun,
-    df: pd.DataFrame,
-    channel_nomenclature: str = "default"
+    run: SyntheticRun, df: pd.DataFrame, channel_nomenclature: str = "default"
 ):
     """
     Loop over channels of synthetic data in df and make ChannelTS objects.
@@ -194,7 +192,7 @@ def create_mth5_synthetic_file(
     file_version: Optional[str] = "0.1.0",
     channel_nomenclature: Optional[str] = "default",
     force_make_mth5: Optional[bool] = True,
-    survey_metadata: Optional[Union[Survey, None]] = None
+    survey_metadata: Optional[Union[Survey, None]] = None,
 ):
     """
     Creates an MTH5 from synthetic data
@@ -245,10 +243,9 @@ def create_mth5_synthetic_file(
         logger.error(msg)
 
     mth5_path = target_folder.joinpath(mth5_name)
-    mth5_path = update_mth5_path(
+    mth5_path = _update_mth5_path(
         mth5_path, add_nan_values, channel_nomenclature
     )
-
 
     if not force_make_mth5:
         if mth5_path.exists():
@@ -318,7 +315,9 @@ def create_test1_h5(
     :return: the path to the mth5 file
 
     """
-    station_01_params = make_station_01(channel_nomenclature=channel_nomenclature)
+    station_01_params = make_station_01(
+        channel_nomenclature=channel_nomenclature
+    )
     mth5_name = station_01_params.mth5_name
     station_params = [
         station_01_params,
@@ -362,7 +361,9 @@ def create_test2_h5(
     :rtype: pathlib.Path
     :return: the path to the mth5 file
     """
-    station_02_params = make_station_02(channel_nomenclature=channel_nomenclature)
+    station_02_params = make_station_02(
+        channel_nomenclature=channel_nomenclature
+    )
     mth5_name = station_02_params.mth5_name
     station_params = [
         station_02_params,
@@ -401,7 +402,9 @@ def create_test1_h5_with_nan(
     :rtype: pathlib.Path
     :return: the path to the mth5 file
     """
-    station_01_params = make_station_01(channel_nomenclature=channel_nomenclature)
+    station_01_params = make_station_01(
+        channel_nomenclature=channel_nomenclature
+    )
     mth5_name = station_01_params.mth5_name
     station_params = [
         station_01_params,
@@ -440,8 +443,12 @@ def create_test12rr_h5(
     :rtype: pathlib.Path
     :return: the path to the mth5 file
     """
-    station_01_params = make_station_01(channel_nomenclature=channel_nomenclature)
-    station_02_params = make_station_02(channel_nomenclature=channel_nomenclature)
+    station_01_params = make_station_01(
+        channel_nomenclature=channel_nomenclature
+    )
+    station_02_params = make_station_02(
+        channel_nomenclature=channel_nomenclature
+    )
     station_params = [station_01_params, station_02_params]
     mth5_name = "test12rr.h5"
     mth5_path = create_mth5_synthetic_file(
@@ -483,7 +490,9 @@ def create_test3_h5(
     :rtype: pathlib.Path
     :return: the path to the mth5 file
     """
-    station_03_params = make_station_03(channel_nomenclature=channel_nomenclature)
+    station_03_params = make_station_03(
+        channel_nomenclature=channel_nomenclature
+    )
     station_params = [
         station_03_params,
     ]
@@ -524,7 +533,9 @@ def create_test4_h5(
     :rtype: pathlib.Path
     :return: the path to the mth5 file
     """
-    station_04_params = make_station_04(channel_nomenclature=channel_nomenclature)
+    station_04_params = make_station_04(
+        channel_nomenclature=channel_nomenclature
+    )
     mth5_path = create_mth5_synthetic_file(
         [
             station_04_params,
@@ -557,10 +568,9 @@ def _add_survey(m: MTH5, survey_metadata: Survey) -> None:
         raise NotImplementedError(msg)
     return
 
+
 def _update_mth5_path(
-    mth5_path,
-    add_nan_values,
-    channel_nomenclature
+    mth5_path, add_nan_values, channel_nomenclature
 ) -> pathlib.Path:
     """set name for output h5 file"""
     path_str = mth5_path.__str__()
@@ -569,6 +579,7 @@ def _update_mth5_path(
     if channel_nomenclature != "default":
         path_str = path_str.replace(".h5", f"_{channel_nomenclature}.h5")
     return pathlib.Path(path_str)
+
 
 def main(file_version="0.1.0"):
     """Allow the module to be called from the command line"""
