@@ -74,13 +74,15 @@ def create_run_ts_from_synthetic_run(
     channel_nomenclature_obj = ChannelNomenclature()
     channel_nomenclature_obj.keyword = channel_nomenclature
     ch_list = []
-    for col in df.columns:
+    for i_col, col in enumerate(df.columns):
 
         data = df[col].values
         if col in channel_nomenclature_obj.ex_ey:
             channel_metadata = Electric()
-            channel_metadata.component = col
             channel_metadata.units = "millivolts per kilometer"
+            channel_metadata.component = col
+            channel_metadata.channel_number = i_col  # not required
+            channel_metadata.sample_rate = run.run_metadata.sample_rate
             channel_metadata.time_period.start = run.start
             chts = ChannelTS(
                 channel_type="electric",
@@ -97,8 +99,8 @@ def create_run_ts_from_synthetic_run(
             channel_metadata = Magnetic()
             channel_metadata.units = "nanotesla"
             channel_metadata.component = col
-            channel_metadata.channel_number = 0
-            channel_metadata.sample_rate = 1.0
+            channel_metadata.channel_number = i_col    # not required
+            channel_metadata.sample_rate = run.run_metadata.sample_rate
             channel_metadata.time_period.start = run.start
             chts = ChannelTS(
                 channel_type=channel_metadata.type,
