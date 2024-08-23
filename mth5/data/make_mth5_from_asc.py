@@ -161,9 +161,9 @@ def get_time_series_dataframe(run, source_folder, add_nan_values):
     df = pd.read_csv(run.raw_data_path, names=run.channels, sep="\s+")
     # the data were modeled in a different coordinate system so if
     # we flip the E channels we get the correct phase. Just multiply
-    # by a negative one.
-    df["ex"] = df["ex"].values * -1
-    df["ey"] = df["ey"].values * -1
+    # Invert electric field channels -- there is a phase swap because of the modeling coordinates
+    df["ex"] = -df["ex"]
+    df["ey"] = -df["ey"]
 
     # upsample data if requested,
     if run.run_metadata.sample_rate != 1.0:
