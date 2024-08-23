@@ -84,9 +84,6 @@ def create_run_ts_from_synthetic_run(
     for col in df.columns:
 
         data = df[col].values
-        # the data were modeled in a different coordinate system so if
-        # we flip the E channels we get the correct phase. Just multiply
-        # by a negative one.
         if col in channel_nomenclature_obj.ex_ey:
             channel_metadata = Electric()
             channel_metadata.component = col
@@ -94,7 +91,6 @@ def create_run_ts_from_synthetic_run(
             channel_metadata.time_period.start = run.start
             chts = ChannelTS(
                 channel_type="electric",
-                data=data * -1,
                 channel_metadata=channel_metadata.to_dict(),
             )
 
@@ -162,6 +158,11 @@ def get_time_series_dataframe(run, source_folder, add_nan_values):
 
     # read in data
     df = pd.read_csv(run.raw_data_path, names=run.channels, sep="\s+")
+    # the data were modeled in a different coordinate system so if
+    # we flip the E channels we get the correct phase. Just multiply
+    # by a negative one.
+    df["ex"] = df["ex"].values * -1
+    df["ey"] = df["ey"].values * -1
 
     # upsample data if requested,
     if run.run_metadata.sample_rate != 1.0:
@@ -169,9 +170,6 @@ def get_time_series_dataframe(run, source_folder, add_nan_values):
         new_data_dict = {}
         for i_ch, ch in enumerate(run.channels):
             data = df_orig[ch].to_numpy()
-            # there is a phase swap because of the modeling coordinates
-            if ch in ["ex", "ey"]:
-                data *= -1
             new_data_dict[ch] = ssig.resample(
                 data, int(run.run_metadata.sample_rate) * len(df_orig)
             )
