@@ -53,6 +53,7 @@ class SyntheticTestPaths:
             self._sandbox_path = sandbox_path
 
         self.mth5_path = self._sandbox_path.joinpath("mth5")
+        self.mkdirs()
         self.writability_check()
 
     def writability_check(self):
@@ -77,7 +78,11 @@ class SyntheticTestPaths:
         Makes the directories that the tests will write results to.
 
         """
-        self.mth5_path.mkdir(parents=True, exist_ok=True)
+        try:
+            self.mth5_path.mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            msg = "unable to create mth5 data folder -- check write access!"
+            return FileNotFoundError(msg)
 
 
 def _is_writable(path: pathlib.Path) -> bool:
