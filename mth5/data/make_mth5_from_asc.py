@@ -91,6 +91,7 @@ def create_run_ts_from_synthetic_run(
             channel_metadata.time_period.start = run.start
             chts = ChannelTS(
                 channel_type="electric",
+                data=data,
                 channel_metadata=channel_metadata.to_dict(),
             )
 
