@@ -84,6 +84,9 @@ def create_run_ts_from_synthetic_run(
     for col in df.columns:
 
         data = df[col].values
+        # the data were modeled in a different coordinate system so if
+        # we flip the E channels we get the correct phase. Just multiply
+        # by a negative one.
         if col in channel_nomenclature_obj.ex_ey:
             channel_metadata = Electric()
             channel_metadata.component = col
