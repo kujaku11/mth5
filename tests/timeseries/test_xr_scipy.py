@@ -80,6 +80,10 @@ class TestChannelScipyFilters(unittest.TestCase):
             [1 / self.sample_rate], self.ch.sps_filters.dx.tolist()
         )
 
+    def test_resample_poly(self):
+        a = self.ch.sps_filters.resample_poly(3)
+        self.assertEqual(a.sps_filters.dt, 3)
+
 
 # =============================================================================
 # run

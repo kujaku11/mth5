@@ -500,7 +500,6 @@ def resample_poly(darray, new_sample_rate, dim=None, pad_type="mean"):
     if n_samples_data != n_samples_axis:
         msg = f"conflicting axes sizes {n_samples_data} data and {n_samples_axis} axes after resampling"
         logger.warning(msg)
-        new_dim = new_dim[:n_samples_data]
         msg = f"trimming {dim} axis from {n_samples_axis} to {n_samples_data}"
         logger.info(msg)
         new_dim = new_dim[:n_samples_data]
