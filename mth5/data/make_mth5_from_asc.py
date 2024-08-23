@@ -165,10 +165,6 @@ def get_time_series_dataframe(run, source_folder, add_nan_values):
     df["ex"] = df["ex"].values * -1
     df["ey"] = df["ey"].values * -1
 
-    # Invert electric field channels -- there is a phase swap because of the modeling coordinates
-    df["ex"] = -df["ex"]
-    df["ey"] = -df["ey"]
-
     # upsample data if requested,
     if run.run_metadata.sample_rate != 1.0:
         df_orig = df.copy(deep=True)
