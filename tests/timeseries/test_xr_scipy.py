@@ -80,9 +80,27 @@ class TestChannelScipyFilters(unittest.TestCase):
             [1 / self.sample_rate], self.ch.sps_filters.dx.tolist()
         )
 
-    def test_resample_poly(self):
+    def test_resample_poly_odd_ratio(self):
         a = self.ch.sps_filters.resample_poly(3)
-        self.assertEqual(a.sps_filters.dt, 3)
+        with self.subTest("number of samples"):
+            self.assertEqual(a.size, self.n_samples / (self.sample_rate / 3))
+        with self.subTest("start time"):
+            self.assertTrue(self.ch.time[0].data == a.time[0].data)
+        with self.subTest("end time"):
+            self.assertTrue(self.ch.time[-1].data == a.time[-1].data)
+        with self.subTest("sample rate"):
+            self.assertNotEqual(a.sps_filters.fs, 3)
+
+    def test_resample_poly_even_ratio(self):
+        a = self.ch.sps_filters.resample_poly(4)
+        with self.subTest("number of samples"):
+            self.assertEqual(a.size, self.n_samples / (self.sample_rate / 4))
+        with self.subTest("start time"):
+            self.assertTrue(self.ch.time[0].data == a.time[0].data)
+        with self.subTest("end time"):
+            self.assertTrue(self.ch.time[-16].data == a.time[-1].data)
+        with self.subTest("sample rate"):
+            self.assertEqual(a.sps_filters.fs, 4)
 
 
 # =============================================================================
