@@ -14,12 +14,15 @@ import pandas as pd
 import h5py
 
 from mth5.groups import BaseGroup, FCChannelDataset
+# from mth5.groups import FCGroup
+
 from mth5.helpers import validate_name
 from mth5.utils.exceptions import MTH5Error
 
 from mt_metadata.transfer_functions.processing.fourier_coefficients import (
     Channel,
 )
+from mt_metadata.transfer_functions.processing.fourier_coefficients.decimation import Decimation
 
 
 # =============================================================================
@@ -47,7 +50,7 @@ class MasterFCGroup(BaseGroup):
         """
         pass
 
-    def add_fc_group(self, fc_name, fc_metadata=None):
+    def add_fc_group(self, fc_name: str, fc_metadata=None):  # -> FCGroup:
         """
         Add a Fourier Coefficent group
 
@@ -113,7 +116,7 @@ class FCGroup(BaseGroup):
         super().__init__(group, group_metadata=decimation_level_metadata, **kwargs)
 
     @BaseGroup.metadata.getter
-    def metadata(self):
+    def metadata(self) -> Decimation:
         """Overwrite get metadata to include channel information in the runs"""
 
         self._metadata.channels = []

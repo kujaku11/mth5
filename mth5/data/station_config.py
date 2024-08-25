@@ -16,9 +16,8 @@ Run level: 'sample_rate', 1.0
 
 """
 import pathlib
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
-# from mth5.data.paths import SyntheticTestPaths
 from mt_metadata.timeseries.filters.helper_functions import make_coefficient_filter
 from mt_metadata.timeseries import Run
 from mt_metadata.timeseries import Station
@@ -26,7 +25,7 @@ from mt_metadata.transfer_functions.processing.aurora import ChannelNomenclature
 
 ASCII_DATA_PATH = pathlib.Path(__file__).parent.resolve()
 
-def make_filters(as_list=False):
+def make_filters(as_list: Optional[bool] = False) -> Union[dict, list]:
     """
     Because the data from EMTF is already in mV/km and nT these filters are just
     placeholders to show where they would get assigned.
@@ -65,10 +64,10 @@ class SyntheticRun(object):
     Initially this class worked only with the synthetic ASCII data from legacy EMTF.
     """
 
-    def __init__(self, id, **kwargs):
+    def __init__(self, id: str, sample_rate: Optional[float] = 1.0, **kwargs):
         run_metadata = Run()
         run_metadata.id = id
-        run_metadata.sample_rate = kwargs.get("sample_rate", 1.0)
+        run_metadata.sample_rate = sample_rate
 
         self.raw_data_path = kwargs.get("raw_data_path", None)
 

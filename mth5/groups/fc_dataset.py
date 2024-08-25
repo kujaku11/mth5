@@ -22,7 +22,7 @@ from mth5.timeseries.ts_helpers import make_dt_coordinates
 from mt_metadata.transfer_functions.processing.fourier_coefficients import (
     Channel,
 )
-
+from typing import Optional, Union
 
 # =============================================================================
 
@@ -64,8 +64,6 @@ class FCChannelDataset:
     :class:`mt_metadata.transfer_functions.tf.StatisticalEstimate`,
      defaults to None
     :type dataset_metadata: :class:`mt_metadata.transfer_functions.tf.StatisticalEstimate`, optional
-    :param write_metadata: True to write metadata, defaults to True
-    :type write_metadata: Boolean, optional
     :param **kwargs: DESCRIPTION
     :type **kwargs: TYPE
     :raises MTH5Error: When an estimate is not present, or metadata name
@@ -74,7 +72,10 @@ class FCChannelDataset:
     """
 
     def __init__(
-        self, dataset, dataset_metadata=None, write_metadata=True, **kwargs
+        self,
+        dataset: h5py.Dataset,
+        dataset_metadata: Optional[Union[Channel, None]] = None,
+        **kwargs
     ):
 
         if dataset is not None and isinstance(dataset, (h5py.Dataset)):
