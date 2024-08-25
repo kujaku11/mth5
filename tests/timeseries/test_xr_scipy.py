@@ -87,7 +87,7 @@ class TestChannelScipyFilters(unittest.TestCase):
         with self.subTest("start time"):
             self.assertTrue(self.ch.time[0].data == a.time[0].data)
         with self.subTest("end time"):
-            self.assertTrue(self.ch.time[-1].data == a.time[-1].data)
+            self.assertTrue(np.datetime64('2020-01-01T00:01:03.666666667') == a.time[-1].data)
         with self.subTest("sample rate"):
             self.assertNotEqual(a.sps_filters.fs, 3)
 

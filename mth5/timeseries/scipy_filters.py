@@ -496,7 +496,8 @@ def resample_poly(darray, new_sample_rate, dim=None, pad_type="mean"):
     if new_step % 1 == 0:
         q = int(np.rint(new_step))
         # directly downsample without AAF on dimension
-        # this only works if q is an integer, otherwise to reset the time
+        # this only works if q is an integer, otherwise to 
+        # the index gets messed up from fractional spacing
         new_dim = darray[dim].values[slice(None, None, q)]
 
     else:
@@ -504,15 +505,18 @@ def resample_poly(darray, new_sample_rate, dim=None, pad_type="mean"):
             "New sample rate is not an even number of original sample rate. "
             f"The ratio is {new_step}.  Use the new dimensions with caution."
         )
+        # need to reset the end time
+        end_time = darray[dim].values[0] + np.timedelta64(int(np.rint(((ret[dim].size -1) / new_sample_rate)*1E9)), "ns")
         if dim in ["time"]:
             new_dim = pd.date_range(
                 darray[dim].values[0],
-                darray[dim].values[-1],
+                end_time,
                 periods=ret[dim].size,
             )
         else:
+            end_index = int(np.rint((ret[dim].size - (darray[dim].size / new_step)))) - 1
             new_dim = np.linspace(
-                darray[dim].values[0], darray[dim].values[-1], ret[dim].size
+                darray[dim].values[0], darray[dim].values[end_index], ret[dim].size
             )
 
     # check to make sure the dimension size is the same as the new array
