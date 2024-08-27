@@ -94,6 +94,33 @@ CHANNEL_DTYPE_LIST = [
 
 CHANNEL_DTYPE = np.dtype(CHANNEL_DTYPE_LIST)
 
+
+### Fourier coefficient summary table dtype
+FC_DTYPE_LIST = [
+    ("survey", "S30"),
+    ("station", "S30"),
+    ("run", "S20"),
+    ("decimation_level", "S44"),
+    ("latitude", float),
+    ("longitude", float),
+    ("elevation", float),
+    ("component", "S20"),
+    ("start", "S36"),
+    ("end", "S36"),
+    ("n_samples", np.int64),
+    ("sample_rate", float),
+    ("measurement_type", "S30"),
+    # ("azimuth", float),
+    # ("tilt", float),
+    ("units", "S60"),
+    ("hdf5_reference", h5py.ref_dtype),
+    ("decimation_level_reference", h5py.ref_dtype),
+    ("run_hdf5_reference", h5py.ref_dtype),
+    ("station_hdf5_reference", h5py.ref_dtype),
+]
+
+FC_DTYPE = np.dtype(FC_DTYPE_LIST)
+
 ### Standards dtype
 STANDARDS_DTYPE_LIST = [
     ("attribute", "S72"),

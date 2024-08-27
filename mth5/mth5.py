@@ -29,10 +29,12 @@ from loguru import logger
 from mth5.utils.exceptions import MTH5Error
 from mth5 import __version__ as mth5_version
 from mth5 import groups
-from mth5.tables import ChannelSummaryTable, TFSummaryTable
+from mth5.tables import ChannelSummaryTable, FCSummaryTable, TFSummaryTable
+
 from mth5 import helpers
 from mth5 import (
     CHANNEL_DTYPE,
+    FC_DTYPE,
     TF_DTYPE,
     ACCEPTABLE_FILE_SUFFIXES,
     ACCEPTABLE_FILE_TYPES,
@@ -700,6 +702,16 @@ class MTH5:
             )
         except ValueError:
             pass
+        try:
+            self.__hdf5_obj[self._default_root_name].create_dataset(
+                "fc_summary",
+                shape=(1,),
+                maxshape=(None,),
+                dtype=FC_DTYPE,
+                **self.dataset_options,
+            )
+        except ValueError:
+            pass
 
     def validate_file(self):
         """
@@ -981,8 +993,16 @@ class MTH5:
         )
 
     @property
+    def fc_summary(self):
+        """return a dataframe of fcs"""
+
+        return FCSummaryTable(
+            self.__hdf5_obj[f"{self._root_path}/fc_summary"]
+        )
+
+    @property
     def tf_summary(self):
-        """return a dataframe of channels"""
+        """return a dataframe of tfs"""
 
         return TFSummaryTable(self.__hdf5_obj[f"{self._root_path}/tf_summary"])
 
