@@ -145,38 +145,3 @@ def _get_fc_entry(
         dtype=dtype,
     )
     return fc_entry
-
-
-# TODO: delete or implement
-"""
-It would be nice to smooth the logic in the table building.
-Instead nested, all entries could be built in _recursive_get_fc_entries()
-and then added to the table.
-This would allow the factoring out of _recursive_get_fc_entry()
-which is not so much a method of table as it is of H5
-"""
-# def _recursive_get_fc_entries(
-#     group: Union[h5py._hl.group.Group, h5py._hl.files.File, h5py._hl.dataset.Dataset],
-#     # output: list
-# ):
-#     """
-#     a function to get fc_entry
-#     - Continues recursively drilling down until it encounters a Dataset
-#     """
-#     # output = []
-#     if isinstance(group, (h5py._hl.group.Group, h5py._hl.files.File)):
-#         for key, node in group.items():
-#             _recursive_get_fc_entries(node, output)
-#     elif isinstance(group, h5py._hl.dataset.Dataset):
-#         try:
-#             ch_type = group.attrs["mth5_type"]
-#             # ch_type = group.attrs["type"]
-#             if ch_type in ["FCChannel", ]:
-#                 ch_entry = _get_fc_entry(group)
-#                 output.append(ch_entry)
-#         except KeyError:
-#             pass
-#     else:
-#         msg = f"group is not Group, File, or Dataset, but {group}"
-#         self.logger.error(msg)
-#     #return output
