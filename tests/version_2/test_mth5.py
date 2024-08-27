@@ -69,7 +69,7 @@ class TestMTH5(unittest.TestCase):
         groups = sorted(self.mth5_obj.experiment_group.groups_list)
         defaults = sorted(
             self.mth5_obj._default_subgroup_names
-            + ["channel_summary", "tf_summary"]
+            + ["channel_summary", "fc_summary", "tf_summary"]
         )
 
         self.assertListEqual(defaults, groups)
