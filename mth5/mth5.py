@@ -1672,3 +1672,10 @@ class MTH5:
         station_group = self.get_station(station_id, survey=survey)
 
         station_group.transfer_functions_group.remove_transfer_function(tf_id)
+
+
+def _default_table_names() -> list:
+    """
+    track a global list of mth5 table names
+    """
+    return ["channel_summary", "fc_summary", "tf_summary"]
