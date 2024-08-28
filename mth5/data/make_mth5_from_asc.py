@@ -21,6 +21,10 @@ data/test1_LEMI12.h5
 so the band between the old and new Nyquist frequencies is bogus.
 
 """
+# =============================================================================
+# Imports
+# =============================================================================
+
 import numpy as np
 import pandas as pd
 import pathlib
@@ -37,12 +41,17 @@ from mth5.data.station_config import SyntheticRun
 from mth5.mth5 import MTH5
 from mth5.timeseries import ChannelTS, RunTS
 from mth5.utils.helpers import add_filters
-from mt_metadata.transfer_functions.processing.aurora import ChannelNomenclature
+from mt_metadata.transfer_functions.processing.aurora import (
+    ChannelNomenclature,
+)
 from mt_metadata.timeseries import Electric
 from mt_metadata.timeseries import Magnetic
 from mt_metadata.timeseries import Survey
+
 from typing import Optional, Union
 
+
+# =============================================================================
 np.random.seed(0)
 
 synthetic_test_paths = SyntheticTestPaths()
@@ -50,9 +59,7 @@ MTH5_PATH = synthetic_test_paths.mth5_path
 
 
 def create_run_ts_from_synthetic_run(
-    run: SyntheticRun,
-    df: pd.DataFrame,
-    channel_nomenclature: str = "default"
+    run: SyntheticRun, df: pd.DataFrame, channel_nomenclature: str = "default"
 ):
     """
     Loop over channels of synthetic data in df and make ChannelTS objects.
@@ -74,13 +81,15 @@ def create_run_ts_from_synthetic_run(
     channel_nomenclature_obj = ChannelNomenclature()
     channel_nomenclature_obj.keyword = channel_nomenclature
     ch_list = []
-    for col in df.columns:
+    for i_col, col in enumerate(df.columns):
 
         data = df[col].values
         if col in channel_nomenclature_obj.ex_ey:
             channel_metadata = Electric()
-            channel_metadata.component = col
             channel_metadata.units = "millivolts per kilometer"
+            channel_metadata.component = col
+            channel_metadata.channel_number = i_col  # not required
+            channel_metadata.sample_rate = run.run_metadata.sample_rate
             channel_metadata.time_period.start = run.start
             chts = ChannelTS(
                 channel_type="electric",
@@ -97,8 +106,8 @@ def create_run_ts_from_synthetic_run(
             channel_metadata = Magnetic()
             channel_metadata.units = "nanotesla"
             channel_metadata.component = col
-            channel_metadata.channel_number = 0
-            channel_metadata.sample_rate = 1.0
+            channel_metadata.channel_number = i_col    # not required
+            channel_metadata.sample_rate = run.run_metadata.sample_rate
             channel_metadata.time_period.start = run.start
             chts = ChannelTS(
                 channel_type=channel_metadata.type,
@@ -152,6 +161,11 @@ def get_time_series_dataframe(run, source_folder, add_nan_values):
 
     # read in data
     df = pd.read_csv(run.raw_data_path, names=run.channels, sep="\s+")
+    # the data were modeled in a different coordinate system so if
+    # we flip the E channels we get the correct phase. Just multiply
+    # Invert electric field channels -- there is a phase swap because of the modeling coordinates
+    df["ex"] = -df["ex"]
+    df["ey"] = -df["ey"]
 
     # upsample data if requested,
     if run.run_metadata.sample_rate != 1.0:
@@ -187,7 +201,7 @@ def create_mth5_synthetic_file(
     file_version: Optional[str] = "0.1.0",
     channel_nomenclature: Optional[str] = "default",
     force_make_mth5: Optional[bool] = True,
-    survey_metadata: Optional[Union[Survey, None]] = None
+    survey_metadata: Optional[Union[Survey, None]] = None,
 ):
     """
     Creates an MTH5 from synthetic data
@@ -238,7 +252,9 @@ def create_mth5_synthetic_file(
         logger.error(msg)
 
     mth5_path = target_folder.joinpath(mth5_name)
-    mth5_path = _update_mth5_path(mth5_path, add_nan_values, channel_nomenclature)
+    mth5_path = _update_mth5_path(
+        mth5_path, add_nan_values, channel_nomenclature
+    )
 
     if not force_make_mth5:
         if mth5_path.exists():
@@ -251,33 +267,35 @@ def create_mth5_synthetic_file(
         survey_metadata.id = survey_id
 
     # open output h5
-    m = MTH5(file_version=file_version)
-    m.open_mth5(mth5_path, mode="w")
-    _add_survey(m, survey_metadata)
+    with MTH5(file_version=file_version) as m:
+        m.open_mth5(mth5_path, mode="w")
+        _add_survey(m, survey_metadata)
 
-    for station_cfg in station_cfgs:
-        station_group = m.add_station(station_cfg.id, survey=survey_id)
+        for station_cfg in station_cfgs:
+            station_group = m.add_station(station_cfg.id, survey=survey_id)
 
-        for run in station_cfg.runs:
-            df = get_time_series_dataframe(run, source_folder, add_nan_values)
+            for run in station_cfg.runs:
+                df = get_time_series_dataframe(
+                    run, source_folder, add_nan_values
+                )
 
-            # cast to run_ts
-            runts = create_run_ts_from_synthetic_run(
-                run, df, channel_nomenclature=channel_nomenclature
-            )
-            runts.station_metadata.id = station_cfg.id
+                # cast to run_ts
+                runts = create_run_ts_from_synthetic_run(
+                    run, df, channel_nomenclature=channel_nomenclature
+                )
+                runts.station_metadata.id = station_cfg.id
 
-            # plot the data
-            if plot:
-                runts.plot()
+                # plot the data
+                if plot:
+                    runts.plot()
 
-            run_group = station_group.add_run(run.run_metadata.id)
-            run_group.from_runts(runts)
+                run_group = station_group.add_run(run.run_metadata.id)
+                run_group.from_runts(runts)
 
-    # add filters
-    active_filters = make_filters(as_list=True)
-    add_filters(m, active_filters, survey_id)
-    m.close_mth5()
+        # add filters
+        active_filters = make_filters(as_list=True)
+        add_filters(m, active_filters, survey_id)
+
     return mth5_path
 
 
@@ -308,7 +326,9 @@ def create_test1_h5(
     :return: the path to the mth5 file
 
     """
-    station_01_params = make_station_01(channel_nomenclature=channel_nomenclature)
+    station_01_params = make_station_01(
+        channel_nomenclature=channel_nomenclature
+    )
     mth5_name = station_01_params.mth5_name
     station_params = [
         station_01_params,
@@ -352,7 +372,9 @@ def create_test2_h5(
     :rtype: pathlib.Path
     :return: the path to the mth5 file
     """
-    station_02_params = make_station_02(channel_nomenclature=channel_nomenclature)
+    station_02_params = make_station_02(
+        channel_nomenclature=channel_nomenclature
+    )
     mth5_name = station_02_params.mth5_name
     station_params = [
         station_02_params,
@@ -374,6 +396,7 @@ def create_test1_h5_with_nan(
     channel_nomenclature: Optional[str] = "default",
     target_folder: Optional[Union[str, pathlib.Path]] = MTH5_PATH,
     source_folder: Optional[Union[str, pathlib.Path]] = "",
+    force_make_mth5: Optional[bool] = True,
 ) -> pathlib.Path:
     """
     Creates an MTH5 file for a single station named "test1" with some nan values.
@@ -391,7 +414,9 @@ def create_test1_h5_with_nan(
     :rtype: pathlib.Path
     :return: the path to the mth5 file
     """
-    station_01_params = make_station_01(channel_nomenclature=channel_nomenclature)
+    station_01_params = make_station_01(
+        channel_nomenclature=channel_nomenclature
+    )
     mth5_name = station_01_params.mth5_name
     station_params = [
         station_01_params,
@@ -402,6 +427,7 @@ def create_test1_h5_with_nan(
         plot=False,
         add_nan_values=True,
         file_version=file_version,
+        force_make_mth5=force_make_mth5,
         target_folder=target_folder,
         source_folder=source_folder,
     )
@@ -413,6 +439,7 @@ def create_test12rr_h5(
     channel_nomenclature: Optional[str] = "default",
     target_folder: Optional[Union[str, pathlib.Path]] = MTH5_PATH,
     source_folder: Optional[Union[str, pathlib.Path]] = "",
+    force_make_mth5: Optional[bool] = True,
 ) -> pathlib.Path:
     """
     Creates an MTH5 file with data from two stations station named "test1" and "test2".
@@ -430,8 +457,12 @@ def create_test12rr_h5(
     :rtype: pathlib.Path
     :return: the path to the mth5 file
     """
-    station_01_params = make_station_01(channel_nomenclature=channel_nomenclature)
-    station_02_params = make_station_02(channel_nomenclature=channel_nomenclature)
+    station_01_params = make_station_01(
+        channel_nomenclature=channel_nomenclature
+    )
+    station_02_params = make_station_02(
+        channel_nomenclature=channel_nomenclature
+    )
     station_params = [station_01_params, station_02_params]
     mth5_name = "test12rr.h5"
     mth5_path = create_mth5_synthetic_file(
@@ -441,6 +472,7 @@ def create_test12rr_h5(
         channel_nomenclature=channel_nomenclature,
         target_folder=target_folder,
         source_folder=source_folder,
+        force_make_mth5=force_make_mth5,
     )
     mth5_path = pathlib.Path(mth5_path)
     return mth5_path
@@ -473,7 +505,9 @@ def create_test3_h5(
     :rtype: pathlib.Path
     :return: the path to the mth5 file
     """
-    station_03_params = make_station_03(channel_nomenclature=channel_nomenclature)
+    station_03_params = make_station_03(
+        channel_nomenclature=channel_nomenclature
+    )
     station_params = [
         station_03_params,
     ]
@@ -493,6 +527,7 @@ def create_test4_h5(
     channel_nomenclature: Optional[str] = "default",
     target_folder: Optional[Union[str, pathlib.Path]] = MTH5_PATH,
     source_folder: Optional[Union[str, pathlib.Path]] = "",
+    force_make_mth5: Optional[bool] = True,
 ) -> pathlib.Path:
     """
     Creates an MTH5 file for a single station named "test1", data are up-sampled to 8Hz from
@@ -514,7 +549,9 @@ def create_test4_h5(
     :rtype: pathlib.Path
     :return: the path to the mth5 file
     """
-    station_04_params = make_station_04(channel_nomenclature=channel_nomenclature)
+    station_04_params = make_station_04(
+        channel_nomenclature=channel_nomenclature
+    )
     mth5_path = create_mth5_synthetic_file(
         [
             station_04_params,
@@ -525,6 +562,7 @@ def create_test4_h5(
         channel_nomenclature=channel_nomenclature,
         target_folder=target_folder,
         source_folder=source_folder,
+        force_make_mth5=force_make_mth5,
     )
     return mth5_path
 
@@ -547,10 +585,11 @@ def _add_survey(m: MTH5, survey_metadata: Survey) -> None:
         raise NotImplementedError(msg)
     return
 
+
 def _update_mth5_path(
-    mth5_path,
-    add_nan_values,
-    channel_nomenclature
+    mth5_path: pathlib.Path,
+    add_nan_values: bool,
+    channel_nomenclature: str
 ) -> pathlib.Path:
     """set name for output h5 file"""
     path_str = mth5_path.__str__()
@@ -560,12 +599,15 @@ def _update_mth5_path(
         path_str = path_str.replace(".h5", f"_{channel_nomenclature}.h5")
     return pathlib.Path(path_str)
 
+
 def main(file_version="0.1.0"):
     """Allow the module to be called from the command line"""
     create_test1_h5(file_version=file_version)
     create_test1_h5_with_nan(file_version=file_version)
     create_test2_h5(file_version=file_version)
-    create_test12rr_h5(file_version=file_version, channel_nomenclature="lemi12")
+    create_test12rr_h5(
+        file_version=file_version, channel_nomenclature="lemi12"
+    )
     create_test3_h5(file_version=file_version)
     create_test4_h5(file_version=file_version)
 

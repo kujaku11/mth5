@@ -589,6 +589,30 @@ class RunGroup(BaseGroup):
             self.logger.debug("Error: " + msg)
             raise MTH5Error(msg)
 
+    def has_data(self):
+        """
+        make sure there is data in the run, values are non-zero or not empty
+
+        :return: True if has data, False if empty or all zeros
+        :rtype: bool
+
+        """
+        has_data_list = []
+        has_data = True
+        for channel in self.groups_list:
+            if channel in ["summary"]:
+                continue
+            ch_obj = self.get_channel(channel)
+            has_data_list.append(
+                f"{ch_obj.metadata.component}: {ch_obj.has_data()}"
+            )
+            if not ch_obj.has_data():
+                has_data = False
+
+        if not has_data:
+            self.logger.info(", ".join(has_data_list))
+        return has_data
+
     def to_runts(self, start=None, end=None, n_samples=None):
         """
         create a :class:`mth5.timeseries.RunTS` object from channels of the

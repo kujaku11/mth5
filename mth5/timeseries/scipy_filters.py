@@ -16,6 +16,7 @@ from loguru import logger
 import xarray as xr
 import scipy.signal
 import numpy as np
+import pandas as pd
 
 try:
     from scipy.signal import sosfiltfilt
@@ -39,6 +40,7 @@ _ORDER_DEFAULTS = {
     "iir": 8,
     "fir": 29,
 }
+
 
 ### Warnings
 class UnevenSamplingWarning(Warning):
@@ -478,12 +480,6 @@ def resample_poly(darray, new_sample_rate, dim=None, pad_type="mean"):
     # is illegal in apply_ufunc.
     dim = get_maybe_only_dim(darray, dim)
 
-    dt = get_sampling_step(darray, dim)
-    q = int(np.rint(1 / (dt * new_sample_rate)))
-
-    # directly downsample without AAF on dimension
-    new_dim = darray[dim].values[slice(None, None, q)]
-
     ret = xr.apply_ufunc(
         scipy.signal.resample_poly,
         darray.astype(float),
@@ -495,14 +491,45 @@ def resample_poly(darray, new_sample_rate, dim=None, pad_type="mean"):
         kwargs={"padtype": pad_type},
     )
 
+    dt = get_sampling_step(darray, dim)
+    new_step = 1 / (dt * new_sample_rate)
+    if new_step % 1 == 0:
+        q = int(np.rint(new_step))
+        # directly downsample without AAF on dimension
+        # this only works if q is an integer, otherwise to 
+        # the index gets messed up from fractional spacing
+        new_dim = darray[dim].values[slice(None, None, q)]
+
+    else:
+        logger.warning(
+            "New sample rate is not an even number of original sample rate. "
+            f"The ratio is {new_step}.  Use the new dimensions with caution."
+        )
+        # need to reset the end time
+        end_time = darray[dim].values[0] + np.timedelta64(int(np.rint(((ret[dim].size -1) / new_sample_rate)*1E9)), "ns")
+        if dim in ["time"]:
+            new_dim = pd.date_range(
+                darray[dim].values[0],
+                end_time,
+                periods=ret[dim].size,
+            )
+        else:
+            end_index = int(np.rint((ret[dim].size - (darray[dim].size / new_step)))) - 1
+            new_dim = np.linspace(
+                darray[dim].values[0], darray[dim].values[end_index], ret[dim].size
+            )
+
+    # check to make sure the dimension size is the same as the new array
     n_samples_data = len(ret[dim])
     n_samples_axis = len(new_dim)
     if n_samples_data != n_samples_axis:
-        msg = f"conflicting axes sizes {n_samples_data} data and {n_samples_axis} axes after resampling"
-        logger.warning(msg)
-        new_dim = new_dim[:n_samples_data]
-        msg = f"trimming {dim} axis from {n_samples_axis} to {n_samples_data}"
-        logger.info(msg)
+        logger.warning(
+            f"conflicting axes sizes {n_samples_data} data and {n_samples_axis}"
+            " axes after resampling"
+        )
+        logger.info(
+            f"trimming {dim} axis from {n_samples_axis} to {n_samples_data}"
+        )
         new_dim = new_dim[:n_samples_data]
 
     ret[dim] = new_dim
