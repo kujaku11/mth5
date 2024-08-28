@@ -42,6 +42,8 @@ class TestFAPMTH5(unittest.TestCase):
         self.m.open_mth5(self.fn, mode="a")
         self.m.from_experiment(self.experiment, 0)
 
+        self.initial_has_entries = self.m.channel_summary._has_entries()
+
     def test_has_survey(self):
         self.assertEqual(self.m.has_group("Survey"), True)
 
@@ -51,6 +53,10 @@ class TestFAPMTH5(unittest.TestCase):
 
     def test_has_run_a(self):
         self.assertEqual(self.m.has_group("Survey/Stations/FL001/a"), True)
+
+    def test_run_a_has_data(self):
+        run_a = self.m.get_run("FL001", "a")
+        self.assertEqual(run_a.has_data(), False)
 
     def test_has_run_b(self):
         self.assertEqual(self.m.has_group("Survey/Stations/FL001/b"), True)
@@ -80,8 +86,12 @@ class TestFAPMTH5(unittest.TestCase):
         self.hx = self.m.get_channel("FL001", "a", "hx")
         fnames = [f.name for f in self.hx.channel_response.filters_list]
 
-        self.assertIn("frequency response table_00", fnames)
-        self.assertIn("v to counts (electric)", fnames)
+        with self.subTest("fap filter name"):
+            self.assertIn("frequency response table_00", fnames)
+        with self.subTest("counts filter name"):
+            self.assertIn("v to counts (electric)", fnames)
+        with self.subTest("channel has data"):
+            self.assertEqual(self.hx.has_data(), False)
 
     def test_fap(self):
         self.hx = self.m.get_channel("FL001", "a", "hx")
@@ -90,29 +100,54 @@ class TestFAPMTH5(unittest.TestCase):
             "frequency response table_00"
         ]
 
-        self.assertTrue(np.allclose(fap.frequencies, fap_exp.frequencies, 7))
-        self.assertTrue(np.allclose(fap.amplitudes, fap_exp.amplitudes, 7))
-        self.assertTrue(np.allclose(fap.phases, np.deg2rad(fap_exp.phases), 7))
+        with self.subTest("frequencies"):
+            self.assertTrue(
+                np.allclose(fap.frequencies, fap_exp.frequencies, 7)
+            )
+        with self.subTest("amplitude"):
+            self.assertTrue(np.allclose(fap.amplitudes, fap_exp.amplitudes, 7))
+        with self.subTest("phase"):
+            self.assertTrue(
+                np.allclose(fap.phases, np.deg2rad(fap_exp.phases), 7)
+            )
 
-        npt.assert_almost_equal(fap.frequencies, fap_exp.frequencies, 7)
-        npt.assert_almost_equal(fap.amplitudes, fap_exp.amplitudes, 7)
-        npt.assert_almost_equal(fap.phases, np.deg2rad(fap_exp.phases), 7)
+        with self.subTest("np frequencies"):
+            npt.assert_almost_equal(fap.frequencies, fap_exp.frequencies, 7)
+        with self.subTest("np amplitude"):
+            npt.assert_almost_equal(fap.amplitudes, fap_exp.amplitudes, 7)
+        with self.subTest("np phase"):
+            npt.assert_almost_equal(fap.phases, np.deg2rad(fap_exp.phases), 7)
 
         for k in ["gain", "units_in", "units_out", "name", "comments"]:
-            self.assertEqual(getattr(fap, k), getattr(fap_exp, k))
+            with self.subTest(k):
+                self.assertEqual(getattr(fap, k), getattr(fap_exp, k))
 
     def test_coefficient(self):
         self.hx = self.m.get_channel("FL001", "a", "hx")
         coeff = self.hx.channel_response.filters_list[1]
-        coeff_exp = self.experiment.surveys[0].filters[
-            "v to counts (electric)"
-        ]
+        coeff_exp = self.experiment.surveys[0].filters["v to counts (electric)"]
 
         self.assertDictEqual(
             coeff.to_dict(single=True), coeff_exp.to_dict(single=True)
+        )
+
+    def test_has_entries(self):
+        self.assertEqual(False, self.initial_has_entries)
+
+    def test_run_summary_has_data(self):
+        run_summary = self.m.run_summary
+        self.assertListEqual(
+            run_summary.has_data.values.tolist(), [False, False]
         )
 
     @classmethod
     def tearDownClass(self):
         self.m.close_mth5()
         self.fn.unlink()
+
+
+# =============================================================================
+# run
+# =============================================================================
+if __name__ == "__main__":
+    unittest.main()

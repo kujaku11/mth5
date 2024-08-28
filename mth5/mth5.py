@@ -368,7 +368,9 @@ class MTH5:
             self.logger.error(msg)
             raise ValueError(msg)
         if value not in ACCEPTABLE_FILE_TYPES:
-            msg = f"Input file.type is not valid, must be {ACCEPTABLE_FILE_TYPES}"
+            msg = (
+                f"Input file.type is not valid, must be {ACCEPTABLE_FILE_TYPES}"
+            )
             self.logger.error(msg)
             raise ValueError(msg)
         self.__file_type = value
@@ -1000,6 +1002,11 @@ class MTH5:
             self.__hdf5_obj[f"{self._root_path}/fc_summary"]
         )
 
+    def run_summary(self):
+        """return a dataframe of channels"""
+
+        return self.channel_summary.to_run_summary()
+
     @property
     def tf_summary(self):
         """return a dataframe of tfs"""
@@ -1435,9 +1442,7 @@ class MTH5:
                 f"Could not find channel, {run_path}/{channel_name}"
             )
 
-    def remove_channel(
-        self, station_name, run_name, channel_name, survey=None
-    ):
+    def remove_channel(self, station_name, run_name, channel_name, survey=None):
         """
         Convenience function to remove a channel using
         ``mth5.stations_group.get_station().get_run().remove_channel()``

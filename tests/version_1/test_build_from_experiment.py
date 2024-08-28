@@ -15,6 +15,7 @@ Created on Thu May 13 13:45:27 2021
 import unittest
 from pathlib import Path
 import numpy as np
+import pandas as pd
 
 from mth5 import CHANNEL_DTYPE
 from mth5 import helpers
@@ -292,6 +293,21 @@ class TestMTH5(unittest.TestCase):
                     self.mth5_obj.channel_summary.array["station"] == b"REW09"
                 ).all()
             )
+
+    def test_run_summary(self):
+        self.mth5_obj.channel_summary.summarize()
+        run_summary = self.mth5_obj.channel_summary.to_run_summary()
+        with self.subTest("is dataframe"):
+            self.assertIsInstance(run_summary, pd.DataFrame)
+        with self.subTest("shape"):
+            self.assertEqual(run_summary.shape, (5, 15))
+
+    def test_run_summary_property(self):
+        run_summary = self.mth5_obj.run_summary
+        with self.subTest("is dataframe"):
+            self.assertIsInstance(run_summary, pd.DataFrame)
+        with self.subTest("shape"):
+            self.assertEqual(run_summary.shape, (5, 15))
 
     @classmethod
     def tearDownClass(self):
