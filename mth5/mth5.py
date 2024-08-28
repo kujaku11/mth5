@@ -29,10 +29,12 @@ from loguru import logger
 from mth5.utils.exceptions import MTH5Error
 from mth5 import __version__ as mth5_version
 from mth5 import groups
-from mth5.tables import ChannelSummaryTable, TFSummaryTable
+from mth5.tables import ChannelSummaryTable, FCSummaryTable, TFSummaryTable
+
 from mth5 import helpers
 from mth5 import (
     CHANNEL_DTYPE,
+    FC_DTYPE,
     TF_DTYPE,
     ACCEPTABLE_FILE_SUFFIXES,
     ACCEPTABLE_FILE_TYPES,
@@ -366,9 +368,7 @@ class MTH5:
             self.logger.error(msg)
             raise ValueError(msg)
         if value not in ACCEPTABLE_FILE_TYPES:
-            msg = (
-                f"Input file.type is not valid, must be {ACCEPTABLE_FILE_TYPES}"
-            )
+            msg = f"Input file.type is not valid, must be {ACCEPTABLE_FILE_TYPES}"
             self.logger.error(msg)
             raise ValueError(msg)
         self.__file_type = value
@@ -702,6 +702,16 @@ class MTH5:
             )
         except ValueError:
             pass
+        try:
+            self.__hdf5_obj[self._default_root_name].create_dataset(
+                "fc_summary",
+                shape=(1,),
+                maxshape=(None,),
+                dtype=FC_DTYPE,
+                **self.dataset_options,
+            )
+        except ValueError:
+            pass
 
     def validate_file(self):
         """
@@ -983,6 +993,12 @@ class MTH5:
         )
 
     @property
+    def fc_summary(self):
+        """return a dataframe of fcs"""
+
+        return FCSummaryTable(self.__hdf5_obj[f"{self._root_path}/fc_summary"])
+
+    @property
     def run_summary(self):
         """return a dataframe of channels"""
 
@@ -990,7 +1006,7 @@ class MTH5:
 
     @property
     def tf_summary(self):
-        """return a dataframe of channels"""
+        """return a dataframe of tfs"""
 
         return TFSummaryTable(self.__hdf5_obj[f"{self._root_path}/tf_summary"])
 
@@ -1423,7 +1439,9 @@ class MTH5:
                 f"Could not find channel, {run_path}/{channel_name}"
             )
 
-    def remove_channel(self, station_name, run_name, channel_name, survey=None):
+    def remove_channel(
+        self, station_name, run_name, channel_name, survey=None
+    ):
         """
         Convenience function to remove a channel using
         ``mth5.stations_group.get_station().get_run().remove_channel()``
@@ -1658,3 +1676,10 @@ class MTH5:
         station_group = self.get_station(station_id, survey=survey)
 
         station_group.transfer_functions_group.remove_transfer_function(tf_id)
+
+
+def _default_table_names() -> list:
+    """
+    track a global list of mth5 table names
+    """
+    return ["channel_summary", "fc_summary", "tf_summary"]

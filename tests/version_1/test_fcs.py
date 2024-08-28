@@ -412,8 +412,11 @@ class TestFCFromXarray(unittest.TestCase):
         with self.assertRaises(MTH5Error):
             fc_run_chunks[0].run_id = "wont find this run name"
             mvds = make_multistation_spectrogram(self.m, fc_run_chunks, rtype=None)
-        print("OK")
 
+    def test_fc_summary(self):
+        self.m.fc_summary.summarize()
+        df = self.m.fc_summary.to_dataframe()
+        print(df)
 
     @classmethod
     def tearDownClass(self):
