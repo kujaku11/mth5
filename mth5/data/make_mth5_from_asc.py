@@ -137,7 +137,11 @@ def create_run_ts_from_synthetic_run(
     return runts
 
 
-def get_time_series_dataframe(run, source_folder, add_nan_values):
+def get_time_series_dataframe(
+    run: SyntheticRun,
+    source_folder: Optional[Union[pathlib.Path, str]],
+    add_nan_values: Optional[bool] = False
+) -> pd.DataFrame:
     """
     Returns time series data in a dataframe with columns named for EM field component.
 
@@ -145,7 +149,7 @@ def get_time_series_dataframe(run, source_folder, add_nan_values):
     Only tested for 8, to make 8Hz data for testing.  If run.sample_rate is default (1.0)
     then no up-sampling takes place.
 
-    :type run: aurora.test_utils.synthetic.station_config.SyntheticRun
+    :type run: mth5.data.station_config.SyntheticRun
     :param run: Information needed to define/create the run
     :type source_folder: Optional[Union[pathlib.Path, str]]
     :param source_folder: Where to load the ascii time series from
@@ -161,11 +165,11 @@ def get_time_series_dataframe(run, source_folder, add_nan_values):
 
     # read in data
     df = pd.read_csv(run.raw_data_path, names=run.channels, sep="\s+")
-    # the data were modeled in a different coordinate system so if
-    # we flip the E channels we get the correct phase. Just multiply
-    # Invert electric field channels -- there is a phase swap because of the modeling coordinates
-    df["ex"] = -df["ex"]
-    df["ey"] = -df["ey"]
+
+    # Invert electric channels to fix phase swap due to modeling coordinates.
+    df[df.columns[-2]] = -df[df.columns[-2]]  #  df["ex"] = -df["ex"]
+    df[df.columns[-1]] = -df[df.columns[-1]]  #  df["ey"] = -df["ey"]
+    #  Column indices are used to avoid handling channel nomenclature here.
 
     # upsample data if requested,
     if run.run_metadata.sample_rate != 1.0:
@@ -276,7 +280,9 @@ def create_mth5_synthetic_file(
 
             for run in station_cfg.runs:
                 df = get_time_series_dataframe(
-                    run, source_folder, add_nan_values
+                    run=run,
+                    source_folder=source_folder,
+                    add_nan_values=add_nan_values
                 )
 
                 # cast to run_ts
