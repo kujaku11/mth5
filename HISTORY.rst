@@ -117,3 +117,11 @@ History
 * Minor multivariate updates by @kkappler in https://github.com/kujaku11/mth5/pull/232
 * Updating bugs and Adding functionality by @kujaku11 in https://github.com/kujaku11/mth5/pull/226
 * bump v0.4.3 --> v0.4.4 by @kujaku11 in https://github.com/kujaku11/mth5/pull/216
+
+0.4.6
+----------------------------
+
+* add aurora tools to mth5 by @kujaku11 in https://github.com/kujaku11/mth5/pull/229
+* Patches by @kkappler in https://github.com/kujaku11/mth5/pull/234
+* Fix issue 233 by @kkappler in https://github.com/kujaku11/mth5/pull/235
+* hotfix synthetic electric field polarity (#236) by @kkappler in https://github.com/kujaku11/mth5/pull/237
