@@ -107,6 +107,7 @@ class SyntheticRun(object):
         self.set_channel_map()
         if channels is None:
             self.channels = list(self.channel_map.values())
+        self.noise_scalars = noise_scalars
         if noise_scalars is None:
             self.noise_scalars = {}
             for channel in self.channels:
