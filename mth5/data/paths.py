@@ -14,13 +14,9 @@ DEFAULT_SANDBOX_PATH = pathlib.Path(__file__).parent.resolve()
 
 class SyntheticTestPaths:
     """
-    sandbox path must be a place that has write access.  This class was created because on some
-    installations we only have read access.  Originally there was a data/ folder with the synthetic
-    ascii data stored there, and we created the mth5 and other data products in the same place.
-
-    Here we have a ascii_data_path which points at the ascii files (which may be read only), but we
-    also accept a kwarg for "sandbox_path" which is writable and this is where the mth5 and etc. will
-    get built.
+    This class was created to workaround installations with read-only access to the folder containing mth5.
+    Normally, the mth5 data/ folder can be used to store mth5 test data generated when running tests or examples.
+    If data/ is read-only, then this class allows setting "sandbox_path", a writable folder for tests or examples.
 
     """
 
@@ -56,7 +52,7 @@ class SyntheticTestPaths:
         self.mkdirs()
         self.writability_check()
 
-    def writability_check(self):
+    def writability_check(self) -> None:
         """
 
         Check if the path is writable, and Placeholder
@@ -71,9 +67,9 @@ class SyntheticTestPaths:
         if not _is_writable(self.mth5_path):
             msg = f"mth5_path {self.mth5_path} is not writable -- cannot make test data"
             raise IOError(msg)
-        pass
 
-    def mkdirs(self):
+
+    def mkdirs(self) -> None:
         """
         Makes the directories that the tests will write results to.
 
@@ -82,7 +78,7 @@ class SyntheticTestPaths:
             self.mth5_path.mkdir(parents=True, exist_ok=True)
         except Exception as e:
             msg = "unable to create mth5 data folder -- check write access!"
-            return FileNotFoundError(msg)
+            raise FileNotFoundError(msg)
 
 
 def _is_writable(path: pathlib.Path) -> bool:
