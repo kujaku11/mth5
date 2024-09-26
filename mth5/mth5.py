@@ -1480,7 +1480,7 @@ class MTH5:
             .remove_channel(channel_name)
         )
 
-    def add_transfer_function(self, tf_object):
+    def add_transfer_function(self, tf_object, update_metadata=True):
         """
         Add a transfer function
         :param tf_object: DESCRIPTION
@@ -1563,8 +1563,8 @@ class MTH5:
             station_group = survey_group.stations_group.get_station(
                 tf_object.station_metadata.id
             )
-            station_group.metadata.update(tf_object.to_ts_station_metadata())
-            station_group.write_metadata()
+            # station_group.metadata.update(tf_object.to_ts_station_metadata())
+            # station_group.write_metadata()
         except MTH5Error:
             station_group = survey_group.stations_group.add_station(
                 tf_object.station_metadata.id,
@@ -1619,7 +1619,8 @@ class MTH5:
                 )
             )
 
-        survey_group.update_metadata()
+        if update_metadata:
+            survey_group.update_metadata()
         return tf_group
 
     def get_transfer_function(self, station_id, tf_id, survey=None):
