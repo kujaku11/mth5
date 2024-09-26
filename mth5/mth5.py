@@ -368,7 +368,9 @@ class MTH5:
             self.logger.error(msg)
             raise ValueError(msg)
         if value not in ACCEPTABLE_FILE_TYPES:
-            msg = f"Input file.type is not valid, must be {ACCEPTABLE_FILE_TYPES}"
+            msg = (
+                f"Input file.type is not valid, must be {ACCEPTABLE_FILE_TYPES}"
+            )
             self.logger.error(msg)
             raise ValueError(msg)
         self.__file_type = value
@@ -581,7 +583,7 @@ class MTH5:
                 station_list += sg.stations_group.groups_list
             return station_list
 
-    def open_mth5(self, filename=None, mode="a"):
+    def open_mth5(self, filename=None, mode="a", **kwargs):
         """
         open an mth5 file
 
@@ -620,14 +622,18 @@ class MTH5:
                     )
                     self.logger.exception(msg)
             elif mode in ["a", "w-", "x", "r+"]:
-                self.__hdf5_obj = h5py.File(self.__filename, mode=mode)
+                self.__hdf5_obj = h5py.File(
+                    self.__filename, mode=mode, **kwargs
+                )
                 self._set_default_groups()
                 if not self.validate_file():
                     msg = "Input file is not a valid MTH5 file"
                     self.logger.error(msg)
                     raise MTH5Error(msg)
             elif mode in ["r"]:
-                self.__hdf5_obj = h5py.File(self.__filename, mode=mode)
+                self.__hdf5_obj = h5py.File(
+                    self.__filename, mode=mode, **kwargs
+                )
                 self._set_default_groups()
                 self.validate_file()
             else:
@@ -636,7 +642,7 @@ class MTH5:
                 raise MTH5Error(msg)
         else:
             if mode in ["a", "w", "w-", "x"]:
-                self._initialize_file(mode=mode)
+                self._initialize_file(mode=mode, **kwargs)
             else:
                 msg = f"Cannot open new file in mode {mode} "
                 self.logger.error(msg)
@@ -646,7 +652,7 @@ class MTH5:
             self._initialize_summary()
         return self
 
-    def _initialize_file(self, mode="w"):
+    def _initialize_file(self, mode="w", **kwargs):
         """
         Initialize the default groups for the file
 
@@ -655,7 +661,7 @@ class MTH5:
 
         """
         # open an hdf5 file
-        self.__hdf5_obj = h5py.File(self.__filename, mode)
+        self.__hdf5_obj = h5py.File(self.__filename, mode, **kwargs)
 
         # write general metadata
         self.__hdf5_obj.attrs.update(self.file_attributes)
@@ -1439,9 +1445,7 @@ class MTH5:
                 f"Could not find channel, {run_path}/{channel_name}"
             )
 
-    def remove_channel(
-        self, station_name, run_name, channel_name, survey=None
-    ):
+    def remove_channel(self, station_name, run_name, channel_name, survey=None):
         """
         Convenience function to remove a channel using
         ``mth5.stations_group.get_station().get_run().remove_channel()``
