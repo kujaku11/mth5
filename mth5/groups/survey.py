@@ -484,6 +484,7 @@ class SurveyGroup(BaseGroup):
                 value = to_numpy_type(value)
                 self.logger.debug(f"wrote metadata {key} = {value}")
                 self.hdf5_group.attrs.create(key, value)
+            self._has_read_metadata = True
         except KeyError as key_error:
             if "no write intent" in str(key_error):
                 self.logger.warning(
