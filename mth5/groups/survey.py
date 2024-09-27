@@ -518,7 +518,9 @@ class SurveyGroup(BaseGroup):
         if survey_dict:
             self.metadata.from_dict(survey_dict, skip_none=True)
 
-        if not len(station_summary):  # if station info is empty df, skip parsing
+        if not len(
+            station_summary
+        ):  # if station info is empty df, skip parsing
             self.write_metadata()
             return
 
@@ -541,4 +543,6 @@ class SurveyGroup(BaseGroup):
             station_summary.longitude.max()
         )
 
+        # metadata by default comes with stations and runs, need to remove those
+        # before writing the metadata.
         self.write_metadata()
