@@ -25,7 +25,7 @@ from mth5.groups import (
     StandardsGroup,
 )
 from mth5.utils.exceptions import MTH5Error
-from mth5.helpers import validate_name
+from mth5.helpers import validate_name, to_numpy_type
 
 from mt_metadata.timeseries import Survey
 
@@ -472,6 +472,32 @@ class SurveyGroup(BaseGroup):
                 "Stations Group does not exists yet. Metadata contains no station information"
             )
         return self._metadata
+
+    def write_metadata(self):
+        """
+        Write HDF5 metadata from metadata object.
+
+        """
+
+        try:
+            for key, value in self._metadata.to_dict(single=True).items():
+                value = to_numpy_type(value)
+                self.logger.debug(f"wrote metadata {key} = {value}")
+                self.hdf5_group.attrs.create(key, value)
+        except KeyError as key_error:
+            if "no write intent" in str(key_error):
+                self.logger.warning(
+                    "File is in read-only mode, cannot write metadata."
+                )
+            else:
+                raise KeyError(key_error)
+        except ValueError as value_error:
+            if "Unable to synchronously create group" in str(value_error):
+                self.logger.warning(
+                    "File is in read-only mode, cannot write metadata."
+                )
+            else:
+                raise ValueError(value_error)
 
     @property
     def stations_group(self):
