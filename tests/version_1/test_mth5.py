@@ -66,8 +66,7 @@ class TestMTH5(unittest.TestCase):
     def test_default_group_names(self):
         groups = sorted(self.mth5_obj.survey_group.groups_list)
         defaults = sorted(
-            self.mth5_obj._default_subgroup_names
-            + _default_table_names()
+            self.mth5_obj._default_subgroup_names + _default_table_names()
         )
 
         self.assertListEqual(defaults, groups)
@@ -85,14 +84,24 @@ class TestMTH5(unittest.TestCase):
         self.assertEqual(self.mth5_obj.validate_file(), True)
 
     def test_set_survey_metadata_attr(self):
-        """ Test that we can change a value in the survey metadata and this is written to mth5"""
+        """Test that we can change a value in the survey metadata and
+        this is written to mth5
+        """
         survey_metadata = self.mth5_obj.survey_group.metadata
-        assert survey_metadata.id is None
-        new_survey_id = "MT Survey"
-        survey_metadata.id = new_survey_id
-        assert survey_metadata.id == new_survey_id
-        self.mth5_obj.survey_group.update_metadata(survey_metadata.to_dict())
-        assert self.mth5_obj.survey_group.metadata.id == new_survey_id
+        with self.subTest("id None"):
+            self.assertEqual(survey_metadata.id, None)
+
+        with self.subTest("id set"):
+            new_survey_id = "MT Survey"
+            survey_metadata.id = new_survey_id
+            self.assertEqual(survey_metadata.id, new_survey_id)
+        with self.subTest("metadata update"):
+            self.mth5_obj.survey_group.update_metadata(
+                survey_metadata.to_dict()
+            )
+            self.assertEqual(
+                self.mth5_obj.survey_group.metadata.id, new_survey_id
+            )
 
     def test_add_station(self):
         new_station = self.mth5_obj.add_station("MT001")
