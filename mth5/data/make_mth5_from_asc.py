@@ -165,7 +165,6 @@ def get_time_series_dataframe(
 
     # read in data
     df = pd.read_csv(run.raw_data_path, names=run.channels, sep="\s+")
-    print(df)
     if len(df) == 0:
         raise ValueError("Synthetic dataframe is empty. Check path")
 
