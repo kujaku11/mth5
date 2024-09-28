@@ -92,7 +92,8 @@ class TestMetadataValuesSetCorrect(unittest.TestCase):
             summary_row = run_summary_df[
                 run_summary_df.id == run.run_metadata.id
             ].iloc[0]
-            assert summary_row.start == pd.Timestamp(run.start).tz_convert(None)
+            expected_start = run.run_metadata.time_period.start
+            assert summary_row.start == pd.Timestamp(expected_start).tz_convert(None)
 
 
 def main():

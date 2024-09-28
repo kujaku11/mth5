@@ -178,7 +178,7 @@ def get_time_series_dataframe(
     if add_nan_values:
         for col in run.channels:
             for [ndx, num_nan] in run.nan_indices[col]:
-                df[col].loc[ndx : ndx + num_nan] = np.nan
+                df.loc[ndx: ndx + num_nan, col] = np.nan
     return df
 
 
