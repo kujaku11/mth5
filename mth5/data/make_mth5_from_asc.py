@@ -166,7 +166,9 @@ def get_time_series_dataframe(
     # read in data
     df = pd.read_csv(run.raw_data_path, names=run.channels, sep="\s+")
     if len(df) == 0:
-        raise ValueError("Synthetic dataframe is empty. Check path")
+        raise ValueError(
+            f"Synthetic dataframe is empty. Check path {run.raw_data_path}"
+        )
 
     # Invert electric channels to fix phase swap due to modeling coordinates.
     df[df.columns[-2]] = -df[df.columns[-2]]  #  df["ex"] = -df["ex"]
