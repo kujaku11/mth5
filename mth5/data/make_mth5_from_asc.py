@@ -87,60 +87,47 @@ def create_run_ts_from_synthetic_run(
         if col in channel_nomenclature_obj.ex_ey:
             channel_metadata = Electric()
             channel_metadata.units = "millivolts per kilometer"
-            channel_metadata.component = col
-            channel_metadata.channel_number = i_col  # not required
-            channel_metadata.sample_rate = run.run_metadata.sample_rate
-            channel_metadata.time_period.start = run.start
-            chts = ChannelTS(
-                channel_type="electric",
-                data=data,
-                channel_metadata=channel_metadata.to_dict(),
-            )
+        elif col in channel_nomenclature_obj.hx_hy_hz:
+            channel_metadata = Magnetic()
+            channel_metadata.units = "nanotesla"
 
-            # add metadata to the channel here
+        channel_metadata.component = col
+        channel_metadata.channel_number = i_col  # not required
+        channel_metadata.sample_rate = run.run_metadata.sample_rate
+        channel_metadata.time_period.start = run.run_metadata.time_period.start
+        chts = ChannelTS(
+            channel_type=channel_metadata.type,  # "electric" or "magnetic"
+            data=data,
+            channel_metadata=channel_metadata.to_dict(),
+        )
+
+        # Set dipole properties
+        # (Not sure how to pass this in channel_metadata when intializing)
+        if col in channel_nomenclature_obj.ex_ey:
             chts.channel_metadata.dipole_length = 50
             if col == channel_nomenclature_obj.ey:
                 chts.channel_metadata.measurement_azimuth = 90.0
 
-        elif col in channel_nomenclature_obj.hx_hy_hz:
-            channel_metadata = Magnetic()
-            channel_metadata.units = "nanotesla"
-            channel_metadata.component = col
-            channel_metadata.channel_number = i_col  # not required
-            channel_metadata.sample_rate = run.run_metadata.sample_rate
-            channel_metadata.time_period.start = run.start
-            chts = ChannelTS(
-                channel_type=channel_metadata.type,
-                data=data,
-                channel_metadata=channel_metadata.to_dict(),
-            )
-            chts.component = col
-
-            if col == channel_nomenclature_obj.ey:
-                chts.channel_metadata.measurement_azimuth = 90.0
-
-        chts.channel_metadata.component = col
-        chts.channel_metadata.sample_rate = run.run_metadata.sample_rate
+        # Set filters
         chts.channel_metadata.filter.name = run.filters[col]
         chts.channel_metadata.filter.applied = len(run.filters[col]) * [
             True,
         ]
-        chts.channel_metadata.start = run.run_metadata.time_period.start
 
         ch_list.append(chts)
 
     # make a RunTS object
-    runts = RunTS(array_list=ch_list)
+    runts = RunTS(array_list=ch_list, run_metadata=run.run_metadata)
 
     # add in metadata
-    runts.run_metadata.id = run.run_metadata.id
+    # runts.run_metadata.id = run.run_metadata.id
     return runts
 
 
 def get_time_series_dataframe(
     run: SyntheticRun,
     source_folder: Optional[Union[pathlib.Path, str]],
-    add_nan_values: Optional[bool] = False,
+    add_nan_values: Optional[bool] = False
 ) -> pd.DataFrame:
     """
     Returns time series data in a dataframe with columns named for EM field component.
@@ -165,10 +152,6 @@ def get_time_series_dataframe(
 
     # read in data
     df = pd.read_csv(run.raw_data_path, names=run.channels, sep="\s+")
-    if len(df) == 0:
-        raise ValueError(
-            f"Synthetic dataframe is empty. Check path {run.raw_data_path}"
-        )
 
     # Invert electric channels to fix phase swap due to modeling coordinates.
     df[df.columns[-2]] = -df[df.columns[-2]]  #  df["ex"] = -df["ex"]
@@ -195,7 +178,7 @@ def get_time_series_dataframe(
     if add_nan_values:
         for col in run.channels:
             for [ndx, num_nan] in run.nan_indices[col]:
-                df[col].loc[ndx : ndx + num_nan] = np.nan
+                df.loc[ndx: ndx + num_nan, col] = np.nan
     return df
 
 
@@ -255,7 +238,7 @@ def create_mth5_synthetic_file(
     try:
         target_folder.mkdir(exist_ok=True, parents=True)
     except OSError:
-        msg = "MTH5 maybe installed on a read-only file system"
+        msg = "Aurora maybe installed on a read-only file system"
         msg = f"{msg}: try setting target_path argument when calling create_mth5_synthetic_file"
         logger.error(msg)
 
@@ -286,7 +269,7 @@ def create_mth5_synthetic_file(
                 df = get_time_series_dataframe(
                     run=run,
                     source_folder=source_folder,
-                    add_nan_values=add_nan_values,
+                    add_nan_values=add_nan_values
                 )
 
                 # cast to run_ts
@@ -597,7 +580,9 @@ def _add_survey(m: MTH5, survey_metadata: Survey) -> None:
 
 
 def _update_mth5_path(
-    mth5_path: pathlib.Path, add_nan_values: bool, channel_nomenclature: str
+    mth5_path: pathlib.Path,
+    add_nan_values: bool,
+    channel_nomenclature: str
 ) -> pathlib.Path:
     """set name for output h5 file"""
     path_str = mth5_path.__str__()
@@ -613,7 +598,9 @@ def main(file_version="0.1.0"):
     create_test1_h5(file_version=file_version)
     create_test1_h5_with_nan(file_version=file_version)
     create_test2_h5(file_version=file_version)
-    create_test12rr_h5(file_version=file_version, channel_nomenclature="lemi12")
+    create_test12rr_h5(
+        file_version=file_version, channel_nomenclature="lemi12"
+    )
     create_test3_h5(file_version=file_version)
     create_test4_h5(file_version=file_version)
 
