@@ -83,11 +83,11 @@ class TestMetadataValuesSetCorrect(unittest.TestCase):
 
     def make_run_summary(self):
         mth5_path = self.make_mth5()
-        m = MTH5()
-        m.open_mth5(mth5_path)
-        station_id = m.station_list[0]  # station should be named "test3"
-        self.assertTrue(station_id == "test3")
-        station_obj = m.get_station(station_id)
+        with MTH5() as m:
+            m = m.open_mth5(mth5_path)
+            station_id = m.station_list[0]  # station should be named "test3"
+            self.assertTrue(station_id == "test3")
+            station_obj = m.get_station(station_id)
         return station_obj.run_summary
 
     def test_start_times_correct(self):
