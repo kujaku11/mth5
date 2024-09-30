@@ -88,7 +88,7 @@ class TestMetadataValuesSetCorrect(unittest.TestCase):
             station_id = m.station_list[0]  # station should be named "test3"
             self.assertTrue(station_id == "test3")
             station_obj = m.get_station(station_id)
-        return station_obj.run_summary
+            return station_obj.run_summary
 
     def test_start_times_correct(self):
         run_summary_df = self.make_run_summary()
