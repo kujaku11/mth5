@@ -97,7 +97,8 @@ class SyntheticRun(object):
         """
         run_metadata = Run()
         run_metadata.id = id
-        run_metadata.sample_rte = sample_rate
+        run_metadata.sample_rate = sample_rate
+        run_metadata.time_period.start = start
 
         self.raw_data_path = raw_data_path
 
@@ -116,7 +117,6 @@ class SyntheticRun(object):
             self.nan_indices = {}  # TODO: make this consistent with noise_scalars, None or empty dict.
         if filters is None:
             self.filters = {}  # TODO: make this consistent with noise_scalars, None or empty dict.
-        self.start = start
 
         # run_metadata.add_base_attribute("")
         self.run_metadata = run_metadata

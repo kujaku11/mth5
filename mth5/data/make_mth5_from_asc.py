@@ -87,53 +87,40 @@ def create_run_ts_from_synthetic_run(
         if col in channel_nomenclature_obj.ex_ey:
             channel_metadata = Electric()
             channel_metadata.units = "millivolts per kilometer"
-            channel_metadata.component = col
-            channel_metadata.channel_number = i_col  # not required
-            channel_metadata.sample_rate = run.run_metadata.sample_rate
-            channel_metadata.time_period.start = run.start
-            chts = ChannelTS(
-                channel_type="electric",
-                data=data,
-                channel_metadata=channel_metadata.to_dict(),
-            )
+        elif col in channel_nomenclature_obj.hx_hy_hz:
+            channel_metadata = Magnetic()
+            channel_metadata.units = "nanotesla"
 
-            # add metadata to the channel here
+        channel_metadata.component = col
+        channel_metadata.channel_number = i_col  # not required
+        channel_metadata.sample_rate = run.run_metadata.sample_rate
+        channel_metadata.time_period.start = run.run_metadata.time_period.start
+        chts = ChannelTS(
+            channel_type=channel_metadata.type,  # "electric" or "magnetic"
+            data=data,
+            channel_metadata=channel_metadata.to_dict(),
+        )
+
+        # Set dipole properties
+        # (Not sure how to pass this in channel_metadata when intializing)
+        if col in channel_nomenclature_obj.ex_ey:
             chts.channel_metadata.dipole_length = 50
             if col == channel_nomenclature_obj.ey:
                 chts.channel_metadata.measurement_azimuth = 90.0
 
-        elif col in channel_nomenclature_obj.hx_hy_hz:
-            channel_metadata = Magnetic()
-            channel_metadata.units = "nanotesla"
-            channel_metadata.component = col
-            channel_metadata.channel_number = i_col    # not required
-            channel_metadata.sample_rate = run.run_metadata.sample_rate
-            channel_metadata.time_period.start = run.start
-            chts = ChannelTS(
-                channel_type=channel_metadata.type,
-                data=data,
-                channel_metadata=channel_metadata.to_dict(),
-            )
-            chts.component = col
-
-            if col == channel_nomenclature_obj.ey:
-                chts.channel_metadata.measurement_azimuth = 90.0
-
-        chts.channel_metadata.component = col
-        chts.channel_metadata.sample_rate = run.run_metadata.sample_rate
+        # Set filters
         chts.channel_metadata.filter.name = run.filters[col]
         chts.channel_metadata.filter.applied = len(run.filters[col]) * [
             True,
         ]
-        chts.channel_metadata.start = run.run_metadata.time_period.start
 
         ch_list.append(chts)
 
     # make a RunTS object
-    runts = RunTS(array_list=ch_list)
+    runts = RunTS(array_list=ch_list, run_metadata=run.run_metadata)
 
     # add in metadata
-    runts.run_metadata.id = run.run_metadata.id
+    # runts.run_metadata.id = run.run_metadata.id
     return runts
 
 
@@ -191,7 +178,7 @@ def get_time_series_dataframe(
     if add_nan_values:
         for col in run.channels:
             for [ndx, num_nan] in run.nan_indices[col]:
-                df[col].loc[ndx : ndx + num_nan] = np.nan
+                df.loc[ndx: ndx + num_nan, col] = np.nan
     return df
 
 
