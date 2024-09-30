@@ -5,6 +5,7 @@ import pathlib
 import unittest
 
 from mth5.data.make_mth5_from_asc import create_test1_h5
+
 # from mth5.data.make_mth5_from_asc import create_test1_h5_with_nan
 from mth5.data.make_mth5_from_asc import create_test12rr_h5
 from mth5.data.make_mth5_from_asc import create_test2_h5
@@ -43,6 +44,7 @@ class TestDataFolder(unittest.TestCase):
         assert "test1.asc" in file_names
         assert "test2.asc" in file_names
 
+
 class TestMakeSyntheticMTH5(unittest.TestCase):
     """
     create_test1_h5(file_version=file_version)
@@ -59,6 +61,7 @@ class TestMakeSyntheticMTH5(unittest.TestCase):
     def test_make_more_mth5s(self):
         create_test1_h5(file_version="0.1.0", source_folder=SOURCE_PATH)
 
+
 class TestMetadataValuesSetCorrect(unittest.TestCase):
     """
     Tests setting of start time as per aurora issue #188
@@ -73,7 +76,9 @@ class TestMetadataValuesSetCorrect(unittest.TestCase):
 
     def make_mth5(self):
         close_open_files()
-        mth5_path = create_test3_h5(force_make_mth5=self.remake_mth5_for_each_test)
+        mth5_path = create_test3_h5(
+            force_make_mth5=self.remake_mth5_for_each_test
+        )
         return mth5_path
 
     def make_run_summary(self):
@@ -93,13 +98,15 @@ class TestMetadataValuesSetCorrect(unittest.TestCase):
                 run_summary_df.id == run.run_metadata.id
             ].iloc[0]
             expected_start = run.run_metadata.time_period.start
-            assert summary_row.start == pd.Timestamp(expected_start).tz_convert(None)
+            with self.subTest(run):
+                self.assertEqual(
+                    summary_row.start,
+                    pd.Timestamp(expected_start).tz_convert(None),
+                )
 
 
-def main():
-#    TestMetadataValuesSetCorrect()
-    unittest.main()
-
-
+# =============================================================================
+# Run
+# =============================================================================
 if __name__ == "__main__":
-    main()
+    unittest.main()
