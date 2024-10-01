@@ -133,3 +133,4 @@ History
 * Update synthetic data by @kkappler in https://github.com/kujaku11/mth5/pull/243
 * Optimize adding TF by @kujaku11 in https://github.com/kujaku11/mth5/pull/242
 * Patches by @kujaku11 in https://github.com/kujaku11/mth5/pull/244
+* bump v0.4.6 --> v0.4.7 by @kujaku11 in https://github.com/kujaku11/mth5/pull/245
