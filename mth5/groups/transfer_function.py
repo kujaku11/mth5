@@ -24,6 +24,7 @@ from mt_metadata.transfer_functions.tf import (
     Magnetic,
 )
 
+
 # =============================================================================
 # Transfer Functions Group
 # =============================================================================
@@ -85,9 +86,9 @@ class TransferFunctionsGroup(BaseGroup):
 
         if "1980" not in tf_object.station_metadata.time_period.start:
             if "1980" in self.hdf5_group.parent.attrs["time_period.start"]:
-                self.hdf5_group.parent.attrs[
-                    "time_period.start"
-                ] = tf_object.station_metadata.time_period.start
+                self.hdf5_group.parent.attrs["time_period.start"] = (
+                    tf_object.station_metadata.time_period.start
+                )
 
             elif (
                 self.hdf5_group.parent.attrs["time_period.start"]
@@ -97,15 +98,15 @@ class TransferFunctionsGroup(BaseGroup):
                     self.hdf5_group.parent.attrs["time_period.start"]
                     > tf_object.station_metadata.time_period.start
                 ):
-                    self.hdf5_group.parent.attrs[
-                        "time_period.start"
-                    ] = tf_object.station_metadata.time_period.start
+                    self.hdf5_group.parent.attrs["time_period.start"] = (
+                        tf_object.station_metadata.time_period.start
+                    )
 
         if "1980" not in tf_object.station_metadata.time_period.end:
             if "1980" in self.hdf5_group.parent.attrs["time_period.end"]:
-                self.hdf5_group.parent.attrs[
-                    "time_period.end"
-                ] = tf_object.station_metadata.time_period.end
+                self.hdf5_group.parent.attrs["time_period.end"] = (
+                    tf_object.station_metadata.time_period.end
+                )
 
             elif (
                 self.hdf5_group.parent.attrs["time_period.end"]
@@ -115,9 +116,9 @@ class TransferFunctionsGroup(BaseGroup):
                     self.hdf5_group.parent.attrs["time_period.end"]
                     > tf_object.station_metadata.time_period.end
                 ):
-                    self.hdf5_group.parent.attrs[
-                        "time_period.end"
-                    ] = tf_object.station_metadata.time_period.end
+                    self.hdf5_group.parent.attrs["time_period.end"] = (
+                        tf_object.station_metadata.time_period.end
+                    )
 
     def add_transfer_function(self, name, tf_object=None):
         """
@@ -141,13 +142,19 @@ class TransferFunctionsGroup(BaseGroup):
         """
         name = validate_name(name)
 
-        tf_group = TransferFunctionGroup(
-            self.hdf5_group.create_group(name), **self.dataset_options
-        )
-
         if tf_object is not None:
-            tf_group.from_tf_object(tf_object)
             self._update_time_period_from_tf(tf_object)
+            tf_group = TransferFunctionGroup(
+                self.hdf5_group.create_group(name),
+                group_metadata=tf_object.station_metadata.transfer_function,
+                **self.dataset_options,
+            )
+            tf_group.from_tf_object(tf_object, update_metadata=False)
+
+        else:
+            tf_group = TransferFunctionGroup(
+                self.hdf5_group.create_group(name), **self.dataset_options
+            )
 
         return tf_group
 
@@ -431,14 +438,14 @@ class TransferFunctionGroup(BaseGroup):
             return EstimateDataset(
                 estimate_dataset, dataset_metadata=estimate_metadata
             )
-        except (KeyError):
+        except KeyError:
             msg = (
                 f"{estimate_name} does not exist, "
                 "check groups_list for existing names"
             )
             self.logger.error(msg)
             raise MTH5Error(msg)
-        except (OSError) as error:
+        except OSError as error:
             self.logger.error(error)
             raise MTH5Error(error)
 
@@ -533,9 +540,7 @@ class TransferFunctionGroup(BaseGroup):
         if self.period is not None:
             tf_obj.period = self.period
         else:
-            msg = (
-                "Period must not be None to create a transfer function object"
-            )
+            msg = "Period must not be None to create a transfer function object"
             self.logger.error(msg)
             raise ValueError(msg)
         for estimate_name in self.groups_list:
@@ -553,7 +558,7 @@ class TransferFunctionGroup(BaseGroup):
         tf_obj.survey_metadata.update_time_period()
         return tf_obj
 
-    def from_tf_object(self, tf_obj):
+    def from_tf_object(self, tf_obj, update_metadata=True):
         """
         Create data sets from a :class:`mt_metadata.transfer_function.core.TF`
         object.
@@ -570,8 +575,9 @@ class TransferFunctionGroup(BaseGroup):
             self.logger.error(msg)
             raise ValueError(msg)
         self.period = tf_obj.period
-        self.metadata.update(tf_obj.station_metadata.transfer_function)
-        self.write_metadata()
+        if update_metadata:
+            self.metadata.update(tf_obj.station_metadata.transfer_function)
+            self.write_metadata()
 
         # if transfer function is available then impedance and tipper are
         # redundant.
