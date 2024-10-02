@@ -903,14 +903,12 @@ class ChannelTS:
 
         """
         if self.is_high_frequency():
-            sr = 1 / (
-                float(
-                    np.median(
-                        np.diff(self.data_array.coords.indexes["time"])
-                    )
-                )
-                / 1e9
-            )
+            dt_array = np.diff(self.data_array.coords.indexes["time"])
+            best_dt, counts = scipy.stats.mode(dt_array)
+
+            # Calculate total seconds of the best dt and calculate sample rate
+            best_dt_seconds = float(best_dt) / 1e9
+            sr = 1 / best_dt_seconds
         else:
             t_diff = (
                 self.data_array.coords.indexes["time"][-1]
