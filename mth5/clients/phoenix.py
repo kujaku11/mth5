@@ -15,6 +15,7 @@ from pathlib import Path
 from mth5.mth5 import MTH5
 from mth5 import read_file
 from mth5.io.phoenix import PhoenixCollection
+from mth5.io.phoenix.readers.calibrations import PhoenixCalibration
 
 # =============================================================================
 
@@ -27,9 +28,10 @@ class PhoenixClient:
         save_path=None,
         receiver_calibration_dict={},
         sensor_calibration_dict={},
+        mth5_filename="from_phoenix.h5",
     ):
         self.data_path = data_path
-        self.mth5_filename = "from_phoenix.h5"
+        self.mth5_filename = mth5_filename
         self.sample_rates = sample_rates
         self.save_path = save_path
 
@@ -113,7 +115,9 @@ class PhoenixClient:
             cal_path = Path(value)
             if cal_path.is_dir():
                 for fn in cal_path.glob("*scal.json"):
-                    self._sensor_calibration_dict[fn.stem.split("_")[0]] = fn
+                    self._sensor_calibration_dict[fn.stem.split("_")[0]] = (
+                        PhoenixCalibration(fn)
+                    )
             self._calibration_path = Path(value)
             if not self._calibration_path.exists():
                 raise IOError(f"Could not find {self._calibration_path}")
@@ -151,7 +155,7 @@ class PhoenixClient:
     @property
     def save_path(self):
         """Path to save mth5"""
-        return self._save_path
+        return self._save_path.joinpath(self.mth5_filename)
 
     @save_path.setter
     def save_path(self, value):
@@ -165,12 +169,15 @@ class PhoenixClient:
         """
 
         if value is not None:
-            self._save_path = Path(value)
-            if self._save_path.is_dir():
-                self._save_path = self._save_path.joinpath(self.mth5_filename)
+            value = Path(value)
+            if value.is_dir():
+                self._save_path = value
+            else:
+                self._save_path = value.parent
+                self.mth5_filename = value.name
 
         else:
-            self._save_path = self.data_path.joinpath(self.mth5_filename)
+            self._save_path = self.data_path
 
     def get_run_dict(self):
         """
@@ -205,12 +212,12 @@ class PhoenixClient:
         run_dict = self.get_run_dict()
 
         with MTH5() as m:
+
             m.open_mth5(self.save_path, "w")
 
             for station_id, station_dict in run_dict.items():
-                survey_metadata = self.collection.metadata_dict[
-                    station_id
-                ].survey_metadata
+                collection_metadata = self.collection.metadata_dict[station_id]
+                survey_metadata = collection_metadata.survey_metadata
                 survey_group = m.add_survey(survey_metadata.id)
 
                 station_metadata = self.collection.metadata_dict[
@@ -220,9 +227,7 @@ class PhoenixClient:
                     station_metadata.id, station_metadata=station_metadata
                 )
                 for run_id, run_df in station_dict.items():
-                    run_metadata = self.collection.metadata_dict[
-                        station_id
-                    ].run_metadata
+                    run_metadata = collection_metadata.run_metadata
                     run_metadata.id = run_id
                     run_metadata.sample_rate = float(
                         run_df.sample_rate.unique()[0]
@@ -232,7 +237,45 @@ class PhoenixClient:
                         run_metadata.id, run_metadata=run_metadata
                     )
                     for row in run_df.itertuples():
-                        ch_ts = read_file(row.fn)
+                        try:
+                            ch_ts = read_file(
+                                row.fn,
+                                **{
+                                    "channel_map": collection_metadata.channel_map,
+                                    "rxcal_fn": self.receiver_calibration_dict[
+                                        collection_metadata.instrument_id
+                                    ],
+                                },
+                            )
+                        except OSError:
+                            print(
+                                f"OSError: skipping {row.fn.name} likely too small"
+                            )
+                            continue
+
+                        if ch_ts.component in ["h1", "h2", "h3"]:
+
+                            # for phx coils from generic response curves
+                            if (
+                                ch_ts.channel_metadata.sensor.id
+                                in self.sensor_calibration_dict.keys()
+                            ):
+                                pc = self.sensor_calibration_dict[
+                                    ch_ts.channel_metadata.sensor.id
+                                ]
+                                for key in pc.__dict__.keys():
+                                    if key.startswith("h"):
+                                        break
+                                coil_fap = getattr(pc, key)
+
+                            # add filter
+                            ch_ts.channel_metadata.filter.name.append(
+                                coil_fap.name
+                            )
+                            ch_ts.channel_metadata.filter.applied.append(True)
+                            ch_ts.channel_response.filters_list.append(
+                                coil_fap
+                            )
 
                         # add channel to the run group
                         run_group.from_channel_ts(ch_ts)
@@ -241,3 +284,5 @@ class PhoenixClient:
 
             station_group.update_metadata()
             survey_group.update_metadata()
+
+        return self.save_path

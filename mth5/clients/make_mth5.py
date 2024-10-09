@@ -58,6 +58,7 @@ class MakeMTH5:
         if self.save_path is None:
             self.save_path = Path().cwd()
 
+    @classmethod
     def from_fdsn_client(self, request_df, client="IRIS", **kwargs):
         """
         Pull data from an FDSN archive like IRIS.  Uses Obspy.Clients.
@@ -110,6 +111,7 @@ class MakeMTH5:
 
         return mth5_object
 
+    @classmethod
     def from_usgs_geomag(self, request_df, **kwargs):
         """
         Download geomagnetic observatory data from USGS webservices into an
@@ -156,6 +158,7 @@ class MakeMTH5:
 
         return geomag_client.make_mth5_from_geomag(request_df)
 
+    @classmethod
     def from_zen(
         self,
         data_path,
@@ -199,9 +202,24 @@ class MakeMTH5:
             survey_id=survey_id, combine=combine, **kwargs
         )
 
+    @classmethod
     def from_phoenix(
         self,
         data_path,
-        sample_rate=[150, 24000],
+        mth5_filename=None,
+        sample_rates=[150, 24000],
+        receiver_calibration_dict=None,
+        sensor_calibration_dict=None,
+        save_path=None,
     ):
-        pass
+
+        phx_client = PhoenixClient(
+            data_path,
+            mth5_filename=mth5_filename,
+            sample_rates=sample_rates,
+            receiver_calibration_dict=receiver_calibration_dict,
+            sensor_calibration_dict=sensor_calibration_dict,
+            save_path=save_path,
+        )
+
+        return phx_client.make_mth5_from_phoenix()
