@@ -50,6 +50,8 @@ class PhoenixCalibration:
             self._cal_fn = Path(cal_fn)
             if self._cal_fn.exists():
                 self.read()
+            else:
+                raise IOError("Could not find file {cal_fn}.")
 
     @property
     def calibration_date(self):
@@ -97,9 +99,7 @@ class PhoenixCalibration:
 
         """
 
-        return (
-            f"{self.base_filter_name}_{channel}_{max_freq}hz_lowpass".lower()
-        )
+        return f"{self.base_filter_name}_{channel}_{max_freq}hz_lowpass".lower()
 
     def get_filter_sensor_name(self, sensor):
         """

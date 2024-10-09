@@ -48,10 +48,13 @@ setup(
     keywords="mth5",
     name="mth5",
     packages=find_packages(include=["mth5", "mth5.*"]),
+    package_data={
+      'mth5': ['data/*.asc'],
+    },
     setup_requires=setup_requirements,
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/kujaku11/mth5",
-    version="0.4.1",
+    version="0.4.7",
     zip_safe=False,
 )

@@ -407,14 +407,19 @@ class TSReaderBase(Header):
         rx_cal_obj = PhoenixCalibration(rxcal_fn)
         if rx_cal_obj._has_read():
             lp_name = self.get_lowpass_filter_name()
+            if lp_name is None:
+                msg = (
+                    f"Could not find {lp_name} for channel "
+                    f"{self.channel_metadata().comp}"
+                )
+                self.logger.error(msg)
+                raise ValueError(msg)
+
             return rx_cal_obj.get_filter(
                 self.channel_metadata.component, lp_name
             )
         else:
-            self.logger.error(
-                f"Could not find {lp_name} for channel "
-                f"{self.channel_metadata().comp}"
-            )
+            self.logger.error("Phoenix RX Calibration is None. Check file path")
 
     def get_dipole_filter(self):
         """

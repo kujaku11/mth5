@@ -23,18 +23,17 @@ class TFSummaryTable(MTH5Table):
     """
     Object to hold the channel summary and provide some convenience functions
     like fill, to_dataframe ...
-    
+
     """
 
     def __init__(self, hdf5_dataset):
-        super().__init__(hdf5_dataset)
-        self._dtype = TF_DTYPE
+        super().__init__(hdf5_dataset, TF_DTYPE)
 
     def to_dataframe(self):
         """
         Create a pandas DataFrame from the table for easier querying.
-        
-        :return: Channel Summary 
+
+        :return: Channel Summary
         :rtype: :class:`pandas.DataFrame`
 
         """
@@ -51,7 +50,7 @@ class TFSummaryTable(MTH5Table):
 
     def summarize(self):
         """
-        
+
         :return: DESCRIPTION
         :rtype: TYPE
 
@@ -62,7 +61,7 @@ class TFSummaryTable(MTH5Table):
             """
             a function to get tf entry, hopefully this is faster than looping
             and getting the correct group object.
-            
+
             """
             if isinstance(group, (h5py._hl.group.Group, h5py._hl.files.File)):
                 for key, node in group.items():
@@ -77,7 +76,10 @@ class TFSummaryTable(MTH5Table):
                                 if tf_dataset != (1, 1, 1):
                                     nz = np.nonzero(tf_dataset)
                                     unique_values = np.unique(nz[1])
-                                    if 0 in unique_values or 1 in unique_values:
+                                    if (
+                                        0 in unique_values
+                                        or 1 in unique_values
+                                    ):
                                         has_impedance = True
                                     if 2 in unique_values:
                                         has_tipper = True
@@ -88,7 +90,11 @@ class TFSummaryTable(MTH5Table):
                                 res = node["residual_covariance"]
                                 isp = node["inverse_signal_power"]
 
-                                if res.shape != (1, 1, 1) and isp.shape != (1, 1, 1):
+                                if res.shape != (1, 1, 1) and isp.shape != (
+                                    1,
+                                    1,
+                                    1,
+                                ):
                                     has_covariance = True
                             if "period" in node.keys():
                                 period = node["period"][()]
@@ -97,13 +103,23 @@ class TFSummaryTable(MTH5Table):
                             tf_entry = np.array(
                                 [
                                     (
-                                        validate_name(node.parent.parent.attrs["id"]),
                                         validate_name(
-                                            node.parent.parent.parent.parent.attrs["id"]
+                                            node.parent.parent.attrs["id"]
                                         ),
-                                        node.parent.parent.attrs["location.latitude"],
-                                        node.parent.parent.attrs["location.longitude"],
-                                        node.parent.parent.attrs["location.elevation"],
+                                        validate_name(
+                                            node.parent.parent.parent.parent.attrs[
+                                                "id"
+                                            ]
+                                        ),
+                                        node.parent.parent.attrs[
+                                            "location.latitude"
+                                        ],
+                                        node.parent.parent.attrs[
+                                            "location.longitude"
+                                        ],
+                                        node.parent.parent.attrs[
+                                            "location.elevation"
+                                        ],
                                         validate_name(node.attrs["id"]),
                                         node.attrs["units"],
                                         has_impedance,

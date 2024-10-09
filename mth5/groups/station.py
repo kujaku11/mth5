@@ -5,7 +5,7 @@ Created on Wed Dec 23 17:18:29 2020
 .. note:: Need to keep these groups together, if you split them into files you
  get a circular import.
 
-:copyright: 
+:copyright:
     Jared Peacock (jpeacock@usgs.gov)
 
 :license: MIT
@@ -177,24 +177,52 @@ class MasterStationGroup(BaseGroup):
         """
         Summary of stations in the file
 
+        TODO: consider returning None instead of empty df
+
         :return: DESCRIPTION
         :rtype: TYPE
 
         """
-        st_list = []
-        for key, group in self.hdf5_group.items():
-            entry = {
-                "station": key,
+
+        def _get_entry(group):
+            return {
+                "station": group.attrs["id"],
                 "start": group.attrs["time_period.start"],
                 "end": group.attrs["time_period.end"],
                 "latitude": group.attrs["location.latitude"],
                 "longitude": group.attrs["location.longitude"],
             }
-            st_list.append(entry)
 
+        def _recursive_get_station_entry(group, entry_list=[]):
+            """
+            method to get station entry
+            """
+
+            if isinstance(group, h5py._hl.group.Group):
+                try:
+                    group_type = group.attrs["mth5_type"].lower()
+                    if group_type in ["station"]:
+                        entry_list.append(_get_entry(group))
+                    elif group_type in ["masterstation"]:
+                        for key, node in group.items():
+                            entry_list = _recursive_get_station_entry(
+                                node, entry_list
+                            )
+
+                except KeyError:
+                    pass
+            return entry_list
+
+        st_list = []
+        st_list = _recursive_get_station_entry(self.hdf5_group, st_list)
         df = pd.DataFrame(st_list)
-        df.start = pd.to_datetime(df.start)
-        df.end = pd.to_datetime(df.end)
+        if len(df):
+            try:
+                df.start = pd.to_datetime(df.start, format="mixed")
+                df.end = pd.to_datetime(df.end, format="mixed")
+            except ValueError:
+                df.start = pd.to_datetime(df.start)
+                df.end = pd.to_datetime(df.end)
 
         return df
 

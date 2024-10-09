@@ -36,6 +36,8 @@ from mth5.timeseries.channel_ts import make_dt_coordinates
 
 
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
+
+
 # =============================================================================
 class ChannelDataset:
     """
@@ -132,6 +134,7 @@ class ChannelDataset:
             self.read_metadata()
         # if the attrs don't have the proper metadata keys yet write them
         if not "mth5_type" in list(self.hdf5_dataset.attrs.keys()):
+            self.hdf5_dataset.attrs["mth5_type"] = self._class_name
             self.write_metadata()
 
     def _add_base_attributes(self):
@@ -175,9 +178,7 @@ class ChannelDataset:
             lines = ["Channel {0}:".format(self._class_name)]
             lines.append("-" * (len(lines[0]) + 2))
             info_str = "\t{0:<18}{1}"
-            lines.append(
-                info_str.format("component:", self.metadata.component)
-            )
+            lines.append(info_str.format("component:", self.metadata.component))
             lines.append(info_str.format("data type:", self.metadata.type))
             lines.append(
                 info_str.format("data format:", self.hdf5_dataset.dtype)
@@ -188,9 +189,7 @@ class ChannelDataset:
             lines.append(
                 info_str.format("start:", self.metadata.time_period.start)
             )
-            lines.append(
-                info_str.format("end:", self.metadata.time_period.end)
-            )
+            lines.append(info_str.format("end:", self.metadata.time_period.end))
             lines.append(
                 info_str.format("sample rate:", self.metadata.sample_rate)
             )
@@ -304,9 +303,7 @@ class ChannelDataset:
 
         """
 
-        return make_dt_coordinates(
-            self.start, self.sample_rate, self.n_samples
-        )
+        return make_dt_coordinates(self.start, self.sample_rate, self.n_samples)
 
     def read_metadata(self):
         """
@@ -498,9 +495,9 @@ class ChannelDataset:
                     )
 
                     # fill based on time, refill existing data first
-                    self.hdf5_dataset[
-                        self.get_index_from_time(old_start) :
-                    ] = old_slice.ts.values
+                    self.hdf5_dataset[self.get_index_from_time(old_start) :] = (
+                        old_slice.ts.values
+                    )
                     self.hdf5_dataset[
                         0 : self.get_index_from_time(end_time)
                     ] = new_data_array
@@ -557,12 +554,12 @@ class ChannelDataset:
 
                 # put back the existing data, which any overlapping times
                 # will be overwritten
-                self.hdf5_dataset[
-                    self.get_index_from_time(old_start) :
-                ] = old_slice.ts.values
-                self.hdf5_dataset[
-                    0 : self.get_index_from_time(end_time)
-                ] = new_data_array
+                self.hdf5_dataset[self.get_index_from_time(old_start) :] = (
+                    old_slice.ts.values
+                )
+                self.hdf5_dataset[0 : self.get_index_from_time(end_time)] = (
+                    new_data_array
+                )
         # append data
         elif start_t_diff > 0:
             old_end = self.end.copy()
@@ -670,6 +667,22 @@ class ChannelDataset:
                     self.hdf5_dataset[
                         self.get_index_from_time(start_time) :
                     ] = new_data_array
+
+    def has_data(self):
+        """
+        check to see if the channel has data, meaning values are non-zero
+
+        :return: True if has data, False if all zeros or empty
+        :rtype: bool
+
+        """
+
+        if len(self.hdf5_dataset) > 0:
+            if len(np.nonzero(self.hdf5_dataset)[0]) > 0:
+                return True
+            else:
+                return False
+        return False
 
     def to_channel_ts(self):
         """
@@ -787,9 +800,7 @@ class ChannelDataset:
         """
 
         if not isinstance(channel_ts_obj, ChannelTS):
-            msg = (
-                f"Input must be a ChannelTS object not {type(channel_ts_obj)}"
-            )
+            msg = f"Input must be a ChannelTS object not {type(channel_ts_obj)}"
             self.logger.error(msg)
             raise TypeError(msg)
         if how == "replace":
@@ -934,12 +945,8 @@ class ChannelDataset:
                     self.hdf5_dataset.parent.parent.attrs["id"],
                     self.hdf5_dataset.parent.attrs["id"],
                     self.hdf5_dataset.parent.parent.attrs["location.latitude"],
-                    self.hdf5_dataset.parent.parent.attrs[
-                        "location.longitude"
-                    ],
-                    self.hdf5_dataset.parent.parent.attrs[
-                        "location.elevation"
-                    ],
+                    self.hdf5_dataset.parent.parent.attrs["location.longitude"],
+                    self.hdf5_dataset.parent.parent.attrs["location.elevation"],
                     self.metadata.component,
                     self.metadata.time_period.start,
                     self.metadata.time_period.end,

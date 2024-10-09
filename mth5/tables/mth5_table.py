@@ -11,7 +11,6 @@ Created on Wed Dec 23 16:53:55 2020
 # Imports
 # =============================================================================
 import weakref
-import copy
 
 import h5py
 import numpy as np
@@ -34,13 +33,15 @@ class MTH5Table:
 
     """
 
-    def __init__(self, hdf5_dataset):
+    def __init__(self, hdf5_dataset, default_dtype):
         self.logger = logger
+        self._default_dtype = self._validate_dtype(default_dtype)
 
-        self.hdf5_reference = None
+        # validate dtype with dataset
         if isinstance(hdf5_dataset, h5py.Dataset):
             self.array = weakref.ref(hdf5_dataset)()
-            self.hdf5_reference = hdf5_dataset.ref
+            if self.array.dtype != self._default_dtype:
+                self.update_dtype(self._default_dtype)
         else:
             msg = f"Input must be a h5py.Dataset not {type(hdf5_dataset)}"
             self.logger.error(msg)
@@ -55,52 +56,11 @@ class MTH5Table:
 
         """
         # if the array is empty
-        if self.array.size == 0:
-            length_dict = dict([(key, len(str(key))) for key in list(self.dtype.names)])
-            lines = [
-                " | ".join(
-                    ["index"]
-                    + [
-                        "{0:^{1}}".format(name, length_dict[name])
-                        for name in list(self.dtype.names)
-                    ]
-                )
-            ]
-            lines.append("-" * len(lines[0]))
-            return "\n".join(lines)
-        length_dict = dict(
-            [
-                (key, max([len(str(b)) for b in self.array[key]]))
-                for key in list(self.dtype.names)
-            ]
-        )
-        lines = [
-            " | ".join(
-                ["index"]
-                + [
-                    "{0:^{1}}".format(name, length_dict[name])
-                    for name in list(self.dtype.names)
-                ]
-            )
-        ]
-        lines.append("-" * len(lines[0]))
+        if self.array.size > 0:
+            df = self.to_dataframe()
 
-        for ii, row in enumerate(self.array):
-            line = ["{0:^5}".format(ii)]
-            for element, key in zip(row, list(self.dtype.names)):
-                if isinstance(element, (np.bytes_)):
-                    element = element.decode()
-                try:
-                    line.append("{0:^{1}}".format(element, length_dict[key]))
-                except TypeError as error:
-                    if isinstance(element, h5py.h5r.Reference):
-                        msg = f"{error}: Cannot represent h5 reference as a string"
-                        self.logger.debug(msg)
-                        line.append(f"<HDF5 object reference>: {length_dict[key]:^}")
-                    else:
-                        self.logger.exception(f"{error}")
-            lines.append(" | ".join(line))
-        return "\n".join(lines)
+            return df.__str__()
+        return ""
 
     def __repr__(self):
         return self.__str__()
@@ -122,19 +82,67 @@ class MTH5Table:
         return self.array.shape[0]
 
     @property
+    def hdf5_reference(self):
+        return self.array.ref
+
+    @property
     def dtype(self):
-        try:
-            return self.array.dtype
-        except AttributeError as error:
-            msg = f"{error}, dataframe is not initiated yet"
-            self.logger.warning(msg)
-            return None
+        return self._default_dtype
+
+    @dtype.setter
+    def dtype(self, value):
+        """
+        set dtype, if different need to astype the array, clear the table and
+        remake the table.
+
+        :param value: DESCRIPTION
+        :type value: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if not isinstance(value, np.dtype):
+            raise TypeError(
+                f"Input dtype must be np.dtype not type {type(value)}"
+            )
+
+        if value != self._default_dtype:
+            self.update_dtype(value)
+
+    def _validate_dtype(self, value):
+        """
+        make sure the new dtype has the same column names
+
+        :param value: DESCRIPTION
+        :type value: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        if not isinstance(value, np.dtype):
+            msg = f"Input dtype must be np.dtype not type {type(value)}"
+            self.logger.exception(msg)
+            raise TypeError(msg)
+        return value
+
+    def _validate_dtype_names(self, value):
+        if self.dtype.names != value.names:
+            msg = f"New dtype must have the same names: {self.dtype.names}"
+            self.logger.exception(msg)
+            raise TypeError(msg)
+
+        return value
 
     def check_dtypes(self, other_dtype):
         """
         Check to make sure datatypes match
         """
-
+        other_dtype = self._validate_dtype(other_dtype)
+        try:
+            other_dtype = self._validate_dtype_names(other_dtype)
+        except TypeError:
+            return False
         if self.dtype == other_dtype:
             return True
         return False
@@ -193,9 +201,9 @@ class MTH5Table:
                 msg = "If testing for between value must be an iterable of length 2."
                 self.logger.error(msg)
                 raise ValueError(msg)
-            index_values = np.where((test_array > value[0]) & (test_array < value[1]))[
-                0
-            ]
+            index_values = np.where(
+                (test_array > value[0]) & (test_array < value[1])
+            )[0]
         else:
             raise ValueError("Test {0} not understood".format(test))
         return index_values
@@ -221,14 +229,19 @@ class MTH5Table:
 
         if not isinstance(row, (np.ndarray)):
             msg = f"Input must be an numpy.ndarray not {type(row)}"
+            self.logger.exception(msg)
+            raise TypeError(msg)
         if isinstance(row, np.ndarray):
             if not self.check_dtypes(row.dtype):
-                msg = (
-                    f"Data types are not equal. Input dtypes: "
-                    f"{row.dtype} Table dtypes: {self.dtype}"
-                )
-                self.logger.error(msg)
-                raise ValueError(msg)
+                if row.dtype.names == self.dtype.names:
+                    row = row.astype(self.dtype)
+                else:
+                    msg = (
+                        f"Data types are not equal. Input dtypes: "
+                        f"{row.dtype} Table dtypes: {self.dtype}"
+                    )
+                    self.logger.error(msg)
+                    raise ValueError(msg)
         if index is None:
             index = self.nrows
             if self.nrows == 1:
@@ -243,10 +256,14 @@ class MTH5Table:
                 if match:
                     index = 0
                 else:
-                    new_shape = tuple([self.nrows + 1] + [ii for ii in self.shape[1:]])
+                    new_shape = tuple(
+                        [self.nrows + 1] + [ii for ii in self.shape[1:]]
+                    )
                     self.array.resize(new_shape)
             else:
-                new_shape = tuple([self.nrows + 1] + [ii for ii in self.shape[1:]])
+                new_shape = tuple(
+                    [self.nrows + 1] + [ii for ii in self.shape[1:]]
+                )
                 self.array.resize(new_shape)
         # add the row
         self.array[index] = row
@@ -268,7 +285,9 @@ class MTH5Table:
 
         """
         try:
-            row_index = self.locate("hdf5_reference", entry["hdf5_reference"])[0]
+            row_index = self.locate("hdf5_reference", entry["hdf5_reference"])[
+                0
+            ]
             return self.add_row(entry, index=row_index)
         except IndexError:
             self.logger.debug("Could not find row, adding a new one")
@@ -314,16 +333,10 @@ class MTH5Table:
         """
 
         df = pd.DataFrame(self.array[()])
-        for key in [
-            "station",
-            "run",
-            "component",
-            "measurement_type",
-            "units",
-        ]:
-            setattr(df, key, getattr(df, key).str.decode("utf-8"))
-        df.start = pd.to_datetime(df.start.str.decode("utf-8"))
-        df.end = pd.to_datetime(df.end.str.decode("utf-8"))
+        for key in self.dtype.names:
+            dtype_kind = self.dtype.fields[key][0].kind
+            if dtype_kind in ["S", "U"]:
+                setattr(df, key, getattr(df, key).str.decode("utf-8"))
 
         return df
 
@@ -337,7 +350,34 @@ class MTH5Table:
 
         """
 
-        dtype = copy.deepcopy(self.dtype)
+        root = self.array.parent
+        name = self.array.name.split("/")[-1]
+        ds_options = {
+            "compression": self.array.compression,
+            "compression_opts": self.array.compression_opts,
+            "shuffle": self.array.shuffle,
+            "fletcher32": self.array.fletcher32,
+        }
+
+        del root[name]
+
+        self.array = root.create_dataset(
+            name, (1,), maxshape=(None,), dtype=self.dtype, **ds_options
+        )
+
+    def update_dtype(self, new_dtype):
+        """
+        Update array with new dtype.
+
+        Must have the same keys.
+        """
+
+        new_dtype = self._validate_dtype_names(self._validate_dtype(new_dtype))
+
+        # need to do this manually otherwise get an error of not safe
+        new_array = np.ones(self.array.shape, dtype=new_dtype)
+        for key in self.array.dtype.fields.keys():
+            new_array[key] = self.array[key][()]
 
         root = self.array.parent
         name = self.array.name.split("/")[-1]
@@ -351,5 +391,11 @@ class MTH5Table:
         del root[name]
 
         self.array = root.create_dataset(
-            name, (1,), maxshape=(None,), dtype=dtype, **ds_options
+            name,
+            data=new_array,
+            maxshape=(None,),
+            dtype=new_dtype,
+            **ds_options,
         )
+
+        self._default_dtype = new_dtype

@@ -11,6 +11,7 @@ Created on Wed Aug 24 11:35:59 2022
 import numpy as np
 from loguru import logger
 
+
 # =============================================================================
 class Z3DMetadata:
     """
@@ -130,13 +131,19 @@ class Z3DMetadata:
             self.logger.waringn("No Z3D file to read")
         elif self.fn is None:
             if self.fid is not None:
-                self.fid.seek(self._header_length + self._schedule_metadata_len)
+                self.fid.seek(
+                    self._header_length + self._schedule_metadata_len
+                )
         elif self.fn is not None:
             if self.fid is None:
                 self.fid = open(self.fn, "rb")
-                self.fid.seek(self._header_length + self._schedule_metadata_len)
+                self.fid.seek(
+                    self._header_length + self._schedule_metadata_len
+                )
             else:
-                self.fid.seek(self._header_length + self._schedule_metadata_len)
+                self.fid.seek(
+                    self._header_length + self._schedule_metadata_len
+                )
         # read in calibration and meta data
         self.find_metadata = True
         self.board_cal = []
@@ -145,7 +152,9 @@ class Z3DMetadata:
         cal_find = False
         while self.find_metadata == True:
             try:
-                test_str = self.fid.read(self._metadata_length).decode().lower()
+                test_str = (
+                    self.fid.read(self._metadata_length).decode().lower()
+                )
             except UnicodeDecodeError:
                 self.find_metadata = False
                 break
@@ -192,7 +201,10 @@ class Z3DMetadata:
                         t_str = t_str.replace("\x00", "").replace("|", "")
                         try:
                             self.board_cal.append(
-                                [float(tt.strip()) for tt in t_str.strip().split(":")]
+                                [
+                                    float(tt.strip())
+                                    for tt in t_str.strip().split(":")
+                                ]
                             )
                         except ValueError:
                             self.board_cal.append(
@@ -215,18 +227,23 @@ class Z3DMetadata:
                     for t_str in test_list[2:]:
                         if "\x00" in t_str:
                             break
-                        self.coil_cal.append(
-                            [float(tt.strip()) for tt in t_str.split(":")]
-                        )
+                        for tt in t_str.split(":"):
+                            try:
+                                self.coil_cal.append(float(tt.strip()))
+                            except ValueError:
+                                pass
+
                 elif cal_find and self.count > 3:
                     t_list = test_str.replace("|", ",").split(",")
                     for t_str in t_list:
                         if "\x00" in t_str:
                             break
                         else:
-                            self.coil_cal.append(
-                                [float(tt.strip()) for tt in t_str.strip().split(":")]
-                            )
+                            for tt in t_str.split(":"):
+                                try:
+                                    self.coil_cal.append(float(tt.strip()))
+                                except ValueError:
+                                    pass
             elif "caldata" in test_str:
                 self.cal_board = {}
                 sr = 256
@@ -238,7 +255,8 @@ class Z3DMetadata:
                     else:
                         if "cal.brd" in t_str:
                             values = [
-                                float(tt) for tt in t_str.split(",")[-1].split(":")
+                                float(tt)
+                                for tt in t_str.split(",")[-1].split(":")
                             ]
                             self.cal_board[sr] = dict(
                                 [
@@ -254,12 +272,17 @@ class Z3DMetadata:
                         elif "caldata" in t_str:
                             continue
                         else:
-                            cal_key, cal_value = t_str.split("=")
                             try:
-                                cal_value = float(cal_value)
+                                cal_key, cal_value = t_str.split("=")
+                                try:
+                                    cal_value = float(cal_value)
+                                except ValueError:
+                                    pass
+                                self.cal_board[cal_key] = cal_value
                             except ValueError:
-                                pass
-                            self.cal_board[cal_key] = cal_value
+                                self.logger.info(
+                                    "Could not read Calibration Data"
+                                )
             else:
                 self.find_metadata = False
                 # need to go back to where the meta data was found so
@@ -267,8 +290,10 @@ class Z3DMetadata:
                 self.m_tell = self.fid.tell() - self._metadata_length
         # make coil calibration and board calibration structured arrays
         if len(self.coil_cal) > 0:
+            a = np.array(self.coil_cal)
+            a = a.reshape((int(a.size / 3), 3))
             self.coil_cal = np.core.records.fromrecords(
-                self.coil_cal, names="frequency, amplitude, phase"
+                a, names="frequency, amplitude, phase"
             )
         if len(self.board_cal) > 0:
             try:
@@ -278,7 +303,9 @@ class Z3DMetadata:
             except ValueError:
                 self.board_cal = None
         try:
-            self.station = "{0}{1}".format(self.line_name, self.rx_xyz0.split(":")[0])
+            self.station = "{0}{1}".format(
+                self.line_name, self.rx_xyz0.split(":")[0]
+            )
         except AttributeError:
             if hasattr(self, "rx_stn"):
                 self.station = f"{self.rx_stn}"

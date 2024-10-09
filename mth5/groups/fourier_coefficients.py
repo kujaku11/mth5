@@ -14,12 +14,15 @@ import pandas as pd
 import h5py
 
 from mth5.groups import BaseGroup, FCChannelDataset
+# from mth5.groups import FCGroup
+
 from mth5.helpers import validate_name
 from mth5.utils.exceptions import MTH5Error
 
 from mt_metadata.transfer_functions.processing.fourier_coefficients import (
     Channel,
 )
+from mt_metadata.transfer_functions.processing.fourier_coefficients.decimation import Decimation
 
 
 # =============================================================================
@@ -47,7 +50,7 @@ class MasterFCGroup(BaseGroup):
         """
         pass
 
-    def add_fc_group(self, fc_name, fc_metadata=None):
+    def add_fc_group(self, fc_name: str, fc_metadata=None):  # -> FCGroup:
         """
         Add a Fourier Coefficent group
 
@@ -113,7 +116,7 @@ class FCGroup(BaseGroup):
         super().__init__(group, group_metadata=decimation_level_metadata, **kwargs)
 
     @BaseGroup.metadata.getter
-    def metadata(self):
+    def metadata(self) -> Decimation:
         """Overwrite get metadata to include channel information in the runs"""
 
         self._metadata.channels = []
@@ -267,6 +270,11 @@ class FCDecimationGroup(BaseGroup):
     """
     Holds a single decimation level
 
+    FCDecimationGroup assumes two conditions on the data array (spectrogram):
+        1. The data are uniformly sampled in frequency domain
+        2. The data are uniformly sampled in time.
+        (i.e. the FFT moving window has a uniform step size)
+
     Attributes
 
         - start time
@@ -383,7 +391,7 @@ class FCDecimationGroup(BaseGroup):
             xrds = df[col].to_xarray()
             self.add_channel(col, fc_data=xrds.to_numpy())
 
-    def from_xarray(self, data_array):
+    def from_xarray(self, data_array, sample_rate_decimation_level):
         """
         can input a dataarray or dataset
 
@@ -401,12 +409,11 @@ class FCDecimationGroup(BaseGroup):
         ch_metadata = Channel()
         ch_metadata.time_period.start = data_array.time[0].values
         ch_metadata.time_period.end = data_array.time[-1].values
-        ch_metadata.sample_rate_decimation_level = (
-            data_array.coords["frequency"].values.max() * 2
-        )
-        ch_metadata.sample_rate_window_step = np.median(
-            np.diff(data_array.coords["time"].values)
-        ) / np.timedelta64(1, "s")
+        ch_metadata.sample_rate_decimation_level = sample_rate_decimation_level
+        ch_metadata.frequency_min = data_array.coords["frequency"].data.min()
+        ch_metadata.frequency_max = data_array.coords["frequency"].data.max()
+        step_size = data_array.coords["time"].data[1] - data_array.coords["time"].data[0]
+        ch_metadata.sample_rate_window_step = step_size / np.timedelta64(1, "s")
         try:
             ch_metadata.units = data_array.units
         except AttributeError:
@@ -421,19 +428,24 @@ class FCDecimationGroup(BaseGroup):
             for ch in data_array.data_vars.keys():
 
                 ch_metadata.component = ch
+                if ch in self.channel_summary.component.to_list():
+                    self.remove_channel(ch)
                 # time index should be the first index
                 if data_array[ch].time.size == data_array[ch].shape[0]:
                     self.add_channel(
                         ch,
                         fc_data=data_array[ch].to_numpy(),
                         fc_metadata=ch_metadata,
+                        dtype=data_array[ch].dtype,
                     )
                 elif data_array[ch].time.size == data_array[ch].shape[1]:
                     self.add_channel(
                         ch,
                         fc_data=data_array[ch].to_numpy().T,
                         fc_metadata=ch_metadata,
+                        dtype=data_array[ch].dtype,
                     )
+        return
 
     def to_xarray(self, channels=None):
         """
@@ -487,6 +499,7 @@ class FCDecimationGroup(BaseGroup):
         fc_metadata=None,
         max_shape=(None, None),
         chunks=True,
+        dtype=complex,
         **kwargs,
     ):
         """
@@ -541,12 +554,12 @@ class FCDecimationGroup(BaseGroup):
                 raise TypeError(msg)
         else:
             chunks = True
-            fc_data = np.zeros((1, 1), dtype=complex)
+            fc_data = np.zeros((1, 1), dtype=dtype)
         try:
             dataset = self.hdf5_group.create_dataset(
                 fc_name,
                 data=fc_data,
-                dtype=complex,
+                dtype=dtype,
                 chunks=chunks,
                 maxshape=max_shape,
                 **self.dataset_options,

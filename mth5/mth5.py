@@ -29,11 +29,14 @@ from loguru import logger
 from mth5.utils.exceptions import MTH5Error
 from mth5 import __version__ as mth5_version
 from mth5 import groups
-from mth5.tables import ChannelSummaryTable, TFSummaryTable
+from mth5.tables import ChannelSummaryTable, FCSummaryTable, TFSummaryTable
+
 from mth5 import helpers
 from mth5 import (
     CHANNEL_DTYPE,
+    FC_DTYPE,
     TF_DTYPE,
+    ACCEPTABLE_FILE_SUFFIXES,
     ACCEPTABLE_FILE_TYPES,
     ACCEPTABLE_FILE_VERSIONS,
     ACCEPTABLE_DATA_LEVELS,
@@ -334,7 +337,7 @@ class MTH5:
         if value is not None:
             if not isinstance(value, Path):
                 value = Path(value)
-            if value.suffix not in ACCEPTABLE_FILE_TYPES:
+            if value.suffix not in ACCEPTABLE_FILE_SUFFIXES:
                 msg = (
                     f"file extension {value.suffix} is not correct. "
                     "Changing to default .h5"
@@ -580,7 +583,7 @@ class MTH5:
                 station_list += sg.stations_group.groups_list
             return station_list
 
-    def open_mth5(self, filename=None, mode="a"):
+    def open_mth5(self, filename=None, mode="a", **kwargs):
         """
         open an mth5 file
 
@@ -619,14 +622,18 @@ class MTH5:
                     )
                     self.logger.exception(msg)
             elif mode in ["a", "w-", "x", "r+"]:
-                self.__hdf5_obj = h5py.File(self.__filename, mode=mode)
+                self.__hdf5_obj = h5py.File(
+                    self.__filename, mode=mode, **kwargs
+                )
                 self._set_default_groups()
                 if not self.validate_file():
                     msg = "Input file is not a valid MTH5 file"
                     self.logger.error(msg)
                     raise MTH5Error(msg)
             elif mode in ["r"]:
-                self.__hdf5_obj = h5py.File(self.__filename, mode=mode)
+                self.__hdf5_obj = h5py.File(
+                    self.__filename, mode=mode, **kwargs
+                )
                 self._set_default_groups()
                 self.validate_file()
             else:
@@ -635,7 +642,7 @@ class MTH5:
                 raise MTH5Error(msg)
         else:
             if mode in ["a", "w", "w-", "x"]:
-                self._initialize_file(mode=mode)
+                self._initialize_file(mode=mode, **kwargs)
             else:
                 msg = f"Cannot open new file in mode {mode} "
                 self.logger.error(msg)
@@ -645,7 +652,7 @@ class MTH5:
             self._initialize_summary()
         return self
 
-    def _initialize_file(self, mode="w"):
+    def _initialize_file(self, mode="w", **kwargs):
         """
         Initialize the default groups for the file
 
@@ -654,7 +661,7 @@ class MTH5:
 
         """
         # open an hdf5 file
-        self.__hdf5_obj = h5py.File(self.__filename, mode)
+        self.__hdf5_obj = h5py.File(self.__filename, mode, **kwargs)
 
         # write general metadata
         self.__hdf5_obj.attrs.update(self.file_attributes)
@@ -697,6 +704,16 @@ class MTH5:
                 shape=(1,),
                 maxshape=(None,),
                 dtype=TF_DTYPE,
+                **self.dataset_options,
+            )
+        except ValueError:
+            pass
+        try:
+            self.__hdf5_obj[self._default_root_name].create_dataset(
+                "fc_summary",
+                shape=(1,),
+                maxshape=(None,),
+                dtype=FC_DTYPE,
                 **self.dataset_options,
             )
         except ValueError:
@@ -982,8 +999,20 @@ class MTH5:
         )
 
     @property
-    def tf_summary(self):
+    def fc_summary(self):
+        """return a dataframe of fcs"""
+
+        return FCSummaryTable(self.__hdf5_obj[f"{self._root_path}/fc_summary"])
+
+    @property
+    def run_summary(self):
         """return a dataframe of channels"""
+
+        return self.channel_summary.to_run_summary()
+
+    @property
+    def tf_summary(self):
+        """return a dataframe of tfs"""
 
         return TFSummaryTable(self.__hdf5_obj[f"{self._root_path}/tf_summary"])
 
@@ -1451,7 +1480,7 @@ class MTH5:
             .remove_channel(channel_name)
         )
 
-    def add_transfer_function(self, tf_object):
+    def add_transfer_function(self, tf_object, update_metadata=True):
         """
         Add a transfer function
         :param tf_object: DESCRIPTION
@@ -1534,8 +1563,8 @@ class MTH5:
             station_group = survey_group.stations_group.get_station(
                 tf_object.station_metadata.id
             )
-            station_group.metadata.update(tf_object.to_ts_station_metadata())
-            station_group.write_metadata()
+            # station_group.metadata.update(tf_object.to_ts_station_metadata())
+            # station_group.write_metadata()
         except MTH5Error:
             station_group = survey_group.stations_group.add_station(
                 tf_object.station_metadata.id,
@@ -1577,20 +1606,21 @@ class MTH5:
         try:
             tf_group = (
                 station_group.transfer_functions_group.add_transfer_function(
-                    tf_object.station, tf_object=tf_object
+                    tf_object.tf_id, tf_object=tf_object
                 )
             )
             # need to update time_period from TF here
         except (OSError, RuntimeError, ValueError):
-            msg = f"TF {tf_object.station} already exists, returning existing group."
+            msg = f"TF {tf_object.tf_id} already exists, returning existing group."
             self.logger.debug(msg)
             tf_group = (
                 station_group.transfer_functions_group.get_transfer_function(
-                    tf_object.station
+                    tf_object.tf_id
                 )
             )
 
-        survey_group.update_metadata()
+        if update_metadata:
+            survey_group.update_metadata()
         return tf_group
 
     def get_transfer_function(self, station_id, tf_id, survey=None):
@@ -1651,3 +1681,10 @@ class MTH5:
         station_group = self.get_station(station_id, survey=survey)
 
         station_group.transfer_functions_group.remove_transfer_function(tf_id)
+
+
+def _default_table_names() -> list:
+    """
+    track a global list of mth5 table names
+    """
+    return ["channel_summary", "fc_summary", "tf_summary"]

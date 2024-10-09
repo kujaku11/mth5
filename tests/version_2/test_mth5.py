@@ -17,6 +17,7 @@ import numpy as np
 from mth5.mth5 import MTH5
 from mth5 import helpers
 from mth5 import groups
+from mth5.mth5 import _default_table_names
 from mth5.utils.exceptions import MTH5Error
 from mth5.timeseries import ChannelTS, RunTS
 from mth5.groups.standards import summarize_metadata_standards
@@ -69,7 +70,7 @@ class TestMTH5(unittest.TestCase):
         groups = sorted(self.mth5_obj.experiment_group.groups_list)
         defaults = sorted(
             self.mth5_obj._default_subgroup_names
-            + ["channel_summary", "tf_summary"]
+            + _default_table_names()
         )
 
         self.assertListEqual(defaults, groups)

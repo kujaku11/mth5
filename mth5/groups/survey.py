@@ -25,7 +25,7 @@ from mth5.groups import (
     StandardsGroup,
 )
 from mth5.utils.exceptions import MTH5Error
-from mth5.helpers import validate_name
+from mth5.helpers import validate_name, to_numpy_type
 
 from mt_metadata.timeseries import Survey
 
@@ -473,6 +473,33 @@ class SurveyGroup(BaseGroup):
             )
         return self._metadata
 
+    def write_metadata(self):
+        """
+        Write HDF5 metadata from metadata object.
+
+        """
+
+        try:
+            for key, value in self._metadata.to_dict(single=True).items():
+                value = to_numpy_type(value)
+                self.logger.debug(f"wrote metadata {key} = {value}")
+                self.hdf5_group.attrs.create(key, value)
+            self._has_read_metadata = True
+        except KeyError as key_error:
+            if "no write intent" in str(key_error):
+                self.logger.warning(
+                    "File is in read-only mode, cannot write metadata."
+                )
+            else:
+                raise KeyError(key_error)
+        except ValueError as value_error:
+            if "Unable to synchronously create group" in str(value_error):
+                self.logger.warning(
+                    "File is in read-only mode, cannot write metadata."
+                )
+            else:
+                raise ValueError(value_error)
+
     @property
     def stations_group(self):
         return MasterStationGroup(self.hdf5_group["Stations"])
@@ -517,6 +544,13 @@ class SurveyGroup(BaseGroup):
 
         if survey_dict:
             self.metadata.from_dict(survey_dict, skip_none=True)
+
+        if not len(
+            station_summary
+        ):  # if station info is empty df, skip parsing
+            self.write_metadata()
+            return
+
         self._metadata.time_period.start_date = (
             station_summary.start.min().isoformat().split("T")[0]
         )
@@ -536,4 +570,6 @@ class SurveyGroup(BaseGroup):
             station_summary.longitude.max()
         )
 
+        # metadata by default comes with stations and runs, need to remove those
+        # before writing the metadata.
         self.write_metadata()
