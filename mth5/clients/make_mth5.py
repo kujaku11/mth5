@@ -198,3 +198,10 @@ class MakeMTH5:
         return zc.make_mth5_from_zen(
             survey_id=survey_id, combine=combine, **kwargs
         )
+
+    def from_phoenix(
+        self,
+        data_path,
+        sample_rate=[150, 24000],
+    ):
+        pass

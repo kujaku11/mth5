@@ -29,9 +29,10 @@ class PhoenixClient:
         sensor_calibration_dict={},
     ):
         self.data_path = data_path
+        self.mth5_filename = "from_phoenix.h5"
         self.sample_rates = sample_rates
         self.save_path = save_path
-        self.mth5_filename = "from_phoenix.h5"
+
         self.receiver_calibration_dict = receiver_calibration_dict
         self.sensor_calibration_dict = sensor_calibration_dict
 
@@ -77,10 +78,10 @@ class PhoenixClient:
             receiver_path = Path(value)
             if receiver_path.is_dir():
                 self._receiver_calibration_dict = {}
-                for fn in receiver_path.glob("*.rx_cal.json"):
-                    self._receiver_calibration_dict[fn.stem.split("_")[0]] = (
-                        fn
-                    )
+                for fn in list(receiver_path.glob("*.rxcal.json")) + list(
+                    receiver_path.glob("*.rx_cal.json")
+                ):
+                    self._receiver_calibration_dict[fn.stem.split("_")[0]] = fn
             elif receiver_path.is_file():
                 self._receiver_calibration_dict = {}
                 self._receiver_calibration_dict[fn.stem.split("_")[0]] = (
@@ -112,7 +113,7 @@ class PhoenixClient:
             cal_path = Path(value)
             if cal_path.is_dir():
                 for fn in cal_path.glob("*scal.json"):
-                    self._sensor_calibration_dict[fn.stem.split("_")[0]]
+                    self._sensor_calibration_dict[fn.stem.split("_")[0]] = fn
             self._calibration_path = Path(value)
             if not self._calibration_path.exists():
                 raise IOError(f"Could not find {self._calibration_path}")
@@ -138,12 +139,12 @@ class PhoenixClient:
         """
 
         if isinstance(value, (int, float)):
-            self._value = [value]
+            self._sample_rates = [value]
         elif isinstance(value, str):
-            self._value = [float(v) for v in value.split(",")]
+            self._sample_rates = [float(v) for v in value.split(",")]
 
         elif isinstance(value, (tuple, list)):
-            self._value = [float(v) for v in value]
+            self._sample_rates = [float(v) for v in value]
         else:
             raise TypeError(f"Cannot parse {type(value)}")
 
