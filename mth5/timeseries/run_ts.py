@@ -66,7 +66,6 @@ class RunTS:
         station_metadata=None,
         survey_metadata=None,
     ):
-
         self.logger = logger
         self._survey_metadata = self._initialize_metadata()
         self._dataset = xr.Dataset()
@@ -76,9 +75,26 @@ class RunTS:
         self.station_metadata = station_metadata
         self.run_metadata = run_metadata
 
+        self._sample_rate = self._check_sample_rate_at_init()
+
         # load the arrays first this will write run and station metadata
         if array_list is not None:
             self.dataset = array_list
+
+    def _check_sample_rate_at_init(self):
+        """
+        Interrogate the channel_metadata argument supplied at init
+        to see if sample_rate is specified.
+
+        If the data is set a check will be done to make sure the sample_rates
+        are the same.  If they are not the data sample_rate is used.
+
+        """
+        sr = None
+        if self.run_metadata is not None:
+            sr = self.run_metadata.sample_rate
+
+        return sr
 
     def __str__(self):
         s_list = [
@@ -96,7 +112,6 @@ class RunTS:
         return self.__str__()
 
     def __eq__(self, other):
-
         if not isinstance(other, RunTS):
             raise TypeError(f"Cannot compare RunTS with {type(other)}.")
         if not other.survey_metadata == self.survey_metadata:
@@ -451,7 +466,6 @@ class RunTS:
 
         filter_list = []
         if ch_name in self.dataset.keys():
-
             for filter_name in self.dataset[ch_name].attrs["filter.name"]:
                 try:
                     filter_list.append(self.filters[filter_name])
@@ -464,7 +478,6 @@ class RunTS:
     def __getattr__(self, name):
         # change to look for keys directly and use type to set channel type
         if name in self.dataset.keys():
-
             ch_response_filter = self._get_channel_response(name)
             # if cannot get filters, but the filters name indicates that
             # filters should be there don't input the channel response filter
@@ -552,9 +565,7 @@ class RunTS:
         """
 
         if station_metadata is not None:
-            station_metadata = self._validate_station_metadata(
-                station_metadata
-            )
+            station_metadata = self._validate_station_metadata(station_metadata)
 
             runs = ListDict()
             if self.run_metadata.id not in ["0", 0]:
@@ -657,17 +668,29 @@ class RunTS:
                     )
                     self.logger.warning(msg)
                 self.run_metadata.time_period.end = self.end.iso_str
+            # check sample rate
+            data_sr = self._compute_sample_rate()
+            if self.sample_rate != data_sr:
+                # if self.run_metadata.sample_rate == 0.0:
+                #     pass
+                # elif self.run_metadata.sample_rate is not None:
+                msg = (
+                    f"sample rate of dataset {data_sr} does not "
+                    f"match metadata sample rate {self.sample_rate} "
+                    f"updating metatdata value to {data_sr}"
+                )
+                self.logger.critical(msg)
+                self._sample_rate = data_sr
+                self.run_metadata.sample_rate = data_sr
+
             if self.sample_rate != self.run_metadata.sample_rate:
-                if self.run_metadata.sample_rate == 0.0:
-                    pass
-                elif self.run_metadata.sample_rate is not None:
-                    msg = (
-                        f"sample rate of dataset {self.sample_rate} does not "
-                        f"match metadata sample rate {self.run_metadata.sample_rate} "
-                        f"updating metatdata value to {self.sample_rate}"
-                    )
-                    self.logger.warning(msg)
-                self.run_metadata.sample_rate = self.sample_rate
+                msg = (
+                    f"sample rate of dataset {data_sr} does not "
+                    f"match metadata sample rate {self.sample_rate} "
+                    f"updating metatdata value to {data_sr}"
+                )
+                self.logger.critical(msg)
+                self.run_metadata.sample_rate = self._sample_rate
             if self.run_metadata.id not in self.station_metadata.runs.keys():
                 self.station_metadata.runs[0].update(self.run_metadata)
             self.station_metadata.update_time_period()
@@ -774,10 +797,38 @@ class RunTS:
     def end(self):
         """End time UTC"""
         if self.has_data():
-            return MTime(
-                self.dataset.coords["time"].to_index()[-1].isoformat()
-            )
+            return MTime(self.dataset.coords["time"].to_index()[-1].isoformat())
         return self.run_metadata.time_period.end
+
+    def _compute_sample_rate(self):
+        """
+        compute sample rate
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        try:
+            return round(
+                1.0
+                / np.float64(
+                    (
+                        np.median(
+                            np.diff(self.dataset.coords["time"].to_index())
+                            / np.timedelta64(1, "s")
+                        )
+                    )
+                ),
+                0,
+            )
+        except AttributeError:
+            self.logger.warning(
+                "Something weird happend with xarray time indexing"
+            )
+
+            raise ValueError(
+                "Something weird happend with xarray time indexing"
+            )
 
     @property
     def sample_rate(self):
@@ -787,28 +838,10 @@ class RunTS:
         sample rate.
         """
         if self.has_data():
-            try:
-                return round(
-                    1.0
-                    / np.float64(
-                        (
-                            np.median(
-                                np.diff(self.dataset.coords["time"].to_index())
-                                / np.timedelta64(1, "s")
-                            )
-                        )
-                    ),
-                    0,
-                )
-            except AttributeError:
-                self.logger.warning(
-                    "Something weird happend with xarray time indexing"
-                )
+            if self._sample_rate is None:
+                self._sample_rate = self._compute_sample_rate()
 
-                raise ValueError(
-                    "Something weird happend with xarray time indexing"
-                )
-        return self.run_metadata.sample_rate
+        return self._sample_rate
 
     @property
     def sample_interval(self):
@@ -875,7 +908,6 @@ class RunTS:
         msg = f"Possible Leap Second Bug -- see issue #169"
         self.logger.warning(msg)
         return [x for x in array_list if x.n_samples != 1]
-
 
     def from_obspy_stream(self, obspy_stream, run_metadata=None):
         """
