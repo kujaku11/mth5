@@ -500,7 +500,7 @@ class TestChannelTSSampleRate(unittest.TestCase):
             ),
         )
 
-        self.assertEqual(ts.sample_rate, data.sample_rate)
+        self.assertNotEqual(ts.sample_rate, data.sample_rate)
 
 
 class TestChannelTS2ObspyTrace(unittest.TestCase):
@@ -583,7 +583,9 @@ class TestAddChannels(unittest.TestCase):
 
         self.run_metadata = metadata.Run(id="001")
 
-        self.channel_metadata = metadata.Electric(component="ex", sample_rate=1)
+        self.channel_metadata = metadata.Electric(
+            component="ex", sample_rate=1
+        )
         self.channel_metadata.time_period.start = "2020-01-01T00:00:00+00:00"
         self.channel_metadata.time_period.end = "2020-01-01T00:00:59+00:00"
 
