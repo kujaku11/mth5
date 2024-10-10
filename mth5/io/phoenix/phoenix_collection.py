@@ -211,9 +211,7 @@ class PhoenixCollection(Collection):
                     starts = np.sort(
                         sdf.loc[sdf.sample_rate == sr].start.unique()
                     )
-                    ends = np.sort(
-                        sdf.loc[sdf.sample_rate == sr].end.unique()
-                    )
+                    ends = np.sort(sdf.loc[sdf.sample_rate == sr].end.unique())
 
                     # find any breaks in the data
                     diff = ends[0:-1] - starts[1:]
@@ -238,8 +236,7 @@ class PhoenixCollection(Collection):
 
                     else:
                         rdf.loc[
-                            (rdf.station == station)
-                            & (rdf.sample_rate == sr),
+                            (rdf.station == station) & (rdf.sample_rate == sr),
                             "run",
                         ] = f"sr{run_stem}_{count:0{zeros}}"
 
@@ -303,8 +300,17 @@ class PhoenixCollection(Collection):
                 key=lambda x: x[-run_name_zeros:],
             ):
                 run_df = df[(df.station == station) & (df.run == run_id)]
-                run_dict[station][run_id] = run_df[
-                    run_df.start == run_df.start.min()
-                ]
+
+                first_row_list = []
+                for comp in run_df.component.unique():
+                    comp_df = run_df[run_df.component == comp]
+                    comp_df = comp_df[comp_df.start == comp_df.start.min()]
+                    first_row_list.append(comp_df)
+
+                # run_dict[station][run_id] = run_df[
+                #     run_df.start == run_df.start.min()
+                # ]
+                # need to get the earliest file for each component separately
+                run_dict[station][run_id] = pd.concat(first_row_list)
 
         return run_dict

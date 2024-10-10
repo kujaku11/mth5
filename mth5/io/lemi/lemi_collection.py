@@ -14,9 +14,11 @@ Created on Wed Aug 31 10:32:44 2022
 # Imports
 # =============================================================================
 import pandas as pd
+import pathlib
 
 from mth5.io.collection import Collection
 from mth5.io.lemi import LEMI424
+from typing import Optional, Union
 
 # =============================================================================
 
@@ -54,9 +56,17 @@ class LEMICollection(Collection):
 
     """
 
-    def __init__(self, file_path=None, **kwargs):
+    def __init__(
+        self,
+        file_path: Optional[pathlib.Path] = None, 
+        file_ext: Optional[list] = None,
+        **kwargs
+    ):
         super().__init__(file_path=file_path, **kwargs)
-        self.file_ext = "txt"
+        if file_ext is None:
+            file_ext = "txt"
+
+        self.file_ext = file_ext
 
         self.station_id = "mt001"
         self.survey_id = "mt"
@@ -111,6 +121,11 @@ class LEMICollection(Collection):
             entries.append(entry)
 
         # make pandas dataframe and set data types
+        if len(entries) == 0:
+            msg = f"No entries found for LEMI collection"
+            self.logger.warning(msg)
+            return pd.DataFrame()
+
         df = pd.DataFrame(entries)
         df.loc[:, "channel_id"] = 1
         df.loc[:, "sequence_number"] = 0
