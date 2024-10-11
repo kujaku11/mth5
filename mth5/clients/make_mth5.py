@@ -171,16 +171,25 @@ class MakeMTH5:
         """
         Create an MTH5 from zen data.
 
-        :param data_path: DESCRIPTION
-        :type data_path: TYPE
-        :param sample_rates: DESCRIPTION, defaults to [4096, 1024, 256]
-        :type sample_rates: TYPE, optional
-        :param save_path: DESCRIPTION, defaults to None
-        :type save_path: TYPE, optional
-        :param calibration_path: DESCRIPTION, defaults to None
-        :type calibration_path: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
+        :param data_path: directory to where data are stored
+        :type data_path: Path, str
+        :param sample_rates: sample rates to include,
+         defaults to [4096, 1024, 256]
+        :type sample_rates: list, optional
+        :param save_path: path to save H5 file to, defaults to None which will
+         place the file in `data_path`
+        :type save_path: str or Path, optional
+        :param calibration_path: path to calibration file amtant.cal,
+         defaults to None
+        :type calibration_path: str or Path, optional
+        :param survey_id: survey ID to apply to all station found under
+         `data_path`, defaults to None
+        :type survey_id: string
+        :param combine: if True combine the runs into a single run sampled at 1s,
+         defaults to True
+        :type combine: bool
+        :return: MTH5 file name
+        :rtype: Path
 
         """
 
@@ -207,11 +216,46 @@ class MakeMTH5:
         self,
         data_path,
         mth5_filename=None,
+        save_path=None,
         sample_rates=[150, 24000],
         receiver_calibration_dict=None,
         sensor_calibration_dict=None,
-        save_path=None,
     ):
+        """
+        Build an H5 file from Phoenix MTU-5C files.  The key step when working
+        with Phoenix data is to export the scal and rxcal files into JSON using
+        EMPower.  Place these files in a folder that you can easily find, and
+        you can use this folder as inputs for the `receiver_calibration_dict`
+        and `sensor_calibration_dict` which will search the folder and read
+        in all the rxcal and scal files into appropriate dictionaries such
+        that the filters will be linked with the data for appropriate
+        calibration.
+
+        :param data_path: Directory where data files are, could be a single
+         station or a full directory of stations.
+        :type data_path: str or Path
+        :param mth5_filename: filename for the H5, defaults to 'from_phoenix.h5'
+        :type mth5_filename: str, optional
+        :param save_path: path to save H5 file to, defaults to None which will
+         place the file in `data_path`
+        :type save_path: str or Path, optional
+        :param sample_rates: sample rates to include in file, defaults to
+         [150, 24000]
+        :type sample_rates: list, optional
+        :param receiver_calibration_dict: This can either be a directory path to
+         where the rxcal.json files are or a dictionary where keys are the
+         receiver IDs and the values are the filename of the rxcal.json file,
+         defaults to None
+        :type receiver_calibration_dict: str, Path or dict, optional
+        :param sensor_calibration_dict: This can either be a directory path to
+         where the scal.json files are or a dictionary where keys are the
+         sensor IDs and the values are the `PhoenixCalibration` objects that
+         have read in the scal.json file for that sensor, defaults to None
+        :type sensor_calibration_dict: str, Path, dict, optional
+        :return: Path to MTH5 file
+        :rtype: Path
+
+        """
 
         phx_client = PhoenixClient(
             data_path,
