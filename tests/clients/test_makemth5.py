@@ -31,19 +31,19 @@ class TestMakeMTH5v1(unittest.TestCase):
         self.assertEqual(self.m.save_path, Path().cwd())
 
     def test_compression(self):
-        self.assertEqual(self.m.compression, "gzip")
+        self.assertEqual(self.m.h5_compression, "gzip")
 
     def test_compression_opts(self):
-        self.assertEqual(self.m.compression_opts, 4)
+        self.assertEqual(self.m.h5_compression_opts, 4)
 
     def test_shuffle(self):
-        self.assertEqual(self.m.shuffle, True)
+        self.assertEqual(self.m.h5_shuffle, True)
 
     def test_fletcher32(self):
-        self.assertEqual(self.m.fletcher32, True)
+        self.assertEqual(self.m.h5_fletcher32, True)
 
     def test_data_level(self):
-        self.assertEqual(self.m.data_level, 1)
+        self.assertEqual(self.m.h5_data_level, 1)
 
 
 class TestMakeMTH5v2(unittest.TestCase):
@@ -53,11 +53,11 @@ class TestMakeMTH5v2(unittest.TestCase):
             mth5_version="0.2.0",
             interact=False,
             save_path=None,
-            compression=None,
-            compression_opts=None,
-            shuffle=False,
-            fletcher32=False,
-            data_level=2,
+            h5_compression=None,
+            h5_compression_opts=None,
+            h5_shuffle=False,
+            h5_fletcher32=False,
+            h5_data_level=2,
         )
 
     def test_mth5_version(self):
@@ -70,19 +70,19 @@ class TestMakeMTH5v2(unittest.TestCase):
         self.assertEqual(self.m.save_path, Path().cwd())
 
     def test_compression(self):
-        self.assertEqual(self.m.compression, None)
+        self.assertEqual(self.m.h5_compression, None)
 
     def test_compression_opts(self):
-        self.assertEqual(self.m.compression_opts, None)
+        self.assertEqual(self.m.h5_compression_opts, None)
 
     def test_shuffle(self):
-        self.assertEqual(self.m.shuffle, False)
+        self.assertEqual(self.m.h5_shuffle, False)
 
     def test_fletcher32(self):
-        self.assertEqual(self.m.fletcher32, False)
+        self.assertEqual(self.m.h5_fletcher32, False)
 
     def test_data_level(self):
-        self.assertEqual(self.m.data_level, 2)
+        self.assertEqual(self.m.h5_data_level, 2)
 
 
 # =============================================================================

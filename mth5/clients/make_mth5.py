@@ -47,17 +47,34 @@ class MakeMTH5:
         self.mth5_version = mth5_version
         self.interact = interact
         self.save_path = save_path
-        self.compression = "gzip"
-        self.compression_opts = 4
-        self.shuffle = True
-        self.fletcher32 = True
-        self.data_level = 1
+        self.h5_compression = "gzip"
+        self.h5_compression_opts = 4
+        self.h5_shuffle = True
+        self.h5_fletcher32 = True
+        self.h5_data_level = 1
 
         for key, value in kwargs.items():
             setattr(self, key, value)
 
         if self.save_path is None:
             self.save_path = Path().cwd()
+
+    @property
+    def h5_kwargs(self):
+        h5_params = dict(
+            mth5_version=self.mth5_version,
+            h5_compression=self.h5_compression,
+            h5_compression_opts=self.h5_compression_opts,
+            h5_shuffle=self.h5_shuffle,
+            h5_fletcher32=self.h5_fletcher32,
+            h5_data_level=self.h5_data_level,
+        )
+
+        for key, value in self.__dict__.items():
+            if key.startswith("h5"):
+                h5_params[key] = value
+
+        return h5_params
 
     @classmethod
     def from_fdsn_client(self, request_df, client="IRIS", **kwargs):
