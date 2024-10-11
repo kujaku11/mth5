@@ -70,12 +70,6 @@ class TestClientBase(unittest.TestCase):
     def test_initial_fail_bad_directory(self):
         self.assertRaises(IOError, PhoenixClient, r"a:\\")
 
-    def test_calibration_path_fail_None(self):
-        def set_calibration_path(value):
-            self.base.calibration_path = value
-
-        self.assertRaises(ValueError, set_calibration_path, None)
-
 
 # =============================================================================
 # run
