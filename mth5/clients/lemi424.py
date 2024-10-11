@@ -32,7 +32,7 @@ class LEMI424Client(ClientBase):
             **kwargs
         )
 
-        self.collection = LEMICollection(data_path)
+        self.collection = LEMICollection(self.data_path)
 
     def make_mth5_from_lemi424(self, survey_id, station_id, **kwargs):
         """

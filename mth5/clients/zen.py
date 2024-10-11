@@ -1,17 +1,10 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# # Make an MTH5 from Phoenix Data
-#
-# This example demonstrates how to read Phoenix data into an MTH5 file.  The data comes from example data in [PhoenixGeoPy](https://github.com/torresolmx/PhoenixGeoPy). Here I downloaded those data into a local folder on my computer by forking the main branch.
-
-# ## Imports
-
 # =============================================================================
 # Imports
 # =============================================================================
 from pathlib import Path
-from loguru import logger
 
 from mth5.mth5 import MTH5
 from mth5 import read_file
@@ -43,32 +36,6 @@ class ZenClient(ClientBase):
         self.collection = Z3DCollection(self.data_path)
 
     @property
-    def data_path(self):
-        """Path to phoenix data"""
-        return self._data_path
-
-    @data_path.setter
-    def data_path(self, value):
-        """
-
-        :param value: DESCRIPTION
-        :type value: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        if value is not None:
-            self._data_path = Path(value)
-            if not self._data_path.exists():
-                raise IOError(f"Could not find {self._data_path}")
-
-            self.collection = Z3DCollection(self.data_path)
-
-        else:
-            raise ValueError("data_path cannot be None")
-
-    @property
     def calibration_path(self):
         """Path to calibration data"""
         return self._calibration_path
@@ -91,57 +58,6 @@ class ZenClient(ClientBase):
 
         else:
             raise ValueError("calibration_path cannot be None")
-
-    @property
-    def sample_rates(self):
-        """sample rates to look for"""
-        return self._sample_rates
-
-    @sample_rates.setter
-    def sample_rates(self, value):
-        """
-        sample rates set to a list
-
-        :param value: DESCRIPTION
-        :type value: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        if isinstance(value, (int, float)):
-            self._sample_rates = [value]
-        elif isinstance(value, str):
-            self._sample_rates = [float(v) for v in value.split(",")]
-
-        elif isinstance(value, (tuple, list)):
-            self._sample_rates = [float(v) for v in value]
-        else:
-            raise TypeError(f"Cannot parse {type(value)}")
-
-    @property
-    def save_path(self):
-        """Path to save mth5"""
-        return self._save_path
-
-    @save_path.setter
-    def save_path(self, value):
-        """
-
-        :param value: DESCRIPTION
-        :type value: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        if value is not None:
-            self._save_path = Path(value)
-            if self._save_path.is_dir():
-                self._save_path = self._save_path.joinpath(self.mth5_filename)
-
-        else:
-            self._save_path = self.data_path.joinpath(self.mth5_filename)
 
     def get_run_dict(self):
         """
@@ -197,15 +113,9 @@ class ZenClient(ClientBase):
 
         runs = self.get_run_dict()
 
-        with MTH5() as m:
-            m.file_version = self.file_version
-            m.compression = self.compression
-            m.compression_opts = self.comporession_opts
-            m.shuffle = self.shuffle
-            m.fletcher32 = self.fletcher32
-            m.data_level = self.data_level
-
+        with MTH5(**self.h5_kwargs) as m:
             m.open_mth5(self.save_path, "w")
+
             for station_id, station_dict in runs.items():
                 if survey_id is None:
                     survey_id = self.get_survey(station_dict)
