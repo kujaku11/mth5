@@ -58,9 +58,9 @@ class LEMICollection(Collection):
 
     def __init__(
         self,
-        file_path: Optional[pathlib.Path] = None, 
+        file_path: Optional[pathlib.Path] = None,
         file_ext: Optional[list] = None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(file_path=file_path, **kwargs)
         if file_ext is None:
@@ -122,8 +122,7 @@ class LEMICollection(Collection):
 
         # make pandas dataframe and set data types
         if len(entries) == 0:
-            msg = f"No entries found for LEMI collection"
-            self.logger.warning(msg)
+            self.logger.warning("No entries found for LEMI collection")
             return pd.DataFrame()
 
         df = pd.DataFrame(entries)
