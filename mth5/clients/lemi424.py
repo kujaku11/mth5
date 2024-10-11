@@ -8,86 +8,69 @@ Created on Fri Oct 11 10:57:54 2024
 # =============================================================================
 # Imports
 # =============================================================================
-from pathlib import Path
-
 from mth5.mth5 import MTH5
 from mth5 import read_file
-from mth5.io.lemi import LEMI424, LEMICollection
+from mth5.clients.base import ClientBase
+from mth5.io.lemi import LEMICollection
 
 # =============================================================================
 
 
-class LEMI424Client:
+class LEMI424Client(ClientBase):
     def __init__(
         self,
         data_path,
-        file_ext=["txt", "TXT"],
         save_path=None,
-        mth5_filename=None,
+        mth5_filename="from_lemi424.h5",
+        **kwargs
     ):
-        self.data_path = data_path
-        self.file_extensions = file_ext
-        self.save_path = save_path
-        self.mth5_filename = mth5_filename
-        self.sample_rate = [1]
+        super().__init__(
+            data_path,
+            save_path=save_path,
+            sample_rates=[1],
+            mth5_filename=mth5_filename,
+            **kwargs
+        )
 
-    @property
-    def data_path(self):
-        """Path to lemi424 data"""
-        return self._data_path
+        self.collection = LEMICollection(data_path)
 
-    @data_path.setter
-    def data_path(self, value):
+    def make_mth5_from_lemi424(self, survey_id, station_id, **kwargs):
         """
+        create an MTH5 file from LEMI 424 long period data.
 
-        :param value: data path, directory to where files are
-        :type value: str or Path
-
-        """
-
-        if value is not None:
-            self._data_path = Path(value)
-            if not self._data_path.exists():
-                raise IOError(f"Could not find {self._data_path}")
-
-            self.collection = LEMICollection(self.data_path)
-
-        else:
-            raise ValueError("data_path cannot be None")
-
-    @property
-    def save_path(self):
-        """Path to save mth5"""
-        return self._save_path.joinpath(self.mth5_filename)
-
-    @save_path.setter
-    def save_path(self, value):
-        """
-
-        :param value: DESCRIPTION
-        :type value: TYPE
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
         :return: DESCRIPTION
         :rtype: TYPE
 
         """
 
-        if value is not None:
-            value = Path(value)
-            if value.is_dir():
-                self._save_path = value
-            else:
-                self._save_path = value.parent
-                self.mth5_filename = value.name
+        for key, value in kwargs.items():
+            if value is not None:
+                setattr(self, key, value)
 
-        else:
-            self._save_path = self.data_path
+        self.collection.survey_id = survey_id
+        self.collection.station_id = station_id
 
-    def get_run_dict(self):
-        """
+        runs = self.get_run_dict()
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        with MTH5(**self.h5_kwargs) as m:
+            m.open_mth5(self.save_path, "w")
+            survey_group = m.add_survey(self.collection.survey_id)
 
-        """
+            for station_id in runs.keys():
+                station_group = survey_group.stations_group.add_station(
+                    station_id
+                )
+                for run_id, run_df in runs[station_id].items():
+                    run_group = station_group.add_run(run_id)
+                    run_ts = read_file(run_df.fn.to_list())
+                    run_ts.run_metadata.id = run_id
+                    run_group.from_runts(run_ts)
+                station_group.metadata.update(run_ts.station_metadata)
+                station_group.write_metadata()
 
-        return self.collection.get_runs(sample_rates=self.sample_rate)
+            # update survey metadata from input station
+            survey_group.update_metadata()
+
+        return self.save_path

@@ -66,7 +66,7 @@ class ClientBase:
     @property
     def h5_kwargs(self):
         h5_params = dict(
-            mth5_version=self.mth5_version,
+            file_version=self.mth5_version,
             compression=self.h5_compression,
             compression_opts=self.h5_compression_opts,
             shuffle=self.h5_shuffle,

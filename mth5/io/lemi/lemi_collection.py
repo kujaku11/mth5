@@ -18,7 +18,7 @@ import pathlib
 
 from mth5.io.collection import Collection
 from mth5.io.lemi import LEMI424
-from typing import Optional, Union
+from typing import Optional
 
 # =============================================================================
 
@@ -59,14 +59,10 @@ class LEMICollection(Collection):
     def __init__(
         self,
         file_path: Optional[pathlib.Path] = None,
-        file_ext: Optional[list] = None,
+        file_ext: Optional[list] = ["txt", "TXT"],
         **kwargs,
     ):
-        super().__init__(file_path=file_path, **kwargs)
-        if file_ext is None:
-            file_ext = "txt"
-
-        self.file_ext = file_ext
+        super().__init__(file_path=file_path, file_ext=file_ext, **kwargs)
 
         self.station_id = "mt001"
         self.survey_id = "mt"
