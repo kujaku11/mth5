@@ -15,37 +15,30 @@ from loguru import logger
 
 from mth5.mth5 import MTH5
 from mth5 import read_file
+from mth5.clients.base import ClientBase
 from mth5.io.zen import Z3DCollection
 
 # =============================================================================
 
 
-class ZenClient:
+class ZenClient(ClientBase):
     def __init__(
         self,
         data_path,
         sample_rates=[4096, 1024, 256],
         save_path=None,
         calibration_path=None,
+        mth5_filename="from_zen.h5",
         **kwargs,
     ):
-        self.logger = logger
-        self.data_path = data_path
-        self.sample_rates = sample_rates
-        self.mth5_filename = "from_zen.h5"
-        self.save_path = save_path
-        self.calibration_path = calibration_path
 
-        self.mth5_version = "0.2.0"
-        self.interact = False
-        self.compression = "gzip"
-        self.compression_opts = 4
-        self.shuffle = True
-        self.fletcher32 = True
-        self.data_level = 1
-
-        for key, value in kwargs.items():
-            setattr(self, key, value)
+        super().__init__(
+            data_path,
+            save_path=save_path,
+            sample_rates=sample_rates,
+            mth5_filename=mth5_filename,
+            **kwargs,
+        )
 
         self.collection = Z3DCollection(self.data_path)
 

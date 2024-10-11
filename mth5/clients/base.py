@@ -9,6 +9,7 @@ Created on Fri Oct 11 11:36:26 2024
 # Imports
 # =============================================================================
 from pathlib import Path
+from loguru import logger
 
 # =============================================================================
 
@@ -42,6 +43,7 @@ class ClientBase:
         :rtype: TYPE
 
         """
+        self.logger = logger
 
         self.data_path = data_path
         self.mth5_filename = mth5_filename

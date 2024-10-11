@@ -24,6 +24,7 @@ from . import FDSN
 from . import USGSGeomag
 from . import PhoenixClient
 from . import ZenClient
+from . import LEMI424Client
 
 # =============================================================================
 
@@ -46,17 +47,34 @@ class MakeMTH5:
         self.mth5_version = mth5_version
         self.interact = interact
         self.save_path = save_path
-        self.compression = "gzip"
-        self.compression_opts = 4
-        self.shuffle = True
-        self.fletcher32 = True
-        self.data_level = 1
+        self.h5_compression = "gzip"
+        self.h5_compression_opts = 4
+        self.h5_shuffle = True
+        self.h5_fletcher32 = True
+        self.h5_data_level = 1
 
         for key, value in kwargs.items():
             setattr(self, key, value)
 
         if self.save_path is None:
             self.save_path = Path().cwd()
+
+    @property
+    def h5_kwargs(self):
+        h5_params = dict(
+            mth5_version=self.mth5_version,
+            h5_compression=self.h5_compression,
+            h5_compression_opts=self.h5_compression_opts,
+            h5_shuffle=self.h5_shuffle,
+            h5_fletcher32=self.h5_fletcher32,
+            h5_data_level=self.h5_data_level,
+        )
+
+        for key, value in self.__dict__.items():
+            if key.startswith("h5"):
+                h5_params[key] = value
+
+        return h5_params
 
     @classmethod
     def from_fdsn_client(self, request_df, client="IRIS", **kwargs):
@@ -171,6 +189,13 @@ class MakeMTH5:
         """
         Create an MTH5 from zen data.
 
+        Any H5 file parameters like compression, shuffle, etc need to have a
+        prefix of 'h5'. For example h5_compression='gzip'.
+
+        >>> MakeMTH5.make_mth5_from_zen(
+            data_path, **{'h5_compression_opts': 1}
+            )
+
         :param data_path: directory to where data are stored
         :type data_path: Path, str
         :param sample_rates: sample rates to include,
@@ -192,12 +217,6 @@ class MakeMTH5:
         :rtype: Path
 
         """
-
-        kwargs["compression"] = self.compression
-        kwargs["compression_opts"] = self.compression_opts
-        kwargs["shuffle"] = self.shuffle
-        kwargs["fletcher32"] = self.fletcher32
-        kwargs["data_level"] = self.data_level
 
         zc = ZenClient(
             data_path,
@@ -230,6 +249,13 @@ class MakeMTH5:
         in all the rxcal and scal files into appropriate dictionaries such
         that the filters will be linked with the data for appropriate
         calibration.
+
+        Any H5 file parameters like compression, shuffle, etc need to have a
+        prefix of 'h5'. For example h5_compression='gzip'.
+
+        >>> MakeMTH5.make_mth5_from_phoenix(
+            data_path, **{'h5_compression_opts': 1}
+            )
 
         :param data_path: Directory where data files are, could be a single
          station or a full directory of stations.
@@ -267,3 +293,50 @@ class MakeMTH5:
         )
 
         return phx_client.make_mth5_from_phoenix()
+
+    @classmethod
+    def make_mth5_from_lemi424(
+        self,
+        data_path,
+        survey_id,
+        station_id,
+        mth5_filename=None,
+        save_path=None,
+        **kwargs
+    ):
+        """
+        Build a MTH5 file from LEMI 424 long period data.  Works mainly on a
+        station by station basis because there is limited metadata.
+
+        Any H5 file parameters like compression, shuffle, etc need to have a
+        prefix of 'h5'. For example h5_compression='gzip'.
+
+        >>> MakeMTH5.make_mth5_from_lemi424(
+            data_path, 'test', 'mt01', **{'h5_compression_opts': 1}
+            )
+
+
+        :param data_path: Directory where data files are, could be a single
+         station or a full directory of stations.
+        :type data_path: str or Path
+        :param survey_id: survey ID for all stations
+        :type survey_id: str
+        :param station_id: station ID for station
+        :type station_id: string
+        :param mth5_filename: filename for the H5, defaults to 'from_lemi424.h5'
+        :type mth5_filename: str, optional
+        :param save_path: path to save H5 file to, defaults to None which will
+         place the file in `data_path`
+        :type save_path: str or Path, optional
+        :return: Path to MTH5 file
+        :rtype: Path
+        """
+
+        lemi_client = LEMI424Client(
+            data_path,
+            save_path=save_path,
+            mth5_filename=mth5_filename,
+            **kwargs,
+        )
+
+        return lemi_client.make_mth5_from_lemi424(survey_id, station_id)
