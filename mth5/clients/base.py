@@ -127,7 +127,7 @@ class ClientBase:
             value = Path(value)
             if value.is_dir():
                 self._save_path = value
-            else:
+            elif value.is_file():
                 self._save_path = value.parent
                 self.mth5_filename = value.name
 
