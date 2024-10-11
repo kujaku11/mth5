@@ -81,6 +81,28 @@ class ClientBase:
         return h5_params
 
     @property
+    def data_path(self):
+        """Path to data"""
+        return self._data_path
+
+    @data_path.setter
+    def data_path(self, value):
+        """
+
+        :param value: data path, directory to where files are
+        :type value: str or Path
+
+        """
+
+        if value is not None:
+            self._data_path = Path(value)
+            if not self._data_path.exists():
+                raise IOError(f"Could not find {self._data_path}")
+
+        else:
+            raise ValueError("data_path cannot be None")
+
+    @property
     def sample_rates(self):
         """sample rates to look for"""
         return self._sample_rates

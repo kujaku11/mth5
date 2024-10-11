@@ -19,7 +19,10 @@ from mth5.clients.base import ClientBase
 
 class TestClientBase(unittest.TestCase):
     def setUp(self):
-        self.base = ClientBase(None, **{"h5_mode": "w", "h5_driver": "sec2"})
+        self.file_path = Path(__file__)
+        self.base = ClientBase(
+            self.file_path.parent, **{"h5_mode": "w", "h5_driver": "sec2"}
+        )
 
     def test_h5_kwargs(self):
         keys = [
@@ -53,14 +56,16 @@ class TestClientBase(unittest.TestCase):
         self.assertRaises(TypeError, set_sample_rates, None)
 
     def test_set_save_path(self):
-        self.base.save_path = __file__
-        value = Path(__file__)
+        self.base.save_path = self.file_path
         with self.subTest("_save_path"):
-            self.assertEqual(self.base._save_path, value.parent)
+            self.assertEqual(self.base._save_path, self.file_path.parent)
         with self.subTest("filename"):
-            self.assertEqual(self.base.mth5_filename, value.name)
+            self.assertEqual(self.base.mth5_filename, self.file_path.name)
         with self.subTest("save_path"):
-            self.assertEqual(self.base.save_path, value)
+            self.assertEqual(self.base.save_path, self.file_path)
+
+    def test_initial_fail(self):
+        self.assertRaises(ValueError, ClientBase, None)
 
 
 # =============================================================================
