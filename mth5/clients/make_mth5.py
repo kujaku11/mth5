@@ -81,6 +81,13 @@ class MakeMTH5:
         """
         Pull data from an FDSN archive like IRIS.  Uses Obspy.Clients.
 
+        Any H5 file parameters like compression, shuffle, etc need to have a
+        prefix of 'h5'. For example h5_compression='gzip'.
+
+        >>> MakeMTH5.from_fdsn_client(
+            request_df, **{'h5_compression_opts': 1}
+            )
+
         :param request_df: DataFrame with columns
 
             - 'network'   --> FDSN Network code
@@ -160,6 +167,13 @@ class MakeMTH5:
 
         .. seealso:: https://www.usgs.gov/tools/web-service-geomagnetism-data
 
+        Any H5 file parameters like compression, shuffle, etc need to have a
+        prefix of 'h5'. For example h5_compression='gzip'.
+
+        >>> MakeMTH5.from_usgs_geomag(
+            request_df, **{'h5_compression_opts': 1}
+            )
+
         """
 
         geomag_client = USGSGeomag(
@@ -192,7 +206,7 @@ class MakeMTH5:
         Any H5 file parameters like compression, shuffle, etc need to have a
         prefix of 'h5'. For example h5_compression='gzip'.
 
-        >>> MakeMTH5.make_mth5_from_zen(
+        >>> MakeMTH5.from_zen(
             data_path, **{'h5_compression_opts': 1}
             )
 
@@ -253,7 +267,7 @@ class MakeMTH5:
         Any H5 file parameters like compression, shuffle, etc need to have a
         prefix of 'h5'. For example h5_compression='gzip'.
 
-        >>> MakeMTH5.make_mth5_from_phoenix(
+        >>> MakeMTH5.from_phoenix(
             data_path, **{'h5_compression_opts': 1}
             )
 
@@ -295,7 +309,7 @@ class MakeMTH5:
         return phx_client.make_mth5_from_phoenix()
 
     @classmethod
-    def make_mth5_from_lemi424(
+    def from_lemi424(
         self,
         data_path,
         survey_id,
@@ -311,7 +325,7 @@ class MakeMTH5:
         Any H5 file parameters like compression, shuffle, etc need to have a
         prefix of 'h5'. For example h5_compression='gzip'.
 
-        >>> MakeMTH5.make_mth5_from_lemi424(
+        >>> MakeMTH5.from_lemi424(
             data_path, 'test', 'mt01', **{'h5_compression_opts': 1}
             )
 
