@@ -230,11 +230,16 @@ class FCGroup(BaseGroup):
             )
             self.write_metadata()
 
-    def supports_aurora_processing_config(self, processing_config, remote):
+    def supports_aurora_processing_config(self, processing_config, remote) -> bool:
         """
-        This is an "all-or-nothing" check:
-        Either every (valid) decimation level in the processing config is available or we will build all FCs.
 
+        An "all-or-nothing" check: Return True if every (valid) decimation needed to satisfy the processing_config
+         is available in the FCGroup (self) otherwise return False (and we will build all FCs).
+
+        Logic:
+        1. Get a list of all fc groups in the FCGroup (self)
+        2. Loop the processing_config decimations, checking if there is a corresponding, already built FCDecimation
+         in the FCGroup.
 
         Parameters
         ----------
@@ -245,22 +250,23 @@ class FCGroup(BaseGroup):
         -------
 
         """
-        fc_decimation_ids_to_check = self.groups_list
+        pre_existing_fc_decimation_ids_to_check = self.groups_list
         levels_present = np.full(processing_config.num_decimation_levels, False)
         for i, dec_level in enumerate(processing_config.decimations):
-            # All or nothing condition
+
+            # Quit checking if dec_level wasn't there
             if (i > 0):
                 if not levels_present[i - 1]:
                     return False
 
-            # iterate over fc_group decimations
-            for fc_decimation_id in fc_decimation_ids_to_check:
+            # iterate over existing decimations
+            for fc_decimation_id in pre_existing_fc_decimation_ids_to_check:
                 fc_dec_group = self.get_decimation_level(fc_decimation_id)
                 fc_decimation = fc_dec_group.metadata
                 levels_present[i] = fc_decimation.has_fcs_for_aurora_processing(dec_level, remote)
 
                 if levels_present[i]:
-                    fc_decimation_ids_to_check.remove(fc_decimation_id)  # no need to look at this one again
+                    pre_existing_fc_decimation_ids_to_check.remove(fc_decimation_id)  # no need to check this one again
                     break  # break inner for-loop over decimations
 
         return levels_present.all()
