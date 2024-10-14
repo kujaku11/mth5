@@ -270,66 +270,66 @@ If you add a reader, you should also add a `Client`.  This should inherit :class
 .. code-block:: python
 
 	class NewFileTypeClient(ClientBase):
-    def __init__(
-        self,
-        data_path,
-        save_path=None,
-        mth5_filename="from_new_file_type.h5",
-        **kwargs
-    ):
-        super().__init__(
-            data_path,
-            save_path=save_path,
-            sample_rates=[1],
-            mth5_filename=mth5_filename,
-            **kwargs
-        )
+		def __init__(
+			self,
+			data_path,
+			save_path=None,
+			mth5_filename="from_new_file_type.h5",
+			**kwargs
+		):
+			super().__init__(
+				data_path,
+				save_path=save_path,
+				sample_rates=[1],
+				mth5_filename=mth5_filename,
+				**kwargs
+			)
 
-        self.collection = NewFileCollection(self.data_path)
+			self.collection = NewFileCollection(self.data_path)
 
-    def make_mth5_from_new_file_type(self, **kwargs):
-        """
-        Create an MTH5 from the new file type using the newly create Collections
-		object for the new file type.  
+		def make_mth5_from_new_file_type(self, **kwargs):
+			"""
+			Create an MTH5 from the new file type using the newly create Collections
+			object for the new file type.  
 
-        :param **kwargs: DESCRIPTION
-        :type **kwargs: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+			:param **kwargs: DESCRIPTION
+			:type **kwargs: TYPE
+			:return: DESCRIPTION
+			:rtype: TYPE
 
-        """
+			"""
 
-        for key, value in kwargs.items():
-            if value is not None:
-                setattr(self, key, value)
+			for key, value in kwargs.items():
+				if value is not None:
+					setattr(self, key, value)
 
-        runs = self.get_run_dict()
+			runs = self.get_run_dict()
 
-        with MTH5(**self.h5_kwargs) as m:
-            m.open_mth5(self.save_path, "w")
-			# here is where you put the code specific to your
-			# new file type and how to get the data into an 
-			# mth5.  It should be organized as runs with
-			# logical names and use as much metadata as possible
-			# from the data.  
-            survey_group = m.add_survey(self.collection.survey_id)
+			with MTH5(**self.h5_kwargs) as m:
+				m.open_mth5(self.save_path, "w")
+				# here is where you put the code specific to your
+				# new file type and how to get the data into an 
+				# mth5.  It should be organized as runs with
+				# logical names and use as much metadata as possible
+				# from the data.  
+				survey_group = m.add_survey(self.collection.survey_id)
 
-            for station_id in runs.keys():
-                station_group = survey_group.stations_group.add_station(
-                    station_id
-                )
-                for run_id, run_df in runs[station_id].items():
-                    run_group = station_group.add_run(run_id)
-                    run_ts = read_file(run_df.fn.to_list())
-                    run_ts.run_metadata.id = run_id
-                    run_group.from_runts(run_ts)
-                station_group.metadata.update(run_ts.station_metadata)
-                station_group.write_metadata()
+				for station_id in runs.keys():
+					station_group = survey_group.stations_group.add_station(
+						station_id
+					)
+					for run_id, run_df in runs[station_id].items():
+						run_group = station_group.add_run(run_id)
+						run_ts = read_file(run_df.fn.to_list())
+						run_ts.run_metadata.id = run_id
+						run_group.from_runts(run_ts)
+					station_group.metadata.update(run_ts.station_metadata)
+					station_group.write_metadata()
 
-            # update survey metadata from input station
-            survey_group.update_metadata()
+				# update survey metadata from input station
+				survey_group.update_metadata()
 
-        return self.save_path
+			return self.save_path
 
 
 Adding to MakeMTH5
@@ -339,47 +339,49 @@ If you add a reader, you should also add the client to `MakeMTH5` for convenienc
 
 .. code-block:: python
 
-	@classmethod
-    def from_new_filetype(
-        cls,
-        data_path,
-        mth5_filename=None,
-        save_path=None,
-        **kwargs,
-    ):
-        """
-        Doc string
+	class MakeMTH5:
+		...
+		@classmethod
+		def from_new_filetype(
+			cls,
+			data_path,
+			mth5_filename=None,
+			save_path=None,
+			**kwargs,
+		):
+			"""
+			Doc string
 
-        Any H5 file parameters like compression, shuffle, etc need to have a
-        prefix of 'h5'. For example h5_compression='gzip'.
+			Any H5 file parameters like compression, shuffle, etc need to have a
+			prefix of 'h5'. For example h5_compression='gzip'.
 
-        >>> MakeMTH5.from_lemi424(
-            data_path, 'test', 'mt01', **{'h5_compression_opts': 1}
-            )
+			>>> MakeMTH5.from_lemi424(
+				data_path, 'test', 'mt01', **{'h5_compression_opts': 1}
+				)
 
 
-        :param data_path: Directory where data files are, could be a single
-         station or a full directory of stations.
-        :type data_path: str or Path
-        :param mth5_filename: filename for the H5, defaults to 'from_lemi424.h5'
-        :type mth5_filename: str, optional
-        :param save_path: path to save H5 file to, defaults to None which will
-         place the file in `data_path`
-        :type save_path: str or Path, optional
-        :return: Path to MTH5 file
-        :rtype: Path
-        """
-        maker = cls(**kwargs)
-        kw_dict = maker.get_h5_kwargs()
+			:param data_path: Directory where data files are, could be a single
+			station or a full directory of stations.
+			:type data_path: str or Path
+			:param mth5_filename: filename for the H5, defaults to 'from_lemi424.h5'
+			:type mth5_filename: str, optional
+			:param save_path: path to save H5 file to, defaults to None which will
+			place the file in `data_path`
+			:type save_path: str or Path, optional
+			:return: Path to MTH5 file
+			:rtype: Path
+			"""
+			maker = cls(**kwargs)
+			kw_dict = maker.get_h5_kwargs()
 
-        lemi_client = NewFileClient(
-            data_path,
-            save_path=save_path,
-            mth5_filename=mth5_filename,
-            **kw_dict,
-        )
+			new_file_client = NewFileClient(
+				data_path,
+				save_path=save_path,
+				mth5_filename=mth5_filename,
+				**kw_dict,
+			)
 
-        return lemi_client.make_mth5_from_new_file_type(**kwargs**)
+			return new_file_client.make_mth5_from_new_file_type(**kwargs**)
 
 
 			
