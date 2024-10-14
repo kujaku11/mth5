@@ -59,8 +59,17 @@ class MakeMTH5:
         if self.save_path is None:
             self.save_path = Path().cwd()
 
-    @property
-    def h5_kwargs(self):
+    def __str__(self):
+        lines = ["MakeMTH5 Attibutes:"]
+        for key, value in self.get_h5_kwargs().items():
+            lines.append(f"\t{key}: {value}")
+
+        return "\n".join(lines)
+
+    def __repr__(self):
+        return self.__str__()
+
+    def get_h5_kwargs(self):
         h5_params = dict(
             mth5_version=self.mth5_version,
             h5_compression=self.h5_compression,
@@ -77,7 +86,7 @@ class MakeMTH5:
         return h5_params
 
     @classmethod
-    def from_fdsn_client(self, request_df, client="IRIS", **kwargs):
+    def from_fdsn_client(cls, request_df, client="IRIS", **kwargs):
         """
         Pull data from an FDSN archive like IRIS.  Uses Obspy.Clients.
 
@@ -118,26 +127,19 @@ class MakeMTH5:
         within the given start and end time will be returned.
 
         """
+        maker = cls(**kwargs)
+        kw_dict = maker.get_h5_kwargs()
 
-        fdsn_client = FDSN(
-            client=client,
-            mth5_version=self.mth5_version,
-            compression=self.compression,
-            compression_opts=self.compression_opts,
-            shuffle=self.shuffle,
-            fletcher32=self.fletcher32,
-            data_level=self.data_level,
-            **kwargs,
-        )
+        fdsn_client = FDSN(client=client, **kw_dict)
 
         mth5_object = fdsn_client.make_mth5_from_fdsn_client(
-            request_df, path=self.save_path, interact=self.interact
+            request_df, path=maker.save_path, interact=maker.interact
         )
 
         return mth5_object
 
     @classmethod
-    def from_usgs_geomag(self, request_df, **kwargs):
+    def from_usgs_geomag(cls, request_df, **kwargs):
         """
         Download geomagnetic observatory data from USGS webservices into an
         MTH5 using a request dataframe or csv file.
@@ -175,30 +177,26 @@ class MakeMTH5:
             )
 
         """
+        maker = cls(**kwargs)
+        kw_dict = maker.get_h5_kwargs()
 
         geomag_client = USGSGeomag(
-            mth5_version=self.mth5_version,
-            save_path=self.save_path,
-            compression=self.compression,
-            compression_opts=self.compression_opts,
-            shuffle=self.shuffle,
-            fletcher32=self.fletcher32,
-            data_level=self.data_level,
-            interact=self.interact,
-            **kwargs,
+            save_path=maker.save_path,
+            interact=maker.interact,
+            **kw_dict,
         )
 
         return geomag_client.make_mth5_from_geomag(request_df)
 
     @classmethod
     def from_zen(
-        self,
+        cls,
         data_path,
         sample_rates=[4096, 1024, 256],
         calibration_path=None,
         survey_id=None,
         combine=True,
-        **kwargs
+        **kwargs,
     ):
         """
         Create an MTH5 from zen data.
@@ -232,12 +230,15 @@ class MakeMTH5:
 
         """
 
+        maker = cls(**kwargs)
+        kw_dict = maker.get_h5_kwargs()
+
         zc = ZenClient(
             data_path,
             sample_rates=sample_rates,
-            save_path=self.save_path,
+            save_path=maker.save_path,
             calibration_path=calibration_path,
-            **kwargs,
+            **kw_dict,
         )
 
         return zc.make_mth5_from_zen(
@@ -246,13 +247,14 @@ class MakeMTH5:
 
     @classmethod
     def from_phoenix(
-        self,
+        cls,
         data_path,
         mth5_filename=None,
         save_path=None,
         sample_rates=[150, 24000],
         receiver_calibration_dict=None,
         sensor_calibration_dict=None,
+        **kwargs,
     ):
         """
         Build an H5 file from Phoenix MTU-5C files.  The key step when working
@@ -297,6 +299,9 @@ class MakeMTH5:
 
         """
 
+        maker = cls(**kwargs)
+        kw_dict = maker.get_h5_kwargs()
+
         phx_client = PhoenixClient(
             data_path,
             mth5_filename=mth5_filename,
@@ -304,19 +309,20 @@ class MakeMTH5:
             receiver_calibration_dict=receiver_calibration_dict,
             sensor_calibration_dict=sensor_calibration_dict,
             save_path=save_path,
+            **kw_dict,
         )
 
         return phx_client.make_mth5_from_phoenix()
 
     @classmethod
     def from_lemi424(
-        self,
+        cls,
         data_path,
         survey_id,
         station_id,
         mth5_filename=None,
         save_path=None,
-        **kwargs
+        **kwargs,
     ):
         """
         Build a MTH5 file from LEMI 424 long period data.  Works mainly on a
@@ -345,12 +351,14 @@ class MakeMTH5:
         :return: Path to MTH5 file
         :rtype: Path
         """
+        maker = cls(**kwargs)
+        kw_dict = maker.get_h5_kwargs()
 
         lemi_client = LEMI424Client(
             data_path,
             save_path=save_path,
             mth5_filename=mth5_filename,
-            **kwargs,
+            **kw_dict,
         )
 
         return lemi_client.make_mth5_from_lemi424(survey_id, station_id)
