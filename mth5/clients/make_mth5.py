@@ -10,6 +10,10 @@ Supported Clients include:
     * FDSN (through Obspy)
     * Science Base (TODO)
     * NCI - Australia (TODO)
+    * Phoenix MTU-5C
+    * Zen
+    * LEMI 424
+    
 
 Updated on Wed Aug  25 19:57:00 2021
 
