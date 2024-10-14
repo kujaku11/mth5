@@ -12,6 +12,14 @@ mth5.tables.channel\_table module
    :undoc-members:
    :show-inheritance:
 
+mth5.tables.fc\_table module
+----------------------------
+
+.. automodule:: mth5.tables.fc_table
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 mth5.tables.mth5\_table module
 ------------------------------
 

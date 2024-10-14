@@ -8,6 +8,7 @@ Subpackages
    :maxdepth: 4
 
    mth5.clients
+   mth5.data
    mth5.groups
    mth5.io
    mth5.tables

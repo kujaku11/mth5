@@ -22,6 +22,22 @@ mth5.io.phoenix.readers.base module
    :undoc-members:
    :show-inheritance:
 
+mth5.io.phoenix.readers.calibrations module
+-------------------------------------------
+
+.. automodule:: mth5.io.phoenix.readers.calibrations
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+mth5.io.phoenix.readers.config module
+-------------------------------------
+
+.. automodule:: mth5.io.phoenix.readers.config
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 mth5.io.phoenix.readers.header module
 -------------------------------------
 
@@ -30,10 +46,18 @@ mth5.io.phoenix.readers.header module
    :undoc-members:
    :show-inheritance:
 
-mth5.io.phoenix.readers.phx\_json module
-----------------------------------------
+mth5.io.phoenix.readers.helpers module
+--------------------------------------
 
-.. automodule:: mth5.io.phoenix.readers.phx_json
+.. automodule:: mth5.io.phoenix.readers.helpers
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+mth5.io.phoenix.readers.receiver\_metadata module
+-------------------------------------------------
+
+.. automodule:: mth5.io.phoenix.readers.receiver_metadata
    :members:
    :undoc-members:
    :show-inheritance:

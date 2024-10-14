@@ -52,6 +52,14 @@ mth5.io.zen.zen module
    :undoc-members:
    :show-inheritance:
 
+mth5.io.zen.zen\_tools module
+-----------------------------
+
+.. automodule:: mth5.io.zen.zen_tools
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 
