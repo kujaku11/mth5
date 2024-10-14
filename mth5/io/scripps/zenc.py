@@ -153,7 +153,14 @@ class ZENC:
 
         # write out file
         # write metadata
-        lines = self._write_metadata(run)
+
+        with open(mth5_file, "w") as fid:
+            lines = self._write_metadata(run)
+            fid.write("\n".join(lines))
+
+            for ii in range(len(run.time)):
+                for comp in self._expected_channel_order:
+                    run.dataset[comp].data[ii]
 
         # write data as (hx, hy, hz, ex, ey, ...)
 

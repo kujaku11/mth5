@@ -41,8 +41,8 @@ class TestMakeMTH5FDSNInventory(unittest.TestCase):
             mth5_version="0.1.0", interact=True, save_path=Path().cwd()
         )
 
-        self.channels = ["MFE", "MFN", "MFZ", "MQE", "MQN"]
-        ORF08 = ["EM", "ORF08", "2006-09-04T16:00:00", "2006-09-26T00:00:00"]
+        self.channels = ["LFE", "LFN", "LFZ", "LQE", "LQN"]
+        ORF08 = ["4P", "ORF08", "2006-09-04T16:00:00", "2006-09-26T00:00:00"]
 
         request_list = []
         for entry in [ORF08]:
@@ -81,9 +81,20 @@ class TestMakeMTH5FDSNInventory(unittest.TestCase):
             self.assertRaises(IOError, self.fdsn._validate_dataframe, "k.fail")
 
     def test_df_input_inventory(self):
-        inv, streams = self.fdsn.get_inventory_from_df(
-            self.metadata_df, data=False
-        )
+        try:
+            inv, streams = self.fdsn.get_inventory_from_df(
+                self.metadata_df, data=False
+            )
+
+        except FDSNNoDataException as error:
+            msg = (
+                "The requested data could not be found on the FDSN IRIS server, "
+                "check data availability"
+            )
+            self.logger.warning(msg)
+            self.logger.exception(error)
+
+            raise Exception(msg)
         with self.subTest(name="stations"):
             self.assertListEqual(
                 sorted(self.stations),
@@ -149,15 +160,15 @@ class TestMakeMTH5FDSNInventory(unittest.TestCase):
 
     def test_h5_parameters(self):
         with self.subTest("compression"):
-            self.assertEqual(self.make_mth5.compression, "gzip")
+            self.assertEqual(self.make_mth5.h5_compression, "gzip")
         with self.subTest("compression_options"):
-            self.assertEqual(self.make_mth5.compression_opts, 4)
+            self.assertEqual(self.make_mth5.h5_compression_opts, 4)
         with self.subTest("shuffle"):
-            self.assertEqual(self.make_mth5.shuffle, True)
+            self.assertEqual(self.make_mth5.h5_shuffle, True)
         with self.subTest("fletcher32"):
-            self.assertEqual(self.make_mth5.fletcher32, True)
+            self.assertEqual(self.make_mth5.h5_fletcher32, True)
         with self.subTest("data_level"):
-            self.assertEqual(self.make_mth5.data_level, 1)
+            self.assertEqual(self.make_mth5.h5_data_level, 1)
         with self.subTest("file_version"):
             self.assertEqual(self.make_mth5.mth5_version, "0.1.0")
         with self.subTest("save_path"):
@@ -167,15 +178,15 @@ class TestMakeMTH5FDSNInventory(unittest.TestCase):
 
     def test_fdsn_h5_parameters(self):
         with self.subTest("compression"):
-            self.assertEqual(self.fdsn.compression, "gzip")
+            self.assertEqual(self.fdsn.h5_compression, "gzip")
         with self.subTest("compression_options"):
-            self.assertEqual(self.fdsn.compression_opts, 4)
+            self.assertEqual(self.fdsn.h5_compression_opts, 4)
         with self.subTest("shuffle"):
-            self.assertEqual(self.fdsn.shuffle, True)
+            self.assertEqual(self.fdsn.h5_shuffle, True)
         with self.subTest("fletcher32"):
-            self.assertEqual(self.fdsn.fletcher32, True)
+            self.assertEqual(self.fdsn.h5_fletcher32, True)
         with self.subTest("data_level"):
-            self.assertEqual(self.fdsn.data_level, 1)
+            self.assertEqual(self.fdsn.h5_data_level, 1)
         with self.subTest("file_version"):
             self.assertEqual(self.fdsn.mth5_version, "0.1.0")
 
@@ -203,8 +214,8 @@ class TestMakeMTH5(unittest.TestCase):
             mth5_version="0.1.0", interact=True, save_path=Path().cwd()
         )
 
-        channels = ["MFE", "MFN", "MFZ", "MQE", "MQN"]
-        ORF08 = ["EM", "ORF08", "2006-09-04T16:00:00", "2006-09-26T00:00:00"]
+        channels = ["LFE", "LFN", "LFZ", "LQE", "LQN"]
+        ORF08 = ["4P", "ORF08", "2006-09-04T16:00:00", "2006-09-26T00:00:00"]
 
         request_list = []
         for entry in [ORF08]:
@@ -281,9 +292,7 @@ class TestMakeMTH5(unittest.TestCase):
                 with self.subTest(name=f"has metadata ORF08.{run}.{ch}"):
                     self.assertEqual(x.component, ch)
                 with self.subTest(name=f"has filters ORF08.{run}.{ch}"):
-                    self.assertTrue(
-                        len(x.channel_response.filters_list) >= 1
-                    )
+                    self.assertTrue(len(x.channel_response.filters_list) >= 1)
 
     @classmethod
     def tearDownClass(self):

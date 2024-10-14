@@ -671,15 +671,13 @@ class RunTS:
             # check sample rate
             data_sr = self._compute_sample_rate()
             if self.sample_rate != data_sr:
-                # if self.run_metadata.sample_rate == 0.0:
-                #     pass
-                # elif self.run_metadata.sample_rate is not None:
-                msg = (
-                    f"sample rate of dataset {data_sr} does not "
-                    f"match metadata sample rate {self.sample_rate} "
-                    f"updating metatdata value to {data_sr}"
-                )
-                self.logger.critical(msg)
+                if self.run_metadata.sample_rate not in [0.0, None]:
+                    msg = (
+                        f"sample rate of dataset {data_sr} does not "
+                        f"match metadata sample rate {self.sample_rate} "
+                        f"updating metatdata value to {data_sr}"
+                    )
+                    self.logger.critical(msg)
                 self._sample_rate = data_sr
                 self.run_metadata.sample_rate = data_sr
 
