@@ -61,7 +61,7 @@ class TestMakeMTH5FromGeomag(unittest.TestCase):
         self.assertTrue(self.m.filename.exists())
 
     def test_file_version(self):
-        self.assertEqual(self.make_mth5.mth5_version, "0.1.0")
+        self.assertEqual(self.m.file_version, "0.1.0")
 
     def test_survey_metadata(self):
         sm = OrderedDict(
