@@ -19,7 +19,6 @@ import time
 
 from gzip import BadGzipFile
 from loguru import logger
-from lxml.etree import XMLSyntaxError
 from obspy.clients import fdsn
 from obspy import UTCDateTime
 from obspy import read as obsread
@@ -47,11 +46,11 @@ class FDSN:
         self.client = client
 
         # parameters of hdf5 file
-        self.compression = "gzip"
-        self.compression_opts = 4
-        self.shuffle = True
-        self.fletcher32 = True
-        self.data_level = 1
+        self.h5_compression = "gzip"
+        self.h5_compression_opts = 4
+        self.h5_shuffle = True
+        self.h5_fletcher32 = True
+        self.h5_data_level = 1
         self.mth5_version = mth5_version
 
         for key, value in kwargs.items():
@@ -59,6 +58,23 @@ class FDSN:
 
         # ivars
         self._streams = None
+
+    @property
+    def h5_kwargs(self):
+        h5_params = dict(
+            file_version=self.mth5_version,
+            compression=self.h5_compression,
+            compression_opts=self.h5_compression_opts,
+            shuffle=self.h5_shuffle,
+            fletcher32=self.h5_fletcher32,
+            data_level=self.h5_data_level,
+        )
+
+        for key, value in self.__dict__.items():
+            if key.startswith("h5"):
+                h5_params[key[3:]] = value
+
+        return h5_params
 
     def _validate_dataframe(self, df):
         if not isinstance(df, pd.DataFrame):
@@ -349,9 +365,7 @@ class FDSN:
                 )
                 if run_num > 1:
                     # cleaner, but not working
-                    og_run_group_metadata_dict = (
-                        og_run_group.metadata.to_dict()
-                    )
+                    og_run_group_metadata_dict = og_run_group.metadata.to_dict()
                     for key in ["id", "time_period.start", "time_period.end"]:
                         og_run_group_metadata_dict["run"].pop(key)
                     run_group.metadata.from_dict(og_run_group_metadata_dict)
@@ -455,14 +469,7 @@ class FDSN:
         file_name = path.joinpath(self.make_filename(df))
 
         # initiate MTH5 file
-        with MTH5(
-            file_version=self.mth5_version,
-            compression=self.compression,
-            compression_opts=self.compression_opts,
-            shuffle=self.shuffle,
-            fletcher32=self.fletcher32,
-            data_level=self.data_level,
-        ) as m:
+        with MTH5(**self.h5_kwargs) as m:
             m.open_mth5(file_name, "w")
 
             # read in inventory and streams
@@ -507,11 +514,15 @@ class FDSN:
             # First for loop builds out networks and stations
             if row.network not in networks.keys():
                 networks[row.network] = {}
-                net_inv = _fdsn_client_get_inventory(client, row, response_level="network")
+                net_inv = _fdsn_client_get_inventory(
+                    client, row, response_level="network"
+                )
                 networks[row.network][row.start] = net_inv.networks[0]
             elif networks.get(row.network) is not None:
                 if row.start not in networks[row.network].keys():
-                    net_inv = _fdsn_client_get_inventory(client, row, response_level="network")
+                    net_inv = _fdsn_client_get_inventory(
+                        client, row, response_level="network"
+                    )
                     networks[row.network][row.start] = net_inv.networks[0]
             else:
                 continue
@@ -551,7 +562,12 @@ class FDSN:
                 sub_df.reset_index(inplace=True, drop=True)
 
                 for station_row in sub_df.itertuples():
-                    sta_inv = _fdsn_client_get_inventory(client, station_row, response_level="station", max_tries=10)
+                    sta_inv = _fdsn_client_get_inventory(
+                        client,
+                        station_row,
+                        response_level="station",
+                        max_tries=10,
+                    )
 
                     stations_dict[network_id][start_time][
                         station_row.station
@@ -647,7 +663,9 @@ class FDSN:
             station_obj = stations_dict[ch_row.network][ch_row.start][
                 ch_row.station
             ]
-            cha_inv = _fdsn_client_get_inventory(client, ch_row, response_level="response", max_tries=10)
+            cha_inv = _fdsn_client_get_inventory(
+                client, ch_row, response_level="response", max_tries=10
+            )
 
             for returned_chan in cha_inv.networks[0].stations[0].channels:
                 station_obj.channels.append(returned_chan)
@@ -717,9 +735,7 @@ class FDSN:
         for network in networks:
             network_dict = {
                 "network": network,
-                "stations": df[df.network == network]
-                .station.unique()
-                .tolist(),
+                "stations": df[df.network == network].station.unique().tolist(),
             }
             unique_list.append(network_dict)
         return unique_list
@@ -789,8 +805,9 @@ def _fdsn_client_get_inventory(client, row, response_level, max_tries=10):
 
     """
     from lxml.etree import XMLSyntaxError
+
     def sleep_random_time():
-        """ Sleep for a fraction of a second before trying again"""
+        """Sleep for a fraction of a second before trying again"""
         sleep_time = np.random.randint(0, 100) * 0.01
         logger.info(f"Sleeping for {sleep_time}s")
         time.sleep(sleep_time)
@@ -815,7 +832,7 @@ def _fdsn_client_get_inventory(client, row, response_level, max_tries=10):
                 sleep_random_time()
                 i_try += 1
 
-    if response_level == "response": #channel level
+    if response_level == "response":  # channel level
         while i_try < max_tries:
             try:
                 inventory = client.get_stations(
@@ -835,7 +852,7 @@ def _fdsn_client_get_inventory(client, row, response_level, max_tries=10):
                 sleep_random_time()
                 i_try += 1
 
-    if response_level =="network":
+    if response_level == "network":
         try:
             inventory = client.get_stations(
                 row.start,
@@ -850,6 +867,5 @@ def _fdsn_client_get_inventory(client, row, response_level, max_tries=10):
             logger.warning(msg)
             sleep_random_time()
             i_try += 1
-
 
     return inventory

@@ -456,7 +456,7 @@ class GeomagClient:
 class USGSGeomag:
     def __init__(self, **kwargs):
         self.save_path = Path().cwd()
-        self.filename = None
+        self.mth5_filename = None
         self.interact = False
         self.request_columns = [
             "observatory",
@@ -468,16 +468,33 @@ class USGSGeomag:
         ]
 
         # parameters of hdf5 file
-        self.compression = "gzip"
-        self.compression_opts = 4
-        self.shuffle = True
-        self.fletcher32 = True
-        self.data_level = 1
+        self.h5_compression = "gzip"
+        self.h5_compression_opts = 4
+        self.h5_shuffle = True
+        self.h5_fletcher32 = True
+        self.h5_data_level = 1
         self.mth5_version = "0.2.0"
         self._ch_map = {"x": "hx", "y": "hy", "z": "hz"}
 
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+    @property
+    def h5_kwargs(self):
+        h5_params = dict(
+            file_version=self.mth5_version,
+            compression=self.h5_compression,
+            compression_opts=self.h5_compression_opts,
+            shuffle=self.h5_shuffle,
+            fletcher32=self.h5_fletcher32,
+            data_level=self.h5_data_level,
+        )
+
+        for key, value in self.__dict__.items():
+            if key.startswith("h5"):
+                h5_params[key[3:]] = value
+
+        return h5_params
 
     def validate_request_df(self, request_df):
         """
@@ -605,14 +622,8 @@ class USGSGeomag:
 
         fn = self._make_filename(self.save_path, request_df)
 
-        with MTH5(
-            file_version=self.mth5_version,
-            compression=self.compression,
-            compression_opts=self.compression_opts,
-            shuffle=self.shuffle,
-            fletcher32=self.fletcher32,
-            data_level=self.data_level,
-        ) as m:
+        with MTH5(**self.h5_kwargs) as m:
+
             m.open_mth5(fn)
 
             if self.mth5_version in ["0.1.0"]:

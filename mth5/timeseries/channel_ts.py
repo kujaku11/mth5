@@ -45,6 +45,7 @@ from obspy.core import Trace
 # =============================================================================
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
 
+
 # ==============================================================================
 # Channel Time Series Object
 # ==============================================================================
@@ -124,7 +125,9 @@ class ChannelTS:
         self.station_metadata = station_metadata
         self.run_metadata = run_metadata
         self.channel_metadata = channel_metadata
-        self._sample_rate = self.get_sample_rate_supplied_at_init(channel_metadata)
+        self._sample_rate = self.get_sample_rate_supplied_at_init(
+            channel_metadata
+        )
         # input data
         if data is not None:
             self.ts = data
@@ -155,7 +158,7 @@ class ChannelTS:
         if channel_metadata is None:
             sr = None
         elif isinstance(channel_metadata, dict):
-            #check first two layers for sample_rate key
+            # check first two layers for sample_rate key
             if "sample_rate" in channel_metadata.keys():
                 sr = channel_metadata["sample_rate"]
             else:
@@ -332,7 +335,11 @@ class ChannelTS:
         then input must be dict. Try to figure out which (Electric, Magnetic, Auxiliary) it should be,
         cast to object and return.
         """
-        expected_types = (metadata.Electric, metadata.Magnetic, metadata.Auxiliary)
+        expected_types = (
+            metadata.Electric,
+            metadata.Magnetic,
+            metadata.Auxiliary,
+        )
         if isinstance(channel_metadata, expected_types):
             return channel_metadata.copy()
 
@@ -344,7 +351,9 @@ class ChannelTS:
             self.logger.error(msg)
             raise TypeError(msg)
 
-        channel_metadata_lower_keys = [x.lower() for x in channel_metadata.keys()]
+        channel_metadata_lower_keys = [
+            x.lower() for x in channel_metadata.keys()
+        ]
         if self.channel_type.lower() not in channel_metadata_lower_keys:
             try:
                 self.channel_type = channel_metadata["type"]
@@ -357,8 +366,6 @@ class ChannelTS:
         ch_metadata.from_dict(channel_metadata)
         channel_metadata = ch_metadata.copy()
         return channel_metadata
-
-
 
     def _validate_run_metadata(self, run_metadata):
         """
@@ -891,7 +898,6 @@ class ChannelTS:
         else:
             return False
 
-
     def compute_sample_rate(self):
         """
         Two cases, high_frequency (HF) data and not HF data.
@@ -903,14 +909,12 @@ class ChannelTS:
 
         """
         if self.is_high_frequency():
-            sr = 1 / (
-                float(
-                    np.median(
-                        np.diff(self.data_array.coords.indexes["time"])
-                    )
-                )
-                / 1e9
-            )
+            dt_array = np.diff(self.data_array.coords.indexes["time"])
+            best_dt, counts = scipy.stats.mode(dt_array)
+
+            # Calculate total seconds of the best dt and calculate sample rate
+            best_dt_seconds = float(best_dt) / 1e9
+            sr = 1 / best_dt_seconds
         else:
             t_diff = (
                 self.data_array.coords.indexes["time"][-1]
@@ -1103,13 +1107,20 @@ class ChannelTS:
                 self.channel_metadata.filter.name
             )
 
-
     def get_calibration_operation(self):
-        if self.channel_response.units_out == self.channel_metadata.unit_object.abbreviation:
+        if (
+            self.channel_response.units_out
+            == self.channel_metadata.unit_object.abbreviation
+        ):
             calibration_operation = "divide"
-        elif self.channel_response.units_in == self.channel_metadata.unit_object.abbreviation:
+        elif (
+            self.channel_response.units_in
+            == self.channel_metadata.unit_object.abbreviation
+        ):
             calibration_operation = "multiply"
-            self.logger.warning("Unexpected Inverse Filter is being corrected -- something maybe wrong here ")
+            self.logger.warning(
+                "Unexpected Inverse Filter is being corrected -- something maybe wrong here "
+            )
         else:
             msg = "cannot determine multiply or divide via units -- setting to divide"
             self.logger.warning(msg)
@@ -1137,27 +1148,32 @@ class ChannelTS:
         """
         from mt_metadata.utils.units import get_unit_object
 
-        if self.channel_response.units_out == self.channel_metadata.unit_object.abbreviation:
+        if (
+            self.channel_response.units_out
+            == self.channel_metadata.unit_object.abbreviation
+        ):
             calibrated_units = self.channel_response.units_in
-        elif (self.channel_response.units_in == None
-              and self.channel_response.units_out == None):
+        elif (
+            self.channel_response.units_in == None
+            and self.channel_response.units_out == None
+        ):
             msg = "No Units are associated with the channel_response"
             self.logger.warning(msg)
             msg = "cannot determine multiply or divide via units -- setting to divide:/"
             self.logger.warning(msg)
             calibrated_units = self.channel_metadata.units
         else:
-            logger.critical("channel response filter units are likely corrupt or channel_ts has no units")
+            logger.critical(
+                "channel response filter units are likely corrupt or channel_ts has no units"
+            )
             calibrated_units = self.channel_response.units_in
         unit_object = get_unit_object(calibrated_units)
         calibrated_units = unit_object.name
         return calibrated_units
 
-
-    def remove_instrument_response(self,
-                                   include_decimation=False,
-                                   include_delay=False,
-                                   **kwargs):
+    def remove_instrument_response(
+        self, include_decimation=False, include_delay=False, **kwargs
+    ):
         """
         Remove instrument response from the given channel response filter
 
@@ -1203,8 +1219,9 @@ class ChannelTS:
         :type bandpass: dictionary
 
         """
+
         def bool_flip(x):
-            return bool(int(x)-1)
+            return bool(int(x) - 1)
 
         if self.channel_metadata.filter.name is []:
             self.logger.warning(
@@ -1216,9 +1233,15 @@ class ChannelTS:
 
         # Make a list of the filters whose response will be removed.
         # We make the list here so that we have access to the indices to flip
-        indices_to_flip = self.channel_response.get_indices_of_filters_to_remove(include_decimation=include_decimation,
-                                                                              include_delay=include_delay)
-        filters_to_remove = [self.channel_response.filters_list[i] for i in indices_to_flip]
+        indices_to_flip = (
+            self.channel_response.get_indices_of_filters_to_remove(
+                include_decimation=include_decimation,
+                include_delay=include_delay,
+            )
+        )
+        filters_to_remove = [
+            self.channel_response.filters_list[i] for i in indices_to_flip
+        ]
 
         remover = RemoveInstrumentResponse(
             self.ts,
@@ -1229,9 +1252,10 @@ class ChannelTS:
         )
 
         calibration_operation = self.get_calibration_operation()
-        calibrated_ts.ts = remover.remove_instrument_response(filters_to_remove=filters_to_remove,
-                                                              operation=calibration_operation,
-                                                              )
+        calibrated_ts.ts = remover.remove_instrument_response(
+            filters_to_remove=filters_to_remove,
+            operation=calibration_operation,
+        )
 
         # update "applied" booleans
         applied_filters = calibrated_ts.channel_metadata.filter.applied
@@ -1563,8 +1587,8 @@ class ChannelTS:
 
         self.channel_metadata.component = mt_code
         self.channel_metadata.type = measurement
-        self.start = obspy_trace.stats.starttime.isoformat()
         self.sample_rate = obspy_trace.stats.sampling_rate
+        self.start = obspy_trace.stats.starttime.isoformat()
         self.station_metadata.fdsn.id = obspy_trace.stats.station
         self.station_metadata.fdsn.network = obspy_trace.stats.network
         self.station_metadata.id = obspy_trace.stats.station
@@ -1602,9 +1626,7 @@ class ChannelTS:
 
         return plot_frequency, power
 
-    def plot_spectra(
-        self, spectra_type="welch", window_length=2**12, **kwargs
-    ):
+    def plot_spectra(self, spectra_type="welch", window_length=2**12, **kwargs):
         """
 
         :param spectra_type: spectra type, defaults to "welch"

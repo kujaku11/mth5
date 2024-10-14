@@ -24,9 +24,9 @@ from mth5.clients import MakeMTH5
 class TestMakeMTH5FromGeomag(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.make_mth5 = MakeMTH5(
-            mth5_version="0.1.0", interact=True, save_path=Path().cwd()
-        )
+        # self.make_mth5 = MakeMTH5(
+        #     mth5_version="0.1.0", interact=True, save_path=Path().cwd()
+        # )
 
         self.request_df = pd.DataFrame(
             {
@@ -49,13 +49,19 @@ class TestMakeMTH5FromGeomag(unittest.TestCase):
             }
         )
 
-        self.m = self.make_mth5.from_usgs_geomag(self.request_df)
+        # self.m = self.make_mth5.from_usgs_geomag(self.request_df)
+        self.m = MakeMTH5.from_usgs_geomag(
+            self.request_df,
+            mth5_version="0.1.0",
+            interact=True,
+            save_path=Path().cwd(),
+        )
 
     def test_file_exists(self):
         self.assertTrue(self.m.filename.exists())
 
     def test_file_version(self):
-        self.assertEqual(self.make_mth5.mth5_version, "0.1.0")
+        self.assertEqual(self.m.file_version, "0.1.0")
 
     def test_survey_metadata(self):
         sm = OrderedDict(
