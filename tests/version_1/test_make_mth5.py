@@ -280,6 +280,22 @@ class TestMakeMTH5(unittest.TestCase):
                 "The requested data could not be found on the FDSN IRIS server, check data availability"
             )
 
+    def test_h5_parameters(self):
+        with self.subTest("compression"):
+            self.assertEqual(self.m.dataset_options["compression"], "gzip")
+        with self.subTest("compression_options"):
+            self.assertEqual(self.m.dataset_options["compression_opts"], 4)
+        with self.subTest("shuffle"):
+            self.assertEqual(self.m.dataset_options["shuffle"], True)
+        with self.subTest("fletcher32"):
+            self.assertEqual(self.m.dataset_options["fletcher32"], True)
+        with self.subTest("data_level"):
+            self.assertEqual(self.m.file_attributes["data_level"], 1)
+        with self.subTest("file_version"):
+            self.assertEqual(self.m.file_version, "0.1.0")
+        with self.subTest("save_path"):
+            self.assertEqual(self.m.filename.parent, self.mth5_path)
+
     def test_stations(self):
         self.assertListEqual(self.stations, self.m.stations_group.groups_list)
 
