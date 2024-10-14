@@ -134,3 +134,14 @@ History
 * Optimize adding TF by @kujaku11 in https://github.com/kujaku11/mth5/pull/242
 * Patches by @kujaku11 in https://github.com/kujaku11/mth5/pull/244
 * bump v0.4.6 --> v0.4.7 by @kujaku11 in https://github.com/kujaku11/mth5/pull/245
+
+0.4.8 (2024-10-14)
+-------------------------
+
+* Fix Issue 241 by @dequiroga in https://github.com/kujaku11/mth5/pull/246
+* Updating clients by @kujaku11 in https://github.com/kujaku11/mth5/pull/249
+* Update MakeMTH5 and clients by @kujaku11 in https://github.com/kujaku11/mth5/pull/189
+* Updating Clients by @kujaku11 in https://github.com/kujaku11/mth5/pull/250
+* @dequiroga made their first contribution in https://github.com/kujaku11/mth5/pull/246
+
+**Full Changelog**: https://github.com/kujaku11/mth5/compare/v0.4.7...v0.4.8
