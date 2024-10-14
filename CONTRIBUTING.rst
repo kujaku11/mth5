@@ -33,7 +33,7 @@ Implement Features
 ~~~~~~~~~~~~~~~~~~
 
 Look through the GitHub issues for features. Anything tagged with "enhancement"
-and "help wanted" is open to whoever wants to implement it.
+and "help wanted" is open to whoever wants to implement it.  
 
 Write Documentation
 ~~~~~~~~~~~~~~~~~~~
@@ -102,8 +102,10 @@ Before you submit a pull request, check that it meets these guidelines:
 2. If the pull request adds functionality, the docs should be updated. Put
    your new functionality into a function with a docstring, and add the
    feature to the list in README.rst.
-3. The pull request should work for Python 3.5, 3.6, 3.7 and 3.8, and for PyPy. Check
+3. The pull request should work for Python 3.8, 3.9, 3.10 and 3.11, and for PyPy. Check
    the Actions report to make sure that the tests pass for all supported Python versions.
+4. The pull request should merge into the `patches` branch. That way we keep `main` 
+   clean until a release is needed.
 
 Tips
 ----
