@@ -4,6 +4,7 @@ channels:
   - conda-forge
 dependencies:
   - python=3.10
+  - pip
   - h5py>=2.10.0
   - ipykernel
   - ipython
@@ -18,6 +19,6 @@ dependencies:
   - xarray
   - PyYAML
   - pandas
-  - mt_metadata
+  - mt-metadata
   - pip:
     - loguru
