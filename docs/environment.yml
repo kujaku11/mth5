@@ -3,7 +3,7 @@ channels:
   # Don't change to pkgs/main, as it causes random timeouts in readthedocs
   - conda-forge
 dependencies:
-  - python=3.8
+  - python=3.10
   - h5py>=2.10.0
   - ipykernel
   - ipython
