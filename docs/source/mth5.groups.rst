@@ -20,6 +20,14 @@ mth5.groups.base module
    :undoc-members:
    :show-inheritance:
 
+mth5.groups.channel\_dataset module
+-----------------------------------
+
+.. automodule:: mth5.groups.channel_dataset
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 mth5.groups.estimate\_dataset module
 ------------------------------------
 
@@ -36,6 +44,14 @@ mth5.groups.experiment module
    :undoc-members:
    :show-inheritance:
 
+mth5.groups.fc\_dataset module
+------------------------------
+
+.. automodule:: mth5.groups.fc_dataset
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 mth5.groups.filters module
 --------------------------
 
@@ -44,10 +60,10 @@ mth5.groups.filters module
    :undoc-members:
    :show-inheritance:
 
-mth5.groups.master\_station\_run\_channel module
-------------------------------------------------
+mth5.groups.fourier\_coefficients module
+----------------------------------------
 
-.. automodule:: mth5.groups.master_station_run_channel
+.. automodule:: mth5.groups.fourier_coefficients
    :members:
    :undoc-members:
    :show-inheritance:
@@ -60,10 +76,26 @@ mth5.groups.reports module
    :undoc-members:
    :show-inheritance:
 
+mth5.groups.run module
+----------------------
+
+.. automodule:: mth5.groups.run
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 mth5.groups.standards module
 ----------------------------
 
 .. automodule:: mth5.groups.standards
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+mth5.groups.station module
+--------------------------
+
+.. automodule:: mth5.groups.station
    :members:
    :undoc-members:
    :show-inheritance:

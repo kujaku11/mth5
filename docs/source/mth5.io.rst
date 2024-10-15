@@ -11,6 +11,7 @@ Subpackages
    mth5.io.miniseed
    mth5.io.nims
    mth5.io.phoenix
+   mth5.io.scripps
    mth5.io.usgs_ascii
    mth5.io.zen
 

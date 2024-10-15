@@ -20,10 +20,26 @@ mth5.timeseries.run\_ts module
    :undoc-members:
    :show-inheritance:
 
+mth5.timeseries.scipy\_filters module
+-------------------------------------
+
+.. automodule:: mth5.timeseries.scipy_filters
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 mth5.timeseries.ts\_filters module
 ----------------------------------
 
 .. automodule:: mth5.timeseries.ts_filters
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+mth5.timeseries.ts\_helpers module
+----------------------------------
+
+.. automodule:: mth5.timeseries.ts_helpers
    :members:
    :undoc-members:
    :show-inheritance:
