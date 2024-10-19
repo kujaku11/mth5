@@ -1032,7 +1032,7 @@ class RunTS:
 
         return new_runts
 
-    def calibrate(self, **kwargs) -> RunTS:
+    def calibrate(self, **kwargs):
         """
         Calibrate the data according to the filters in each channel.
 
