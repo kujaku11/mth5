@@ -576,7 +576,7 @@ class LEMI424:
 
         self.data = pd.read_csv(
             lines,
-            delimiter="\s+",
+            delimiter=r"\s+",
             names=self.file_column_names,
             dtype=self.dtypes,
             parse_dates={
