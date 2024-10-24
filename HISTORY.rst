@@ -145,3 +145,11 @@ History
 * @dequiroga made their first contribution in https://github.com/kujaku11/mth5/pull/246
 
 **Full Changelog**: https://github.com/kujaku11/mth5/compare/v0.4.7...v0.4.8
+
+0.4.9
+-----------------------------
+
+* Update documentation by @kujaku11 in https://github.com/kujaku11/mth5/pull/251
+* Fix issue 252 by @kkappler in https://github.com/kujaku11/mth5/pull/253
+
+**Full Changelog**: https://github.com/kujaku11/mth5/compare/v0.4.8...v0.4.9
