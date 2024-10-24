@@ -2,7 +2,7 @@
 """
 Created on Tue May 11 15:31:31 2021
 
-:copyright: 
+:copyright:
     Jared Peacock (jpeacock@usgs.gov)
 
 :license: MIT
@@ -446,7 +446,7 @@ class LEMI424:
                 self.read_metadata()
                 data = pd.read_csv(
                     self.fn,
-                    delimiter="\s+",
+                    delimiter=r"\s+",
                     names=self.file_column_names,
                     dtype=self.dtypes,
                     usecols=(
@@ -499,7 +499,7 @@ class LEMI424:
             dfs = list(
                 pd.read_csv(
                     self.fn,
-                    delimiter="\s+",
+                    delimiter=r"\s+",
                     names=self.file_column_names,
                     dtype=self.dtypes,
                     parse_dates={
@@ -533,7 +533,7 @@ class LEMI424:
             st = MTime().now()
             self.data = pd.read_csv(
                 self.fn,
-                delimiter="\s+",
+                delimiter=r"\s+",
                 names=self.file_column_names,
                 dtype=self.dtypes,
                 parse_dates={
