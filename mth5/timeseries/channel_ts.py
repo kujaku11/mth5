@@ -25,6 +25,7 @@ import pandas as pd
 import xarray as xr
 from loguru import logger
 from scipy import signal
+import scipy
 
 import mt_metadata.timeseries as metadata
 from mt_metadata.timeseries.filters import ChannelResponse
