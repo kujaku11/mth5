@@ -24,7 +24,7 @@ class ZenClient(ClientBase):
         mth5_filename="from_zen.h5",
         **kwargs,
     ):
-
+        
         super().__init__(
             data_path,
             save_path=save_path,
@@ -33,6 +33,7 @@ class ZenClient(ClientBase):
             **kwargs,
         )
 
+        self.calibration_path = calibration_path
         self.collection = Z3DCollection(self.data_path)
 
     @property
