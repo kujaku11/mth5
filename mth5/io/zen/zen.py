@@ -902,10 +902,17 @@ class Z3D:
         self.time_series = data[np.nonzero(data)]
 
         # validate everything
-        self.validate_time_blocks()
+        if not self.validate_gps_time():
+            self.logger.warning(
+                f"GPS stamps are not 1 second apart for file {self.fn.name}."
+                )
+        if not self.validate_time_blocks():
+            self.logger.warning(
+                f"Time block between stamps was not the sample rate for file {self.fn.name}"
+                )
         self.convert_gps_time()
         self.zen_schedule = self.check_start_time()
-
+\
         self.logger.debug(f"found {self.gps_stamps.shape[0]} GPS time stamps")
         self.logger.debug(f"found {self.time_series.size} data points")
 
@@ -979,18 +986,17 @@ class Z3D:
         make sure each time stamp is 1 second apart
 
         """
+        # need to put the gps time into seconds
+        t_diff = np.diff(self.gps_stamps["time"]) / 1024
 
-        t_diff = np.zeros_like(self.gps_stamps["time"])
-
-        for ii in range(len(t_diff) - 1):
-            t_diff[ii] = (
-                self.gps_stamps["time"][ii] - self.gps_stamps["time"][ii + 1]
-            )
-        bad_times = np.where(abs(t_diff) > 0.5)[0]
+        bad_times = np.where(abs(t_diff) > 1)[0]
         if len(bad_times) > 0:
-            self.logger.warning("BAD GPS TIMES:")
             for bb in bad_times:
-                self.logger.warning(f"bad GPS time at index {bb} > 0.5 s")
+                self.logger.debug(
+                    f"ZEN bad GPS time at index {bb} > 1 second "
+                    f"({t_diff[bb]})")
+            return False
+        return True
 
     # ===================================================
     def validate_time_blocks(self):
@@ -1017,6 +1023,8 @@ class Z3D:
                 self.logger.warning(
                     f"Skipped first {ts_skip} poins in time series"
                 )
+            return False
+        return True
 
     # ==================================================
     def convert_gps_time(self):
