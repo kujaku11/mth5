@@ -167,6 +167,7 @@ class Z3D:
         self.units = "counts"
         self.sample_rate = None
         self.time_series = None
+        self._max_time_diff = 20
 
         self.ch_dict = {"hx": 1, "hy": 2, "hz": 3, "ex": 4, "ey": 5}
 
@@ -974,6 +975,11 @@ class Z3D:
 
         # estimate the time difference between the two
         time_diff = zen_start_utc - self.schedule.initial_start
+        if time_diff > self._max_time_diff:
+            self.logger.warning(f"ZEN Scheduled time was {self.schedule.initial_start}")
+            self.logger.warning(f"1st good stamp was {zen_start_utc}")
+            self.logger.warning(f"difference of {time_diff:.2f} seconds")
+            
         self.logger.debug(f"Scheduled time was {self.schedule.initial_start}")
         self.logger.debug(f"1st good stamp was {zen_start_utc}")
         self.logger.debug(f"difference of {time_diff:.2f} seconds")
