@@ -132,6 +132,15 @@ class MetronixJSONMagnetic(MetronixJSONBase):
         magnetic = Magnetic(
             component=self.component,
             channel_number=self.channel_number,
+            measurement_azimuth=self.metadata.angle,
+            measurement_tilt=self.metadata.tilt,
+            sample_rate=self.sample_rate,
+            type="magnetic",
         )
+
+        magnetic.time_period.start = self.metadata.datetime
+        magnetic.location.latitude = self.metadata.latitude
+        magnetic.location.longitude = self.metadata.longitude
+        magnetic.location.elevation = self.metadata.elevation
 
         return magnetic
