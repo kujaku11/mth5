@@ -12,6 +12,7 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 from loguru import logger
+import numpy as np
 
 from mt_metadata.timeseries import Magnetic, Electric
 from mt_metadata.timeseries.filters import FrequencyResponseTableFilter
@@ -119,6 +120,11 @@ class MetronixJSONMagnetic(MetronixJSONBase):
     def __init__(self, fn=None, **kwargs):
         super().__init__(fn=fn, **kwargs)
 
+    def _has_metadata(self):
+        if self.metadata is None:
+            raise ValueError("Metronix JSON file has not been read in yet.")
+        return True
+
     def to_mt_metadata(self):
         """
         translate to `mt_metadata.timeseries.Magnetic` object
@@ -127,8 +133,10 @@ class MetronixJSONMagnetic(MetronixJSONBase):
         :rtype: TYPE
 
         """
-        if self.metadata is None:
-            raise ValueError("Metronix JSON file has not been read in yet.")
+        self._has_metadata()
+
+        sensor_response_filter = self.get_sensor_response_filter()
+
         magnetic = Magnetic(
             component=self.component,
             channel_number=self.channel_number,
@@ -142,5 +150,40 @@ class MetronixJSONMagnetic(MetronixJSONBase):
         magnetic.location.latitude = self.metadata.latitude
         magnetic.location.longitude = self.metadata.longitude
         magnetic.location.elevation = self.metadata.elevation
+        magnetic.units = self.metadata.units
+        magnetic.filter.name = self.metadata.filter.split(",") + [
+            sensor_response_filter.name
+        ]
+        magnetic.filter.applied = [True] * len(magnetic.filter.name)
 
-        return magnetic
+        sensor_response_filter = self.get_sensor_response_filter()
+
+        return magnetic, sensor_response_filter
+
+    def get_sensor_response_filter(self):
+        """
+        get the sensor response FAP filter
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        self._has_metadata()
+
+        fap = FrequencyResponseTableFilter(
+            calibration_date=self.metadata.sensor_calibration.datetime,
+            name=self.metadata.sensor_calibration.sensor,
+            frequencies=self.metadata.sensor_calibration.f,
+            amplitudes=self.metadata.sensor_calibration.a,
+            units_out=self.metadata.units,
+            units_in=self.metadata.sensor_calibration.units_amplitude.split(
+                "/"
+            )[-1],
+        )
+
+        if self.metadata.sensor_calibration.units_phase in ["degrees", "deg"]:
+            fap.phases = np.deg2rad(self.metadata.sensor_calibration.p)
+        else:
+            fap.phases = self.metadata.sensor_calibration.p
+
+        return fap
