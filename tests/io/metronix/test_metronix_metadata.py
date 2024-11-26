@@ -14,7 +14,7 @@ import json
 from collections import OrderedDict
 import numpy as np
 
-from mth5.io.metronix.metronix_metadata import MetronixJSONMagnetic
+from mth5.io.metronix.metronix_metadata import MetronixChannelJSON
 
 # =============================================================================
 
@@ -330,7 +330,7 @@ class TestMetronixJSONMagnetic(unittest.TestCase):
         with open(self.fn, "w") as fid:
             json.dump(self.magnetic_dict, fid)
 
-        self.magnetic = MetronixJSONMagnetic(self.fn)
+        self.magnetic = MetronixChannelJSON(self.fn)
 
         self.expected_magnetic_metadata = OrderedDict(
             [
@@ -409,6 +409,98 @@ class TestMetronixJSONMagnetic(unittest.TestCase):
 
         with self.subTest("fap"):
             self.assertEqual(self.expected_fap, fap)
+
+    @classmethod
+    def tearDownClass(self):
+        self.fn.unlink()
+
+
+class TestMetronixJSONElectric(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.electric_dict = {
+            "datetime": "2009-08-20T13:22:00",
+            "latitude": 39.026196666666664,
+            "longitude": 29.123953333333333,
+            "elevation": 1088.31,
+            "angle": 0.0,
+            "tilt": 0.0,
+            "resistance": 572.3670043945313,
+            "units": "mV/km",
+            "filter": "ADB-LF,LF-RF-4",
+            "source": "",
+            "sensor_calibration": {
+                "sensor": "EFP-06",
+                "serial": 0,
+                "chopper": 1,
+                "units_frequency": "Hz",
+                "units_amplitude": "mV",
+                "units_phase": "degrees",
+                "datetime": "1970-01-01T00:00:00",
+                "Operator": "",
+                "f": [],
+                "a": [],
+                "p": [],
+            },
+        }
+
+        self.fn = Path().cwd().joinpath("084_ADU-07e_C000_TEx_128Hz.json")
+        with open(self.fn, "w") as fid:
+            json.dump(self.electric_dict, fid)
+
+        self.expected_electric_metadata = OrderedDict(
+            [
+                ("channel_number", 0),
+                ("component", "ex"),
+                ("data_quality.rating.value", 0),
+                ("filter.applied", [True, True]),
+                ("filter.name", ["adb-lf", "lf-rf-4"]),
+                ("location.elevation", 1088.31),
+                ("location.latitude", 39.026196666666664),
+                ("location.longitude", 29.123953333333333),
+                ("measurement_azimuth", 0.0),
+                ("measurement_tilt", 0.0),
+                ("sample_rate", 128.0),
+                ("sensor.id", None),
+                ("sensor.manufacturer", None),
+                ("sensor.type", None),
+                ("time_period.end", "1980-01-01T00:00:00+00:00"),
+                ("time_period.start", "2009-08-20T13:22:00+00:00"),
+                ("type", "electric"),
+                ("units", "mV/km"),
+            ]
+        )
+
+        self.electric = MetronixChannelJSON(self.fn)
+
+    def test_fn(self):
+        self.assertEqual(self.fn, self.electric.fn)
+
+    def test_system_number(self):
+        self.assertEqual("084", self.electric.system_number)
+
+    def test_system_name(self):
+        self.assertEqual("ADU-07e", self.electric.system_name)
+
+    def test_channel_number(self):
+        self.assertEqual(0, self.electric.channel_number)
+
+    def test_component(self):
+        self.assertEqual("ex", self.electric.component)
+
+    def test_sample_rate(self):
+        self.assertEqual(128.0, self.electric.sample_rate)
+
+    def test_has_metadata(self):
+        self.assertTrue(self.electric._has_metadata())
+
+    def test_to_mt_metadata(self):
+        electric_metadata, fap = self.electric.to_mt_metadata()
+        with self.subTest("channel_metadata"):
+            self.assertEqual(self.expected_electric_metadata, electric_metadata)
+
+        with self.subTest("fap"):
+            self.assertEqual(None, fap)
 
     @classmethod
     def tearDownClass(self):

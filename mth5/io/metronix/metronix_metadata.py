@@ -20,7 +20,7 @@ from mt_metadata.timeseries.filters import FrequencyResponseTableFilter
 # =============================================================================
 
 
-class MetronixJSONBase:
+class MetronixChannelJSON:
     def __init__(self, fn=None, **kwargs):
         self.fn = fn
         if self.fn is not None:
@@ -37,6 +37,11 @@ class MetronixJSONBase:
         else:
             self._fn = Path(value)
             self._parse_fn(self._fn)
+
+    def _has_metadata(self):
+        if self.metadata is None:
+            raise ValueError("Metronix JSON file has not been read in yet.")
+        return True
 
     def _parse_fn(self, fn):
         """
@@ -115,21 +120,12 @@ class MetronixJSONBase:
                 fid, object_hook=lambda d: SimpleNamespace(**d)
             )
 
-
-class MetronixJSONMagnetic(MetronixJSONBase):
-    def __init__(self, fn=None, **kwargs):
-        super().__init__(fn=fn, **kwargs)
-
-    def _has_metadata(self):
-        if self.metadata is None:
-            raise ValueError("Metronix JSON file has not been read in yet.")
-        return True
-
     def to_mt_metadata(self):
         """
-        translate to `mt_metadata.timeseries.Magnetic` object
+        translate to `mt_metadata.timeseries.Channel` object
 
-        :return: DESCRIPTION
+        :return: mt_metadata object based on component and FAP filter if one
+         exists.
         :rtype: TYPE
 
         """
@@ -137,28 +133,46 @@ class MetronixJSONMagnetic(MetronixJSONBase):
 
         sensor_response_filter = self.get_sensor_response_filter()
 
-        magnetic = Magnetic(
-            component=self.component,
-            channel_number=self.channel_number,
-            measurement_azimuth=self.metadata.angle,
-            measurement_tilt=self.metadata.tilt,
-            sample_rate=self.sample_rate,
-            type="magnetic",
+        if self.component.startswith("e"):
+            metadata_object = Electric(
+                component=self.component,
+                channel_number=self.channel_number,
+                measurement_azimuth=self.metadata.angle,
+                measurement_tilt=self.metadata.tilt,
+                sample_rate=self.sample_rate,
+                type="electric",
+            )
+        elif self.component.startswith("h"):
+            metadata_object = Magnetic(
+                component=self.component,
+                channel_number=self.channel_number,
+                measurement_azimuth=self.metadata.angle,
+                measurement_tilt=self.metadata.tilt,
+                sample_rate=self.sample_rate,
+                type="magnetic",
+            )
+        else:
+            msg = f"Do not understand channel component {self.component}"
+            logger.error(msg)
+            raise ValueError(msg)
+
+        metadata_object.time_period.start = self.metadata.datetime
+        metadata_object.location.latitude = self.metadata.latitude
+        metadata_object.location.longitude = self.metadata.longitude
+        metadata_object.location.elevation = self.metadata.elevation
+        metadata_object.units = self.metadata.units
+
+        if sensor_response_filter is not None:
+            metadata_object.filter.name = self.metadata.filter.split(",") + [
+                sensor_response_filter.name
+            ]
+        else:
+            metadata_object.filter.name = self.metadata.filter.split(",")
+        metadata_object.filter.applied = [True] * len(
+            metadata_object.filter.name
         )
 
-        magnetic.time_period.start = self.metadata.datetime
-        magnetic.location.latitude = self.metadata.latitude
-        magnetic.location.longitude = self.metadata.longitude
-        magnetic.location.elevation = self.metadata.elevation
-        magnetic.units = self.metadata.units
-        magnetic.filter.name = self.metadata.filter.split(",") + [
-            sensor_response_filter.name
-        ]
-        magnetic.filter.applied = [True] * len(magnetic.filter.name)
-
-        sensor_response_filter = self.get_sensor_response_filter()
-
-        return magnetic, sensor_response_filter
+        return metadata_object, sensor_response_filter
 
     def get_sensor_response_filter(self):
         """
@@ -186,4 +200,6 @@ class MetronixJSONMagnetic(MetronixJSONBase):
         else:
             fap.phases = self.metadata.sensor_calibration.p
 
-        return fap
+        if len(fap.frequencies) > 0:
+            return fap
+        return None
