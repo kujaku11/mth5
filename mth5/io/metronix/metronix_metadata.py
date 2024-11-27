@@ -105,6 +105,25 @@ class MetronixFileNameMetadata:
         else:
             raise ValueError(f"Metronix file type {value} not supported.")
 
+    @property
+    def file_size(self):
+        """
+        file size in bytes
+
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        if self.fn is not None:
+            return self.fn.stat().st_size
+        return 0
+
+    @property
+    def n_samples(self):
+        """estimated number of samples in file"""
+        return self.file_size / 8
+
 
 class MetronixChannelJSON(MetronixFileNameMetadata):
     def __init__(self, fn=None, **kwargs):
