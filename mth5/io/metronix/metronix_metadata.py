@@ -315,4 +315,4 @@ class MetronixChannelJSON(MetronixFileNameMetadata):
         fap = self.get_sensor_response_filter()
         if fap is not None:
             filter_list.append(fap)
-        return ChannelResponse(filter_list=filter_list)
+        return ChannelResponse(filters_list=filter_list)

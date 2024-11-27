@@ -36,7 +36,7 @@ class MetronixClient(ClientBase):
             mth5_filename=mth5_filename,
             **kwargs,
         )
-
+        self.calibration_path = calibration_path
         self.collection = MetronixCollection(self.data_path)
 
     def get_run_dict(self, run_name_zeros=0):
@@ -125,7 +125,7 @@ class MetronixClient(ClientBase):
                     for row in run_df.itertuples():
                         ch_ts = read_file(row.fn)
                         run_group.from_channel_ts(ch_ts)
-                    run_group.update_metadata
+                    run_group.update_metadata()
                 station_group.update_metadata()
                 survey_group.update_metadata
 
