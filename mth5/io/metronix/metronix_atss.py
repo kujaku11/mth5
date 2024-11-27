@@ -145,6 +145,15 @@ class ATSS(MetronixFileNameMetadata):
         )
 
 
+def read_atss(fn, calibration_fn=None, logger_file_handler=None):
+    """
+    generic tool to read z3d file
+    """
+
+    atss_obj = ATSS(fn)
+    return atss_obj.to_channel_ts()
+
+
 # ##################################################################################################################
 
 
