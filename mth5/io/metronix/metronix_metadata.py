@@ -153,7 +153,7 @@ class MetronixChannelJSON(MetronixFileNameMetadata):
                 fid, object_hook=lambda d: SimpleNamespace(**d)
             )
 
-    def to_mt_metadata(self):
+    def get_channel_metadata(self):
         """
         translate to `mt_metadata.timeseries.Channel` object
 
@@ -175,6 +175,10 @@ class MetronixChannelJSON(MetronixFileNameMetadata):
                 sample_rate=self.sample_rate,
                 type="electric",
             )
+            metadata_object.positive.latitude = self.metadata.latitude
+            metadata_object.positive.longitude = self.metadata.longitude
+            metadata_object.positive.elevation = self.metadata.elevation
+            metadata_object.contact_resistance.start = self.metadata.resistance
         elif self.component.startswith("h"):
             metadata_object = Magnetic(
                 component=self.component,
@@ -184,15 +188,16 @@ class MetronixChannelJSON(MetronixFileNameMetadata):
                 sample_rate=self.sample_rate,
                 type="magnetic",
             )
+            metadata_object.location.latitude = self.metadata.latitude
+            metadata_object.location.longitude = self.metadata.longitude
+            metadata_object.location.elevation = self.metadata.elevation
         else:
             msg = f"Do not understand channel component {self.component}"
             logger.error(msg)
             raise ValueError(msg)
 
         metadata_object.time_period.start = self.metadata.datetime
-        metadata_object.location.latitude = self.metadata.latitude
-        metadata_object.location.longitude = self.metadata.longitude
-        metadata_object.location.elevation = self.metadata.elevation
+
         metadata_object.units = self.metadata.units
 
         if sensor_response_filter is not None:
@@ -205,7 +210,7 @@ class MetronixChannelJSON(MetronixFileNameMetadata):
             metadata_object.filter.name
         )
 
-        return metadata_object, sensor_response_filter
+        return metadata_object
 
     def get_sensor_response_filter(self):
         """
@@ -236,3 +241,6 @@ class MetronixChannelJSON(MetronixFileNameMetadata):
         if len(fap.frequencies) > 0:
             return fap
         return None
+
+    def get_run_metadata(self):
+        pass

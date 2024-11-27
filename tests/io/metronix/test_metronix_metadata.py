@@ -405,13 +405,13 @@ class TestMetronixJSONMagnetic(unittest.TestCase):
     def test_has_metadata(self):
         self.assertTrue(self.magnetic._has_metadata())
 
-    def test_to_mt_metadata(self):
-        magnetic_metadata, fap = self.magnetic.to_mt_metadata()
-        with self.subTest("channel_metadata"):
-            self.assertEqual(self.expected_magnetic_metadata, magnetic_metadata)
+    def test_channel_metadata(self):
+        magnetic_metadata = self.magnetic.get_channel_metadata()
+        self.assertEqual(self.expected_magnetic_metadata, magnetic_metadata)
 
-        with self.subTest("fap"):
-            self.assertEqual(self.expected_fap, fap)
+    def test_get_sensor_response_filter(self):
+        fap = self.magnetic.get_sensor_response_filter()
+        self.assertEqual(self.expected_fap, fap)
 
     @classmethod
     def tearDownClass(self):
@@ -455,18 +455,26 @@ class TestMetronixJSONElectric(unittest.TestCase):
             [
                 ("channel_number", 0),
                 ("component", "ex"),
+                ("contact_resistance.start", 572.3670043945312),
                 ("data_quality.rating.value", 0),
+                ("dipole_length", None),
                 ("filter.applied", [True, True]),
                 ("filter.name", ["adb-lf", "lf-rf-4"]),
-                ("location.elevation", 1088.31),
-                ("location.latitude", 39.026196666666664),
-                ("location.longitude", 29.123953333333333),
                 ("measurement_azimuth", 0.0),
                 ("measurement_tilt", 0.0),
+                ("negative.elevation", 0.0),
+                ("negative.id", None),
+                ("negative.latitude", 0.0),
+                ("negative.longitude", 0.0),
+                ("negative.manufacturer", None),
+                ("negative.type", None),
+                ("positive.elevation", 1088.31),
+                ("positive.id", None),
+                ("positive.latitude", 39.026196666666664),
+                ("positive.longitude", 29.123953333333333),
+                ("positive.manufacturer", None),
+                ("positive.type", None),
                 ("sample_rate", 128.0),
-                ("sensor.id", None),
-                ("sensor.manufacturer", None),
-                ("sensor.type", None),
                 ("time_period.end", "1980-01-01T00:00:00+00:00"),
                 ("time_period.start", "2009-08-20T13:22:00+00:00"),
                 ("type", "electric"),
@@ -501,12 +509,12 @@ class TestMetronixJSONElectric(unittest.TestCase):
         self.assertTrue(self.electric._has_metadata())
 
     def test_to_mt_metadata(self):
-        electric_metadata, fap = self.electric.to_mt_metadata()
-        with self.subTest("channel_metadata"):
-            self.assertEqual(self.expected_electric_metadata, electric_metadata)
+        electric_metadata = self.electric.get_channel_metadata()
+        self.assertEqual(self.expected_electric_metadata, electric_metadata)
 
-        with self.subTest("fap"):
-            self.assertEqual(None, fap)
+    def test_get_sensor_response_filter(self):
+        fap = self.electric.get_sensor_response_filter()
+        self.assertEqual(None, fap)
 
     @classmethod
     def tearDownClass(self):

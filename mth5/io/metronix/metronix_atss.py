@@ -93,8 +93,14 @@ class ATSS(MetronixFileNameMetadata):
         """
         if not self.has_metadata():
             msg = f"Could not find Metronix metadata file for {self.fn.name}."
-            logger.error(msg)
-            raise IOError(msg)
+            logger.warning(msg)
+            ch_metadata = None
+            return ChannelTS(data=self.read_atss())
+        else:
+            ch_metadata = MetronixChannelJSON(self.metadata_fn)
+            return ChannelTS(
+                channel_type=ch_metadata.type, data=self.read_atss()
+            )
 
 
 # ##################################################################################################################
