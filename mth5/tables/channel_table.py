@@ -96,9 +96,11 @@ class ChannelSummaryTable(MTH5Table):
             ch_entry = np.array(
                 [
                     (
-                        group.parent.parent.parent.parent.attrs["id"],
-                        group.parent.parent.attrs["id"],
-                        group.parent.attrs["id"],
+                        group.parent.parent.parent.parent.attrs["id"].encode(
+                            "utf-8"
+                        ),
+                        group.parent.parent.attrs["id"].encode("utf-8"),
+                        group.parent.attrs["id"].encode("utf-8"),
                         group.parent.parent.attrs["location.latitude"],
                         group.parent.parent.attrs["location.longitude"],
                         group.parent.parent.attrs["location.elevation"],
