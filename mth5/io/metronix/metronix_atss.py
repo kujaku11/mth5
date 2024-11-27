@@ -20,6 +20,7 @@ that is equivalent to a numpy array of type np.float64
 import numpy as np
 from loguru import logger
 
+from mt_metadata.timeseries import Run, Station, Survey
 from mth5.timeseries import ChannelTS
 from mth5.io.metronix import MetronixFileNameMetadata, MetronixChannelJSON
 
@@ -119,6 +120,52 @@ class ATSS(MetronixFileNameMetadata):
         if self.fn.exists:
             return self.fn.parent.parent.parent.parent.name
 
+    @property
+    def run_metadata(self):
+        """
+
+        :return: run metadata
+        :rtype: :class:`mt_metadata.timeseries.Run`
+
+        """
+        run = Run(id=self.run_id)
+        run.data_logger.id = self.system_number
+        run.data_logger.manufacturer = "Metronix Geophysics"
+        run.data_logger.model = self.system_name
+        run.sample_rate = self.sample_rate
+        run.add_channel(self.channel_metadata)
+        run.update_time_period()
+        return run
+
+    @property
+    def station_metadata(self):
+        """
+
+        :return: station metadata
+        :rtype: :class:`mt_metadata.timeseries.Station`
+
+        """
+        station = Station(id=self.station_id)
+        station.location.latitude = self.header.metadata.latitude
+        station.location.longitude = self.header.metadata.longitude
+        station.location.elevation = self.header.metadata.elevation
+        station.add_run(self.run_metadata)
+        station.update_time_period()
+        return station
+
+    @property
+    def survey_metadata(self):
+        """
+
+        :return: survey metadata
+        :rtype: :class:`mt_metadata.timeseries.Survey`
+
+        """
+        survey = Survey(id=self.survey_id)
+        survey.add_station(self.station_metadata)
+        survey.update_time_period()
+        return survey
+
     def to_channel_ts(self, fn=None):
         """
 
@@ -142,6 +189,9 @@ class ATSS(MetronixFileNameMetadata):
             data=self.read_atss(),
             channel_metadata=self.channel_metadata,
             channel_response=self.channel_response,
+            run_metadata=self.run_metadata,
+            station_metadata=self.station_metadata,
+            survey_metadata=self.survey_metadata,
         )
 
 

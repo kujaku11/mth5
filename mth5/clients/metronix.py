@@ -39,7 +39,7 @@ class MetronixClient(ClientBase):
 
         self.collection = MetronixCollection(self.data_path)
 
-    def get_run_dict(self):
+    def get_run_dict(self, run_name_zeros=0):
         """
         get run information
 
@@ -50,5 +50,26 @@ class MetronixClient(ClientBase):
 
         return self.collection.get_runs(
             sample_rates=self.sample_rates,
+            run_name_zeros=run_name_zeros,
             calibration_path=self.calibration_path,
         )
+
+    def make_mth5_from_metronix(self, run_name_zeros=0, **kwargs):
+        """
+        Create an MTH5 from new ATSS + JSON style Metronix data.
+
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        for key, value in kwargs.items():
+            if value is not None:
+                setattr(self, key, value)
+
+        runs = self.get_run_dict(run_name_zeros=run_name_zeros)
+
+        with MTH5(**self.h5_kwargs) as m:
+            m.open_mth5(self.save_path, "w")
