@@ -17,12 +17,8 @@ that is equivalent to a numpy array of type np.float64
 # =============================================================================
 # Imports
 # =============================================================================
-from pathlib import Path
-import json
-import copy
 import numpy as np
 from loguru import logger
-
 
 from mth5.timeseries import ChannelTS
 from mth5.io.metronix import MetronixFileNameMetadata, MetronixChannelJSON
@@ -32,7 +28,7 @@ from mth5.io.metronix import MetronixFileNameMetadata, MetronixChannelJSON
 
 class ATSS(MetronixFileNameMetadata):
     def __init__(self, fn=None, **kwargs):
-        super().__init__(fn, **kwargs)
+        super().__init__(fn=fn, **kwargs)
 
         self.header = MetronixChannelJSON()
         if self.has_metadata_file():
@@ -104,6 +100,24 @@ class ATSS(MetronixFileNameMetadata):
                 return "magnetic"
             else:
                 return "auxiliary"
+
+    @property
+    def run_id(self):
+        """run ID from the file path expect station\run\ts.atss"""
+        if self.fn.exists:
+            return self.fn.parent.name
+
+    @property
+    def station_id(self):
+        """station ID from the file path expect station\run\ts.atss"""
+        if self.fn.exists:
+            return self.fn.parent.parent.name
+
+    @property
+    def survey_id(self):
+        """station ID from the file path expect survey\stations\station\run\ts.atss"""
+        if self.fn.exists:
+            return self.fn.parent.parent.parent.parent.name
 
     def to_channel_ts(self, fn=None):
         """

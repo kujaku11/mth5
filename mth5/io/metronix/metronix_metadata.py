@@ -25,14 +25,14 @@ from mt_metadata.timeseries.filters import (
 
 class MetronixFileNameMetadata:
     def __init__(self, fn=None, **kwargs):
-        self.fn = fn
-
         self.system_number = None
         self.system_name = None
         self.channel_number = None
         self.component = None
         self.sample_rate = None
         self.file_type = None
+
+        self.fn = fn
 
     def __str__(self):
 
@@ -244,6 +244,13 @@ class MetronixChannelJSON(MetronixFileNameMetadata):
             metadata_object.location.latitude = self.metadata.latitude
             metadata_object.location.longitude = self.metadata.longitude
             metadata_object.location.elevation = self.metadata.elevation
+            metadata_object.sensor.id = self.metadata.sensor_calibration.serial
+            metadata_object.sensor.manufacturer = "Metronix Geophysics"
+            metadata_object.sensor.type = "induction coil"
+            metadata_object.sensor.model = (
+                self.metadata.sensor_calibration.sensor
+            )
+
         else:
             msg = f"Do not understand channel component {self.component}"
             logger.error(msg)
