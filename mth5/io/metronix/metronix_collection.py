@@ -9,6 +9,7 @@ Created on Fri Nov 22 13:22:44 2024
 # Imports
 # =============================================================================
 from pathlib import Path
+import pandas as pd
 
 from mth5.io.collection import Collection
 from mth5.io.metronix import ATSS
@@ -21,9 +22,7 @@ class MetronixCollection(Collection):
         super().__init__(file_path=file_path, **kwargs)
         self.file_ext = ["atss"]
 
-    def to_dataframe(
-        self, sample_rates=[128], rename_run=False, run_name_zeros=4
-    ):
+    def to_dataframe(self, sample_rates=[128], run_name_zeros=0):
         """
         Create dataframe for metronix timeseries atss + json file sets
 
@@ -39,6 +38,8 @@ class MetronixCollection(Collection):
         entries = []
         for atss_fn in set(self.get_files(self.file_ext)):
             atss_obj = ATSS(atss_fn)
+            if not atss_obj.sample_rate in sample_rates:
+                continue
             ch_metadata = atss_obj.channel_metadata
 
             entry = self.get_empty_entry_dict()
@@ -55,13 +56,45 @@ class MetronixCollection(Collection):
             entry["n_samples"] = atss_obj.n_samples
             entry["sequence_number"] = 0
             entry["dipole"] = 0
-            entry["coil_number"] = z3d_obj.coil_number
-            entry["latitude"] = z3d_obj.latitude
-            entry["longitude"] = z3d_obj.longitude
-            entry["elevation"] = z3d_obj.elevation
-            entry["instrument_id"] = f"ZEN_{int(z3d_obj.header.box_number):03}"
-            entry["coil_number"] = z3d_obj.coil_number
-            if cal_obj.has_coil_number(z3d_obj.coil_number):
-                entry["calibration_fn"] = cal_obj.calibration_file
+            if ch_metadata.type in ["magnetic"]:
+                entry["coil_number"] = ch_metadata.sensor.id
+                entry["latitude"] = ch_metadata.location.latitude
+                entry["longitude"] = ch_metadata.location.longitude
+                entry["elevation"] = ch_metadata.location.elevation
             else:
-                entry["calibration_fn"] = None
+                entry["coil_number"] = None
+                entry["latitude"] = ch_metadata.positive.latitude
+                entry["longitude"] = ch_metadata.positive.longitude
+                entry["elevation"] = ch_metadata.positive.elevation
+
+            entry["instrument_id"] = atss_obj.system_number
+            entry["calibration_fn"] = None
+            entries.append(entry)
+        # make pandas dataframe and set data types
+        df = self._sort_df(
+            self._set_df_dtypes(pd.DataFrame(entries)), run_name_zeros
+        )
+
+        return df
+
+    def assign_run_names(self, df, zeros=0):
+        """
+        assign run names, if zeros is 0 then run name is unchanged, otherwise
+        the run name will be `sr{sample_rate}_{run_number:zeros}
+
+        :param df: DESCRIPTION
+        :type df: TYPE
+        :param zeros: DESCRIPTION, defaults to 0
+        :type zeros: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        if zeros == 0:
+            return df
+
+        for row in df.itertuples():
+            df.loc[row.Index, "run"] = (
+                f"sr{row.sample_rate:.0f}_{int(row.run.split('_')[1]):0{zeros}}"
+            )
+        return df

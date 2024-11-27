@@ -14,9 +14,100 @@ import json
 from collections import OrderedDict
 import numpy as np
 
-from mth5.io.metronix.metronix_metadata import MetronixChannelJSON
+from mth5.io.metronix import MetronixFileNameMetadata, MetronixChannelJSON
 
 # =============================================================================
+
+
+class TestMetronixFileNameMetadata(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.obj = MetronixFileNameMetadata()
+
+        self.fn_list = [
+            {
+                "fn": Path(r"084_ADU-07e_C000_TEx_2048Hz.json"),
+                "system_number": "084",
+                "system_name": "ADU-07e",
+                "channel_number": 0,
+                "component": "ex",
+                "sample_rate": 2048,
+                "file_type": "metadata",
+            },
+            {
+                "fn": Path(r"084_ADU-07e_C001_THx_512Hz.json"),
+                "system_number": "084",
+                "system_name": "ADU-07e",
+                "channel_number": 1,
+                "component": "hx",
+                "sample_rate": 512,
+                "file_type": "metadata",
+            },
+            {
+                "fn": Path(r"084_ADU-07e_C002_TEy_128Hz.json"),
+                "system_number": "084",
+                "system_name": "ADU-07e",
+                "channel_number": 2,
+                "component": "ey",
+                "sample_rate": 128,
+                "file_type": "metadata",
+            },
+            {
+                "fn": Path(r"084_ADU-07e_C003_THy_32Hz.json"),
+                "system_number": "084",
+                "system_name": "ADU-07e",
+                "channel_number": 3,
+                "component": "hy",
+                "sample_rate": 32,
+                "file_type": "metadata",
+            },
+            {
+                "fn": Path(r"084_ADU-07e_C004_THz_8Hz.json"),
+                "system_number": "084",
+                "system_name": "ADU-07e",
+                "channel_number": 4,
+                "component": "hz",
+                "sample_rate": 8,
+                "file_type": "metadata",
+            },
+            {
+                "fn": Path(r"084_ADU-07e_C005_TEx_2Hz.json"),
+                "system_number": "084",
+                "system_name": "ADU-07e",
+                "channel_number": 5,
+                "component": "ex",
+                "sample_rate": 2,
+                "file_type": "metadata",
+            },
+            {
+                "fn": Path(r"084_ADU-07e_C006_TEy_2s.json"),
+                "system_number": "084",
+                "system_name": "ADU-07e",
+                "channel_number": 6,
+                "component": "ey",
+                "sample_rate": 1 / 2,
+                "file_type": "metadata",
+            },
+            {
+                "fn": Path(r"084_ADU-07e_C007_THx_8s.atss"),
+                "system_number": "084",
+                "system_name": "ADU-07e",
+                "channel_number": 7,
+                "component": "hx",
+                "sample_rate": 1 / 8,
+                "file_type": "timeseries",
+            },
+        ]
+
+    def row_test(self, row):
+        self.obj.fn = row["fn"]
+
+    def test_sample_rate(self):
+        for row in self.fn_list:
+            self.obj.fn = row["fn"]
+            for key, value in row.items():
+                with self.subTest(f"{row['fn']}_{key}"):
+                    self.assertEqual(getattr(self.obj, key), value)
 
 
 class TestMetronixJSONMagnetic(unittest.TestCase):

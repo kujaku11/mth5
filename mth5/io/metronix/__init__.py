@@ -10,7 +10,13 @@ Created on Fri Nov 22 13:55:28 2024
 # =============================================================================
 from .metronix_metadata import MetronixFileNameMetadata, MetronixChannelJSON
 from .metronix_atss import ATSS
+from .metronix_collection import MetronixCollection
 
 # =============================================================================
 
-__all__ = ["MetronixFileNameMetadata", "MetronixChannelJSON", "ATSS"]
+__all__ = [
+    "MetronixFileNameMetadata",
+    "MetronixChannelJSON",
+    "ATSS",
+    "MetronixCollection",
+]
