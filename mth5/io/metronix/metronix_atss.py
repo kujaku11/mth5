@@ -108,6 +108,10 @@ class ATSS(MetronixFileNameMetadata):
     def to_channel_ts(self, fn=None):
         """
 
+        Create mth5.timeseries.ChannelTS object
+
+        Can be slow because of pandas.datetimelike.py creating a time index.
+
         :param fn: DESCRIPTION, defaults to None
         :type fn: TYPE, optional
         :return: DESCRIPTION

@@ -27,6 +27,13 @@ class MetronixFileNameMetadata:
     def __init__(self, fn=None, **kwargs):
         self.fn = fn
 
+        self.system_number = None
+        self.system_name = None
+        self.channel_number = None
+        self.component = None
+        self.sample_rate = None
+        self.file_type = None
+
     def __str__(self):
 
         if self.fn is not None:
@@ -147,6 +154,11 @@ class MetronixFileNameMetadata:
         """estimated number of samples in file"""
         return self.file_size / 8
 
+    @property
+    def duration(self):
+        """Estimated duration of the file in seconds"""
+        return self.n_samples / self.sample_rate
+
 
 class MetronixChannelJSON(MetronixFileNameMetadata):
     def __init__(self, fn=None, **kwargs):
@@ -238,6 +250,9 @@ class MetronixChannelJSON(MetronixFileNameMetadata):
             raise ValueError(msg)
 
         metadata_object.time_period.start = self.metadata.datetime
+        metadata_object.time_period.end = (
+            metadata_object.time_period._start_dt + self.duration
+        )
 
         metadata_object.units = self.metadata.units
 
