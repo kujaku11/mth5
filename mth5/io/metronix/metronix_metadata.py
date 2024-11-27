@@ -15,7 +15,10 @@ from loguru import logger
 import numpy as np
 
 from mt_metadata.timeseries import Magnetic, Electric
-from mt_metadata.timeseries.filters import FrequencyResponseTableFilter
+from mt_metadata.timeseries.filters import (
+    FrequencyResponseTableFilter,
+    ChannelResponse,
+)
 
 # =============================================================================
 
@@ -23,6 +26,20 @@ from mt_metadata.timeseries.filters import FrequencyResponseTableFilter
 class MetronixFileNameMetadata:
     def __init__(self, fn=None, **kwargs):
         self.fn = fn
+
+    def __str__(self):
+
+        if self.fn is not None:
+            lines = [f"Metronix ATSS {self.file_type.upper()}:"]
+            lines.append(f"\tSystem Name:    {self.system_name}")
+            lines.append(f"\tSystem Number:  {self.system_number}")
+            lines.append(f"\tChannel Number: {self.channel_number}")
+            lines.append(f"\tComponent:      {self.component}")
+            lines.append(f"\tSample Rate:    {self.sample_rate}")
+            return "\n".join(lines)
+
+    def __repr__(self):
+        return self.__str__()
 
     @property
     def fn(self):
@@ -35,6 +52,12 @@ class MetronixFileNameMetadata:
         else:
             self._fn = Path(value)
             self._parse_fn(self._fn)
+
+    @property
+    def fn_exists(self):
+        if self.fn != None:
+            return self.fn.exists()
+        return False
 
     def _parse_fn(self, fn):
         """
@@ -128,13 +151,27 @@ class MetronixFileNameMetadata:
 class MetronixChannelJSON(MetronixFileNameMetadata):
     def __init__(self, fn=None, **kwargs):
         super().__init__(fn=fn, **kwargs)
+        self.metadata = None
         if self.fn is not None:
             self.read(self.fn)
 
     def _has_metadata(self):
         if self.metadata is None:
-            raise ValueError("Metronix JSON file has not been read in yet.")
+            return False
         return True
+
+    @MetronixFileNameMetadata.fn.setter
+    def fn(self, value):
+        if value is None:
+            self._fn = None
+
+        else:
+            value = Path(value)
+            if not value.exists():
+                raise IOError(f"Cannot find Metronix JSON file {value}")
+            self._fn = value
+            self._parse_fn(self._fn)
+            self.read()
 
     def read(self, fn=None):
         """
@@ -147,6 +184,9 @@ class MetronixChannelJSON(MetronixFileNameMetadata):
         """
         if fn is not None:
             self.fn = fn
+
+        if not self.fn_exists:
+            raise IOError(f"Cannot find Metronix JSON file {self.fn}")
 
         with open(self.fn, "r") as fid:
             self.metadata = json.load(
@@ -162,7 +202,8 @@ class MetronixChannelJSON(MetronixFileNameMetadata):
         :rtype: TYPE
 
         """
-        self._has_metadata()
+        if not self._has_metadata():
+            return
 
         sensor_response_filter = self.get_sensor_response_filter()
 
@@ -220,7 +261,8 @@ class MetronixChannelJSON(MetronixFileNameMetadata):
 
         """
 
-        self._has_metadata()
+        if not self._has_metadata():
+            return
 
         fap = FrequencyResponseTableFilter(
             calibration_date=self.metadata.sensor_calibration.datetime,
@@ -242,5 +284,13 @@ class MetronixChannelJSON(MetronixFileNameMetadata):
             return fap
         return None
 
-    def get_run_metadata(self):
-        pass
+    def get_channel_response(self):
+        """
+        get all the filters to calibrate the data
+        """
+
+        filter_list = []
+        fap = self.get_sensor_response_filter()
+        if fap is not None:
+            filter_list.append(fap)
+        return ChannelResponse(filter_list=filter_list)

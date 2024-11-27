@@ -23,6 +23,7 @@ import copy
 import numpy as np
 from loguru import logger
 
+
 from mth5.timeseries import ChannelTS
 from mth5.io.metronix import MetronixFileNameMetadata, MetronixChannelJSON
 
@@ -33,13 +34,17 @@ class ATSS(MetronixFileNameMetadata):
     def __init__(self, fn=None, **kwargs):
         super().__init__(fn, **kwargs)
 
+        self.header = MetronixChannelJSON()
+        if self.has_metadata_file():
+            self.header.read(self.metadata_fn)
+
     @property
     def metadata_fn(self):
         """metadata JSON file, same name as the atss file with extension json"""
         if self.fn is not None:
             return self.fn.parent.joinpath(f"{self.fn.stem}.json")
 
-    def has_metadata(self):
+    def has_metadata_file(self):
         """has metadata file (.json)"""
         if self.fn is not None:
             return self.metadata_fn.exists()
@@ -82,6 +87,24 @@ class ATSS(MetronixFileNameMetadata):
             data_bytes = data_array.tobytes()
             fid.write(data_bytes)
 
+    @property
+    def channel_metadata(self):
+        return self.header.get_channel_metadata()
+
+    @property
+    def channel_response(self):
+        return self.header.get_channel_response()
+
+    @property
+    def channel_type(self):
+        if self.fn_exists:
+            if self.component.startswith("e"):
+                return "electric"
+            elif self.component.startswith("h"):
+                return "magnetic"
+            else:
+                return "auxiliary"
+
     def to_channel_ts(self, fn=None):
         """
 
@@ -91,16 +114,16 @@ class ATSS(MetronixFileNameMetadata):
         :rtype: TYPE
 
         """
-        if not self.has_metadata():
+        if not self.has_metadata_file():
             msg = f"Could not find Metronix metadata file for {self.fn.name}."
             logger.warning(msg)
-            ch_metadata = None
-            return ChannelTS(data=self.read_atss())
-        else:
-            ch_metadata = MetronixChannelJSON(self.metadata_fn)
-            return ChannelTS(
-                channel_type=ch_metadata.type, data=self.read_atss()
-            )
+
+        return ChannelTS(
+            channel_type=self.channel_type,
+            data=self.read_atss(),
+            channel_metadata=self.channel_metadata,
+            channel_response=self.channel_response,
+        )
 
 
 # ##################################################################################################################
