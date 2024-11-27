@@ -21,6 +21,7 @@ from pathlib import Path
 import json
 import copy
 import numpy as np
+from loguru import logger
 
 from mth5.timeseries import ChannelTS
 from mth5.io.metronix import MetronixFileNameMetadata, MetronixChannelJSON
@@ -90,6 +91,10 @@ class ATSS(MetronixFileNameMetadata):
         :rtype: TYPE
 
         """
+        if not self.has_metadata():
+            msg = f"Could not find Metronix metadata file for {self.fn.name}."
+            logger.error(msg)
+            raise IOError(msg)
 
 
 # ##################################################################################################################
