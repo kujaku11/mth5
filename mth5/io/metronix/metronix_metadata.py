@@ -20,11 +20,9 @@ from mt_metadata.timeseries.filters import FrequencyResponseTableFilter
 # =============================================================================
 
 
-class MetronixChannelJSON:
+class MetronixFileNameMetadata:
     def __init__(self, fn=None, **kwargs):
         self.fn = fn
-        if self.fn is not None:
-            self.read(self.fn)
 
     @property
     def fn(self):
@@ -37,11 +35,6 @@ class MetronixChannelJSON:
         else:
             self._fn = Path(value)
             self._parse_fn(self._fn)
-
-    def _has_metadata(self):
-        if self.metadata is None:
-            raise ValueError("Metronix JSON file has not been read in yet.")
-        return True
 
     def _parse_fn(self, fn):
         """
@@ -62,6 +55,7 @@ class MetronixChannelJSON:
         self.channel_number = self._parse_channel_number(fn_list[2])
         self.component = self._parse_component(fn_list[3])
         self.sample_rate = self._parse_sample_rate(fn_list[4])
+        self.file_type = self._get_file_type(fn)
 
     def _parse_channel_number(self, value):
         """
@@ -102,6 +96,26 @@ class MetronixChannelJSON:
             return float(value.lower().replace("hz", ""))
         elif "s" in value.lower():
             return 1.0 / float(value.lower().replace("s", ""))
+
+    def _get_file_type(self, value):
+        if value.suffix in [".json"]:
+            return "metadata"
+        elif value.suffix in [".atss"]:
+            return "timeseries"
+        else:
+            raise ValueError(f"Metronix file type {value} not supported.")
+
+
+class MetronixChannelJSON(MetronixFileNameMetadata):
+    def __init__(self, fn=None, **kwargs):
+        super().__init__(fn=fn, **kwargs)
+        if self.fn is not None:
+            self.read(self.fn)
+
+    def _has_metadata(self):
+        if self.metadata is None:
+            raise ValueError("Metronix JSON file has not been read in yet.")
+        return True
 
     def read(self, fn=None):
         """

@@ -399,6 +399,9 @@ class TestMetronixJSONMagnetic(unittest.TestCase):
     def test_sample_rate(self):
         self.assertEqual(128.0, self.magnetic.sample_rate)
 
+    def test_file_type(self):
+        self.assertEqual("metadata", self.magnetic.file_type)
+
     def test_has_metadata(self):
         self.assertTrue(self.magnetic._has_metadata())
 
@@ -490,6 +493,9 @@ class TestMetronixJSONElectric(unittest.TestCase):
 
     def test_sample_rate(self):
         self.assertEqual(128.0, self.electric.sample_rate)
+
+    def test_file_type(self):
+        self.assertEqual("metadata", self.electric.file_type)
 
     def test_has_metadata(self):
         self.assertTrue(self.electric._has_metadata())
