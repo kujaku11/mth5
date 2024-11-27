@@ -22,7 +22,9 @@ class MetronixCollection(Collection):
         super().__init__(file_path=file_path, **kwargs)
         self.file_ext = ["atss"]
 
-    def to_dataframe(self, sample_rates=[128], run_name_zeros=0):
+    def to_dataframe(
+        self, sample_rates=[128], run_name_zeros=0, calibration_path=None
+    ):
         """
         Create dataframe for metronix timeseries atss + json file sets
 
