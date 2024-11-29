@@ -137,9 +137,9 @@ class TestMakeDtCoordinates(unittest.TestCase):
         delta_t1 = tmp1.diff()[1:]
         delta_t2 = tmp2.diff()[1:]
 
-        # This assertion indicates that delta_t1 is not uniform, whereas delta_t2 is.
-        assert len(delta_t1.unique()) == 2
-        assert len(delta_t2.unique()) == 1
+        # This assertion indicates that delta_t1 is uniform, whereas delta_t2 is not.
+        assert len(delta_t1.unique()) == 1
+        assert len(delta_t2.unique()) == 2
 
         # This assertion indicates that the difference is in the first delta.
         assert delta_t1[0] != delta_t2[0]
