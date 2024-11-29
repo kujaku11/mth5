@@ -7,6 +7,7 @@ Created on Wed Mar 29 14:30:08 2023
 # =============================================================================
 # Imports
 # =============================================================================
+import pandas as pd
 import unittest
 
 from mt_metadata.utils.mttime import MTime
@@ -113,6 +114,36 @@ class TestMakeDtCoordinates(unittest.TestCase):
             )
         with self.subTest("length"):
             self.assertEqual(16, len(dt))
+
+    def test_fix_issue_263(self):
+        """
+            Note that passing endtime explicitly vs not can causing different values in time coordinates.
+
+
+        Returns
+        -------
+
+        """
+        end_str = "2023-10-14T19:47:31.176479359+00:00"
+        start_str = "2023-10-14T19:47:23.978079359+00:00"
+
+        dt = 0.13088
+        sr = 1 / dt
+        n_samples = 56
+
+        tmp1 = make_dt_coordinates(start_str, sample_rate=sr, n_samples=n_samples, end_time=end_str)
+        tmp2 = make_dt_coordinates(start_str, sample_rate=sr, n_samples=n_samples, end_time=None)
+
+        delta_t1 = tmp1.diff()[1:]
+        delta_t2 = tmp2.diff()[1:]
+
+        # This assertion indicates that delta_t1 is not uniform, whereas delta_t2 is.
+        assert len(delta_t1.unique()) == 2
+        assert len(delta_t2.unique()) == 1
+
+        # This assertion indicates that the difference is in the first delta.
+        assert delta_t1[0] != delta_t2[0]
+        assert (delta_t1[1:] == delta_t2[1:]).all()
 
 
 class TestDecimalSigFigs(unittest.TestCase):
