@@ -135,7 +135,7 @@ class TestMakeDtCoordinates(unittest.TestCase):
         tmp1 = make_dt_coordinates(start_str, sample_rate=sr, n_samples=n_samples, end_time=end_str)
         tmp2 = make_dt_coordinates(start_str, sample_rate=sr, n_samples=n_samples, end_time=None)
 
-        if sys.version_info > (3, 8):
+        if sys.version_info >= (3, 9):
             delta_t1 = tmp1.diff()[1:]  # fails in python 3.8
             delta_t2 = tmp2.diff()[1:]  # fails in python 3.8
 
