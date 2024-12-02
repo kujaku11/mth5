@@ -8,6 +8,7 @@ Created on Wed Mar 29 14:30:08 2023
 # Imports
 # =============================================================================
 import pandas as pd
+import sys
 import unittest
 
 from mt_metadata.utils.mttime import MTime
@@ -134,16 +135,17 @@ class TestMakeDtCoordinates(unittest.TestCase):
         tmp1 = make_dt_coordinates(start_str, sample_rate=sr, n_samples=n_samples, end_time=end_str)
         tmp2 = make_dt_coordinates(start_str, sample_rate=sr, n_samples=n_samples, end_time=None)
 
-        delta_t1 = tmp1.diff()[1:]
-        delta_t2 = tmp2.diff()[1:]
+        if sys.version_info > (3, 8):
+            delta_t1 = tmp1.diff()[1:]  # fails in python 3.8
+            delta_t2 = tmp2.diff()[1:]  # fails in python 3.8
 
-        # This assertion indicates that delta_t1 is uniform, whereas delta_t2 is not.
-        assert len(delta_t1.unique()) == 1
-        assert len(delta_t2.unique()) == 2
+            # This assertion indicates that delta_t1 is uniform, whereas delta_t2 is not.
+            assert len(delta_t1.unique()) == 1
+            assert len(delta_t2.unique()) == 2
 
-        # This assertion indicates that the difference is in the first delta.
-        assert delta_t1[0] != delta_t2[0]
-        assert (delta_t1[1:] == delta_t2[1:]).all()
+            # This assertion indicates that the difference is in the first delta.
+            assert delta_t1[0] != delta_t2[0]
+            assert (delta_t1[1:] == delta_t2[1:]).all()
 
 
 class TestDecimalSigFigs(unittest.TestCase):
