@@ -288,7 +288,7 @@ class MetronixChannelJSON(MetronixFileNameMetadata):
 
         fap = FrequencyResponseTableFilter(
             calibration_date=self.metadata.sensor_calibration.datetime,
-            name=self.metadata.sensor_calibration.sensor,
+            name=f"{self.metadata.sensor_calibration.sensor}_chopper_{self.metadata.sensor_calibration.chopper}",
             frequencies=self.metadata.sensor_calibration.f,
             amplitudes=self.metadata.sensor_calibration.a,
             units_out=self.metadata.units,
