@@ -429,7 +429,7 @@ class TestMetronixJSONMagnetic(unittest.TestCase):
                 ("component", "hx"),
                 ("data_quality.rating.value", 0),
                 ("filter.applied", [True, True, True]),
-                ("filter.name", ["adb-lf", "lf-rf-4", "mfs-06"]),
+                ("filter.name", ["adb-lf", "lf-rf-4", "mfs-06_chopper_1"]),
                 ("location.elevation", 1088.31),
                 ("location.latitude", 39.026196666666664),
                 ("location.longitude", 29.123953333333333),
@@ -460,7 +460,7 @@ class TestMetronixJSONMagnetic(unittest.TestCase):
                 ),
                 ("gain", 1.0),
                 ("instrument_type", None),
-                ("name", "mfs-06"),
+                ("name", "mfs-06_chopper_1"),
                 (
                     "phases",
                     np.deg2rad(
