@@ -29,6 +29,7 @@ from . import USGSGeomag
 from . import PhoenixClient
 from . import ZenClient
 from . import LEMI424Client
+from . import MetronixClient
 
 # =============================================================================
 
@@ -366,3 +367,52 @@ class MakeMTH5:
         )
 
         return lemi_client.make_mth5_from_lemi424(survey_id, station_id)
+
+    @classmethod
+    def from_metronix(
+        cls,
+        data_path,
+        sample_rates=[128],
+        mth5_filename=None,
+        save_path=None,
+        run_name_zeros=0,
+        **kwargs,
+    ):
+        """
+        Build a MTH5 file from Metronix Geophysics ATSS + JSON files saved in
+        their new folder structure.
+
+        :param data_path: Highest level of where you want to archive data from,
+         usuall the survey level.  If you want just a single station, then use
+         the station folder path.
+        :type data_path: str or pathlib.Path
+        :param sample_rates: sample rates to archive in samples/sercond,
+         defaults to [128]
+        :type sample_rates: list of floats, optional
+        :param mth5_filename: filename for the H5, defaults to 'from_lemi424.h5'
+        :type mth5_filename: str, optional
+        :param save_path: path to save H5 file to, defaults to None which will
+         place the file in `data_path`
+        :type save_path: str or Path, optional
+        :param run_name_zeros: number of zeros to include in new run names, will
+         be named as 'sr{sample_rate}_{run_id:0{run_name_zeros}}'.  If set to
+         0 then will use the original run name, usually 'run_0001'.
+        :type run_name_zeros: int, defaults to 0
+        :return: Path to MTH5 file
+        :rtype: Path
+
+        """
+        maker = cls(**kwargs)
+        kw_dict = maker.get_h5_kwargs()
+
+        metronix_client = MetronixClient(
+            data_path,
+            sample_rates=sample_rates,
+            save_path=save_path,
+            mth5_filename=mth5_filename,
+            **kw_dict,
+        )
+
+        return metronix_client.make_mth5_from_metronix(
+            run_name_zeros=run_name_zeros
+        )

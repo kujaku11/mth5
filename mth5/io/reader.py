@@ -51,7 +51,7 @@ Created on Wed Aug 26 10:32:45 2020
 from pathlib import Path
 from loguru import logger
 
-from mth5.io import zen, nims, usgs_ascii, miniseed, lemi, phoenix
+from mth5.io import zen, nims, usgs_ascii, miniseed, lemi, phoenix, metronix
 
 # =============================================================================
 # generic reader for any file type
@@ -74,6 +74,10 @@ readers = {
     "phoenix": {
         "file_types": ["bin", "td_150", "td_24k"],
         "reader": phoenix.read_phoenix,
+    },
+    "metronix": {
+        "file_types": ["atss"],
+        "reader": metronix.read_atss,
     },
 }
 

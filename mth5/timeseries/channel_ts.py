@@ -24,8 +24,10 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from loguru import logger
+import scipy
 from scipy import signal
 import scipy
+
 
 import mt_metadata.timeseries as metadata
 from mt_metadata.timeseries.filters import ChannelResponse
@@ -939,7 +941,11 @@ class ChannelTS:
             sr = self.channel_metadata.sample_rate
             if sr is None:
                 sr = 0.0
-        return np.round(sr, 0)
+
+        if sr >= 1:
+            return np.round(sr, 0)
+        else:
+            return np.round(sr, 6)
 
     @sample_rate.setter
     def sample_rate(self, sample_rate):
