@@ -34,6 +34,8 @@ Features
     - USGS ASCII
     - LEMI
     - StationXML + miniseed
+    - Metronix (`atss` + `json`)
+    - Phoenix (MTU5C)
 
 Introduction
 -------------
