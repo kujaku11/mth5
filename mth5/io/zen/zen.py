@@ -40,6 +40,7 @@ from mth5.io.zen import Z3DHeader, Z3DSchedule, Z3DMetadata
 from mth5.io.zen.coil_response import CoilResponse
 from mth5.timeseries import ChannelTS
 
+
 # ==============================================================================
 #
 # ==============================================================================
@@ -555,9 +556,7 @@ class Z3D:
                     fap_str = self.metadata.cal_board["cal.ch"]
                     for ss in fap_str.split(";"):
                         freq, _, resp = ss.split(",")
-                        ff, amp, phs = [
-                            float(item) for item in resp.split(":")
-                        ]
+                        ff, amp, phs = [float(item) for item in resp.split(":")]
                         if float(freq) == self.sample_rate:
                             frequency = ff
                             amplitude = amp
@@ -634,9 +633,7 @@ class Z3D:
             self._gps_stamp_length = 36
             self._gps_bytes = self._gps_stamp_length / 4
             self._gps_flag_0 = -1
-            self._block_len = int(
-                self._gps_stamp_length + self.sample_rate * 4
-            )
+            self._block_len = int(self._gps_stamp_length + self.sample_rate * 4)
             self.gps_flag = self._gps_f0
         else:
             return
@@ -879,9 +876,7 @@ class Z3D:
         self.raw_data = data.copy()
 
         # find the gps stamps
-        gps_stamp_find = self.get_gps_stamp_index(
-            data, self.header.old_version
-        )
+        gps_stamp_find = self.get_gps_stamp_index(data, self.header.old_version)
 
         # skip the first two stamps and trim data
         try:
@@ -891,9 +886,7 @@ class Z3D:
             self.logger.error(msg)
             raise ZenGPSError(msg)
         # find gps stamps of the trimmed data
-        gps_stamp_find = self.get_gps_stamp_index(
-            data, self.header.old_version
-        )
+        gps_stamp_find = self.get_gps_stamp_index(data, self.header.old_version)
 
         # read data chunks and GPS stamps
         self.gps_stamps = np.zeros(len(gps_stamp_find), dtype=self._gps_dtype)
@@ -906,14 +899,13 @@ class Z3D:
         if not self.validate_gps_time():
             self.logger.warning(
                 f"GPS stamps are not 1 second apart for file {self.fn.name}."
-                )
+            )
         if not self.validate_time_blocks():
             self.logger.warning(
                 f"Time block between stamps was not the sample rate for file {self.fn.name}"
-                )
+            )
         self.convert_gps_time()
         self.zen_schedule = self.check_start_time()
-\
         self.logger.debug(f"found {self.gps_stamps.shape[0]} GPS time stamps")
         self.logger.debug(f"found {self.time_series.size} data points")
 
@@ -976,10 +968,12 @@ class Z3D:
         # estimate the time difference between the two
         time_diff = zen_start_utc - self.schedule.initial_start
         if time_diff > self._max_time_diff:
-            self.logger.warning(f"ZEN Scheduled time was {self.schedule.initial_start}")
+            self.logger.warning(
+                f"ZEN Scheduled time was {self.schedule.initial_start}"
+            )
             self.logger.warning(f"1st good stamp was {zen_start_utc}")
             self.logger.warning(f"difference of {time_diff:.2f} seconds")
-            
+
         self.logger.debug(f"Scheduled time was {self.schedule.initial_start}")
         self.logger.debug(f"1st good stamp was {zen_start_utc}")
         self.logger.debug(f"difference of {time_diff:.2f} seconds")
@@ -1000,7 +994,8 @@ class Z3D:
             for bb in bad_times:
                 self.logger.debug(
                     f"ZEN bad GPS time at index {bb} > 1 second "
-                    f"({t_diff[bb]})")
+                    f"({t_diff[bb]})"
+                )
             return False
         return True
 
