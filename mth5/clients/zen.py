@@ -33,6 +33,7 @@ class ZenClient(ClientBase):
             **kwargs,
         )
 
+        self.calibration_path = calibration_path
         self.collection = Z3DCollection(self.data_path)
 
     @property
@@ -57,7 +58,8 @@ class ZenClient(ClientBase):
                 raise IOError(f"Could not find {self._calibration_path}")
 
         else:
-            raise ValueError("calibration_path cannot be None")
+            self._calibration_path = None
+            # raise ValueError("calibration_path cannot be None")
 
     def get_run_dict(self):
         """

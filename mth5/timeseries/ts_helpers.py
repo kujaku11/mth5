@@ -57,7 +57,7 @@ def _count_decimal_sig_figs(digits):
     return len(fractional.rstrip("0"))
 
 
-def make_dt_coordinates(start_time, sample_rate, n_samples):
+def make_dt_coordinates(start_time, sample_rate, n_samples, end_time=None):
     """
     get the date time index from the data
 
@@ -89,6 +89,7 @@ def make_dt_coordinates(start_time, sample_rate, n_samples):
         raise ValueError(msg)
     if not isinstance(start_time, MTime):
         start_time = MTime(start_time)
+
     # there is something screwy that happens when your sample rate is not a
     # nice value that can easily fit into the 60 base.  For instance if you
     # have a sample rate of 24000 the dt_freq will be '41667N', but that is
@@ -97,8 +98,10 @@ def make_dt_coordinates(start_time, sample_rate, n_samples):
     # FIX: therefore estimate the end time based on the decimal sample rate.
     # need to account for the fact that the start time is the first sample
     # need n_samples - 1
-    end_time = start_time + (n_samples - 1) / sample_rate
-
+    if end_time is None:
+        end_time = start_time + (n_samples - 1) / sample_rate
+    else:
+        end_time = MTime(end_time)
     # dt_freq = "{0:.0f}N".format(1.0e9 / (sample_rate))
 
     dt_index = pd.date_range(

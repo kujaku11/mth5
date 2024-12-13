@@ -70,11 +70,9 @@ class TestClientBase(unittest.TestCase):
     def test_initial_fail_bad_directory(self):
         self.assertRaises(IOError, ZenClient, r"a:\\")
 
-    def test_calibration_path_fail_None(self):
-        def set_calibration_path(value):
-            self.base.calibration_path = value
+    def test_calibration_path_None(self):
 
-        self.assertRaises(ValueError, set_calibration_path, None)
+        self.assertEqual(None, self.base.calibration_path)
 
 
 # =============================================================================

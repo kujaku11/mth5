@@ -76,10 +76,7 @@ class TFSummaryTable(MTH5Table):
                                 if tf_dataset != (1, 1, 1):
                                     nz = np.nonzero(tf_dataset)
                                     unique_values = np.unique(nz[1])
-                                    if (
-                                        0 in unique_values
-                                        or 1 in unique_values
-                                    ):
+                                    if 0 in unique_values or 1 in unique_values:
                                         has_impedance = True
                                     if 2 in unique_values:
                                         has_tipper = True
@@ -105,12 +102,12 @@ class TFSummaryTable(MTH5Table):
                                     (
                                         validate_name(
                                             node.parent.parent.attrs["id"]
-                                        ),
+                                        ).encode("utf-8"),
                                         validate_name(
                                             node.parent.parent.parent.parent.attrs[
                                                 "id"
                                             ]
-                                        ),
+                                        ).encode("utf-8"),
                                         node.parent.parent.attrs[
                                             "location.latitude"
                                         ],
@@ -120,7 +117,9 @@ class TFSummaryTable(MTH5Table):
                                         node.parent.parent.attrs[
                                             "location.elevation"
                                         ],
-                                        validate_name(node.attrs["id"]),
+                                        validate_name(node.attrs["id"]).encode(
+                                            "utf-8"
+                                        ),
                                         node.attrs["units"],
                                         has_impedance,
                                         has_tipper,

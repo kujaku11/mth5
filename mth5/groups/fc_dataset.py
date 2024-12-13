@@ -208,6 +208,7 @@ class FCChannelDataset:
             self.metadata.time_period.start,
             1.0 / self.metadata.sample_rate_window_step,
             self.n_windows,
+            end_time=self.metadata.time_period.end
         )
 
     @property

@@ -50,7 +50,9 @@ class FCSummaryTable(MTH5Table):
         ]:
             setattr(df, key, getattr(df, key).str.decode("utf-8"))
         try:
-            df.start = pd.to_datetime(df.start.str.decode("utf-8"), format="mixed")
+            df.start = pd.to_datetime(
+                df.start.str.decode("utf-8"), format="mixed"
+            )
             df.end = pd.to_datetime(df.end.str.decode("utf-8"), format="mixed")
         except ValueError:
             df.start = pd.to_datetime(df.start.str.decode("utf-8"))
@@ -65,6 +67,7 @@ class FCSummaryTable(MTH5Table):
         :rtype: TYPE
 
         """
+
         def recursive_get_fc_entry(group):
             """
             a function to get channel entry
@@ -75,7 +78,9 @@ class FCSummaryTable(MTH5Table):
             elif isinstance(group, h5py._hl.dataset.Dataset):
                 try:
                     ch_type = group.attrs["mth5_type"]
-                    if ch_type in ["FCChannel", ]:
+                    if ch_type in [
+                        "FCChannel",
+                    ]:
                         fc_entry = _get_fc_entry(group)
                         try:
                             self.add_row(fc_entry)
@@ -89,7 +94,7 @@ class FCSummaryTable(MTH5Table):
                     pass
 
         self.clear_table()
-        #self.fc_entries = []
+        # self.fc_entries = []
         recursive_get_fc_entry(self.array.parent)
         # for row in self.fc_entries:
         #     try:
@@ -100,10 +105,8 @@ class FCSummaryTable(MTH5Table):
         # return
 
 
-
 def _get_fc_entry(
-    group: h5py._hl.dataset.Dataset,
-    dtype: Optional[np.dtype] = FC_DTYPE
+    group: h5py._hl.dataset.Dataset, dtype: Optional[np.dtype] = FC_DTYPE
 ) -> np.ndarray:
     """
     Create a fc_summary table entry in np.array format
@@ -119,10 +122,18 @@ def _get_fc_entry(
     fc_entry = np.array(
         [
             (
-                group.parent.parent.parent.parent.parent.parent.attrs["id"], # get survey from FCChannel
-                group.parent.parent.parent.parent.attrs["id"], # get station from FCChannel
+                group.parent.parent.parent.parent.parent.parent.attrs[
+                    "id"
+                ].encode(
+                    "utf-8"
+                ),  # get survey from FCChannel
+                group.parent.parent.parent.parent.attrs["id"].encode(
+                    "utf-8"
+                ),  # get station from FCChannel
                 group.parent.parent.attrs["id"],  # get run from FCChannel
-                group.parent.attrs["decimation_level"], # get decimation_level from FCChannel
+                group.parent.attrs[
+                    "decimation_level"
+                ],  # get decimation_level from FCChannel
                 group.parent.parent.parent.parent.attrs["location.latitude"],
                 group.parent.parent.parent.parent.attrs["location.longitude"],
                 group.parent.parent.parent.parent.attrs["location.elevation"],
