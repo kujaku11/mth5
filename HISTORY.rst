@@ -153,3 +153,13 @@ History
 * Fix issue 252 by @kkappler in https://github.com/kujaku11/mth5/pull/253
 
 **Full Changelog**: https://github.com/kujaku11/mth5/compare/v0.4.8...v0.4.9
+
+0.4.10
+------------------------------
+
+* HOT FIX: importing scipy, to use scipy.stats by @dequiroga in https://github.com/kujaku11/mth5/pull/258
+* FC dataset end time consistency by @dequiroga in https://github.com/kujaku11/mth5/pull/264
+* Add Metronix reader by @kujaku11 in https://github.com/kujaku11/mth5/pull/261
+* Resolve SyntaxWarnings in Python 3.12 and above for invalid escape sequences by @jameswilburlewis in https://github.com/kujaku11/mth5/pull/256
+* Patches by @kujaku11 in https://github.com/kujaku11/mth5/pull/265
+* Update README.md by @kujaku11 in https://github.com/kujaku11/mth5/pull/266
