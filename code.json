@@ -3,20 +3,20 @@
     "name": "mth5",
     "organization": "U.S. Geological Survey",
     "description": "MTH5 is a Python module built to read/write/interact with MTH5 files, a data container for magnetotelluric data.",
-    "version": "v0.4.9",
+    "version": "v0.4.10",
     "status": "Production",
     "permissions": {
       "usageType": "openSource",
       "licenses": [
         {
           "name": "MIT",
-          "URL": "https://code.usgs.gov/gmeg/mth5/-/raw/v0.4.9/LICENSE.md"
+          "URL": "https://code.usgs.gov/gmeg/mth5/-/raw/v0.4.10/LICENSE.md"
         }
       ]
     },
     "homepageURL": "https://code.usgs.gov/gmeg/mth5",
-    "downloadURL": "https://code.usgs.gov/gmeg/mth5/-/archive/v0.4.9/mth5-v0.4.9.zip",
-    "disclaimerURL": "https://code.usgs.gov/gmeg/mth5/-/raw/v0.4.9/DISCLAIMER.md",
+    "downloadURL": "https://code.usgs.gov/gmeg/mth5/-/archive/v0.4.10/mth5-v0.4.10.zip",
+    "disclaimerURL": "https://code.usgs.gov/gmeg/mth5/-/raw/v0.4.10/DISCLAIMER.md",
     "repositoryURL": "https://code.usgs.gov/gmeg/mth5.git",
     "tags": [
       "magnetotellurics",
