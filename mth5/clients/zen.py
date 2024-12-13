@@ -24,7 +24,7 @@ class ZenClient(ClientBase):
         mth5_filename="from_zen.h5",
         **kwargs,
     ):
-        
+
         super().__init__(
             data_path,
             save_path=save_path,
@@ -58,7 +58,8 @@ class ZenClient(ClientBase):
                 raise IOError(f"Could not find {self._calibration_path}")
 
         else:
-            raise ValueError("calibration_path cannot be None")
+            self._calibration_path = None
+            # raise ValueError("calibration_path cannot be None")
 
     def get_run_dict(self):
         """
