@@ -1,0 +1,50 @@
+
+[project]
+name = "mth5"
+dynamic = ["version"]
+description = "Archivable and exchangeable format for magnetotelluric data"
+keywords = [
+	"mth5", 
+	"magnetotellurics",
+	"time series", 
+	"Fourier coefficients"
+	]
+readme = "README.md"
+authors = [
+    {name = "Jared Peacock", email = "jpeacock@usgs.gov"}
+	{name = "Karl Kappler", email = "karl.kappler@berkeley.edu"},
+]
+maintainers = [
+    {name = "Jared Peacock", email = "jpeacock@usgs.gov"}
+	{name = "Karl Kappler", email = "karl.kappler@berkeley.edu"},
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+	"Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.8",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "h5py",
+    "mt_metadata",
+    "pyyaml",
+    "scipy",
+]
+license = {text = "MIT license"}
+
+[project.urls]
+homepage = "https://github.com/kujaku11/mth5"
+Usage = "https://mtgeophysics.github.io/"
+documentation = "mth5.readthedocs.io/en/latest/index.html"
+changelog = "https://github.com/kujaku11/mth5/HISTORY.rst"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
