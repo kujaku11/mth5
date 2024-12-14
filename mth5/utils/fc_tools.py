@@ -202,7 +202,149 @@ class MultivariateDataset():
 
         return self._station_channels[station]
 
+    def extract_band(self, band):
+        """
+            Extracts a sub-xarray for frequencies f, such that
+            band.lower_bound <= f <= band.upper_bound
+        Parameters
+        ----------
+        band
 
+        Returns
+        -------
+
+        """
+        pass
+
+    def archive_cross_powers(
+        self,
+        tf_station: str,
+        with_fcs: bool = True,
+
+    ):
+        """
+        tf_station: str
+         This tells us under which station we should store the output of this function.
+         TODO: Consider moving this to another function which performs archiving in future.
+
+        with_fcs: bool
+         If True, the features are packed into the same hdf5-group as the FCs,
+         as its own dataset.
+         If False: the features are packed into the hdf5 features-group.
+
+        Returns
+        -------
+
+        """
+
+    def calculate_cross_powers(
+        self,
+        frequency_bands,
+        channel_pairs: list,
+    ):
+        """
+
+        Parameters
+        ----------
+        frequency_bands: iterable (of intervals)
+         Each element of this iterable tells the lower and upper bounds of the
+         cross-power calculation bands.  These may become objects with information about
+         tapers as ewwll.
+
+        Returns
+        -------
+
+        This calculates the crosspowers with an appropriate
+        labelling scheme and returns an xr or dataframe,
+        multiindexed by frequency (the band centers) and time.
+        So for each STFT-window, we now have a few cross-power bands.
+
+        TODO: What is not addressed here is which station we want to get a TF for
+        and where in teh mth5 we would want to store the "answer product",.
+
+        If we requuire
+
+
+        Parameters
+        ----------
+        frequency_bands
+
+        Returns
+        -------
+
+        """
+        # output = xr.DataSet(time=self.dataset.time, freq=frequency_bands.band_centers)
+        # TODO: check FrequenmcyBands object for details of getting frequency axis
+
+        for i_time_window in time_windows: # len xrds.time
+            for band in frequency_bands:
+                cross_power_input_data = self.extract_band(band)  # this is an xarray
+                for ch_pair in channel_pairs:
+                    x = cross_power_input_data[ch_pair[0]]
+                    y = cross_power_input_data[ch_pair[1]]
+                    xpwr = x.flatten @ y.flatten.conj().T
+                    output[f"xpwr_{ch_pair[0]}{ch_pair[1]}"] = xpwr
+
+        print("Now archive this under tf_station")
+        return output
+
+# Weights vs masks
+
+def calculate_mask_from_feature(
+    feature_series,
+    threshold_obj, # has lower/upper bound, can be -inf, inf
+):
+    """
+
+    Returns
+    -------
+
+    """
+    mask1 = feature_series < threshold_obj.lower_bound
+    mask2 = feature_series > threshold_obj.upper_bound
+    return mask1 & mask2
+
+def calculate_weight_from_feature(
+    feature_series,
+    threshold_obj, # has lower/upper bound, can be -inf, inf
+):
+        """
+            This calculates a weighting function based on the thresholds
+            and possibly some other info, such as the distribution of the features.
+
+            The weigth function is interpolated over the range of the feature values
+            and then evaluated at the feature values.
+        Parameters
+        ----------
+        feature_series
+        threshold_obj
+
+        Returns
+        -------
+
+        """
+    pass
+
+def merge_masks():
+    """
+        calcualtes a "final mask" that is loaded and applied to the data
+        input to regression
+    """
+    pass
+
+def merge_weights():
+    """
+    calcualtes a "final mask" that is loaded and applied to the data
+        input to regression
+    Returns
+    -------
+
+    """
+    pass
+
+# TODO: add this method to tf-estimation right before robust regression.
+def apply_masks_and_weights():
+    pass
 
 def make_multistation_spectrogram(
     m: mth5.mth5.MTH5,
@@ -259,7 +401,6 @@ def make_multistation_spectrogram(
             logger.error(f"Maybe try adding FCs for {fcrc.run_id}")
             raise e #MTH5Error(error_msg)
 
-        # print(run_fc_group)
         fc_dec_level = run_fc_group.get_decimation_level(fcrc.decimation_level_id)
         if fcrc.channels:
             channels = list(fcrc.channels)
