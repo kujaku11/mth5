@@ -14,6 +14,7 @@ import pandas as pd
 import h5py
 
 from mth5.groups import BaseGroup, FCChannelDataset
+
 # from mth5.groups import FCGroup
 
 from mth5.helpers import validate_name
@@ -22,7 +23,9 @@ from mth5.utils.exceptions import MTH5Error
 from mt_metadata.transfer_functions.processing.fourier_coefficients import (
     Channel,
 )
-from mt_metadata.transfer_functions.processing.fourier_coefficients.decimation import Decimation
+from mt_metadata.transfer_functions.processing.fourier_coefficients.decimation import (
+    Decimation,
+)
 
 
 # =============================================================================
@@ -34,6 +37,8 @@ class MasterFCGroup(BaseGroup):
     Master group to hold various Fourier coefficient estimations of time series
     data.
     No metadata needed as of yet.
+
+    master -> processing run -> decimation levels -> channels
     """
 
     def __init__(self, group, **kwargs):
@@ -63,7 +68,9 @@ class MasterFCGroup(BaseGroup):
 
         """
 
-        return self._add_group(fc_name, FCGroup, group_metadata=fc_metadata, match="id")
+        return self._add_group(
+            fc_name, FCGroup, group_metadata=fc_metadata, match="id"
+        )
 
     def get_fc_group(self, fc_name):
         """
@@ -94,7 +101,7 @@ class MasterFCGroup(BaseGroup):
 class FCGroup(BaseGroup):
     """
     Holds a set of Fourier Coefficients based on a single set of configuration
-    parameters.
+    parameters. A processing run.
 
     .. note:: Must be calibrated FCs. Otherwise weird things will happen, can
      always rerun the FC estimation if the metadata changes.
@@ -113,7 +120,9 @@ class FCGroup(BaseGroup):
 
     def __init__(self, group, decimation_level_metadata=None, **kwargs):
 
-        super().__init__(group, group_metadata=decimation_level_metadata, **kwargs)
+        super().__init__(
+            group, group_metadata=decimation_level_metadata, **kwargs
+        )
 
     @BaseGroup.metadata.getter
     def metadata(self) -> Decimation:
@@ -230,7 +239,9 @@ class FCGroup(BaseGroup):
             )
             self.write_metadata()
 
-    def supports_aurora_processing_config(self, processing_config, remote) -> bool:
+    def supports_aurora_processing_config(
+        self, processing_config, remote
+    ) -> bool:
         """
 
         An "all-or-nothing" check: Return True if every (valid) decimation needed to satisfy the processing_config
@@ -255,7 +266,7 @@ class FCGroup(BaseGroup):
         for i, dec_level in enumerate(processing_config.decimations):
 
             # Quit checking if dec_level wasn't there
-            if (i > 0):
+            if i > 0:
                 if not levels_present[i - 1]:
                     return False
 
@@ -263,10 +274,14 @@ class FCGroup(BaseGroup):
             for fc_decimation_id in pre_existing_fc_decimation_ids_to_check:
                 fc_dec_group = self.get_decimation_level(fc_decimation_id)
                 fc_decimation = fc_dec_group.metadata
-                levels_present[i] = fc_decimation.has_fcs_for_aurora_processing(dec_level, remote)
+                levels_present[i] = fc_decimation.has_fcs_for_aurora_processing(
+                    dec_level, remote
+                )
 
                 if levels_present[i]:
-                    pre_existing_fc_decimation_ids_to_check.remove(fc_decimation_id)  # no need to check this one again
+                    pre_existing_fc_decimation_ids_to_check.remove(
+                        fc_decimation_id
+                    )  # no need to check this one again
                     break  # break inner for-loop over decimations
 
         return levels_present.all()
@@ -307,7 +322,9 @@ class FCDecimationGroup(BaseGroup):
 
     def __init__(self, group, decimation_level_metadata=None, **kwargs):
 
-        super().__init__(group, group_metadata=decimation_level_metadata, **kwargs)
+        super().__init__(
+            group, group_metadata=decimation_level_metadata, **kwargs
+        )
 
     @BaseGroup.metadata.getter
     def metadata(self):
@@ -418,7 +435,10 @@ class FCDecimationGroup(BaseGroup):
         ch_metadata.sample_rate_decimation_level = sample_rate_decimation_level
         ch_metadata.frequency_min = data_array.coords["frequency"].data.min()
         ch_metadata.frequency_max = data_array.coords["frequency"].data.max()
-        step_size = data_array.coords["time"].data[1] - data_array.coords["time"].data[0]
+        step_size = (
+            data_array.coords["time"].data[1]
+            - data_array.coords["time"].data[0]
+        )
         ch_metadata.sample_rate_window_step = step_size / np.timedelta64(1, "s")
         try:
             ch_metadata.units = data_array.units
@@ -496,7 +516,9 @@ class FCDecimationGroup(BaseGroup):
         elif len(nd_array.shape) == 2:
             self.add_channel(ch_name, fc_data=nd_array)
         else:
-            raise ValueError("input array must be shaped (n_frequencies, n_windows)")
+            raise ValueError(
+                "input array must be shaped (n_frequencies, n_windows)"
+            )
 
     def add_channel(
         self,
@@ -596,11 +618,11 @@ class FCDecimationGroup(BaseGroup):
             fc_dataset = self.hdf5_group[fc_name]
             fc_metadata = Channel(**dict(fc_dataset.attrs))
             return FCChannelDataset(fc_dataset, dataset_metadata=fc_metadata)
-        except (KeyError):
+        except KeyError:
             msg = f"{fc_name} does not exist, check groups_list for existing names"
             self.logger.error(msg)
             raise MTH5Error(msg)
-        except (OSError) as error:
+        except OSError as error:
             self.logger.error(error)
             raise MTH5Error(error)
 
@@ -640,8 +662,12 @@ class FCDecimationGroup(BaseGroup):
         channel_summary = self.channel_summary.copy()
 
         if not channel_summary.empty:
-            self._metadata.time_period.start = channel_summary.start.min().isoformat()
-            self._metadata.time_period.end = channel_summary.end.max().isoformat()
+            self._metadata.time_period.start = (
+                channel_summary.start.min().isoformat()
+            )
+            self._metadata.time_period.end = (
+                channel_summary.end.max().isoformat()
+            )
             self._metadata.sample_rate_decimation_level = (
                 channel_summary.sample_rate_decimation_level.unique()[0]
             )
@@ -650,11 +676,11 @@ class FCDecimationGroup(BaseGroup):
             )
             self.write_metadata()
 
-    def add_weights(
+    def add_feature(
         self,
-        weight_name,
-        weight_data=None,
-        weight_metadata=None,
+        feature_name,
+        feature_data=None,
+        feature_metadata=None,
         max_shape=(None, None, None),
         chunks=True,
         **kwargs,
