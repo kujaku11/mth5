@@ -3,10 +3,13 @@
 
     This module is concerned with working with Fourier coefficient data
 
+    TODO:
+    2. Give MultivariateDataset a covariance() method
+
     Tools include prototypes for
-    - extacting portions of an FC Run Time Series
+    - extracting portions of an FC Run Time Series
     - merging multiple stations runs together into an xarray
-    - relabelling channels to avoid namespace clashes for multistation data
+    - relabelling channels to avoid namespace clashes for multi-station data
 
 """
 
@@ -15,8 +18,9 @@ from loguru import logger
 from mth5.utils.exceptions import MTH5Error
 from typing import Optional, Tuple , Union
 import mth5.mth5
+import numpy as np
 import pandas as pd
-import xarray
+import xarray as xr
 
 
 @dataclass
@@ -69,8 +73,8 @@ class MultivariateLabelScheme():
     ----------
     :type label_elements: tuple
     :param label_elements: This is meant to tell what information is being concatenated into an MV channel label.
-    :type join_chan: str
-    :param join_chan: The string that is used to join the label elements.
+    :type join_char: str
+    :param join_char: The string that is used to join the label elements.
 
     """
     label_elements: tuple = "station", "component",
@@ -88,7 +92,7 @@ class MultivariateLabelScheme():
         :type elements:  tuple
         :param elements: Expected to be the label elements, default are (station, component)
 
-        :return: The name of the MV channel.
+        :return: The name of the channel (in a multiple-station context).
         :rtype: str
 
         """
@@ -97,17 +101,18 @@ class MultivariateLabelScheme():
     def split(self, mv_channel_name) -> dict:
         """
 
-        Splits a MV channel name and returns a dict of strings, keyed by self.label_elements.
+        Splits a multi-station channel name and returns a dict of strings, keyed by self.label_elements.
         This method is basically the reverse of self.join
 
-        :type mv_channel_name: str
         :param mv_channel_name: a multivariate channel name string
-        :return:
+        :type mv_channel_name: str
+        :return: Channel name as a dictionary.
+        :rtype: dict
 
         """
         splitted = mv_channel_name.split(self.join_char)
         if len(splitted) != len(self.label_elements):
-            msg = f"Incompatible map {splitted} and {self.label_elements}"
+            msg = f"Incompatable map {splitted} and {self.label_elements}"
             logger.error(msg)
             msg = f"cannot map {len(splitted)} to {len(self.label_elements)}"
             raise ValueError(msg)
@@ -118,14 +123,17 @@ class MultivariateLabelScheme():
 class MultivariateDataset():
     """
         Here is a container for a multivariate dataset.
-        The xarray is the main underlying item, but it will be useful to have functions that, \
-        for example return a list of the associated stations, or that return a list of cahnnels
-        that are associated with a station, etc.
+        The xarray is the main underlying item, but it will be useful to have functions that, for example returns a
+        list of the associated stations, or that return a list of channels that are associated with a station, etc.
+
+        This is intended to be used as a multivariate spectral dotaset at one frequency band.
+
+        TODO: Consider making this an extension of Spectrogram
 
     """
     def __init__(
         self,
-        xrds: xarray.Dataset,
+        xrds: xr.Dataset,
         label_scheme: Optional[Union[MultivariateLabelScheme, None]] = None,
     ):
         self._xrds = xrds
@@ -144,11 +152,11 @@ class MultivariateDataset():
         return self._label_scheme
 
     @property
-    def dataset(self) -> xarray.Dataset:
+    def dataset(self) -> xr.Dataset:
         return self._xrds
 
     @property
-    def dataarray(self) -> xarray.DataArray:
+    def dataarray(self) -> xr.DataArray:
         return self._xrds.to_array()
 
     @property
@@ -203,13 +211,12 @@ class MultivariateDataset():
         return self._station_channels[station]
 
 
-
 def make_multistation_spectrogram(
     m: mth5.mth5.MTH5,
     fc_run_chunks: list,
     label_scheme: Optional[MultivariateLabelScheme] = MultivariateLabelScheme(),
     rtype: Optional[Union[str, None]] = None
-) -> Union[xarray.Dataset, MultivariateDataset]:
+) -> Union[xr.Dataset, MultivariateDataset]:
     """
 
     See notes in mth5 issue #209.  Takes a list of FCRunChunks and returns the largest contiguous
@@ -259,7 +266,6 @@ def make_multistation_spectrogram(
             logger.error(f"Maybe try adding FCs for {fcrc.run_id}")
             raise e #MTH5Error(error_msg)
 
-        # print(run_fc_group)
         fc_dec_level = run_fc_group.get_decimation_level(fcrc.decimation_level_id)
         if fcrc.channels:
             channels = list(fcrc.channels)
@@ -270,7 +276,7 @@ def make_multistation_spectrogram(
         # could create name mapper dict from run_fc_group.channel_summary here if we wanted to.
 
         if fcrc.start:
-            # TODO: Push slicing into the to_xarray() command so we only access what we need
+            # TODO: Push slicing into the to_xarray() command so we only access what we need -- See issue #212
             cond = fc_dec_level_xrds.time >= fcrc.start_timestamp
             msg = (
                 f"trimming  {sum(~cond.data)} samples to {fcrc.start} "
@@ -280,7 +286,7 @@ def make_multistation_spectrogram(
             fc_dec_level_xrds = fc_dec_level_xrds.dropna(dim="time")
 
         if fcrc.end:
-            # TODO: Push slicing into the to_xarray() command so we only access what we need
+            # TODO: Push slicing into the to_xarray() command so we only access what we need -- See issue #212
             cond = fc_dec_level_xrds.time <= fcrc.end_timestamp
             msg = (
                 f"trimming  {sum(~cond.data)} samples to {fcrc.end} "
@@ -295,7 +301,6 @@ def make_multistation_spectrogram(
             msg = f"Label Scheme elements {label_scheme.id} not implemented"
             raise NotImplementedError(msg)
 
-        # qq = label_scheme.split(name_dict["ex"])  # test during dev -- To be deleted.
         if i_fcrc == 0:
             xrds = fc_dec_level_xrds.rename_vars(name_dict=name_dict)
         else:
