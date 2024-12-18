@@ -5,7 +5,7 @@
 
 import unittest
 
-from mth5.time_series.spectre import Spectrogram
+from mth5.timeseries.spectre import Spectrogram
 
 
 class TestSpectrogram(unittest.TestCase):
