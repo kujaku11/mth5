@@ -19,9 +19,9 @@ import xarray as xr
 
 from mth5.mth5 import MTH5
 from mth5.utils.exceptions import MTH5Error
-from mth5.timeseries.spectre.fc_tools import make_multistation_spectrogram
-from mth5.timeseries.spectre.fc_tools import FCRunChunk
-from mth5.timeseries.spectre.fc_tools import MultivariateDataset
+from mth5.timeseries.spectre import make_multistation_spectrogram
+from mth5.timeseries.spectre import FCRunChunk
+from mth5.timeseries.spectre import MultivariateDataset
 
 from mt_metadata.utils.mttime import MTime
 

@@ -3,8 +3,8 @@ Proof of concept for issue #209 mulitstation FCs
 
 """
 from loguru import logger
-from mth5.timeseries.spectre.fc_tools import FCRunChunk
-from mth5.timeseries.spectre.fc_tools import MultivariateLabelScheme
+from mth5.timeseries.spectre import FCRunChunk
+from mth5.timeseries.spectre import MultivariateLabelScheme
 import unittest
 
 
