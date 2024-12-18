@@ -19,9 +19,9 @@ import xarray as xr
 
 from mth5.mth5 import MTH5
 from mth5.utils.exceptions import MTH5Error
-from mth5.timeseries.spectre.fc_tools import make_multistation_spectrogram
-from mth5.timeseries.spectre.fc_tools import FCRunChunk
-from mth5.timeseries.spectre.fc_tools import MultivariateDataset
+from mth5.timeseries.spectre import make_multistation_spectrogram
+from mth5.timeseries.spectre import FCRunChunk
+from mth5.timeseries.spectre import MultivariateDataset
 
 from mt_metadata.utils.mttime import MTime
 
@@ -32,11 +32,15 @@ h5_filename = fn_path.joinpath("fc_test.h5")
 
 
 #@pytest.fixture
-def create_mth5_with_some_test_data():
+def create_mth5_with_some_test_data() -> MTH5:
     """
+        Creates an mth5 file with some FCs in it.
+        Populates the FCs based on data in a stored csv file.
 
-    Returns
-    -------
+        TODO: This could be improved by using a full, synthetic-data-based mth5.
+
+        :return: MTH5 object with some test data.
+        :rtype: MTH5
 
     """
     # get some test data to pack into mth5
@@ -77,7 +81,13 @@ def create_mth5_with_some_test_data():
     return m
 
 
-def create_xarray_test_dataset_with_various_dtypes():
+def create_xarray_test_dataset_with_various_dtypes() -> xr.Dataset:
+    """
+        Makes a dataset with a bunch of different dtypes for testing
+        :return: xrds - dataset with a different dtype for each datavar
+        :rtype: xr.Dataset
+
+    """
     t0 = pd.Timestamp("now")
     t1 = t0 + pd.Timedelta(seconds=1)
     t2 = t1 + pd.Timedelta(seconds=1)
@@ -96,13 +106,14 @@ def create_xarray_test_dataset_with_various_dtypes():
     xrds = xrds.expand_dims({"frequency": freq})
     return xrds
 
-def read_fc_csv(csv_name):
+def read_fc_csv(csv_name) -> xr.Dataset:
     """
-    read csv to xarray
-    :param csv_name: CSV File with some stored FC values for testing
-    :type csv_name: pathlib.Path
-    :return: the data from the csv as an xarray
-    :rtype: xarray.core.dataset.Dataset
+        Read csv of test FC data with pandas, and return it cast as xarray
+
+        :param csv_name: CSV File with some stored FC values for testing
+        :type csv_name: pathlib.Path
+        :return: the data from the csv as an xarray
+        :rtype: xarray.core.dataset.Dataset
 
     """
     df = pd.read_csv(

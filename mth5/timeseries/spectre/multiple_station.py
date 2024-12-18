@@ -4,7 +4,6 @@
     This module is concerned with working with Fourier coefficient data
 
     TODO:
-    1. move MultivariateDataset to multivariate_dataset.py
     2. Give MultivariateDataset a covariance() method
 
     Tools include prototypes for
@@ -74,8 +73,8 @@ class MultivariateLabelScheme():
     ----------
     :type label_elements: tuple
     :param label_elements: This is meant to tell what information is being concatenated into an MV channel label.
-    :type join_chan: str
-    :param join_chan: The string that is used to join the label elements.
+    :type join_char: str
+    :param join_char: The string that is used to join the label elements.
 
     """
     label_elements: tuple = "station", "component",
@@ -93,7 +92,7 @@ class MultivariateLabelScheme():
         :type elements:  tuple
         :param elements: Expected to be the label elements, default are (station, component)
 
-        :return: The name of the MV channel.
+        :return: The name of the channel (in a multiple-station context).
         :rtype: str
 
         """
@@ -102,17 +101,18 @@ class MultivariateLabelScheme():
     def split(self, mv_channel_name) -> dict:
         """
 
-        Splits a MV channel name and returns a dict of strings, keyed by self.label_elements.
+        Splits a multi-station channel name and returns a dict of strings, keyed by self.label_elements.
         This method is basically the reverse of self.join
 
-        :type mv_channel_name: str
         :param mv_channel_name: a multivariate channel name string
-        :return:
+        :type mv_channel_name: str
+        :return: Channel name as a dictionary.
+        :rtype: dict
 
         """
         splitted = mv_channel_name.split(self.join_char)
         if len(splitted) != len(self.label_elements):
-            msg = f"Incompatible map {splitted} and {self.label_elements}"
+            msg = f"Incompatable map {splitted} and {self.label_elements}"
             logger.error(msg)
             msg = f"cannot map {len(splitted)} to {len(self.label_elements)}"
             raise ValueError(msg)
@@ -123,11 +123,10 @@ class MultivariateLabelScheme():
 class MultivariateDataset():
     """
         Here is a container for a multivariate dataset.
-        The xarray is the main underlying item, but it will be useful to have functions that, \
-        for example return a list of the associated stations, or that return a list of channels
-        that are associated with a station, etc.
+        The xarray is the main underlying item, but it will be useful to have functions that, for example returns a
+        list of the associated stations, or that return a list of channels that are associated with a station, etc.
 
-        This is intended to be used as a multivariate spectral dotaset at one frequenc band, .
+        This is intended to be used as a multivariate spectral dotaset at one frequency band.
 
         TODO: Consider making this an extension of Spectrogram
 
@@ -211,191 +210,6 @@ class MultivariateDataset():
 
         return self._station_channels[station]
 
-    def extract_band(self, band):
-        """
-            Extracts a sub-xarray for frequencies f, such that
-            band.lower_bound <= f <= band.upper_bound
-        Parameters
-        ----------
-        band
-
-        Returns
-        -------
-
-        """
-        pass
-
-    def archive_cross_powers(
-        self,
-        tf_station: str,
-        with_fcs: bool = True,
-
-    ):
-        """
-        tf_station: str
-         This tells us under which station we should store the output of this function.
-         TODO: Consider moving this to another function which performs archiving in future.
-
-        with_fcs: bool
-         If True, the features are packed into the same hdf5-group as the FCs,
-         as its own dataset.
-         If False: the features are packed into the hdf5 features-group.
-
-        Returns
-        -------
-
-        """
-
-    def calculate_cross_powers(
-        self,
-        frequency_bands,
-        channel_pairs: list,
-    ):
-        """
-
-        Parameters
-        ----------
-        frequency_bands: iterable (of intervals)
-         Each element of this iterable tells the lower and upper bounds of the
-         cross-power calculation bands.  These may become objects with information about
-         tapers as ewwll.
-
-        Returns
-        -------
-
-        This calculates the crosspowers with an appropriate
-        labelling scheme and returns an xr or dataframe,
-        multiindexed by frequency (the band centers) and time.
-        So for each STFT-window, we now have a few cross-power bands.
-
-        TODO: What is not addressed here is which station we want to get a TF for
-        and where in teh mth5 we would want to store the "answer product",.
-
-        If we requuire
-
-
-        Parameters
-        ----------
-        frequency_bands
-
-        Returns
-        -------
-
-        """
-        # output = xr.DataSet(time=self.dataset.time, freq=frequency_bands.band_centers)
-        # TODO: check FrequenmcyBands object for details of getting frequency axis
-
-        for i_time_window in time_windows: # len xrds.time
-            for band in frequency_bands:
-                cross_power_input_data = self.extract_band(band)  # this is an xarray
-                for ch_pair in channel_pairs:
-                    x = cross_power_input_data[ch_pair[0]]
-                    y = cross_power_input_data[ch_pair[1]]
-                    xpwr = x.flatten @ y.flatten.conj().T
-                    output[f"xpwr_{ch_pair[0]}{ch_pair[1]}"] = xpwr
-
-        print("Now archive this under tf_station")
-        return output
-
-
-    def cross_power(
-        self,
-        aweights: Optional[np.ndarray] = None,
-        bias: Optional[bool] = True
-    ) -> xr.DataArray:
-        """
-            Calculate the cross-power from a multivariate, complex-valued array of Fourier coefficients.
-
-            For a multivaraiate FC Dataset with n_time time windows, this returns an array with the same number of time
-            windows.  At each time _t_, the result is a covariance matrix.
-
-            Caveats and Notes:
-              - This method calls numpy.cov, which means that the cross-power is computes as X@XH (rather than
-              XH@X). Sometimes X*XH is referred to as the Vozoff convention, whereas XH*X could be the
-              Bendat & Piersol convention.
-              - np.cov subtracts the meas before computing the cross terms.
-              - This methos will use the entire band of the spectrogram.
-
-            :param X: Multivariate time series as an xarray
-            :type X: xr.DataArray
-            :param aweights: This is a "passthrough" parameter to numpy.cov These relative weights are typically large for
-             observations considered "important" and smaller for observations considered less "important". If ``ddof=0``
-             the array of weights can be used to assign probabilities to observation vectors.
-            :type aweights: Optional[np.ndarray]
-            :param bias: bias=True normalizes by N instead of (N-1).
-            :type bias: bool
-
-            :rtype: xr.DataArray
-            :return: The covariance matrix of the data in xarray form.
-
-        """
-        X = self.dataarray
-        channels = list(X.coords["variable"].values)
-
-        S = xr.DataArray(
-            np.cov(X, aweights=aweights, bias=bias),
-            dims=["channel_1", "channel_2"],
-            coords={"channel_1": channels, "channel_2": channels},
-        )
-        return S
-
-# Weights vs masks
-
-def calculate_mask_from_feature(
-    feature_series,
-    threshold_obj, # has lower/upper bound, can be -inf, inf
-):
-    """
-
-    Returns
-    -------
-
-    """
-    mask1 = feature_series < threshold_obj.lower_bound
-    mask2 = feature_series > threshold_obj.upper_bound
-    return mask1 & mask2
-
-def calculate_weight_from_feature(
-    feature_series,
-    threshold_obj, # has lower/upper bound, can be -inf, inf
-):
-        """
-            This calculates a weighting function based on the thresholds
-            and possibly some other info, such as the distribution of the features.
-
-            The weigth function is interpolated over the range of the feature values
-            and then evaluated at the feature values.
-        Parameters
-        ----------
-        feature_series
-        threshold_obj
-
-        Returns
-        -------
-
-        """
-        pass
-
-def merge_masks():
-    """
-        calcualtes a "final mask" that is loaded and applied to the data
-        input to regression
-    """
-    pass
-
-def merge_weights():
-    """
-    calcualtes a "final mask" that is loaded and applied to the data
-        input to regression
-    Returns
-    -------
-
-    """
-    pass
-
-# TODO: add this method to tf-estimation right before robust regression.
-def apply_masks_and_weights():
-    pass
 
 def make_multistation_spectrogram(
     m: mth5.mth5.MTH5,
@@ -462,7 +276,7 @@ def make_multistation_spectrogram(
         # could create name mapper dict from run_fc_group.channel_summary here if we wanted to.
 
         if fcrc.start:
-            # TODO: Push slicing into the to_xarray() command so we only access what we need
+            # TODO: Push slicing into the to_xarray() command so we only access what we need -- See issue #212
             cond = fc_dec_level_xrds.time >= fcrc.start_timestamp
             msg = (
                 f"trimming  {sum(~cond.data)} samples to {fcrc.start} "
@@ -472,7 +286,7 @@ def make_multistation_spectrogram(
             fc_dec_level_xrds = fc_dec_level_xrds.dropna(dim="time")
 
         if fcrc.end:
-            # TODO: Push slicing into the to_xarray() command so we only access what we need
+            # TODO: Push slicing into the to_xarray() command so we only access what we need -- See issue #212
             cond = fc_dec_level_xrds.time <= fcrc.end_timestamp
             msg = (
                 f"trimming  {sum(~cond.data)} samples to {fcrc.end} "
@@ -487,7 +301,6 @@ def make_multistation_spectrogram(
             msg = f"Label Scheme elements {label_scheme.id} not implemented"
             raise NotImplementedError(msg)
 
-        # qq = label_scheme.split(name_dict["ex"])  # test during dev -- To be deleted.
         if i_fcrc == 0:
             xrds = fc_dec_level_xrds.rename_vars(name_dict=name_dict)
         else:
