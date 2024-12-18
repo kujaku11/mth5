@@ -3,10 +3,14 @@
 
     This module is concerned with working with Fourier coefficient data
 
+    TODO:
+    1. move MultivariateDataset to multivariate_dataset.py
+    2. Give MultivariateDataset a covariance() method
+
     Tools include prototypes for
-    - extacting portions of an FC Run Time Series
+    - extracting portions of an FC Run Time Series
     - merging multiple stations runs together into an xarray
-    - relabelling channels to avoid namespace clashes for multistation data
+    - relabelling channels to avoid namespace clashes for multi-station data
 
 """
 
@@ -15,8 +19,9 @@ from loguru import logger
 from mth5.utils.exceptions import MTH5Error
 from typing import Optional, Tuple , Union
 import mth5.mth5
+import numpy as np
 import pandas as pd
-import xarray
+import xarray as xr
 
 
 @dataclass
@@ -119,13 +124,17 @@ class MultivariateDataset():
     """
         Here is a container for a multivariate dataset.
         The xarray is the main underlying item, but it will be useful to have functions that, \
-        for example return a list of the associated stations, or that return a list of cahnnels
+        for example return a list of the associated stations, or that return a list of channels
         that are associated with a station, etc.
+
+        This is intended to be used as a multivariate spectral dotaset at one frequenc band, .
+
+        TODO: Consider making this an extension of Spectrogram
 
     """
     def __init__(
         self,
-        xrds: xarray.Dataset,
+        xrds: xr.Dataset,
         label_scheme: Optional[Union[MultivariateLabelScheme, None]] = None,
     ):
         self._xrds = xrds
@@ -144,11 +153,11 @@ class MultivariateDataset():
         return self._label_scheme
 
     @property
-    def dataset(self) -> xarray.Dataset:
+    def dataset(self) -> xr.Dataset:
         return self._xrds
 
     @property
-    def dataarray(self) -> xarray.DataArray:
+    def dataarray(self) -> xr.DataArray:
         return self._xrds.to_array()
 
     @property
@@ -288,6 +297,48 @@ class MultivariateDataset():
         print("Now archive this under tf_station")
         return output
 
+
+    def cross_power(
+        self,
+        aweights: Optional[np.ndarray] = None,
+        bias: Optional[bool] = True
+    ) -> xr.DataArray:
+        """
+            Calculate the cross-power from a multivariate, complex-valued array of Fourier coefficients.
+
+            For a multivaraiate FC Dataset with n_time time windows, this returns an array with the same number of time
+            windows.  At each time _t_, the result is a covariance matrix.
+
+            Caveats and Notes:
+              - This method calls numpy.cov, which means that the cross-power is computes as X@XH (rather than
+              XH@X). Sometimes X*XH is referred to as the Vozoff convention, whereas XH*X could be the
+              Bendat & Piersol convention.
+              - np.cov subtracts the meas before computing the cross terms.
+              - This methos will use the entire band of the spectrogram.
+
+            :param X: Multivariate time series as an xarray
+            :type X: xr.DataArray
+            :param aweights: This is a "passthrough" parameter to numpy.cov These relative weights are typically large for
+             observations considered "important" and smaller for observations considered less "important". If ``ddof=0``
+             the array of weights can be used to assign probabilities to observation vectors.
+            :type aweights: Optional[np.ndarray]
+            :param bias: bias=True normalizes by N instead of (N-1).
+            :type bias: bool
+
+            :rtype: xr.DataArray
+            :return: The covariance matrix of the data in xarray form.
+
+        """
+        X = self.dataarray
+        channels = list(X.coords["variable"].values)
+
+        S = xr.DataArray(
+            np.cov(X, aweights=aweights, bias=bias),
+            dims=["channel_1", "channel_2"],
+            coords={"channel_1": channels, "channel_2": channels},
+        )
+        return S
+
 # Weights vs masks
 
 def calculate_mask_from_feature(
@@ -323,7 +374,7 @@ def calculate_weight_from_feature(
         -------
 
         """
-    pass
+        pass
 
 def merge_masks():
     """
@@ -351,7 +402,7 @@ def make_multistation_spectrogram(
     fc_run_chunks: list,
     label_scheme: Optional[MultivariateLabelScheme] = MultivariateLabelScheme(),
     rtype: Optional[Union[str, None]] = None
-) -> Union[xarray.Dataset, MultivariateDataset]:
+) -> Union[xr.Dataset, MultivariateDataset]:
     """
 
     See notes in mth5 issue #209.  Takes a list of FCRunChunks and returns the largest contiguous
