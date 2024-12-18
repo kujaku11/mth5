@@ -6,3 +6,4 @@ from .multiple_station import FCRunChunk
 from .multiple_station import MultivariateDataset
 from .multiple_station import MultivariateLabelScheme
 from .multiple_station import make_multistation_spectrogram
+from .spectrogram import Spectrogram
