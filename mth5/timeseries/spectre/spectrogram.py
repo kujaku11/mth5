@@ -3,9 +3,9 @@
  i.e. A 2D time series of Fourier coefficients with axes time and frequency.
 
 """
-from aurora.time_series.frequency_band_helpers import extract_band
-from typing import Optional
-import xarray
+from mt_metadata.transfer_functions.processing.aurora.band import Band
+from typing import Optional, Union
+import xarray as xr
 
 
 class Spectrogram(object):
@@ -125,7 +125,7 @@ class Spectrogram(object):
     # def cross_powers(self, ch1, ch2, band=None):
     #     pass
 
-    def flatten(self, chunk_by: Optional[str] = "time") -> xarray.Dataset:
+    def flatten(self, chunk_by: Optional[str] = "time") -> xr.Dataset:
         """
 
         Returns the flattened xarray (time-chunked by default).
@@ -158,3 +158,52 @@ class Spectrogram(object):
         elif chunk_by == "frequency":
             observation = ("frequency", "time")
         return self.dataset.stack(observation=observation)
+
+
+def extract_band(
+    frequency_band: Band,
+    fft_obj: Union[xr.Dataset, xr.DataArray],
+    channels: list = None,
+    epsilon: float = 1e-7
+) -> Union[xr.Dataset, xr.DataArray]:
+    """
+        Extracts a frequency band from xr.DataArray representing a spectrogram.
+
+        TODO: Update varable names.
+
+        Development Notes:
+        #1: 20230902
+        TODO: Decide if base dataset object should be a xr.DataArray (not xr.Dataset)
+        - drop=True does not play nice with h5py and Dataset, results in a type error.
+        File "stringsource", line 2, in h5py.h5r.Reference.__reduce_cython__
+        TypeError: no default __reduce__ due to non-trivial __cinit__
+        However, it works OK with DataArray, so maybe use data array in general
+
+        Parameters
+        ----------
+        frequency_band: mt_metadata.transfer_functions.processing.aurora.band.Band
+            Specifies interval corresponding to a frequency band
+        fft_obj: xarray.core.dataset.Dataset
+            To be replaced with an fft_obj() class in future
+        epsilon: float
+            Use this when you are worried about missing a frequency due to
+            round off error.  This is in general not needed if we use a df/2 pad
+            around true harmonics.
+
+        Returns
+        -------
+        band: xr.DataArray
+            The frequencies within the band passed into this function
+    """
+    cond1 = fft_obj.frequency >= frequency_band.lower_bound - epsilon
+    cond2 = fft_obj.frequency <= frequency_band.upper_bound + epsilon
+    try:
+        band = fft_obj.where(cond1 & cond2, drop=True)
+    except TypeError:  # see Note #1
+        tmp = fft_obj.to_array()
+        band = tmp.where(cond1 & cond2, drop=True)
+        band = band.to_dataset("variable")
+    if channels:
+        band = band[channels]
+    return band
+
