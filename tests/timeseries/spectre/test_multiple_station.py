@@ -1,6 +1,8 @@
 """
 Proof of concept for issue #209 mulitstation FCs
 
+TODO: Add test that builds FCs 
+
 """
 from loguru import logger
 from mth5.timeseries.spectre import FCRunChunk

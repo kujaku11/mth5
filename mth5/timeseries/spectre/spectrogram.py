@@ -3,8 +3,10 @@
  i.e. A 2D time series of Fourier coefficients with axes time and frequency.
 
 """
+
 from mt_metadata.transfer_functions.processing.aurora.band import Band
 from typing import Optional, Union
+
 import xarray as xr
 
 
@@ -23,9 +25,9 @@ class Spectrogram(object):
         self._frequency_increment = None
 
     def _lowest_frequency(self):
-        pass
+        pass  # return self.dataset.frequency.min
 
-    def _higest_frequency(self):
+    def _highest_frequency(self):
         pass
 
     def __str__(self) -> str:
@@ -163,7 +165,7 @@ class Spectrogram(object):
 def extract_band(
     frequency_band: Band,
     fft_obj: Union[xr.Dataset, xr.DataArray],
-    channels: list = None,
+    channels: Optional[list] = None,
     epsilon: float = 1e-7
 ) -> Union[xr.Dataset, xr.DataArray]:
     """
@@ -172,19 +174,20 @@ def extract_band(
         TODO: Update varable names.
 
         Development Notes:
-        #1: 20230902
-        TODO: Decide if base dataset object should be a xr.DataArray (not xr.Dataset)
-        - drop=True does not play nice with h5py and Dataset, results in a type error.
-        File "stringsource", line 2, in h5py.h5r.Reference.__reduce_cython__
-        TypeError: no default __reduce__ due to non-trivial __cinit__
-        However, it works OK with DataArray, so maybe use data array in general
+            Base dataset object should be a xr.DataArray (not xr.Dataset)
+            - drop=True does not play nice with h5py and Dataset, results in a type error.
+            File "stringsource", line 2, in h5py.h5r.Reference.__reduce_cython__
+            TypeError: no default __reduce__ due to non-trivial __cinit__
+            However, it works OK with DataArray.
 
         Parameters
         ----------
         frequency_band: mt_metadata.transfer_functions.processing.aurora.band.Band
             Specifies interval corresponding to a frequency band
         fft_obj: xarray.core.dataset.Dataset
-            To be replaced with an fft_obj() class in future
+            Short-time-Fourier-transformed datat.  Can be multichannel.
+        channels: list
+            Channel names to extract.
         epsilon: float
             Use this when you are worried about missing a frequency due to
             round off error.  This is in general not needed if we use a df/2 pad
@@ -192,18 +195,18 @@ def extract_band(
 
         Returns
         -------
-        band: xr.DataArray
+        extracted_band: xr.DataArray
             The frequencies within the band passed into this function
     """
     cond1 = fft_obj.frequency >= frequency_band.lower_bound - epsilon
     cond2 = fft_obj.frequency <= frequency_band.upper_bound + epsilon
     try:
-        band = fft_obj.where(cond1 & cond2, drop=True)
+        extracted_band = fft_obj.where(cond1 & cond2, drop=True)
     except TypeError:  # see Note #1
         tmp = fft_obj.to_array()
-        band = tmp.where(cond1 & cond2, drop=True)
-        band = band.to_dataset("variable")
+        extracted_band = tmp.where(cond1 & cond2, drop=True)
+        extracted_band = extracted_band.to_dataset("variable")
     if channels:
-        band = band[channels]
-    return band
+        extracted_band = extracted_band[channels]
+    return extracted_band
 

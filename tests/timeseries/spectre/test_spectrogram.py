@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 """
     This modules contains tests for the Spectrogram class.
+
+    TODO: Add a test that accesses the synthetic data, and adds some FC Levels, then reads those FC levels and
+    casts them to spectogram objects.  Currently this still depends on methods in aurora.
+    
 """
 
 import unittest
