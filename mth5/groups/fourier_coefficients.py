@@ -167,7 +167,7 @@ class FCGroup(BaseGroup):
 
     def add_decimation_level(
         self, decimation_level_name, decimation_level_metadata=None
-    ):
+    ):  # TODO: FIXME NameError when output correctly dtyped-> FCDecimationGroup:
         """
         add a Decimation level
 
