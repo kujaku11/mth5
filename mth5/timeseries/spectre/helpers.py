@@ -39,8 +39,8 @@ def read_back_fcs(m: Union[MTH5, pathlib.Path, str], mode: str = "r") -> None:
     """
     channel_summary_df = m.channel_summary.to_dataframe()
     logger.debug(channel_summary_df)
-    usssr_grouper = channel_summary_df.groupby(GROUPBY_COLUMNS)
-    for (survey, station, sample_rate), usssr_group in usssr_grouper:
+    grouper = channel_summary_df.groupby(GROUPBY_COLUMNS)
+    for (survey, station, sample_rate), group in grouper:
         logger.info(f"survey: {survey}, station: {station}, sample_rate {sample_rate}")
         station_obj = m.get_station(station, survey)
         fc_groups = station_obj.fourier_coefficients_group.groups_list
