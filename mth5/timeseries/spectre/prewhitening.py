@@ -6,12 +6,14 @@ import xarray as xr
 from typing import Literal, Optional
 
 def apply_prewhitening(
-    prewhitening_type: Optional[Literal["first difference", ]] = None,
+    prewhitening_type: Literal["first difference", ""],
     run_xrds_input: xr.Dataset,
 ) -> xr.Dataset:
     """
     Applies pre-whitening to time series to avoid spectral leakage when FFT is applied.
 
+    Development Notes:
+    - Consider passing the stft object, or a prewhitening object instead of a string literal as first argument.
     Parameters
     ----------
     prewhitening_type: Literal["first difference", ]
