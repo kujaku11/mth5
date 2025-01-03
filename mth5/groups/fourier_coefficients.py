@@ -176,7 +176,7 @@ class FCGroup(BaseGroup):
 
     def add_decimation_level(
         self, decimation_level_name, decimation_level_metadata=None
-    ):
+    ):  # TODO: FIXME NameError when output correctly dtyped-> FCDecimationGroup:
         """
         add a Decimation level
 
@@ -263,7 +263,8 @@ class FCGroup(BaseGroup):
         """
         pre_existing_fc_decimation_ids_to_check = self.groups_list
         levels_present = np.full(processing_config.num_decimation_levels, False)
-        for i, dec_level in enumerate(processing_config.decimations):
+
+        for i, aurora_decimation_level in enumerate(processing_config.decimations):
 
             # Quit checking if dec_level wasn't there
             if i > 0:
@@ -274,10 +275,10 @@ class FCGroup(BaseGroup):
             for fc_decimation_id in pre_existing_fc_decimation_ids_to_check:
                 fc_dec_group = self.get_decimation_level(fc_decimation_id)
                 fc_decimation = fc_dec_group.metadata
-                levels_present[i] = fc_decimation.has_fcs_for_aurora_processing(
-                    dec_level, remote
+                levels_present[i] = aurora_decimation_level.is_consistent_with_archived_fc_parameters(
+                    fc_decimation=fc_decimation,
+                    remote=remote
                 )
-
                 if levels_present[i]:
                     pre_existing_fc_decimation_ids_to_check.remove(
                         fc_decimation_id
@@ -307,7 +308,7 @@ class FCDecimationGroup(BaseGroup):
         - method (FFT, wavelet, ...)
         - anti alias filter
         - prewhitening type
-        - extra_pre_fft_detrend_type
+        - per_window_detrend_type
         - recoloring (True | False)
         - harmonics_kept (index values of harmonics kept (list) | 'all')
         - window parameters

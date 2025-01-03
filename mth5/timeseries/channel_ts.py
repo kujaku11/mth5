@@ -24,24 +24,19 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from loguru import logger
-import scipy
-from scipy import signal
-import scipy
-
 
 import mt_metadata.timeseries as metadata
 from mt_metadata.timeseries.filters import ChannelResponse
 from mt_metadata.utils.mttime import MTime
 from mt_metadata.utils.list_dict import ListDict
-
 from mth5.utils import fdsn_tools
 from mth5.timeseries.ts_filters import RemoveInstrumentResponse
 from mth5.timeseries.ts_helpers import (
     make_dt_coordinates,
     get_decimation_sample_rates,
 )
-
 from obspy.core import Trace
+from scipy import signal
 
 # =============================================================================
 # make a dictionary of available metadata classes
