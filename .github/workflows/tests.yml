@@ -46,8 +46,6 @@ jobs:
       run: |
         source activate mth5-test
         pip install -e .
-        pip uninstall mt_metadata -y
-        pip install git+https://github.com/kujaku11/mt_metadata.git@fix_issue_243
         conda list
 
     #- name: Install Jupyter and dependencies
