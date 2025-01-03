@@ -15,8 +15,6 @@ from mth5.helpers import close_open_files
 from mth5.timeseries.spectre.helpers import add_fcs_to_mth5
 from mth5.timeseries.spectre.helpers import read_back_fcs
 from mth5.timeseries.spectre import Spectrogram
-from mtpy.processing import RunSummary, KernelDataset
-
 
 import unittest
 
