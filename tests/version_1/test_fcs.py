@@ -331,11 +331,11 @@ class TestFCFromXarray(unittest.TestCase):
     def test_can_update_decimation_level_metadata(self):
         window_type = "hann"
         # set the window typw
-        self.decimation_level.metadata.window.type = window_type
+        self.decimation_level.metadata.stft.window.type = window_type
         # assert that the updated value is true
         with self.subTest("window.type is set"):
             self.assertEqual(
-                self.decimation_level.metadata.window.type, window_type
+                self.decimation_level.metadata.stft.window.type, window_type
             )
         self.decimation_level.update_metadata()
         self.decimation_level.write_metadata()
@@ -345,7 +345,7 @@ class TestFCFromXarray(unittest.TestCase):
 
         tmp = self.fc_group.get_decimation_level("3")
         with self.subTest("get_decimation_level.metadata.window.type"):
-            self.assertEqual(tmp.metadata.window.type, window_type)
+            self.assertEqual(tmp.metadata.stft.window.type, window_type)
 
     def test_from_xarray_dtypes(self):
         """
