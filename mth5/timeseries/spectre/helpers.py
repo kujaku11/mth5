@@ -11,6 +11,7 @@ from mth5.utils.helpers import path_or_mth5_object
 from typing import Literal, Optional, Union
 from .prewhitening import apply_prewhitening
 from .prewhitening import apply_recoloring
+from .stft import run_ts_to_stft_scipy
 
 import mth5
 import numpy as np
@@ -216,71 +217,66 @@ def read_back_fcs(m: Union[MTH5, pathlib.Path, str], mode: str = "r") -> None:
     return
 
 
-def run_ts_to_stft_scipy(
-    decimation_obj: Union[AuroraDecimationLevel, FCDecimation],
-    run_xrds_orig: xr.Dataset,
-) -> xr.Dataset:
-    """
-    Converts a runts object into a time series of Fourier coefficients.
-    This method uses scipy.signal.spectrogram.
-
-
-    Parameters
-    ----------
-    decimation_obj : mt_metadata.transfer_functions.processing.aurora.DecimationLevel
-        Information about how the decimation level is to be processed
-        Note: This works with FCdecimation and AuroraDecimationLevel becuase test_fourier_coefficients
-         and test_stft_methods_agree both use them)
-        Note: Both of these objects are basically spectrogram metadata with provenance for decimation levels.
-    run_xrds_orig : : xarray.core.dataset.Dataset
-        Time series to be processed
-
-    Returns
-    -------
-    stft_obj : xarray.core.dataset.Dataset
-        Time series of Fourier coefficients
-    """
-    run_xrds = apply_prewhitening(decimation_obj.stft.prewhitening_type, run_xrds_orig)
-
-    stft_obj = xr.Dataset()
-    for channel_id in run_xrds.data_vars:
-        ff, tt, specgm = ssig.spectrogram(
-            run_xrds[channel_id].data,
-            fs=decimation_obj.sample_rate_decimation,
-            window=decimation_obj.window.taper(),
-            nperseg=decimation_obj.window.num_samples,
-            noverlap=decimation_obj.window.overlap,
-            detrend="linear",
-            scaling="density",
-            mode="complex",
-        )
-
-        # drop Nyquist
-        ff = ff[:-1]
-        specgm = specgm[:-1, :]
-        specgm *= np.sqrt(2)  # compensate energy for keeping only half the spectrum
-
-        # make time_axis
-        tt = tt - tt[0]
-        tt *= decimation_obj.sample_rate_decimation
-        time_axis = run_xrds.time.data[tt.astype(int)]
-
-        xrd = xr.DataArray(
-            specgm.T,
-            dims=["time", "frequency"],
-            coords={"frequency": ff, "time": time_axis},
-        )
-        stft_obj.update({channel_id: xrd})
-
-    # TODO : remove try/except after mt_metadata issue 238 addressed
-    try:
-        to_recolor_or_not_to_recolor = decimation_obj.recoloring
-    except AttributeError:
-        to_recolor_or_not_to_recolor = decimation_obj.stft.recoloring
-    if to_recolor_or_not_to_recolor:
-        stft_obj = apply_recoloring(decimation_obj, stft_obj)
-
-    return stft_obj
+# def run_ts_to_stft_scipy(
+#     decimation_obj: Union[AuroraDecimationLevel, FCDecimation],
+#     run_xrds_orig: xr.Dataset,
+# ) -> xr.Dataset:
+#     """
+#     Converts a runts object into a time series of Fourier coefficients.
+#     This method uses scipy.signal.spectrogram.
+#
+#
+#     Parameters
+#     ----------
+#     decimation_obj : mt_metadata.transfer_functions.processing.aurora.DecimationLevel
+#         Information about how the decimation level is to be processed
+#         Note: This works with FCdecimation and AuroraDecimationLevel becuase test_fourier_coefficients
+#          and test_stft_methods_agree both use them)
+#         Note: Both of these objects are basically spectrogram metadata with provenance for decimation levels.
+#     run_xrds_orig : : xarray.core.dataset.Dataset
+#         Time series to be processed
+#
+#     Returns
+#     -------
+#     stft_obj : xarray.core.dataset.Dataset
+#         Time series of Fourier coefficients
+#     """
+#     run_xrds = apply_prewhitening(decimation_obj.stft.prewhitening_type, run_xrds_orig)
+#
+#     stft_obj = xr.Dataset()
+#     for channel_id in run_xrds.data_vars:
+#         ff, tt, specgm = ssig.spectrogram(
+#             run_xrds[channel_id].data,
+#             fs=decimation_obj.decimation.sample_rate,
+#             window=decimation_obj.window.taper(),
+#             nperseg=decimation_obj.window.num_samples,
+#             noverlap=decimation_obj.window.overlap,
+#             detrend="linear",
+#             scaling="density",
+#             mode="complex",
+#         )
+#
+#         # drop Nyquist
+#         ff = ff[:-1]
+#         specgm = specgm[:-1, :]
+#         specgm *= np.sqrt(2)  # compensate energy for keeping only half the spectrum
+#
+#         # make time_axis
+#         tt = tt - tt[0]
+#         tt *= decimation_obj.decimation.sample_rate
+#         time_axis = run_xrds.time.data[tt.astype(int)]
+#
+#         xrd = xr.DataArray(
+#             specgm.T,
+#             dims=["time", "frequency"],
+#             coords={"frequency": ff, "time": time_axis},
+#         )
+#         stft_obj.update({channel_id: xrd})
+#
+#         to_recolor_or_not_to_recolor = decimation_obj.stft.recoloring
+#         stft_obj = apply_recoloring(decimation_obj, stft_obj)
+#
+#     return stft_obj
 
 
 def calibrate_stft_obj(
