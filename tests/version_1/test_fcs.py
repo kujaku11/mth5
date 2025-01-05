@@ -368,7 +368,7 @@ class TestFCFromXarray(unittest.TestCase):
         fc_decimation_level = self.fc_group.add_decimation_level(dec_level_name, decimation_level_metadata=fc_metadata)
         xrds = create_xarray_test_dataset_with_various_dtypes()
 
-        fc_decimation_level.from_xarray(xrds, fc_metadata.sample_rate)
+        fc_decimation_level.from_xarray(xrds, fc_metadata.decimation.sample_rate)
         fc_decimation_level.update_metadata()
         self.fc_group.update_metadata()
         self.m.close_mth5()

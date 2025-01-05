@@ -164,7 +164,7 @@ def _add_spectrogram_to_mth5(
         decimation_level_metadata=fc_decimation,
     )
     fc_decimation_group.from_xarray(
-        stft_obj, fc_decimation_group.metadata.time_series_decimation.sample_rate
+        stft_obj, fc_decimation_group.metadata.decimation.sample_rate
     )
     fc_decimation_group.update_metadata()
     fc_group.update_metadata()
