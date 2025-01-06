@@ -1,5 +1,5 @@
 """
-    This module has methods for prewhiteing time series to reduce spectral leakage before FFT.
+    This module has methods for pre-whitening time series to reduce spectral leakage before FFT.
 """
 import xarray as xr
 
@@ -12,12 +12,10 @@ def apply_prewhitening(
     """
     Applies pre-whitening to time series to avoid spectral leakage when FFT is applied.
 
-    Development Notes:
-    - Consider passing the stft object, or a prewhitening object instead of a string literal as first argument.
     Parameters
     ----------
     prewhitening_type: Literal["first difference", ]
-        Placeholder to allow for multiple methods of prewhitening.  Currently only
+        Placeholder to allow for multiple methods of pre-whitening.  Currently only
         "first difference" is supported.
     run_xrds_input : xr.Dataset
         Time series to be pre-whitened (can be multivariate).
