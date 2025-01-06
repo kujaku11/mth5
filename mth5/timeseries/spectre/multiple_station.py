@@ -129,6 +129,8 @@ class MultivariateDataset():
         This is intended to be used as a multivariate spectral dotaset at one frequency band.
 
         TODO: Consider making this an extension of Spectrogram
+        TODO: Rename this class to MultivariateSpectrogram.
+        
 
     """
     def __init__(
