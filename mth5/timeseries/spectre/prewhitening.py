@@ -3,6 +3,7 @@
 """
 import xarray as xr
 
+from loguru import logger
 from typing import Literal, Optional
 
 def apply_prewhitening(
@@ -50,7 +51,7 @@ def apply_recoloring(
     Parameters
     ----------
     prewhitening_type: Literal["first difference", ]
-        Placeholder to allow for multiple methods of prewhitening.  Currently only
+        Placeholder to allow for multiple methods of pre-whitening.  Currently only
         "first difference" is supported.
     stft_obj : xarray.core.dataset.Dataset
         Time series of Fourier coefficients to be recoloured
@@ -65,6 +66,7 @@ def apply_recoloring(
     # No recoloring needed if prewhitening not appiled, or recoloring set to False
     if not prewhitening_type:
         msg = "No prewhitening was defined -- skipping recoloring"
+        logger.debug(msg)
         return stft_obj
 
     if prewhitening_type == "first difference":
