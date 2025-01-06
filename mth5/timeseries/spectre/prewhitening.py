@@ -1,6 +1,7 @@
 """
     This module has methods for pre-whitening time series to reduce spectral leakage before FFT.
 """
+import numpy as np
 import xarray as xr
 
 from loguru import logger
