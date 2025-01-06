@@ -19,16 +19,19 @@ class Spectrogram(object):
 
     """
 
-    def __init__(self, dataset=None):
+    def __init__(
+        self,
+        dataset: Optional[xr.Dataset] = None
+    ):
         """Constructor"""
         self._dataset = dataset
         self._frequency_increment = None
 
-    def _lowest_frequency(self):
+    def _lowest_frequency(self):  # -> float:
         pass  # return self.dataset.frequency.min
 
-    def _highest_frequency(self):
-        pass
+    def _highest_frequency(self):  # -> float:
+        pass  # return self.dataset.frequency.max
 
     def __str__(self) -> str:
         """Returns a Description of frequency coverage"""

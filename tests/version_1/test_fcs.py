@@ -383,8 +383,9 @@ class TestFCFromXarray(unittest.TestCase):
 
     def test_multi_station_spectrogram(self):
         """
-        TODO: This could be moved to fc_tools.
-        It is here because there was a handy dataset already available here.
+        TODO: This should have its own test in tests/spectre/test_multiple_station.py
+         It can be moved once there is a fixture available for the dataset in the test_fcs.py module.
+         See Issue #227.
 
         """
         fc_run_chunks = []
@@ -400,7 +401,6 @@ class TestFCFromXarray(unittest.TestCase):
             )
             fc_run_chunks.append(fcrc)
 
-        # TODO: These tests should go in their own module, but need test dataset (issue #227)
         xrds = make_multistation_spectrogram(self.m, fc_run_chunks, rtype="xrds")
 
 
