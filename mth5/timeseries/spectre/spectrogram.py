@@ -63,6 +63,11 @@ class Spectrogram(object):
         return self._dataset
 
     @property
+    def dataarray(self):
+        """returns the underlying xarray data"""
+        return self._dataset.to_array()
+
+    @property
     def time_axis(self):
         """returns the time axis of the underlying xarray"""
         return self.dataset.time
@@ -130,7 +135,7 @@ class Spectrogram(object):
     def flatten(self, chunk_by: Optional[str] = "time") -> xr.Dataset:
         """
 
-        Returns the flattened xarray (time-chunked by default).
+            Reshape the 2D spectrogram into a 1D flattened xarray (time-chunked by default).
 
         Parameters
         ----------
@@ -171,7 +176,7 @@ def extract_band(
     """
         Extracts a frequency band from xr.DataArray representing a spectrogram.
 
-        TODO: Update varable names.
+        TODO: Update variable names.
 
         Development Notes:
             Base dataset object should be a xr.DataArray (not xr.Dataset)
@@ -209,4 +214,3 @@ def extract_band(
     if channels:
         extracted_band = extracted_band[channels]
     return extracted_band
-
