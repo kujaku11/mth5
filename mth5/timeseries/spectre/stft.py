@@ -71,6 +71,6 @@ def run_ts_to_stft_scipy(
         stft_obj.update({channel_id: xrd})
 
     if decimation_obj.stft.recoloring:
-        stft_obj = apply_recoloring(decimation_obj, stft_obj)
+        stft_obj = apply_recoloring(decimation_obj.stft.prewhitening_type, stft_obj)
 
     return stft_obj
