@@ -75,14 +75,14 @@ def initialize_xrda_1d(
     if value != 0:
         data = value * np.ones(k, dtype=dtype)
         xrda.data = data
-    return xrda 
+    return xrda
 
 
 def initialize_xrda_2d(
     channels: list,
+    coords: dict,
     dtype: Optional[type] = complex,
     value: Optional[Union[complex, float, bool]] = 0,
-    dims: Optional[list] = None,
 ) -> xr.DataArray:
     """
     Returns a 2D xr.DataArray with dimensions channel_1 and channel_2.
@@ -91,31 +91,66 @@ def initialize_xrda_2d(
     ----------
     channels: list
         The channels in the multivariate array
+    coords: dict
+        the coordinates of the data array to return.
     dtype: type, optional
         The datatype to initialize the array.
         Common cases are complex, float, and bool
     value: Union[complex, float, bool], optional
         The default value to assign the array
-    dims: list, optional
-        List of two channel lists for the two dimensions. If None, uses the same channels for both dimensions.
 
     Returns
     -------
     xrda: xarray.core.dataarray.DataArray
         An xarray container for the channel variances etc., initialized to zeros.
     """
-    if dims is None:
-        dims = [channels, channels]
-
-    K1 = len(dims[0])
-    K2 = len(dims[1])
+    dims = list(coords.keys())
+    K1 = len(coords[dims[0]])
+    K2 = len(coords[dims[1]])
     xrda = xr.DataArray(
         np.zeros((K1, K2), dtype=dtype),
-        dims=["channel_1", "channel_2"],
-        coords={"channel_1": dims[0], "channel_2": dims[1]},
+        dims=dims,
+        coords=coords
     )
     if value != 0:
         data = value * np.ones(xrda.shape, dtype=dtype)
         xrda.data = data
 
-    return xrda 
+    return xrda
+
+
+def initialize_xrda_2d_cov(
+    channels, dtype=complex, value: Optional[Union[complex, float, bool]] = 0
+):
+    """
+     TODO: consider changing nomenclature from dims=["channel_1", "channel_2"],
+     to dims=["variable_1", "variable_2"], to be consistent with initialize_xrda_1d
+
+    Parameters
+     ----------
+     channels: list
+         The channels in the multivariate array. The covariance matrix will be square
+         with dimensions len(channels) x len(channels).
+     dtype: type
+         The datatype to initialize the array.
+         Common cases are complex, float, and bool
+     value: Union[complex, float, bool]
+         The default value to assign the array
+
+    Returns
+     -------
+     xrda: xarray.core.dataarray.DataArray
+         An xarray container for the channel covariances, initialized to zeros.
+         The matrix is square with dimensions len(channels) x len(channels).
+    """
+    K = len(channels)
+    xrda = xr.DataArray(
+        np.zeros((K, K), dtype=dtype),
+        dims=["channel_1", "channel_2"],
+        coords={"channel_1": channels, "channel_2": channels},
+    )
+    if value != 0:
+        data = value * np.ones(xrda.shape, dtype=dtype)
+        xrda.data = data
+
+    return xrda

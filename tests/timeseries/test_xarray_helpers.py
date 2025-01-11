@@ -5,7 +5,12 @@ import numpy as np
 import xarray as xr
 import pytest
 
-from mth5.timeseries.xarray_helpers import covariance_xr, initialize_xrda_1d, initialize_xrda_2d
+from mth5.timeseries.xarray_helpers import (
+    covariance_xr,
+    initialize_xrda_1d,
+    initialize_xrda_2d,
+    initialize_xrda_2d_cov,
+)
 
 
 def test_covariance_xr():
@@ -156,30 +161,50 @@ def test_initialize_xrda_1d():
 def test_initialize_xrda_2d():
     """Test initialization of 2D xarray DataArray."""
     channels = ["ex", "ey", "hx", "hy"]
+    channels2 = ["hx", "hy"]
     
     # Test with default parameters (complex)
-    xrda = initialize_xrda_2d(channels)
-    assert xrda.dims == ("channel_1", "channel_2")
-    assert list(xrda.coords["channel_1"].values) == channels
-    assert list(xrda.coords["channel_2"].values) == channels
+    coords = {
+        'channel_1': channels,
+        'channel_2': channels2
+    }
+    xrda = initialize_xrda_2d(channels, coords=coords)
+    
+    assert xrda.dims == ('channel_1', 'channel_2')
+    assert list(xrda.coords['channel_1'].values) == channels
+    assert list(xrda.coords['channel_2'].values) == channels2
+    assert xrda.dtype == complex
+    assert np.allclose(xrda.values, np.zeros((len(channels), len(channels2))))
+    
+    # Test with real value
+    xrda = initialize_xrda_2d(channels, coords=coords, dtype=float, value=1.5)
+    assert xrda.dtype == float
+    assert np.allclose(xrda.values, np.ones((len(channels), len(channels2))) * 1.5)
+    
+    # Test with complex value
+    xrda = initialize_xrda_2d(channels, coords=coords, dtype=complex, value=2+3j)
+    assert xrda.dtype == complex
+    assert np.allclose(xrda.values, np.ones((len(channels), len(channels2))) * (2+3j))
+
+
+def test_initialize_xrda_2d_cov():
+    """Test initialization of 2D covariance xarray DataArray."""
+    channels = ["ex", "ey", "hx", "hy"]
+    
+    # Test with default parameters (complex)
+    xrda = initialize_xrda_2d_cov(channels)
+    assert xrda.dims == ('channel_1', 'channel_2')
+    assert list(xrda.coords['channel_1'].values) == channels
+    assert list(xrda.coords['channel_2'].values) == channels
     assert xrda.dtype == complex
     assert np.allclose(xrda.values, np.zeros((len(channels), len(channels))))
     
     # Test with real value
-    xrda = initialize_xrda_2d(channels, dtype=float, value=1.5)
+    xrda = initialize_xrda_2d_cov(channels, dtype=float, value=1.5)
     assert xrda.dtype == float
     assert np.allclose(xrda.values, np.ones((len(channels), len(channels))) * 1.5)
     
     # Test with complex value
-    xrda = initialize_xrda_2d(channels, dtype=complex, value=2+3j)
+    xrda = initialize_xrda_2d_cov(channels, dtype=complex, value=2+3j)
     assert xrda.dtype == complex
-    assert np.allclose(xrda.values, np.ones((len(channels), len(channels))) * (2+3j))
-    
-    # Test with different dimensions
-    channels2 = ["hx", "hy"]
-    xrda = initialize_xrda_2d(channels, dims=[channels, channels2], dtype=complex, value=1-1j)
-    assert xrda.dims == ("channel_1", "channel_2")
-    assert list(xrda.coords["channel_1"].values) == channels
-    assert list(xrda.coords["channel_2"].values) == channels2
-    assert xrda.shape == (len(channels), len(channels2))
-    assert np.allclose(xrda.values, np.ones((len(channels), len(channels2))) * (1-1j)) 
+    assert np.allclose(xrda.values, np.ones((len(channels), len(channels))) * (2+3j)) 
