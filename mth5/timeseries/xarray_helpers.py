@@ -107,9 +107,10 @@ def initialize_xrda_2d(
     if dims is None:
         dims = [channels, channels]
 
-    K = len(channels)
+    K1 = len(dims[0])
+    K2 = len(dims[1])
     xrda = xr.DataArray(
-        np.zeros((K, K), dtype=dtype),
+        np.zeros((K1, K2), dtype=dtype),
         dims=["channel_1", "channel_2"],
         coords={"channel_1": dims[0], "channel_2": dims[1]},
     )
