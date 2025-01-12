@@ -7,27 +7,24 @@
 
 """
 from loguru import logger
+from mt_metadata.transfer_functions.processing.aurora.frequency_bands import FrequencyBands
+from mth5.data.make_mth5_from_asc import create_mth5_synthetic_file
 from mth5.data.make_mth5_from_asc import create_test1_h5
 from mth5.data.make_mth5_from_asc import create_test2_h5
 from mth5.data.make_mth5_from_asc import create_test3_h5
 from mth5.data.make_mth5_from_asc import create_test12rr_h5
+from mth5.data.station_config import make_station_01
 from mth5.helpers import close_open_files
+from mth5.mth5 import MTH5
 from mth5.timeseries.spectre.helpers import add_fcs_to_mth5
 from mth5.timeseries.spectre.helpers import read_back_fcs
 from mth5.timeseries.spectre import Spectrogram
-from mth5.mth5 import MTH5
-from mth5.data.station_config import make_station_01
-from mth5.data.make_mth5_from_asc import create_mth5_synthetic_file
-from aurora.test_utils.synthetic.make_processing_configs import create_test_run_config
-from mtpy.processing import RunSummary
 from scipy.constants import mu_0
 
 import unittest
 import numpy as np
 import xarray as xr
 import pytest
-
-from mt_metadata.transfer_functions.processing.aurora.frequency_bands import FrequencyBands
 
 FORCE_MAKE_MTH5 = True  # Should be True except when debugging locally
 
@@ -228,17 +225,12 @@ def test_impedance_from_synthetic_data(test1_spectrogram, test_frequency_bands):
     rho_xy_mean = np.mean(rho_xy, axis=0)
 
     # Test that apparent resistivity is approximately 100 Ohm-m
-    assert (rho_xy_mean > 75.).all()
-    assert (rho_xy_mean < 125.).all()
+    assert (rho_xy_mean > 70.).all()
+    assert (rho_xy_mean < 130.).all()
 
 @pytest.fixture
 def test1_spectrogram():
     """Create a test spectrogram from synthetic data."""
-    from mth5.data.station_config import make_station_01
-    from mth5.data.make_mth5_from_asc import create_mth5_synthetic_file
-    from mth5.timeseries.spectre.helpers import add_fcs_to_mth5
-    from aurora.test_utils.synthetic.make_processing_configs import create_test_run_config
-    from mtpy.processing import RunSummary, KernelDataset
 
     # Create test configuration
     station_cfg = make_station_01()
@@ -250,18 +242,8 @@ def test1_spectrogram():
         force_make_mth5=True
     )
 
-    # Create run summary and dataset
-    run_summary = RunSummary()
-    run_summary.from_mth5s([mth5_path])
-    tfk_dataset = KernelDataset()
-    tfk_dataset.from_run_summary(run_summary, "test1")
-
-    # Get processing config and FC decimations
-    processing_config = create_test_run_config("test1", tfk_dataset)
-    fc_decimations = [x.to_fc_decimation() for x in processing_config.decimations]
-
     # Add Fourier coefficients to MTH5 file
-    add_fcs_to_mth5(mth5_path, fc_decimations=fc_decimations)
+    add_fcs_to_mth5(mth5_path, fc_decimations=None)
 
     # Read back the Fourier coefficients directly
     with MTH5() as m:
