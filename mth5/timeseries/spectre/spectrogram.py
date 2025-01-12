@@ -252,6 +252,7 @@ class Spectrogram(object):
         method: str = "numpy_cov"
     ) -> xr.DataArray:
         """
+        TODO: Add tests for this WIP Work-in-progress method
         Compute full covariance matrix for spectrogram data.
 
         For complex-valued data, the result is a Hermitian matrix where:
