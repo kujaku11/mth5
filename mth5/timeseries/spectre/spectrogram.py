@@ -7,6 +7,7 @@ from typing import List, Optional, Tuple, Union
 
 # Third-party imports
 import numpy as np
+import pandas as pd
 import xarray as xr
 
 # Local imports
@@ -31,6 +32,7 @@ class Spectrogram(object):
         """Constructor"""
         self._dataset = dataset
         self._frequency_increment = None
+        self._frequency_band = None
 
     def _lowest_frequency(self):  # -> float:
         pass  # return self.dataset.frequency.min
@@ -79,6 +81,22 @@ class Spectrogram(object):
     def time_axis(self):
         """returns the time axis of the underlying xarray"""
         return self.dataset.time
+
+    @property
+    def frequency_axis(self):
+        """returns the frequency axis of the underlying xarray"""
+        return self.dataset.frequency
+
+    @property
+    def frequency_band(self) -> Band:
+        """ returns a frequency band object representing the spectrograms band (assumes continuous)"""
+        if self._frequency_band is None:
+            band = Band(
+            frequency_min=self.frequency_axis.min().item(),
+            frequency_max=self.frequency_axis.max().item()
+            )
+            self._frequency_band = band
+        return self._frequency_band
 
     @property
     def frequency_increment(self):
@@ -140,9 +158,42 @@ class Spectrogram(object):
         """ joins channel names with join_char"""
         return f"{ch1}{join_char}{ch2}"
 
+    def _validate_frequency_bands(
+        self,
+        frequency_bands: FrequencyBands,
+        strict: bool = True,
+    ):
+        """
+        Make sure that the frequency bands passed are relevant.  If not, drop and warn.
+
+        :param frequency_bands: A collection of bands
+        :type frequency_bands: FrequencyBands
+        :param strict: If true, band must be contained to be valid, if false, any overlapping band is valid.
+        :type strict: bool
+        :return:
+        """
+        if strict:
+            valid_bands = [x for x in frequency_bands.bands() if self.frequency_band.contains(x)]
+        else:
+            valid_bands = [x for x in frequency_bands.bands() if self.frequency_band.overlaps(x)]
+        lower_bounds = [x.lower_bound for x in valid_bands]
+        upper_bounds = [x.upper_bound for x in valid_bands]
+        valid_frequency_bands = FrequencyBands(
+            pd.DataFrame(data={
+                "lower_bound": lower_bounds,
+                "upper_bound": upper_bounds,
+            })
+        )
+
+        # TODO: If strict, only take bands that are contained
+        return valid_frequency_bands
+
     def cross_powers(self, frequency_bands, channel_pairs=None):
         """
         Compute cross powers between channel pairs for given frequency bands.
+
+        TODO: Add handling for case when band in frequency_bands is not contained
+        in self.frequencies.
 
         Parameters
         ----------
@@ -162,6 +213,7 @@ class Spectrogram(object):
         """
         from itertools import combinations_with_replacement
 
+        valid_frequency_bands = self._validate_frequency_bands(frequency_bands)
         # If no channel pairs specified, use all possible pairs
         if channel_pairs is None:
             channels = list(self.dataset.data_vars.keys())
@@ -179,7 +231,7 @@ class Spectrogram(object):
         )
 
         # Compute cross powers for each band and channel pair
-        for band in frequency_bands.bands():
+        for band in valid_frequency_bands.bands():
             # Extract band data
             band_data = self.extract_band(band).dataset
 
@@ -188,7 +240,7 @@ class Spectrogram(object):
                 label = self.cross_power_label(ch1, ch2)
                 # Always compute as ch1 * conj(ch2)
                 xpower = (band_data[ch1] * band_data[ch2].conj()).mean(dim='frequency')
-                
+
                 # Store the cross power
                 xpower_array.loc[dict(frequency=band.center_frequency, variable=label, time=slice(None))] = xpower
 
