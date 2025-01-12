@@ -132,7 +132,7 @@ class Spectrogram(object):
             epsilon=self.frequency_increment / 2.0,
         )
         # Drop NaN values along the frequency dimension
-        extracted_band_dataset = extracted_band_dataset.dropna(dim='frequency', how='any')
+        # extracted_band_dataset = extracted_band_dataset.dropna(dim='frequency', how='any')
         spectrogram = Spectrogram(dataset=extracted_band_dataset)
         return spectrogram
 
