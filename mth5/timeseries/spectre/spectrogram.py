@@ -12,7 +12,7 @@ import xarray as xr
 # Local imports
 from mt_metadata.transfer_functions.processing.aurora.band import Band
 from mt_metadata.transfer_functions.processing.aurora.frequency_bands import FrequencyBands
-from mth5.timeseries.xarray_helpers import covariance_xr
+from mth5.timeseries.xarray_helpers import covariance_xr, initialize_xrda_2d
 
 
 class Spectrogram(object):
@@ -114,8 +114,6 @@ class Spectrogram(object):
         """
         Returns another instance of Spectrogram, with the frequency axis reduced to the input band.
 
-        TODO: Consider returning a copy of the data...
-
         Parameters
         ----------
         frequency_band
@@ -133,80 +131,68 @@ class Spectrogram(object):
             channels=channels,
             epsilon=self.frequency_increment / 2.0,
         )
+        # Drop NaN values along the frequency dimension
+        extracted_band_dataset = extracted_band_dataset.dropna(dim='frequency', how='any')
         spectrogram = Spectrogram(dataset=extracted_band_dataset)
         return spectrogram
 
+    def cross_power_label(self, ch1: str, ch2: str, join_char: str = "_"):
+        """ joins channel names with join_char"""
+        return f"{ch1}{join_char}{ch2}"
+
     def cross_powers(self, frequency_bands, channel_pairs=None):
         """
-        Calculate cross powers between channel pairs for given frequency bands.
-        
+        Compute cross powers between channel pairs for given frequency bands.
+
         Parameters
         ----------
         frequency_bands : FrequencyBands
             The frequency bands to compute cross powers for.
         channel_pairs : list of tuples, optional
             List of channel pairs to compute cross powers for.
-            If None, defaults to [('ex', 'ey')].
-            
+            If None, all possible pairs will be used.
+
         Returns
         -------
-        CrossPowerFeatures
-            Object containing the computed cross powers.
-            
-        Notes
-        -----
-        Input data is expected to be in:
-        - E-fields: mV/km
-        - H-fields: nT
-        
-        Cross powers will maintain these units:
-        - E-E: (mV/km)^2
-        - H-H: nT^2
-        - E-H: mV/km * nT
+        xr.Dataset
+            Dataset containing cross powers for all channel pairs.
+            Each variable is named by the channel pair (e.g. 'ex_hy')
+            and contains a 2D array with dimensions (frequency, time).
+            All variables share common frequency and time coordinates.
         """
-        from mth5.timeseries.spectre.cross_power_features import CrossPowerFeatures
-        
-        # Default to ex-ey pair if none specified
+        from itertools import combinations_with_replacement
+
+        # If no channel pairs specified, use all possible pairs
         if channel_pairs is None:
-            channel_pairs = [('ex', 'ey')]
-        
-        # Initialize output features dictionary
-        features = {}
-        
-        # Get all unique channels needed
-        channels = list(set([ch for pair in channel_pairs for ch in pair]))
-        
-        # Convert bands generator to list for length and reuse
-        bands = list(frequency_bands.bands())
-        
-        # For each frequency band
-        for i, band in enumerate(bands):
-            # Extract data for this band
-            band_spectrogram = self.extract_band(band, channels=channels)
-            
-            # For each channel pair
-            for pair in channel_pairs:
-                ch1, ch2 = pair
-                # Compute cross power for this pair
-                # For each time point, average over frequencies in the band
-                # Note: Units are preserved in the cross power calculation
-                xpower = (band_spectrogram.dataset[ch1] * np.conj(band_spectrogram.dataset[ch2])).mean(dim='frequency')
+            channels = list(self.dataset.data_vars.keys())
+            channel_pairs = list(combinations_with_replacement(channels, 2))
+
+        # Create variable names from channel pairs
+        var_names = [self.cross_power_label(ch1, ch2) for ch1, ch2 in channel_pairs]
+
+        # Initialize a single multi-channel 2D xarray
+        xpower_array = initialize_xrda_2d(
+            var_names,
+            coords={'frequency': frequency_bands.band_centers(),
+                   'time': self.dataset.time.values},
+            dtype=complex
+        )
+
+        # Compute cross powers for each band and channel pair
+        for band in frequency_bands.bands():
+            # Extract band data
+            band_data = self.extract_band(band).dataset
+
+            # Compute cross powers for each channel pair
+            for ch1, ch2 in channel_pairs:
+                label = self.cross_power_label(ch1, ch2)
+                # Always compute as ch1 * conj(ch2)
+                xpower = (band_data[ch1] * band_data[ch2].conj()).mean(dim='frequency')
                 
-                # Store in features
-                key = f"{ch1}_{ch2}"
-                if key not in features:
-                    # Initialize with correct shape for time dimension
-                    features[key] = xr.DataArray(
-                        np.zeros((len(bands), len(self.dataset.time)), dtype=complex),
-                        dims=['band', 'time'],
-                        coords={
-                            'time': self.dataset.time,
-                            'band': range(len(bands))
-                        }
-                    )
-                features[key][i, :] = xpower
-        
-        return CrossPowerFeatures(features, channel_pairs)
+                # Store the cross power
+                xpower_array.loc[dict(frequency=band.center_frequency, variable=label, time=slice(None))] = xpower
+
+        return xpower_array
 
     def covariance_matrix(
         self,
@@ -215,12 +201,12 @@ class Spectrogram(object):
     ) -> xr.DataArray:
         """
         Compute full covariance matrix for spectrogram data.
-        
+
         For complex-valued data, the result is a Hermitian matrix where:
         - diagonal elements are real-valued variances
         - off-diagonal element [i,j] is E[ch_i * conj(ch_j)]
         - off-diagonal element [j,i] is the complex conjugate of [i,j]
-        
+
         Parameters
         ----------
         band_data : Spectrogram, optional
@@ -228,7 +214,7 @@ class Spectrogram(object):
             If None, use the full spectrogram
         method : str
             Computation method. Currently only supports 'numpy_cov'
-            
+
         Returns
         -------
         xr.DataArray
@@ -237,7 +223,7 @@ class Spectrogram(object):
         """
         data = band_data or self
         flat_data = data.flatten(chunk_by="time")
-        
+
         if method == "numpy_cov":
             # Convert to DataArray for covariance_xr
             stacked = flat_data.to_array(dim="variable")
