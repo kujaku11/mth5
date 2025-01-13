@@ -7,16 +7,24 @@
 
 """
 from loguru import logger
+from mt_metadata.transfer_functions.processing.aurora.frequency_bands import FrequencyBands
+from mth5.data.make_mth5_from_asc import create_mth5_synthetic_file
 from mth5.data.make_mth5_from_asc import create_test1_h5
 from mth5.data.make_mth5_from_asc import create_test2_h5
 from mth5.data.make_mth5_from_asc import create_test3_h5
 from mth5.data.make_mth5_from_asc import create_test12rr_h5
+from mth5.data.station_config import make_station_01
 from mth5.helpers import close_open_files
+from mth5.mth5 import MTH5
 from mth5.timeseries.spectre.helpers import add_fcs_to_mth5
 from mth5.timeseries.spectre.helpers import read_back_fcs
 from mth5.timeseries.spectre import Spectrogram
+from scipy.constants import mu_0
 
 import unittest
+import numpy as np
+import xarray as xr
+import pytest
 
 FORCE_MAKE_MTH5 = True  # Should be True except when debugging locally
 
@@ -80,31 +88,181 @@ class TestAddFourierCoefficientsToSyntheticData(unittest.TestCase):
 
         return
 
-class TestSpectrogram(unittest.TestCase):
+
+def test_cross_powers_basic(test1_spectrogram, test_frequency_bands):
+    """Test basic cross power computation."""
+    # Define channel pairs to test, including a conjugate pair
+    channel_pairs = [("ex", "ey"), ("hx", "hy"), ("ex", "hx"), ("hx", "ex")]
+
+    # Compute cross powers
+    xpowers = test1_spectrogram.cross_powers(
+        test_frequency_bands,
+        channel_pairs=channel_pairs
+    )
+    xpowers = xpowers.to_dataset(dim='variable')
+
+    # Test structure
+    assert len(xpowers.data_vars) == len(channel_pairs)
+    for pair in channel_pairs:
+        key = f"{pair[0]}_{pair[1]}"
+        assert key in xpowers
+        assert np.iscomplexobj(xpowers[key].values)
+
+    # Test conjugate property
+    ex_hx = xpowers["ex_hx"].values
+    hx_ex = xpowers["hx_ex"].values
+    assert np.allclose(ex_hx, np.conj(hx_ex), rtol=1e-10, atol=1e-15)
+
+def test_cross_powers_specific_pairs(test1_spectrogram, test_frequency_bands):
+    """Test cross power computation with specific channel pairs."""
+    # Define channel pairs to test
+    channel_pairs = [("ex", "hx"), ("ey", "hy")]
+
+    # Compute cross powers
+    xpowers = test1_spectrogram.cross_powers(
+        test_frequency_bands,
+        channel_pairs=channel_pairs
+    )
+    xpowers = xpowers.to_dataset(dim='variable')
+
+    # Test structure
+    assert len(xpowers.data_vars) == len(channel_pairs)
+    for pair in channel_pairs:
+        key = f"{pair[0]}_{pair[1]}"
+        assert key in xpowers
+        assert np.iscomplexobj(xpowers[key].values)
+
+def test_integrated_cross_powers(test1_spectrogram, test_frequency_bands):
     """
-    Test Spectrogram class
+    Test cross power computation using synthetic data.
+
+    This tests:
+    1. E-field cross powers (ex-ey)
+    2. H-field cross powers (hx-hy, hx-hz, hy-hz)
+    3. E-H cross powers (ex-hx, ex-hy, ey-hx, ey-hy)
     """
+    # Define channel pairs to test
+    e_pairs = [("ex", "ey")]
+    h_pairs = [("hx", "hy"), ("hx", "hz"), ("hy", "hz")]
+    eh_pairs = [("ex", "hx"), ("ey", "hx"), ("ey", "hy")]  # Remove ex-hy since it's in conjugate_pairs
 
-    @classmethod
-    def setUpClass(self):
-        pass
+    # For conjugate test, add both forward and reverse pairs
+    conjugate_pairs = [("ex", "hy"), ("hy", "ex")]
 
-    def setUp(self):
-        pass
+    # Compute cross powers
+    xpowers = test1_spectrogram.cross_powers(
+        test_frequency_bands,
+        channel_pairs=e_pairs + h_pairs + eh_pairs + conjugate_pairs
+    )
+    xpowers = xpowers.to_dataset(dim='variable')
 
-    def test_initialize(self):
-        spectrogram = Spectrogram()
-        assert isinstance(spectrogram, Spectrogram)
+    # Test structure
+    assert len(xpowers.data_vars) == len(e_pairs + h_pairs + eh_pairs + conjugate_pairs)
 
-    def test_slice_band(self):
-        """
-        Place holder
-        TODO: Once FCs are added to an mth5, load a spectrogram and extract a Band
-        """
-        pass
+    # Test E-field cross powers
+    for pair in e_pairs:
+        key = f"{pair[0]}_{pair[1]}"
+        assert key in xpowers
+        assert np.iscomplexobj(xpowers[key].values)
 
+    # Test H-field cross powers
+    for pair in h_pairs:
+        key = f"{pair[0]}_{pair[1]}"
+        assert key in xpowers
+        assert np.iscomplexobj(xpowers[key].values)
+
+    # Test E-H cross powers (transfer functions)
+    for pair in eh_pairs:
+        key = f"{pair[0]}_{pair[1]}"
+        assert key in xpowers
+        assert np.iscomplexobj(xpowers[key].values)
+
+    # Test conjugate property
+    ex_hy = xpowers["ex_hy"].values
+    hy_ex = xpowers["hy_ex"].values
+    assert np.allclose(ex_hy, np.conj(hy_ex), rtol=1e-10, atol=1e-15)
+
+def test_impedance_from_synthetic_data(test1_spectrogram, test_frequency_bands):
+    """Test impedance tensor calculation using synthetic data."""
+    # Define channel pairs for impedance calculation
+    channel_pairs = [
+        ("ex", "hx"), ("ex", "hy"),
+        ("ey", "hx"), ("ey", "hy"),
+        ("hx", "hx"), ("hy", "hy"),
+        ("hx", "hy")
+    ]
+
+    # Compute cross powers
+    xpowers = test1_spectrogram.cross_powers(
+        test_frequency_bands,
+        channel_pairs=channel_pairs
+    )
+    xpowers = xpowers.to_dataset(dim='variable')
+
+    # Calculate Zxy for each frequency band
+    ex_hy = xpowers["ex_hy"].values
+    ex_hx = xpowers["ex_hx"].values
+    hx_hx = xpowers["hx_hx"].values
+    hy_hy = xpowers["hy_hy"].values
+    hx_hy = xpowers["hx_hy"].values
+
+    # Compute determinant of H-field auto-spectra matrix
+    det_h = hx_hx * hy_hy - hx_hy * np.conj(hx_hy)
+
+    # Calculate Zxy using matrix operations
+    zxy = (ex_hy * hx_hx - ex_hx * hx_hy) / det_h
+
+    # Unit conversion factors
+    # Input data is in nT and mV/km
+    # Convert to SI units (T and V/m) for impedance calculation
+    zxy *= 1e3
+
+    # Calculate apparent resistivity
+    freq = test_frequency_bands.band_centers()
+    omega = 2 * np.pi * freq
+    zxy2 = np.abs(zxy) ** 2
+    rho_xy = (mu_0 / omega) * zxy2.T
+    rho_xy_mean = np.mean(rho_xy, axis=0)
+
+    # Test that apparent resistivity is approximately 100 Ohm-m
+    assert (rho_xy_mean > 70.).all()
+    assert (rho_xy_mean < 130.).all()
+
+@pytest.fixture
+def test1_spectrogram():
+    """Create a test spectrogram from synthetic data."""
+
+    # Create test configuration
+    station_cfg = make_station_01()
+
+    # Create test h5 file with Fourier coefficients
+    mth5_path = create_mth5_synthetic_file(
+        station_cfgs=[station_cfg],
+        mth5_name="test1.h5",
+        force_make_mth5=True
+    )
+
+    # Add Fourier coefficients to MTH5 file
+    add_fcs_to_mth5(mth5_path, fc_decimations=None)
+
+    # Read back the Fourier coefficients directly
+    with MTH5() as m:
+        m.open_mth5(mth5_path, mode="r")
+        station_obj = m.get_station("test1", "EMTF Synthetic")
+        fc_group = station_obj.fourier_coefficients_group.get_fc_group("001")
+        dec_level = fc_group.get_decimation_level("0")  # Get first decimation level
+        ds = dec_level.to_xarray()
+        return Spectrogram(dataset=ds)
+
+@pytest.fixture
+def test_frequency_bands():
+    """Create frequency bands for testing"""
+    edges = np.array([
+        [0.01, 0.1],   # Low band
+        [0.1, 0.2],    # Mid band
+        [0.2, 0.49]     # High band
+    ])
+    return FrequencyBands(edges)
 
 if __name__ == "__main__":
-    # tmp = TestSpectrogram()
-    # tmp.test_initialize()
     unittest.main()
