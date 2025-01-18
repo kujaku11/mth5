@@ -19,9 +19,7 @@ from mth5.groups import BaseGroup, FCChannelDataset
 from mth5.helpers import validate_name
 from mth5.utils.exceptions import MTH5Error
 
-from mt_metadata.transfer_functions.processing.fourier_coefficients import (
-    Channel,
-)
+from mt_metadata.transfer_functions.processing import fourier_coefficients as fc
 from mt_metadata.transfer_functions.processing.fourier_coefficients.decimation import Decimation
 
 
@@ -412,7 +410,7 @@ class FCDecimationGroup(BaseGroup):
             msg = f"Must input a xarray Dataset or DataArray not {type(data_array)}"
             self.logger.error(msg)
             raise TypeError(msg)
-        ch_metadata = Channel()
+        ch_metadata = fc.Channel()
         ch_metadata.time_period.start = data_array.time[0].values
         ch_metadata.time_period.end = data_array.time[-1].values
         ch_metadata.sample_rate_decimation_level = sample_rate_decimation_level
@@ -547,7 +545,7 @@ class FCDecimationGroup(BaseGroup):
         fc_name = validate_name(fc_name)
 
         if fc_metadata is None:
-            fc_metadata = Channel(name=fc_name)
+            fc_metadata = fc.Channel(name=fc_name)
         if fc_data is not None:
             if not isinstance(
                 fc_data, (np.ndarray, xr.DataArray, xr.Dataset, pd.DataFrame)
@@ -594,7 +592,7 @@ class FCDecimationGroup(BaseGroup):
 
         try:
             fc_dataset = self.hdf5_group[fc_name]
-            fc_metadata = Channel(**dict(fc_dataset.attrs))
+            fc_metadata = fc.Channel(**dict(fc_dataset.attrs))
             return FCChannelDataset(fc_dataset, dataset_metadata=fc_metadata)
         except (KeyError):
             msg = f"{fc_name} does not exist, check groups_list for existing names"
