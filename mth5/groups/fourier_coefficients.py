@@ -12,6 +12,7 @@ import numpy as np
 import xarray as xr
 import pandas as pd
 import h5py
+from typing import Optional, Union, List, Dict
 
 from mth5.groups import BaseGroup, FCChannelDataset
 
@@ -20,12 +21,7 @@ from mth5.groups import BaseGroup, FCChannelDataset
 from mth5.helpers import validate_name
 from mth5.utils.exceptions import MTH5Error
 
-from mt_metadata.transfer_functions.processing.fourier_coefficients import (
-    Channel,
-)
-from mt_metadata.transfer_functions.processing.fourier_coefficients.decimation import (
-    Decimation,
-)
+import mt_metadata.transfer_functions.processing.fourier_coefficients as fc
 
 
 # =============================================================================
@@ -84,7 +80,7 @@ class MasterFCGroup(BaseGroup):
         """
         return self._get_group(fc_name, FCGroup)
 
-    def remove_fc_group(self, fc_name):
+    def remove_fc_group(self, fc_name: str) -> None:
         """
         Remove an FC group
 
@@ -125,7 +121,7 @@ class FCGroup(BaseGroup):
         )
 
     @BaseGroup.metadata.getter
-    def metadata(self) -> Decimation:
+    def metadata(self) -> fc.Decimation:
         """Overwrite get metadata to include channel information in the runs"""
 
         self._metadata.channels = []
@@ -196,7 +192,7 @@ class FCGroup(BaseGroup):
             match="decimation_level",
         )
 
-    def get_decimation_level(self, decimation_level_name):
+    def get_decimation_level(self, decimation_level_name: str) -> FCDecimationGroup:
         """
         Get a Decimation Level
 
@@ -208,7 +204,7 @@ class FCGroup(BaseGroup):
         """
         return self._get_group(decimation_level_name, FCDecimationGroup)
 
-    def remove_decimation_level(self, decimation_level_name):
+    def remove_decimation_level(self, decimation_level_name: str) -> None:
         """
         Remove decimation level
 
@@ -221,7 +217,7 @@ class FCGroup(BaseGroup):
 
         self._remove_group(decimation_level_name)
 
-    def update_metadata(self):
+    def update_metadata(self) -> None:
         """
         update metadata from channels
 
@@ -240,7 +236,7 @@ class FCGroup(BaseGroup):
             self.write_metadata()
 
     def supports_aurora_processing_config(
-        self, processing_config, remote
+        self, processing_config: 'aurora.config.metadata.processing.Processing', remote: bool
     ) -> bool:
         """
 
@@ -388,8 +384,8 @@ class FCDecimationGroup(BaseGroup):
         return pd.DataFrame(ch_summary)
 
     def from_dataframe(
-        self, df, channel_key, time_key="time", frequency_key="frequency"
-    ):
+        self, df: pd.DataFrame, channel_key: str, time_key: str = "time", frequency_key: str = "frequency"
+    ) -> None:
         """
         assumes channel_key is the coefficient values
 
@@ -415,7 +411,7 @@ class FCDecimationGroup(BaseGroup):
             xrds = df[col].to_xarray()
             self.add_channel(col, fc_data=xrds.to_numpy())
 
-    def from_xarray(self, data_array, sample_rate_decimation_level):
+    def from_xarray(self, data_array: Union[xr.Dataset, xr.DataArray], sample_rate_decimation_level: float) -> None:
         """
         can input a dataarray or dataset
 
@@ -430,7 +426,7 @@ class FCDecimationGroup(BaseGroup):
             msg = f"Must input a xarray Dataset or DataArray not {type(data_array)}"
             self.logger.error(msg)
             raise TypeError(msg)
-        ch_metadata = Channel()
+        ch_metadata = fc.Channel()
         ch_metadata.time_period.start = data_array.time[0].values
         ch_metadata.time_period.end = data_array.time[-1].values
         ch_metadata.sample_rate_decimation_level = sample_rate_decimation_level
@@ -474,7 +470,7 @@ class FCDecimationGroup(BaseGroup):
                     )
         return
 
-    def to_xarray(self, channels=None):
+    def to_xarray(self, channels: Optional[List[str]] = None) -> xr.Dataset:
         """
         create an xarray dataset from the desired channels. If none grabs all
         channels in the decimation level.
@@ -494,7 +490,7 @@ class FCDecimationGroup(BaseGroup):
             ch_dict[ch] = ch_ds.to_xarray()
         return xr.Dataset(ch_dict)
 
-    def from_numpy_array(self, nd_array, ch_name):
+    def from_numpy_array(self, nd_array: np.ndarray, ch_name: str) -> None:
         """
         assumes shape of (n_frequencies, n_windows) or
         (n_channels, n_frequencies, n_windows)
@@ -523,14 +519,14 @@ class FCDecimationGroup(BaseGroup):
 
     def add_channel(
         self,
-        fc_name,
-        fc_data=None,
-        fc_metadata=None,
-        max_shape=(None, None),
-        chunks=True,
-        dtype=complex,
+        fc_name: str,
+        fc_data: Optional[np.ndarray] = None,
+        fc_metadata: Optional[fc.Channel] = None,
+        max_shape: tuple = (None, None),
+        chunks: bool = True,
+        dtype: type = complex,
         **kwargs,
-    ):
+    ) -> FCChannelDataset:
         """
 
         Add a set of Fourier coefficients for a single channel at a single
@@ -570,7 +566,7 @@ class FCDecimationGroup(BaseGroup):
         fc_name = validate_name(fc_name)
 
         if fc_metadata is None:
-            fc_metadata = Channel(name=fc_name)
+            fc_metadata = fc.Channel(name=fc_name)
         if fc_data is not None:
             if not isinstance(
                 fc_data, (np.ndarray, xr.DataArray, xr.Dataset, pd.DataFrame)
@@ -603,7 +599,7 @@ class FCDecimationGroup(BaseGroup):
             fc_dataset = self.get_channel(fc_metadata.component)
         return fc_dataset
 
-    def get_channel(self, fc_name):
+    def get_channel(self, fc_name: str) -> FCChannelDataset:
         """
         get an fc dataset
 
@@ -617,7 +613,7 @@ class FCDecimationGroup(BaseGroup):
 
         try:
             fc_dataset = self.hdf5_group[fc_name]
-            fc_metadata = Channel(**dict(fc_dataset.attrs))
+            fc_metadata = fc.Channel(**dict(fc_dataset.attrs))
             return FCChannelDataset(fc_dataset, dataset_metadata=fc_metadata)
         except KeyError:
             msg = f"{fc_name} does not exist, check groups_list for existing names"
@@ -627,7 +623,7 @@ class FCDecimationGroup(BaseGroup):
             self.logger.error(error)
             raise MTH5Error(error)
 
-    def remove_channel(self, fc_name):
+    def remove_channel(self, fc_name: str) -> None:
         """
         remove an fc dataset
 
@@ -652,7 +648,7 @@ class FCDecimationGroup(BaseGroup):
             self.logger.error(msg)
             raise MTH5Error(msg)
 
-    def update_metadata(self):
+    def update_metadata(self) -> None:
         """
         update metadata from channels
 
@@ -679,11 +675,11 @@ class FCDecimationGroup(BaseGroup):
 
     def add_feature(
         self,
-        feature_name,
-        feature_data=None,
-        feature_metadata=None,
-        max_shape=(None, None, None),
-        chunks=True,
+        feature_name: str,
+        feature_data: Optional[np.ndarray] = None,
+        feature_metadata: Optional[Dict] = None,
+        max_shape: tuple = (None, None, None),
+        chunks: bool = True,
         **kwargs,
-    ):
+    ) -> None:
         pass
