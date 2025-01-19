@@ -495,7 +495,6 @@ class FCDecimationGroup(BaseGroup):
         pass
 
 
-
 class FCGroup(BaseGroup):
     """
     Holds a set of Fourier Coefficients based on a single set of configuration
@@ -534,12 +533,12 @@ class FCGroup(BaseGroup):
         return self._metadata
 
     @property
-    def decimation_level_summary(self):
+    def decimation_level_summary(self) -> pd.DataFrame:
         """
 
-         summary of channels in run
+        summary of channels in run
         :return: DESCRIPTION
-        :rtype: TYPE
+        :rtype: pd.DataFrame
 
         """
 
@@ -558,6 +557,7 @@ class FCGroup(BaseGroup):
                     )
             except KeyError as error:
                 self.logger.debug(f"Could not find key: {error}")
+    
         ch_summary = np.array(
             ch_list,
             dtype=np.dtype(
@@ -573,8 +573,8 @@ class FCGroup(BaseGroup):
         return pd.DataFrame(ch_summary)
 
     def add_decimation_level(
-        self, decimation_level_name, decimation_level_metadata=None
-    ):  # TODO: FIXME NameError when output correctly dtyped-> FCDecimationGroup:
+        self, decimation_level_name: str, decimation_level_metadata: Optional[Union[Dict, fc.Decimation]] = None
+    ) -> FCDecimationGroup:
         """
         add a Decimation level
 
