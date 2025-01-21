@@ -7,7 +7,10 @@ from typing import Optional, Union
 
 
 def covariance_xr(
-    X: xr.DataArray, aweights: Optional[Union[np.ndarray, None]] = None
+    X: xr.DataArray,
+    aweights: Optional[Union[np.ndarray, None]] = None,
+    bias: Optional[bool] = True,
+    rowvar: Optional[bool] = False
 ) -> xr.DataArray:
     """
     Compute the covariance matrix with numpy.cov.
@@ -17,22 +20,38 @@ def covariance_xr(
     X: xarray.core.dataarray.DataArray
         Multivariate time series as an xarray
     aweights: array_like, optional
-        Doc taken from numpy cov follows:
+        Passthrough param for np.cov.
         1-D array of observation vector weights. These relative weights are
         typically large for observations considered "important" and smaller for
         observations considered less "important". If ``ddof=0`` the array of
         weights can be used to assign probabilities to observation vectors.
+    bias: bool
+        Passthrough param for np.cov.
+        Default normalization (False) is by ``(N - 1)``, where ``N`` is the
+        number of observations given (unbiased estimate). If `bias` is True,
+        then normalization is by ``N``. These values can be overridden by using
+        the keyword ``ddof`` in numpy versions >= 1.5.
+    rowvar: bool
+        Passthrough param for np.cov.
+        If `rowvar` is True (default), then each row represents a
+        variable, with observations in the columns. Otherwise, the relationship
+        is transposed: each column represents a variable, while the rows
+        contain observations.
 
     Returns
     -------
     S: xarray.DataArray
         The covariance matrix of the data in xarray form.
+
+    Development Notes:
+        In case of ValueError: conflicting sizes for dimension 'channel_1', this likely means the bool for rowvar
+        should be flipped.
     """
 
     channels = list(X.coords["variable"].values)
 
     S = xr.DataArray(
-        np.cov(X.values, rowvar=False, aweights=aweights),
+        np.cov(X.values, rowvar=rowvar, aweights=aweights, bias=bias),
         dims=["channel_1", "channel_2"],
         coords={"channel_1": channels, "channel_2": channels},
     )
@@ -107,23 +126,23 @@ def initialize_xrds_2d(
     # Get dimensions from coords
     dims = list(coords.keys())
     shape = tuple(len(v) for v in coords.values())
-    
+
     # Initialize empty dataset
     xrds = xr.Dataset(coords=coords)
-    
+
     # Add each variable
     for var in variables:
         if value == 0:
             data = np.zeros(shape, dtype=dtype)
         else:
             data = value * np.ones(shape, dtype=dtype)
-            
+
         xrds[var] = xr.DataArray(
             data,
             dims=dims,
             coords=coords
         )
-    
+
     return xrds
 
 
@@ -148,11 +167,11 @@ def initialize_xrda_2d(variables, coords, dtype=complex, value=0):
     """
     # Create Dataset first
     ds = initialize_xrds_2d(variables, coords, dtype, value)
-    
+
     # Convert to DataArray with original dimension order plus 'variable'
     dims = list(coords.keys())
     da = ds.to_array(dim='variable').transpose(*dims, 'variable')
-    
+
     return da
 
 
