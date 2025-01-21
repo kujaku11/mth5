@@ -9,7 +9,7 @@ from typing import Optional, Union
 def covariance_xr(
     X: xr.DataArray,
     aweights: Optional[Union[np.ndarray, None]] = None,
-    bias: Optional[bool] = True,
+    bias: Optional[bool] = False,
     rowvar: Optional[bool] = False
 ) -> xr.DataArray:
     """
