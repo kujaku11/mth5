@@ -19,9 +19,9 @@ import xarray as xr
 
 from mth5.mth5 import MTH5
 from mth5.utils.exceptions import MTH5Error
-from mth5.utils.fc_tools import make_multistation_spectrogram
-from mth5.utils.fc_tools import FCRunChunk
-from mth5.utils.fc_tools import MultivariateDataset
+from mth5.timeseries.spectre import make_multistation_spectrogram
+from mth5.timeseries.spectre import FCRunChunk
+from mth5.timeseries.spectre import MultivariateDataset
 
 from mt_metadata.utils.mttime import MTime
 
@@ -32,11 +32,15 @@ h5_filename = fn_path.joinpath("fc_test.h5")
 
 
 #@pytest.fixture
-def create_mth5_with_some_test_data():
+def create_mth5_with_some_test_data() -> MTH5:
     """
+        Creates an mth5 file with some FCs in it.
+        Populates the FCs based on data in a stored csv file.
 
-    Returns
-    -------
+        TODO: This could be improved by using a full, synthetic-data-based mth5.
+
+        :return: MTH5 object with some test data.
+        :rtype: MTH5
 
     """
     # get some test data to pack into mth5
@@ -77,7 +81,13 @@ def create_mth5_with_some_test_data():
     return m
 
 
-def create_xarray_test_dataset_with_various_dtypes():
+def create_xarray_test_dataset_with_various_dtypes() -> xr.Dataset:
+    """
+        Makes a dataset with a bunch of different dtypes for testing
+        :return: xrds - dataset with a different dtype for each datavar
+        :rtype: xr.Dataset
+
+    """
     t0 = pd.Timestamp("now")
     t1 = t0 + pd.Timedelta(seconds=1)
     t2 = t1 + pd.Timedelta(seconds=1)
@@ -96,13 +106,14 @@ def create_xarray_test_dataset_with_various_dtypes():
     xrds = xrds.expand_dims({"frequency": freq})
     return xrds
 
-def read_fc_csv(csv_name):
+def read_fc_csv(csv_name) -> xr.Dataset:
     """
-    read csv to xarray
-    :param csv_name: CSV File with some stored FC values for testing
-    :type csv_name: pathlib.Path
-    :return: the data from the csv as an xarray
-    :rtype: xarray.core.dataset.Dataset
+        Read csv of test FC data with pandas, and return it cast as xarray
+
+        :param csv_name: CSV File with some stored FC values for testing
+        :type csv_name: pathlib.Path
+        :return: the data from the csv as an xarray
+        :rtype: xarray.core.dataset.Dataset
 
     """
     df = pd.read_csv(
@@ -320,11 +331,11 @@ class TestFCFromXarray(unittest.TestCase):
     def test_can_update_decimation_level_metadata(self):
         window_type = "hann"
         # set the window typw
-        self.decimation_level.metadata.window.type = window_type
+        self.decimation_level.metadata.stft.window.type = window_type
         # assert that the updated value is true
         with self.subTest("window.type is set"):
             self.assertEqual(
-                self.decimation_level.metadata.window.type, window_type
+                self.decimation_level.metadata.stft.window.type, window_type
             )
         self.decimation_level.update_metadata()
         self.decimation_level.write_metadata()
@@ -334,7 +345,7 @@ class TestFCFromXarray(unittest.TestCase):
 
         tmp = self.fc_group.get_decimation_level("3")
         with self.subTest("get_decimation_level.metadata.window.type"):
-            self.assertEqual(tmp.metadata.window.type, window_type)
+            self.assertEqual(tmp.metadata.stft.window.type, window_type)
 
     def test_from_xarray_dtypes(self):
         """
@@ -357,7 +368,7 @@ class TestFCFromXarray(unittest.TestCase):
         fc_decimation_level = self.fc_group.add_decimation_level(dec_level_name, decimation_level_metadata=fc_metadata)
         xrds = create_xarray_test_dataset_with_various_dtypes()
 
-        fc_decimation_level.from_xarray(xrds, fc_metadata.sample_rate)
+        fc_decimation_level.from_xarray(xrds, fc_metadata.decimation.sample_rate)
         fc_decimation_level.update_metadata()
         self.fc_group.update_metadata()
         self.m.close_mth5()
@@ -372,8 +383,9 @@ class TestFCFromXarray(unittest.TestCase):
 
     def test_multi_station_spectrogram(self):
         """
-        TODO: This could be moved to fc_tools.
-        It is here because there was a handy dataset already available here.
+        TODO: This should have its own test in tests/spectre/test_multiple_station.py
+         It can be moved once there is a fixture available for the dataset in the test_fcs.py module.
+         See Issue #227.
 
         """
         fc_run_chunks = []
@@ -389,7 +401,6 @@ class TestFCFromXarray(unittest.TestCase):
             )
             fc_run_chunks.append(fcrc)
 
-        # TODO: These tests should go in their own module, but need test dataset (issue #227)
         xrds = make_multistation_spectrogram(self.m, fc_run_chunks, rtype="xrds")
 
 

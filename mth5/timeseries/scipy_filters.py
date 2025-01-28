@@ -13,6 +13,7 @@ It creates a wrapper for scipy methods for xarray.
 import warnings
 from fractions import Fraction
 from loguru import logger
+from typing import Optional, Union
 import xarray as xr
 import scipy.signal
 import numpy as np
@@ -407,7 +408,12 @@ def bandstop(darray, f_low, f_high, *args, **kwargs):
 #     bx = signal.filtfilt(b, a, bx)
 
 
-def decimate(darray, target_sample_rate, n_order=8, dim=None):
+def decimate(
+    darray: Union[xr.Dataset, xr.DataArray],
+    target_sample_rate: float,
+    n_order: int = 8,
+    dim: Optional[str] = None
+):
     """
     Decimate data following the method of scipy.signal.decimate.
 
@@ -421,13 +427,12 @@ def decimate(darray, target_sample_rate, n_order=8, dim=None):
     :type darray: :class:`xr.DataArray` or :class:`xr.Dataset`
     :param target_sample_rate: new sample rate in samples per second or samples
      per space
-    :type target_sample_rate: integer
+    :type target_sample_rate: float
     :param n_order: Order of the Cheby1 filter, defaults to 8
     :type n_order: integer, optional
     :param dim: dimension to decimate along, defaults to None
     :type dim: string, optional
-    :param **kwargs: DESCRIPTION
-    :type **kwargs: TYPE
+
     :return: DESCRIPTION
     :rtype: TYPE
 
@@ -496,7 +501,7 @@ def resample_poly(darray, new_sample_rate, dim=None, pad_type="mean"):
     if new_step % 1 == 0:
         q = int(np.rint(new_step))
         # directly downsample without AAF on dimension
-        # this only works if q is an integer, otherwise to 
+        # this only works if q is an integer, otherwise to
         # the index gets messed up from fractional spacing
         new_dim = darray[dim].values[slice(None, None, q)]
 
