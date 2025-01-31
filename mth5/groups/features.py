@@ -71,7 +71,7 @@ class MasterFeatureGroup(BaseGroup):
         :rtype: TYPE
 
         """
-        return self._get_group(feature_name, featureGroup)
+        return self._get_group(feature_name, FeatureRunGroup)
 
     def remove_feature_group(self, feature_name):
         """
@@ -85,6 +85,17 @@ class MasterFeatureGroup(BaseGroup):
         """
 
         self._remove_group(feature_name)
+
+
+class FeatureGroup(BaseGroup):
+    """
+    Holds a single feature set.  This includes all the runs and decimation
+    levels for a feature. This could also include time series features
+    """
+
+    def __init__(self, group, feature_metadata=None, **kwargs):
+
+        super().__init__(group, group_metadata=feature_metadata, **kwargs)
 
 
 class FeatureRunGroup(BaseGroup):
