@@ -1,6 +1,7 @@
 """
 Import all Group objects
 """
+
 ## !!! DO NOT CHANGE ORDER !!!
 from .base import BaseGroup
 from .reports import ReportsGroup
@@ -17,6 +18,13 @@ from .channel_dataset import (
     AuxiliaryDataset,
 )
 from .run import RunGroup
+from .features import (
+    MasterFeaturesGroup,
+    FeatureGroup,
+    FeatureTSRunGroup,
+    FeatureFCRunGroup,
+    FeatureDecimationGroup,
+)
 from .station import MasterStationGroup, StationGroup
 from .survey import MasterSurveyGroup, SurveyGroup
 from .experiment import ExperimentGroup
@@ -41,6 +49,11 @@ __all__ = [
     "SurveyGroup",
     "ReportsGroup",
     "StandardsGroup",
+    "MasterFeaturesGroup",
+    "FeatureGroup",
+    "FeatureTSRunGroup",
+    "FeatureFCRunGroup",
+    "FeatureDecimationGroup",
     "StationGroup",
     "MasterStationGroup",
     "MasterSurveyGroup",
