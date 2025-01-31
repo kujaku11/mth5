@@ -13,7 +13,7 @@ import xarray as xr
 import pandas as pd
 import h5py
 
-from mth5.groups import BaseGroup, FeatureChannelDataset
+from mth5.groups import BaseGroup, FeatureChannelDataset, RunGroup
 
 # from mth5.groups import FCGroup
 
@@ -33,9 +33,13 @@ from mt_metadata.transfer_functions.processing.fourier_coefficients.decimation i
 
 class MasterFeatureGroup(BaseGroup):
     """
-    Master group to hold various Fourier coefficient estimations of time series
-    data.
-    No metadata needed as of yet.
+    Master group to hold various features associated with either Fourier
+    Coefficients or time series.
+
+    MasterFeatureGroup -> FeatureGroup -> FeatureRunGroup ->
+
+       - FC: FeatureDecimationGroup -> FeatureChannelGroup
+       - Time Series: FeatureChannelGroup
     """
 
     def __init__(self, group, **kwargs):
@@ -56,9 +60,9 @@ class MasterFeatureGroup(BaseGroup):
 
         return self._add_group(
             feature_name,
-            FeatureRunGroup,
+            FeatureGroup,
             group_metadata=feature_metadata,
-            match="id",
+            match="feature_name",
         )
 
     def get_feature_group(self, feature_name):
@@ -71,7 +75,7 @@ class MasterFeatureGroup(BaseGroup):
         :rtype: TYPE
 
         """
-        return self._get_group(feature_name, FeatureRunGroup)
+        return self._get_group(feature_name, FeatureGroup)
 
     def remove_feature_group(self, feature_name):
         """
@@ -90,18 +94,183 @@ class MasterFeatureGroup(BaseGroup):
 class FeatureGroup(BaseGroup):
     """
     Holds a single feature set.  This includes all the runs and decimation
-    levels for a feature. This could also include time series features
+    levels for a feature. This could also include time series features.
+
+    FeatureGroup -> FeatureRunGroup ->
+
+       - FC: FeatureDecimationLevel -> FeatureChannelDateset
+       - TS: FeatureChannelDataset
+
+    Feature metadata should be specific to the feature. Should include a
+    description of the feature and any parameters used.
     """
 
     def __init__(self, group, feature_metadata=None, **kwargs):
 
         super().__init__(group, group_metadata=feature_metadata, **kwargs)
 
+    def add_feature_run_group(
+        self, feature_name: str, feature_run_metadata=None, feature_type="fc"
+    ):
+        """
+        Feature group for a single feature like coherency or polarization
 
-class FeatureRunGroup(BaseGroup):
+        :param feature_name: DESCRIPTION
+        :type feature_name: TYPE
+        :param feature_metadata: DESCRIPTION, defaults to None
+        :type feature_metadata: TYPE, optional
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        if feature_type in ["fc", "fourier coefficient", "fourier"]:
+            return self._add_group(
+                feature_name,
+                FeatureFCRunGroup,
+                group_metadata=feature_run_metadata,
+                match="id",
+            )
+        elif feature_type in ["ts", "time series"]:
+            return self._add_group(
+                feature_name,
+                FeatureTSRunGroup,
+                group_metadata=feature_run_metadata,
+                match="id",
+            )
+
+    def get_feature_run_group(self, feature_name, feature_type="fc"):
+        """
+        Get Fourier Coefficient group
+
+        :param feature_name: DESCRIPTION
+        :type feature_name: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        if feature_type in ["fc", "fourier coefficient", "fourier"]:
+            return self._get_group(feature_name, FeatureFCRunGroup)
+        elif feature_type in ["ts", "time series"]:
+            return self._get_group(feature_name, FeatureTSRunGroup)
+        else:
+            raise ValueError(
+                f"feature_type {feature_type} not supported. Use either 'fc' "
+                "for Fourier Coefficent or 'ts' for time series."
+            )
+
+    def remove_feature_run_group(self, feature_name):
+        """
+        Remove an feature group
+
+        :param feature_name: DESCRIPTION
+        :type feature_name: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        self._remove_group(feature_name)
+
+
+class FeatureTSRunGroup(BaseGroup):
     """
-    Holds a set of features estimated from Fourier Coefficients for a processing
-    run.
+    containter for a feature of a time series run.
+
+    FeatureRunMetadata should be the same as timeseries.Run
+    """
+
+    def __init__(self, group, feature_run_metadata=None, **kwargs):
+
+        super().__init__(group, group_metadata=feature_run_metadata, **kwargs)
+
+        ### Use methods from RunGroup (might be slow cause initiating multiple
+        ### RunGroups)?
+        self._run_group = RunGroup(group, feature_run_metadata=None)
+
+    def add_feature_channel(
+        self,
+        channel_name,
+        channel_type,
+        data,
+        channel_dtype="int32",
+        shape=None,
+        max_shape=(None,),
+        chunks=True,
+        channel_metadata=None,
+        **kwargs,
+    ):
+        """
+
+        :param channel_name: DESCRIPTION
+        :type channel_name: TYPE
+        :param channel_type: DESCRIPTION
+        :type channel_type: TYPE
+        :param data: DESCRIPTION
+        :type data: TYPE
+        :param channel_dtype: DESCRIPTION, defaults to "int32"
+        :type channel_dtype: TYPE, optional
+        :param shape: DESCRIPTION, defaults to None
+        :type shape: TYPE, optional
+        :param max_shape: DESCRIPTION, defaults to (None,)
+        :type max_shape: TYPE, optional
+        :param chunks: DESCRIPTION, defaults to True
+        :type chunks: TYPE, optional
+        :param channel_metadata: DESCRIPTION, defaults to None
+        :type channel_metadata: TYPE, optional
+        :param **kwargs: DESCRIPTION
+        :type **kwargs: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        channel_metadata should be a class of timeseries.Channel
+
+        """
+
+        return self._run_group.add_channel(
+            channel_name,
+            channel_type,
+            data,
+            channel_dtype=channel_dtype,
+            shape=shape,
+            max_shape=max_shape,
+            chunks=chunks,
+            channel_metadata=channel_metadata,
+            **kwargs,
+        )
+
+    def get_feature_channel(self, channel_name):
+        """
+
+        :param channel_name: DESCRIPTION
+        :type channel_name: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        return self._run_group.get_channel(channel_name)
+
+    def remove_feature_channel(self, channel_name):
+        """
+
+        :param channel_name: DESCRIPTION
+        :type channel_name: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        self._run_group.remove_channel(channel_name)
+
+
+class FeatureFCRunGroup(BaseGroup):
+    """
+    Holds a set of features for either a processing run or a time series run.
+
+    If the feature is for Fourier Coefficients then the heirarcy is
+     FeatureDecimationLevel -> FeatureChannelDataset
+
+    If the feature is for a time series run then the heirarchy is
+     FeatureChannelDataset
 
     Metadata should include:
 
@@ -113,13 +282,14 @@ class FeatureRunGroup(BaseGroup):
         - list of acquistion runs (maybe)
         - starting sample rate
         - bands used (can be different from processing bands)
+        - type [ TS | FC ]
 
     """
 
-    def __init__(self, group, decimation_level_metadata=None, **kwargs):
+    def __init__(self, group, feature_decimation_level_metadata=None, **kwargs):
 
         super().__init__(
-            group, group_metadata=decimation_level_metadata, **kwargs
+            group, group_metadata=feature_decimation_level_metadata, **kwargs
         )
 
     @BaseGroup.metadata.getter
@@ -173,7 +343,7 @@ class FeatureRunGroup(BaseGroup):
         return pd.DataFrame(ch_summary)
 
     def add_decimation_level(
-        self, decimation_level_name, decimation_level_metadata=None
+        self, decimation_level_name, feature_decimation_level_metadata=None
     ):
         """
         add a Decimation level
@@ -190,7 +360,7 @@ class FeatureRunGroup(BaseGroup):
         return self._add_group(
             decimation_level_name,
             FeatureDecimationGroup,
-            group_metadata=decimation_level_metadata,
+            group_metadata=feature_decimation_level_metadata,
             match="decimation_level",
         )
 
