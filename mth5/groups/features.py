@@ -28,6 +28,9 @@ from mt_metadata.transfer_functions.processing.fourier_coefficients.decimation i
 # =============================================================================
 """feature -> FeatureMasterGroup -> FeatureGroup -> DecimationLevelGroup -> ChannelGroup -> FeatureChannelDataset"""
 
+TIME_DOMAIN = ["ts", "time", "time series", "time_series"]
+FREQUENCY_DOMAIN = ["fc", "frequency", "fourier", "fourier_domain"]
+
 
 class MasterFeaturesGroup(BaseGroup):
     """
@@ -60,7 +63,7 @@ class MasterFeaturesGroup(BaseGroup):
             feature_name,
             FeatureGroup,
             group_metadata=feature_metadata,
-            match="feature_name",
+            match="name",
         )
 
     def get_feature_group(self, feature_name):
@@ -108,7 +111,7 @@ class FeatureGroup(BaseGroup):
         super().__init__(group, group_metadata=feature_metadata, **kwargs)
 
     def add_feature_run_group(
-        self, feature_name: str, feature_run_metadata=None, feature_type="fc"
+        self, feature_name: str, feature_run_metadata=None, domain="fc"
     ):
         """
         Feature group for a single feature like coherency or polarization
@@ -121,22 +124,36 @@ class FeatureGroup(BaseGroup):
         :rtype: TYPE
 
         """
-        if feature_type in ["fc", "fourier coefficient", "fourier"]:
+        if feature_run_metadata is not None:
+            try:
+                domain = feature_run_metadata.domain
+            except AttributeError:
+                raise AttributeError(
+                    "Could not find attribute 'domain' in metadata object"
+                )
+
+        if domain in FREQUENCY_DOMAIN:
+
             return self._add_group(
                 feature_name,
                 FeatureFCRunGroup,
                 group_metadata=feature_run_metadata,
                 match="id",
             )
-        elif feature_type in ["ts", "time series"]:
+        elif domain in TIME_DOMAIN:
             return self._add_group(
                 feature_name,
                 FeatureTSRunGroup,
                 group_metadata=feature_run_metadata,
                 match="id",
             )
+        else:
+            raise ValueError(
+                f"feature_type {domain} not supported. Use either 'fc' "
+                "for Fourier Coefficent or 'ts' for time series."
+            )
 
-    def get_feature_run_group(self, feature_name, feature_type="fc"):
+    def get_feature_run_group(self, feature_name, domain="frequency"):
         """
         Get Fourier Coefficient group
 
@@ -146,13 +163,13 @@ class FeatureGroup(BaseGroup):
         :rtype: TYPE
 
         """
-        if feature_type in ["fc", "fourier coefficient", "fourier"]:
+        if domain in FREQUENCY_DOMAIN:
             return self._get_group(feature_name, FeatureFCRunGroup)
-        elif feature_type in ["ts", "time series"]:
+        elif domain in TIME_DOMAIN:
             return self._get_group(feature_name, FeatureTSRunGroup)
         else:
             raise ValueError(
-                f"feature_type {feature_type} not supported. Use either 'fc' "
+                f"feature_type {domain} not supported. Use either 'fc' "
                 "for Fourier Coefficent or 'ts' for time series."
             )
 
@@ -284,11 +301,9 @@ class FeatureFCRunGroup(BaseGroup):
 
     """
 
-    def __init__(self, group, feature_decimation_level_metadata=None, **kwargs):
+    def __init__(self, group, feature_run_metadata=None, **kwargs):
 
-        super().__init__(
-            group, group_metadata=feature_decimation_level_metadata, **kwargs
-        )
+        super().__init__(group, group_metadata=feature_run_metadata, **kwargs)
 
     @BaseGroup.metadata.getter
     def metadata(self) -> Decimation:
