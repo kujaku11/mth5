@@ -29,6 +29,7 @@ from mt_metadata.transfer_functions.processing.fourier_coefficients import (
     Channel,
     FC,
 )
+from mt_metadata.features import Feature, FeatureTSRun, FeatureFCRun
 from mt_metadata.base import Base
 
 from mth5.helpers import get_tree, validate_name
@@ -41,6 +42,10 @@ meta_classes["TransferFunction"] = TransferFunction
 meta_classes["FCDecimation"] = Decimation
 meta_classes["FCChannel"] = Channel
 meta_classes["FC"] = FC
+meta_classes["Feature"] = Feature
+meta_classes["FeatureTSRun"] = FeatureTSRun
+meta_classes["FeatureFCRun"] = FeatureFCRun
+meta_classes["FeatureDecimation"] = Decimation
 
 
 # =============================================================================
