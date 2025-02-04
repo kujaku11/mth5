@@ -151,9 +151,14 @@ class ClientBase:
             value = Path(value)
             if value.is_dir():
                 self._save_path = value
-            elif value.is_file():
+            elif value.suffix in [".h5", ".mth5"]:
                 self._save_path = value.parent
                 self.mth5_filename = value.name
+            else:
+                raise ValueError(
+                    "save_path can be a directory or a file with extension '.h5' or 'mth5'. "
+                    f"{value} not understood."
+                )
 
         else:
             self._save_path = self.data_path
