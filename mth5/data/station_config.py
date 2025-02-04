@@ -16,6 +16,7 @@ Run level: 'sample_rate', 1.0
 
 """
 import pathlib
+import scipy.signal as ssig
 from typing import Dict, List, Optional, Union
 
 import mt_metadata.timeseries
@@ -67,7 +68,7 @@ class SyntheticRun(object):
     def __init__(
         self,
         id: str,
-        sample_rate: Optional[float] = 1.0,
+        sample_rate: float = 1.0,
         raw_data_path: Optional[Union[str, pathlib.Path]] = None,
         channel_nomenclature: SupportedNomenclature = "default",
         channels: Optional[list] = None,
@@ -83,7 +84,7 @@ class SyntheticRun(object):
 
         :param id: label for the run
         :type id: str
-        :param sample_rate: sample rate of the times series
+        :param sample_rate: sample rate of the time series in Hz.
         :type sample_rate: float
         :param raw_data_path: Path to ascii data source
         :type raw_data_path: Union[str, pathlib.Path, None]
@@ -172,17 +173,11 @@ class SyntheticRun(object):
         """
         Returns time series data in a dataframe with columns named for EM field component.
 
-        Up-samples data to run.sample_rate, which is treated as in integer.
+        Up-samples data to self.run_metadata.sample_rate, which is treated as in integer,
+        in teh case that self.data_source == "legacy emtf ascii".
         Only tested for 8, to make 8Hz data for testing.  If run.sample_rate is default (1.0)
         then no up-sampling takes place.
 
-        :type run: mth5.data.station_config.SyntheticRun
-        :param run: Information needed to define/create the run
-        :type source_folder: Optional[Union[pathlib.Path, str]]
-        :param source_folder: Where to load the ascii time series from.  This overwrites any
-        previous value that may have been stored in the SyntheticRun
-        :type add_nan_values: bool
-        :param add_nan_values: If True, add some NaN, if False, do not add Nan.
         :rtype df: pandas.DataFrame
         :return df: The time series data for the synthetic run
 
@@ -194,7 +189,11 @@ class SyntheticRun(object):
 
         elif self.data_source == "legacy emtf ascii":
             ascii_file = LegacyEMTFAsciiFile(file_path=self.raw_data_path)
-            df = ascii_file.load_dataframe(channel_names=self.channels)
+            df = ascii_file.load_dataframe(
+                channel_names=self.channels,
+                sample_rate=self.run_metadata.sample_rate
+            )
+
             return df
         else:
             msg = f"No dataframe associated with run, nor a legacy EMTF ASCII file"
@@ -238,6 +237,8 @@ class SyntheticStation(object):
 
 def make_station_01(channel_nomenclature: SupportedNomenclature = "default") -> SyntheticStation:
     """
+        This method prepares the metadata needed to generate an mth5 with syntheric data.
+
     :param channel_nomenclature: Must be one of the nomenclatures defined in SupportedNomenclature
     :type channel_nomenclature: str
 
@@ -256,6 +257,7 @@ def make_station_01(channel_nomenclature: SupportedNomenclature = "default") -> 
 
     run_001 = SyntheticRun(
         id="001",
+        sample_rate=1.0,
         raw_data_path=ASCII_DATA_PATH.joinpath("test1.asc"),
         channel_nomenclature=channel_nomenclature,
         start=None,
@@ -345,7 +347,8 @@ def make_station_03(channel_nomenclature: SupportedNomenclature = "default") -> 
             filters[ch] = [FILTERS["10x"].name, FILTERS["0.1x"].name]
 
     run_001 = SyntheticRun(
-        "001",
+        id="001",
+        sample_rate=1.0,
         raw_data_path=ASCII_DATA_PATH.joinpath("test1.asc"),
         nan_indices=nan_indices,
         filters=filters,
@@ -357,7 +360,8 @@ def make_station_03(channel_nomenclature: SupportedNomenclature = "default") -> 
     for ch in channels:
         noise_scalars[ch] = 2.0
     run_002 = SyntheticRun(
-        "002",
+        id="002",
+        sample_rate=1.0,
         raw_data_path=ASCII_DATA_PATH.joinpath("test1.asc"),
         noise_scalars=noise_scalars,
         nan_indices=nan_indices,
@@ -369,7 +373,8 @@ def make_station_03(channel_nomenclature: SupportedNomenclature = "default") -> 
     for ch in channels:
         noise_scalars[ch] = 5.0
     run_003 = SyntheticRun(
-        "003",
+        id="003",
+        sample_rate=1.0,
         raw_data_path=ASCII_DATA_PATH.joinpath("test1.asc"),
         noise_scalars=noise_scalars,
         nan_indices=nan_indices,
@@ -381,7 +386,8 @@ def make_station_03(channel_nomenclature: SupportedNomenclature = "default") -> 
     for ch in channels:
         noise_scalars[ch] = 10.0
     run_004 = SyntheticRun(
-        "004",
+        id="004",
+        sample_rate=1.0,
         raw_data_path=ASCII_DATA_PATH.joinpath("test1.asc"),
         noise_scalars=noise_scalars,
         nan_indices=nan_indices,
@@ -418,11 +424,11 @@ def make_station_04(channel_nomenclature: SupportedNomenclature = "default") -> 
     station.mth5_name = "test_04_8Hz.h5"
 
     run_001 = SyntheticRun(
-        "001",
+        id="001",
+        sample_rate=8.0,
         raw_data_path=ASCII_DATA_PATH.joinpath("test1.asc"),
         channel_nomenclature=channel_nomenclature,
         start=None,
-        sample_rate=8.0,
     )
     run_001.nan_indices = {}
 
@@ -451,14 +457,24 @@ class LegacyEMTFAsciiFile():
         This class can be used to interact with the legacy synthetic data files
         that were originally in EMTF.
 
+        Development Notes:
+         As of 2025-02-03 the only LegacyEMTFAsciiFile date sources are sampled at 1Hz.
+         One-off upsampling can be handled in this class if the requested sample rate differs.
+
     """
+    IMPLICIT_SAMPLE_RATE = 1.0  # Hz
+
     def __init__(
         self,
         file_path: pathlib.Path
     ):
         self.file_path  = file_path
 
-    def load_dataframe(self, channel_names: list) -> pd.DataFrame:
+    def load_dataframe(
+        self,
+        channel_names: list,
+        sample_rate: float,
+    ) -> pd.DataFrame:
         """
             Loads an EMTF legacy ASCII time series into a dataframe.
 
@@ -467,6 +483,9 @@ class LegacyEMTFAsciiFile():
 
             :param channel_names: The names of the channels in the legacy EMTF file, in order.
             :type channel_names: list
+            :param sample_rate: The sample rate of the output time series in Hz.
+            :type sample_rate: float
+
             :return df: The labelled time series from the legacy EMTF file.
             :rtype df: pd.DataFrame
 
@@ -480,7 +499,20 @@ class LegacyEMTFAsciiFile():
         df[df.columns[-2]] = -df[df.columns[-2]]  # df["ex"] = -df["ex"]
         df[df.columns[-1]] = -df[df.columns[-1]]  # df["ey"] = -df["ey"]
 
+        # Temporary kludge: One-off handling for a test case to upsample data.
+        # TODO: delete this once synthetic data module is built can offer multiple sample rates
+        if sample_rate != self.IMPLICIT_SAMPLE_RATE:
+            df_orig = df.copy(deep=True)
+            new_data_dict = {}
+            for ch in df.columns:
+                data = df_orig[ch].to_numpy()
+                new_data_dict[ch] = ssig.resample(
+                    data, int(sample_rate) * len(df_orig)
+                )
+            df = pd.DataFrame(data=new_data_dict)
+
         return df
+
 
 def main():
     # sr = SyntheticRun("001")

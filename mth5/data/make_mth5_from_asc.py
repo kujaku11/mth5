@@ -151,7 +151,7 @@ def get_time_series_dataframe(
     Only tested for 8, to make 8Hz data for testing.  If run.sample_rate is default (1.0)
     then no up-sampling takes place.
 
-    TODO: Move Upsampling, noise, and nan addition out of this method.
+    TODO: Move noise, and nan addition out of this method.
 
     :type run: mth5.data.station_config.SyntheticRun
     :param run: Information needed to define/create the run
@@ -170,23 +170,12 @@ def get_time_series_dataframe(
 
     df = run._get_timeseries_dataframe()
 
-    # upsample data if requested,
-    if run.run_metadata.sample_rate != 1.0:
-        df_orig = df.copy(deep=True)
-        new_data_dict = {}
-        for i_ch, ch in enumerate(run.channels):
-            data = df_orig[ch].to_numpy()
-            new_data_dict[ch] = ssig.resample(
-                data, int(run.run_metadata.sample_rate) * len(df_orig)
-            )
-        df = pd.DataFrame(data=new_data_dict)
-
-    # add noise
+    # add noise if requested
     for col in run.channels:
         if run.noise_scalars[col]:
             df[col] += run.noise_scalars[col] * np.random.randn(len(df))
 
-    # add nan
+    # add nan if requested
     if add_nan_values:
         for col in run.channels:
             for [ndx, num_nan] in run.nan_indices[col]:
