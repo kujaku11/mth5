@@ -19,7 +19,7 @@ from mth5.clients.base import ClientBase
 
 class TestClientBase(unittest.TestCase):
     def setUp(self):
-        self.file_path = Path(__file__)
+        self.file_path = Path(__file__).parent.joinpath("test.h5")
         self.base = ClientBase(
             self.file_path.parent, **{"h5_mode": "w", "h5_driver": "sec2"}
         )
