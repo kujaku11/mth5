@@ -13,14 +13,12 @@ import xarray as xr
 import pandas as pd
 import h5py
 
-from mth5.groups import BaseGroup, FCChannelDataset, RunGroup
+from mth5.groups import BaseGroup, RunGroup, FeatureChannelDataset
 
 from mth5.helpers import validate_name
 from mth5.utils.exceptions import MTH5Error
 
-from mt_metadata.transfer_functions.processing.fourier_coefficients import (
-    Channel,
-)
+from mt_metadata.features import FeatureDecimationChannel
 from mt_metadata.transfer_functions.processing.fourier_coefficients.decimation import (
     Decimation,
 )
@@ -309,10 +307,10 @@ class FeatureFCRunGroup(BaseGroup):
     def metadata(self) -> Decimation:
         """Overwrite get metadata to include channel information in the runs"""
 
-        self._metadata.channels = []
-        for dl in self.groups_list:
-            dl_group = self.get_decimation_level(dl)
-            self._metadata.levels.append(dl_group.metadata)
+        # self._metadata.channels = []
+        # for dl in self.groups_list:
+        #     dl_group = self.get_decimation_level(dl)
+        #     self._metadata.levels.append(dl_group.metadata)
         self._metadata.hdf5_reference = self.hdf5_group.ref
         return self._metadata
 
@@ -345,7 +343,7 @@ class FeatureFCRunGroup(BaseGroup):
             ch_list,
             dtype=np.dtype(
                 [
-                    ("component", "U20"),
+                    ("name", "U20"),
                     ("start", "datetime64[ns]"),
                     ("end", "datetime64[ns]"),
                     ("hdf5_reference", h5py.ref_dtype),
@@ -374,7 +372,7 @@ class FeatureFCRunGroup(BaseGroup):
             decimation_level_name,
             FeatureDecimationGroup,
             group_metadata=feature_decimation_level_metadata,
-            match="decimation_level",
+            match="id",
         )
 
     def get_decimation_level(self, decimation_level_name):
@@ -535,7 +533,7 @@ class FeatureDecimationGroup(BaseGroup):
                 if ch_type in ["FCChannel"]:
                     ch_list.append(
                         (
-                            group.attrs["component"],
+                            group.attrs["name"],
                             group.attrs["time_period.start"].split("+")[0],
                             group.attrs["time_period.end"].split("+")[0],
                             group.shape[0],
@@ -552,7 +550,7 @@ class FeatureDecimationGroup(BaseGroup):
             ch_list,
             dtype=np.dtype(
                 [
-                    ("component", "U20"),
+                    ("name", "U20"),
                     ("start", "datetime64[ns]"),
                     ("end", "datetime64[ns]"),
                     ("n_frequency", np.int64),
@@ -610,7 +608,7 @@ class FeatureDecimationGroup(BaseGroup):
             msg = f"Must input a xarray Dataset or DataArray not {type(data_array)}"
             self.logger.error(msg)
             raise TypeError(msg)
-        ch_metadata = Channel()
+        ch_metadata = FeatureDecimationChannel()
         ch_metadata.time_period.start = data_array.time[0].values
         ch_metadata.time_period.end = data_array.time[-1].values
         ch_metadata.sample_rate_decimation_level = sample_rate_decimation_level
@@ -634,8 +632,8 @@ class FeatureDecimationGroup(BaseGroup):
         else:
             for ch in data_array.data_vars.keys():
 
-                ch_metadata.component = ch
-                if ch in self.channel_summary.component.to_list():
+                ch_metadata.name = ch
+                if ch in self.channel_summary.name.to_list():
                     self.remove_channel(ch)
                 # time index should be the first index
                 if data_array[ch].time.size == data_array[ch].shape[0]:
@@ -750,7 +748,7 @@ class FeatureDecimationGroup(BaseGroup):
         fc_name = validate_name(fc_name)
 
         if fc_metadata is None:
-            fc_metadata = Channel(name=fc_name)
+            fc_metadata = FeatureDecimationChannel(name=fc_name)
         if fc_data is not None:
             if not isinstance(
                 fc_data, (np.ndarray, xr.DataArray, xr.Dataset, pd.DataFrame)
@@ -774,13 +772,15 @@ class FeatureDecimationGroup(BaseGroup):
                 **self.dataset_options,
             )
 
-            fc_dataset = FCChannelDataset(dataset, dataset_metadata=fc_metadata)
+            fc_dataset = FeatureChannelDataset(
+                dataset, dataset_metadata=fc_metadata
+            )
         except (OSError, RuntimeError, ValueError) as error:
             self.logger.error(error)
-            msg = f"estimate {fc_metadata.component} already exists, returning existing group."
+            msg = f"estimate {fc_metadata.name} already exists, returning existing group."
             self.logger.debug(msg)
 
-            fc_dataset = self.get_channel(fc_metadata.component)
+            fc_dataset = self.get_channel(fc_metadata.name)
         return fc_dataset
 
     def get_channel(self, fc_name):
@@ -797,8 +797,10 @@ class FeatureDecimationGroup(BaseGroup):
 
         try:
             fc_dataset = self.hdf5_group[fc_name]
-            fc_metadata = Channel(**dict(fc_dataset.attrs))
-            return FCChannelDataset(fc_dataset, dataset_metadata=fc_metadata)
+            fc_metadata = FeatureDecimationChannel(**dict(fc_dataset.attrs))
+            return FeatureChannelDataset(
+                fc_dataset, dataset_metadata=fc_metadata
+            )
         except KeyError:
             msg = f"{fc_name} does not exist, check groups_list for existing names"
             self.logger.error(msg)

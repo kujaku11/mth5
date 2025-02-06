@@ -18,6 +18,7 @@ from .channel_dataset import (
     AuxiliaryDataset,
 )
 from .run import RunGroup
+from .feature_dataset import FeatureChannelDataset
 from .features import (
     MasterFeaturesGroup,
     FeatureGroup,
@@ -25,6 +26,7 @@ from .features import (
     FeatureFCRunGroup,
     FeatureDecimationGroup,
 )
+
 from .station import MasterStationGroup, StationGroup
 from .survey import MasterSurveyGroup, SurveyGroup
 from .experiment import ExperimentGroup
@@ -49,6 +51,7 @@ __all__ = [
     "SurveyGroup",
     "ReportsGroup",
     "StandardsGroup",
+    "FeatureChannelDataset",
     "MasterFeaturesGroup",
     "FeatureGroup",
     "FeatureTSRunGroup",
