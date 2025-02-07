@@ -38,7 +38,6 @@ Development Notes:
 import numpy as np
 import pandas as pd
 import pathlib
-import scipy.signal as ssig
 
 from loguru import logger
 from mth5.data.paths import SyntheticTestPaths
@@ -232,21 +231,7 @@ def create_mth5_synthetic_file(
 
     """
 
-    # Handle path and file name conventions
-    if not target_folder:
-        msg = f"No target folder provided for making {mth5_name}"
-        logger.warning(msg)
-        msg = f"Setting target folder to {MTH5_PATH}"
-        logger.info(msg)
-        target_folder = MTH5_PATH
-
-    try:
-        target_folder.mkdir(exist_ok=True, parents=True)
-    except OSError:
-        msg = "MTH5 maybe installed on a read-only file system"
-        msg = f"{msg}: try setting `target_folder` argument when calling create_mth5_synthetic_file"
-        logger.error(msg)
-
+    target_folder = _get_target_folder(target_folder=target_folder)
     mth5_path = target_folder.joinpath(mth5_name)
     mth5_path = _update_mth5_path(
         mth5_path, add_nan_values, channel_nomenclature
@@ -300,6 +285,38 @@ def create_mth5_synthetic_file(
         add_filters(m, active_filters, survey_id)
 
     return mth5_path
+
+def _get_target_folder(
+    target_folder: Optional[Union[pathlib.Path, str]] = ""):
+    """
+        Return the target folder where an mth5 file will be created
+
+        :param target_folder: This is where the mth5 will be created.  If this argument is null,
+        then set to MTH5_PATH
+        :type target_folder: Optional[Union[pathlib.Path, str]]
+
+        :return: the path where an mth5 file will be created
+        :rtype: pathlib.Path
+    
+    """
+    # Handle path and file name conventions
+    if not target_folder:
+        msg = "No target folder provided for making mth5 file"
+        logger.warning(msg)
+        msg = f"Setting target folder to {MTH5_PATH}"
+        logger.info(msg)
+        target_folder = MTH5_PATH
+
+    if isinstance(target_folder, str):
+        target_folder = pathlib.Path(target_folder)
+
+    try:
+        target_folder.mkdir(exist_ok=True, parents=True)
+    except OSError:
+        msg = "MTH5 maybe installed on a read-only file system"
+        msg = f"{msg}: try setting `target_folder` argument when calling create_mth5_synthetic_file"
+        logger.error(msg)
+    return target_folder
 
 
 def create_test1_h5(
