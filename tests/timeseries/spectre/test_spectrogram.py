@@ -7,7 +7,7 @@
 
 """
 from loguru import logger
-from mt_metadata.transfer_functions.processing.aurora.frequency_bands import FrequencyBands
+from mt_metadata.transfer_functions.processing.aurora import FrequencyBands
 from mth5.data.make_mth5_from_asc import create_mth5_synthetic_file
 from mth5.data.make_mth5_from_asc import create_test1_h5
 from mth5.data.make_mth5_from_asc import create_test2_h5
@@ -227,6 +227,78 @@ def test_impedance_from_synthetic_data(test1_spectrogram, test_frequency_bands):
     # Test that apparent resistivity is approximately 100 Ohm-m
     assert (rho_xy_mean > 70.).all()
     assert (rho_xy_mean < 130.).all()
+
+
+def test_store_and_read_cross_power_features(test1_spectrogram, test_frequency_bands):
+    """
+        Generate Cross powers as above, but this time:
+            - store them as features
+            - close the h5
+            - open the h5
+            - read them from file
+            - assert they are equal to the computed values
+
+    Parameters
+    ----------
+    test1_spectrogram
+    test_frequency_bands
+
+    Returns
+    -------
+
+    """
+    # Define channel pairs to test
+    channel_pairs = [("ex", "hx"), ("ey", "hy")]
+
+    # Compute cross powers
+    # TODO: add dcimation level contexst to makign these xpowers
+    xpowers = test1_spectrogram.cross_powers(
+        test_frequency_bands,
+        channel_pairs=channel_pairs
+    )
+    xpowers = xpowers.to_dataset(dim='variable')
+
+    # slightly hacky workaround for getting the mth5 path
+    station_cfg = make_station_01()
+    mth5_path = create_mth5_synthetic_file(
+        station_cfgs=[station_cfg],
+        mth5_name="test1.h5",
+        force_make_mth5=False
+    )
+
+    # Now try storing the cross power features in the mth5 and close the file
+    # - logic here follows tests/version_2/test_features.py
+    m = MTH5(filename=mth5_path)
+    m.open_mth5(mode="a")
+    m.channel_summary.to_dataframe()
+    station_group = m.get_station("test1", "EMTF Synthetic")
+    features_group = station_group.features_group
+    feature_fc = features_group.add_feature_group("feature_fc")
+    fc_run = feature_fc.add_feature_run_group(
+        "cross powers", domain="frequency"
+    )
+    dl = fc_run.add_decimation_level("0")
+    feature_ch = dl.add_channel("ex_hx")
+    feature_ch.from_xarray(data=xpowers["ex_hx"], sample_rate_decimation_level=0.010416)
+    # get sample rate from 1e9/xpowers.time.diff(dim="time")
+    m.close_mth5()
+
+    #open the mth5 and access the data
+    # note slightly hacky _2 added to var names to make sure we are not interacting
+    # with ones declared above
+    # TODO: clean that up - maybe def _read_features()
+    m.open_mth5(mode="r")
+    station_group_2 = m.get_station("test1", "EMTF Synthetic")
+    features_group_2 = station_group_2.features_group
+    feature_fc_2 = features_group_2.get_feature_group("feature_fc")
+    feature_run = feature_fc_2.get_feature_run_group("cross powers", domain="frequency")
+    dl_2 = feature_run.get_decimation_level("0")
+    exhx = dl_2.get_channel("ex_hx")
+    accessed_data = exhx.to_numpy()  # this works
+    # exhx.to_xarray()  # TODO: FIXME this doesn't work yet, needs work on metadata
+    m.close_mth5()
+    assert np.isclose(accessed_data - xpowers["ex_hx"].data, 0).all()
+    
 
 @pytest.fixture
 def test1_spectrogram():
