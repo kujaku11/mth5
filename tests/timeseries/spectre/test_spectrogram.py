@@ -144,7 +144,7 @@ def test_integrated_cross_powers(test1_spectrogram, test_frequency_bands):
     # Define channel pairs to test
     e_pairs = [("ex", "ey")]
     h_pairs = [("hx", "hy"), ("hx", "hz"), ("hy", "hz")]
-    eh_pairs = [("ex", "hx"), ("ey", "hx"), ("ey", "hy")]  # Remove ex-hy since it's in conjugate_pairs
+    eh_pairs = [("ex", "hx"), ("ey", "hx"), ("ey", "hy")]  # Skip ex-hy (it's in conjugate_pairs below)
 
     # For conjugate test, add both forward and reverse pairs
     conjugate_pairs = [("ex", "hy"), ("hy", "ex")]
@@ -248,7 +248,8 @@ def test_store_and_read_cross_power_features(test1_spectrogram, test_frequency_b
 
     """
     # Define channel pairs to test
-    channel_pairs = [("ex", "hx"), ("ey", "hy")]
+    channel_pairs = None  #  Setting to None will make all cross powers
+    # channel_pairs = [("ex", "hx"), ("ey", "hy")]
 
     # Compute cross powers
     # TODO: add dcimation level contexst to makign these xpowers
@@ -278,12 +279,19 @@ def test_store_and_read_cross_power_features(test1_spectrogram, test_frequency_b
         "cross powers", domain="frequency"
     )
     dl = fc_run.add_decimation_level("0")
-    feature_ch = dl.add_channel("ex_hx")
-    feature_ch.from_xarray(data=xpowers["ex_hx"], sample_rate_decimation_level=0.010416)
-    # get sample rate from 1e9/xpowers.time.diff(dim="time")
+    sample_interval_in_nano_seconds = xpowers.time.diff(dim="time")[0].item()
+    sample_rate = 1e9 / sample_interval_in_nano_seconds  # 0.010416666666666
+    for key, value in xpowers.items():
+        feature_ch = dl.add_channel(key)
+        feature_ch.from_xarray(data=value, sample_rate_decimation_level=sample_rate)
+
     m.close_mth5()
 
-    #open the mth5 and access the data
+    # Above shows we are OK storing a multiple channels one at a time.
+    # TODO: Can we add them en-masse? e.g. dl.from_xarray(xpowers, sample_rate) ?
+    # Will this cause performance issues if not?
+
+    # open the mth5 and access the data
     # note slightly hacky _2 added to var names to make sure we are not interacting
     # with ones declared above
     # TODO: clean that up - maybe def _read_features()
@@ -293,12 +301,14 @@ def test_store_and_read_cross_power_features(test1_spectrogram, test_frequency_b
     feature_fc_2 = features_group_2.get_feature_group("feature_fc")
     feature_run = feature_fc_2.get_feature_run_group("cross powers", domain="frequency")
     dl_2 = feature_run.get_decimation_level("0")
-    exhx = dl_2.get_channel("ex_hx")
-    accessed_data = exhx.to_numpy()  # this works
-    # exhx.to_xarray()  # TODO: FIXME this doesn't work yet, needs work on metadata
+    for key, value in xpowers.items():
+        stored_feature = dl_2.get_channel(key)
+        accessed_data = stored_feature.to_numpy()  # this works
+        assert np.isclose(accessed_data - xpowers[key].data, 0).all()
+        # accessed_data.to_xarray()  # TODO: FIXME this doesn't work yet, needs work on metadata
     m.close_mth5()
-    assert np.isclose(accessed_data - xpowers["ex_hx"].data, 0).all()
-    
+
+
 
 @pytest.fixture
 def test1_spectrogram():
