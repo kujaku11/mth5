@@ -130,13 +130,13 @@ class MultivariateDataset():
 
         TODO: Consider making this an extension of Spectrogram
         TODO: Rename this class to MultivariateSpectrogram.
-        
+
 
     """
     def __init__(
         self,
         xrds: xr.Dataset,
-        label_scheme: Optional[Union[MultivariateLabelScheme, None]] = None,
+        label_scheme: Optional[MultivariateLabelScheme] = None,
     ):
         self._xrds = xrds
         self._label_scheme = label_scheme
