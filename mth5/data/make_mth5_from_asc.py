@@ -104,6 +104,10 @@ def create_run_ts_from_synthetic_run(
         elif col in channel_nomenclature_obj.hx_hy_hz:
             channel_metadata = Magnetic()
             channel_metadata.units = "nanotesla"
+        else:
+            msg = f"column {col} not in channel_nomenclature_obj {channel_nomenclature_obj}"
+            logger.error(msg)
+            raise ValueError(msg)
 
         channel_metadata.component = col
         channel_metadata.channel_number = i_col  # not required
