@@ -212,26 +212,20 @@ class SyntheticStation(object):
 
     def __init__(
         self,
-        id: str,
-        latitude: float = 0.0,
+        station_metadata: Station,
         mth5_name: Optional[Union[str, pathlib.Path]] = None,
     ) -> None:
         """
         Constructor.
 
-        :param id: The name of the station
-        :type id: str
-        :param latitude: The station latitude
-         TODO: Add note about units supported for latitude
-         TODO: replace this with a station_metadata dictionary.
-        :type latitude: float
-        :type mth5_name: Union[str, pathlib.Path, None]
+        :param station_metadata: mt_metadata objeect with station metadata
+        :type id: Station
         :param mth5_name: The name of the h5 file to which the station data and metadata will be written.
+        :type mth5_name: Optional[Union[str, pathlib.Path]]
 
         """
-        self.id = id
+        self.station_metadata = station_metadata
         self.runs = []
-        self.latitude = latitude
         self.mth5_name = mth5_name
 
 
@@ -248,11 +242,14 @@ def make_station_01(channel_nomenclature: SupportedNomenclature = "default") -> 
     """
     station_metadata = Station()
     station_metadata.id = "test1"
+    station_metadata.location.latitude = 17.996
+    # TODO: Add more metadata here as an example
+
     channel_nomenclature_obj = ChannelNomenclature()
     channel_nomenclature_obj.keyword = channel_nomenclature
 
     # initialize SyntheticStation
-    station = SyntheticStation(station_metadata.id)
+    station = SyntheticStation(station_metadata=station_metadata)
     station.mth5_name = f"{station_metadata.id}.h5"
 
     run_001 = SyntheticRun(
@@ -306,7 +303,7 @@ def make_station_02(channel_nomenclature: SupportedNomenclature = "default") -> 
 
     """
     test2 = make_station_01(channel_nomenclature=channel_nomenclature)
-    test2.id = "test2"
+    test2.station_metadata.id = "test2"
     test2.mth5_name = "test2.h5"
     test2.runs[0].raw_data_path = ASCII_DATA_PATH.joinpath("test2.asc")
     nan_indices = {}
@@ -329,7 +326,9 @@ def make_station_03(channel_nomenclature: SupportedNomenclature = "default") -> 
     """
     channel_nomenclature_obj = ChannelNomenclature()
     channel_nomenclature_obj.keyword = channel_nomenclature
-    station = SyntheticStation("test3")
+    station_metadata = Station()
+    station_metadata.id = "test3"
+    station = SyntheticStation(station_metadata=station_metadata)
     station.mth5_name = "test3.h5"
     channels = channel_nomenclature_obj.channels
 
@@ -420,7 +419,7 @@ def make_station_04(channel_nomenclature: SupportedNomenclature = "default") -> 
     channel_nomenclature_obj = ChannelNomenclature()
     channel_nomenclature_obj.keyword = channel_nomenclature
 
-    station = SyntheticStation("test1")
+    station = SyntheticStation(station_metadata=station_metadata)
     station.mth5_name = "test_04_8Hz.h5"
 
     run_001 = SyntheticRun(

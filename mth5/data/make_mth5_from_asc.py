@@ -254,7 +254,11 @@ def create_mth5_synthetic_file(
         _add_survey(m, survey_metadata)
 
         for station_cfg in station_cfgs:
-            station_group = m.add_station(station_cfg.id, survey=survey_id)
+            station_group = m.add_station(
+                station_cfg.station_metadata.id,
+                station_metadata=station_cfg.station_metadata,
+                survey=survey_id
+            )
 
             for run in station_cfg.runs:
                 # run is object of type SyntheticRun
@@ -271,7 +275,7 @@ def create_mth5_synthetic_file(
                 runts = create_run_ts_from_synthetic_run(
                     run, df, channel_nomenclature=channel_nomenclature
                 )
-                runts.station_metadata.id = station_cfg.id
+                runts.station_metadata.id = station_group.metadata.id
 
                 # plot the data
                 if plot:
@@ -297,7 +301,7 @@ def _get_target_folder(
 
         :return: the path where an mth5 file will be created
         :rtype: pathlib.Path
-    
+
     """
     # Handle path and file name conventions
     if not target_folder:
