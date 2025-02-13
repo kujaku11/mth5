@@ -84,8 +84,8 @@ class SyntheticRun(object):
         self,
         id: str,
         sample_rate: float,
+        channels: List[str],
         raw_data_path: Optional[Union[str, pathlib.Path]] = None,
-        channels: Optional[list] = None,
         noise_scalars: Optional[dict] = None,
         nan_indices: Optional[dict] = None,
         filters: Optional[dict] = None,
@@ -100,10 +100,10 @@ class SyntheticRun(object):
         :type id: str
         :param sample_rate: sample rate of the time series in Hz.
         :type sample_rate: float
+        :param channels: the channel names to include in the run.
+        :type channels: List[str]
         :param raw_data_path: Path to ascii data source
         :type raw_data_path: Union[str, pathlib.Path, None]
-        :param channels: the channel names to include in the run.
-        :type channels: Union[list, None]
         :param noise_scalars: Keys are channels, values are scale factors for noise to add
         :type noise_scalars: Union[dict, None]
         :param nan_indices: Keys are channels, values lists.  List elements are pairs of (index, num_nan_to_add)
@@ -116,7 +116,7 @@ class SyntheticRun(object):
          Added 2025 to try to allow more general data to be cast to mth5
         :type timeseries_dataframe: Optional[pd.DataFrame] = None
         :param data_source: Keyword to tell if data are a legacy EMTF ASCII file
-        :param data_source: Keyword to tell if data are a legacy EMTF ASCII file
+        :type data_source: str
 
         """
         run_metadata = Run()
@@ -131,11 +131,8 @@ class SyntheticRun(object):
             self.data_source = data_source
             self.raw_data_path = raw_data_path
 
-        # # set channel names
-        if channels is None:
-            self.channels = list(channel_map.values())
-        else:
-            self.channels = channels
+        # set channel names
+        self.channels = channels
 
         # Set scale factors for adding noise to individual channels
         self.noise_scalars = noise_scalars
