@@ -15,7 +15,10 @@ Station level: mt_metadata Station() object with station info.
   - the `id` field (name of the station) is required.
   - other station metadata can be added
   - channel_nomenclature
-
+    - The channel_nomenclature was previously stored at the run level.  It makes more sense to store
+     this info at the station level, as the only reason the nomenclature would change (that I can
+     think of) would be if the acquistion system changed, in which case it would make the most
+     sense to initialize a new station object.
 
 Run level: 'columns', :channel names as a list; ["hx", "hy", "hz", "ex", "ey"]
 Run level: 'raw_data_path', Path to ascii data source
@@ -25,11 +28,6 @@ Run level: 'filters', dict of filters keyed by columns
 Run level: 'run_id', name of the run
 Run level: 'sample_rate', 1.0
 
-2025-02-12:
- - The channel_nomenclature was previously stored at the run level.  It makes more sense to store
- this info at the station level, as the only reason the nomenclature would change (that I can
- think of) would be if the acquistion system changed, in which case it would make the most
- sense to initialize a new station object.
 
 """
 import pathlib
@@ -222,16 +220,17 @@ class SyntheticStation(object):
         self.runs = []
         self.mth5_name = mth5_name
         self.channel_nomenclature_keyword = channel_nomenclature_keyword
-        self._channel_nomenclature_obj = None  # TODO: rename to channel_nomenclature
+        self._channel_nomenclature = None
 
-        self.station_metadata.channels_recorded = self.channel_nomenclature_obj.channels
+        self.station_metadata.channels_recorded = self.channel_nomenclature.channels
 
     @property
-    def channel_nomenclature_obj(self):  # TODO: rename to channel_nomenclature
-        if self._channel_nomenclature_obj is None:
-            self._channel_nomenclature_obj = ChannelNomenclature(
-                keyword=self.channel_nomenclature_keyword)
-        return self._channel_nomenclature_obj
+    def channel_nomenclature(self):
+        if self._channel_nomenclature is None:
+            self._channel_nomenclature = ChannelNomenclature(
+                keyword=self.channel_nomenclature_keyword
+            )
+        return self._channel_nomenclature
 
 
 def make_station_01(channel_nomenclature: SupportedNomenclature = "default") -> SyntheticStation:
@@ -260,7 +259,7 @@ def make_station_01(channel_nomenclature: SupportedNomenclature = "default") -> 
     run_001 = SyntheticRun(
         id="001",
         sample_rate=1.0,
-        channels = station.channel_nomenclature_obj.channels,
+        channels = station.channel_nomenclature.channels,
         raw_data_path=ASCII_DATA_PATH.joinpath("test1.asc"),
         start=None,
     )
@@ -269,9 +268,9 @@ def make_station_01(channel_nomenclature: SupportedNomenclature = "default") -> 
     nan_indices = {}
     for ch in run_001.channels:
         nan_indices[ch] = []
-        if ch == station.channel_nomenclature_obj.hx:
+        if ch == station.channel_nomenclature.hx:
             nan_indices[ch].append([11, 100])
-        if ch == station.channel_nomenclature_obj.hy:
+        if ch == station.channel_nomenclature.hy:
             nan_indices[ch].append([11, 100])
             nan_indices[ch].append([20000, 444])
     run_001.nan_indices = nan_indices
@@ -279,11 +278,11 @@ def make_station_01(channel_nomenclature: SupportedNomenclature = "default") -> 
     # assign some filters to the channels
     filters = {}
     for ch in run_001.channels:
-        if ch in station.channel_nomenclature_obj.ex_ey:
+        if ch in station.channel_nomenclature.ex_ey:
             filters[ch] = [
                 FILTERS["1x"].name,
             ]
-        elif ch in station.channel_nomenclature_obj.hx_hy_hz:
+        elif ch in station.channel_nomenclature.hx_hy_hz:
             filters[ch] = [
                 FILTERS["10x"].name,
                 FILTERS["0.1x"].name
@@ -293,7 +292,6 @@ def make_station_01(channel_nomenclature: SupportedNomenclature = "default") -> 
     station.runs = [
         run_001,
     ]
-    # station.station_metadata.run_list = [run_001, ]  # TODO: delete if not needed
 
     return station
 
@@ -341,7 +339,7 @@ def make_station_03(channel_nomenclature: SupportedNomenclature = "default") -> 
     )
     station.mth5_name = "test3.h5"
 
-    channels = station.channel_nomenclature_obj.channels
+    channels = station.channel_nomenclature.channels
 
     nan_indices = {}
     for ch in channels:
@@ -349,11 +347,11 @@ def make_station_03(channel_nomenclature: SupportedNomenclature = "default") -> 
 
     filters = {}
     for ch in channels:
-        if ch in station.channel_nomenclature_obj.ex_ey:
+        if ch in station.channel_nomenclature.ex_ey:
             filters[ch] = [
                 FILTERS["1x"].name,
             ]
-        elif ch in station.channel_nomenclature_obj.hx_hy_hz:
+        elif ch in station.channel_nomenclature.hx_hy_hz:
             filters[ch] = [FILTERS["10x"].name, FILTERS["0.1x"].name]
 
     run_001 = SyntheticRun(
@@ -438,7 +436,7 @@ def make_station_04(channel_nomenclature: SupportedNomenclature = "default") -> 
     run_001 = SyntheticRun(
         id="001",
         sample_rate=8.0,
-        channels=station.channel_nomenclature_obj.channels,
+        channels=station.channel_nomenclature.channels,
         raw_data_path=ASCII_DATA_PATH.joinpath("test1.asc"),
         start=None,
     )
@@ -446,11 +444,11 @@ def make_station_04(channel_nomenclature: SupportedNomenclature = "default") -> 
 
     filters = {}
     for ch in run_001.channels:
-        if ch in station.channel_nomenclature_obj.ex_ey:
+        if ch in station.channel_nomenclature.ex_ey:
             filters[ch] = [
                 FILTERS["1x"].name,
             ]
-        elif ch in station.channel_nomenclature_obj.hx_hy_hz:
+        elif ch in station.channel_nomenclature.hx_hy_hz:
             filters[ch] = [FILTERS["10x"].name, FILTERS["0.1x"].name]
     run_001.filters = filters
 

@@ -73,7 +73,7 @@ MTH5_PATH = synthetic_test_paths.mth5_path
 def create_run_ts_from_synthetic_run(
     run: SyntheticRun,
     df: pd.DataFrame,
-    channel_nomenclature_obj: ChannelNomenclature
+    channel_nomenclature: ChannelNomenclature
 ) -> RunTS:
     """
     Loop over channels of synthetic data in df and make ChannelTS objects.
@@ -96,14 +96,14 @@ def create_run_ts_from_synthetic_run(
     for i_col, col in enumerate(df.columns):
 
         data = df[col].values
-        if col in channel_nomenclature_obj.ex_ey:
+        if col in channel_nomenclature.ex_ey:
             channel_metadata = Electric()
             channel_metadata.units = "millivolts per kilometer"
-        elif col in channel_nomenclature_obj.hx_hy_hz:
+        elif col in channel_nomenclature.hx_hy_hz:
             channel_metadata = Magnetic()
             channel_metadata.units = "nanotesla"
         else:
-            msg = f"column {col} not in channel_nomenclature_obj {channel_nomenclature_obj}"
+            msg = f"column {col} not in channel_nomenclature {channel_nomenclature}"
             logger.error(msg)
             raise ValueError(msg)
 
@@ -119,9 +119,9 @@ def create_run_ts_from_synthetic_run(
 
         # Set dipole properties
         # (Not sure how to pass this in channel_metadata when intializing)
-        if col in channel_nomenclature_obj.ex_ey:
+        if col in channel_nomenclature.ex_ey:
             chts.channel_metadata.dipole_length = 50
-            if col == channel_nomenclature_obj.ey:
+            if col == channel_nomenclature.ey:
                 chts.channel_metadata.measurement_azimuth = 90.0
 
         # Set filters
@@ -225,7 +225,7 @@ def create_mth5_synthetic_file(
     :rtype: mth5_path: pathlib.Path
 
     """
-    nomenclatures = [x.channel_nomenclature_obj.keyword for x in station_cfgs]
+    nomenclatures = [x.channel_nomenclature.keyword for x in station_cfgs]
     unconventional_nomenclatures = [x for x in nomenclatures if x.lower() != "default"]
     if unconventional_nomenclatures:
         nomenclature_str = "_".join(unconventional_nomenclatures)
@@ -280,8 +280,9 @@ def create_mth5_synthetic_file(
                 #  synthetic_run.to_run_ts(df)
                 # but channel types for each column name must come from the Station level.
                 runts = create_run_ts_from_synthetic_run(
-                    run, df,
-                    channel_nomenclature_obj=station_cfg.channel_nomenclature_obj
+                    run,
+                    df,
+                    channel_nomenclature=station_cfg.channel_nomenclature
                 )
                 runts.station_metadata.id = station_group.metadata.id
 
