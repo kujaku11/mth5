@@ -73,7 +73,7 @@ MTH5_PATH = synthetic_test_paths.mth5_path
 def create_run_ts_from_synthetic_run(
     run: SyntheticRun,
     df: pd.DataFrame,
-    channel_nomenclature: SupportedNomenclature = "default"
+    channel_nomenclature_obj: ChannelNomenclature
 ) -> RunTS:
     """
     Loop over channels of synthetic data in df and make ChannelTS objects.
@@ -92,8 +92,6 @@ def create_run_ts_from_synthetic_run(
 
     """
 
-    channel_nomenclature_obj = ChannelNomenclature()
-    channel_nomenclature_obj.keyword = channel_nomenclature
     ch_list = []
     for i_col, col in enumerate(df.columns):
 
@@ -282,7 +280,8 @@ def create_mth5_synthetic_file(
                 #  synthetic_run.to_run_ts(df)
                 # but channel types for each column name must come from the Station level.
                 runts = create_run_ts_from_synthetic_run(
-                    run, df, channel_nomenclature=station_cfg.channel_nomenclature
+                    run, df,
+                    channel_nomenclature_obj=station_cfg.channel_nomenclature_obj
                 )
                 runts.station_metadata.id = station_group.metadata.id
 

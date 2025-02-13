@@ -204,7 +204,7 @@ class SyntheticStation(object):
         self,
         station_metadata: Station,
         mth5_name: Optional[Union[str, pathlib.Path]] = None,
-        channel_nomenclature: SupportedNomenclature = "default",  # TODO: rename to channel_nomenclature_keyword
+        channel_nomenclature_keyword: SupportedNomenclature = "default",  # TODO: rename to channel_nomenclature_keyword
     ) -> None:
         """
         Constructor.
@@ -213,15 +213,15 @@ class SyntheticStation(object):
         :type id: Station
         :param mth5_name: The name of the h5 file to which the station data and metadata will be written.
         :type mth5_name: Optional[Union[str, pathlib.Path]]
-        :param channel_nomenclature: the keyword for the channel nomenclature
-        :type channel_nomenclature: str
+        :param channel_nomenclature_keyword: the keyword for the channel nomenclature
+        :type channel_nomenclature_keyword: str
 
 
         """
         self.station_metadata = station_metadata
         self.runs = []
         self.mth5_name = mth5_name
-        self.channel_nomenclature = channel_nomenclature
+        self.channel_nomenclature_keyword = channel_nomenclature_keyword
         self._channel_nomenclature_obj = None  # TODO: rename to channel_nomenclature
 
         self.station_metadata.channels_recorded = self.channel_nomenclature_obj.channels
@@ -229,7 +229,8 @@ class SyntheticStation(object):
     @property
     def channel_nomenclature_obj(self):  # TODO: rename to channel_nomenclature
         if self._channel_nomenclature_obj is None:
-            self._channel_nomenclature_obj = ChannelNomenclature(keyword=self.channel_nomenclature)
+            self._channel_nomenclature_obj = ChannelNomenclature(
+                keyword=self.channel_nomenclature_keyword)
         return self._channel_nomenclature_obj
 
 
@@ -251,7 +252,7 @@ def make_station_01(channel_nomenclature: SupportedNomenclature = "default") -> 
     # initialize SyntheticStation
     station = SyntheticStation(
         station_metadata=station_metadata,
-        channel_nomenclature=channel_nomenclature  # Needed to assign channel types in RunTS
+        channel_nomenclature_keyword=channel_nomenclature  # Needed to assign channel types in RunTS
     )
 
     station.mth5_name = f"{station_metadata.id}.h5"
@@ -336,7 +337,7 @@ def make_station_03(channel_nomenclature: SupportedNomenclature = "default") -> 
     station_metadata.id = "test3"
     station = SyntheticStation(
         station_metadata=station_metadata,
-        channel_nomenclature=channel_nomenclature
+        channel_nomenclature_keyword=channel_nomenclature
     )
     station.mth5_name = "test3.h5"
 
@@ -430,7 +431,7 @@ def make_station_04(channel_nomenclature: SupportedNomenclature = "default") -> 
 
     station = SyntheticStation(
         station_metadata=station_metadata,
-        channel_nomenclature=channel_nomenclature
+        channel_nomenclature_keyword=channel_nomenclature
     )
     station.mth5_name = "test_04_8Hz.h5"
 
