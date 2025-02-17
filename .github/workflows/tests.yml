@@ -25,7 +25,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Setup Conda
-      uses: s-weigand/setup-conda@v1.2.3
+      uses: s-weigand/setup-conda@v1.0.7
       with:
         update-conda: true
         python-version: ${{ matrix.python-version }}
