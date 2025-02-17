@@ -73,8 +73,8 @@ MTH5_PATH = synthetic_test_paths.mth5_path
 def create_run_ts_from_synthetic_run(
     run: SyntheticRun,
     df: pd.DataFrame,
-    channel_nomenclature: SupportedNomenclature = "default"
-):
+    channel_nomenclature: ChannelNomenclature
+) -> RunTS:
     """
     Loop over channels of synthetic data in df and make ChannelTS objects.
 
@@ -92,18 +92,20 @@ def create_run_ts_from_synthetic_run(
 
     """
 
-    channel_nomenclature_obj = ChannelNomenclature()
-    channel_nomenclature_obj.keyword = channel_nomenclature
     ch_list = []
     for i_col, col in enumerate(df.columns):
 
         data = df[col].values
-        if col in channel_nomenclature_obj.ex_ey:
+        if col in channel_nomenclature.ex_ey:
             channel_metadata = Electric()
             channel_metadata.units = "millivolts per kilometer"
-        elif col in channel_nomenclature_obj.hx_hy_hz:
+        elif col in channel_nomenclature.hx_hy_hz:
             channel_metadata = Magnetic()
             channel_metadata.units = "nanotesla"
+        else:
+            msg = f"column {col} not in channel_nomenclature {channel_nomenclature}"
+            logger.error(msg)
+            raise ValueError(msg)
 
         channel_metadata.component = col
         channel_metadata.channel_number = i_col  # not required
@@ -117,9 +119,9 @@ def create_run_ts_from_synthetic_run(
 
         # Set dipole properties
         # (Not sure how to pass this in channel_metadata when intializing)
-        if col in channel_nomenclature_obj.ex_ey:
+        if col in channel_nomenclature.ex_ey:
             chts.channel_metadata.dipole_length = 50
-            if col == channel_nomenclature_obj.ey:
+            if col == channel_nomenclature.ey:
                 chts.channel_metadata.measurement_azimuth = 90.0
 
         # Set filters
@@ -133,8 +135,6 @@ def create_run_ts_from_synthetic_run(
     # make a RunTS object
     runts = RunTS(array_list=ch_list, run_metadata=run.run_metadata)
 
-    # add in metadata
-    # runts.run_metadata.id = run.run_metadata.id
     return runts
 
 
@@ -190,7 +190,6 @@ def create_mth5_synthetic_file(
     plot: bool = False,
     add_nan_values: bool = False,
     file_version: Literal["0.1.0", "0.2.0"] = "0.1.0",
-    channel_nomenclature: SupportedNomenclature = "default",
     force_make_mth5: bool = True,
     survey_metadata: Optional[Survey] = None,
 ):
@@ -217,10 +216,6 @@ def create_mth5_synthetic_file(
     :type add_nan_values: bool
     :param file_version: One of the supported mth5 file versions.  This is the version of mth5 to create.
     :type file_version: Literal["0.1.0", "0.2.0"] = "0.1.0",
-    :param channel_nomenclature: Keyword corresponding to channel nomenclature mapping in CHANNEL_MAPS variable,
-    for example ['default', 'lemi12', 'lemi34', 'phoenix123']
-    A full list is in mt_metadata/transfer_functions/processing/aurora/standards/channel_nomenclatures.json
-    :type channel_nomenclature: SupportedNomenclature
     :param force_make_mth5: If set to true, the file will be made, even if it already exists.
     If false, and file already exists, skip the make job.
     :type force_make_mth5: bool
@@ -230,11 +225,20 @@ def create_mth5_synthetic_file(
     :rtype: mth5_path: pathlib.Path
 
     """
+    nomenclatures = [x.channel_nomenclature.keyword for x in station_cfgs]
+    unconventional_nomenclatures = [x for x in nomenclatures if x.lower() != "default"]
+    if unconventional_nomenclatures:
+        nomenclature_str = "_".join(unconventional_nomenclatures)
+    else:
+        nomenclature_str = ""
 
+    # determine the path to the file that will be created
     target_folder = _get_target_folder(target_folder=target_folder)
     mth5_path = target_folder.joinpath(mth5_name)
     mth5_path = _update_mth5_path(
-        mth5_path, add_nan_values, channel_nomenclature
+        mth5_path,
+        add_nan_values,
+        channel_nomenclature=nomenclature_str
     )
 
     # Only create file if needed
@@ -272,8 +276,13 @@ def create_mth5_synthetic_file(
                 #  (They don't belong in get_time_Series_dataframe()
 
                 # cast to run_ts
+                # TODO: This could be
+                #  synthetic_run.to_run_ts(df)
+                # but channel types for each column name must come from the Station level.
                 runts = create_run_ts_from_synthetic_run(
-                    run, df, channel_nomenclature=channel_nomenclature
+                    run,
+                    df,
+                    channel_nomenclature=station_cfg.channel_nomenclature
                 )
                 runts.station_metadata.id = station_group.metadata.id
 
@@ -357,12 +366,12 @@ def create_test1_h5(
     station_params = [
         station_01_params,
     ]
+
     mth5_path = create_mth5_synthetic_file(
         station_params,
         mth5_name,
         plot=False,
         file_version=file_version,
-        channel_nomenclature=channel_nomenclature,
         target_folder=target_folder,
         source_folder=source_folder,
         force_make_mth5=force_make_mth5,
@@ -493,7 +502,6 @@ def create_test12rr_h5(
         station_params,
         mth5_name,
         file_version=file_version,
-        channel_nomenclature=channel_nomenclature,
         target_folder=target_folder,
         source_folder=source_folder,
         force_make_mth5=force_make_mth5,
@@ -583,7 +591,6 @@ def create_test4_h5(
         station_04_params.mth5_name,
         plot=False,
         file_version=file_version,
-        channel_nomenclature=channel_nomenclature,
         target_folder=target_folder,
         source_folder=source_folder,
         force_make_mth5=force_make_mth5,
@@ -615,13 +622,27 @@ def _update_mth5_path(
     add_nan_values: bool,
     channel_nomenclature: str
 ) -> pathlib.Path:
-    """ Modify the name of output h5 file based on wheter or not nan-data are included
-     as well as channel_nomenclature if not default. """
+    """
+
+    Modify the name of output h5 file based on wheter or not nan-data are included
+     as well as channel_nomenclature if not default for all stations.
+
+    :param mth5_path:
+    :param add_nan_values:
+    :param channel_nomenclature: designator for the channel nomenclatures in the mth5
+    :type channel_nomenclature: str
+
+    :return: TODO
+    :rtype: pathlib.Path
+
+    """
+
     path_str = mth5_path.__str__()
     if add_nan_values:
         path_str = path_str.replace(".h5", "_nan.h5")
-    if channel_nomenclature != "default":
-        path_str = path_str.replace(".h5", f"_{channel_nomenclature}.h5")
+    if channel_nomenclature:
+        if channel_nomenclature != "default":
+            path_str = path_str.replace(".h5", f"_{channel_nomenclature}.h5")
     return pathlib.Path(path_str)
 
 

@@ -1,10 +1,24 @@
 """
+
+This module contains tools for building MTH5 files from synthetic data.
+
+Development Notes:
+  - These tools are a work in progress and ideally will be able to yield
+  generalize to more than just the legacy EMTF ascii datasets that they
+  initially served.
+
 Definitions used in the creation of synthetic mth5 files.
 
-
 Survey level: 'mth5_path', Path to output h5
-Station level: 'station_id', name of the station
-Station level:'latitude':17.996
+
+Station level: mt_metadata Station() object with station info.
+  - the `id` field (name of the station) is required.
+  - other station metadata can be added
+  - channel_nomenclature
+    - The channel_nomenclature was previously stored at the run level.  It makes more sense to store
+     this info at the station level, as the only reason the nomenclature would change (that I can
+     think of) would be if the acquistion system changed, in which case it would make the most
+     sense to initialize a new station object.
 
 Run level: 'columns', :channel names as a list; ["hx", "hy", "hz", "ex", "ey"]
 Run level: 'raw_data_path', Path to ascii data source
@@ -13,6 +27,7 @@ Run level: 'nan_indices', iterable of integers, where to put nan [
 Run level: 'filters', dict of filters keyed by columns
 Run level: 'run_id', name of the run
 Run level: 'sample_rate', 1.0
+
 
 """
 import pathlib
@@ -68,10 +83,9 @@ class SyntheticRun(object):
     def __init__(
         self,
         id: str,
-        sample_rate: float = 1.0,
+        sample_rate: float,
+        channels: List[str],
         raw_data_path: Optional[Union[str, pathlib.Path]] = None,
-        channel_nomenclature: SupportedNomenclature = "default",
-        channels: Optional[list] = None,
         noise_scalars: Optional[dict] = None,
         nan_indices: Optional[dict] = None,
         filters: Optional[dict] = None,
@@ -86,12 +100,10 @@ class SyntheticRun(object):
         :type id: str
         :param sample_rate: sample rate of the time series in Hz.
         :type sample_rate: float
+        :param channels: the channel names to include in the run.
+        :type channels: List[str]
         :param raw_data_path: Path to ascii data source
         :type raw_data_path: Union[str, pathlib.Path, None]
-        :param channel_nomenclature: the keyword for the channel nomenclature
-        :type channel_nomenclature: str
-        :param channels: the channel names to include in the run.
-        :type channels: Union[list, None]
         :param noise_scalars: Keys are channels, values are scale factors for noise to add
         :type noise_scalars: Union[dict, None]
         :param nan_indices: Keys are channels, values lists.  List elements are pairs of (index, num_nan_to_add)
@@ -104,7 +116,7 @@ class SyntheticRun(object):
          Added 2025 to try to allow more general data to be cast to mth5
         :type timeseries_dataframe: Optional[pd.DataFrame] = None
         :param data_source: Keyword to tell if data are a legacy EMTF ASCII file
-        :param data_source: Keyword to tell if data are a legacy EMTF ASCII file
+        :type data_source: str
 
         """
         run_metadata = Run()
@@ -120,11 +132,7 @@ class SyntheticRun(object):
             self.raw_data_path = raw_data_path
 
         # set channel names
-        self._channel_map = None
-        self.channel_nomenclature_keyword = channel_nomenclature
-        self.set_channel_map()
-        if channels is None:
-            self.channels = list(self.channel_map.values())
+        self.channels = channels
 
         # Set scale factors for adding noise to individual channels
         self.noise_scalars = noise_scalars
@@ -143,29 +151,6 @@ class SyntheticRun(object):
 
         # run_metadata.add_base_attribute("")
         self.run_metadata = run_metadata
-
-    @property
-    def channel_map(self) -> dict:
-        """
-        Make self._channel_map if it isn't initialize already.
-
-        :rtype: dict
-        :return: The mappings between the standard channel names and the ones that will be used in the MTH5.
-
-        """
-        if self._channel_map is None:
-            self.set_channel_map()
-        return self._channel_map
-
-    def set_channel_map(self) -> None:
-        """
-        Populates a dictionary relating "actual" channel names to the standard names "hx", "hy", "hz", "ex", "ey"
-
-        """
-        channel_nomenclature = ChannelNomenclature(
-            keyword=self.channel_nomenclature_keyword
-        )
-        self._channel_map = channel_nomenclature.get_channel_map()
 
     def _get_timeseries_dataframe(
         self,
@@ -214,6 +199,7 @@ class SyntheticStation(object):
         self,
         station_metadata: Station,
         mth5_name: Optional[Union[str, pathlib.Path]] = None,
+        channel_nomenclature_keyword: SupportedNomenclature = "default",  # TODO: rename to channel_nomenclature_keyword
     ) -> None:
         """
         Constructor.
@@ -222,11 +208,26 @@ class SyntheticStation(object):
         :type id: Station
         :param mth5_name: The name of the h5 file to which the station data and metadata will be written.
         :type mth5_name: Optional[Union[str, pathlib.Path]]
+        :param channel_nomenclature_keyword: the keyword for the channel nomenclature
+        :type channel_nomenclature_keyword: str
+
 
         """
         self.station_metadata = station_metadata
         self.runs = []
         self.mth5_name = mth5_name
+        self.channel_nomenclature_keyword = channel_nomenclature_keyword
+        self._channel_nomenclature = None
+
+        self.station_metadata.channels_recorded = self.channel_nomenclature.channels
+
+    @property
+    def channel_nomenclature(self):
+        if self._channel_nomenclature is None:
+            self._channel_nomenclature = ChannelNomenclature(
+                keyword=self.channel_nomenclature_keyword
+            )
+        return self._channel_nomenclature
 
 
 def make_station_01(channel_nomenclature: SupportedNomenclature = "default") -> SyntheticStation:
@@ -242,21 +243,21 @@ def make_station_01(channel_nomenclature: SupportedNomenclature = "default") -> 
     """
     station_metadata = Station()
     station_metadata.id = "test1"
-    station_metadata.location.latitude = 17.996
-    # TODO: Add more metadata here as an example
-
-    channel_nomenclature_obj = ChannelNomenclature()
-    channel_nomenclature_obj.keyword = channel_nomenclature
+    station_metadata.location.latitude = 17.996  # TODO: Add more metadata here as an example
 
     # initialize SyntheticStation
-    station = SyntheticStation(station_metadata=station_metadata)
+    station = SyntheticStation(
+        station_metadata=station_metadata,
+        channel_nomenclature_keyword=channel_nomenclature  # Needed to assign channel types in RunTS
+    )
+
     station.mth5_name = f"{station_metadata.id}.h5"
 
     run_001 = SyntheticRun(
         id="001",
         sample_rate=1.0,
+        channels = station.channel_nomenclature.channels,
         raw_data_path=ASCII_DATA_PATH.joinpath("test1.asc"),
-        channel_nomenclature=channel_nomenclature,
         start=None,
     )
 
@@ -264,9 +265,9 @@ def make_station_01(channel_nomenclature: SupportedNomenclature = "default") -> 
     nan_indices = {}
     for ch in run_001.channels:
         nan_indices[ch] = []
-        if ch == channel_nomenclature_obj.hx:
+        if ch == station.channel_nomenclature.hx:
             nan_indices[ch].append([11, 100])
-        if ch == channel_nomenclature_obj.hy:
+        if ch == station.channel_nomenclature.hy:
             nan_indices[ch].append([11, 100])
             nan_indices[ch].append([20000, 444])
     run_001.nan_indices = nan_indices
@@ -274,21 +275,21 @@ def make_station_01(channel_nomenclature: SupportedNomenclature = "default") -> 
     # assign some filters to the channels
     filters = {}
     for ch in run_001.channels:
-        if ch in channel_nomenclature_obj.ex_ey:
+        if ch in station.channel_nomenclature.ex_ey:
             filters[ch] = [
                 FILTERS["1x"].name,
             ]
-        elif ch in channel_nomenclature_obj.hx_hy_hz:
-            filters[ch] = [FILTERS["10x"].name, FILTERS["0.1x"].name]
+        elif ch in station.channel_nomenclature.hx_hy_hz:
+            filters[ch] = [
+                FILTERS["10x"].name,
+                FILTERS["0.1x"].name
+            ]
     run_001.filters = filters
 
     station.runs = [
         run_001,
     ]
-    station_metadata.run_list = [
-        run_001,
-    ]
-    station.station_metadata = station_metadata
+
     return station
 
 
@@ -306,10 +307,12 @@ def make_station_02(channel_nomenclature: SupportedNomenclature = "default") -> 
     test2.station_metadata.id = "test2"
     test2.mth5_name = "test2.h5"
     test2.runs[0].raw_data_path = ASCII_DATA_PATH.joinpath("test2.asc")
+
     nan_indices = {}
     for channel in test2.runs[0].channels:
         nan_indices[channel] = []
     test2.runs[0].nan_indices = nan_indices
+
     return test2
 
 
@@ -324,13 +327,16 @@ def make_station_03(channel_nomenclature: SupportedNomenclature = "default") -> 
     :return: Object with all info needed to generate MTH5 file from synthetic data.
 
     """
-    channel_nomenclature_obj = ChannelNomenclature()
-    channel_nomenclature_obj.keyword = channel_nomenclature
+
     station_metadata = Station()
     station_metadata.id = "test3"
-    station = SyntheticStation(station_metadata=station_metadata)
+    station = SyntheticStation(
+        station_metadata=station_metadata,
+        channel_nomenclature_keyword=channel_nomenclature
+    )
     station.mth5_name = "test3.h5"
-    channels = channel_nomenclature_obj.channels
+
+    channels = station.channel_nomenclature.channels
 
     nan_indices = {}
     for ch in channels:
@@ -338,20 +344,20 @@ def make_station_03(channel_nomenclature: SupportedNomenclature = "default") -> 
 
     filters = {}
     for ch in channels:
-        if ch in channel_nomenclature_obj.ex_ey:
+        if ch in station.channel_nomenclature.ex_ey:
             filters[ch] = [
                 FILTERS["1x"].name,
             ]
-        elif ch in channel_nomenclature_obj.hx_hy_hz:
+        elif ch in station.channel_nomenclature.hx_hy_hz:
             filters[ch] = [FILTERS["10x"].name, FILTERS["0.1x"].name]
 
     run_001 = SyntheticRun(
         id="001",
         sample_rate=1.0,
+        channels=channels,
         raw_data_path=ASCII_DATA_PATH.joinpath("test1.asc"),
         nan_indices=nan_indices,
         filters=filters,
-        channel_nomenclature=channel_nomenclature,
         start="1980-01-01T00:00:00+00:00",
     )
 
@@ -361,11 +367,11 @@ def make_station_03(channel_nomenclature: SupportedNomenclature = "default") -> 
     run_002 = SyntheticRun(
         id="002",
         sample_rate=1.0,
+        channels=channels,
         raw_data_path=ASCII_DATA_PATH.joinpath("test1.asc"),
         noise_scalars=noise_scalars,
         nan_indices=nan_indices,
         filters=filters,
-        channel_nomenclature=channel_nomenclature,
         start="1980-01-02T00:00:00+00:00",
     )
 
@@ -374,11 +380,11 @@ def make_station_03(channel_nomenclature: SupportedNomenclature = "default") -> 
     run_003 = SyntheticRun(
         id="003",
         sample_rate=1.0,
+        channels=channels,
         raw_data_path=ASCII_DATA_PATH.joinpath("test1.asc"),
         noise_scalars=noise_scalars,
         nan_indices=nan_indices,
         filters=filters,
-        channel_nomenclature=channel_nomenclature,
         start="1980-01-03T00:00:00+00:00",
     )
 
@@ -387,11 +393,11 @@ def make_station_03(channel_nomenclature: SupportedNomenclature = "default") -> 
     run_004 = SyntheticRun(
         id="004",
         sample_rate=1.0,
+        channels=channels,
         raw_data_path=ASCII_DATA_PATH.joinpath("test1.asc"),
         noise_scalars=noise_scalars,
         nan_indices=nan_indices,
         filters=filters,
-        channel_nomenclature=channel_nomenclature,
         start="1980-01-04T00:00:00+00:00",
     )
 
@@ -414,30 +420,32 @@ def make_station_04(channel_nomenclature: SupportedNomenclature = "default") -> 
     :rtype: SyntheticStation
     :return: Object with all info needed to generate MTH5 file from synthetic data.
     """
+
     station_metadata = Station()
     station_metadata.id = "test1"
-    channel_nomenclature_obj = ChannelNomenclature()
-    channel_nomenclature_obj.keyword = channel_nomenclature
 
-    station = SyntheticStation(station_metadata=station_metadata)
+    station = SyntheticStation(
+        station_metadata=station_metadata,
+        channel_nomenclature_keyword=channel_nomenclature
+    )
     station.mth5_name = "test_04_8Hz.h5"
 
     run_001 = SyntheticRun(
         id="001",
         sample_rate=8.0,
+        channels=station.channel_nomenclature.channels,
         raw_data_path=ASCII_DATA_PATH.joinpath("test1.asc"),
-        channel_nomenclature=channel_nomenclature,
         start=None,
     )
     run_001.nan_indices = {}
 
     filters = {}
     for ch in run_001.channels:
-        if ch in channel_nomenclature_obj.ex_ey:
+        if ch in station.channel_nomenclature.ex_ey:
             filters[ch] = [
                 FILTERS["1x"].name,
             ]
-        elif ch in channel_nomenclature_obj.hx_hy_hz:
+        elif ch in station.channel_nomenclature.hx_hy_hz:
             filters[ch] = [FILTERS["10x"].name, FILTERS["0.1x"].name]
     run_001.filters = filters
 

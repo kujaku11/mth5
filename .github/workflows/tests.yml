@@ -20,12 +20,13 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest"]
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+#        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.9", "3.10", "3.11"]
 
     steps:
     - uses: actions/checkout@v4
     - name: Setup Conda
-      uses: s-weigand/setup-conda@v1.2.1
+      uses: s-weigand/setup-conda@v1.0.7
       with:
         update-conda: false
         python-version: ${{ matrix.python-version }}
@@ -36,7 +37,7 @@ jobs:
         python --version
         conda create -n mth5-test python=${{ matrix.python-version }}
         source activate mth5-test
-        conda install pytest=7.1.2
+        conda install pytest=7.3
         conda install pytest-cov
         conda install pytest-subtests
         pip install git+https://github.com/kujaku11/mt_metadata.git@features
