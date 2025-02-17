@@ -37,7 +37,7 @@ jobs:
         python --version
         conda create -n mth5-test python=${{ matrix.python-version }}
         source activate mth5-test
-        conda install pytest-7.4.4
+        conda install pytest=7.4.4
         conda install pytest-cov
         conda install pytest-subtests
         pip install git+https://github.com/kujaku11/mt_metadata.git@features
