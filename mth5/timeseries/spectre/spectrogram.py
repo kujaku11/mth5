@@ -1,6 +1,8 @@
 """
-Module contains a class that represents a spectrogram,
-i.e. A 2D time series of Fourier coefficients with axes time and frequency.
+Module contains a class that represents a spectrogram.
+i.e. A 2D time series of Fourier coefficients with axes time and the other frequency.
+The datasets are xarray/dataframe and are fundmentally multivariate.
+
 """
 # Standard library imports
 from typing import List, Optional, Tuple, Union
@@ -19,9 +21,29 @@ from mth5.timeseries.xarray_helpers import covariance_xr, initialize_xrda_2d
 class Spectrogram(object):
     """
     Class to contain methods for STFT objects.
-    TODO: Add support for cross powers
+
+
     TODO: Add OLS Z-estimates
     TODO: Add Sims/Vozoff Z-estimates
+
+
+    Development Notes:
+    - The spectrogram class is fundamental to MT Processing, and normally appears during the STFT operation.
+    - The extract_band method returns another Spectrogram, having the same time axis as the parent
+    object, but only a slice of the frequency range.  Both of these have in common that their frequency axes
+    are uniformly spaced, delta-f, where delta-f is dictated by the time series sample rate and the FFT window
+    lenght.
+    - There is a sibling spectral-time-series container that should be considered.  Call it for now, a
+    FrequencyChunkedSpectrogram (or an AveragedSpectrogram).  This is a container similar to spectrogram, but
+    the frequencies are not uniformly spaced (instead, often logartihmically spaced), they are made from one or
+    more (possibly multivariate) spectrograms, and a FrequencyBands object.  The key difference
+    is that in a FrequencyChunkedSpectrogram object has a non-uniform spaced the Frequency axis which was prescribed
+    by a metadata object.  Most features, as well as TFs have a FrequencyChunkedSpectrogram representation,
+    where final TFs are just time-averaged a FrequencyChunkedSpectrograms.
+
+    TODO: consider factoring a simpler class that does not make the uniform frequency axis assumption.
+    Spectrogram would extend this class and add the  _frequency_increment property (taken from the differece in
+    the first two values of the frequency axis), and num_harmoincs in band.
 
     """
 
@@ -29,7 +51,10 @@ class Spectrogram(object):
         self,
         dataset: Optional[xr.Dataset] = None
     ):
-        """Constructor"""
+        """
+        Constructor.
+
+        """
         self._dataset = dataset
         self._frequency_increment = None
         self._frequency_band = None
@@ -64,7 +89,7 @@ class Spectrogram(object):
             + channel_coverage
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
     @property
@@ -188,7 +213,11 @@ class Spectrogram(object):
         # TODO: If strict, only take bands that are contained
         return valid_frequency_bands
 
-    def cross_powers(self, frequency_bands, channel_pairs=None):
+    def cross_powers(
+        self,
+        frequency_bands: FrequencyBands,
+        channel_pairs: Optional[List[Tuple[str, str]]] = None
+    ):
         """
         Compute cross powers between channel pairs for given frequency bands.
 
@@ -214,6 +243,7 @@ class Spectrogram(object):
         from itertools import combinations_with_replacement
 
         valid_frequency_bands = self._validate_frequency_bands(frequency_bands)
+
         # If no channel pairs specified, use all possible pairs
         if channel_pairs is None:
             channels = list(self.dataset.data_vars.keys())

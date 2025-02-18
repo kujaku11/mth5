@@ -16,7 +16,7 @@
 from dataclasses import dataclass
 from loguru import logger
 from mth5.utils.exceptions import MTH5Error
-from typing import Optional, Tuple , Union
+from typing import Literal, Optional, Tuple , Union
 import mth5.mth5
 import numpy as np
 import pandas as pd
@@ -402,7 +402,7 @@ def make_multistation_spectrogram(
     m: mth5.mth5.MTH5,
     fc_run_chunks: list,
     label_scheme: Optional[MultivariateLabelScheme] = MultivariateLabelScheme(),
-    rtype: Optional[Union[str, None]] = None
+    rtype: Optional[Literal["xrds"]] = None
 ) -> Union[xr.Dataset, MultivariateDataset]:
     """
 
@@ -427,13 +427,13 @@ def make_multistation_spectrogram(
 
     :param m:  The mth5 object to get the FCs from.
     :type m: mth5.mth5.MTH5
-    :param fc_run_chunks: Each element of this describes a chunk of a run to loac from stored FCs.
+    :param fc_run_chunks: Each element of this describes a chunk of a run to load from stored FCs.
     :type fc_run_chunks: list
     :param label_scheme: Specifies how the channels are to be named in the multivariate xarray.
     :type label_scheme: Optional[MultivariateLabelScheme]
     :param rtype: Specifies whether to return an xarray or a MultivariateDataset.  Currently only supports "xrds",
     otherwise will return MultivariateDataset.
-    :type rtype: Optional[Union[str, None]]
+    :type rtype: Optional[Literal["xrds"]]
 
     :rtype: Union[xarray.Dataset, MultivariateDataset]:
     :return: The multivariate dataset, either as an xarray or as a MultivariateDataset
