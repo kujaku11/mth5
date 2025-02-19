@@ -25,9 +25,11 @@ from mth5.data.make_mth5_from_asc import create_test12rr_h5
 from mth5.data.station_config import make_station_01
 from mth5.helpers import close_open_files
 from mth5.mth5 import MTH5
+from mth5.timeseries.spectre import MultivariateDataset
+from mth5.timeseries.spectre import Spectrogram
+from mth5.timeseries.spectre.frequency_band_helpers import half_octave
 from mth5.timeseries.spectre.helpers import add_fcs_to_mth5
 from mth5.timeseries.spectre.helpers import read_back_fcs
-from mth5.timeseries.spectre import Spectrogram
 from scipy.constants import mu_0
 
 import unittest
@@ -319,7 +321,8 @@ def test_store_and_read_cross_power_features(test1_spectrogram, test_frequency_b
 
 
 def test_can_mvds(
-    test_multivariate_spectrogram
+    test_multivariate_spectrogram,  # pytest.Fixture -- TODO typehint this properly
+
 ):
     """
         Placeholder:
@@ -335,7 +338,21 @@ def test_can_mvds(
     -------
 
     """
-    mv_spectrogram = test_multivariate_spectrogram
+    spectrogram = test_multivariate_spectrogram
+    #  Pick a target frequency, say 1/4 way along the axis
+    target_frequency = spectrogram.frequency_axis.data.mean() / 2
+    frequency_band = half_octave(
+        target_frequency=target_frequency,
+        fft_frequencies=spectrogram.frequency_axis
+    )
+    band_spectrogram = spectrogram.extract_band(
+        frequency_band=frequency_band,
+        epsilon=0.0
+    )
+    xrds = band_spectrogram.flatten()
+    mvds = MultivariateDataset(xrds=xrds)
+    mvds.cross_power()
+
     return
 
 # ======================== pytest fixtures ======================== #
@@ -380,6 +397,7 @@ def test_multivariate_spectrogram():
         Development Notes:
             - In this example, we are supposing that we already know which runs from which stations will be merged
             into a multivariate dataset.
+            - The runs are packed into a list of FCRunChunk objects, and a
 
 
     Returns
@@ -389,7 +407,6 @@ def test_multivariate_spectrogram():
     from mth5.mth5 import MTH5
     from mth5.timeseries.spectre.multiple_station import make_multistation_spectrogram
     from mth5.timeseries.spectre.multiple_station import FCRunChunk
-
 
     # get the path to an mth5 file that has multiple stations
     mth5_path_12rr = create_test12rr_h5(
@@ -421,10 +438,9 @@ def test_multivariate_spectrogram():
         mvds = make_multistation_spectrogram(m, [fc_run_chunk_1, fc_run_chunk_2], rtype=None)
     assert len(mvds.channels) == 10
 
-    mv_spectrogram = Spectrogram(dataset=mvds.dataset)
+    spectrogram = Spectrogram(dataset=mvds.dataset)
 
-
-    return mv_spectrogram
+    return spectrogram
 
 
 @pytest.fixture
