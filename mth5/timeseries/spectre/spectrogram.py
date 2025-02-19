@@ -5,7 +5,8 @@ The datasets are xarray/dataframe and are fundmentally multivariate.
 
 """
 # Standard library imports
-from typing import List, Optional, Tuple, Union
+from loguru import logger
+from typing import List, Literal, Optional, Tuple, Union
 
 # Third-party imports
 import numpy as np
@@ -153,7 +154,12 @@ class Spectrogram(object):
         num_harmonics = (cond1 & cond2).data.sum()
         return num_harmonics
 
-    def extract_band(self, frequency_band, channels=[]):
+    def extract_band(
+        self,
+        frequency_band: Band,
+        channels: Optional[list] = None,
+        epsilon: Optional[float] = None
+    ):
         """
         Returns another instance of Spectrogram, with the frequency axis reduced to the input band.
 
@@ -168,11 +174,16 @@ class Spectrogram(object):
             Returns a Spectrogram object with only the extracted band for a dataset
 
         """
+        # Set epsilon to a floating point value if it was not provided
+        # self.frequency_increment / 2.0 is the legacy default
+        if epsilon is None:
+            epsilon = self.frequency_increment / 2.0
+
         extracted_band_dataset = extract_band(
             frequency_band,
             self.dataset,
             channels=channels,
-            epsilon=self.frequency_increment / 2.0,
+            epsilon=epsilon
         )
         # Drop NaN values along the frequency dimension
         # extracted_band_dataset = extracted_band_dataset.dropna(dim='frequency', how='any')
@@ -323,18 +334,17 @@ class Spectrogram(object):
                 pairs.append((ch1, ch2))
         return pairs
 
-    def flatten(self, chunk_by: Optional[str] = "time") -> xr.Dataset:
+    def flatten(self, chunk_by: Literal["time", "frequency"] = "time") -> xr.Dataset:
         """
 
             Reshape the 2D spectrogram into a 1D flattened xarray (time-chunked by default).
 
         Parameters
         ----------
-        chunk_by: str
-            Controlled vocabulary ["time", "frequency"]. Reshaping the 2D spectrogram can be done two ways
-            (basically "row-major", or column-major). In xarray, but we either keep frequency constant and
-            iterate over time, or keep time constant and iterate over frequency (in the inner loop).
-
+        chunk_by: Literal["time", "frequency"]
+            Reshaping the 2D spectrogram can be done two ways, (basically "row-major",
+            or column-major). In xarray, but we either keep frequency constant and iterate
+            over time, or keep time constant and iterate over frequency (in the inner loop).
 
         Returns
         -------
@@ -355,6 +365,11 @@ class Spectrogram(object):
             observation = ("time", "frequency")
         elif chunk_by == "frequency":
             observation = ("frequency", "time")
+        else:
+            msg = f"Invalid argument chunk_by={chunk_by}, must be one of ['time', 'frequency']"
+            logger.error(msg)
+            raise ValueError(msg)
+
         return self.dataset.stack(observation=observation)
 
 
