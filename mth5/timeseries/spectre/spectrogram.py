@@ -68,12 +68,14 @@ class Spectrogram(object):
 
     def __str__(self) -> str:
         """Returns a Description of frequency coverage"""
+        if self.dataset is None:
+            return "Dataless Spectrogram"
         intro = "Spectrogram:"
         frequency_coverage = (
-            f"{self.dataset.dims['frequency']} harmonics, {self.frequency_increment}Hz spaced \n"
+            f"{self.dataset.sizes['frequency']} harmonics, {self.frequency_increment}Hz spaced \n"
             f" from {self.dataset.frequency.data[0]} to {self.dataset.frequency.data[-1]} Hz."
         )
-        time_coverage = f"\n{self.dataset.dims['time']} Time observations"
+        time_coverage = f"\n{self.dataset.sizes['time']} Time observations"
         time_coverage = f"{time_coverage} \nStart: {self.dataset.time.data[0]}"
         time_coverage = f"{time_coverage} \nEnd:   {self.dataset.time.data[-1]}"
 
