@@ -350,7 +350,7 @@ def test_can_mvds(
         epsilon=0.0
     )
     xrds = band_spectrogram.flatten()
-    mvds = MultivariateDataset(xrds=xrds)
+    mvds = MultivariateDataset(dataset=xrds)
     mvds.cross_power()
 
     return
