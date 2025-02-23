@@ -136,10 +136,10 @@ class MultivariateDataset(Spectrogram):
     """
     def __init__(
         self,
-        xrds: xr.Dataset,
+        dataset: xr.Dataset,
         label_scheme: Optional[MultivariateLabelScheme] = None,
     ):
-        super().__init__(dataset=xrds)
+        super().__init__(dataset=dataset)
         self._label_scheme = label_scheme
 
         self._channels = None
@@ -204,21 +204,6 @@ class MultivariateDataset(Spectrogram):
             self._station_channels = station_channels
 
         return self._station_channels[station]
-
-    # TODO: delete -- this now uses Spectrogram's extract_band
-    # def extract_band(self, band):
-    #     """
-    #         Extracts a sub-xarray for frequencies f, such that
-    #         band.lower_bound <= f <= band.upper_bound
-    #     Parameters
-    #     ----------
-    #     band
-    #
-    #     Returns
-    #     -------
-    #
-    #     """
-    #     pass
 
     def archive_cross_powers(
         self,
@@ -446,6 +431,6 @@ def make_multistation_spectrogram(
     if rtype == "xrds":
         output = xrds
     else:
-        output = MultivariateDataset(xrds=xrds, label_scheme=label_scheme)
+        output = MultivariateDataset(dataset=xrds, label_scheme=label_scheme)
 
     return output
