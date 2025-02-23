@@ -240,7 +240,9 @@ class Spectrogram(object):
         Parameters
         ----------
         frequency_bands : FrequencyBands
-            The frequency bands to compute cross powers for.
+            The frequency bands to compute cross powers for.  Each element of this iterable
+            tells the lower and upper bounds of the cross-power calculation bands.
+            These may become objects with information about tapers as ewwll.
         channel_pairs : list of tuples, optional
             List of channel pairs to compute cross powers for.
             If None, all possible pairs will be used.
