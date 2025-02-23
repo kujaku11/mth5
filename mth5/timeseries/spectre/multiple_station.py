@@ -16,6 +16,7 @@
 from dataclasses import dataclass
 from loguru import logger
 from mth5.utils.exceptions import MTH5Error
+from mth5.timeseries.spectre.spectrogram import Spectrogram
 from typing import Literal, Optional, Tuple , Union
 import mth5.mth5
 import numpy as np
@@ -120,9 +121,9 @@ class MultivariateLabelScheme():
         return output
 
 
-class MultivariateDataset():
+class MultivariateDataset(Spectrogram):
     """
-        Here is a container for a multivariate dataset.
+        Here is a container for a multivariate spectral dataset.
         The xarray is the main underlying item, but it will be useful to have functions that, for example returns a
         list of the associated stations, or that return a list of channels that are associated with a station, etc.
 
@@ -135,10 +136,10 @@ class MultivariateDataset():
     """
     def __init__(
         self,
-        xrds: xr.Dataset,
+        dataset: xr.Dataset,
         label_scheme: Optional[MultivariateLabelScheme] = None,
     ):
-        self._xrds = xrds
+        super().__init__(dataset=dataset)
         self._label_scheme = label_scheme
 
         self._channels = None
@@ -152,14 +153,6 @@ class MultivariateDataset():
             logger.warning(msg)
             self._label_scheme = MultivariateLabelScheme()
         return self._label_scheme
-
-    @property
-    def dataset(self) -> xr.Dataset:
-        return self._xrds
-
-    @property
-    def dataarray(self) -> xr.DataArray:
-        return self._xrds.to_array()
 
     @property
     def channels(self) -> list:
@@ -212,20 +205,6 @@ class MultivariateDataset():
 
         return self._station_channels[station]
 
-    def extract_band(self, band):
-        """
-            Extracts a sub-xarray for frequencies f, such that
-            band.lower_bound <= f <= band.upper_bound
-        Parameters
-        ----------
-        band
-
-        Returns
-        -------
-
-        """
-        pass
-
     def archive_cross_powers(
         self,
         tf_station: str,
@@ -246,59 +225,9 @@ class MultivariateDataset():
         -------
 
         """
+        pass
 
-    def calculate_cross_powers(
-        self,
-        frequency_bands,
-        channel_pairs: list,
-    ):
-        """
-
-        Parameters
-        ----------
-        frequency_bands: iterable (of intervals)
-         Each element of this iterable tells the lower and upper bounds of the
-         cross-power calculation bands.  These may become objects with information about
-         tapers as ewwll.
-
-        Returns
-        -------
-
-        This calculates the crosspowers with an appropriate
-        labelling scheme and returns an xr or dataframe,
-        multiindexed by frequency (the band centers) and time.
-        So for each STFT-window, we now have a few cross-power bands.
-
-        TODO: What is not addressed here is which station we want to get a TF for
-        and where in teh mth5 we would want to store the "answer product",.
-
-        If we requuire
-
-
-        Parameters
-        ----------
-        frequency_bands
-
-        Returns
-        -------
-
-        """
-        # output = xr.DataSet(time=self.dataset.time, freq=frequency_bands.band_centers)
-        # TODO: check FrequenmcyBands object for details of getting frequency axis
-
-        for i_time_window in time_windows: # len xrds.time
-            for band in frequency_bands:
-                cross_power_input_data = self.extract_band(band)  # this is an xarray
-                for ch_pair in channel_pairs:
-                    x = cross_power_input_data[ch_pair[0]]
-                    y = cross_power_input_data[ch_pair[1]]
-                    xpwr = x.flatten @ y.flatten.conj().T
-                    output[f"xpwr_{ch_pair[0]}{ch_pair[1]}"] = xpwr
-
-        print("Now archive this under tf_station")
-        return output
-
-
+    # TODO: Replace with Spectrogram's covariance_matrix
     def cross_power(
         self,
         aweights: Optional[np.ndarray] = None,
@@ -502,6 +431,6 @@ def make_multistation_spectrogram(
     if rtype == "xrds":
         output = xrds
     else:
-        output = MultivariateDataset(xrds=xrds, label_scheme=label_scheme)
+        output = MultivariateDataset(dataset=xrds, label_scheme=label_scheme)
 
     return output
