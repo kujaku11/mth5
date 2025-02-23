@@ -5,6 +5,7 @@
 """
 from .prewhitening import apply_prewhitening
 from .prewhitening import apply_recoloring
+from .spectrogram import Spectrogram
 from mt_metadata.transfer_functions.processing.aurora.decimation_level import (
     DecimationLevel as AuroraDecimationLevel,
 )
@@ -21,10 +22,12 @@ import xarray as xr
 def run_ts_to_stft_scipy(
     decimation_obj: Union[AuroraDecimationLevel, FCDecimation],
     run_xrds_orig: xr.Dataset,
-) -> xr.Dataset:
+) -> Spectrogram:
     """
     Converts a runts object into a time series of Fourier coefficients.
     This method uses scipy.signal.spectrogram.
+
+    TODO: consider making this a method of RunTS; runts.to_spectrogram(decimation_obj)
 
     Parameters
     ----------
@@ -73,4 +76,4 @@ def run_ts_to_stft_scipy(
     if decimation_obj.stft.recoloring:
         stft_obj = apply_recoloring(decimation_obj.stft.prewhitening_type, stft_obj)
 
-    return stft_obj
+    return Spectrogram(dataset=stft_obj)

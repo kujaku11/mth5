@@ -155,8 +155,8 @@ def _add_spectrogram_to_mth5(
         )
         return
 
-    stft_obj = run_ts_to_stft_scipy(fc_decimation, run_xrds)
-    stft_obj = calibrate_stft_obj(stft_obj, run_obj)
+    spectrogram = run_ts_to_stft_scipy(fc_decimation, run_xrds)
+    stft_obj = calibrate_stft_obj(spectrogram.dataset, run_obj)
 
     # Pack FCs into h5 and update metadata
     fc_decimation_group: FCDecimationGroup = fc_group.add_decimation_level(
