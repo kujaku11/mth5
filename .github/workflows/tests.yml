@@ -35,8 +35,7 @@ jobs:
     - name: Install Env
       run: |
         python --version
-        pip install --upgrade attr
-        conda install pytest
+        conda install pytest=7.3
         conda install pytest-cov
         conda install pytest-subtests
         pip install git+https://github.com/kujaku11/mt_metadata.git@features
