@@ -20,24 +20,21 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest"]
-#        python-version: ["3.8", "3.9", "3.10", "3.11"]
-        python-version: ["3.9", "3.10", "3.11"]
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
 
     steps:
     - uses: actions/checkout@v4
-    - name: Setup Conda
-      uses: s-weigand/setup-conda@v1.0.7
+    - name: Setup Miniconda
+      uses: conda-incubator/setup-miniconda@v3
       with:
-        update-conda: false
+        auto-update-conda: true
         python-version: ${{ matrix.python-version }}
 
     - name: Install Env
       shell: bash
       run: |
         python --version
-        conda create -n mth5-test python=${{ matrix.python-version }}
-        source activate mth5-test
-        conda install pytest=7.3
+        conda install pytest
         conda install pytest-cov
         conda install pytest-subtests
         pip install git+https://github.com/kujaku11/mt_metadata.git@features
@@ -45,7 +42,6 @@ jobs:
     - name: Install Our Package
       shell: bash
       run: |
-        source activate mth5-test
         pip install -e .
         conda list
 
@@ -64,10 +60,7 @@ jobs:
     #    jupyter nbconvert --to notebook --execute docs/examples/notebooks/make_mth5_driver_v0.2.0.ipynb
 
     - name: Run Tests
-      shell: bash
-      run: |
-        source activate mth5-test
-        pytest -rA --cov=./ --cov-report=xml --cov=mth5
+      run: pytest -rA --cov=./ --cov-report=xml --cov=mth5
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
