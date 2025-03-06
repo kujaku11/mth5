@@ -392,7 +392,7 @@ class Z3D:
             )
         elif "h" in self.component:
             ch = Magnetic()
-            ch.sensor.id = (self.coil_number,)
+            ch.sensor.id = self.coil_number
             ch.sensor.manufacturer = "Geotell"
             ch.sensor.model = "ANT-4"
             ch.sensor.type = "induction coil"
