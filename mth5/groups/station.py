@@ -205,9 +205,7 @@ class MasterStationGroup(BaseGroup):
                         entry_list.append(_get_entry(group))
                     elif group_type in ["masterstation"]:
                         for key, node in group.items():
-                            entry_list = _recursive_get_station_entry(
-                                node, entry_list
-                            )
+                            entry_list = _recursive_get_station_entry(node, entry_list)
 
                 except KeyError:
                     pass
@@ -260,9 +258,7 @@ class MasterStationGroup(BaseGroup):
         if station_name is None:
             raise Exception("station name is None, do not know what to name it")
 
-        return self._add_group(
-            station_name, StationGroup, station_metadata, match="id"
-        )
+        return self._add_group(station_name, StationGroup, station_metadata, match="id")
 
     def get_station(self, station_name):
         """
@@ -477,6 +473,7 @@ class StationGroup(BaseGroup):
         self._default_subgroup_names = [
             "Transfer_Functions",
             "Fourier_Coefficients",
+            "Features",
         ]
         super().__init__(group, group_metadata=station_metadata, **kwargs)
 
@@ -496,9 +493,7 @@ class StationGroup(BaseGroup):
                 m5_grp.initialize_group()
             except ValueError as value_error:
                 if "Unable to synchronously create group" in str(value_error):
-                    self.logger.warning(
-                        "File is in write mode, cannot create group."
-                    )
+                    self.logger.warning("File is in write mode, cannot create group.")
                 else:
                     raise ValueError(value_error)
 
@@ -542,9 +537,7 @@ class StationGroup(BaseGroup):
             self._has_read_metadata = True
 
         for key in self.groups_list:
-            if key.lower() in [
-                name.lower() for name in self._default_subgroup_names
-            ]:
+            if key.lower() in [name.lower() for name in self._default_subgroup_names]:
                 continue
             try:
                 key_group = self.get_run(key)
@@ -577,9 +570,7 @@ class StationGroup(BaseGroup):
                 comps = ",".join(
                     [
                         ii.decode()
-                        for ii in group.attrs[
-                            "channels_recorded_auxiliary"
-                        ].tolist()
+                        for ii in group.attrs["channels_recorded_auxiliary"].tolist()
                         + group.attrs["channels_recorded_electric"].tolist()
                         + group.attrs["channels_recorded_magnetic"].tolist()
                     ]
@@ -666,8 +657,7 @@ class StationGroup(BaseGroup):
         if run_summary.size < 1:
             return None
         sr_find = run_summary[
-            (run_summary.sample_rate == sample_rate)
-            & (run_summary.start == start)
+            (run_summary.sample_rate == sample_rate) & (run_summary.start == start)
         ]
         if sr_find.size < 1:
             return None
