@@ -126,6 +126,7 @@ class MTH5ToMiniSEEDStationXML:
                     logger.info(
                         f"Wrote miniSEED for {row.survey}.{row.station}.{row.run} to {stream_fn}"
                     )
+                    stream_list.append(stream_fn)
 
         # write StationXML
         experiment.surveys[0].fdsn.network = converter.network_code
@@ -138,4 +139,4 @@ class MTH5ToMiniSEEDStationXML:
         )
         logger.info(f"Wrote StationXML to {xml_fn}")
 
-        return stationxml
+        return xml_fn, stream_list

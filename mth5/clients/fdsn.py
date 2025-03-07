@@ -452,24 +452,27 @@ class FDSN:
 
         inventory can be an obspy.Inventory object or a string or path to a StationXML
 
-        streams can be a list of obspy.Stream objects or a list of strings or paths to miniseed files
+        streams must be a Stream object or a list of paths
 
         """
 
         if not isinstance(inventory, obspy.Inventory):
-            if isinstance(inventory, [str, Path]):
+            if isinstance(inventory, (str, Path)):
                 inventory = obspy.read_inventory(inventory)
             else:
                 raise TypeError(f"Cannot understand inventory type {type(inventory)}")
 
+        stream_list = obspy.read()
         if isinstance(streams, obspy.Stream):
-            streams = [streams]
-        elif isinstance(streams, [list, tuple]):
+            stream_list += streams
+        elif isinstance(streams, (list, tuple)):
             if not isinstance(streams[0], obspy.Stream):
-                if isinstance(streams[0], [str, Path]):
-                    streams = [obspy.read(fn) for fn in streams]
+                if isinstance(streams[0], (str, Path)):
+                    for fn in streams:
+                        stream_list += obspy.read(fn)
                 else:
                     raise TypeError("Cannot understand streams input.")
+            streams = []
 
         if save_path is None:
             save_path = Path().cwd()

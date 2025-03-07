@@ -11,6 +11,7 @@ import unittest
 from pathlib import Path
 from mth5.io.conversion import MTH5ToMiniSEEDStationXML
 from mth5.data.make_mth5_from_asc import create_test1_h5
+from mth5.clients import MakeMTH5
 
 # =============================================================================
 
@@ -64,12 +65,36 @@ class TestMTH5ToMiniSEEDStationXML(unittest.TestCase):
         )
 
     def test_conversion_v1(self):
-        inventory = self.convert("0.1.0")
-        self.assertTrue(self.mth5_path_v1.exists())
+        stationxml, miniseeds = self.convert("0.1.0")
+        with self.subTest("StationXML was written"):
+            self.assertTrue(stationxml.exists())
+        with self.subTest("miniseeds were written"):
+            self.assertEqual(len(miniseeds), 1)
+
+        mth5_file = MakeMTH5.from_fdsn_miniseed_and_stationxml(
+            stationxml,
+            miniseeds,
+            save_path=self.mth5_path_v1.parent,
+            **{"mth5_version": "0.1.0"}
+        )
+        with self.subTest("new MTH5 created"):
+            self.assertTrue(mth5_file.exists())
 
     def test_conversion_v2(self):
-        inventory = self.convert("0.2.0")
-        self.assertTrue(self.mth5_path_v2.exists())
+        stationxml, miniseeds = self.convert("0.2.0")
+        with self.subTest("StationXML was written"):
+            self.assertTrue(stationxml.exists())
+        with self.subTest("miniseeds were written"):
+            self.assertEqual(len(miniseeds), 1)
+
+        mth5_file = MakeMTH5.from_fdsn_miniseed_and_stationxml(
+            stationxml,
+            miniseeds,
+            save_path=self.mth5_path_v1.parent,
+            **{"mth5_version": "0.2.0"}
+        )
+        with self.subTest("new MTH5 created"):
+            self.assertTrue(mth5_file.exists())
 
 
 # =============================================================================
