@@ -76,7 +76,7 @@ class MTH5ToMiniSEEDStationXML:
 
     @property
     def network_code(self):
-        """2 alpha-numeric string provided by FDSN DMC"""
+        """alpha-numeric string of 2 characters provided by FDSN DMC"""
         return self._network_code
 
     @network_code.setter
@@ -86,7 +86,7 @@ class MTH5ToMiniSEEDStationXML:
             raise ValueError(
                 f"{value} is not a valid network code. It must be 2 alphanumeric characters"
             )
-        self._nework_code = value
+        self._network_code = value
 
     @classmethod
     def convert_mth5_to_ms_stationxml(
@@ -108,17 +108,17 @@ class MTH5ToMiniSEEDStationXML:
         )
 
         with MTH5() as m:
-            m.open_mth5(cls.mth5_path)
-            experiment = m.to_experiment(has_data=cls.use_runs_with_data_only)
+            m.open_mth5(converter.mth5_path)
+            experiment = m.to_experiment(has_data=converter.use_runs_with_data_only)
             stream_list = []
             for row in m.run_summary.itertuples():
                 if row.has_data:
                     run_ts = m.from_reference(row.run_hdf5_reference).to_runts()
-                    streams = run_ts.to_obspy_stream(network_code=cls.network_code)
-                    stream_fn = cls.save_path.joinpath(
+                    stream = run_ts.to_obspy_stream(network_code=converter.network_code)
+                    stream_fn = converter.save_path.joinpath(
                         f"{row.survey}_{row.station}_{row.run}.mseed"
                     )
-                    streams.write(
+                    stream.write(
                         stream_fn,
                         format="MSEED",
                         reclen=256,
@@ -128,10 +128,10 @@ class MTH5ToMiniSEEDStationXML:
                     )
 
         # write StationXML
-        experiment.surveys[0].fdsn.network = cls.network_code
+        experiment.surveys[0].fdsn.network = converter.network_code
 
         translator = XMLInventoryMTExperiment()
-        xml_fn = cls.save_path.joinpath(f"{cls.mth5_path.stem}.xml")
+        xml_fn = converter.save_path.joinpath(f"{converter.mth5_path.stem}.xml")
         stationxml = translator.mt_to_xml(
             experiment,
             stationxml_fn=xml_fn,

@@ -473,7 +473,7 @@ class StationGroup(BaseGroup):
         self._default_subgroup_names = [
             "Transfer_Functions",
             "Fourier_Coefficients",
-            "Features",
+            # "Features",
         ]
         super().__init__(group, group_metadata=station_metadata, **kwargs)
 
