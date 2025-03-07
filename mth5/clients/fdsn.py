@@ -14,15 +14,19 @@ Created on Fri Feb  4 15:53:21 2022
 # =============================================================================
 import copy
 import numpy as np
+import obspy.clients
 import pandas as pd
 import time
 
 from gzip import BadGzipFile
 from loguru import logger
-from obspy.clients import fdsn
-from obspy import UTCDateTime
-from obspy import read as obsread
-from obspy.core.inventory import Inventory
+import obspy
+
+# from obspy.clients import fdsn
+# from obspy import UTCDateTime
+# from obspy import read as obsread
+# from obspy import read_inventory
+# from obspy.core.inventory import Inventory
 from pathlib import Path
 
 from mt_metadata.timeseries.stationxml import XMLInventoryMTExperiment
@@ -85,9 +89,7 @@ class FDSN:
                 df = pd.read_csv(fn)
                 df = df.fillna("")
             else:
-                raise ValueError(
-                    f"Input must be a pandas.Dataframe not {type(df)}"
-                )
+                raise ValueError(f"Input must be a pandas.Dataframe not {type(df)}")
         if df.columns.to_list() != self.request_columns:
             raise ValueError(
                 f"column names in file {df.columns} are not the expected "
@@ -110,9 +112,7 @@ class FDSN:
         loop over stations
         """
         for station_id in stations:
-            self.wrangle_runs_into_containers(
-                m, station_id, survey_group=survey_group
-            )
+            self.wrangle_runs_into_containers(m, station_id, survey_group=survey_group)
 
     def _run_010(self, unique_list, m, **kwargs):
         """
@@ -223,8 +223,8 @@ class FDSN:
                 f"Do not have the same number of start {len(start_times)}"
                 f" and end times {len(end_times)} from streams"
             )
-        start_times = [UTCDateTime(x) for x in start_times]
-        end_times = [UTCDateTime(x) for x in end_times]
+        start_times = [obspy.UTCDateTime(x) for x in start_times]
+        end_times = [obspy.UTCDateTime(x) for x in end_times]
         return start_times, end_times
 
     def get_station_streams(self, station_id):
@@ -252,9 +252,9 @@ class FDSN:
         -------
 
         """
-        run_group = mth5_obj_or_survey.stations_group.get_station(
-            station_id
-        ).add_run(run_id)
+        run_group = mth5_obj_or_survey.stations_group.get_station(station_id).add_run(
+            run_id
+        )
         return run_group
 
     def pack_stream_into_run_group(self, run_group, run_stream):
@@ -265,9 +265,7 @@ class FDSN:
 
         return run_group
 
-    def run_timings_match_stream_timing(
-        self, run_group, stream_start, stream_end
-    ):
+    def run_timings_match_stream_timing(self, run_group, stream_start, stream_end):
         """
         Checks start and end times in the run.
         Compares start and end times of runs to start and end times of traces.
@@ -286,8 +284,8 @@ class FDSN:
         streams_and_run_timings_match = False
         run_start = run_group.metadata.time_period.start
         run_end = run_group.metadata.time_period.end
-        cond1 = stream_start >= UTCDateTime(run_start)
-        cond2 = stream_end <= UTCDateTime(run_end)
+        cond1 = stream_start >= obspy.UTCDateTime(run_start)
+        cond2 = stream_end <= obspy.UTCDateTime(run_end)
         if cond1 and cond2:  # paired up
             streams_and_run_timings_match = True
         return streams_and_run_timings_match
@@ -324,21 +322,15 @@ class FDSN:
         # get the streams for the given station
         msstreams = self.get_station_streams(station_id)
         trace_start_times, trace_end_times = self.stream_boundaries(msstreams)
-        run_list = self.get_run_list_from_station_id(
-            m, station_id, survey_id=survey_id
-        )
+        run_list = self.get_run_list_from_station_id(m, station_id, survey_id=survey_id)
         num_streams = len(trace_start_times)
 
         # See Note 2
         # If number of runs and number of streams are the same, then metadata
         # matches the data and an easy pack.
         if len(run_list) == num_streams:
-            for run_id, start, end in zip(
-                run_list, trace_start_times, trace_end_times
-            ):
-                run_group = self.get_run_group(
-                    run_group_source, station_id, run_id
-                )
+            for run_id, start, end in zip(run_list, trace_start_times, trace_end_times):
+                run_group = self.get_run_group(run_group_source, station_id, run_id)
                 run_stream = msstreams.slice(start, end)
                 self.pack_stream_into_run_group(run_group, run_stream)
 
@@ -351,18 +343,12 @@ class FDSN:
                 "from the data. Using first run metadata and channel metadata "
                 "for the other channels and runs except time periods."
             )
-            og_run_group = self.get_run_group(
-                run_group_source, station_id, run_list[0]
-            )
-            for run_num, times in enumerate(
-                zip(trace_start_times, trace_end_times), 1
-            ):
+            og_run_group = self.get_run_group(run_group_source, station_id, run_list[0])
+            for run_num, times in enumerate(zip(trace_start_times, trace_end_times), 1):
                 start = times[0]
                 end = times[1]
                 run_id = f"{run_num:03}"
-                run_group = self.get_run_group(
-                    run_group_source, station_id, run_id
-                )
+                run_group = self.get_run_group(run_group_source, station_id, run_id)
                 if run_num > 1:
                     # cleaner, but not working
                     og_run_group_metadata_dict = og_run_group.metadata.to_dict()
@@ -372,17 +358,13 @@ class FDSN:
                     run_group.write_metadata()
 
                 run_stream = msstreams.slice(start, end)
-                run_group = self.pack_stream_into_run_group(
-                    run_group, run_stream
-                )
+                run_group = self.pack_stream_into_run_group(run_group, run_stream)
 
                 # update channels from run 1 metadata
                 if run_num > 1:
                     for ch in run_group.groups_list:
                         og_ch = og_run_group.get_channel(ch)
-                        og_ch_metadata_dict = og_ch.metadata.to_dict(
-                            single=True
-                        )
+                        og_ch_metadata_dict = og_ch.metadata.to_dict(single=True)
                         # skip the start and end times
                         for key in ["time_period.start", "time_period.end"]:
                             og_ch_metadata_dict.pop(key)
@@ -397,16 +379,10 @@ class FDSN:
         # there is missing data or metadata.
         elif len(run_list) != num_streams:
             self.logger.warning(self.run_list_ne_stream_intervals_message)
-            for run_id, start, end in zip(
-                run_list, trace_start_times, trace_end_times
-            ):
+            for run_id, start, end in zip(run_list, trace_start_times, trace_end_times):
                 for run in run_list:
-                    run_group = self.get_run_group(
-                        run_group_source, station_id, run
-                    )
-                    if self.run_timings_match_stream_timing(
-                        run_group, start, end
-                    ):
+                    run_group = self.get_run_group(run_group_source, station_id, run)
+                    if self.run_timings_match_stream_timing(run_group, start, end):
                         run_stream = msstreams.slice(start, end)
                         self.pack_stream_into_run_group(run_group, run_stream)
                     else:
@@ -415,9 +391,7 @@ class FDSN:
             raise ValueError("Cannot add Run for some reason.")
         return
 
-    def make_mth5_from_fdsn_client(
-        self, df, path=None, client=None, interact=False
-    ):
+    def make_mth5_from_fdsn_client(self, df, path=None, client=None, interact=False):
         """
         Make an MTH5 file from an FDSN data center
 
@@ -452,10 +426,7 @@ class FDSN:
 
 
         """
-        if path is None:
-            path = Path().cwd()
-        else:
-            path = Path(path)
+
         if client is not None:
             self.client = client
         df = self._validate_dataframe(df)
@@ -463,34 +434,64 @@ class FDSN:
         unique_list = self.get_unique_networks_and_stations(df)
         if self.mth5_version in ["0.1.0"]:
             if len(unique_list) != 1:
-                raise AttributeError(
-                    "MTH5 supports one survey/network per container."
-                )
-        file_name = path.joinpath(self.make_filename(df))
+                raise AttributeError("MTH5 supports one survey/network per container.")
+
+        # read in inventory and streams
+        inv, streams = self.get_inventory_from_df(df, self.client)
+        self._streams = streams
+        if interact:
+            self.logger.warning(
+                "Interact is deprecated.  Open the returned file path. \n\t"
+                "> with MTH5() as m:\n\t\tm.open_mth5(filepath)\n\t\tdo something."
+            )
+        return self.make_mth5_from_inventory_and_streams(inv, streams, save_path=path)
+
+    def make_mth5_from_inventory_and_streams(self, inventory, streams, save_path=None):
+        """
+        Create an MTH5 from existing inventory and a stationXML
+
+        inventory can be an obspy.Inventory object or a string or path to a StationXML
+
+        streams can be a list of obspy.Stream objects or a list of strings or paths to miniseed files
+
+        """
+
+        if not isinstance(inventory, obspy.Inventory):
+            if isinstance(inventory, [str, Path]):
+                inventory = obspy.read_inventory(inventory)
+            else:
+                raise TypeError(f"Cannot understand inventory type {type(inventory)}")
+
+        if isinstance(streams, obspy.Stream):
+            streams = [streams]
+        elif isinstance(streams, [list, tuple]):
+            if not isinstance(streams[0], obspy.Stream):
+                if isinstance(streams[0], [str, Path]):
+                    streams = [obspy.read(fn) for fn in streams]
+                else:
+                    raise TypeError("Cannot understand streams input.")
+
+        if save_path is None:
+            save_path = Path().cwd()
+        else:
+            save_path = Path(save_path)
+
+        self._streams = streams
+        # translate obspy.core.Inventory to an mt_metadata.timeseries.Experiment
+        translator = XMLInventoryMTExperiment()
+        experiment = translator.xml_to_mt(inventory)
+
+        retrieved_df = self.get_df_from_inventory(inventory)
+        retrieved_unique_list = self.get_unique_networks_and_stations(retrieved_df)
+        file_name = save_path.joinpath(self.make_filename(retrieved_df))
 
         # initiate MTH5 file
         with MTH5(**self.h5_kwargs) as m:
             m.open_mth5(file_name, "w")
 
-            # read in inventory and streams
-            inv, streams = self.get_inventory_from_df(df, self.client)
-            self._streams = streams
-
-            # translate obspy.core.Inventory to an mt_metadata.timeseries.Experiment
-            translator = XMLInventoryMTExperiment()
-            experiment = translator.xml_to_mt(inv)
-
-            # Updates experiment information based on time extent of streams
-            # rather than time extent of inventory
-            # experiment = translator.drop_runs(m, streams)
-
             m.from_experiment(experiment)
-            self._process_list(experiment, unique_list, m)
+            self._process_list(experiment, retrieved_unique_list, m)
 
-        if interact:
-            m.open_mth5(m.filename)
-            return m
-        else:
             return m.filename
 
     def build_network_dict(self, df, client):
@@ -527,7 +528,9 @@ class FDSN:
             else:
                 continue
             if len(net_inv.networks) != 1:
-                msg = f"Expected a unique network associated with {row.start}--{row.end}"
+                msg = (
+                    f"Expected a unique network associated with {row.start}--{row.end}"
+                )
                 msg += f"Instead found {len(net_inv.networks)} networks"
                 raise NotImplementedError(msg)
         return networks
@@ -569,9 +572,9 @@ class FDSN:
                         max_tries=10,
                     )
 
-                    stations_dict[network_id][start_time][
-                        station_row.station
-                    ] = sta_inv.networks[0].stations[0]
+                    stations_dict[network_id][start_time][station_row.station] = (
+                        sta_inv.networks[0].stations[0]
+                    )
         return stations_dict
 
     def get_waveforms_from_request_row(self, client, row):
@@ -586,8 +589,8 @@ class FDSN:
         -------
 
         """
-        start = UTCDateTime(row.start)
-        end = UTCDateTime(row.end)
+        start = obspy.UTCDateTime(row.start)
+        end = obspy.UTCDateTime(row.end)
         streams = client.get_waveforms(
             row.network, row.station, row.location, row.channel, start, end
         )
@@ -643,13 +646,13 @@ class FDSN:
         df = self._validate_dataframe(df)
 
         # get the metadata from an obspy client
-        client = fdsn.Client(self.client)
+        client = obspy.clients.fdsn.Client(self.client)
 
         # creat an empty stream to add to
-        streams = obsread()
+        streams = obspy.read()
         streams.clear()
 
-        inv = Inventory(networks=[], source="MTH5")
+        inv = obspy.Inventory(networks=[], source="MTH5")
 
         # sort the values to be logically ordered
         df.sort_values(self.request_columns[:-1])
@@ -660,9 +663,7 @@ class FDSN:
 
         # Pack channels into stations
         for ch_row in df.itertuples():
-            station_obj = stations_dict[ch_row.network][ch_row.start][
-                ch_row.station
-            ]
+            station_obj = stations_dict[ch_row.network][ch_row.start][ch_row.station]
             cha_inv = _fdsn_client_get_inventory(
                 client, ch_row, response_level="response", max_tries=10
             )
@@ -754,12 +755,7 @@ class FDSN:
         unique_list = self.get_unique_networks_and_stations(df)
 
         return (
-            "_".join(
-                [
-                    f"{d['network']}_{'_'.join(d['stations'])}"
-                    for d in unique_list
-                ]
-            )
+            "_".join([f"{d['network']}_{'_'.join(d['stations'])}" for d in unique_list])
             + ".h5"
         )
 
