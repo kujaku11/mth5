@@ -11,13 +11,19 @@ import re
 from pathlib import Path
 from mth5.mth5 import MTH5
 from mt_metadata.timeseries.stationxml import XMLInventoryMTExperiment
+from loguru import logger
 
 # ==================================================================================
 
 
 class MTH5ToMiniSEEDStationXML:
     def __init__(
-        self, mth5_path, save_path=None, network_code=None, use_runs_with_data_only=True
+        self,
+        mth5_path,
+        save_path=None,
+        network_code=None,
+        use_runs_with_data_only=True,
+        **kwargs,
     ):
         self.mth5_path = mth5_path
         self.save_path = save_path
@@ -25,6 +31,9 @@ class MTH5ToMiniSEEDStationXML:
         self.use_runs_with_data_only = use_runs_with_data_only
 
         self._network_code_pattern = r"^[a-zA-Z0-9]{2}$"
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     @property
     def mth5_path(self):
@@ -68,8 +77,55 @@ class MTH5ToMiniSEEDStationXML:
     @network_code.setter
     def network_code(self, value):
         """be sure the string is just 2 characters"""
-        if not re.match(pattern, value):
+        if not re.match(self._network_code_pattern, value):
             raise ValueError(
                 f"{value} is not a valid network code. It must be 2 alphanumeric characters"
             )
         self._nework_code = value
+
+    @classmethod
+    def convert_mth5_to_ms_stationxml(
+        cls,
+        mth5_path,
+        save_path=None,
+        network_code=None,
+        use_runs_with_data_only=True,
+        **kwargs,
+    ):
+        """Class method to convert an MTH5 to miniSEED and StationXML"""
+
+        converter = cls(
+            mth5_path,
+            save_path=save_path,
+            network_code=network_code,
+            use_runs_with_data_only=use_runs_with_data_only,
+            **kwargs,
+        )
+
+        with MTH5() as m:
+            m.open_mth5(cls.mth5_path)
+            experiment = m.to_experiment(has_data=cls.use_runs_with_data_only)
+            stream_list = []
+            for row in m.run_summary.itertuples():
+                if row.has_data:
+                    run_ts = m.from_reference(row.run_hdf5_reference).to_runts()
+                    streams = run_ts.to_obspy_stream(network_code=cls.network_code)
+                    stream_fn = cls.save_path.joinpath(
+                            f"{row.survey}_{row.station}_{row.run}.mseed"
+                        ) 
+                    streams.write(
+                        stream_fn,
+                        format="MSEED",
+                        reclen=256,
+                    )
+                    logger.info(f"Wrote miniSEED for {row.survey}.{row.station}.{row.run} to {stream_fn}")
+
+        # write StationXML
+        experiment.surveys[0].fdsn.network = cls.network_code
+
+        translator = XMLInventoryMTExperiment()
+        stationxml = translator.mt_to_xml(
+            experiment,
+            stationxml_fn=cls.save_path.joinpath(f"{cls.mth5_path.stem}.xml"),
+        )
+        logger.info(f"Wrote StationXML to {cls.save_path.joinpath(f"{cls.mth5_path.stem}.xml")}")
