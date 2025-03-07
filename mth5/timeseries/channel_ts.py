@@ -24,6 +24,8 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from loguru import logger
+import scipy
+from scipy import signal
 
 import mt_metadata.timeseries as metadata
 from mt_metadata.timeseries.filters import ChannelResponse
@@ -36,7 +38,7 @@ from mth5.timeseries.ts_helpers import (
     get_decimation_sample_rates,
 )
 from obspy.core import Trace
-from scipy import signal
+
 
 # =============================================================================
 # make a dictionary of available metadata classes
