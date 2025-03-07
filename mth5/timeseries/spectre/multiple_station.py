@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from loguru import logger
 from mth5.utils.exceptions import MTH5Error
 from mth5.timeseries.spectre.spectrogram import Spectrogram
-from typing import Literal, Optional, Tuple , Union
+from typing import List, Literal, Optional, Tuple , Union
 import mth5.mth5
 import numpy as np
 import pandas as pd
@@ -169,7 +169,7 @@ class MultivariateDataset(Spectrogram):
         return len(self.channels)
 
     @property
-    def stations(self) -> list:
+    def stations(self) -> List[str]:
         """
         Parses the channel names, extracts the station names
 
@@ -187,23 +187,65 @@ class MultivariateDataset(Spectrogram):
 
         return self._stations
 
-    def station_channels(self, station) -> dict:
+    def station_channels(
+        self,
+        station: str,
+    ) -> List[str]:
         """
-        This is a utility function that provides a way to look up all channels in a multivariate array associated
+        This is a utility function that provides a way to access channel_names in a multivariate array associated
          with a particular station.
+        The list is accessed via the self._station_channels attr, which gets set here if it has not
+         been initialized previously.  self._station_channels is a dict keyed by station_id, with value
+         is a list of channel names for that station.
 
-        :rtype: dict
-        :returns: Dict keyed by station_id.  Values are the "full multivariate" channel names.
+        :param station: The name of the station.
+        :type station: str
+
+        :rtype: List[str]
+        :returns: list of channel names for the input station.
+
         """
+        # set self._station_channels is not already done
         if self._station_channels is None:
             station_channels = {}
             for station_id in self.stations:
-                station_channels[station_id] = [
-                    x for x in self.channels if station_id == x.split("_")[0]
-                ]
+                station_channels[station_id] = self._get_station_channel_names(
+                    station_id,
+                    multivariate_labels=True,
+                )
             self._station_channels = station_channels
 
         return self._station_channels[station]
+
+    def _get_station_channel_names(
+        self,
+        station: str,
+        multivariate_labels: bool = True
+    ) -> List[str]:
+        """
+
+        This is a utility function that to get all channel names in a multivariate array associated
+         with a particular station.
+
+        :param station: The name of the station.
+        :type station: str
+        :param multivariate_labels: When set to true, returned values have the "full multivariate" channel names,
+        e.g. station "mt1" may return for example "mt1_ex", "mt1_ey", "mt1_hx" ... etc.  If set to false the names
+        will be returned within the context of a station, so they may be for example "ex", "ey", "hx" ... etc.
+        The default value is True.
+        :type multivariate_labels: bool
+
+        :rtype: List[str]
+        :returns: Channel names for the input station.
+
+        """
+        station_channels = [
+                    x for x in self.channels if station == x.split(self.label_scheme.join_char)[0]
+                ]
+        if not multivariate_labels:
+            station_channels = [x.split(self.label_scheme.join_char)[1] for x in station_channels]
+
+        return station_channels
 
     def archive_cross_powers(
         self,
