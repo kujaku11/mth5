@@ -50,6 +50,11 @@ class TestMTH5ToMiniSEEDStationXMLFunctionality(unittest.TestCase):
 
 
 class TestMTH5ToMiniSEEDStationXML(unittest.TestCase):
+    """This just tests if files were created nothing about accuracy
+
+    TODO: need to make a method that checks accuracy of the two files.
+    """
+
     @classmethod
     def setUpClass(cls):
         cls.mth5_path_v1 = create_test1_h5("0.1.0", force_make_mth5=False)
