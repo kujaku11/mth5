@@ -1512,6 +1512,9 @@ class ChannelTS:
 
         if self.ts.dtype.type in [np.int64]:
             obspy_trace = Trace(self.ts.astype(np.int32))
+        else:
+            obspy_trace = Trace(self.ts)
+        # add metadata
         obspy_trace.stats.channel = fdsn_tools.make_channel_code(self.channel_metadata)
         obspy_trace.stats.starttime = self.start.iso_str
         obspy_trace.stats.sampling_rate = self.sample_rate
