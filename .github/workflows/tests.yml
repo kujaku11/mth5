@@ -21,30 +21,27 @@ jobs:
       matrix:
         os: ["ubuntu-latest"]
         python-version: ["3.8", "3.9", "3.10", "3.11"]
+    defaults:
+      run:
+        shell: bash -el {0}
 
     steps:
     - uses: actions/checkout@v4
-    - name: Setup Conda
-      uses: s-weigand/setup-conda@v1.2.1
+    - uses: conda-incubator/setup-miniconda@v3
       with:
-        update-conda: false
+        auto-update-conda: true
         python-version: ${{ matrix.python-version }}
 
     - name: Install Env
-      shell: bash
       run: |
         python --version
-        conda create -n mth5-test python=${{ matrix.python-version }}
-        source activate mth5-test
-        conda install pytest=7.1.2
+        conda install pytest=7.3
         conda install pytest-cov
         conda install pytest-subtests
         pip install git+https://github.com/kujaku11/mt_metadata.git@main
 
     - name: Install Our Package
-      shell: bash
       run: |
-        source activate mth5-test
         pip install -e .
         conda list
 
@@ -63,10 +60,7 @@ jobs:
     #    jupyter nbconvert --to notebook --execute docs/examples/notebooks/make_mth5_driver_v0.2.0.ipynb
 
     - name: Run Tests
-      shell: bash
-      run: |
-        source activate mth5-test
-        pytest -rA --cov=./ --cov-report=xml --cov=mth5
+      run: pytest -rA --cov=./ --cov-report=xml --cov=mth5
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
@@ -74,4 +68,3 @@ jobs:
         flags: tests
         fail_ci_if_error: false
         verbose: true
-
