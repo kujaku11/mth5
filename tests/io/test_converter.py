@@ -80,6 +80,10 @@ class TestMTH5ToMiniSEEDStationXML(unittest.TestCase):
         with self.subTest("new MTH5 created"):
             self.assertTrue(mth5_file.exists())
 
+        mth5_file.unlink()
+        stationxml.unlink()
+        [fn.unlink() for fn in miniseeds]
+
     def test_conversion_v2(self):
         stationxml, miniseeds = self.convert("0.2.0")
         with self.subTest("StationXML was written"):
@@ -95,6 +99,14 @@ class TestMTH5ToMiniSEEDStationXML(unittest.TestCase):
         )
         with self.subTest("new MTH5 created"):
             self.assertTrue(mth5_file.exists())
+
+        mth5_file.unlink()
+        stationxml.unlink()
+        [fn.unlink() for fn in miniseeds]
+
+    @classmethod
+    def tearDownClass(cls):
+        return super().tearDownClass()
 
 
 # =============================================================================
