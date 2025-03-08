@@ -438,13 +438,34 @@ class FDSN:
 
         # read in inventory and streams
         inv, streams = self.get_inventory_from_df(df, self.client)
-        self._streams = streams
         if interact:
             self.logger.warning(
                 "Interact is deprecated.  Open the returned file path. \n\t"
                 "> with MTH5() as m:\n\t\tm.open_mth5(filepath)\n\t\tdo something."
             )
         return self.make_mth5_from_inventory_and_streams(inv, streams, save_path=path)
+
+    @property
+    def streams(self):
+        """obspy.Stream object"""
+        return self._streams
+
+    @streams.setter
+    def streams(self, streams):
+        """set streams can be a list of filenames"""
+
+        if not isinstance(streams, obspy.Stream):
+            if isinstance(streams, (list, tuple)):
+                if not isinstance(streams[0], obspy.Stream):
+                    if isinstance(streams[0], (str, Path)):
+                        stream_list = obspy.read()
+                        for fn in streams:
+                            stream_list += obspy.read(fn)
+                        self._streams = stream_list
+                    else:
+                        raise TypeError("Cannot understand streams input.")
+        else:
+            self._streams = streams
 
     def make_mth5_from_inventory_and_streams(self, inventory, streams, save_path=None):
         """
@@ -462,24 +483,12 @@ class FDSN:
             else:
                 raise TypeError(f"Cannot understand inventory type {type(inventory)}")
 
-        stream_list = obspy.read()
-        if isinstance(streams, obspy.Stream):
-            stream_list += streams
-        elif isinstance(streams, (list, tuple)):
-            if not isinstance(streams[0], obspy.Stream):
-                if isinstance(streams[0], (str, Path)):
-                    for fn in streams:
-                        stream_list += obspy.read(fn)
-                else:
-                    raise TypeError("Cannot understand streams input.")
-            streams = []
-
         if save_path is None:
             save_path = Path().cwd()
         else:
             save_path = Path(save_path)
 
-        self._streams = streams
+        self.streams = streams
         # translate obspy.core.Inventory to an mt_metadata.timeseries.Experiment
         translator = XMLInventoryMTExperiment()
         experiment = translator.xml_to_mt(inventory)
