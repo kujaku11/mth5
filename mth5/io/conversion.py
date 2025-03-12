@@ -119,6 +119,7 @@ class MTH5ToMiniSEEDStationXML:
             for row in m.run_summary.itertuples():
                 if row.has_data:
                     run_ts = m.from_reference(row.run_hdf5_reference).to_runts()
+
                     stream = run_ts.to_obspy_stream(network_code=converter.network_code)
                     stream_fn = converter.save_path.joinpath(
                         f"{row.survey}_{row.station}_{row.run}.mseed"
@@ -127,6 +128,7 @@ class MTH5ToMiniSEEDStationXML:
                         stream_fn,
                         format="MSEED",
                         reclen=256,
+                        encoding=get_encoding(run_ts),
                     )
                     logger.info(
                         f"Wrote miniSEED for {row.survey}.{row.station}.{row.run} to {stream_fn}"
@@ -145,3 +147,15 @@ class MTH5ToMiniSEEDStationXML:
         logger.info(f"Wrote StationXML to {xml_fn}")
 
         return xml_fn, stream_list
+
+
+def get_encoding(run_ts):
+    """
+    need to make sure that the encoding for each run is the same across channels, or there may be
+    compatibility issues with the miniseed files.
+
+    For now take the median dtype
+    """
+    dtypes = [run_ts.dataset[ch].data.dtype.name for ch in run_ts.channels]
+
+    return sorted(dtypes)[int(len(dtypes) / 2)].upper()
