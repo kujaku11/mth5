@@ -30,6 +30,7 @@ class MTH5ToMiniSEEDStationXML:
         self.save_path = save_path
         self.network_code = network_code
         self.use_runs_with_data_only = use_runs_with_data_only
+        self.encoding = None
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -119,7 +120,10 @@ class MTH5ToMiniSEEDStationXML:
             for row in m.run_summary.itertuples():
                 if row.has_data:
                     run_ts = m.from_reference(row.run_hdf5_reference).to_runts()
-                    encoding = get_encoding(run_ts)
+                    if converter.encoding is None:
+                        encoding = get_encoding(run_ts)
+                    else:
+                        encoding = converter.encoding
                     stream = run_ts.to_obspy_stream(
                         network_code=converter.network_code, encoding=encoding
                     )
