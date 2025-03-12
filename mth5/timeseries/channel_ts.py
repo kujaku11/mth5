@@ -1497,7 +1497,7 @@ class ChannelTS:
         self._update_xarray_metadata()
         return self.data_array
 
-    def to_obspy_trace(self, network_code=None):
+    def to_obspy_trace(self, network_code=None, encoding=None):
         """
         Convert the time series to an :class:`obspy.core.trace.Trace` object.  This
         will be helpful for converting between data pulled from IRIS and data going
@@ -1509,11 +1509,26 @@ class ChannelTS:
         :rtype: TYPE
 
         """
-
+        encoding_dict = {
+            "INT16": np.int16,
+            "INT32": np.int32,
+            "INT64": np.int32,
+            "FLOAT32": np.float32,
+            "FLOAT64": np.float64,
+        }
         if self.ts.dtype.type in [np.int64]:
             obspy_trace = Trace(self.ts.astype(np.int32))
+
+        if encoding:
+            try:
+                obspy_trace = Trace(self.ts.astype(encoding_dict[encoding]))
+            except KeyError:
+                raise KeyError(
+                    f"{encoding} is not understood.  Acceptable values are {list(encoding_dict.keys())}"
+                )
         else:
             obspy_trace = Trace(self.ts)
+
         # add metadata
         obspy_trace.stats.channel = fdsn_tools.make_channel_code(self.channel_metadata)
         obspy_trace.stats.starttime = self.start.iso_str

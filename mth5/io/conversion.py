@@ -119,8 +119,10 @@ class MTH5ToMiniSEEDStationXML:
             for row in m.run_summary.itertuples():
                 if row.has_data:
                     run_ts = m.from_reference(row.run_hdf5_reference).to_runts()
-
-                    stream = run_ts.to_obspy_stream(network_code=converter.network_code)
+                    encoding = get_encoding(run_ts)
+                    stream = run_ts.to_obspy_stream(
+                        network_code=converter.network_code, encoding=encoding
+                    )
                     stream_fn = converter.save_path.joinpath(
                         f"{row.survey}_{row.station}_{row.run}.mseed"
                     )
@@ -128,7 +130,7 @@ class MTH5ToMiniSEEDStationXML:
                         stream_fn,
                         format="MSEED",
                         reclen=256,
-                        encoding=get_encoding(run_ts),
+                        encoding=encoding,
                     )
                     logger.info(
                         f"Wrote miniSEED for {row.survey}.{row.station}.{row.run} to {stream_fn}"

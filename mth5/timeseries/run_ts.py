@@ -848,7 +848,7 @@ class RunTS:
             raise TypeError("input must be a dictionary")
         self._filters = value
 
-    def to_obspy_stream(self, network_code=None):
+    def to_obspy_stream(self, network_code=None, encoding=None):
         """
         convert time series to an :class:`obspy.core.Stream` which is like a
         list of :class:`obspy.core.Trace` objects.
@@ -863,7 +863,9 @@ class RunTS:
         trace_list = []
         for channel in self.channels:
             ts_obj = getattr(self, channel)
-            trace_list.append(ts_obj.to_obspy_trace(network_code=network_code))
+            trace_list.append(
+                ts_obj.to_obspy_trace(network_code=network_code, encoding=encoding)
+            )
         return Stream(traces=trace_list)
 
     def wrangle_leap_seconds_from_obspy(self, array_list):
