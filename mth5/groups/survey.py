@@ -459,6 +459,9 @@ class SurveyGroup(BaseGroup):
                         key_group = self.stations_group.get_station(key)
                         if key_group.metadata.id in self._metadata.stations.keys():
                             continue
+                        # skip non-station groups like Features, FCs, TransferFunction
+                        elif key_group.metadata.mth5_type not in ["Station"]:
+                            continue
                         self._metadata.add_station(key_group.metadata)
                     except MTH5Error:
                         self.logger.warning(f"Could not find station {key}")

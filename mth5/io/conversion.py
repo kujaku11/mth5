@@ -69,7 +69,7 @@ class MTH5ToMiniSEEDStationXML:
             else:
                 self._save_path = self._mth5_path.parent
         else:
-            value = Path(value)
+            self._save_path = Path(value)
 
         if not self._save_path.exists():
             self._save_path.mkdir(exists_ok=True)
@@ -82,6 +82,11 @@ class MTH5ToMiniSEEDStationXML:
     @network_code.setter
     def network_code(self, value):
         """be sure the string is just 2 characters"""
+        if value is None:
+            raise ValueError(
+                "Must input a network code.  "
+                "Request a temporary code from https://www.fdsn.org/networks/request/temp/"
+            )
         if not re.match(self._network_code_pattern, value):
             raise ValueError(
                 f"{value} is not a valid network code. It must be 2 alphanumeric characters"
@@ -93,7 +98,7 @@ class MTH5ToMiniSEEDStationXML:
         cls,
         mth5_path,
         save_path=None,
-        network_code=None,
+        network_code="ZU",
         use_runs_with_data_only=True,
         **kwargs,
     ):

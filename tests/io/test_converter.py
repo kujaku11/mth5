@@ -39,6 +39,13 @@ class TestMTH5ToMiniSEEDStationXMLFunctionality(unittest.TestCase):
                 FileExistsError, set_path, Path().cwd().joinpath("fail.h5")
             )
 
+    def test_save_path_none(self):
+        self.assertEqual(self.converter.save_path, Path().cwd())
+
+    def test_save_path(self):
+        self.converter.save_path = Path().cwd()
+        self.assertEqual(self.converter.save_path, Path().cwd())
+
     def test_set_network_code_fail(self):
         def set_code(value):
             self.converter.network_code = value
