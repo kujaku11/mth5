@@ -163,5 +163,9 @@ def get_encoding(run_ts):
     For now take the median dtype
     """
     dtypes = [run_ts.dataset[ch].data.dtype.name for ch in run_ts.channels]
+    encoding = sorted(dtypes)[int(len(dtypes) / 2)].upper()
+    if encoding in ["INT64"]:
+        encoding = "INT32"
+        logger.warning("Casting INT64 to INT32")
 
-    return sorted(dtypes)[int(len(dtypes) / 2)].upper()
+    return encoding
