@@ -994,7 +994,7 @@ class MTH5:
         """return a dataframe of channels"""
         # need to add mth5 file path for future processing classes.
         run_summary_df = self.channel_summary.to_run_summary()
-        run_summary_df["mth5_path"] = self.filename
+        run_summary_df["mth5_path"] = self.filename.as_posix()
 
         return run_summary_df
 
