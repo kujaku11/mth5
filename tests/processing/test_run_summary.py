@@ -48,6 +48,12 @@ class TestRunSummary(unittest.TestCase):
 
     def test_clone(self):
         rs_clone = self.rs.clone()
+        rs_clone.df["mth5_path"] = rs_clone.df.mth5_path.infer_objects(
+            copy=False
+        ).fillna(0)
+        self.rs.df["mth5_path"] = self.rs.df.mth5_path.infer_objects(copy=False).fillna(
+            0
+        )
         self.assertEqual(True, (self.rs.df == rs_clone.df).all().all())
 
     def test_mini_summary(self):
@@ -66,6 +72,10 @@ class TestRunSummary(unittest.TestCase):
 
     def test_set_sample_rate(self):
         new_rs = self.rs.set_sample_rate(1)
+        new_rs.df["mth5_path"] = new_rs.df.mth5_path.infer_objects(copy=False).fillna(0)
+        self.rs.df["mth5_path"] = self.rs.df.mth5_path.infer_objects(copy=False).fillna(
+            0
+        )
         self.assertEqual(True, (self.rs.df == new_rs.df).all().all())
 
     def test_set_sample_rate_faile(self):
