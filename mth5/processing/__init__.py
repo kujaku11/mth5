@@ -1,4 +1,3 @@
-from loguru import logger
 from mth5 import RUN_SUMMARY_DTYPE, RUN_SUMMARY_COLUMNS
 
 ADDED_KERNEL_DATASET_DTYPE = [
@@ -24,12 +23,3 @@ MINI_SUMMARY_COLUMNS = [
 
 from .run_summary import RunSummary
 from .kernel_dataset import KernelDataset
-
-try:
-    from .aurora.process_aurora import AuroraProcessing
-except ImportError:
-    msg = "Import from mtpy.processing.aurora failed"
-    msg = f"{msg} This is a known issue when aurora imports from mtpy"
-    logger.debug(msg)
-
-__all__ = ["RunSummary", "KernelDataset", "AuroraProcessing"]
