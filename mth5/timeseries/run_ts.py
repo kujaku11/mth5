@@ -22,6 +22,7 @@ import inspect
 
 import xarray as xr
 import numpy as np
+import scipy
 from loguru import logger
 
 from matplotlib import pyplot as plt
@@ -807,18 +808,9 @@ class RunTS:
         """
 
         try:
-            return round(
-                1.0
-                / np.float64(
-                    (
-                        np.median(
-                            np.diff(self.dataset.coords["time"].to_index())
-                            / np.timedelta64(1, "s")
-                        )
-                    )
-                ),
-                0,
-            )
+            dt_array = np.diff(self.dataset.coords["time"].to_index()) / np.timedelta64(1, "s")
+            best_dt, counts = scipy.stats.mode(dt_array)
+            return round(1.0 / np.float64(best_dt),0,)
         except AttributeError:
             self.logger.warning(
                 "Something weird happend with xarray time indexing"

@@ -38,7 +38,7 @@ jobs:
         conda install pytest=7.3
         conda install pytest-cov
         conda install pytest-subtests
-        pip install git+https://github.com/kujaku11/mt_metadata.git@features
+        pip install "mt_metadata[obspy] @ git+https://github.com/kujaku11/mt_metadata.git@features"
 
     - name: Install Our Package
       run: |
@@ -68,4 +68,3 @@ jobs:
         flags: tests
         fail_ci_if_error: false
         verbose: true
-
