@@ -134,7 +134,12 @@ class Spectrogram(object):
         """
         if self._frequency_increment is None:
             frequency_axis = self.dataset.frequency
-            self._frequency_increment = frequency_axis.data[1] - frequency_axis.data[0]
+            try:
+                self._frequency_increment = frequency_axis.data[1] - frequency_axis.data[0]
+            except IndexError:
+                msg = "frequency increment for spectrogram with frequency axis of length 1 is not defined"
+                logger.debug(msg)
+                self._frequency_increment = "undefined"
         return self._frequency_increment
 
     def num_harmonics_in_band(self, frequency_band, epsilon=1e-7):
