@@ -5,7 +5,7 @@ TODO: Add test that builds FCs
 
 """
 from loguru import logger
-from mth5.timeseries.spectre.frequency_band_helpers import half_octave
+from mth5.processing.spectre.frequency_band_helpers import half_octave
 
 import numpy as np
 import unittest
