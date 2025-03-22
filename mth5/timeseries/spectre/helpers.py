@@ -7,11 +7,9 @@ from mt_metadata.transfer_functions.processing.aurora import DecimationLevel as 
 from mt_metadata.transfer_functions.processing.fourier_coefficients import Decimation as FCDecimation
 from mt_metadata.transfer_functions.processing.fourier_coefficients.decimation import fc_decimations_creator
 from mth5.mth5 import MTH5
+from mth5.processing.spectre.stft import run_ts_to_stft_scipy
 from mth5.utils.helpers import path_or_mth5_object
 from typing import Literal, Optional, Union
-from .prewhitening import apply_prewhitening
-from .prewhitening import apply_recoloring
-from .stft import run_ts_to_stft_scipy
 
 import mth5
 import numpy as np

@@ -5,13 +5,13 @@
 """
 from .prewhitening import apply_prewhitening
 from .prewhitening import apply_recoloring
-from .spectrogram import Spectrogram
 from mt_metadata.transfer_functions.processing.aurora.decimation_level import (
     DecimationLevel as AuroraDecimationLevel,
 )
 from mt_metadata.transfer_functions.processing.fourier_coefficients import (
     Decimation as FCDecimation,
 )
+from mth5.timeseries.spectre.spectrogram import Spectrogram
 from typing import Union
 
 import numpy as np
