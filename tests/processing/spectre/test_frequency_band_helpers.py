@@ -5,12 +5,12 @@ TODO: Add test that builds FCs
 
 """
 from loguru import logger
+from mth5.processing.spectre.frequency_band_helpers import bands_of_constant_q
 from mth5.processing.spectre.frequency_band_helpers import half_octave
 from mth5.processing.spectre.frequency_band_helpers import log_spaced_frequencies
 
 import numpy as np
 import unittest
-
 
 class TestHalfOctave(unittest.TestCase):
 
@@ -82,6 +82,7 @@ class TestLogSpacedFrequencies(unittest.TestCase):
         )
         # check that the ratios of each value to its predescessor are all equal
         assert np.isclose(freqs[1:] / freqs[:-1], freqs[1] / freqs[0]).all()
+        assert len(freqs) == params["num_bands"] + 1
 
     def test_bands_per_decade(self):
         params = self.params_dict["bands per decade"]
@@ -102,6 +103,42 @@ class TestLogSpacedFrequencies(unittest.TestCase):
         )
         # check that the ratios of each value to its predescessor are all equal
         assert np.isclose(freqs[1:] / freqs[:-1], freqs[1] / freqs[0]).all()
+
+
+class TestFrequencyBandsCreation(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        """ Put stuff you only need to init once in here"""
+        params_dict = {}
+        params_dict["band_center_frequencies"] = log_spaced_frequencies(
+            f_lower_bound=0.01,
+            f_upper_bound=100.0,
+            num_bands_per_decade=7.7,
+        )
+        params_dict["fractional bandwidths"] = [0.2, 0.5, 0.8]
+        params_dict["Q values"] = [1/x for x in params_dict["fractional bandwidths"]]
+
+        cls.params_dict = params_dict
+
+    def setUp(self) -> None:
+        """ Put stuff you want to reset every time in here """
+        pass
+
+    def test_bands_of_constant_q(self):
+        for Q in self.params_dict["Q values"]:
+            frequency_bands = bands_of_constant_q(
+                band_center_frequencies=self.params_dict["band_center_frequencies"],
+                q=Q
+            )
+            for i in range(frequency_bands.number_of_bands):
+                band = frequency_bands.band(i)
+                band.center_averaging_type = "arithmetic"
+                assert np.isclose(band.Q, Q)
+                band.center_averaging_type = "geometric"
+                assert np.isclose(band.Q, Q, rtol=1e-1)
+
+
 
 
 # =============================================================================

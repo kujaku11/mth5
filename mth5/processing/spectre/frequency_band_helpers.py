@@ -64,7 +64,8 @@ def log_spaced_frequencies(
     f_upper_bound : float
         highest frequency under consideration
     num_bands : int
-        Total number of bands.  This supercedes num_bands_per_decade if supplied
+        Total number of bands. Note that `num_bands` is one fewer than the number
+         of frequencies returned (gates and fenceposts).
     num_bands_per_decade : int (TODO test, float maybe ok also.. need to test)
         number of bands per decade.  8 is a nice choice.
     num_bands : int
@@ -117,41 +118,59 @@ def log_spaced_frequencies(
     frequencies = f_lower_bound * (bases**exponents)
 
     return frequencies
-#
-# def bands_of_constant_q(
-#     band_center_frequencies: np.ndarray,
-#     Q: Optional[float] = None
-# ) -> FrequencyBands:
-#     """
-#         Generate frequency bands centered at band_center_frequencies.
-#         These bands have
-#         Given The resultant gates would have constant Q.
-#          i.e. Q = delta_f/f_center = constant.
-#         Normally f_center is defined geometrically, i.e. sqrt(f2*f1) is the center freq
-#     between f1 and f2.
-#     Parameters
-#     ----------
-#     frequencies_list
-#     Q
-#
-#     Returns
-#     -------
-#
-#     """
-#     num_bands = len(band_center_frequencies)
-#     lower_bounds = np.full(num_bands, np.nan)
-#     upper_bounds = np.full(num_bands, np.nan)
-#     for i, frq in enumerate(band_center_frequencies):
-#         delta_f = frq * Q
-#         lower_bounds[i] = ff - delta_f
-#         upper_bounds[i] = ff + delta_f
-#     band_edges_df = pd.DataFrame(
-#         data={
-#             'lower_bound': lower_bounds,
-#             'upper_bound': upper_bounds,
-#         }
-#     )
-#     return FrequencyBands(band_edges=band_edges_df)
+
+
+def bands_of_constant_q(
+    band_center_frequencies: np.ndarray,
+    q: Optional[float] = None,
+    fractional_bandwidth: Optional[float] = None,
+) -> FrequencyBands:
+    """
+        Generate frequency bands centered at band_center_frequencies.
+        These bands have Q = f_center/delta_f = constant.
+        Normally f_center is defined geometrically, i.e. sqrt(f2*f1) is the center freq between f1 and f2.
+
+        Parameters
+        ----------
+        band_center_frequencies: np.ndarray
+            The center frequencies for the bands
+        q: float
+            Q = f_center/delta_f = constant.
+            Q is 1/fractional_bandwidth.
+            Q is nonsene when less than 1, just as fractional bandwidth is nonsense when greater than 1.
+            - Upper case Q is used in the literature
+            See
+            - https://en.wikipedia.org/wiki/Bandwidth_(signal_processing)#Fractional_bandwidth
+            - https://en.wikipedia.org/wiki/Q_factor
+
+
+
+        Returns
+        -------
+
+    """
+    if fractional_bandwidth is None:
+        if q is None:
+            msg = "must specify one of Q or fractional_bandwidth"
+            raise ValueError(msg)
+        fractional_bandwidth = 1./q
+
+    num_bands = len(band_center_frequencies)
+    lower_bounds = np.full(num_bands, np.nan)
+    upper_bounds = np.full(num_bands, np.nan)
+    for i, frq in enumerate(band_center_frequencies):
+        delta_f = (frq * fractional_bandwidth) / 2  # halved because 2*delta_f is bandwidth
+        # delta_f = frq / Q
+        lower_bounds[i] = frq - delta_f
+        upper_bounds[i] = frq + delta_f
+
+    band_edges_df = pd.DataFrame(
+        data={
+            'lower_bound': lower_bounds,
+            'upper_bound': upper_bounds,
+        }
+    )
+    return FrequencyBands(band_edges=band_edges_df)
 #
 # def partitioned_bands(frequencies_list: Union[np.ndarray, list]) -> FrequencyBands:
 #     """
