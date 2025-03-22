@@ -27,9 +27,9 @@ from mth5.helpers import close_open_files
 from mth5.mth5 import MTH5
 from mth5.timeseries.spectre import MultivariateDataset
 from mth5.timeseries.spectre import Spectrogram
-from mth5.timeseries.spectre.frequency_band_helpers import half_octave
 from mth5.timeseries.spectre.helpers import add_fcs_to_mth5
 from mth5.timeseries.spectre.helpers import read_back_fcs
+from mth5.processing.spectre.frequency_band_helpers import half_octave
 from scipy.constants import mu_0
 
 import unittest

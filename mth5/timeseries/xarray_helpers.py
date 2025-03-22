@@ -61,7 +61,7 @@ def covariance_xr(
 def initialize_xrda_1d(
     channels: list,
     dtype: Optional[type] = None,
-    value: Optional[Union[complex, float, bool]] = 0,
+    value: Optional[Union[complex, float, bool]] = 0.0,
 ) -> xr.DataArray:
     """
     Returns a 1D xr.DataArray with variable "channel", having values channels named by the input list.
@@ -146,7 +146,12 @@ def initialize_xrds_2d(
     return xrds
 
 
-def initialize_xrda_2d(variables, coords, dtype=complex, value=0):
+def initialize_xrda_2d(
+    variables: list,
+    coords: dict,
+    dtype: type = complex,
+    value: Union[int, float] = 0.0
+) -> xr.Dataset:
     """Initialize a 3D xarray DataArray with dimensions from coords plus 'variable'.
 
     Parameters
