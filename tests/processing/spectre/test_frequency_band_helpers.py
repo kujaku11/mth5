@@ -6,6 +6,7 @@ TODO: Add test that builds FCs
 """
 from loguru import logger
 from mth5.processing.spectre.frequency_band_helpers import half_octave
+from mth5.processing.spectre.frequency_band_helpers import log_spaced_frequencies
 
 import numpy as np
 import unittest
@@ -46,6 +47,61 @@ class TestHalfOctave(unittest.TestCase):
         nfft = 128
         fft_freqs = np.fft.rfftfreq(n=nfft, d=delta_t)
         self.assertRaises(IndexError, half_octave, sample_rate * 4.0, fft_freqs)
+
+
+class TestLogSpacedFrequencies(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        params_dict = {}
+        params_dict["geometric"] = {}
+        params_dict["geometric"]["f_lower_bound"] = 1e-4
+        params_dict["geometric"]["f_upper_bound"] = 1e4
+        params_dict["geometric"]["num_bands"] = 42
+
+        params_dict["bands per decade"] = {}
+        params_dict["bands per decade"]["f_lower_bound"] = 1e-4
+        params_dict["bands per decade"]["f_upper_bound"] = 1e4
+        params_dict["bands per decade"]["num_bands_per_decade"] = 8.0
+
+        params_dict["bands per octave"] = {}
+        params_dict["bands per octave"]["f_lower_bound"] = 1e-4
+        params_dict["bands per octave"]["f_upper_bound"] = 1e4
+        params_dict["bands per octave"]["num_bands_per_octave"] = 2.2
+        cls.params_dict = params_dict
+
+    def setUp(self) -> None:
+        pass
+
+    def test_geometric_spacing(self):
+        params = self.params_dict["geometric"]
+        freqs = log_spaced_frequencies(
+            f_lower_bound=params["f_lower_bound"],
+            f_upper_bound=params["f_upper_bound"],
+            num_bands=params["num_bands"]
+        )
+        # check that the ratios of each value to its predescessor are all equal
+        assert np.isclose(freqs[1:] / freqs[:-1], freqs[1] / freqs[0]).all()
+
+    def test_bands_per_decade(self):
+        params = self.params_dict["bands per decade"]
+        freqs = log_spaced_frequencies(
+            f_lower_bound=params["f_lower_bound"],
+            f_upper_bound=params["f_upper_bound"],
+            num_bands_per_decade=params["num_bands_per_decade"]
+        )
+        # check that the ratios of each value to its predescessor are all equal
+        assert np.isclose(freqs[1:] / freqs[:-1], freqs[1] / freqs[0]).all()
+
+    def test_bands_per_octave(self):
+        params = self.params_dict["bands per octave"]
+        freqs = log_spaced_frequencies(
+            f_lower_bound=params["f_lower_bound"],
+            f_upper_bound=params["f_upper_bound"],
+            num_bands_per_octave=params["num_bands_per_octave"]
+        )
+        # check that the ratios of each value to its predescessor are all equal
+        assert np.isclose(freqs[1:] / freqs[:-1], freqs[1] / freqs[0]).all()
 
 
 # =============================================================================

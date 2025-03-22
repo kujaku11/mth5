@@ -40,80 +40,83 @@ def half_octave(
 
     return band
 
-# def log_spaced_frequencies(
-#     f_lower_bound: float,
-#     f_upper_bound: float,
-#     num_bands: Optional[int] = None,
-#     num_bands_per_decade: Optional[float] = 8.0,
-#     num_bands_per_octave: Optional[float] = None,
-# ):
-#     """
-#     Convenience function for generating logarithmically spaced fenceposts running
-#     from f_lower_bound Hz to f_upper_bound Hz.
-#
-#     These can be taken, two at a time as band edges, or used as band centers with
-#     a constant Q scheme.  This is basically the same as np.logspace, but allows
-#     for specification of frequencies in Hz.
-#
-#     Note in passing, replacing np.exp with 10** and np.log with np.log10 yields same base.
-#
-#     Parameters
-#     ----------
-#     f_lower_bound : float
-#         lowest frequency under consideration
-#     f_upper_bound : float
-#         highest frequency under consideration
-#     num_bands : int
-#         Total number of bands.  This supercedes num_bands_per_decade if supplied
-#     num_bands_per_decade : int (TODO test, float maybe ok also.. need to test)
-#         number of bands per decade
-#     num_bands : int
-#         total number of bands.  This supercedes num_bands_per_decade if supplied
-#
-#     Returns
-#     -------
-#     frequencies : array
-#         logarithmically spaced fence posts acoss lowest and highest
-#         frequencies.  These partition the frequency domain between
-#         f_lower_bound and f_upper_bound
-#     """
-#     band_spacing_method = None
-#     if num_bands:
-#         msg = f"generating {num_bands} log-spaced frequencies in range " \
-#               f"{f_lower_bound}-{f_upper_bound} Hz"
-#         logger.info(msg)
-#         band_spacing_method = "geometric"
-#
-#     if num_bands_per_decade:
-#         if band_spacing_method is not None:
-#             msg = f"band_spacing_method already set to {band_spacing_method}"
-#             msg += "Please specify only one of num_bands_per_decade, num_bands_per_octave, num_bands"
-#             logger.error(msg)
-#             raise ValueError(msg)
-#         else:
-#             number_of_decades = np.log10(f_upper_bound / f_lower_bound)
-#             num_bands = round(
-#                 number_of_decades * num_bands_per_decade
-#             )  # floor or ceiling here?
-#
-#     if num_bands_per_octave:
-#         if band_spacing_method is not None:
-#             msg = f"band_spacing_method already set to {band_spacing_method}"
-#             msg += "Please specify only one of num_bands_per_decade, num_bands_per_octave, num_bands"
-#             logger.error(msg)
-#             raise ValueError(msg)
-#         else:
-#             number_of_octaves = np.log2(f_upper_bound / f_lower_bound)
-#             num_bands = round(
-#                 number_of_octaves * num_bands_per_octave
-#             )  # floor or ceiling here?
-#
-#     base = np.exp((1.0 / num_bands) * np.log(f_upper_bound / f_lower_bound))
-#     bases = base * np.ones(num_bands + 1)
-#     exponents = np.linspace(0, num_bands, num_bands + 1)
-#     frequencies = f_lower_bound * (bases**exponents)
-#
-#     return frequencies
+def log_spaced_frequencies(
+    f_lower_bound: float,
+    f_upper_bound: float,
+    num_bands: Optional[int] = None,
+    num_bands_per_decade: Optional[float] = None,
+    num_bands_per_octave: Optional[float] = None,
+):
+    """
+    Convenience function for generating logarithmically spaced fenceposts running
+    from f_lower_bound Hz to f_upper_bound Hz.
+
+    These can be taken, two at a time as band edges, or used as band centers with
+    a constant Q scheme.  This is basically the same as np.logspace, but allows
+    for specification of frequencies in Hz.
+
+    Note in passing, replacing np.exp with 10** and np.log with np.log10 yields same base.
+
+    Parameters
+    ----------
+    f_lower_bound : float
+        lowest frequency under consideration
+    f_upper_bound : float
+        highest frequency under consideration
+    num_bands : int
+        Total number of bands.  This supercedes num_bands_per_decade if supplied
+    num_bands_per_decade : int (TODO test, float maybe ok also.. need to test)
+        number of bands per decade.  8 is a nice choice.
+    num_bands : int
+        total number of bands.  This supercedes num_bands_per_decade if supplied
+
+    Returns
+    -------
+    frequencies : array
+        logarithmically spaced fence posts acoss lowest and highest
+        frequencies.  These partition the frequency domain between
+        f_lower_bound and f_upper_bound
+    """
+    band_spacing_method = None
+    if num_bands:
+        msg = f"generating {num_bands} log-spaced frequencies in range " \
+              f"{f_lower_bound}-{f_upper_bound} Hz"
+        logger.info(msg)
+        band_spacing_method = "geometric"
+
+    if num_bands_per_decade:
+        if band_spacing_method is not None:
+            msg = f"band_spacing_method already set to {band_spacing_method}"
+            msg += "Please specify only one of num_bands_per_decade, num_bands_per_octave, num_bands"
+            logger.error(msg)
+            raise ValueError(msg)
+        else:
+            msg = f"generating {num_bands_per_decade} log-spaced frequency bands per decade in range " \
+                  f"{f_lower_bound}-{f_upper_bound} Hz"
+            logger.info(msg)
+            number_of_decades = np.log10(f_upper_bound / f_lower_bound)
+            num_bands = round(number_of_decades * num_bands_per_decade)
+            band_spacing_method = "bands per decade"
+
+    if num_bands_per_octave:
+        if band_spacing_method is not None:
+            msg = f"band_spacing_method already set to {band_spacing_method}"
+            msg += "Please specify only one of num_bands_per_decade, num_bands_per_octave, num_bands"
+            logger.error(msg)
+            raise ValueError(msg)
+        else:
+            msg = f"generating {num_bands_per_octave} log-spaced frequency bands per octave in range " \
+                  f"{f_lower_bound}-{f_upper_bound} Hz"
+            logger.info(msg)
+            number_of_octaves = np.log2(f_upper_bound / f_lower_bound)
+            num_bands = round(number_of_octaves * num_bands_per_octave)
+
+    base = np.exp((1.0 / num_bands) * np.log(f_upper_bound / f_lower_bound))
+    bases = base * np.ones(num_bands + 1)
+    exponents = np.linspace(0, num_bands, num_bands + 1)
+    frequencies = f_lower_bound * (bases**exponents)
+
+    return frequencies
 #
 # def bands_of_constant_q(
 #     band_center_frequencies: np.ndarray,
