@@ -8,6 +8,7 @@ from loguru import logger
 from mth5.processing.spectre.frequency_band_helpers import bands_of_constant_q
 from mth5.processing.spectre.frequency_band_helpers import half_octave
 from mth5.processing.spectre.frequency_band_helpers import log_spaced_frequencies
+from mth5.processing.spectre.frequency_band_helpers import partitioned_bands
 
 import numpy as np
 import unittest
@@ -111,7 +112,7 @@ class TestFrequencyBandsCreation(unittest.TestCase):
     def setUpClass(cls) -> None:
         """ Put stuff you only need to init once in here"""
         params_dict = {}
-        params_dict["band_center_frequencies"] = log_spaced_frequencies(
+        params_dict["log_spaced_frequencies"] = log_spaced_frequencies(
             f_lower_bound=0.01,
             f_upper_bound=100.0,
             num_bands_per_decade=7.7,
@@ -128,7 +129,7 @@ class TestFrequencyBandsCreation(unittest.TestCase):
     def test_bands_of_constant_q(self):
         for Q in self.params_dict["Q values"]:
             frequency_bands = bands_of_constant_q(
-                band_center_frequencies=self.params_dict["band_center_frequencies"],
+                band_center_frequencies=self.params_dict["log_spaced_frequencies"],
                 q=Q
             )
             for i in range(frequency_bands.number_of_bands):
@@ -138,8 +139,14 @@ class TestFrequencyBandsCreation(unittest.TestCase):
                 band.center_averaging_type = "geometric"
                 assert np.isclose(band.Q, Q, rtol=1e-1)
 
-
-
+    def test_partitioned_bands(self):
+        """ """
+        fenceposts = self.params_dict["log_spaced_frequencies"]
+        frequency_bands = partitioned_bands(frequencies=fenceposts)
+        for i in range(frequency_bands.number_of_bands - 1):
+            band = frequency_bands.band(i)
+            assert band.lower_bound == fenceposts[i]
+            assert band.upper_bound == fenceposts[i+1]
 
 # =============================================================================
 # run

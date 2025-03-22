@@ -143,11 +143,10 @@ def bands_of_constant_q(
             - https://en.wikipedia.org/wiki/Bandwidth_(signal_processing)#Fractional_bandwidth
             - https://en.wikipedia.org/wiki/Q_factor
 
-
-
         Returns
         -------
-
+        frequency_bands: FrequencyBands
+            Frequency bands object with bands packed inside.
     """
     if fractional_bandwidth is None:
         if q is None:
@@ -170,88 +169,33 @@ def bands_of_constant_q(
             'upper_bound': upper_bounds,
         }
     )
-    return FrequencyBands(band_edges=band_edges_df)
-#
-# def partitioned_bands(frequencies_list: Union[np.ndarray, list]) -> FrequencyBands:
-#     """
-#         Takes ordered list of frequencies and returns
-#         a FrequencyBands object
-#     Returns
-#     -------
-#
-#     """
-#     num_bands = len(frequencies_list) - 1  # gates and fenceposts
-#     lower_bounds = num_bands * [None]
-#     upper_bounds = num_bands * [None]
-#     lower_bounds = frequencies_list[:-1]
-#     upper_bounds = frequencies_list[1:]
-#     band_edges_df = pd.DataFrame(
-#         data = {
-#             'lower_bound': lower_bounds,
-#             'upper_bound': upper_bounds,
-#         }
-#     )
-#     return FrequencyBands(band_edges=band_edges_df)
-#
-# # def bands_at_constant_radius():
-# #     pass
-#
-#
-#
-# def tst_constant_q(
-#     Q: Optional[float] = None,
-# ):
-#     """
-#     See
-#     - https://en.wikipedia.org/wiki/Bandwidth_(signal_processing)#Fractional_bandwidth
-#     - https://en.wikipedia.org/wiki/Q_factor
-#
-#
-#
-#     low q (Q->1 as radius approaches f, and the DC term is included)
-#     Returns
-#     -------
-#
-#     """
-#     import numpy as np
-#     N = 10000
-#     sample_rate = 500
-#     frequencies = np.fft.rfftfreq(N, 1. / sample_rate)
-#     radius = 0.9
-#     feature_frequencies = np.logspace(-1, 2, 40)
-#     print(f"low freqs = {frequencies[0:2]}")
-#     print(f"high freqs = {frequencies[-3:]}")
-#     for ff in feature_frequencies:
-#         delta_f = radius * ff
-#         Q = ff / delta_f
-#         lower_bound = ff - delta_f
-#         upper_bound = ff + delta_f
-#         # print(2*delta_f/ff)
-#         print(Q)
-#     print("OK")
-#
-# def measure_q():
-#     f_lower_bound = 0.10
-#     f_upper_bound = 1000.1
-#     edges = log_spaced_frequencies(
-#         f_lower_bound,
-#         f_upper_bound,
-#         num_bands_per_decade=None,
-#         num_bands=400,
-#         Q = None,
-#     )
-#     for i in range(len(edges) - 1):
-#         band = FrequencyBand(
-#             frequency_min = edges[i],
-#             frequency_max = edges[i+1],
-#         )
-#         print(band.Q)
-#         #print(band.fractional_bandwidth)
-#
-#     print(edges)
-#     return edges
-#
-#
+    frequency_bands = FrequencyBands(band_edges=band_edges_df)
+    return frequency_bands
+
+def partitioned_bands(
+    frequencies: Union[np.ndarray, list]) -> FrequencyBands:
+    """
+        Takes ordered list of frequencies and returns
+        a FrequencyBands object
+    Returns
+    -------
+
+    """
+    num_bands = len(frequencies) - 1  # gates and fenceposts
+    lower_bounds = num_bands * [None]
+    upper_bounds = num_bands * [None]
+    lower_bounds = frequencies[:-1]
+    upper_bounds = frequencies[1:]
+    band_edges_df = pd.DataFrame(
+        data = {
+            'lower_bound': lower_bounds,
+            'upper_bound': upper_bounds,
+        }
+    )
+    frequency_bands = FrequencyBands(band_edges=band_edges_df)
+    return frequency_bands
+
+
 # class FrequencyBandsCreator():
 #     """
 #         This class can generate FrequencyBands objects based on parametric methods.
