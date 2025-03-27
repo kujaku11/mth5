@@ -6,10 +6,11 @@ from loguru import logger
 from mt_metadata.transfer_functions.processing.aurora import DecimationLevel as AuroraDecimationLevel
 from mt_metadata.transfer_functions.processing.fourier_coefficients import Decimation as FCDecimation
 from mt_metadata.transfer_functions.processing.fourier_coefficients.decimation import fc_decimations_creator
+from mt_metadata.transfer_functions.processing.fourier_coefficients.decimation import get_degenerate_fc_decimation
 from mth5.mth5 import MTH5
 from mth5.processing.spectre.stft import run_ts_to_stft_scipy
 from mth5.utils.helpers import path_or_mth5_object
-from typing import Literal, Optional, Union
+from typing import List, Literal, Optional, Union
 
 import mth5
 import numpy as np
@@ -21,9 +22,18 @@ GROUPBY_COLUMNS = ["survey", "station", "sample_rate"]
 
 
 @path_or_mth5_object
-def add_fcs_to_mth5(m: MTH5, fc_decimations: Optional[Union[str, list]] = None) -> None:
+def add_fcs_to_mth5(
+    m: MTH5,
+    fc_decimations: Optional[Union[str, list]] = None,
+    groupby_columns: List[str] = GROUPBY_COLUMNS
+) -> None:
     """
     Add Fourier Coefficient Levels ot an existing MTH5.
+
+    TODO: This method currently loops the heirarcy of the h5, and then calls an operator.
+    How about making a single table that represents the loop up front and then looping once that
+    table instead of this nested loop business?  We would need a function that takes as input
+    the groupby_columns.
 
     **Notes:**
 
@@ -48,26 +58,22 @@ def add_fcs_to_mth5(m: MTH5, fc_decimations: Optional[Union[str, list]] = None) 
     """
     # Group the channel summary by survey, station, sample_rate
     channel_summary_df = m.channel_summary.to_dataframe()
-    grouper = channel_summary_df.groupby(GROUPBY_COLUMNS)
+    grouper = channel_summary_df.groupby(groupby_columns)
     logger.debug(f"Detected {len(grouper)} unique station-sample_rate instances")
 
     # loop over groups
-    for (survey, station, sample_rate), group in grouper:
+    for (survey, station, sample_rate), group in grouper:  # TODO: is there a way to use the groupby_columns var instead of this tuple?
         msg = f"\n\n\nsurvey: {survey}, station: {station}, sample_rate {sample_rate}"
         logger.info(msg)
         station_obj = m.get_station(station, survey)
         run_summary = station_obj.run_summary
 
-        # Get the FC decimation schemes if not provided
-        if not fc_decimations:
-            msg = "FC Decimations not supplied, creating defaults on the fly"
-            logger.info(f"{msg}")
-            fc_decimations = fc_decimations_creator(
-                initial_sample_rate=sample_rate, time_period=None
-            )
-        elif isinstance(fc_decimations, str):
-            if fc_decimations == "degenerate":
-                fc_decimations = get_degenerate_fc_decimation(sample_rate)
+        # Get the FC decimation schemes if not provided -- note that this depends only on sample rate
+        fc_decimations = _fc_decimations_from_sample_rate(
+            fc_decimations=fc_decimations,
+            sample_rate=sample_rate
+
+        )
 
         # TODO: Make this a function that can be done using df.apply()
         for i_run_row, run_row in run_summary.iterrows():
@@ -121,6 +127,32 @@ def add_fcs_to_mth5(m: MTH5, fc_decimations: Optional[Union[str, list]] = None) 
     return
 
 
+def _fc_decimations_from_sample_rate(
+    sample_rate:float,
+    fc_decimations: Optional[Union[str, list]] = None,
+) -> Union[str, list]:
+    """
+        Helper function to get some fc_decimations.
+        Really only seems to be used by add_fcs_to_mth5.
+
+        Development Notes:
+            This function is probably overslicing the add_fcs_to_mth5 function
+
+        :return fc_decimations:  This is an iterable of
+    """
+    # Get the FC decimation schemes if not provided -- note that this depend only on sample rate
+    if not fc_decimations:
+        msg = "FC Decimations not supplied, creating defaults on the fly"
+        logger.info(f"{msg}")
+        fc_decimations = fc_decimations_creator(
+            initial_sample_rate=sample_rate, time_period=None
+        )
+    elif isinstance(fc_decimations, str):
+        if fc_decimations == "degenerate":
+            fc_decimations = get_degenerate_fc_decimation(sample_rate)
+
+    return fc_decimations
+
 def _add_spectrogram_to_mth5(
     fc_decimation: FCDecimation,
     run_obj: mth5.groups.RunGroup,
@@ -169,7 +201,11 @@ def _add_spectrogram_to_mth5(
 
 
 @path_or_mth5_object
-def read_back_fcs(m: Union[MTH5, pathlib.Path, str], mode: str = "r") -> None:
+def read_back_fcs(
+    m: Union[MTH5, pathlib.Path, str],
+    mode: str = "r",
+    groupby_columns: List[str] = GROUPBY_COLUMNS
+) -> None:
     """
         Loops over stations in the channel summary of input (m) grouping by common sample_rate.
         Then loop over the runs in the corresponding FC Group.  Finally, within an fc_group,
@@ -195,7 +231,7 @@ def read_back_fcs(m: Union[MTH5, pathlib.Path, str], mode: str = "r") -> None:
     """
     channel_summary_df = m.channel_summary.to_dataframe()
     logger.debug(channel_summary_df)
-    grouper = channel_summary_df.groupby(GROUPBY_COLUMNS)
+    grouper = channel_summary_df.groupby(groupby_columns)
     for (survey, station, sample_rate), group in grouper:
         logger.info(f"survey: {survey}, station: {station}, sample_rate {sample_rate}")
         station_obj = m.get_station(station, survey)
@@ -285,33 +321,3 @@ def calibrate_stft_obj(
         # TODO: FIXME Sometimes raises a runtime warning due to DC term in calibration response = 0
         stft_obj[channel_id].data /= calibration_response
     return stft_obj
-
-
-def get_degenerate_fc_decimation(sample_rate: float) -> list:
-    """
-        TODO: consider placing this in mt_metadata.decimation.py
-
-    Makes a default fc_decimation list. WIP
-    This "degenerate" config will only operate on the first decimation level.
-    This is useful for testing.  It could also be used in future on an MTH5 stored time series in decimation
-    levels already as separate runs.
-
-    Parameters
-    ----------
-    sample_rate: float
-        The sample rate associated with the time-series to convert to spectrogram
-
-    Returns
-    -------
-    output: list
-        List has only one element which is of type FCDecimation, aka.
-
-    """
-    output = fc_decimations_creator(
-        sample_rate,
-        decimation_factors=[
-            1,
-        ],
-        max_levels=1,
-    )
-    return output
