@@ -1,7 +1,7 @@
 """
-Module contains a class that represents a spectrogram.
-i.e. A 2D time series of Fourier coefficients with axes time and the other frequency.
-The datasets are xarray/dataframe and are fundmentally multivariate.
+    Module contains a class that represents a spectrogram.
+    i.e. A 2D time series of Fourier coefficients with axes time and the other frequency.
+    The datasets are xarray/dataframe and are fundmentally multivariate.
 
 """
 # Standard library imports
@@ -23,10 +23,11 @@ class Spectrogram(object):
     """
     Class to contain methods for STFT objects.
 
-
-    TODO: Add OLS Z-estimates
-    TODO: Add Sims/Vozoff Z-estimates
-
+    TODO: Add OLS Z-estimates -- actually, these are properties of cross powers, not direct properties of spectrograms.
+    TODO: Add Sims/Vozoff Z-estimates -- actually, these are properties of cross powers as well.
+    **Note** Coherence is similarly, a property of cross powers.
+    There are in fact, very few features that we would derive from an unaveraged spectrogram.  Pretty much
+    everything except statistical moments comes from cross powers.
 
     Development Notes:
     - The spectrogram class is fundamental to MT Processing, and normally appears during the STFT operation.
@@ -142,23 +143,24 @@ class Spectrogram(object):
                 self._frequency_increment = "undefined"
         return self._frequency_increment
 
-    def num_harmonics_in_band(self, frequency_band, epsilon=1e-7):
+    def num_harmonics_in_band(self, frequency_band: Band, epsilon: float = 1e-7) -> int:
         """
 
         Returns the number of harmonics within the frequency band in the underlying dataset
 
         Parameters
         ----------
-        band
+        frequency_band
         stft_obj
 
         Returns
         -------
+        num_harmonics: int
+            The number of harmonics in the underlying dataset within the given frequency band.
 
         """
-        cond1 = self._dataset.frequency >= frequency_band.lower_bound - epsilon
-        cond2 = self._dataset.frequency <= frequency_band.upper_bound + epsilon
-        num_harmonics = (cond1 & cond2).data.sum()
+        extracted_spectrogram = self.extract_band(frequency_band, epsilon=epsilon)
+        num_harmonics = len(extracted_spectrogram.frequency_axis)
         return num_harmonics
 
     def extract_band(

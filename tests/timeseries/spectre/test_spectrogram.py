@@ -42,6 +42,7 @@ FORCE_MAKE_MTH5 = True  # Should be True except when debugging locally
 
 class TestAddFourierCoefficientsToSyntheticData(unittest.TestCase):
     """
+
     Runs several synthetic processing tests from config creation to tf_cls.
 
     There are two ways to prepare the FC-schema
@@ -52,9 +53,12 @@ class TestAddFourierCoefficientsToSyntheticData(unittest.TestCase):
     Flow is to make some mth5 files from synthetic data, then loop over those files adding fcs.
 
     Development Notes:
-     This test is in process of being moved to mth5 from aurora.  The aurora created spectrograms and then
-     proceeded to process the mth5s to make TFs.  It would be nice to make some pytest fixtures that generate
-     these mth5 with spectrograms so they could be reused by multiple tests.
+     This test was moved to mth5 from aurora.  The aurora created spectrograms and then proceeded to process
+     the mth5s to make TFs.  It would be nice to make some pytest fixtures that generate these mth5 with
+     spectrograms so they could be reused by multiple tests. (there is an issue in MTH5 for this, #synthetic
+     #fixture #pytest)
+     TODO: This function (19 Feb 2025) does noet actually use the Spectrogram class -- check add_fcs_to_mth5
+     if it should be using that.
 
     """
 
