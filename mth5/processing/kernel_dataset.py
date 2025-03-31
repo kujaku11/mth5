@@ -118,9 +118,9 @@ class KernelDataset:
 
     def __init__(
         self,
-        df: Optional[Union[pd.DataFrame, None]] = None,
+        df: Optional[pd.DataFrame] = None,
         local_station_id: Optional[str] = "",
-        remote_station_id: Optional[Union[str, None]] = None,
+        remote_station_id: Optional[str] = None,
         **kwargs,
     ):
         """Constructor.
@@ -146,7 +146,7 @@ class KernelDataset:
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Str function."""
         return str(self.mini_summary.head(None))
 
@@ -155,7 +155,7 @@ class KernelDataset:
         return self.__str__()
 
     @property
-    def df(self):
+    def df(self) -> pd.DataFrame:
         """Df function."""
         return self._df
 
@@ -434,11 +434,13 @@ class KernelDataset:
     def from_run_summary(
         self,
         run_summary: RunSummary,
-        local_station_id: Optional[Union[str, None]] = None,
-        remote_station_id: Optional[Union[str, None]] = None,
-        sample_rate: Optional[Union[float, int, None]] = None,
+        local_station_id: Optional[str] = None,
+        remote_station_id: Optional[str] = None,
+        sample_rate: Optional[Union[float, int]] = None,
     ) -> None:
-        """Initialize the dataframe from a run summary.
+        """
+            Initialize the dataframe from a run summary.
+
         :param sample_rate:
             Defaults to None.
         :type sample_rate: Optional[Union[float, int, None]], optional
@@ -468,6 +470,20 @@ class KernelDataset:
         # Check df is non-empty
         if len(df) == 0:
             msg = f"Restricting run_summary df to {station_ids} yields an empty set"
+            logger.critical(msg)
+            raise ValueError(msg)
+
+        # Check that the columns have data
+        len_df_before_drop_dataless_rows = len(df)
+        df = df[df.has_data]
+        n_dropped = len_df_before_drop_dataless_rows - len(df)
+        if n_dropped:
+            msg = f"Dropped {n_dropped} rows from Kernel Dataset due to missing data"
+            logger.warning(msg)
+
+        # Check df is non-empty (again)
+        if len(df) == 0:
+            msg = "Restricting run_summary df to runs that have data yields an empty set"
             logger.critical(msg)
             raise ValueError(msg)
 
