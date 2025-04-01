@@ -128,7 +128,7 @@ class MTH5ToMiniSEEDStationXML:
                         network_code=converter.network_code, encoding=encoding
                     )
                     stream_fn = converter.save_path.joinpath(
-                        f"{row.survey}_{row.station}_{row.run}.mseed"
+                        f"{row.survey}_{row.station.upper()}_{row.run}.mseed"
                     )
                     stream.write(
                         stream_fn,
@@ -137,7 +137,7 @@ class MTH5ToMiniSEEDStationXML:
                         encoding=encoding,
                     )
                     logger.info(
-                        f"Wrote miniSEED for {row.survey}.{row.station}.{row.run} to {stream_fn}"
+                        f"Wrote miniSEED for {row.survey}.{row.station.upper()}.{row.run} to {stream_fn}"
                     )
                     stream_list.append(stream_fn)
 

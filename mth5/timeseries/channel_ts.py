@@ -1535,7 +1535,7 @@ class ChannelTS:
         obspy_trace.stats.sampling_rate = self.sample_rate
         if self.station_metadata.fdsn.id is None:
             self.station_metadata.fdsn.id = self.station_metadata.id
-        obspy_trace.stats.station = self.station_metadata.fdsn.id
+        obspy_trace.stats.station = self.station_metadata.fdsn.id.upper()
         obspy_trace.stats.network = network_code
 
         return obspy_trace
