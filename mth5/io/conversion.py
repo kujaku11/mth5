@@ -9,9 +9,14 @@ Convert MTH5 to other formats
 # ==================================================================================
 import re
 from pathlib import Path
+from loguru import logger
+import datetime
+
 from mth5.mth5 import MTH5
 from mt_metadata.timeseries.stationxml import XMLInventoryMTExperiment
-from loguru import logger
+
+from obspy import read
+from obspy.core import UTCDateTime
 
 # ==================================================================================
 
@@ -127,19 +132,12 @@ class MTH5ToMiniSEEDStationXML:
                     stream = run_ts.to_obspy_stream(
                         network_code=converter.network_code, encoding=encoding
                     )
-                    stream_fn = converter.save_path.joinpath(
-                        f"{row.survey}_{row.station.upper()}_{row.run}.mseed"
+                    # write to miniseed files
+                    stream_list.append(
+                        converter.split_ms_to_days(
+                            stream, converter.save_path, encoding
+                        )
                     )
-                    stream.write(
-                        stream_fn,
-                        format="MSEED",
-                        reclen=256,
-                        encoding=encoding,
-                    )
-                    logger.info(
-                        f"Wrote miniSEED for {row.survey}.{row.station.upper()}.{row.run} to {stream_fn}"
-                    )
-                    stream_list.append(stream_fn)
 
         # write StationXML
         experiment.surveys[0].fdsn.network = converter.network_code
@@ -153,6 +151,48 @@ class MTH5ToMiniSEEDStationXML:
         logger.info(f"Wrote StationXML to {xml_fn}")
 
         return xml_fn, stream_list
+
+    def split_ms_to_days(self, streams, save_path: Path, encoding: str) -> list:
+        """
+        Need to split the files into day files
+
+        Parameters
+        ----------
+        streams : obspy.Stream
+            list of traces
+
+        save_path : Path
+        """
+        fn_list = []
+        for tr in streams:
+            start_time = tr.stats.starttime
+            end_time = tr.stats.endtime
+
+            # Split the trace by day
+            current_time = start_time
+            while current_time < end_time:
+                next_day = UTCDateTime(current_time.date + datetime.timedelta(days=1))
+                if next_day > end_time:
+                    next_day = end_time
+
+                # Slice the trace for the current day
+                tr_day = tr.slice(current_time, next_day)
+
+                # Generate the output file name
+                output_file = save_path.joinpath(
+                    f"{tr.stats.network}_{tr.stats.station}_{tr.stats.location}_{tr.stats.channel}_{current_time.isoformat().replace('-', '_').replace(':', '_')}.mseed"
+                )
+                logger.info(f"Wrote miniseed file to: {output_file}")
+
+                fn_list.append(output_file)
+
+                # Write the sliced trace to a new MiniSEED file
+                tr_day.write(output_file, format="MSEED", reclen=256, encoding=encoding)
+
+                # Move to the next day
+                current_time = next_day
+
+        return fn_list
 
 
 def get_encoding(run_ts):
@@ -169,3 +209,42 @@ def get_encoding(run_ts):
         logger.warning("Casting INT64 to INT32")
 
     return encoding
+
+
+from pathlib import Path
+from obspy import read
+from obspy.core import UTCDateTime
+import datetime
+
+
+def split_miniseed_by_day(input_file):
+    save_path = Path(input_file).parent
+    # Read the MiniSEED file
+    st = read(input_file)
+
+    tr_list = []
+    # Iterate over each trace in the stream
+    for tr in st:
+        start_time = tr.stats.starttime
+        end_time = tr.stats.endtime
+
+        # Split the trace by day
+        current_time = start_time
+        while current_time < end_time:
+            next_day = UTCDateTime(current_time.date + datetime.timedelta(days=1))
+            if next_day > end_time:
+                next_day = end_time
+
+            # Slice the trace for the current day
+            tr_day = tr.slice(current_time, next_day)
+
+            # Generate the output file name
+            output_file = save_path.joinpath(
+                f"{tr.stats.network}.{tr.stats.station}.{tr.stats.location}.{tr.stats.channel}.{current_time.date}.mseed"
+            )
+
+            # Write the sliced trace to a new MiniSEED file
+            tr_day.write(output_file, format="MSEED")
+
+            # Move to the next day
+            current_time = next_day
