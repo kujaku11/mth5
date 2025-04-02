@@ -133,10 +133,8 @@ class MTH5ToMiniSEEDStationXML:
                         network_code=converter.network_code, encoding=encoding
                     )
                     # write to miniseed files
-                    stream_list.append(
-                        converter.split_ms_to_days(
-                            stream, converter.save_path, encoding
-                        )
+                    stream_list += converter.split_ms_to_days(
+                        stream, converter.save_path, encoding
                     )
 
         # write StationXML

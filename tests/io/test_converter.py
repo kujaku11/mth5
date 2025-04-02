@@ -81,7 +81,7 @@ class TestMTH5ToMiniSEEDStationXML(unittest.TestCase):
         with self.subTest("StationXML was written"):
             self.assertTrue(stationxml.exists())
         with self.subTest("miniseeds were written"):
-            self.assertEqual(len(miniseeds), 1)
+            self.assertEqual(len(miniseeds), 5)
 
         mth5_file = MakeMTH5.from_fdsn_miniseed_and_stationxml(
             stationxml,
@@ -94,14 +94,18 @@ class TestMTH5ToMiniSEEDStationXML(unittest.TestCase):
 
         mth5_file.unlink()
         stationxml.unlink()
-        [fn.unlink() for fn in miniseeds]
+        for fn in miniseeds:
+            try:
+                fn.unlink()
+            except:
+                pass
 
     def test_conversion_v2(self):
         stationxml, miniseeds = self.convert("0.2.0")
         with self.subTest("StationXML was written"):
             self.assertTrue(stationxml.exists())
         with self.subTest("miniseeds were written"):
-            self.assertEqual(len(miniseeds), 1)
+            self.assertEqual(len(miniseeds), 5)
 
         mth5_file = MakeMTH5.from_fdsn_miniseed_and_stationxml(
             stationxml,
@@ -114,7 +118,11 @@ class TestMTH5ToMiniSEEDStationXML(unittest.TestCase):
 
         mth5_file.unlink()
         stationxml.unlink()
-        [fn.unlink() for fn in miniseeds]
+        for fn in miniseeds:
+            try:
+                fn.unlink()
+            except:
+                pass
 
     @classmethod
     def tearDownClass(cls):
