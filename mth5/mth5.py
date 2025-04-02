@@ -1002,8 +1002,11 @@ class MTH5:
     @property
     def run_summary(self):
         """return a dataframe of channels"""
+        # need to add mth5 file path for future processing classes.
+        run_summary_df = self.channel_summary.to_run_summary()
+        run_summary_df["mth5_path"] = self.filename.as_posix()
 
-        return self.channel_summary.to_run_summary()
+        return run_summary_df
 
     @property
     def tf_summary(self):

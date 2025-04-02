@@ -1,40 +1,40 @@
 # -*- coding: utf-8 -*-
 """
-This is a utility function to get the appropriate reader for a given file type and 
+This is a utility function to get the appropriate reader for a given file type and
 return the appropriate object of :class:`mth5.timeseries`
 
 This setup to be like plugins but a hack cause I did not find the time to set
-this up properly as a true plugin.  
+this up properly as a true plugin.
 
 If you are writing your own reader you need the following structure:
-    
+
     * Class object that will read the given file
     * a reader function that is read_{file_type}, for instance read_nims
-    * the return value is a :class:`mth5.timeseries.MTTS` or 
+    * the return value is a :class:`mth5.timeseries.MTTS` or
       :class:`mth5.timeseries.RunTS` object and any extra metadata in the form
       of a dictionary with keys as {level.attribute}.
-    
+
 .. code-block:: python
-    
+
     class NewFile
         def __init__(self, fn):
             self.fn = fn
-        
+
         def read_header(self):
             return header_information
-        
+
         def read_newfile(self):
             ex, ey, hx, hy, hz = read_in_channels_as_MTTS
             return RunTS([ex, ey, hx, hy, hz])
-        
+
     def read_newfile(fn):
         new_file_obj = NewFile(fn)
         run_obj = new_file_obj.read_newfile()
-        
+
         return run_obj, extra_metadata
-        
+
 Then add your reader to the reader dictionary so that those files can be read.
-        
+
 .. seealso:: Existing readers for some guidance found in `mth5.io`
 
 Created on Wed Aug 26 10:32:45 2020
@@ -72,7 +72,7 @@ readers = {
         "reader": lemi.read_lemi424,
     },
     "phoenix": {
-        "file_types": ["bin", "td_150", "td_24k"],
+        "file_types": ["bin", "td_30", "td_150", "td_24k"],
         "reader": phoenix.read_phoenix,
     },
     "metronix": {
@@ -94,9 +94,7 @@ def get_reader(extension):
 
     """
     if extension in ["bin"]:
-        logger.warning(
-            "Suggest inputing file type, bin could be nims or phoenix"
-        )
+        logger.warning("Suggest inputing file type, bin could be nims or phoenix")
     for key, vdict in readers.items():
         if extension.lower() in vdict["file_types"]:
             return key, vdict["reader"]
