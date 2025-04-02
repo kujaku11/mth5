@@ -5,8 +5,8 @@ Test reading lemi files
 
 :copyright:
     Jared Peacock (jpeacock@usgs.gov)
-    
-:license: 
+
+:license:
     MIT
 """
 
@@ -141,6 +141,10 @@ class TestLEMI424(unittest.TestCase):
             )
         )
 
+        self.station_metadata.provenance.creation_time = (
+            self.lemi_obj.station_metadata.provenance.creation_time
+        )
+
         self.run_metadata = Run()
         self.run_metadata.from_dict(
             OrderedDict(
@@ -177,14 +181,10 @@ class TestLEMI424(unittest.TestCase):
         self.assertTrue(self.lemi_obj._has_data())
 
     def test_start(self):
-        self.assertEqual(
-            "2020-10-04T00:00:00+00:00", self.lemi_obj.start.isoformat()
-        )
+        self.assertEqual("2020-10-04T00:00:00+00:00", self.lemi_obj.start.isoformat())
 
     def test_end(self):
-        self.assertEqual(
-            "2020-10-04T00:00:59+00:00", self.lemi_obj.end.isoformat()
-        )
+        self.assertEqual("2020-10-04T00:00:59+00:00", self.lemi_obj.end.isoformat())
 
     def test_n_samples(self):
         self.assertEqual(60, self.lemi_obj.n_samples)
@@ -259,14 +259,10 @@ class TestLEMI424Metadata(unittest.TestCase):
         self.assertTrue(self.lemi_obj._has_data())
 
     def test_start(self):
-        self.assertEqual(
-            "2020-10-04T00:00:00+00:00", self.lemi_obj.start.isoformat()
-        )
+        self.assertEqual("2020-10-04T00:00:00+00:00", self.lemi_obj.start.isoformat())
 
     def test_end(self):
-        self.assertEqual(
-            "2020-10-04T00:00:59+00:00", self.lemi_obj.end.isoformat()
-        )
+        self.assertEqual("2020-10-04T00:00:59+00:00", self.lemi_obj.end.isoformat())
 
     def test_n_samples(self):
         self.assertEqual(2, self.lemi_obj.n_samples)
