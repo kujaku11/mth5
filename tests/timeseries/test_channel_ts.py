@@ -516,7 +516,7 @@ class TestChannelTS2ObspyTrace(unittest.TestCase):
         with self.subTest("network"):
             self.assertEqual("None", tr.stats.network)
         with self.subTest("station"):
-            self.assertEqual(self.ch.station_metadata.id, tr.stats.station)
+            self.assertEqual(self.ch.station_metadata.id.upper(), tr.stats.station)
         with self.subTest("location"):
             self.assertEqual("", tr.stats.location)
         with self.subTest("channel"):
@@ -542,7 +542,9 @@ class TestChannelTS2ObspyTrace(unittest.TestCase):
         new_ch.from_obspy_trace(tr)
 
         with self.subTest("station"):
-            self.assertEqual(self.ch.station_metadata.id, new_ch.station_metadata.id)
+            self.assertEqual(
+                self.ch.station_metadata.id.upper(), new_ch.station_metadata.id
+            )
         with self.subTest("channel"):
             self.assertEqual("temperaturex", new_ch.component)
         with self.subTest("channel metadata type"):
