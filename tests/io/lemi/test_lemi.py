@@ -205,6 +205,12 @@ class TestLEMI424(unittest.TestCase):
         )
 
     def test_station_metadata(self):
+        self.station_metadata.provenance.creation_time = (
+            self.lemi_obj.station_metadata.provenance.creation_time
+        )
+        self.station_metadata.provenance.creation_time = (
+            self.lemi_obj.station_metadata.provenance.creation_time
+        )
         self.assertDictEqual(
             self.station_metadata.to_dict(single=True),
             self.lemi_obj.station_metadata.to_dict(single=True),
@@ -218,6 +224,9 @@ class TestLEMI424(unittest.TestCase):
 
     def test_to_runts(self):
         r = self.lemi_obj.to_run_ts()
+        self.station_metadata.provenance.creation_time = (
+            r.station_metadata.provenance.creation_time
+        )
 
         with self.subTest("station_metadata"):
             self.assertDictEqual(
