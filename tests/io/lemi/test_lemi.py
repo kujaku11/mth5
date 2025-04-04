@@ -208,13 +208,14 @@ class TestLEMI424(unittest.TestCase):
         self.station_metadata.provenance.creation_time = (
             self.lemi_obj.station_metadata.provenance.creation_time
         )
-        self.station_metadata.provenance.creation_time = (
-            self.lemi_obj.station_metadata.provenance.creation_time
-        )
-        self.assertDictEqual(
-            self.station_metadata.to_dict(single=True),
-            self.lemi_obj.station_metadata.to_dict(single=True),
-        )
+        sd = self.station_metadata.to_dict(single=True)
+        ld = self.lemi_obj.station_metadata.to_dict(single=True)
+        try:
+            sd.pop("provenance.creation_time")
+            ld.pop("provenance.creation_time")
+        except KeyError:
+            pass
+        self.assertDictEqual(sd, ld)
 
     def test_run_metadata(self):
         self.assertDictEqual(
