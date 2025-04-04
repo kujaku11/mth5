@@ -14,7 +14,7 @@ Created on Fri Feb  4 15:53:21 2022
 # =============================================================================
 import copy
 import numpy as np
-import obspy.clients
+from obspy.clients.fdsn import Client as FDSNClient
 import pandas as pd
 import time
 
@@ -658,7 +658,7 @@ class FDSN:
         df = self._validate_dataframe(df)
 
         # get the metadata from an obspy client
-        client = obspy.clients.fdsn.Client(self.client)
+        client = FDSNClient(self.client)
 
         # creat an empty stream to add to
         streams = obspy.read()
