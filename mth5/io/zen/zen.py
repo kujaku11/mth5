@@ -749,6 +749,27 @@ class Z3D:
             self._read_schedule(fid=file_id)
             self._read_metadata(fid=file_id)
 
+    def _find_first_gps_flag(self, fid) -> int:
+        """
+        find the first GPS flag, shoud be at the end of the metadata, but sometimes
+        that is incorrect.  There is a few extra bytes of data.  So need to go
+        byte by byte to find the first GPS flag.
+
+        """
+        find_gps_flag = False
+        fid_tell = self.metadata.m_tell - 1
+        fid.seek(fid_tell)
+        while not find_gps_flag:
+            fid_tell += 1
+            fid.seek(fid_tell)
+            line = fid.read(4)
+            try:
+                line = np.frombuffer(line, np.int32)[0]
+                if line == np.int32(2147483647):
+                    return fid_tell
+            except AttributeError:
+                continue
+
     def _read_raw_string(self, fid):
         """
         read raw sting into data
@@ -761,6 +782,7 @@ class Z3D:
         """
 
         # move the read value to where the end of the metadata is
+        self.metadata.m_tell = self._find_first_gps_flag(fid)
         fid.seek(self.metadata.m_tell)
 
         # initalize a data array filled with zeros, everything goes into
