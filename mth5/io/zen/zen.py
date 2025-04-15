@@ -759,7 +759,8 @@ class Z3D:
         find_gps_flag = False
         fid_tell = self.metadata.m_tell - 1
         fid.seek(fid_tell)
-        while not find_gps_flag:
+        # adding a fail safe to not have an infinite loop
+        while not find_gps_flag or fid_tell < 15000:
             fid_tell += 1
             fid.seek(fid_tell)
             line = fid.read(4)
