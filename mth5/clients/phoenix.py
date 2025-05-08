@@ -65,9 +65,7 @@ class PhoenixClient(ClientBase):
                     self._receiver_calibration_dict[fn.stem.split("_")[0]] = fn
             elif receiver_path.is_file():
                 self._receiver_calibration_dict = {}
-                self._receiver_calibration_dict[fn.stem.split("_")[0]] = (
-                    receiver_path
-                )
+                self._receiver_calibration_dict[fn.stem.split("_")[0]] = receiver_path
         else:
             raise TypeError(f"type {type(value)} not supported.")
 
@@ -143,9 +141,7 @@ class PhoenixClient(ClientBase):
                 for run_id, run_df in station_dict.items():
                     run_metadata = collection_metadata.run_metadata
                     run_metadata.id = run_id
-                    run_metadata.sample_rate = float(
-                        run_df.sample_rate.unique()[0]
-                    )
+                    run_metadata.sample_rate = float(run_df.sample_rate.unique()[0])
 
                     run_group = station_group.add_run(
                         run_metadata.id, run_metadata=run_metadata
@@ -162,9 +158,7 @@ class PhoenixClient(ClientBase):
                                 },
                             )
                         except OSError:
-                            print(
-                                f"OSError: skipping {row.fn.name} likely too small"
-                            )
+                            print(f"OSError: skipping {row.fn.name} likely too small")
                             continue
 
                         if ch_ts.component in ["h1", "h2", "h3"]:
@@ -182,12 +176,14 @@ class PhoenixClient(ClientBase):
                                         break
                                 coil_fap = getattr(pc, key)
 
-                            # add filter
-                            ch_ts.channel_metadata.filter.name.append(
-                                coil_fap.name
-                            )
-                            ch_ts.channel_metadata.filter.applied.append(True)
-                            ch_ts.channel_response.filters_list.append(coil_fap)
+                                # add filter
+                                ch_ts.channel_metadata.filter.name.append(coil_fap.name)
+                                ch_ts.channel_metadata.filter.applied.append(True)
+                                ch_ts.channel_response.filters_list.append(coil_fap)
+                            else:
+                                self.logger.warning(
+                                    f"Could not find coil {ch_ts.channel_metadata.sensor.id} in sensor calibrations."
+                                )
 
                         # add channel to the run group
                         run_group.from_channel_ts(ch_ts)

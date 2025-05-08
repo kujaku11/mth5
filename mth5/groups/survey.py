@@ -308,9 +308,7 @@ class MasterSurveyGroup(BaseGroup):
         survey_name = validate_name(survey_name)
 
         try:
-            return SurveyGroup(
-                self.hdf5_group[survey_name], **self.dataset_options
-            )
+            return SurveyGroup(self.hdf5_group[survey_name], **self.dataset_options)
         except KeyError:
             msg = (
                 f"{survey_name} does not exist, "
@@ -459,10 +457,10 @@ class SurveyGroup(BaseGroup):
                 for key in self.stations_group.groups_list:
                     try:
                         key_group = self.stations_group.get_station(key)
-                        if (
-                            key_group.metadata.id
-                            in self._metadata.stations.keys()
-                        ):
+                        if key_group.metadata.id in self._metadata.stations.keys():
+                            continue
+                        # skip non-station groups like Features, FCs, TransferFunction
+                        elif key_group.metadata.mth5_type not in ["Station"]:
                             continue
                         self._metadata.add_station(key_group.metadata)
                     except MTH5Error:
@@ -470,6 +468,25 @@ class SurveyGroup(BaseGroup):
         except KeyError:
             self.logger.debug(
                 "Stations Group does not exists yet. Metadata contains no station information"
+            )
+
+        try:
+            filters_group = self.filters_group
+            if list(filters_group.filter_dict.keys()) != list(
+                self._metadata.filters.keys()
+            ):
+                for key in self.filters_group.filter_dict.keys():
+                    try:
+                        if key in self._metadata.filters.keys():
+                            continue
+                        filter_obj = filters_group.to_filter_object(key)
+                        self._metadata.filters[key] = filter_obj
+                    except MTH5Error:
+                        self.logger.warning(f"Could not find filter {key}")
+
+        except KeyError:
+            self.logger.debug(
+                "Filters Group does not exists yet. Metadata contains no filter information"
             )
         return self._metadata
 
@@ -487,16 +504,12 @@ class SurveyGroup(BaseGroup):
             self._has_read_metadata = True
         except KeyError as key_error:
             if "no write intent" in str(key_error):
-                self.logger.warning(
-                    "File is in read-only mode, cannot write metadata."
-                )
+                self.logger.warning("File is in read-only mode, cannot write metadata.")
             else:
                 raise KeyError(key_error)
         except ValueError as value_error:
             if "Unable to synchronously create group" in str(value_error):
-                self.logger.warning(
-                    "File is in read-only mode, cannot write metadata."
-                )
+                self.logger.warning("File is in read-only mode, cannot write metadata.")
             else:
                 raise ValueError(value_error)
 
@@ -517,9 +530,7 @@ class SurveyGroup(BaseGroup):
     @property
     def standards_group(self):
         """Convenience property for /Survey/Standards group"""
-        return StandardsGroup(
-            self.hdf5_group["Standards"], **self.dataset_options
-        )
+        return StandardsGroup(self.hdf5_group["Standards"], **self.dataset_options)
 
     def update_survey_metadata(self, survey_dict=None):
         """
@@ -538,16 +549,12 @@ class SurveyGroup(BaseGroup):
         """
 
         station_summary = self.stations_group.station_summary.copy()
-        self.logger.debug(
-            "Updating survey metadata from stations summary table"
-        )
+        self.logger.debug("Updating survey metadata from stations summary table")
 
         if survey_dict:
             self.metadata.from_dict(survey_dict, skip_none=True)
 
-        if not len(
-            station_summary
-        ):  # if station info is empty df, skip parsing
+        if not len(station_summary):  # if station info is empty df, skip parsing
             self.write_metadata()
             return
 
@@ -557,18 +564,10 @@ class SurveyGroup(BaseGroup):
         self._metadata.time_period.end_date = (
             station_summary.end.max().isoformat().split("T")[0]
         )
-        self._metadata.northwest_corner.latitude = (
-            station_summary.latitude.max()
-        )
-        self._metadata.northwest_corner.longitude = (
-            station_summary.longitude.min()
-        )
-        self._metadata.southeast_corner.latitude = (
-            station_summary.latitude.min()
-        )
-        self._metadata.southeast_corner.longitude = (
-            station_summary.longitude.max()
-        )
+        self._metadata.northwest_corner.latitude = station_summary.latitude.max()
+        self._metadata.northwest_corner.longitude = station_summary.longitude.min()
+        self._metadata.southeast_corner.latitude = station_summary.latitude.min()
+        self._metadata.southeast_corner.longitude = station_summary.longitude.max()
 
         # metadata by default comes with stations and runs, need to remove those
         # before writing the metadata.

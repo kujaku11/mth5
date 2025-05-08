@@ -500,7 +500,7 @@ class MTH5:
         """Convenience property for /Surveys group"""
         if self.file_version in ["0.1.0"]:
             self.logger.info(
-                f"File version {self.file_version} does not have a survey_group, try surveys_group"
+                f"File version {self.file_version} does not have a surveys_group, try survey_group"
             )
         elif self.file_version in ["0.2.0"]:
             if self.h5_is_read():
@@ -881,7 +881,7 @@ class MTH5:
             )
             return referenced
 
-    def to_experiment(self):
+    def to_experiment(self, has_data=True):
         """
         Create an :class:`mt_metadata.timeseries.Experiment` object from the
         metadata contained in the MTH5 file.
@@ -896,6 +896,16 @@ class MTH5:
                 experiment.surveys.append(self.survey_group.metadata)
             elif self.file_version in ["0.2.0"]:
                 experiment = self.experiment_group.metadata
+
+            # remove runs that have no data.
+            if has_data:
+                no_data_runs = self.run_summary[self.run_summary.has_data == False]
+                if not no_data_runs.empty:
+                    for row in no_data_runs.itertuples():
+                        experiment.surveys[row.survey].stations[row.station].remove_run(
+                            row.run
+                        )
+
             return experiment
 
     def from_experiment(self, experiment, survey_index=0, update=False):
