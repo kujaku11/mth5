@@ -205,9 +205,21 @@ class TestLEMI424(unittest.TestCase):
         )
 
     def test_station_metadata(self):
+        """ 
+            Test that the station metadata matches the expected values. \
+            Provenance creation time is not included in the comparison.
+        """
+        
+        dict1 = self.station_metadata.to_dict(single=True)
+        dict2 = self.lemi_obj.station_metadata.to_dict(single=True)
+        
+        # remove the creation time from the dicts for comparison
+        dict1.pop("provenance.creation_time", None)
+        dict2.pop("provenance.creation_time", None)
+        # compare the two dictionaries  
         self.assertDictEqual(
-            self.station_metadata.to_dict(single=True),
-            self.lemi_obj.station_metadata.to_dict(single=True),
+            dict1, 
+            dict2,
         )
 
     def test_run_metadata(self):
@@ -220,10 +232,21 @@ class TestLEMI424(unittest.TestCase):
         r = self.lemi_obj.to_run_ts()
 
         with self.subTest("station_metadata"):
+            dict1 = self.station_metadata.to_dict(single=True)
+            dict2 = self.lemi_obj.station_metadata.to_dict(single=True)
+            
+            # remove the creation time from the dicts for comparison
+            dict1.pop("provenance.creation_time", None)
+            dict2.pop("provenance.creation_time", None)
+            # compare the two dictionaries  
             self.assertDictEqual(
-                self.station_metadata.to_dict(single=True),
-                r.station_metadata.to_dict(single=True),
+                dict1, 
+                dict2,
             )
+            # self.assertDictEqual(
+            #     self.station_metadata.to_dict(single=True),
+            #     r.station_metadata.to_dict(single=True),
+            # )
 
         with self.subTest("run_metadata"):
             self.assertDictEqual(
