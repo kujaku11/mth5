@@ -125,7 +125,7 @@ class KernelDataset:
     ):
         """Constructor.
         :param **kwargs:
-        :param df: Option to pass an already formed dataframe.  Normally the df if built from a run_summary, defaults to None.
+        :param df: Option to pass an already formed dataframe.  Normally the df is built from a run_summary, defaults to None.
         :type df: Optional[Union[pd.DataFrame, None]], optional
         :param local_station_id: The local station for the dataset.  Normally this is passed via from_run_summary method, defaults to "".
         :type local_station_id: Optional[str], optional
@@ -683,7 +683,7 @@ class KernelDataset:
 
         Note that you can wind up splitting runs here.  For example, in that case where
         local is running continuously, but remote is intermittent.  Then the local
-        run may break into several chunks..
+        run may break into several chunks.
         :rtype: None
         """
         local_df = df[df.station == self.local_station_id]
@@ -963,45 +963,6 @@ def restrict_to_station_list(
     cond1 = ~df["station"].isin(station_ids)
     df.drop(df[cond1].index, inplace=True)
     df = df.reset_index(drop=True)
-    return df
-
-
-def _select_station_runs(
-    df: pd.DataFrame,
-    station_runs_dict: dict,
-    keep_or_drop: bool,
-    overwrite: Optional[bool] = True,
-):
-    """Partition the rows of df based on the contents of station_runs_dict and return
-    one of the two partitions (based on value of keep_or_drop).
-    :param df:
-    :type df: pd.DataFrame
-    :param station_runs_dict: Keys are string ids of the stations to keep
-        Values are lists of string labels for run_ids to keep.
-    :type station_runs_dict: dict
-    :param keep_or_drop: If "keep": returns df with only the station-runs specified in station_runs_dict
-        If "drop": returns df with station_runs_dict excised.
-    :type keep_or_drop: bool
-    :param overwrite: If True, self.df is overwritten with the reduced dataframe, defaults to True.
-    :type overwrite: Optional[bool], optional
-    """
-
-    if not overwrite:
-        df = copy.deepcopy(df)
-    for station_id, run_ids in station_runs_dict.items():
-        if isinstance(run_ids, str):
-            run_ids = [
-                run_ids,
-            ]
-        cond1 = df["station"] == station_id
-        cond2 = df["run"].isin(run_ids)
-        if keep_or_drop == "keep":
-            drop_df = df[cond1 & ~cond2]
-        else:
-            drop_df = df[cond1 & cond2]
-
-        df.drop(drop_df.index, inplace=True)
-        df.reset_index(drop=True, inplace=True)
     return df
 
 
