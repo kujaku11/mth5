@@ -289,9 +289,16 @@ def test_store_and_read_cross_power_features(test1_spectrogram, test_frequency_b
     m.channel_summary.to_dataframe()
     station_group = m.get_station("test1", "EMTF Synthetic")
     features_group = station_group.features_group
-    feature_fc = features_group.add_feature_group("feature_fc")
+    from mt_metadata.features.cross_powers import CrossPowers
+    feature_md = CrossPowers()
+    feature_md.name = "cross_powers"
+    feature_md.id = "cross_powers"
+    feature_fc = features_group.add_feature_group(
+        feature_name="cross_powers",
+        feature_metadata=feature_md
+    )
     fc_run = feature_fc.add_feature_run_group(
-        "cross powers", domain="frequency"
+        "cross_powers", domain="frequency"
     )
     dl = fc_run.add_decimation_level("0")
     sample_interval_in_nano_seconds = xpowers.time.diff(dim="time")[0].item()
@@ -313,7 +320,7 @@ def test_store_and_read_cross_power_features(test1_spectrogram, test_frequency_b
     m.open_mth5(mode="r")
     station_group_2 = m.get_station("test1", survey="EMTF Synthetic")
     features_group_2 = station_group_2.features_group
-    feature_fc_2 = features_group_2.get_feature_group("feature_fc")
+    feature_fc_2 = features_group_2.get_feature_group("cross_powers")
     feature_run = feature_fc_2.get_feature_run_group("cross powers", domain="frequency")
     dl_2 = feature_run.get_decimation_level("0")
     for key, value in xpowers.items():
@@ -463,4 +470,5 @@ def test_frequency_bands():
 
 
 if __name__ == "__main__":
+    test_store_and_read_cross_power_features()
     unittest.main()
