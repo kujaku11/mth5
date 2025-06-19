@@ -248,6 +248,10 @@ class BaseGroup:
         meta_dict = dict(self.hdf5_group.attrs)
         for key, value in meta_dict.items():
             meta_dict[key] = from_numpy_type(value)
+        # Defensive check: skip if meta_dict is empty
+        if not meta_dict:
+            self.logger.warning(f"No metadata found for {self._class_name}, skipping from_dict.")
+            return
         self._metadata.from_dict({self._class_name: meta_dict})
         self._has_read_metadata = True
 
