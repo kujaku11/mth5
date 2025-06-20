@@ -115,6 +115,7 @@ class TestChannelTS(unittest.TestCase):
         )
 
     def test_validate_station_metadata_from_dict(self):
+        """ Modified to workaround mt_metadata issue #264"""
         m1 = metadata.Station(id="0")
         m2 = self.ts._validate_station_metadata({"id": "0"})
         objects_are_equal = m1.__eq__(m2, ignore_keys=["provenance.creation_time"])
