@@ -241,7 +241,9 @@ class KernelDataset:
         for col, dtype in KERNEL_DATASET_DTYPE:
             if not col in df.columns:
                 if col in ["survey", "station", "run", "start", "end"]:
-                    raise ValueError(f"{col} must be a filled column in the dataframe")
+                    raise ValueError(
+                        f"{col} must be a filled column in the dataframe"
+                    )
                 set_null = False
                 try:
                     df[col] = dtype(0)
@@ -463,7 +465,9 @@ class KernelDataset:
         station_ids = [local_station_id]
         if self.remote_station_id:
             station_ids.append(remote_station_id)
-        df = restrict_to_station_list(run_summary.df, station_ids, inplace=False)
+        df = restrict_to_station_list(
+            run_summary.df, station_ids, inplace=False
+        )
 
         # Check df is non-empty
         if len(df) == 0:
@@ -512,13 +516,15 @@ class KernelDataset:
     @property
     def local_survey_metadata(self) -> mt_metadata.timeseries.Survey:
         """Return survey metadata for local station."""
-        try:
+        if self.local_station_id in self.survey_metadata.keys():
             return self.survey_metadata[self.local_survey_id]
-        except KeyError:
-            msg = f"Unexpected key {self.local_survey_id} not found in survey_metadata"
-            msg += f"{msg} WARNING -- Maybe old MTH5 -- trying to use key '0'"
-            logger.warning(msg)
-            return self.survey_metadata["0"]
+        else:
+            return {}
+        # except KeyError:
+        #     msg = f"Unexpected key {self.local_survey_id} not found in survey_metadata"
+        #     msg += f"{msg} WARNING -- Maybe old MTH5 -- trying to use key '0'"
+        #     logger.warning(msg)
+        #     return self.survey_metadata["0"]
 
     def _add_duration_column(self, df, inplace=True) -> None:
         """Adds a column to self.df with times end-start (in seconds)."""
@@ -621,7 +627,9 @@ class KernelDataset:
             df = df.reset_index(drop=True, inplace=True)
             return df
 
-    def set_run_times(self, run_time_dict: dict, inplace: Optional[bool] = True):
+    def set_run_times(
+        self, run_time_dict: dict, inplace: Optional[bool] = True
+    ):
         """Set run times from a dictionary formatted as {run_id: {start, end}}.
         :param run_time_dict: DESCRIPTION.
         :type run_time_dict: dict
@@ -804,15 +812,17 @@ class KernelDataset:
         :rtype: None
         """
         survey_id = run_ts.survey_metadata.id
-        if i == 0:
+        if survey_id not in self.survey_metadata.keys():
             self.survey_metadata[survey_id] = run_ts.survey_metadata
-        elif i > 0:
+        else:
             if row.station in self.survey_metadata[survey_id].stations.keys():
                 self.survey_metadata[survey_id].stations[row.station].add_run(
                     run_ts.run_metadata
                 )
             else:
-                self.survey_metadata[survey_id].add_station(run_ts.station_metadata)
+                self.survey_metadata[survey_id].add_station(
+                    run_ts.station_metadata
+                )
         if len(self.survey_metadata.keys()) > 1:
             raise NotImplementedError
 
@@ -840,7 +850,9 @@ class KernelDataset:
         """
         self.local_mth5_obj = initialize_mth5(self.local_mth5_path, mode=mode)
         if self.remote_station_id:
-            self.remote_mth5_obj = initialize_mth5(self.remote_mth5_path, mode="r")
+            self.remote_mth5_obj = initialize_mth5(
+                self.remote_mth5_path, mode="r"
+            )
 
         self.initialized = True
 
@@ -870,11 +882,15 @@ class KernelDataset:
         self.add_columns_for_processing()
 
         for i, row in self.df.iterrows():
-            run_obj = row.mth5_obj.get_run(row.station, row.run, survey=row.survey)
+            run_obj = row.mth5_obj.get_run(
+                row.station, row.run, survey=row.survey
+            )
             self.df["run_hdf5_reference"].at[i] = run_obj.hdf5_group.ref
 
             if row.fc:
-                msg = f"row {row} already has fcs prescribed by processing config"
+                msg = (
+                    f"row {row} already has fcs prescribed by processing config"
+                )
                 msg += "-- skipping time series initialisation"
                 logger.info(msg)
                 # see Note #3
@@ -906,13 +922,13 @@ class KernelDataset:
             raise ValueError("mth5 objects have not been initialized yet.")
 
         if self._has_df():
-            self._df.loc[self._df.station == self.local_station_id, "mth5_obj"] = (
-                self.local_mth5_obj
-            )
+            self._df.loc[
+                self._df.station == self.local_station_id, "mth5_obj"
+            ] = self.local_mth5_obj
             if self.remote_station_id is not None:
-                self._df.loc[self._df.station == self.remote_station_id, "mth5_obj"] = (
-                    self.remote_mth5_obj
-                )
+                self._df.loc[
+                    self._df.station == self.remote_station_id, "mth5_obj"
+                ] = self.remote_mth5_obj
 
     def close_mth5s(self) -> None:
         """Loop over all unique mth5_objs in dataset df and make sure they are closed.+."""
