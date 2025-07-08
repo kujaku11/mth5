@@ -379,12 +379,13 @@ class FDSN:
         # there is missing data or metadata.
         elif len(run_list) != num_streams:
             self.logger.warning(self.run_list_ne_stream_intervals_message)
-            for run_id, start, end in zip(run_list, trace_start_times, trace_end_times):
+            for start, end in zip(trace_start_times, trace_end_times):
                 for run in run_list:
                     run_group = self.get_run_group(run_group_source, station_id, run)
                     if self.run_timings_match_stream_timing(run_group, start, end):
                         run_stream = msstreams.slice(start, end)
                         self.pack_stream_into_run_group(run_group, run_stream)
+                        break
                     else:
                         continue
         else:
