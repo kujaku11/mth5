@@ -118,14 +118,14 @@ class KernelDataset:
 
     def __init__(
         self,
-        df: Optional[Union[pd.DataFrame, None]] = None,
+        df: Optional[pd.DataFrame] = None,
         local_station_id: Optional[str] = "",
-        remote_station_id: Optional[Union[str, None]] = None,
+        remote_station_id: Optional[str] = None,
         **kwargs,
     ):
         """Constructor.
         :param **kwargs:
-        :param df: Option to pass an already formed dataframe.  Normally the df if built from a run_summary, defaults to None.
+        :param df: Option to pass an already formed dataframe.  Normally the df is built from a run_summary, defaults to None.
         :type df: Optional[Union[pd.DataFrame, None]], optional
         :param local_station_id: The local station for the dataset.  Normally this is passed via from_run_summary method, defaults to "".
         :type local_station_id: Optional[str], optional
@@ -146,7 +146,7 @@ class KernelDataset:
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Str function."""
         return str(self.mini_summary.head(None))
 
@@ -155,7 +155,7 @@ class KernelDataset:
         return self.__str__()
 
     @property
-    def df(self):
+    def df(self) -> pd.DataFrame:
         """Df function."""
         return self._df
 
@@ -436,11 +436,13 @@ class KernelDataset:
     def from_run_summary(
         self,
         run_summary: RunSummary,
-        local_station_id: Optional[Union[str, None]] = None,
-        remote_station_id: Optional[Union[str, None]] = None,
-        sample_rate: Optional[Union[float, int, None]] = None,
+        local_station_id: Optional[str] = None,
+        remote_station_id: Optional[str] = None,
+        sample_rate: Optional[Union[float, int]] = None,
     ) -> None:
-        """Initialize the dataframe from a run summary.
+        """
+            Initialize the dataframe from a run summary.
+
         :param sample_rate:
             Defaults to None.
         :type sample_rate: Optional[Union[float, int, None]], optional
@@ -472,6 +474,20 @@ class KernelDataset:
         # Check df is non-empty
         if len(df) == 0:
             msg = f"Restricting run_summary df to {station_ids} yields an empty set"
+            logger.critical(msg)
+            raise ValueError(msg)
+
+        # Check that the columns have data
+        len_df_before_drop_dataless_rows = len(df)
+        df = df[df.has_data]
+        n_dropped = len_df_before_drop_dataless_rows - len(df)
+        if n_dropped:
+            msg = f"Dropped {n_dropped} rows from Kernel Dataset due to missing data"
+            logger.warning(msg)
+
+        # Check df is non-empty (again)
+        if len(df) == 0:
+            msg = "Restricting run_summary df to runs that have data yields an empty set"
             logger.critical(msg)
             raise ValueError(msg)
 
@@ -675,7 +691,7 @@ class KernelDataset:
 
         Note that you can wind up splitting runs here.  For example, in that case where
         local is running continuously, but remote is intermittent.  Then the local
-        run may break into several chunks..
+        run may break into several chunks.
         :rtype: None
         """
         local_df = df[df.station == self.local_station_id]
@@ -963,45 +979,6 @@ def restrict_to_station_list(
     cond1 = ~df["station"].isin(station_ids)
     df.drop(df[cond1].index, inplace=True)
     df = df.reset_index(drop=True)
-    return df
-
-
-def _select_station_runs(
-    df: pd.DataFrame,
-    station_runs_dict: dict,
-    keep_or_drop: bool,
-    overwrite: Optional[bool] = True,
-):
-    """Partition the rows of df based on the contents of station_runs_dict and return
-    one of the two partitions (based on value of keep_or_drop).
-    :param df:
-    :type df: pd.DataFrame
-    :param station_runs_dict: Keys are string ids of the stations to keep
-        Values are lists of string labels for run_ids to keep.
-    :type station_runs_dict: dict
-    :param keep_or_drop: If "keep": returns df with only the station-runs specified in station_runs_dict
-        If "drop": returns df with station_runs_dict excised.
-    :type keep_or_drop: bool
-    :param overwrite: If True, self.df is overwritten with the reduced dataframe, defaults to True.
-    :type overwrite: Optional[bool], optional
-    """
-
-    if not overwrite:
-        df = copy.deepcopy(df)
-    for station_id, run_ids in station_runs_dict.items():
-        if isinstance(run_ids, str):
-            run_ids = [
-                run_ids,
-            ]
-        cond1 = df["station"] == station_id
-        cond2 = df["run"].isin(run_ids)
-        if keep_or_drop == "keep":
-            drop_df = df[cond1 & ~cond2]
-        else:
-            drop_df = df[cond1 & cond2]
-
-        df.drop(drop_df.index, inplace=True)
-        df.reset_index(drop=True, inplace=True)
     return df
 
 

@@ -29,6 +29,7 @@ from mth5.groups import (
     RunGroup,
     TransferFunctionsGroup,
     MasterFCGroup,
+    MasterFeaturesGroup,
 )
 from mth5.helpers import from_numpy_type
 from mth5.utils.exceptions import MTH5Error
@@ -473,7 +474,7 @@ class StationGroup(BaseGroup):
         self._default_subgroup_names = [
             "Transfer_Functions",
             "Fourier_Coefficients",
-            # "Features",
+            "Features",
         ]
         super().__init__(group, group_metadata=station_metadata, **kwargs)
 
@@ -515,6 +516,11 @@ class StationGroup(BaseGroup):
         return MasterFCGroup(
             self.hdf5_group["Fourier_Coefficients"], **self.dataset_options
         )
+
+    @property
+    def features_group(self):
+        """Convinience method for /Station/Features"""
+        return MasterFeaturesGroup(self.hdf5_group["Features"], **self.dataset_options)
 
     @property
     def survey_metadata(self):
