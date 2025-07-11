@@ -232,16 +232,12 @@ class Z3D:
             # only ex and ey have xyz2
             if hasattr(self.metadata, "ch_offset_xyz2"):
                 x1, y1, z1 = [
-                    float(offset)
-                    for offset in self.metadata.ch_offset_xyz1.split(":")
+                    float(offset) for offset in self.metadata.ch_offset_xyz1.split(":")
                 ]
                 x2, y2, z2 = [
-                    float(offset)
-                    for offset in self.metadata.ch_offset_xyz2.split(":")
+                    float(offset) for offset in self.metadata.ch_offset_xyz2.split(":")
                 ]
-                length = np.sqrt(
-                    (x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2
-                )
+                length = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2)
                 length = np.round(length, 2)
             else:
                 length = 0
@@ -340,9 +336,7 @@ class Z3D:
         """
         if not isinstance(schedule_dt, MTime):
             schedule_dt = MTime(schedule_dt)
-            raise TypeError(
-                "New schedule datetime must be type datetime.datetime"
-            )
+            raise TypeError("New schedule datetime must be type datetime.datetime")
         self.schedule.initial_start = schedule_dt
 
     @property
@@ -386,8 +380,7 @@ class Z3D:
                 * self.header.ch_factor
             )
             ch.ac.end = (
-                self.time_series[-int(self.sample_rate) :].std()
-                * self.header.ch_factor
+                self.time_series[-int(self.sample_rate) :].std() * self.header.ch_factor
             )
             ch.dc.start = (
                 self.time_series[0 : int(self.sample_rate)].mean()
@@ -399,25 +392,23 @@ class Z3D:
             )
         elif "h" in self.component:
             ch = Magnetic()
-            ch.sensor.id = (self.coil_number,)
-            ch.sensor.manufacturer = ("Geotell",)
-            ch.sensor.model = ("ANT-4",)
-            ch.sensor.type = ("induction coil",)
+            ch.sensor.id = self.coil_number
+            ch.sensor.manufacturer = "Geotell"
+            ch.sensor.model = "ANT-4"
+            ch.sensor.type = "induction coil"
             ch.h_field_max.start = (
                 self.time_series[0 : int(self.sample_rate)].max()
                 * self.header.ch_factor
             )
             ch.h_field_max.end = (
-                self.time_series[-int(self.sample_rate) :].max()
-                * self.header.ch_factor
+                self.time_series[-int(self.sample_rate) :].max() * self.header.ch_factor
             )
             ch.h_field_min.start = (
                 self.time_series[0 : int(self.sample_rate)].min()
                 * self.header.ch_factor
             )
             ch.h_field_min.end = (
-                self.time_series[-int(self.sample_rate) :].min()
-                * self.header.ch_factor
+                self.time_series[-int(self.sample_rate) :].min() * self.header.ch_factor
             )
         ch.time_period.start = self.start.isoformat()
         ch.time_period.end = self.end.isoformat()
@@ -503,9 +494,7 @@ class Z3D:
                 fap = FrequencyResponseTableFilter()
                 fap.units_in = "nanotesla"
                 fap.units_out = "millivolts"
-                fap.frequencies = (
-                    1 / (2 * np.pi)
-                ) * self.metadata.coil_cal.frequency
+                fap.frequencies = (1 / (2 * np.pi)) * self.metadata.coil_cal.frequency
                 fap.amplitudes = self.metadata.coil_cal.amplitude
                 fap.phases = self.metadata.coil_cal.phase / 1e3
                 fap.name = f"ant4_{self.coil_number}_response"
@@ -579,7 +568,9 @@ class Z3D:
             fap.frequencies = freq
             fap.amplitudes = amp
             fap.phases = phases
-            fap.name = f"{self.header.data_logger.lower()}_{self.sample_rate:.0f}_response"
+            fap.name = (
+                f"{self.header.data_logger.lower()}_{self.sample_rate:.0f}_response"
+            )
             fap.comments = "data logger response read from z3d file"
             return fap
         return None
@@ -709,9 +700,7 @@ class Z3D:
             self.fn = fn
         self.schedule.read_schedule(fn=self.fn, fid=fid)
         if self.header.old_version:
-            self.schedule.initial_start = MTime(
-                self.header.schedule, gps_time=True
-            )
+            self.schedule.initial_start = MTime(self.header.schedule, gps_time=True)
 
     # ======================================
     def _read_metadata(self, fn=None, fid=None):
@@ -760,6 +749,28 @@ class Z3D:
             self._read_schedule(fid=file_id)
             self._read_metadata(fid=file_id)
 
+    def _find_first_gps_flag(self, fid) -> int:
+        """
+        find the first GPS flag, shoud be at the end of the metadata, but sometimes
+        that is incorrect.  There is a few extra bytes of data.  So need to go
+        byte by byte to find the first GPS flag.
+
+        """
+        find_gps_flag = False
+        fid_tell = self.metadata.m_tell - 1
+        fid.seek(fid_tell)
+        # adding a fail safe to not have an infinite loop
+        while not find_gps_flag or fid_tell < 15000:
+            fid_tell += 1
+            fid.seek(fid_tell)
+            line = fid.read(4)
+            try:
+                line = np.frombuffer(line, np.int32)[0]
+                if line == np.int32(2147483647):
+                    return fid_tell
+            except AttributeError:
+                continue
+
     def _read_raw_string(self, fid):
         """
         read raw sting into data
@@ -772,6 +783,7 @@ class Z3D:
         """
 
         # move the read value to where the end of the metadata is
+        self.metadata.m_tell = self._find_first_gps_flag(fid)
         fid.seek(self.metadata.m_tell)
 
         # initalize a data array filled with zeros, everything goes into
@@ -814,9 +826,7 @@ class Z3D:
                     "<" + "i" * int(self._gps_bytes),
                     *data[int(gps_find) : int(gps_find + self._gps_bytes)],
                 )
-                self.gps_stamps[ii] = np.frombuffer(
-                    gps_str, dtype=self._gps_dtype
-                )
+                self.gps_stamps[ii] = np.frombuffer(gps_str, dtype=self._gps_dtype)
                 if ii > 0:
                     self.gps_stamps[ii]["block_len"] = (
                         gps_find - gps_stamp_index[ii - 1] - self._gps_bytes
@@ -968,9 +978,7 @@ class Z3D:
         # estimate the time difference between the two
         time_diff = zen_start_utc - self.schedule.initial_start
         if time_diff > self._max_time_diff:
-            self.logger.warning(
-                f"ZEN Scheduled time was {self.schedule.initial_start}"
-            )
+            self.logger.warning(f"ZEN Scheduled time was {self.schedule.initial_start}")
             self.logger.warning(f"1st good stamp was {zen_start_utc}")
             self.logger.warning(f"difference of {time_diff:.2f} seconds")
 
@@ -993,8 +1001,7 @@ class Z3D:
         if len(bad_times) > 0:
             for bb in bad_times:
                 self.logger.debug(
-                    f"ZEN bad GPS time at index {bb} > 1 second "
-                    f"({t_diff[bb]})"
+                    f"ZEN bad GPS time at index {bb} > 1 second " f"({t_diff[bb]})"
                 )
             return False
         return True
@@ -1006,24 +1013,18 @@ class Z3D:
 
         """
         # first check if the gps stamp blocks are of the correct length
-        bad_blocks = np.where(
-            self.gps_stamps["block_len"][1:] != self.header.ad_rate
-        )[0]
+        bad_blocks = np.where(self.gps_stamps["block_len"][1:] != self.header.ad_rate)[
+            0
+        ]
 
         if len(bad_blocks) > 0:
             if bad_blocks.max() < 5:
-                ts_skip = self.gps_stamps["block_len"][
-                    0 : bad_blocks[-1] + 1
-                ].sum()
+                ts_skip = self.gps_stamps["block_len"][0 : bad_blocks[-1] + 1].sum()
                 self.gps_stamps = self.gps_stamps[bad_blocks[-1] :]
                 self.time_series = self.time_series[ts_skip:]
 
-                self.logger.warning(
-                    f"Skipped the first {bad_blocks[-1]} seconds"
-                )
-                self.logger.warning(
-                    f"Skipped first {ts_skip} poins in time series"
-                )
+                self.logger.warning(f"Skipped the first {bad_blocks[-1]} seconds")
+                self.logger.warning(f"Skipped first {ts_skip} poins in time series")
             return False
         return True
 
@@ -1115,9 +1116,7 @@ class Z3D:
             gps_time -= self._week_len
         # compute seconds using weeks and gps time
         utc_seconds = (
-            self._gps_epoch.epoch_seconds
-            + (gps_week * self._week_len)
-            + gps_time
+            self._gps_epoch.epoch_seconds + (gps_week * self._week_len) + gps_time
         )
 
         # compute date and time from seconds and return a datetime object

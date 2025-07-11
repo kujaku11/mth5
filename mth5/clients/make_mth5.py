@@ -6,14 +6,14 @@ Make MTH5
 This module provides helper functions to make MTH5 file from various clients
 
 Supported Clients include:
-    
+
     * FDSN (through Obspy)
     * Science Base (TODO)
     * NCI - Australia (TODO)
     * Phoenix MTU-5C
     * Zen
     * LEMI 424
-    
+
 
 Updated on Wed Aug  25 19:57:00 2021
 
@@ -35,9 +35,7 @@ from . import MetronixClient
 
 
 class MakeMTH5:
-    def __init__(
-        self, mth5_version="0.2.0", interact=False, save_path=None, **kwargs
-    ):
+    def __init__(self, mth5_version="0.2.0", interact=False, save_path=None, **kwargs):
         """
 
         :param mth5_version: MTH5 file version, defaults to "0.2.0"
@@ -144,6 +142,38 @@ class MakeMTH5:
         return mth5_object
 
     @classmethod
+    def from_fdsn_miniseed_and_stationxml(
+        cls, station_xml_path, miniseed_files, save_path=None, **kwargs
+    ):
+        """
+        This will create an MTH5 if you already have a StationXML and miniSEED
+        files that you created or downloaded from an FDSN client.
+
+        :param station_xml_path: can be either full path to StationXML file
+         or an obspy.Inventory object
+        :type client: string, pathlib.Path, obspy.Inventory
+        :raises TypeError: If the input is not of correct type.
+        :param miniseed_files: a list of miniseed file paths or obspy.Stream
+         objects.  Can also be a single file path or obspy.Stream object.
+        :type miniseed_files: list, pathlib.path, str, obspy.Stream
+        :param save_path: directory to save new MTH5 file to. If None
+         then the file will be saved to the current working directory.
+        :type save_path: str, pathlib.Path, optional
+        :return: MTH5 file name, will be
+         save_path.joinpath(unique_network_unique_stations.h5)
+        :rtype: :class:`pathlib.Path`
+
+        """
+        maker = cls(**kwargs)
+        kw_dict = maker.get_h5_kwargs()
+
+        fdsn_client = FDSN(**kw_dict)
+
+        return fdsn_client.make_mth5_from_inventory_and_streams(
+            station_xml_path, miniseed_files, save_path=save_path
+        )
+
+    @classmethod
     def from_usgs_geomag(cls, request_df, **kwargs):
         """
         Download geomagnetic observatory data from USGS webservices into an
@@ -246,9 +276,7 @@ class MakeMTH5:
             **kw_dict,
         )
 
-        return zc.make_mth5_from_zen(
-            survey_id=survey_id, combine=combine, **kwargs
-        )
+        return zc.make_mth5_from_zen(survey_id=survey_id, combine=combine, **kwargs)
 
     @classmethod
     def from_phoenix(
@@ -413,6 +441,4 @@ class MakeMTH5:
             **kw_dict,
         )
 
-        return metronix_client.make_mth5_from_metronix(
-            run_name_zeros=run_name_zeros
-        )
+        return metronix_client.make_mth5_from_metronix(run_name_zeros=run_name_zeros)

@@ -149,12 +149,19 @@ class ClientBase:
 
         if value is not None:
             value = Path(value)
-            if value.is_dir():
-                self._save_path = value
-            elif value.is_file():
-                self._save_path = value.parent
-                self.mth5_filename = value.name
-
+            if value.exists():
+                if value.is_dir():
+                    self._save_path = value
+                elif value.is_file():
+                    self._save_path = value.parent
+                    self.mth5_filename = value.name
+            else:
+                if "." in value.name:
+                    self._save_path = value.parent
+                    self.mth5_filename = value.name
+                else:
+                    self._save_path = value
+                self._save_path.mkdir(exist_ok=True)
         else:
             self._save_path = self.data_path
 
