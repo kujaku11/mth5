@@ -113,7 +113,7 @@ class TestTFGroup(unittest.TestCase):
 
         meta_dict = OrderedDict(
             [
-                # ("acquired_by.author", "National Geoelectromagnetic Facility"),
+                ("acquired_by.author", "National Geoelectromagnetic Facility"),
                 ("channels_recorded", ["ex", "ey", "hx", "hy", "hz"]),
                 (
                     "comments",
