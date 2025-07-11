@@ -149,17 +149,19 @@ class ClientBase:
 
         if value is not None:
             value = Path(value)
-            if value.is_dir():
-                self._save_path = value
-            elif value.suffix in [".h5", ".mth5"]:
-                self._save_path = value.parent
-                self.mth5_filename = value.name
+            if value.exists():
+                if value.is_dir():
+                    self._save_path = value
+                elif value.is_file():
+                    self._save_path = value.parent
+                    self.mth5_filename = value.name
             else:
-                raise ValueError(
-                    "save_path can be a directory or a file with extension '.h5' or 'mth5'. "
-                    f"{value} not understood."
-                )
-
+                if "." in value.name:
+                    self._save_path = value.parent
+                    self.mth5_filename = value.name
+                else:
+                    self._save_path = value
+                self._save_path.mkdir(exist_ok=True)
         else:
             self._save_path = self.data_path
 

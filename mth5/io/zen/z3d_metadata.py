@@ -131,19 +131,13 @@ class Z3DMetadata:
             self.logger.waringn("No Z3D file to read")
         elif self.fn is None:
             if self.fid is not None:
-                self.fid.seek(
-                    self._header_length + self._schedule_metadata_len
-                )
+                self.fid.seek(self._header_length + self._schedule_metadata_len)
         elif self.fn is not None:
             if self.fid is None:
                 self.fid = open(self.fn, "rb")
-                self.fid.seek(
-                    self._header_length + self._schedule_metadata_len
-                )
+                self.fid.seek(self._header_length + self._schedule_metadata_len)
             else:
-                self.fid.seek(
-                    self._header_length + self._schedule_metadata_len
-                )
+                self.fid.seek(self._header_length + self._schedule_metadata_len)
         # read in calibration and meta data
         self.find_metadata = True
         self.board_cal = []
@@ -152,11 +146,10 @@ class Z3DMetadata:
         cal_find = False
         while self.find_metadata == True:
             try:
-                test_str = (
-                    self.fid.read(self._metadata_length).decode().lower()
-                )
+                test_str = self.fid.read(self._metadata_length).decode().lower()
             except UnicodeDecodeError:
                 self.find_metadata = False
+                self.m_tell = self.fid.tell() + self._metadata_length
                 break
             if "metadata" in test_str:
                 self.count += 1
@@ -201,10 +194,7 @@ class Z3DMetadata:
                         t_str = t_str.replace("\x00", "").replace("|", "")
                         try:
                             self.board_cal.append(
-                                [
-                                    float(tt.strip())
-                                    for tt in t_str.strip().split(":")
-                                ]
+                                [float(tt.strip()) for tt in t_str.strip().split(":")]
                             )
                         except ValueError:
                             self.board_cal.append(
@@ -255,8 +245,7 @@ class Z3DMetadata:
                     else:
                         if "cal.brd" in t_str:
                             values = [
-                                float(tt)
-                                for tt in t_str.split(",")[-1].split(":")
+                                float(tt) for tt in t_str.split(",")[-1].split(":")
                             ]
                             self.cal_board[sr] = dict(
                                 [
@@ -280,9 +269,7 @@ class Z3DMetadata:
                                     pass
                                 self.cal_board[cal_key] = cal_value
                             except ValueError:
-                                self.logger.info(
-                                    "Could not read Calibration Data"
-                                )
+                                self.logger.info("Could not read Calibration Data")
             else:
                 self.find_metadata = False
                 # need to go back to where the meta data was found so
@@ -303,9 +290,7 @@ class Z3DMetadata:
             except ValueError:
                 self.board_cal = None
         try:
-            self.station = "{0}{1}".format(
-                self.line_name, self.rx_xyz0.split(":")[0]
-            )
+            self.station = "{0}{1}".format(self.line_name, self.rx_xyz0.split(":")[0])
         except AttributeError:
             if hasattr(self, "rx_stn"):
                 self.station = f"{self.rx_stn}"

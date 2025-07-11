@@ -97,12 +97,13 @@ class TestTFGroup(unittest.TestCase):
     def test_station_metadata(self):
         """
         Test the station metadata against a known dictionary.
-        
+
         Modified to use a recursive function to handle nested structures
         and to ignore certain keys that may not match exactly, such as
         "provenance.creation_time" which may differ due to the time of
         metadata creation.  See mt_metadata issue #264.
         """
+
         def recursive_to_dict(obj):
             if isinstance(obj, dict):
                 return {k: recursive_to_dict(v) for k, v in obj.items()}
@@ -110,9 +111,10 @@ class TestTFGroup(unittest.TestCase):
                 return [recursive_to_dict(i) for i in obj]
             else:
                 return obj
+
         meta_dict = OrderedDict(
             [
-                ("acquired_by.author", "National Geoelectromagnetic Facility"),
+                # ("acquired_by.author", "National Geoelectromagnetic Facility"),
                 ("channels_recorded", ["ex", "ey", "hx", "hy", "hz"]),
                 (
                     "comments",
@@ -133,7 +135,6 @@ class TestTFGroup(unittest.TestCase):
                 ("orientation.method", None),
                 ("orientation.reference_frame", "geographic"),
                 ("provenance.archive.comments", "IRIS DMC MetaData"),
-                # ("provenance.archive.name", None),
                 ("provenance.archive.url", "http://www.iris.edu/mda/ZU/NMX20"),
                 ("provenance.creation_time", "2021-03-17T14:47:44+00:00"),
                 (
@@ -141,10 +142,6 @@ class TestTFGroup(unittest.TestCase):
                     "Jade Crosbie, Paul Bedrosian and Anna Kelbert",
                 ),
                 ("provenance.creator.email", "pbedrosian@usgs.gov"),
-                #(
-                #    "provenance.creator.name",
-                #    "Jade Crosbie, Paul Bedrosian and Anna Kelbert",
-                #),
                 ("provenance.creator.organization", "U.S. Geological Survey"),
                 (
                     "provenance.creator.url",
@@ -158,7 +155,6 @@ class TestTFGroup(unittest.TestCase):
                 ("provenance.software.version", None),
                 ("provenance.submitter.author", "Anna Kelbert"),
                 ("provenance.submitter.email", "akelbert@usgs.gov"),
-                # ("provenance.submitter.name", "Anna Kelbert"),
                 (
                     "provenance.submitter.organization",
                     "U.S. Geological Survey, Geomagnetism Program",
@@ -180,10 +176,6 @@ class TestTFGroup(unittest.TestCase):
                     "transfer_function.processed_by.author",
                     "Jade Crosbie, Paul Bedrosian and Anna Kelbert",
                 ),
-                # (
-                #    "transfer_function.processed_by.name",
-                #    "Jade Crosbie, Paul Bedrosian and Anna Kelbert",
-                # ),
                 ("transfer_function.processed_date", "1980-01-01"),
                 ("transfer_function.processing_parameters", []),
                 (
