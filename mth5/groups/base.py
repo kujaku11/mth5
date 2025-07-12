@@ -29,6 +29,12 @@ from mt_metadata.transfer_functions.processing.fourier_coefficients import (
     Channel,
     FC,
 )
+from mt_metadata.features import (
+    Feature,
+    FeatureTSRun,
+    FeatureFCRun,
+    FeatureDecimationChannel,
+)
 from mt_metadata.base import Base
 
 from mth5.helpers import get_tree, validate_name
@@ -41,6 +47,11 @@ meta_classes["TransferFunction"] = TransferFunction
 meta_classes["FCDecimation"] = Decimation
 meta_classes["FCChannel"] = Channel
 meta_classes["FC"] = FC
+meta_classes["Feature"] = Feature
+meta_classes["FeatureTSRun"] = FeatureTSRun
+meta_classes["FeatureFCRun"] = FeatureFCRun
+meta_classes["FeatureDecimation"] = Decimation
+meta_classes["FeatureDecimationChannel"] = FeatureDecimationChannel
 
 
 # =============================================================================
@@ -237,6 +248,10 @@ class BaseGroup:
         meta_dict = dict(self.hdf5_group.attrs)
         for key, value in meta_dict.items():
             meta_dict[key] = from_numpy_type(value)
+        # Defensive check: skip if meta_dict is empty
+        if not meta_dict:
+            self.logger.warning(f"No metadata found for {self._class_name}, skipping from_dict.")
+            return
         self._metadata.from_dict({self._class_name: meta_dict})
         self._has_read_metadata = True
 

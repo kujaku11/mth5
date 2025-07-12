@@ -3,20 +3,25 @@
 
     This module is concerned with working with Fourier coefficient data
 
+    TODO:
+    2. Give MultivariateDataset a covariance() method
+
     Tools include prototypes for
-    - extacting portions of an FC Run Time Series
+    - extracting portions of an FC Run Time Series
     - merging multiple stations runs together into an xarray
-    - relabelling channels to avoid namespace clashes for multistation data
+    - relabelling channels to avoid namespace clashes for multi-station data
 
 """
 
 from dataclasses import dataclass
 from loguru import logger
 from mth5.utils.exceptions import MTH5Error
-from typing import Optional, Tuple , Union
+from mth5.timeseries.spectre.spectrogram import Spectrogram
+from typing import List, Literal, Optional, Tuple , Union
 import mth5.mth5
+import numpy as np
 import pandas as pd
-import xarray
+import xarray as xr
 
 
 @dataclass
@@ -69,8 +74,8 @@ class MultivariateLabelScheme():
     ----------
     :type label_elements: tuple
     :param label_elements: This is meant to tell what information is being concatenated into an MV channel label.
-    :type join_chan: str
-    :param join_chan: The string that is used to join the label elements.
+    :type join_char: str
+    :param join_char: The string that is used to join the label elements.
 
     """
     label_elements: tuple = "station", "component",
@@ -88,7 +93,7 @@ class MultivariateLabelScheme():
         :type elements:  tuple
         :param elements: Expected to be the label elements, default are (station, component)
 
-        :return: The name of the MV channel.
+        :return: The name of the channel (in a multiple-station context).
         :rtype: str
 
         """
@@ -97,17 +102,18 @@ class MultivariateLabelScheme():
     def split(self, mv_channel_name) -> dict:
         """
 
-        Splits a MV channel name and returns a dict of strings, keyed by self.label_elements.
+        Splits a multi-station channel name and returns a dict of strings, keyed by self.label_elements.
         This method is basically the reverse of self.join
 
-        :type mv_channel_name: str
         :param mv_channel_name: a multivariate channel name string
-        :return:
+        :type mv_channel_name: str
+        :return: Channel name as a dictionary.
+        :rtype: dict
 
         """
         splitted = mv_channel_name.split(self.join_char)
         if len(splitted) != len(self.label_elements):
-            msg = f"Incompatible map {splitted} and {self.label_elements}"
+            msg = f"Incompatable map {splitted} and {self.label_elements}"
             logger.error(msg)
             msg = f"cannot map {len(splitted)} to {len(self.label_elements)}"
             raise ValueError(msg)
@@ -115,20 +121,25 @@ class MultivariateLabelScheme():
         return output
 
 
-class MultivariateDataset():
+class MultivariateDataset(Spectrogram):
     """
-        Here is a container for a multivariate dataset.
-        The xarray is the main underlying item, but it will be useful to have functions that, \
-        for example return a list of the associated stations, or that return a list of cahnnels
-        that are associated with a station, etc.
+        Here is a container for a multivariate spectral dataset.
+        The xarray is the main underlying item, but it will be useful to have functions that, for example returns a
+        list of the associated stations, or that return a list of channels that are associated with a station, etc.
+
+        This is intended to be used as a multivariate spectral dotaset at one frequency band.
+
+        TODO: Consider making this an extension of Spectrogram
+        TODO: Rename this class to MultivariateSpectrogram.
+
 
     """
     def __init__(
         self,
-        xrds: xarray.Dataset,
-        label_scheme: Optional[Union[MultivariateLabelScheme, None]] = None,
+        dataset: xr.Dataset,
+        label_scheme: Optional[MultivariateLabelScheme] = None,
     ):
-        self._xrds = xrds
+        super().__init__(dataset=dataset)
         self._label_scheme = label_scheme
 
         self._channels = None
@@ -142,14 +153,6 @@ class MultivariateDataset():
             logger.warning(msg)
             self._label_scheme = MultivariateLabelScheme()
         return self._label_scheme
-
-    @property
-    def dataset(self) -> xarray.Dataset:
-        return self._xrds
-
-    @property
-    def dataarray(self) -> xarray.DataArray:
-        return self._xrds.to_array()
 
     @property
     def channels(self) -> list:
@@ -166,7 +169,7 @@ class MultivariateDataset():
         return len(self.channels)
 
     @property
-    def stations(self) -> list:
+    def stations(self) -> List[str]:
         """
         Parses the channel names, extracts the station names
 
@@ -184,32 +187,194 @@ class MultivariateDataset():
 
         return self._stations
 
-    def station_channels(self, station) -> dict:
+    def station_channels(
+        self,
+        station: str,
+    ) -> List[str]:
         """
-        This is a utility function that provides a way to look up all channels in a multivariate array associated
+        This is a utility function that provides a way to access channel_names in a multivariate array associated
          with a particular station.
+        The list is accessed via the self._station_channels attr, which gets set here if it has not
+         been initialized previously.  self._station_channels is a dict keyed by station_id, with value
+         is a list of channel names for that station.
 
-        :rtype: dict
-        :returns: Dict keyed by station_id.  Values are the "full multivariate" channel names.
+        :param station: The name of the station.
+        :type station: str
+
+        :rtype: List[str]
+        :returns: list of channel names for the input station.
+
         """
+        # set self._station_channels is not already done
         if self._station_channels is None:
             station_channels = {}
             for station_id in self.stations:
-                station_channels[station_id] = [
-                    x for x in self.channels if station_id == x.split("_")[0]
-                ]
+                station_channels[station_id] = self._get_station_channel_names(
+                    station_id,
+                    multivariate_labels=True,
+                )
             self._station_channels = station_channels
 
         return self._station_channels[station]
 
+    def _get_station_channel_names(
+        self,
+        station: str,
+        multivariate_labels: bool = True
+    ) -> List[str]:
+        """
 
+        This is a utility function that to get all channel names in a multivariate array associated
+         with a particular station.
+
+        :param station: The name of the station.
+        :type station: str
+        :param multivariate_labels: When set to true, returned values have the "full multivariate" channel names,
+        e.g. station "mt1" may return for example "mt1_ex", "mt1_ey", "mt1_hx" ... etc.  If set to false the names
+        will be returned within the context of a station, so they may be for example "ex", "ey", "hx" ... etc.
+        The default value is True.
+        :type multivariate_labels: bool
+
+        :rtype: List[str]
+        :returns: Channel names for the input station.
+
+        """
+        station_channels = [
+                    x for x in self.channels if station == x.split(self.label_scheme.join_char)[0]
+                ]
+        if not multivariate_labels:
+            station_channels = [x.split(self.label_scheme.join_char)[1] for x in station_channels]
+
+        return station_channels
+
+    def archive_cross_powers(
+        self,
+        tf_station: str,
+        with_fcs: bool = True,
+
+    ):
+        """
+        tf_station: str
+         This tells us under which station we should store the output of this function.
+         TODO: Consider moving this to another function which performs archiving in future.
+
+        with_fcs: bool
+         If True, the features are packed into the same hdf5-group as the FCs,
+         as its own dataset.
+         If False: the features are packed into the hdf5 features-group.
+
+        Returns
+        -------
+
+        """
+        pass
+
+    # TODO: Replace with Spectrogram's covariance_matrix
+    def cross_power(
+        self,
+        aweights: Optional[np.ndarray] = None,
+        bias: Optional[bool] = True
+    ) -> xr.DataArray:
+        """
+            Calculate the cross-power from a multivariate, complex-valued array of Fourier coefficients.
+
+            For a multivaraiate FC Dataset with n_time time windows, this returns an array with the same number of time
+            windows.  At each time _t_, the result is a covariance matrix.
+
+            Caveats and Notes:
+              - This method calls numpy.cov, which means that the cross-power is computes as X@XH (rather than
+              XH@X). Sometimes X*XH is referred to as the Vozoff convention, whereas XH*X could be the
+              Bendat & Piersol convention.
+              - np.cov subtracts the meas before computing the cross terms.
+              - This methos will use the entire band of the spectrogram.
+
+            :param X: Multivariate time series as an xarray
+            :type X: xr.DataArray
+            :param aweights: This is a "passthrough" parameter to numpy.cov These relative weights are typically large for
+             observations considered "important" and smaller for observations considered less "important". If ``ddof=0``
+             the array of weights can be used to assign probabilities to observation vectors.
+            :type aweights: Optional[np.ndarray]
+            :param bias: bias=True normalizes by N instead of (N-1).
+            :type bias: bool
+
+            :rtype: xr.DataArray
+            :return: The covariance matrix of the data in xarray form.
+
+        """
+        X = self.dataarray
+        channels = list(X.coords["variable"].values)
+
+        S = xr.DataArray(
+            np.cov(X, aweights=aweights, bias=bias),
+            dims=["channel_1", "channel_2"],
+            coords={"channel_1": channels, "channel_2": channels},
+        )
+        return S
+
+# Weights vs masks
+
+def calculate_mask_from_feature(
+    feature_series,
+    threshold_obj, # has lower/upper bound, can be -inf, inf
+):
+    """
+
+    Returns
+    -------
+
+    """
+    mask1 = feature_series < threshold_obj.lower_bound
+    mask2 = feature_series > threshold_obj.upper_bound
+    return mask1 & mask2
+
+def calculate_weight_from_feature(
+    feature_series,
+    threshold_obj, # has lower/upper bound, can be -inf, inf
+):
+        """
+            This calculates a weighting function based on the thresholds
+            and possibly some other info, such as the distribution of the features.
+
+            The weigth function is interpolated over the range of the feature values
+            and then evaluated at the feature values.
+        Parameters
+        ----------
+        feature_series
+        threshold_obj
+
+        Returns
+        -------
+
+        """
+        pass
+
+def merge_masks():
+    """
+        calcualtes a "final mask" that is loaded and applied to the data
+        input to regression
+    """
+    pass
+
+def merge_weights():
+    """
+    calcualtes a "final mask" that is loaded and applied to the data
+        input to regression
+    Returns
+    -------
+
+    """
+    pass
+
+# TODO: add this method to tf-estimation right before robust regression.
+def apply_masks_and_weights():
+    pass
 
 def make_multistation_spectrogram(
     m: mth5.mth5.MTH5,
     fc_run_chunks: list,
     label_scheme: Optional[MultivariateLabelScheme] = MultivariateLabelScheme(),
-    rtype: Optional[Union[str, None]] = None
-) -> Union[xarray.Dataset, MultivariateDataset]:
+    rtype: Optional[Literal["xrds"]] = None
+) -> Union[xr.Dataset, MultivariateDataset]:
     """
 
     See notes in mth5 issue #209.  Takes a list of FCRunChunks and returns the largest contiguous
@@ -233,13 +398,13 @@ def make_multistation_spectrogram(
 
     :param m:  The mth5 object to get the FCs from.
     :type m: mth5.mth5.MTH5
-    :param fc_run_chunks: Each element of this describes a chunk of a run to loac from stored FCs.
+    :param fc_run_chunks: Each element of this describes a chunk of a run to load from stored FCs.
     :type fc_run_chunks: list
     :param label_scheme: Specifies how the channels are to be named in the multivariate xarray.
     :type label_scheme: Optional[MultivariateLabelScheme]
     :param rtype: Specifies whether to return an xarray or a MultivariateDataset.  Currently only supports "xrds",
     otherwise will return MultivariateDataset.
-    :type rtype: Optional[Union[str, None]]
+    :type rtype: Optional[Literal["xrds"]]
 
     :rtype: Union[xarray.Dataset, MultivariateDataset]:
     :return: The multivariate dataset, either as an xarray or as a MultivariateDataset
@@ -259,7 +424,6 @@ def make_multistation_spectrogram(
             logger.error(f"Maybe try adding FCs for {fcrc.run_id}")
             raise e #MTH5Error(error_msg)
 
-        # print(run_fc_group)
         fc_dec_level = run_fc_group.get_decimation_level(fcrc.decimation_level_id)
         if fcrc.channels:
             channels = list(fcrc.channels)
@@ -270,7 +434,7 @@ def make_multistation_spectrogram(
         # could create name mapper dict from run_fc_group.channel_summary here if we wanted to.
 
         if fcrc.start:
-            # TODO: Push slicing into the to_xarray() command so we only access what we need
+            # TODO: Push slicing into the to_xarray() command so we only access what we need -- See issue #212
             cond = fc_dec_level_xrds.time >= fcrc.start_timestamp
             msg = (
                 f"trimming  {sum(~cond.data)} samples to {fcrc.start} "
@@ -280,7 +444,7 @@ def make_multistation_spectrogram(
             fc_dec_level_xrds = fc_dec_level_xrds.dropna(dim="time")
 
         if fcrc.end:
-            # TODO: Push slicing into the to_xarray() command so we only access what we need
+            # TODO: Push slicing into the to_xarray() command so we only access what we need -- See issue #212
             cond = fc_dec_level_xrds.time <= fcrc.end_timestamp
             msg = (
                 f"trimming  {sum(~cond.data)} samples to {fcrc.end} "
@@ -295,7 +459,6 @@ def make_multistation_spectrogram(
             msg = f"Label Scheme elements {label_scheme.id} not implemented"
             raise NotImplementedError(msg)
 
-        # qq = label_scheme.split(name_dict["ex"])  # test during dev -- To be deleted.
         if i_fcrc == 0:
             xrds = fc_dec_level_xrds.rename_vars(name_dict=name_dict)
         else:
@@ -310,6 +473,6 @@ def make_multistation_spectrogram(
     if rtype == "xrds":
         output = xrds
     else:
-        output = MultivariateDataset(xrds=xrds, label_scheme=label_scheme)
+        output = MultivariateDataset(dataset=xrds, label_scheme=label_scheme)
 
     return output

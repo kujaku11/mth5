@@ -19,7 +19,7 @@ from mth5.clients.phoenix import PhoenixClient
 
 class TestClientBase(unittest.TestCase):
     def setUp(self):
-        self.file_path = Path(__file__)
+        self.file_path = Path(__file__).parent.joinpath("test.h5")
         self.base = PhoenixClient(
             self.file_path.parent, **{"h5_mode": "w", "h5_driver": "sec2"}
         )
