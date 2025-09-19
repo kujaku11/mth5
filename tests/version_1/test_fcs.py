@@ -11,6 +11,7 @@ Created on Sat May 27 13:59:26 2023
 from pathlib import Path
 import numpy as np
 import pandas as pd
+
 # import pytest
 import unittest
 
@@ -23,7 +24,7 @@ from mth5.timeseries.spectre import make_multistation_spectrogram
 from mth5.timeseries.spectre import FCRunChunk
 from mth5.timeseries.spectre import MultivariateDataset
 
-from mt_metadata.utils.mttime import MTime
+from mt_metadata.common.mttime import MTime
 
 # =============================================================================
 fn_path = Path(__file__).parent
@@ -31,16 +32,16 @@ csv_fn = fn_path.joinpath("test1_dec_level_3.csv")
 h5_filename = fn_path.joinpath("fc_test.h5")
 
 
-#@pytest.fixture
+# @pytest.fixture
 def create_mth5_with_some_test_data() -> MTH5:
     """
-        Creates an mth5 file with some FCs in it.
-        Populates the FCs based on data in a stored csv file.
+    Creates an mth5 file with some FCs in it.
+    Populates the FCs based on data in a stored csv file.
 
-        TODO: This could be improved by using a full, synthetic-data-based mth5.
+    TODO: This could be improved by using a full, synthetic-data-based mth5.
 
-        :return: MTH5 object with some test data.
-        :rtype: MTH5
+    :return: MTH5 object with some test data.
+    :rtype: MTH5
 
     """
     # get some test data to pack into mth5
@@ -52,10 +53,8 @@ def create_mth5_with_some_test_data() -> MTH5:
 
     # Add a station
     station_group = m.add_station("mt01")
-    fc_group = (
-        station_group.fourier_coefficients_group.add_fc_group(
-            "processing_run_01"
-        )
+    fc_group = station_group.fourier_coefficients_group.add_fc_group(
+        "processing_run_01"
     )
 
     decimation_level = fc_group.add_decimation_level("3")
@@ -66,10 +65,8 @@ def create_mth5_with_some_test_data() -> MTH5:
 
     # Add a second station (same as first but scaled so data are different)
     station_group = m.add_station("mt02")
-    fc_group = (
-        station_group.fourier_coefficients_group.add_fc_group(
-            "processing_run_01"
-        )
+    fc_group = station_group.fourier_coefficients_group.add_fc_group(
+        "processing_run_01"
     )
     decimation_level = fc_group.add_decimation_level("3")
     expected_sr_decimation_level = 0.015380859375
@@ -83,9 +80,9 @@ def create_mth5_with_some_test_data() -> MTH5:
 
 def create_xarray_test_dataset_with_various_dtypes() -> xr.Dataset:
     """
-        Makes a dataset with a bunch of different dtypes for testing
-        :return: xrds - dataset with a different dtype for each datavar
-        :rtype: xr.Dataset
+    Makes a dataset with a bunch of different dtypes for testing
+    :return: xrds - dataset with a different dtype for each datavar
+    :rtype: xr.Dataset
 
     """
     t0 = pd.Timestamp("now")
@@ -94,26 +91,26 @@ def create_xarray_test_dataset_with_various_dtypes() -> xr.Dataset:
 
     j = np.complex128(0 + 1j)
     d = {
-
         "time": {"dims": ("time"), "data": [t0, t1, t2]},
         "bools": {"dims": ("time"), "data": [True, True, False]},
         "ints": {"dims": ("time"), "data": [10, 20, 30]},
-        "floats": {"dims": ("time"), "data": [10., 20., 30.]},
-        "complexs": {"dims": ("time"), "data": [j * 10., j * 20., j * 30.]},
+        "floats": {"dims": ("time"), "data": [10.0, 20.0, 30.0]},
+        "complexs": {"dims": ("time"), "data": [j * 10.0, j * 20.0, j * 30.0]},
     }
     xrds = xr.Dataset.from_dict(d)
     freq = np.array([0.667])
     xrds = xrds.expand_dims({"frequency": freq})
     return xrds
 
+
 def read_fc_csv(csv_name) -> xr.Dataset:
     """
-        Read csv of test FC data with pandas, and return it cast as xarray
+    Read csv of test FC data with pandas, and return it cast as xarray
 
-        :param csv_name: CSV File with some stored FC values for testing
-        :type csv_name: pathlib.Path
-        :return: the data from the csv as an xarray
-        :rtype: xarray.core.dataset.Dataset
+    :param csv_name: CSV File with some stored FC values for testing
+    :type csv_name: pathlib.Path
+    :return: the data from the csv as an xarray
+    :rtype: xarray.core.dataset.Dataset
 
     """
     df = pd.read_csv(
@@ -232,15 +229,13 @@ class TestFCFromXarray(unittest.TestCase):
         )
 
     def setUp(self) -> None:
-        self.h5_filename = h5_filename# fn_path.joinpath("fc_test.h5")
+        self.h5_filename = h5_filename  # fn_path.joinpath("fc_test.h5")
         self.m = MTH5()
         self.m.file_version = "0.1.0"
         self.m.open_mth5(self.h5_filename)
         self.station_group = self.m.get_station("mt01")
-        self.fc_group = (
-            self.station_group.fourier_coefficients_group.add_fc_group(
-                "processing_run_01"
-            )
+        self.fc_group = self.station_group.fourier_coefficients_group.add_fc_group(
+            "processing_run_01"
         )
         self.decimation_level = self.fc_group.get_decimation_level("3")
 
@@ -259,13 +254,9 @@ class TestFCFromXarray(unittest.TestCase):
             with self.subTest(f"{ch} name"):
                 self.assertEqual(fc_ch.metadata.component, ch)
             with self.subTest(f"{ch} start"):
-                self.assertEqual(
-                    fc_ch.metadata.time_period.start, self.expected_start
-                )
+                self.assertEqual(fc_ch.metadata.time_period.start, self.expected_start)
             with self.subTest(f"{ch} end"):
-                self.assertEqual(
-                    fc_ch.metadata.time_period.end, self.expected_end
-                )
+                self.assertEqual(fc_ch.metadata.time_period.end, self.expected_end)
             with self.subTest(f"{ch} window_step"):
                 self.assertEqual(
                     fc_ch.metadata.sample_rate_window_step,
@@ -277,9 +268,7 @@ class TestFCFromXarray(unittest.TestCase):
                     self.expected_sr_decimation_level,
                 )
             with self.subTest(f"{ch} shape"):
-                self.assertTupleEqual(
-                    fc_ch.hdf5_dataset.shape, self.expected_shape
-                )
+                self.assertTupleEqual(fc_ch.hdf5_dataset.shape, self.expected_shape)
 
             with self.subTest(f"{ch} time"):
                 self.assertTrue((fc_ch.time == self.expected_time).all())
@@ -289,7 +278,10 @@ class TestFCFromXarray(unittest.TestCase):
                 )
             with self.subTest("metadata and table sample rates agree"):
                 df = self.decimation_level.channel_summary
-                assert (df.sample_rate_decimation_level.iloc[0] == self.expected_sr_decimation_level)
+                assert (
+                    df.sample_rate_decimation_level.iloc[0]
+                    == self.expected_sr_decimation_level
+                )
 
     def test_to_xarray(self):
         da = self.decimation_level.to_xarray()
@@ -303,16 +295,12 @@ class TestFCFromXarray(unittest.TestCase):
         with self.subTest("time"):
             self.assertTrue((ch_da.time.values == self.expected_time).all())
         with self.subTest("frequency"):
-            self.assertTrue(
-                np.isclose(ch_da.frequency, self.expected_frequency).all()
-            )
+            self.assertTrue(np.isclose(ch_da.frequency, self.expected_frequency).all())
         with self.subTest("name"):
             self.assertTrue("ex", ch_da.name)
 
         with self.subTest("ex start"):
-            self.assertEqual(
-                ch_da.attrs["time_period.start"], self.expected_start
-            )
+            self.assertEqual(ch_da.attrs["time_period.start"], self.expected_start)
         with self.subTest("ex end"):
             self.assertEqual(ch_da.attrs["time_period.end"], self.expected_end)
         with self.subTest("ex window_step"):
@@ -365,7 +353,9 @@ class TestFCFromXarray(unittest.TestCase):
         dec_level_name = "ringo"
         fc_metadata = self.decimation_level.metadata.copy()
         fc_metadata.id = dec_level_name
-        fc_decimation_level = self.fc_group.add_decimation_level(dec_level_name, decimation_level_metadata=fc_metadata)
+        fc_decimation_level = self.fc_group.add_decimation_level(
+            dec_level_name, decimation_level_metadata=fc_metadata
+        )
         xrds = create_xarray_test_dataset_with_various_dtypes()
 
         fc_decimation_level.from_xarray(xrds, fc_metadata.decimation.sample_rate)
@@ -402,7 +392,6 @@ class TestFCFromXarray(unittest.TestCase):
             fc_run_chunks.append(fcrc)
 
         xrds = make_multistation_spectrogram(self.m, fc_run_chunks, rtype="xrds")
-
 
         assert isinstance(xrds, xarray.Dataset)
         mvds = make_multistation_spectrogram(self.m, fc_run_chunks, rtype=None)

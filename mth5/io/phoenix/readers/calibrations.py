@@ -5,7 +5,7 @@ Created on Thu Jun 15 15:21:35 2023
 @author: jpeacock
 
 Calibrations can come in json files.  the JSON file includes filters
-for all lowpass filters, so you need to match the lowpass filter used in the 
+for all lowpass filters, so you need to match the lowpass filter used in the
 setup with the lowpass filter.  Then you need to add the dipole length and
 sensor calibrations.
 """
@@ -17,7 +17,7 @@ from pathlib import Path
 
 import numpy as np
 from mt_metadata.timeseries.filters import FrequencyResponseTableFilter
-from mt_metadata.utils.mttime import MTime
+from mt_metadata.common.mttime import MTime
 
 from .helpers import read_json_to_object
 
@@ -147,9 +147,7 @@ class PhoenixCalibration:
                 if self.obj.file_type in ["receiver calibration"]:
                     ch_fap.name = self.get_filter_lp_name(comp, max_freq)
                 else:
-                    ch_fap.name = self.get_filter_sensor_name(
-                        self.obj.sensor_serial
-                    )
+                    ch_fap.name = self.get_filter_sensor_name(self.obj.sensor_serial)
                 ch_fap.calibration_date = self.obj.timestamp_utc
                 ch_cal_dict[max_freq] = ch_fap
                 ch_fap.units_in = "volts"

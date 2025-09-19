@@ -20,7 +20,7 @@ import numpy as np
 
 from mth5.timeseries import ChannelTS, RunTS
 
-from mt_metadata.utils.mttime import MTime
+from mt_metadata.common.mttime import MTime
 import mt_metadata.timeseries as metadata
 from mt_metadata.timeseries.filters import (
     PoleZeroFilter,
@@ -65,16 +65,12 @@ class TestRunTSClass(unittest.TestCase):
         self.assertRaises(TypeError, RunTS, [self.ex], **{"run_metadata": []})
 
     def test_set_station_metadata_fail(self):
-        self.assertRaises(
-            TypeError, RunTS, [self.ex], **{"station_metadata": []}
-        )
+        self.assertRaises(TypeError, RunTS, [self.ex], **{"station_metadata": []})
 
     def test_validate_run_metadata(self):
         self.assertEqual(
             self.run_object.run_metadata,
-            self.run_object._validate_run_metadata(
-                self.run_object.run_metadata
-            ),
+            self.run_object._validate_run_metadata(self.run_object.run_metadata),
         )
 
     def test_validate_run_metadata_from_dict(self):
@@ -92,7 +88,7 @@ class TestRunTSClass(unittest.TestCase):
         )
 
     def test_validate_station_metadata_from_dict(self):
-        """ Modified to workaround mt_metadata issue #264"""
+        """Modified to workaround mt_metadata issue #264"""
         m1 = metadata.Station(id="0")
         m2 = self.run_object._validate_station_metadata({"id": "0"})
         objects_are_equal = m1.__eq__(m2, ignore_keys=["provenance.creation_time"])
@@ -101,9 +97,7 @@ class TestRunTSClass(unittest.TestCase):
     def test_validate_survey_metadata(self):
         self.assertEqual(
             self.run_object.survey_metadata,
-            self.run_object._validate_survey_metadata(
-                self.run_object.survey_metadata
-            ),
+            self.run_object._validate_survey_metadata(self.run_object.survey_metadata),
         )
 
     def test_validate_survey_metadata_from_dict(self):
@@ -114,14 +108,10 @@ class TestRunTSClass(unittest.TestCase):
 
     def test_validate_array_fail(self):
         with self.subTest("bad type"):
-            self.assertRaises(
-                TypeError, self.run_object._validate_array_list, 10
-            )
+            self.assertRaises(TypeError, self.run_object._validate_array_list, 10)
 
         with self.subTest("bad list"):
-            self.assertRaises(
-                TypeError, self.run_object._validate_array_list, [10]
-            )
+            self.assertRaises(TypeError, self.run_object._validate_array_list, [10])
 
     def test_sr_fail(self):
         hz = ChannelTS(
@@ -239,9 +229,7 @@ class TestMakeRunTS(unittest.TestCase):
 
     def test_station_metadata(self):
         with self.subTest("station id"):
-            self.assertEqual(
-                self.run_ts.station_metadata.id, self.station_metadata.id
-            )
+            self.assertEqual(self.run_ts.station_metadata.id, self.station_metadata.id)
         with self.subTest("start"):
             self.assertEqual(
                 self.run_ts.station_metadata.time_period.start,
@@ -377,9 +365,7 @@ class TestRunTS(unittest.TestCase):
             channel_response=self.cr,
         )
 
-        self.run_object.set_dataset(
-            [self.ex, self.ey, self.hx, self.hy, self.hz]
-        )
+        self.run_object.set_dataset([self.ex, self.ey, self.hx, self.hy, self.hz])
 
     def test_str(self):
         s_list = [
@@ -412,9 +398,7 @@ class TestRunTS(unittest.TestCase):
     def test_validate_run_metadata(self):
         self.assertEqual(
             self.run_object.run_metadata,
-            self.run_object._validate_run_metadata(
-                self.run_object.run_metadata
-            ),
+            self.run_object._validate_run_metadata(self.run_object.run_metadata),
         )
 
     def test_validate_station_metadata(self):
@@ -428,9 +412,7 @@ class TestRunTS(unittest.TestCase):
     def test_validate_survey_metadata(self):
         self.assertEqual(
             self.run_object.survey_metadata,
-            self.run_object._validate_survey_metadata(
-                self.run_object.survey_metadata
-            ),
+            self.run_object._validate_survey_metadata(self.run_object.survey_metadata),
         )
 
     def test_initialize(self):
@@ -447,9 +429,7 @@ class TestRunTS(unittest.TestCase):
             self.assertEqual(self.run_object.end, MTime(self.end))
 
     def test_sample_interval(self):
-        self.assertEqual(
-            1.0 / self.sample_rate, self.run_object.sample_interval
-        )
+        self.assertEqual(1.0 / self.sample_rate, self.run_object.sample_interval)
 
     def test_channels(self):
 
@@ -500,17 +480,13 @@ class TestRunTS(unittest.TestCase):
             # so it grabs the closest one.
             self.assertEqual(r_slice.start, MTime(start))
         with self.subTest("end"):
-            self.assertEqual(
-                r_slice.end, MTime("2015-01-08T19:50:01.875000+00:00")
-            )
+            self.assertEqual(r_slice.end, MTime("2015-01-08T19:50:01.875000+00:00"))
 
         with self.subTest("npts"):
             self.assertEqual(r_slice.dataset.ex.data.shape[0], npts)
 
     def test_filters_dict(self):
-        self.assertEqual(
-            list(self.run_object.filters.keys()), ["instrument_response"]
-        )
+        self.assertEqual(list(self.run_object.filters.keys()), ["instrument_response"])
 
     def test_filters_fail(self):
         def set_filters(value):
@@ -683,9 +659,7 @@ class TestMergeRunTS(unittest.TestCase):
 
     def test_merge_runs(self):
         with self.subTest("size"):
-            self.assertEqual(
-                self.merged_run.dataset.sizes["time"], 2 * self.npts + 16
-            )
+            self.assertEqual(self.merged_run.dataset.sizes["time"], 2 * self.npts + 16)
 
         with self.subTest("start"):
             self.assertEqual(self.merged_run.start, self.start_01)
@@ -705,9 +679,7 @@ class TestMergeRunTS(unittest.TestCase):
             )
 
         with self.subTest("run.end"):
-            self.assertEqual(
-                self.merged_run.run_metadata.time_period.end, self.end_02
-            )
+            self.assertEqual(self.merged_run.run_metadata.time_period.end, self.end_02)
         with self.subTest("station.start"):
             self.assertEqual(
                 self.merged_run.station_metadata.time_period.start,
@@ -720,9 +692,7 @@ class TestMergeRunTS(unittest.TestCase):
             )
 
         with self.subTest("run.sample_rate"):
-            self.assertEqual(
-                self.merged_run.run_metadata.sample_rate, self.sample_rate
-            )
+            self.assertEqual(self.merged_run.run_metadata.sample_rate, self.sample_rate)
 
         with self.subTest("channels"):
             self.assertListEqual(
@@ -741,9 +711,7 @@ class TestMergeRunTS(unittest.TestCase):
             self.assertEqual(self.merged_run_sr01.start, self.start_01)
 
         with self.subTest("end"):
-            self.assertEqual(
-                self.merged_run_sr01.end, "2015-01-08T20:06:23+00:00"
-            )
+            self.assertEqual(self.merged_run_sr01.end, "2015-01-08T20:06:23+00:00")
 
         with self.subTest("filters"):
             self.assertDictEqual(
@@ -881,9 +849,7 @@ class TestMisalignedRuns(unittest.TestCase):
         self.assertEqual(True, self.run_ts._check_common_start(self.ch_list))
 
     def test_common_start_fail(self):
-        self.assertEqual(
-            False, self.run_ts._check_common_start(self.bad_ch_list)
-        )
+        self.assertEqual(False, self.run_ts._check_common_start(self.bad_ch_list))
 
     def test_common_end(self):
         self.assertEqual(False, self.run_ts._check_common_end(self.ch_list))

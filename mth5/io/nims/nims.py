@@ -5,25 +5,25 @@ NIMS
 ===============
 
     * deals with reading in NIMS DATA.BIN files
-    
+
     This is a translation from Matlab codes written and edited by:
         * Anna Kelbert
         * Paul Bedrosian
         * Esteban Bowles-Martinez
         * Possibly others.
-        
+
     I've tested it against a version, and it matches.  The data/GPS  gaps I
-    still don't understand so for now the time series is just 
-    made continuous and the number of missing seconds is clipped from the 
+    still don't understand so for now the time series is just
+    made continuous and the number of missing seconds is clipped from the
     end of the time series.
-    
+
     .. note:: this only works for 8Hz data for now
-    
-    
+
+
 :copyright:
     Jared Peacock (jpeacock@usgs.gov)
-    
-:license: 
+
+:license:
     MIT
 """
 
@@ -41,7 +41,7 @@ from mth5.io.nims.header import NIMSHeader
 from mth5.io.nims.response_filters import Response
 from mth5 import timeseries
 
-from mt_metadata.utils.mttime import MTime
+from mt_metadata.common.mttime import MTime
 from mt_metadata.timeseries import Station, Run, Electric, Magnetic, Auxiliary
 
 # =============================================================================

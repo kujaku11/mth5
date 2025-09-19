@@ -59,7 +59,7 @@ import pandas as pd
 from loguru import logger
 
 import mt_metadata.timeseries
-from mt_metadata.utils.list_dict import ListDict
+from mt_metadata.common.list_dict import ListDict
 
 import mth5.timeseries.run_ts
 from mth5.utils.helpers import initialize_mth5
@@ -241,9 +241,7 @@ class KernelDataset:
         for col, dtype in KERNEL_DATASET_DTYPE:
             if not col in df.columns:
                 if col in ["survey", "station", "run", "start", "end"]:
-                    raise ValueError(
-                        f"{col} must be a filled column in the dataframe"
-                    )
+                    raise ValueError(f"{col} must be a filled column in the dataframe")
                 set_null = False
                 try:
                     df[col] = dtype(0)
@@ -467,9 +465,7 @@ class KernelDataset:
         station_ids = [local_station_id]
         if self.remote_station_id:
             station_ids.append(remote_station_id)
-        df = restrict_to_station_list(
-            run_summary.df, station_ids, inplace=False
-        )
+        df = restrict_to_station_list(run_summary.df, station_ids, inplace=False)
 
         # Check df is non-empty
         if len(df) == 0:
@@ -487,7 +483,9 @@ class KernelDataset:
 
         # Check df is non-empty (again)
         if len(df) == 0:
-            msg = "Restricting run_summary df to runs that have data yields an empty set"
+            msg = (
+                "Restricting run_summary df to runs that have data yields an empty set"
+            )
             logger.critical(msg)
             raise ValueError(msg)
 
@@ -643,9 +641,7 @@ class KernelDataset:
             df = df.reset_index(drop=True, inplace=True)
             return df
 
-    def set_run_times(
-        self, run_time_dict: dict, inplace: Optional[bool] = True
-    ):
+    def set_run_times(self, run_time_dict: dict, inplace: Optional[bool] = True):
         """Set run times from a dictionary formatted as {run_id: {start, end}}.
         :param run_time_dict: DESCRIPTION.
         :type run_time_dict: dict
@@ -836,9 +832,7 @@ class KernelDataset:
                     run_ts.run_metadata
                 )
             else:
-                self.survey_metadata[survey_id].add_station(
-                    run_ts.station_metadata
-                )
+                self.survey_metadata[survey_id].add_station(run_ts.station_metadata)
         if len(self.survey_metadata.keys()) > 1:
             raise NotImplementedError
 
@@ -866,9 +860,7 @@ class KernelDataset:
         """
         self.local_mth5_obj = initialize_mth5(self.local_mth5_path, mode=mode)
         if self.remote_station_id:
-            self.remote_mth5_obj = initialize_mth5(
-                self.remote_mth5_path, mode="r"
-            )
+            self.remote_mth5_obj = initialize_mth5(self.remote_mth5_path, mode="r")
 
         self.initialized = True
 
@@ -898,15 +890,11 @@ class KernelDataset:
         self.add_columns_for_processing()
 
         for i, row in self.df.iterrows():
-            run_obj = row.mth5_obj.get_run(
-                row.station, row.run, survey=row.survey
-            )
+            run_obj = row.mth5_obj.get_run(row.station, row.run, survey=row.survey)
             self.df["run_hdf5_reference"].at[i] = run_obj.hdf5_group.ref
 
             if row.fc:
-                msg = (
-                    f"row {row} already has fcs prescribed by processing config"
-                )
+                msg = f"row {row} already has fcs prescribed by processing config"
                 msg += "-- skipping time series initialisation"
                 logger.info(msg)
                 # see Note #3
@@ -938,13 +926,13 @@ class KernelDataset:
             raise ValueError("mth5 objects have not been initialized yet.")
 
         if self._has_df():
-            self._df.loc[
-                self._df.station == self.local_station_id, "mth5_obj"
-            ] = self.local_mth5_obj
+            self._df.loc[self._df.station == self.local_station_id, "mth5_obj"] = (
+                self.local_mth5_obj
+            )
             if self.remote_station_id is not None:
-                self._df.loc[
-                    self._df.station == self.remote_station_id, "mth5_obj"
-                ] = self.remote_mth5_obj
+                self._df.loc[self._df.station == self.remote_station_id, "mth5_obj"] = (
+                    self.remote_mth5_obj
+                )
 
     def close_mth5s(self) -> None:
         """Loop over all unique mth5_objs in dataset df and make sure they are closed.+."""

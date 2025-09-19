@@ -8,8 +8,9 @@ Created on Wed Aug 24 11:24:57 2022
 # =============================================================================
 # Imports
 # =============================================================================
-from mt_metadata.utils.mttime import MTime
+from mt_metadata.common.mttime import MTime
 from loguru import logger
+
 
 # =============================================================================
 class Z3DSchedule:

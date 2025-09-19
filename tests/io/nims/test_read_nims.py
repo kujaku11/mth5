@@ -14,7 +14,7 @@ from collections import OrderedDict
 
 
 from mth5.io.nims import NIMS, read_nims
-from mt_metadata.utils.mttime import MTime
+from mt_metadata.common.mttime import MTime
 from mth5.utils.helpers import get_compare_dict
 
 # =============================================================================
@@ -27,9 +27,7 @@ from mth5.utils.helpers import get_compare_dict
 class TestReadNIMS(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.nims_obj = NIMS(
-            r"c:\Users\jpeacock\OneDrive - DOI\mt\nims\mnp300a.BIN"
-        )
+        self.nims_obj = NIMS(r"c:\Users\jpeacock\OneDrive - DOI\mt\nims\mnp300a.BIN")
         self.nims_obj.read_nims()
         self.maxDiff = None
 
@@ -76,9 +74,7 @@ class TestReadNIMS(unittest.TestCase):
         self.assertEqual(self.nims_obj.ground_electrode_info, None)
 
     def test_header_gps_stamp(self):
-        self.assertEqual(
-            self.nims_obj.header_gps_stamp, MTime("2019-09-26 18:29:29")
-        )
+        self.assertEqual(self.nims_obj.header_gps_stamp, MTime("2019-09-26 18:29:29"))
 
     def test_header_gps_latitude(self):
         self.assertEqual(self.nims_obj.header_gps_latitude, 34.7268)
@@ -118,9 +114,7 @@ class TestReadNIMS(unittest.TestCase):
         self.assertEqual(self.nims_obj.sample_rate, 8)
 
     def test_e_conversion_factor(self):
-        self.assertEqual(
-            self.nims_obj.e_conversion_factor, 2.44141221047903e-06
-        )
+        self.assertEqual(self.nims_obj.e_conversion_factor, 2.44141221047903e-06)
 
     def test_h_conversion_factor(self):
         self.assertEqual(self.nims_obj.h_conversion_factor, 0.01)
@@ -141,9 +135,7 @@ class TestReadNIMS(unittest.TestCase):
         self.assertEqual(len(self.nims_obj.stamps), 402)
 
     def test_start(self):
-        self.assertEqual(
-            self.nims_obj.start_time, MTime("2019-09-26T18:33:21+00:00")
-        )
+        self.assertEqual(self.nims_obj.start_time, MTime("2019-09-26T18:33:21+00:00"))
 
     def test_end(self):
         self.assertEqual(
@@ -170,9 +162,7 @@ class TestReadNIMS(unittest.TestCase):
 class TestNIMSToRunTS(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.runts = read_nims(
-            r"c:\Users\jpeacock\OneDrive - DOI\mt\nims\mnp300a.BIN"
-        )
+        self.runts = read_nims(r"c:\Users\jpeacock\OneDrive - DOI\mt\nims\mnp300a.BIN")
         self.maxDiff = None
 
     def test_station_metadata(self):
@@ -289,9 +279,7 @@ class TestNIMSToRunTS(unittest.TestCase):
         )
 
         self.assertDictEqual(
-            get_compare_dict(
-                self.runts.ex.channel_metadata.to_dict(single=True)
-            ),
+            get_compare_dict(self.runts.ex.channel_metadata.to_dict(single=True)),
             ex_metadata,
         )
 
@@ -337,9 +325,7 @@ class TestNIMSToRunTS(unittest.TestCase):
         )
 
         self.assertDictEqual(
-            get_compare_dict(
-                self.runts.ey.channel_metadata.to_dict(single=True)
-            ),
+            get_compare_dict(self.runts.ey.channel_metadata.to_dict(single=True)),
             ey_metadata,
         )
 
@@ -375,9 +361,7 @@ class TestNIMSToRunTS(unittest.TestCase):
         )
 
         self.assertDictEqual(
-            get_compare_dict(
-                self.runts.hx.channel_metadata.to_dict(single=True)
-            ),
+            get_compare_dict(self.runts.hx.channel_metadata.to_dict(single=True)),
             hx_metadata,
         )
 
@@ -413,9 +397,7 @@ class TestNIMSToRunTS(unittest.TestCase):
         )
 
         self.assertDictEqual(
-            get_compare_dict(
-                self.runts.hy.channel_metadata.to_dict(single=True)
-            ),
+            get_compare_dict(self.runts.hy.channel_metadata.to_dict(single=True)),
             hy_metadata,
         )
 
@@ -451,9 +433,7 @@ class TestNIMSToRunTS(unittest.TestCase):
         )
 
         self.assertDictEqual(
-            get_compare_dict(
-                self.runts.hz.channel_metadata.to_dict(single=True)
-            ),
+            get_compare_dict(self.runts.hz.channel_metadata.to_dict(single=True)),
             hz_metadata,
         )
 

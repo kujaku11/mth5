@@ -11,14 +11,12 @@ import numpy as np
 import pandas as pd
 from loguru import logger
 
-from mt_metadata.utils.mttime import MTime
+from mt_metadata.common.mttime import MTime
 
 # =============================================================================
 
 
-def get_decimation_sample_rates(
-    old_sample_rate, new_sample_rate, max_decimation
-):
+def get_decimation_sample_rates(old_sample_rate, new_sample_rate, max_decimation):
     """
     get a list of sample rates to decimate from old_sample_rate to
     new_sample_rate without exceeding the max decimation value
@@ -34,10 +32,7 @@ def get_decimation_sample_rates(
     if (old_sample_rate / new_sample_rate) > max_decimation:
         # get the number of entries in a geometric series
         n_levels = int(
-            np.ceil(
-                np.log(old_sample_rate / new_sample_rate)
-                / np.log(max_decimation)
-            )
+            np.ceil(np.log(old_sample_rate / new_sample_rate) / np.log(max_decimation))
         )
         # make a geometric series
         sr_list = [

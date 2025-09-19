@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Read an amtant.cal file provided by Zonge.  
+Read an amtant.cal file provided by Zonge.
 
 
 Apparently, the file includes the 6th and 8th harmonic of the given frequency, which
-is a fancy way of saying f x 6 and f x 8. 
+is a fancy way of saying f x 6 and f x 8.
 
- 
+
 """
 # =============================================================================
 # Imports
@@ -16,7 +16,7 @@ import numpy as np
 from loguru import logger
 
 from mt_metadata.timeseries.filters import FrequencyResponseTableFilter
-from mt_metadata.utils.mttime import MTime
+from mt_metadata.common.mttime import MTime
 
 
 # =============================================================================

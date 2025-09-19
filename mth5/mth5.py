@@ -42,7 +42,7 @@ from mth5 import (
     ACCEPTABLE_DATA_LEVELS,
 )
 
-from mt_metadata.utils.mttime import get_now_utc
+from mt_metadata.common.mttime import get_now_utc
 from mt_metadata.timeseries import Experiment
 from mt_metadata.transfer_functions.core import TF
 

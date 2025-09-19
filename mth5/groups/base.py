@@ -24,9 +24,9 @@ import h5py
 
 from mt_metadata import timeseries as metadata
 from mt_metadata.transfer_functions.tf import TransferFunction
-from mt_metadata.transfer_functions.processing.fourier_coefficients import (
+from mt_metadata.processing.fourier_coefficients import (
     Decimation,
-    Channel,
+    FCChannel,
     FC,
 )
 from mt_metadata.features import (
@@ -35,7 +35,7 @@ from mt_metadata.features import (
     FeatureFCRun,
     FeatureDecimationChannel,
 )
-from mt_metadata.base import Base
+from mt_metadata.base import MetadataBase
 
 from mth5.helpers import get_tree, validate_name
 from mth5.utils.exceptions import MTH5Error
@@ -45,7 +45,7 @@ from mth5.helpers import to_numpy_type, from_numpy_type
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
 meta_classes["TransferFunction"] = TransferFunction
 meta_classes["FCDecimation"] = Decimation
-meta_classes["FCChannel"] = Channel
+meta_classes["FCChannel"] = FCChannel
 meta_classes["FC"] = FC
 meta_classes["Feature"] = Feature
 meta_classes["FeatureTSRun"] = FeatureTSRun
@@ -155,46 +155,52 @@ class BaseGroup:
 
         """
 
-        self._metadata = Base()
+        self._metadata = MetadataBase()
         if self._class_name not in ["Standards"]:
             try:
                 self._metadata = meta_classes[self._class_name]()
             except KeyError:
-                self._metadata = Base()
-        # add 2 attributes that will help with querying
-        # 1) the metadata class name
-        self._metadata.add_base_attribute(
-            "mth5_type",
-            self._class_name.split("Group")[0],
-            {
-                "type": str,
+                self._metadata = MetadataBase()
+        # add 2 attributes that will help with querying using the new Pydantic approach
+        from pydantic import Field
+
+        # Create FieldInfo for mth5_type
+        mth5_type_field = Field(
+            default=self._class_name.split("Group")[0],
+            description="type of group",
+            json_schema_extra={
                 "required": True,
                 "style": "free form",
-                "description": "type of group",
                 "units": None,
                 "options": [],
                 "alias": [],
                 "example": "group_name",
-                "default": None,
             },
         )
 
-        # 2) the HDF5 reference that can be used instead of paths
-        self._metadata.add_base_attribute(
-            "hdf5_reference",
-            self.hdf5_group.ref,
-            {
-                "type": "h5py_reference",
+        # Use add_new_field to add mth5_type - this returns a class, not an instance
+        enhanced_class = self._metadata.add_new_field("mth5_type", mth5_type_field)
+
+        # Create FieldInfo for hdf5_reference
+        hdf5_ref_field = Field(
+            default=None,  # Will be set later
+            description="hdf5 internal reference",
+            json_schema_extra={
                 "required": True,
                 "style": "free form",
-                "description": "hdf5 internal reference",
                 "units": None,
                 "options": [],
                 "alias": [],
                 "example": "<HDF5 Group Reference>",
-                "default": "none",
             },
         )
+
+        # Create an instance of the enhanced class to add the second field
+        temp_instance = enhanced_class()
+        enhanced_class2 = temp_instance.add_new_field("hdf5_reference", hdf5_ref_field)
+
+        # Create final instance
+        self._metadata = enhanced_class2()
 
     @property
     def metadata(self):
@@ -215,7 +221,7 @@ class BaseGroup:
 
         """
 
-        if not isinstance(metadata_object, (type(self._metadata), Base)):
+        if not isinstance(metadata_object, (type(self._metadata), MetadataBase)):
             msg = (
                 f"Metadata must be of type {meta_classes[self._class_name]} "
                 f"not {type(metadata_object)}"
@@ -224,8 +230,8 @@ class BaseGroup:
             raise MTH5Error(msg)
         self._metadata.from_dict(metadata_object.to_dict())
 
-        self._metadata.mth5_type = self._class_name
-        self._metadata.hdf5_reference = self.hdf5_group.ref
+        # Note: mth5_type and hdf5_reference are set during field creation
+        # They can be updated later if needed through the model's normal field assignment
 
     @property
     def groups_list(self):
@@ -250,7 +256,9 @@ class BaseGroup:
             meta_dict[key] = from_numpy_type(value)
         # Defensive check: skip if meta_dict is empty
         if not meta_dict:
-            self.logger.warning(f"No metadata found for {self._class_name}, skipping from_dict.")
+            self.logger.warning(
+                f"No metadata found for {self._class_name}, skipping from_dict."
+            )
             return
         self._metadata.from_dict({self._class_name: meta_dict})
         self._has_read_metadata = True
@@ -268,16 +276,12 @@ class BaseGroup:
                 self.hdf5_group.attrs.create(key, value)
         except KeyError as key_error:
             if "no write intent" in str(key_error):
-                self.logger.warning(
-                    "File is in read-only mode, cannot write metadata."
-                )
+                self.logger.warning("File is in read-only mode, cannot write metadata.")
             else:
                 raise KeyError(key_error)
         except ValueError as value_error:
             if "Unable to synchronously create group" in str(value_error):
-                self.logger.warning(
-                    "File is in read-only mode, cannot write metadata."
-                )
+                self.logger.warning("File is in read-only mode, cannot write metadata.")
             else:
                 raise ValueError(value_error)
 
@@ -366,8 +370,7 @@ class BaseGroup:
             return group
         except KeyError:
             msg = (
-                f"Error: {name} does not exist, check groups_list for "
-                "existing names"
+                f"Error: {name} does not exist, check groups_list for " "existing names"
             )
             self.logger.debug(msg)
             raise MTH5Error(msg)
@@ -396,9 +399,7 @@ class BaseGroup:
             )
         except KeyError as key_error:
             if "Couldn't delete link" in str(key_error):
-                self.logger.warning(
-                    f"File is in read-only mode, cannot delete {name}"
-                )
+                self.logger.warning(f"File is in read-only mode, cannot delete {name}")
             else:
                 msg = f"{name} does not exist. Check station_list for existing names"
                 self.logger.debug(msg)

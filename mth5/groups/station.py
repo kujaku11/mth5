@@ -22,7 +22,7 @@ import numpy as np
 import pandas as pd
 
 from mt_metadata import timeseries as metadata
-from mt_metadata.utils.mttime import MTime
+from mt_metadata.common.mttime import MTime
 
 from mth5.groups import (
     BaseGroup,

@@ -29,8 +29,8 @@ from scipy import signal
 
 import mt_metadata.timeseries as metadata
 from mt_metadata.timeseries.filters import ChannelResponse
-from mt_metadata.utils.mttime import MTime
-from mt_metadata.utils.list_dict import ListDict
+from mt_metadata.common.mttime import MTime
+from mt_metadata.common.list_dict import ListDict
 from mth5.utils import fdsn_tools
 from mth5.timeseries.ts_filters import RemoveInstrumentResponse
 from mth5.timeseries.ts_helpers import (
@@ -1127,7 +1127,7 @@ class ChannelTS:
         :return: tuple, calibration_operation, either "mulitply" or divide", and a string for calibrated units
         :rtype: tuple (of two strings_
         """
-        from mt_metadata.utils.units import get_unit_object
+        from mt_metadata.common.units import get_unit_object
 
         if (
             self.channel_response.units_out

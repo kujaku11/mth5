@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Module to read and parse native Phoenix Geophysics data formats of the 
+Module to read and parse native Phoenix Geophysics data formats of the
 MTU-5C Family.
 
 This module implements Streamed readers for decimated continuos time series
@@ -8,7 +8,7 @@ formats of the MTU-5C family.
 
 :author: Jorge Torres-Solis
 
-Revised 2022 by J. Peacock 
+Revised 2022 by J. Peacock
 """
 
 # =============================================================================
@@ -19,7 +19,7 @@ import numpy as np
 
 from mth5.io.phoenix.readers import TSReaderBase
 from mth5.timeseries import ChannelTS
-from mt_metadata.utils.mttime import MTime
+from mt_metadata.common.mttime import MTime
 
 # =============================================================================
 

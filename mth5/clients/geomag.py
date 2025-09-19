@@ -21,7 +21,7 @@ from mth5 import __version__ as mth5_version
 from mth5.timeseries import ChannelTS, RunTS
 from mth5.mth5 import MTH5
 
-from mt_metadata.utils.mttime import MTime
+from mt_metadata.common.mttime import MTime
 from mt_metadata.timeseries import Survey, Station, Run, Magnetic
 
 # =============================================================================
@@ -140,9 +140,7 @@ class GeomagClient:
 
         """
         encoding = sys.getdefaultencoding() or "UTF-8"
-        platform_ = (
-            platform.platform().encode(encoding).decode("ascii", "ignore")
-        )
+        platform_ = platform.platform().encode(encoding).decode("ascii", "ignore")
 
         return f"MTH5 v{mth5_version} ({platform_}, Python {platform.python_version()})"
 
@@ -226,9 +224,7 @@ class GeomagClient:
             try:
                 value = int(value)
             except ValueError:
-                raise ValueError(
-                    f"{value} must be able to convert to an integer."
-                )
+                raise ValueError(f"{value} must be able to convert to an integer.")
 
         if not isinstance(value, (int, float)):
             raise TypeError(
@@ -526,9 +522,7 @@ class USGSGeomag:
                     f"Request must have columns {', '.join(self.request_columns)}"
                 )
         else:
-            if sorted(request_df.columns.tolist()) != sorted(
-                self.request_columns
-            ):
+            if sorted(request_df.columns.tolist()) != sorted(self.request_columns):
                 raise ValueError(
                     f"Request must have columns {', '.join(self.request_columns)}"
                 )
@@ -558,8 +552,7 @@ class USGSGeomag:
                 request_df.observatory == obs, "sampling_period"
             ].unique():
                 sr_df = request_df.loc[
-                    (request_df.observatory == obs)
-                    & (request_df.sampling_period == sr)
+                    (request_df.observatory == obs) & (request_df.sampling_period == sr)
                 ].sort_values("start")
                 request_df.loc[
                     (request_df.observatory == obs)

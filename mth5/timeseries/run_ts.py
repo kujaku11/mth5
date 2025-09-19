@@ -28,8 +28,8 @@ from loguru import logger
 from matplotlib import pyplot as plt
 
 from mt_metadata import timeseries as metadata
-from mt_metadata.utils.mttime import MTime
-from mt_metadata.utils.list_dict import ListDict
+from mt_metadata.common.mttime import MTime
+from mt_metadata.common.list_dict import ListDict
 from mt_metadata.timeseries.filters import ChannelResponse
 
 from .channel_ts import ChannelTS

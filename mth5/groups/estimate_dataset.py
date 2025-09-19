@@ -15,7 +15,7 @@ import numpy as np
 import xarray as xr
 from loguru import logger
 
-from mt_metadata.transfer_functions.tf import StatisticalEstimate
+from mt_metadata.transfer_functions.tf.statistical_estimate import StatisticalEstimate
 
 from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import to_numpy_type

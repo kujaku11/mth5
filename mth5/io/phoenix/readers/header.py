@@ -10,7 +10,7 @@ and native sampling rate time series formats of the MTU-5C family.
 
 :author: Jorge Torres-Solis
 
-Revised 2022 by J. Peacock 
+Revised 2022 by J. Peacock
 """
 
 # =============================================================================
@@ -24,7 +24,8 @@ import string
 from loguru import logger
 
 from mt_metadata.timeseries import Station, Run, Electric, Magnetic
-from mt_metadata.utils.mttime import MTime
+from mt_metadata.common.mttime import MTime
+
 
 # =============================================================================
 class Header:
@@ -105,9 +106,7 @@ class Header:
         }
 
     def __str__(self):
-        lines = [
-            f"channel_id: {self.channel_id}   channel_type: {self.channel_type}"
-        ]
+        lines = [f"channel_id: {self.channel_id}   channel_type: {self.channel_type}"]
         lines += ["-" * 40]
         for key in [
             "instrument_type",
@@ -238,11 +237,7 @@ class Header:
     @property
     def ch_board_model(self):
         if self._has_header():
-            return (
-                self._unpack_value("ch_board_model")[0]
-                .decode("utf-8")
-                .strip(" ")
-            )
+            return self._unpack_value("ch_board_model")[0].decode("utf-8").strip(" ")
 
     @property
     def board_model_main(self):
@@ -258,9 +253,7 @@ class Header:
     def ch_board_serial(self):
         if self._has_header():
             value = (
-                self._unpack_value("ch_board_serial")[0]
-                .decode("utf-8")
-                .strip("\x00")
+                self._unpack_value("ch_board_serial")[0].decode("utf-8").strip("\x00")
             )
             # handle the case of backend < v0.14, which puts '--------' in ch_ser
             if all(chars in string.hexdigits for chars in value):
@@ -321,10 +314,7 @@ class Header:
                         return 1000
             # LPF off
             else:
-                if (
-                    self.board_model_main == "BCM03"
-                    or self.board_model_main == "BCM06"
-                ):
+                if self.board_model_main == "BCM03" or self.board_model_main == "BCM06":
                     return 17800
                 else:
                     return 10000
@@ -361,13 +351,8 @@ class Header:
         main_gain = 1
         if self._has_header():
             # BCM05-B and BCM06 introduced different selectable gains
-            new_gains = (
-                True  # we asume any newer board will have the new gain banks
-            )
-            if (
-                self.board_model_main == "BCM01"
-                or self.board_model_main == "BCM03"
-            ):
+            new_gains = True  # we asume any newer board will have the new gain banks
+            if self.board_model_main == "BCM01" or self.board_model_main == "BCM03":
                 # Original style 24 KSps boards and original 96 KSps boards
                 new_gains = False
             if self.ch_board_model[0:7] == "BCM05-A":
@@ -429,10 +414,7 @@ class Header:
             attenuator_on = bool(self.hardware_configuration[4] & 0x01)
             if attenuator_on and self.channel_type == "E":
                 new_attenuator = True  # By default assume that we are dealing with a newer types of boards
-                if (
-                    self.board_model_main == "BCM01"
-                    or self.board_model_main == "BCM03"
-                ):
+                if self.board_model_main == "BCM01" or self.board_model_main == "BCM03":
                     # Original style 24 KSps boards and original 96 KSps boards
                     new_attenuator = False
                 if self.ch_board_model[0:7] == "BCM05-A":
@@ -449,11 +431,7 @@ class Header:
     def total_selectable_gain(self):
         # Total of the gain that is selectable by the user (i.e. att * pre * gain)
         if self._has_header():
-            return (
-                self.channel_main_gain
-                * self.preamp_gain
-                * self.attenuator_gain
-            )
+            return self.channel_main_gain * self.preamp_gain * self.attenuator_gain
         return 1.0
 
     @property
@@ -628,9 +606,7 @@ class Header:
         try:
             ch.component = self.channel_map[self.channel_id]
         except KeyError:
-            self.logger.error(
-                f"Could not find {self.channel_id} in channel_map"
-            )
+            self.logger.error(f"Could not find {self.channel_id} in channel_map")
         ch.channel_number = self.channel_id
         ch.time_period.start = self.recording_start_time
         ch.sample_rate = self.sample_rate

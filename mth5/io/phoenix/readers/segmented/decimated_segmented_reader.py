@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-Module to read and parse native Phoenix Geophysics data formats of the 
+Module to read and parse native Phoenix Geophysics data formats of the
 MTU-5C Family
 
 This module implements Streamed readers for segmented-decimated  time series
  formats of the MTU-5C family.
- 
+
 :author: Jorge Torres-Solis
 
-Revised 2022 by J. Peacock 
+Revised 2022 by J. Peacock
 """
 
 
@@ -19,9 +19,10 @@ import numpy as np
 
 from struct import unpack_from
 
-from mt_metadata.utils.mttime import MTime
+from mt_metadata.common.mttime import MTime
 from mth5.io.phoenix.readers import TSReaderBase
 from mth5.timeseries import ChannelTS
+
 
 # =============================================================================
 class SubHeader:
@@ -145,9 +146,7 @@ class Segment(SubHeader):
 
         self.unpack_header(self.stream)
         if not metadata_only:
-            self.data = np.fromfile(
-                self.stream, dtype=np.float32, count=self.n_samples
-            )
+            self.data = np.fromfile(self.stream, dtype=np.float32, count=self.n_samples)
 
     @property
     def segment_start_time(self):

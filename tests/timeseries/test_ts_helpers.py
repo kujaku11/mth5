@@ -11,7 +11,7 @@ import pandas as pd
 import sys
 import unittest
 
-from mt_metadata.utils.mttime import MTime
+from mt_metadata.common.mttime import MTime
 
 from mth5.timeseries.ts_helpers import (
     make_dt_coordinates,
@@ -24,14 +24,10 @@ from mth5.timeseries.ts_helpers import (
 
 class TestGetDecimationSampleRates(unittest.TestCase):
     def test_4096_to_1(self):
-        self.assertListEqual(
-            [512, 64, 8, 1], get_decimation_sample_rates(4096, 1, 8)
-        )
+        self.assertListEqual([512, 64, 8, 1], get_decimation_sample_rates(4096, 1, 8))
 
     def test_1000_to_1(self):
-        self.assertListEqual(
-            [125, 16, 2, 1], get_decimation_sample_rates(1000, 1, 8)
-        )
+        self.assertListEqual([125, 16, 2, 1], get_decimation_sample_rates(1000, 1, 8))
 
     def test_1000_to_1000(self):
         self.assertListEqual([1000], get_decimation_sample_rates(1000, 1000, 8))
@@ -72,13 +68,9 @@ class TestMakeDtCoordinates(unittest.TestCase):
         dt = make_dt_coordinates("1980-01-01T00:00:00.0000000010", 1, 16)
 
         with self.subTest("start"):
-            self.assertEqual(
-                MTime(dt[0]), MTime("1980-01-01T00:00:00.000000001")
-            )
+            self.assertEqual(MTime(dt[0]), MTime("1980-01-01T00:00:00.000000001"))
         with self.subTest("end"):
-            self.assertEqual(
-                MTime(dt[-1]), MTime("1980-01-01T00:00:15.000000001")
-            )
+            self.assertEqual(MTime(dt[-1]), MTime("1980-01-01T00:00:15.000000001"))
         with self.subTest("length"):
             self.assertEqual(16, len(dt))
 
@@ -132,8 +124,12 @@ class TestMakeDtCoordinates(unittest.TestCase):
         sr = 1 / dt
         n_samples = 56
 
-        tmp1 = make_dt_coordinates(start_str, sample_rate=sr, n_samples=n_samples, end_time=end_str)
-        tmp2 = make_dt_coordinates(start_str, sample_rate=sr, n_samples=n_samples, end_time=None)
+        tmp1 = make_dt_coordinates(
+            start_str, sample_rate=sr, n_samples=n_samples, end_time=end_str
+        )
+        tmp2 = make_dt_coordinates(
+            start_str, sample_rate=sr, n_samples=n_samples, end_time=None
+        )
 
         if sys.version_info >= (3, 9):
             delta_t1 = tmp1.diff()[1:]  # fails in python 3.8

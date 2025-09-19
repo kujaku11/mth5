@@ -28,7 +28,7 @@ from pathlib import Path
 import numpy as np
 from loguru import logger
 
-from mt_metadata.utils.mttime import MTime
+from mt_metadata.common.mttime import MTime
 from mt_metadata.timeseries.filters import (
     ChannelResponse,
     FrequencyResponseTableFilter,

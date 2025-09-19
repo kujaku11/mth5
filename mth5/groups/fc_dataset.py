@@ -19,8 +19,8 @@ from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import to_numpy_type
 from mth5.timeseries.ts_helpers import make_dt_coordinates
 
-from mt_metadata.transfer_functions.processing.fourier_coefficients import (
-    Channel,
+from mt_metadata.processing.fourier_coefficients import (
+    FCChannel,
 )
 from typing import Optional, Union
 
@@ -74,8 +74,8 @@ class FCChannelDataset:
     def __init__(
         self,
         dataset: h5py.Dataset,
-        dataset_metadata: Optional[Union[Channel, None]] = None,
-        **kwargs
+        dataset_metadata: Optional[Union[FCChannel, None]] = None,
+        **kwargs,
     ):
 
         if dataset is not None and isinstance(dataset, (h5py.Dataset)):
@@ -85,7 +85,7 @@ class FCChannelDataset:
         # set metadata to the appropriate class.  Standards is not a
         # Base object so should be skipped. If the class name is not
         # defined yet set to Base class.
-        self.metadata = Channel()
+        self.metadata = FCChannel()
 
         if not hasattr(self.metadata, "mth5_type"):
             self._add_base_attributes()
@@ -208,7 +208,7 @@ class FCChannelDataset:
             self.metadata.time_period.start,
             1.0 / self.metadata.sample_rate_window_step,
             self.n_windows,
-            end_time=self.metadata.time_period.end
+            end_time=self.metadata.time_period.end,
         )
 
     @property
@@ -312,7 +312,11 @@ class FCChannelDataset:
             self.hdf5_dataset.resize(new_estimate.shape)
         self.hdf5_dataset[...] = new_estimate
 
-    def from_xarray(self, data, sample_rate_decimation_level,):
+    def from_xarray(
+        self,
+        data,
+        sample_rate_decimation_level,
+    ):
         """
 
 

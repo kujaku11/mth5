@@ -21,7 +21,7 @@ from mth5.mth5 import _default_table_names
 from mth5.utils.exceptions import MTH5Error
 from mth5.timeseries import ChannelTS, RunTS
 from mth5.groups.standards import summarize_metadata_standards
-from mt_metadata.utils.mttime import MTime
+from mt_metadata.common.mttime import MTime
 
 fn_path = Path(__file__).parent
 # =============================================================================
@@ -69,8 +69,7 @@ class TestMTH5(unittest.TestCase):
     def test_default_group_names(self):
         groups = sorted(self.mth5_obj.experiment_group.groups_list)
         defaults = sorted(
-            self.mth5_obj._default_subgroup_names
-            + _default_table_names()
+            self.mth5_obj._default_subgroup_names + _default_table_names()
         )
 
         self.assertListEqual(defaults, groups)
@@ -116,9 +115,7 @@ class TestMTH5(unittest.TestCase):
             sg = self.mth5_obj.get_station("MT001", survey="test")
             self.assertIsInstance(sg, groups.StationGroup)
         with self.subTest("get_station check survey metadata"):
-            self.assertListEqual(
-                new_station.survey_metadata.station_names, ["MT001"]
-            )
+            self.assertListEqual(new_station.survey_metadata.station_names, ["MT001"])
 
     def test_remove_station(self):
         self.mth5_obj.add_station("MT002", survey="test")
@@ -155,9 +152,7 @@ class TestMTH5(unittest.TestCase):
         self.assertNotIn("MT004a", new_station.groups_list)
 
     def test_get_run_fail(self):
-        self.assertRaises(
-            MTH5Error, self.mth5_obj.get_run, "MT001", "MT002a", "test"
-        )
+        self.assertRaises(MTH5Error, self.mth5_obj.get_run, "MT001", "MT002a", "test")
 
     def test_add_channel(self):
         new_station = self.mth5_obj.add_station("MT005", survey="test")
@@ -173,14 +168,10 @@ class TestMTH5(unittest.TestCase):
             ch = self.mth5_obj.get_channel("MT005", "MT005a", "ex", "test")
             self.assertIsInstance(ch, groups.ElectricDataset)
         with self.subTest("check run metadata"):
-            self.assertListEqual(
-                new_channel.run_metadata.channels_recorded_all, ["ex"]
-            )
+            self.assertListEqual(new_channel.run_metadata.channels_recorded_all, ["ex"])
         with self.subTest("check station metadata"):
             self.assertListEqual(
-                new_channel.station_metadata.runs[
-                    "MT005a"
-                ].channels_recorded_all,
+                new_channel.station_metadata.runs["MT005a"].channels_recorded_all,
                 ["ex"],
             )
         with self.subTest("check survey metadata"):
@@ -317,9 +308,7 @@ class TestMTH5AddData(unittest.TestCase):
         self.channel_groups = self.rg.from_runts(run_ts)
 
     def test_channels(self):
-        self.assertListEqual(
-            ["ex", "ey", "hx", "hy", "hz"], self.rg.groups_list
-        )
+        self.assertListEqual(["ex", "ey", "hx", "hy", "hz"], self.rg.groups_list)
 
         # check to make sure the metadata was transfered
         for cg in self.channel_groups:
@@ -339,9 +328,7 @@ class TestMTH5AddData(unittest.TestCase):
             self.assertEqual(256, r_slice.dataset.coords.indexes["time"].size)
 
     def test_station_in_survey_metadata(self):
-        self.assertListEqual(
-            ["MT009"], self.survey_group.metadata.station_names
-        )
+        self.assertListEqual(["MT009"], self.survey_group.metadata.station_names)
 
     def test_run_in_station_metadata(self):
         self.assertListEqual(
@@ -351,9 +338,7 @@ class TestMTH5AddData(unittest.TestCase):
     def test_channel_in_run_metadata(self):
         self.assertListEqual(
             ["ex", "ey", "hx", "hy", "hz"],
-            self.survey_group.metadata.stations[0]
-            .runs[0]
-            .channels_recorded_all,
+            self.survey_group.metadata.stations[0].runs[0].channels_recorded_all,
         )
 
     @classmethod
@@ -379,9 +364,7 @@ class TestMTH5GetMethods(unittest.TestCase):
         self.run_group.metadata.time_period.start = "2020-01-01T00:00:00"
         self.run_group.metadata.time_period.end = "2020-01-01T12:00:00"
 
-        self.channel_dataset = self.run_group.add_channel(
-            "ex", "electric", None
-        )
+        self.channel_dataset = self.run_group.add_channel("ex", "electric", None)
         self.channel_dataset.metadata.time_period.start = "2020-01-01T00:00:00"
         self.channel_dataset.metadata.time_period.end = "2020-01-01T12:00:00"
         self.channel_dataset.write_metadata()
@@ -454,9 +437,7 @@ class TestMTH5GetMethods(unittest.TestCase):
         )
 
     def test_deprecation_update_run_metadata(self):
-        self.assertRaises(
-            DeprecationWarning, self.run_group.update_run_metadata
-        )
+        self.assertRaises(DeprecationWarning, self.run_group.update_run_metadata)
 
     @classmethod
     def tearDownClass(self):
