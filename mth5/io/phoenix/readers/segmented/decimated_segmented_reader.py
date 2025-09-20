@@ -84,7 +84,9 @@ class SubHeader:
         """GPS time stamp in UTC"""
 
         if self._has_header():
-            return MTime(self._unpack_value("gps_time_stamp")[0], gps_time=True)
+            return MTime(
+                time_stamp=self._unpack_value("gps_time_stamp")[0], gps_time=True
+            )
 
     @property
     def n_samples(self):

@@ -19,14 +19,14 @@ class TestRunSummary(unittest.TestCase):
     """ """
 
     @classmethod
-    def setUpClass(self):
-        self.mth5_path = MTH5_PATH.joinpath("test12rr.h5")
-        if not self.mth5_path.exists():
-            self.mth5_path = create_test12rr_h5()
-        self.rs = RunSummary()
-        self.rs.from_mth5s([self.mth5_path])
+    def setUpClass(cls):
+        cls.mth5_path = MTH5_PATH.joinpath("test12rr.h5")
+        if not cls.mth5_path.exists():
+            cls.mth5_path = create_test12rr_h5()
+        cls.rs = RunSummary()
+        cls.rs.from_mth5s([cls.mth5_path])
 
-        self.maxDiff = None
+        cls.maxDiff = None
 
     def test_df_columns(self):
         self.assertListEqual(sorted(RUN_SUMMARY_COLUMNS), sorted(self.rs.df.columns))

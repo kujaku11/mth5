@@ -971,13 +971,15 @@ class ChannelTS:
     def start(self):
         """MTime object"""
         if self.has_data():
-            return MTime(self.data_array.coords.indexes["time"][0].isoformat())
+            return MTime(
+                timestamp=self.data_array.coords.indexes["time"][0].isoformat()
+            )
         else:
             self.logger.debug(
                 "Data not set yet, pulling start time from "
                 "metadata.time_period.start"
             )
-            return MTime(self.channel_metadata.time_period.start)
+            return MTime(time_stamp=self.channel_metadata.time_period.start)
 
     @start.setter
     def start(self, start_time):
@@ -996,11 +998,11 @@ class ChannelTS:
         """
 
         if not isinstance(start_time, MTime):
-            start_time = MTime(start_time)
+            start_time = MTime(time_stamp=start_time)
         self.channel_metadata.time_period.start = start_time.iso_str
         if self.has_data():
             if start_time == MTime(
-                self.data_array.coords.indexes["time"][0].isoformat()
+                time_stamp=self.data_array.coords.indexes["time"][0].isoformat()
             ):
                 return
             else:
@@ -1021,12 +1023,14 @@ class ChannelTS:
     def end(self):
         """MTime object"""
         if self.has_data():
-            return MTime(self.data_array.coords.indexes["time"][-1].isoformat())
+            return MTime(
+                time_stamp=self.data_array.coords.indexes["time"][-1].isoformat()
+            )
         else:
             self.logger.debug(
                 "Data not set yet, pulling end time from metadata.time_period.end"
             )
-            return MTime(self.channel_metadata.time_period.end)
+            return MTime(time_stamp=self.channel_metadata.time_period.end)
 
     @end.setter
     def end(self, end_time):
@@ -1276,13 +1280,13 @@ class ChannelTS:
             self.logger.error(msg)
             raise ValueError(msg)
         if not isinstance(start, MTime):
-            start = MTime(start)
+            start = MTime(time_stamp=start)
         if n_samples is not None:
             n_samples = int(n_samples)
             end = start + ((n_samples - 1) / self.sample_rate)
         if end is not None:
             if not isinstance(end, MTime):
-                end = MTime(end)
+                end = MTime(time_stamp=end)
         chunk = self.data_array.indexes["time"].slice_indexer(
             start=np.datetime64(start.iso_no_tz),
             end=np.datetime64(end.iso_no_tz),

@@ -763,14 +763,18 @@ class RunTS:
     def start(self):
         """Start time UTC"""
         if self.has_data():
-            return MTime(self.dataset.coords["time"].to_index()[0].isoformat())
+            return MTime(
+                time_stamp=self.dataset.coords["time"].to_index()[0].isoformat()
+            )
         return self.run_metadata.time_period.start
 
     @property
     def end(self):
         """End time UTC"""
         if self.has_data():
-            return MTime(self.dataset.coords["time"].to_index()[-1].isoformat())
+            return MTime(
+                time_stamp=self.dataset.coords["time"].to_index()[-1].isoformat()
+            )
         return self.run_metadata.time_period.end
 
     def _compute_sample_rate(self):
@@ -977,13 +981,13 @@ class RunTS:
 
         """
         if not isinstance(start, MTime):
-            start = MTime(start)
+            start = MTime(time_stamp=start)
         if n_samples is not None:
             seconds = (n_samples - 1) / self.sample_rate
             end = start + seconds
         elif end is not None:
             if not isinstance(end, MTime):
-                end = MTime(end)
+                end = MTime(time_stamp=end)
         else:
             raise ValueError("Must input n_samples or end")
         chunk = self.dataset.indexes["time"].slice_indexer(

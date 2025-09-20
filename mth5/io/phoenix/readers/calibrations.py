@@ -56,7 +56,7 @@ class PhoenixCalibration:
     @property
     def calibration_date(self):
         if self._has_read():
-            return MTime(self.obj.timestamp_utc)
+            return MTime(time_stamp=self.obj.timestamp_utc)
 
     def _has_read(self):
         if self.obj is not None:

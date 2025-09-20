@@ -210,7 +210,9 @@ class Header:
 
         """
 
-        return MTime(datetime.fromtimestamp(self.recording_id), gps_time=True)
+        return MTime(
+            time_stamp=datetime.fromtimestamp(self.recording_id), gps_time=True
+        )
 
     @property
     def channel_id(self):

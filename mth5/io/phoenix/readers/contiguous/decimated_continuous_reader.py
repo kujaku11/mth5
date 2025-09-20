@@ -89,7 +89,7 @@ class DecimatedContinuousReader(TSReaderBase):
 
     @sequence_start.setter
     def sequence_start(self, value):
-        self._sequence_start = MTime(value)
+        self._sequence_start = MTime(time_stamp=value)
 
     @property
     def sequence_end(self):

@@ -85,7 +85,7 @@ class Z3DSchedule:
         self.Sleep = None
         self.Sync = None
         self.Time = None
-        self.initial_start = MTime()
+        self.initial_start = MTime(time_stamp=None)
 
         for key in kwargs:
             setattr(self, key, kwargs[key])
@@ -121,4 +121,4 @@ class Z3DSchedule:
                 m_key = m_key.replace("/", "")
                 m_value = m_list[1].strip()
                 setattr(self, m_key, m_value)
-        self.initial_start = MTime(time=f"{self.Date}T{self.Time}", gps_time=True)
+        self.initial_start = MTime(time_stamp=f"{self.Date}T{self.Time}", gps_time=True)

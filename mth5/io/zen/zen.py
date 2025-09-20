@@ -158,7 +158,7 @@ class Z3D:
 
         self._week_len = 604800
         # '1980, 1, 6, 0, 0, 0, -1, -1, 0
-        self._gps_epoch = MTime("1980-01-06T00:00:00")
+        self._gps_epoch = MTime(time_stamp="1980-01-06T00:00:00")
         self._leap_seconds = 18
         self._block_len = 2**16
         # the number in the cac files is for volts, we want mV
@@ -326,7 +326,7 @@ class Z3D:
         """
 
         if self.header.old_version is True:
-            return MTime(self.header.schedule)
+            return MTime(time_stamp=self.header.schedule)
         return self.schedule.initial_start
 
     @zen_schedule.setter
@@ -335,7 +335,7 @@ class Z3D:
         on setting set schedule datetime
         """
         if not isinstance(schedule_dt, MTime):
-            schedule_dt = MTime(schedule_dt)
+            schedule_dt = MTime(time_stamp=schedule_dt)
             raise TypeError("New schedule datetime must be type datetime.datetime")
         self.schedule.initial_start = schedule_dt
 
@@ -700,7 +700,9 @@ class Z3D:
             self.fn = fn
         self.schedule.read_schedule(fn=self.fn, fid=fid)
         if self.header.old_version:
-            self.schedule.initial_start = MTime(self.header.schedule, gps_time=True)
+            self.schedule.initial_start = MTime(
+                time_stamp=self.header.schedule, gps_time=True
+            )
 
     # ======================================
     def _read_metadata(self, fn=None, fid=None):
@@ -1121,7 +1123,7 @@ class Z3D:
 
         # compute date and time from seconds and return a datetime object
         # easier to manipulate later, must be in nanoseconds
-        return MTime(utc_seconds, gps_time=True)
+        return MTime(time_stamp=utc_seconds, gps_time=True)
 
     # =================================================
     def to_channelts(self):

@@ -245,7 +245,7 @@ class GeomagClient:
         if value is None:
             self._start = None
         else:
-            self._start = MTime(value)
+            self._start = MTime(time_stamp=value)
 
     @property
     def end(self):
@@ -256,7 +256,7 @@ class GeomagClient:
         if value is None:
             self._end = None
         else:
-            self._end = MTime(value)
+            self._end = MTime(time_stamp=value)
 
     def get_chunks(self):
         """
@@ -277,8 +277,8 @@ class GeomagClient:
 
             dt_request = [
                 (
-                    f"{MTime(dt[ii]).iso_no_tz}Z",
-                    f"{MTime(dt[ii + 1]).iso_no_tz}Z",
+                    f"{MTime(time_stamp=dt[ii]).iso_no_tz}Z",
+                    f"{MTime(time_stamp=dt[ii + 1]).iso_no_tz}Z",
                 )
                 for ii in range(len(dt) - 1)
             ]

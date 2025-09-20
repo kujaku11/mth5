@@ -434,7 +434,7 @@ class ChannelDataset:
                 self.logger.exception(msg)
                 raise TypeError(msg)
         if not isinstance(start_time, MTime):
-            start_time = MTime(start_time)
+            start_time = MTime(time_stamp=start_time)
         # get end time will need later
         end_time = start_time + (new_data_array.size / sample_rate)
 
@@ -886,7 +886,7 @@ class ChannelDataset:
 
         """
         if not isinstance(start_time, MTime):
-            start_time = MTime(start_time)
+            start_time = MTime(time_stamp=start_time)
         t_diff = 0
         if start_time != self.start:
             t_diff = start_time - self.start
@@ -910,7 +910,7 @@ class ChannelDataset:
 
         """
         if not isinstance(end_time, MTime):
-            end_time = MTime(end_time)
+            end_time = MTime(time_stamp=end_time)
         t_diff = 0
         if end_time != self.end:
             t_diff = end_time - self.end
@@ -1090,7 +1090,7 @@ class ChannelDataset:
         """
 
         if not isinstance(given_time, MTime):
-            given_time = MTime(given_time)
+            given_time = MTime(time_stamp=given_time)
         index = (
             given_time - self.metadata.time_period.start
         ) * self.metadata.sample_rate
@@ -1124,9 +1124,9 @@ class ChannelDataset:
         :rtype: TYPE
 
         """
-        start = MTime(start)
+        start = MTime(time_stamp=start)
         if end is not None:
-            end = MTime(end)
+            end = MTime(time_stamp=end)
         if n_samples is not None:
             n_samples = int(n_samples)
 

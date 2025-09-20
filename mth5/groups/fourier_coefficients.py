@@ -21,7 +21,7 @@ from mth5.groups import BaseGroup, FCChannelDataset
 from mth5.helpers import validate_name
 from mth5.utils.exceptions import MTH5Error
 
-import mt_metadata.transfer_functions.processing.fourier_coefficients as fc
+import mt_metadata.processing.fourier_coefficients as fc
 
 
 # =============================================================================
@@ -64,9 +64,7 @@ class MasterFCGroup(BaseGroup):
 
         """
 
-        return self._add_group(
-            fc_name, FCGroup, group_metadata=fc_metadata, match="id"
-        )
+        return self._add_group(fc_name, FCGroup, group_metadata=fc_metadata, match="id")
 
     def get_fc_group(self, fc_name):
         """
@@ -129,9 +127,7 @@ class FCDecimationGroup(BaseGroup):
 
     def __init__(self, group, decimation_level_metadata=None, **kwargs):
 
-        super().__init__(
-            group, group_metadata=decimation_level_metadata, **kwargs
-        )
+        super().__init__(group, group_metadata=decimation_level_metadata, **kwargs)
 
     @BaseGroup.metadata.getter
     def metadata(self):
@@ -194,7 +190,11 @@ class FCDecimationGroup(BaseGroup):
         return pd.DataFrame(ch_summary)
 
     def from_dataframe(
-        self, df: pd.DataFrame, channel_key: str, time_key: str = "time", frequency_key: str = "frequency"
+        self,
+        df: pd.DataFrame,
+        channel_key: str,
+        time_key: str = "time",
+        frequency_key: str = "frequency",
     ) -> None:
         """
         assumes channel_key is the coefficient values
@@ -221,7 +221,11 @@ class FCDecimationGroup(BaseGroup):
             xrds = df[col].to_xarray()
             self.add_channel(col, fc_data=xrds.to_numpy())
 
-    def from_xarray(self, data_array: Union[xr.Dataset, xr.DataArray], sample_rate_decimation_level: float) -> None:
+    def from_xarray(
+        self,
+        data_array: Union[xr.Dataset, xr.DataArray],
+        sample_rate_decimation_level: float,
+    ) -> None:
         """
         can input a dataarray or dataset
 
@@ -236,15 +240,14 @@ class FCDecimationGroup(BaseGroup):
             msg = f"Must input a xarray Dataset or DataArray not {type(data_array)}"
             self.logger.error(msg)
             raise TypeError(msg)
-        ch_metadata = fc.Channel()
+        ch_metadata = fc.FCChannel()
         ch_metadata.time_period.start = data_array.time[0].values
         ch_metadata.time_period.end = data_array.time[-1].values
         ch_metadata.sample_rate_decimation_level = sample_rate_decimation_level
         ch_metadata.frequency_min = data_array.coords["frequency"].data.min()
         ch_metadata.frequency_max = data_array.coords["frequency"].data.max()
         step_size = (
-            data_array.coords["time"].data[1]
-            - data_array.coords["time"].data[0]
+            data_array.coords["time"].data[1] - data_array.coords["time"].data[0]
         )
         ch_metadata.sample_rate_window_step = step_size / np.timedelta64(1, "s")
         try:
@@ -323,15 +326,13 @@ class FCDecimationGroup(BaseGroup):
         elif len(nd_array.shape) == 2:
             self.add_channel(ch_name, fc_data=nd_array)
         else:
-            raise ValueError(
-                "input array must be shaped (n_frequencies, n_windows)"
-            )
+            raise ValueError("input array must be shaped (n_frequencies, n_windows)")
 
     def add_channel(
         self,
         fc_name: str,
         fc_data: Optional[np.ndarray] = None,
-        fc_metadata: Optional[fc.Channel] = None,
+        fc_metadata: Optional[fc.FCChannel] = None,
         max_shape: tuple = (None, None),
         chunks: bool = True,
         dtype: type = complex,
@@ -376,7 +377,7 @@ class FCDecimationGroup(BaseGroup):
         fc_name = validate_name(fc_name)
 
         if fc_metadata is None:
-            fc_metadata = fc.Channel(name=fc_name)
+            fc_metadata = fc.FCChannel(name=fc_name)
         if fc_data is not None:
             if not isinstance(
                 fc_data, (np.ndarray, xr.DataArray, xr.Dataset, pd.DataFrame)
@@ -423,7 +424,7 @@ class FCDecimationGroup(BaseGroup):
 
         try:
             fc_dataset = self.hdf5_group[fc_name]
-            fc_metadata = fc.Channel(**dict(fc_dataset.attrs))
+            fc_metadata = fc.FCChannel(**dict(fc_dataset.attrs))
             return FCChannelDataset(fc_dataset, dataset_metadata=fc_metadata)
         except KeyError:
             msg = f"{fc_name} does not exist, check groups_list for existing names"
@@ -469,12 +470,8 @@ class FCDecimationGroup(BaseGroup):
         channel_summary = self.channel_summary.copy()
 
         if not channel_summary.empty:
-            self._metadata.time_period.start = (
-                channel_summary.start.min().isoformat()
-            )
-            self._metadata.time_period.end = (
-                channel_summary.end.max().isoformat()
-            )
+            self._metadata.time_period.start = channel_summary.start.min().isoformat()
+            self._metadata.time_period.end = channel_summary.end.max().isoformat()
             self._metadata.sample_rate_decimation_level = (
                 channel_summary.sample_rate_decimation_level.unique()[0]
             )
@@ -517,9 +514,7 @@ class FCGroup(BaseGroup):
 
     def __init__(self, group, decimation_level_metadata=None, **kwargs):
 
-        super().__init__(
-            group, group_metadata=decimation_level_metadata, **kwargs
-        )
+        super().__init__(group, group_metadata=decimation_level_metadata, **kwargs)
 
     @BaseGroup.metadata.getter
     def metadata(self) -> fc.Decimation:
@@ -557,7 +552,7 @@ class FCGroup(BaseGroup):
                     )
             except KeyError as error:
                 self.logger.debug(f"Could not find key: {error}")
-    
+
         ch_summary = np.array(
             ch_list,
             dtype=np.dtype(
@@ -573,7 +568,9 @@ class FCGroup(BaseGroup):
         return pd.DataFrame(ch_summary)
 
     def add_decimation_level(
-        self, decimation_level_name: str, decimation_level_metadata: Optional[Union[Dict, fc.Decimation]] = None
+        self,
+        decimation_level_name: str,
+        decimation_level_metadata: Optional[Union[Dict, fc.Decimation]] = None,
     ) -> FCDecimationGroup:
         """
         add a Decimation level
@@ -638,7 +635,9 @@ class FCGroup(BaseGroup):
             self.write_metadata()
 
     def supports_aurora_processing_config(
-        self, processing_config: 'aurora.config.metadata.processing.Processing', remote: bool
+        self,
+        processing_config: "aurora.config.metadata.processing.Processing",
+        remote: bool,
     ) -> bool:
         """
 
@@ -673,9 +672,10 @@ class FCGroup(BaseGroup):
             for fc_decimation_id in pre_existing_fc_decimation_ids_to_check:
                 fc_dec_group = self.get_decimation_level(fc_decimation_id)
                 fc_decimation = fc_dec_group.metadata
-                levels_present[i] = aurora_decimation_level.is_consistent_with_archived_fc_parameters(
-                    fc_decimation=fc_decimation,
-                    remote=remote
+                levels_present[i] = (
+                    aurora_decimation_level.is_consistent_with_archived_fc_parameters(
+                        fc_decimation=fc_decimation, remote=remote
+                    )
                 )
                 if levels_present[i]:
                     pre_existing_fc_decimation_ids_to_check.remove(

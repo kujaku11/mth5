@@ -223,7 +223,7 @@ class NIMS(NIMSHeader):
         beginning of the time series.
         """
         if self.stamps is not None:
-            return MTime(self.ts_data.index[0])
+            return MTime(time_stamp=self.ts_data.index[0])
         return self.header_gps_stamp
 
     @property
@@ -233,7 +233,7 @@ class NIMS(NIMSHeader):
         beginning of the time series.
         """
         if self.stamps is not None:
-            return MTime(self.ts_data.index[-1])
+            return MTime(time_stamp=self.ts_data.index[-1])
         self.logger.warning("Estimating end time from n_samples")
         return self.start_time + int(self.n_samples / self.sample_rate)
 

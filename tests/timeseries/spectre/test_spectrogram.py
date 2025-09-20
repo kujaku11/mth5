@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 """
-    This modules contains tests for the Spectrogram class.
+This modules contains tests for the Spectrogram class.
 
-    WIP: There are also some tests of cross-power features in here, that should move to either
-    test_cross_powers or test_features.
-    - Most of the original cross power tests only considered single station data, keyed simply by
-    channel or component, such as `ex`, `hy`, etc.  These are largely only useful for tests and for
-    single station processing, as for most practical applications we need to at least include cross
-    powers for the reference station.  This is often handled by renaming remote channels `hx`, `hy`
-    to `rx`, `ry`.  An alternative is to bind the station and component into a unique channel name
-    and use a MultivariateDataset.
-        -
-    TODO: Add a test_cross_powers that operates on a multivariate dataset.
+WIP: There are also some tests of cross-power features in here, that should move to either
+test_cross_powers or test_features.
+- Most of the original cross power tests only considered single station data, keyed simply by
+channel or component, such as `ex`, `hy`, etc.  These are largely only useful for tests and for
+single station processing, as for most practical applications we need to at least include cross
+powers for the reference station.  This is often handled by renaming remote channels `hx`, `hy`
+to `rx`, `ry`.  An alternative is to bind the station and component into a unique channel name
+and use a MultivariateDataset.
+    -
+TODO: Add a test_cross_powers that operates on a multivariate dataset.
 
 """
 import mth5.mth5
 from loguru import logger
-from mt_metadata.transfer_functions.processing.aurora import FrequencyBands
+from mt_metadata.processing.aurora import FrequencyBands
 from mth5.data.make_mth5_from_asc import create_mth5_synthetic_file
 from mth5.data.make_mth5_from_asc import create_test1_h5
 from mth5.data.make_mth5_from_asc import create_test2_h5
@@ -71,10 +71,18 @@ class TestAddFourierCoefficientsToSyntheticData(unittest.TestCase):
         logger.info("Making synthetic data")
         close_open_files()
         self.file_version = "0.1.0"
-        mth5_path_1 = create_test1_h5(file_version=self.file_version, force_make_mth5=FORCE_MAKE_MTH5)
-        mth5_path_2 = create_test2_h5(file_version=self.file_version, force_make_mth5=FORCE_MAKE_MTH5)
-        mth5_path_3 = create_test3_h5(file_version=self.file_version, force_make_mth5=FORCE_MAKE_MTH5)
-        mth5_path_12rr = create_test12rr_h5(file_version=self.file_version, force_make_mth5=FORCE_MAKE_MTH5)
+        mth5_path_1 = create_test1_h5(
+            file_version=self.file_version, force_make_mth5=FORCE_MAKE_MTH5
+        )
+        mth5_path_2 = create_test2_h5(
+            file_version=self.file_version, force_make_mth5=FORCE_MAKE_MTH5
+        )
+        mth5_path_3 = create_test3_h5(
+            file_version=self.file_version, force_make_mth5=FORCE_MAKE_MTH5
+        )
+        mth5_path_12rr = create_test12rr_h5(
+            file_version=self.file_version, force_make_mth5=FORCE_MAKE_MTH5
+        )
         self.mth5_paths = [
             mth5_path_1,
             mth5_path_2,
@@ -111,10 +119,9 @@ def test_cross_powers_basic(test1_spectrogram, test_frequency_bands):
 
     # Compute cross powers
     xpowers = test1_spectrogram.cross_powers(
-        test_frequency_bands,
-        channel_pairs=channel_pairs
+        test_frequency_bands, channel_pairs=channel_pairs
     )
-    xpowers = xpowers.to_dataset(dim='variable')
+    xpowers = xpowers.to_dataset(dim="variable")
 
     # Test structure
     assert len(xpowers.data_vars) == len(channel_pairs)
@@ -128,6 +135,7 @@ def test_cross_powers_basic(test1_spectrogram, test_frequency_bands):
     hx_ex = xpowers["hx_ex"].values
     assert np.allclose(ex_hx, np.conj(hx_ex), rtol=1e-10, atol=1e-15)
 
+
 def test_cross_powers_specific_pairs(test1_spectrogram, test_frequency_bands):
     """Test cross power computation with specific channel pairs."""
     # Define channel pairs to test
@@ -135,10 +143,9 @@ def test_cross_powers_specific_pairs(test1_spectrogram, test_frequency_bands):
 
     # Compute cross powers
     xpowers = test1_spectrogram.cross_powers(
-        test_frequency_bands,
-        channel_pairs=channel_pairs
+        test_frequency_bands, channel_pairs=channel_pairs
     )
-    xpowers = xpowers.to_dataset(dim='variable')
+    xpowers = xpowers.to_dataset(dim="variable")
 
     # Test structure
     assert len(xpowers.data_vars) == len(channel_pairs)
@@ -146,6 +153,7 @@ def test_cross_powers_specific_pairs(test1_spectrogram, test_frequency_bands):
         key = f"{pair[0]}_{pair[1]}"
         assert key in xpowers
         assert np.iscomplexobj(xpowers[key].values)
+
 
 def test_integrated_cross_powers(test1_spectrogram, test_frequency_bands):
     """
@@ -159,7 +167,11 @@ def test_integrated_cross_powers(test1_spectrogram, test_frequency_bands):
     # Define channel pairs to test
     e_pairs = [("ex", "ey")]
     h_pairs = [("hx", "hy"), ("hx", "hz"), ("hy", "hz")]
-    eh_pairs = [("ex", "hx"), ("ey", "hx"), ("ey", "hy")]  # Skip ex-hy (it's in conjugate_pairs below)
+    eh_pairs = [
+        ("ex", "hx"),
+        ("ey", "hx"),
+        ("ey", "hy"),
+    ]  # Skip ex-hy (it's in conjugate_pairs below)
 
     # For conjugate test, add both forward and reverse pairs
     conjugate_pairs = [("ex", "hy"), ("hy", "ex")]
@@ -167,9 +179,9 @@ def test_integrated_cross_powers(test1_spectrogram, test_frequency_bands):
     # Compute cross powers
     xpowers = test1_spectrogram.cross_powers(
         test_frequency_bands,
-        channel_pairs=e_pairs + h_pairs + eh_pairs + conjugate_pairs
+        channel_pairs=e_pairs + h_pairs + eh_pairs + conjugate_pairs,
     )
-    xpowers = xpowers.to_dataset(dim='variable')
+    xpowers = xpowers.to_dataset(dim="variable")
 
     # Test structure
     assert len(xpowers.data_vars) == len(e_pairs + h_pairs + eh_pairs + conjugate_pairs)
@@ -197,22 +209,25 @@ def test_integrated_cross_powers(test1_spectrogram, test_frequency_bands):
     hy_ex = xpowers["hy_ex"].values
     assert np.allclose(ex_hy, np.conj(hy_ex), rtol=1e-10, atol=1e-15)
 
+
 def test_impedance_from_synthetic_data(test1_spectrogram, test_frequency_bands):
     """Test impedance tensor calculation using synthetic data."""
     # Define channel pairs for impedance calculation
     channel_pairs = [
-        ("ex", "hx"), ("ex", "hy"),
-        ("ey", "hx"), ("ey", "hy"),
-        ("hx", "hx"), ("hy", "hy"),
-        ("hx", "hy")
+        ("ex", "hx"),
+        ("ex", "hy"),
+        ("ey", "hx"),
+        ("ey", "hy"),
+        ("hx", "hx"),
+        ("hy", "hy"),
+        ("hx", "hy"),
     ]
 
     # Compute cross powers
     xpowers = test1_spectrogram.cross_powers(
-        test_frequency_bands,
-        channel_pairs=channel_pairs
+        test_frequency_bands, channel_pairs=channel_pairs
     )
-    xpowers = xpowers.to_dataset(dim='variable')
+    xpowers = xpowers.to_dataset(dim="variable")
 
     # Calculate Zxy for each frequency band
     ex_hy = xpowers["ex_hy"].values
@@ -240,8 +255,8 @@ def test_impedance_from_synthetic_data(test1_spectrogram, test_frequency_bands):
     rho_xy_mean = np.mean(rho_xy, axis=0)
 
     # Test that apparent resistivity is approximately 100 Ohm-m
-    assert (rho_xy_mean > 70.).all()
-    assert (rho_xy_mean < 130.).all()
+    assert (rho_xy_mean > 70.0).all()
+    assert (rho_xy_mean < 130.0).all()
 
 
 def test_store_and_read_cross_power_features(test1_spectrogram, test_frequency_bands):
@@ -269,17 +284,14 @@ def test_store_and_read_cross_power_features(test1_spectrogram, test_frequency_b
     # Compute cross powers
     # TODO: add dcimation level contexst to makign these xpowers
     xpowers = test1_spectrogram.cross_powers(
-        test_frequency_bands,
-        channel_pairs=channel_pairs
+        test_frequency_bands, channel_pairs=channel_pairs
     )
-    xpowers = xpowers.to_dataset(dim='variable')
+    xpowers = xpowers.to_dataset(dim="variable")
 
     # slightly hacky workaround for getting the mth5 path
     station_cfg = make_station_01()
     mth5_path = create_mth5_synthetic_file(
-        station_cfgs=[station_cfg],
-        mth5_name="test1.h5",
-        force_make_mth5=False
+        station_cfgs=[station_cfg], mth5_name="test1.h5", force_make_mth5=False
     )
 
     # Now try storing the cross power features in the mth5 and close the file
@@ -290,16 +302,14 @@ def test_store_and_read_cross_power_features(test1_spectrogram, test_frequency_b
     station_group = m.get_station("test1", "EMTF Synthetic")
     features_group = station_group.features_group
     from mt_metadata.features.cross_powers import CrossPowers
+
     feature_md = CrossPowers()
     feature_md.name = "cross_powers"
     feature_md.id = "cross_powers"
     feature_fc = features_group.add_feature_group(
-        feature_name="cross_powers",
-        feature_metadata=feature_md
+        feature_name="cross_powers", feature_metadata=feature_md
     )
-    fc_run = feature_fc.add_feature_run_group(
-        "cross_powers", domain="frequency"
-    )
+    fc_run = feature_fc.add_feature_run_group("cross_powers", domain="frequency")
     dl = fc_run.add_decimation_level("0")
     sample_interval_in_nano_seconds = xpowers.time.diff(dim="time")[0].item()
     sample_rate = 1e9 / sample_interval_in_nano_seconds  # 0.010416666666666
@@ -333,7 +343,6 @@ def test_store_and_read_cross_power_features(test1_spectrogram, test_frequency_b
 
 def test_can_mvds(
     test_multivariate_spectrogram,  # pytest.Fixture -- TODO typehint this properly
-
 ):
     """
         Placeholder:
@@ -353,12 +362,10 @@ def test_can_mvds(
     #  Pick a target frequency, say 1/4 way along the axis
     target_frequency = spectrogram.frequency_axis.data.mean() / 2
     frequency_band = half_octave(
-        target_frequency=target_frequency,
-        fft_frequencies=spectrogram.frequency_axis
+        target_frequency=target_frequency, fft_frequencies=spectrogram.frequency_axis
     )
     band_spectrogram = spectrogram.extract_band(
-        frequency_band=frequency_band,
-        epsilon=0.0
+        frequency_band=frequency_band, epsilon=0.0
     )
     xrds = band_spectrogram.flatten()
     mvds = MultivariateDataset(dataset=xrds)
@@ -366,12 +373,13 @@ def test_can_mvds(
 
     return
 
+
 # ======================== pytest fixtures ======================== #
 # TODO: Move fixtures to conftest.py
 @pytest.fixture
 def test1_spectrogram():
     """
-        Create a test spectrogram from synthetic data for the station named 'test1'.
+    Create a test spectrogram from synthetic data for the station named 'test1'.
     """
 
     # Create test configuration
@@ -379,9 +387,7 @@ def test1_spectrogram():
 
     # Create test h5 file with Fourier coefficients
     mth5_path = create_mth5_synthetic_file(
-        station_cfgs=[station_cfg],
-        mth5_name="test1.h5",
-        force_make_mth5=True
+        station_cfgs=[station_cfg], mth5_name="test1.h5", force_make_mth5=True
     )
 
     # Add Fourier coefficients to MTH5 file
@@ -422,7 +428,7 @@ def test_multivariate_spectrogram():
     # get the path to an mth5 file that has multiple stations
     mth5_path_12rr = create_test12rr_h5(
         file_version="0.1.0",
-        force_make_mth5=False  # normally FORCE_MAKE_MTH5=False here
+        force_make_mth5=False,  # normally FORCE_MAKE_MTH5=False here
     )
 
     # Careful here with hard-coded station and run ids
@@ -445,8 +451,10 @@ def test_multivariate_spectrogram():
         channels=(),
     )
 
-    with MTH5().open_mth5(mth5_path_12rr, mode='r') as m:
-        mvds = make_multistation_spectrogram(m, [fc_run_chunk_1, fc_run_chunk_2], rtype=None)
+    with MTH5().open_mth5(mth5_path_12rr, mode="r") as m:
+        mvds = make_multistation_spectrogram(
+            m, [fc_run_chunk_1, fc_run_chunk_2], rtype=None
+        )
     assert len(mvds.channels) == 10
 
     spectrogram = Spectrogram(dataset=mvds.dataset)
@@ -457,11 +465,9 @@ def test_multivariate_spectrogram():
 @pytest.fixture
 def test_frequency_bands():
     """Create frequency bands for testing"""
-    edges = np.array([
-        [0.01, 0.1],   # Low band
-        [0.1, 0.2],    # Mid band
-        [0.2, 0.49]     # High band
-    ])
+    edges = np.array(
+        [[0.01, 0.1], [0.1, 0.2], [0.2, 0.49]]  # Low band  # Mid band  # High band
+    )
     return FrequencyBands(edges)
 
 

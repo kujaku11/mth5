@@ -83,7 +83,7 @@ def make_dt_coordinates(start_time, sample_rate, n_samples, end_time=None):
         logger.error(msg)
         raise ValueError(msg)
     if not isinstance(start_time, MTime):
-        start_time = MTime(start_time)
+        start_time = MTime(time_stamp=start_time)
 
     # there is something screwy that happens when your sample rate is not a
     # nice value that can easily fit into the 60 base.  For instance if you
@@ -96,7 +96,7 @@ def make_dt_coordinates(start_time, sample_rate, n_samples, end_time=None):
     if end_time is None:
         end_time = start_time + (n_samples - 1) / sample_rate
     else:
-        end_time = MTime(end_time)
+        end_time = MTime(time_stamp=end_time)
     # dt_freq = "{0:.0f}N".format(1.0e9 / (sample_rate))
 
     dt_index = pd.date_range(

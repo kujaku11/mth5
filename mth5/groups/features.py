@@ -19,7 +19,7 @@ from mth5.helpers import validate_name
 from mth5.utils.exceptions import MTH5Error
 
 from mt_metadata.features import FeatureDecimationChannel
-from mt_metadata.transfer_functions.processing.fourier_coefficients.decimation import (
+from mt_metadata.processing.fourier_coefficients.decimation import (
     Decimation,
 )
 
@@ -501,9 +501,7 @@ class FeatureDecimationGroup(BaseGroup):
 
     def __init__(self, group, decimation_level_metadata=None, **kwargs):
 
-        super().__init__(
-            group, group_metadata=decimation_level_metadata, **kwargs
-        )
+        super().__init__(group, group_metadata=decimation_level_metadata, **kwargs)
 
     @BaseGroup.metadata.getter
     def metadata(self):
@@ -615,8 +613,7 @@ class FeatureDecimationGroup(BaseGroup):
         ch_metadata.frequency_min = data_array.coords["frequency"].data.min()
         ch_metadata.frequency_max = data_array.coords["frequency"].data.max()
         step_size = (
-            data_array.coords["time"].data[1]
-            - data_array.coords["time"].data[0]
+            data_array.coords["time"].data[1] - data_array.coords["time"].data[0]
         )
         ch_metadata.sample_rate_window_step = step_size / np.timedelta64(1, "s")
         try:
@@ -695,9 +692,7 @@ class FeatureDecimationGroup(BaseGroup):
         elif len(nd_array.shape) == 2:
             self.add_channel(ch_name, fc_data=nd_array)
         else:
-            raise ValueError(
-                "input array must be shaped (n_frequencies, n_windows)"
-            )
+            raise ValueError("input array must be shaped (n_frequencies, n_windows)")
 
     def add_channel(
         self,
@@ -772,12 +767,12 @@ class FeatureDecimationGroup(BaseGroup):
                 **self.dataset_options,
             )
 
-            fc_dataset = FeatureChannelDataset(
-                dataset, dataset_metadata=fc_metadata
-            )
+            fc_dataset = FeatureChannelDataset(dataset, dataset_metadata=fc_metadata)
         except (OSError, RuntimeError, ValueError) as error:
             self.logger.error(error)
-            msg = f"estimate {fc_metadata.name} already exists, returning existing group."
+            msg = (
+                f"estimate {fc_metadata.name} already exists, returning existing group."
+            )
             self.logger.debug(msg)
 
             fc_dataset = self.get_channel(fc_metadata.name)
@@ -798,9 +793,7 @@ class FeatureDecimationGroup(BaseGroup):
         try:
             fc_dataset = self.hdf5_group[fc_name]
             fc_metadata = FeatureDecimationChannel(**dict(fc_dataset.attrs))
-            return FeatureChannelDataset(
-                fc_dataset, dataset_metadata=fc_metadata
-            )
+            return FeatureChannelDataset(fc_dataset, dataset_metadata=fc_metadata)
         except KeyError:
             msg = f"{fc_name} does not exist, check groups_list for existing names"
             self.logger.error(msg)
@@ -845,12 +838,8 @@ class FeatureDecimationGroup(BaseGroup):
         channel_summary = self.channel_summary.copy()
 
         if not channel_summary.empty:
-            self._metadata.time_period.start = (
-                channel_summary.start.min().isoformat()
-            )
-            self._metadata.time_period.end = (
-                channel_summary.end.max().isoformat()
-            )
+            self._metadata.time_period.start = channel_summary.start.min().isoformat()
+            self._metadata.time_period.end = channel_summary.end.max().isoformat()
             self._metadata.sample_rate_decimation_level = (
                 channel_summary.sample_rate_decimation_level.unique()[0]
             )

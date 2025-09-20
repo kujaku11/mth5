@@ -40,6 +40,7 @@ from mt_metadata.base import MetadataBase
 from mth5.helpers import get_tree, validate_name
 from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import to_numpy_type, from_numpy_type
+from pydantic.fields import FieldInfo
 
 # make a dictionary of available metadata classes
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
@@ -162,19 +163,16 @@ class BaseGroup:
             except KeyError:
                 self._metadata = MetadataBase()
         # add 2 attributes that will help with querying using the new Pydantic approach
-        from pydantic import Field
 
         # Create FieldInfo for mth5_type
-        mth5_type_field = Field(
+        mth5_type_field = FieldInfo(
+            annotation=str,
             default=self._class_name.split("Group")[0],
             description="type of group",
             json_schema_extra={
                 "required": True,
-                "style": "free form",
                 "units": None,
-                "options": [],
-                "alias": [],
-                "example": "group_name",
+                "examples": ["group_name"],
             },
         )
 
@@ -182,16 +180,14 @@ class BaseGroup:
         enhanced_class = self._metadata.add_new_field("mth5_type", mth5_type_field)
 
         # Create FieldInfo for hdf5_reference
-        hdf5_ref_field = Field(
+        hdf5_ref_field = FieldInfo(
+            annotation=h5py.Reference,
             default=None,  # Will be set later
             description="hdf5 internal reference",
             json_schema_extra={
                 "required": True,
-                "style": "free form",
                 "units": None,
-                "options": [],
-                "alias": [],
-                "example": "<HDF5 Group Reference>",
+                "examples": ["<HDF5 Group Reference>"],
             },
         )
 

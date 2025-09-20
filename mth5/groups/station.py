@@ -658,7 +658,7 @@ class StationGroup(BaseGroup):
         """
 
         if not isinstance(start, MTime):
-            start = MTime(start)
+            start = MTime(time_stamp=start)
 
         run_summary = self.run_summary.copy()
         if run_summary.size < 1:

@@ -338,13 +338,13 @@ class LEMI424:
     def start(self):
         """start time of data collection in the LEMI424 file"""
         if self._has_data():
-            return MTime(self.data.index[0])
+            return MTime(time_stamp=self.data.index[0])
 
     @property
     def end(self):
         """end time of data collection in the LEMI424 file"""
         if self._has_data():
-            return MTime(self.data.index[-1])
+            return MTime(time_stamp=self.data.index[-1])
 
     @property
     def latitude(self):
@@ -488,7 +488,7 @@ class LEMI424:
         # read in chunks, this doesnt really speed up much as most of the
         # compute time is used in the date time parsing.
         if self.n_samples > self.chunk_size:
-            st = MTime().now()
+            st = MTime(time_stamp=None).now()
             dfs = list(
                 pd.read_csv(
                     self.fn,
@@ -518,10 +518,10 @@ class LEMI424:
             )
 
             self.data = pd.concat(dfs)
-            et = MTime().now()
+            et = MTime(time_stamp=None).now()
             self.logger.debug(f"Reading {self.fn.name} took {et - st:.2f} seconds")
         else:
-            st = MTime().now()
+            st = MTime(time_stamp=None).now()
             self.data = pd.read_csv(
                 self.fn,
                 delimiter=r"\s+",
@@ -546,7 +546,7 @@ class LEMI424:
                 },
                 index_col="date",
             )
-            et = MTime().now()
+            et = MTime(time_stamp=None).now()
             self.logger.debug(f"Reading {self.fn.name} took {et - st:.2f} seconds")
 
     def read_metadata(self):
