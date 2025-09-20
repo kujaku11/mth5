@@ -1,0 +1,45 @@
+name: Format Python code
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - '**.py'
+  pull_request:
+    branches: [ master ]
+    paths:
+      - '**.py'
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install black isort autoflake
+
+    - name: Format with autoflake, isort, and black
+      run: |
+        # Create list of Python files excluding __init__.py files
+        PYTHON_FILES=$(find . -name "*.py" -type f -not -path "*/\.*" -not -name "__init__.py")
+        
+        # Apply formatting to those files only
+        echo "$PYTHON_FILES" | xargs autoflake --remove-all-unused-imports --expand-star-imports --ignore-init-module-imports --in-place
+        echo "$PYTHON_FILES" | xargs isort --profile black --skip __init__.py --force-alphabetical-sort-within-sections --order-by-type --lines-after-imports=2
+        echo "$PYTHON_FILES" | xargs black
+
+    - name: Commit changes
+      uses: stefanzweifel/git-auto-commit-action@v4
+      with:
+        commit_message: "Auto-format code with black and isort"
+        file_pattern: "*.py"
