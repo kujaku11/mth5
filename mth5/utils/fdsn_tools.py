@@ -50,6 +50,8 @@ measurement_code_dict = {
 }
 
 measurement_code_dict_reverse = dict([(v, k) for k, v in measurement_code_dict.items()])
+# Add Y as fallback for unknown/auxiliary measurements
+measurement_code_dict_reverse["Y"] = "auxiliary"
 
 orientation_code_dict = {
     "N": {"min": 0, "max": 15},
@@ -166,7 +168,10 @@ def make_channel_code(channel_obj):
     """
 
     period_code = get_period_code(channel_obj.sample_rate)
-    sensor_code = get_measurement_code(channel_obj.type)
+    # Try to get measurement code from component first, then fallback to type
+    sensor_code = get_measurement_code(channel_obj.component)
+    if sensor_code == "Y":  # If component didn't match, try type
+        sensor_code = get_measurement_code(channel_obj.type)
     if "z" in channel_obj.component.lower():
         orientation_code = get_orientation_code(
             channel_obj.measurement_tilt, orientation="vertical"

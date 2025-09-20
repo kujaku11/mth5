@@ -31,6 +31,7 @@ import mt_metadata.timeseries as metadata
 from mt_metadata.timeseries.filters import ChannelResponse
 from mt_metadata.common.mttime import MTime
 from mt_metadata.common.list_dict import ListDict
+from mt_metadata.common.units import get_unit_object
 from mth5.utils import fdsn_tools
 from mth5.timeseries.ts_filters import RemoveInstrumentResponse
 from mth5.timeseries.ts_helpers import (
@@ -119,7 +120,7 @@ class ChannelTS:
         self._survey_metadata = self._initialize_metadata()
 
         self.data_array = xr.DataArray([1], coords=[("time", [1])], name="ts")
-        self._channel_response = ChannelResponse()
+        self._channel_response = ChannelResponse()  # type: ignore
 
         self.survey_metadata = survey_metadata
         self.station_metadata = station_metadata
@@ -972,7 +973,7 @@ class ChannelTS:
         """MTime object"""
         if self.has_data():
             return MTime(
-                timestamp=self.data_array.coords.indexes["time"][0].isoformat()
+                time_stamp=self.data_array.coords.indexes["time"][0].isoformat()
             )
         else:
             self.logger.debug(
@@ -1082,15 +1083,15 @@ class ChannelTS:
         self._channel_response = value
 
         # update channel metadata
-        if self.channel_metadata.filter.name != value.names:
-            self.channel_metadata.filter.name = []
-            self.channel_metadata.filter.applied = []
+        if self.channel_metadata.filter_names != value.names:
 
-            for f_name in self._channel_response.names:
-                self.channel_metadata.filter.name.append(f_name)
-            self.channel_metadata.filter.applied = [True] * len(
-                self.channel_metadata.filter.name
-            )
+            for ch_filter in self._channel_response.filters_list:
+                self.channel_metadata.add_filter(
+                    name=ch_filter.name,
+                    applied=False,
+                    stage=ch_filter.sequence_number,
+                    comments=ch_filter.comments,
+                )
 
     def get_calibration_operation(self):
         if (
@@ -1131,7 +1132,6 @@ class ChannelTS:
         :return: tuple, calibration_operation, either "mulitply" or divide", and a string for calibrated units
         :rtype: tuple (of two strings_
         """
-        from mt_metadata.common.units import get_unit_object
 
         if (
             self.channel_response.units_out
@@ -1579,7 +1579,12 @@ class ChannelTS:
         self.sample_rate = obspy_trace.stats.sampling_rate
         self.start = obspy_trace.stats.starttime.isoformat()
         self.station_metadata.fdsn.id = obspy_trace.stats.station
-        self.station_metadata.fdsn.network = obspy_trace.stats.network
+        # Handle None network values
+        if (
+            obspy_trace.stats.network is not None
+            and obspy_trace.stats.network != "None"
+        ):
+            self.station_metadata.fdsn.network = obspy_trace.stats.network
         self.station_metadata.id = obspy_trace.stats.station
         self.channel_metadata.units = "counts"
         self.ts = obspy_trace.data

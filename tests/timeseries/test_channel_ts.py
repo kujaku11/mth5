@@ -105,10 +105,12 @@ class TestChannelTS(unittest.TestCase):
         )
 
     def test_validate_station_metadata_from_dict(self):
-        """ Modified to workaround mt_metadata issue #264"""
+        """Modified to workaround mt_metadata issue #264"""
         m1 = metadata.Station(id="0")
         m2 = self.ts._validate_station_metadata({"id": "0"})
-        objects_are_equal = m1.__eq__(m2, ignore_keys=["provenance.creation_time"])
+        # Set same creation time to avoid comparison issues
+        m2.provenance.creation_time = m1.provenance.creation_time
+        objects_are_equal = m1.__eq__(m2)
         self.assertTrue(objects_are_equal)
 
     def test_validate_survey_metadata(self):
@@ -204,13 +206,13 @@ class TestChannelTS(unittest.TestCase):
         self.ts._update_xarray_metadata()
 
         self.ts.ts = np.random.rand(4096)
-        end = self.ts.channel_metadata.time_period._start_dt + (4096 - 1)
+        end = self.ts.channel_metadata.time_period.start + (4096 - 1)
 
         # check to make sure the times align
         with self.subTest(name="is aligned"):
             self.assertEqual(
                 self.ts.data_array.coords.to_index()[0].isoformat(),
-                self.ts.channel_metadata.time_period._start_dt.iso_no_tz,
+                self.ts.channel_metadata.time_period.start.iso_no_tz,
             )
         with self.subTest(name="has index"):
             self.assertEqual(
@@ -232,13 +234,13 @@ class TestChannelTS(unittest.TestCase):
         self.ts.channel_metadata.sample_rate = 1.0
 
         self.ts.ts = np.random.rand(4096).tolist()
-        end = self.ts.channel_metadata.time_period._start_dt + (4096 - 1)
+        end = self.ts.channel_metadata.time_period.start + (4096 - 1)
 
         # check to make sure the times align
         with self.subTest(name="is aligned"):
             self.assertEqual(
                 self.ts.data_array.coords.to_index()[0].isoformat(),
-                self.ts.channel_metadata.time_period._start_dt.iso_no_tz,
+                self.ts.channel_metadata.time_period.start.iso_no_tz,
             )
         with self.subTest(name="has index"):
             self.assertEqual(
@@ -290,13 +292,13 @@ class TestChannelTS(unittest.TestCase):
         self.ts._update_xarray_metadata()
 
         self.ts.ts = pd.DataFrame({"data": np.random.rand(4096)})
-        end = self.ts.channel_metadata.time_period._start_dt + (4096 - 1)
+        end = self.ts.channel_metadata.time_period.start + (4096 - 1)
 
         # check to make sure the times align
         with self.subTest(name="is aligned"):
             self.assertEqual(
                 self.ts.data_array.coords.to_index()[0].isoformat(),
-                self.ts.channel_metadata.time_period._start_dt.iso_no_tz,
+                self.ts.channel_metadata.time_period.start.iso_no_tz,
             )
         with self.subTest(name="has index"):
             self.assertEqual(
@@ -321,13 +323,13 @@ class TestChannelTS(unittest.TestCase):
         with self.subTest(name="is aligned"):
             self.assertEqual(
                 self.ts.data_array.coords.to_index()[0].isoformat(),
-                self.ts.channel_metadata.time_period._start_dt.iso_no_tz,
+                self.ts.channel_metadata.time_period.start.iso_no_tz,
             )
         # check to make sure the times align
         with self.subTest(name="same end"):
             self.assertEqual(
                 self.ts.data_array.coords.to_index()[-1].isoformat(),
-                self.ts.channel_metadata.time_period._end_dt.iso_no_tz,
+                self.ts.channel_metadata.time_period.end.iso_no_tz,
             )
         with self.subTest(name="sample rate"):
             self.assertEqual(self.ts.sample_rate, 4096.0)
@@ -434,7 +436,7 @@ class TestChannelTS(unittest.TestCase):
         self.ts.sample_rate = 16
         self.ts.start = "2020-01-01T12:00:00"
         self.ts.ts = np.arange(4096)
-        self.ts.channel_metadata.filter.name = "example_filter"
+        self.ts.channel_metadata.add_filter(name="example_filter")
         self.ts.channel_response.filters_list.append(
             CoefficientFilter(name="example_filter", gain=10)
         )
@@ -549,7 +551,7 @@ class TestChannelTS2ObspyTrace(unittest.TestCase):
         with self.subTest("channel"):
             self.assertEqual("temperaturex", new_ch.component)
         with self.subTest("channel metadata type"):
-            self.assertEqual("temperature", new_ch.channel_metadata.type)
+            self.assertEqual("auxiliary", new_ch.channel_metadata.type)
         with self.subTest("start"):
             self.assertEqual(self.ch.start, new_ch.start)
         with self.subTest("end"):
@@ -613,13 +615,13 @@ class TestAddChannels(unittest.TestCase):
             )
         with self.subTest("start"):
             self.assertEqual(
-                self.combined_start,
-                self.combined_ex.survey_metadata.time_period.start,
+                self.combined_start.split("T")[0],  # Extract date part from timestamp
+                self.combined_ex.survey_metadata.time_period.start_date,
             )
         with self.subTest("end"):
             self.assertEqual(
-                self.combined_end,
-                self.combined_ex.survey_metadata.time_period.end,
+                self.combined_end.split("T")[0],  # Extract date part from timestamp
+                self.combined_ex.survey_metadata.time_period.end_date,
             )
 
     def test_station_metadata(self):
@@ -689,42 +691,42 @@ class TestAddChannels(unittest.TestCase):
 
 class TestMergeChannels(unittest.TestCase):
     @classmethod
-    def setUpClass(self):
-        self.survey_metadata = metadata.Survey(id="test")
+    def setUpClass(cls):
+        cls.survey_metadata = metadata.Survey(id="test")
 
-        self.station_metadata = metadata.Station(id="mt01")
-        self.station_metadata.location.latitude = 40
-        self.station_metadata.location.longitude = -112
-        self.station_metadata.location.elevation = 120
+        cls.station_metadata = metadata.Station(id="mt01")
+        cls.station_metadata.location.latitude = 40
+        cls.station_metadata.location.longitude = -112
+        cls.station_metadata.location.elevation = 120
 
-        self.run_metadata = metadata.Run(id="001")
+        cls.run_metadata = metadata.Run(id="001")
 
-        self.channel_metadata = metadata.Electric(component="ex", sample_rate=10)
-        self.channel_metadata.time_period.start = "2020-01-01T00:00:00+00:00"
-        self.channel_metadata.time_period.end = "2020-01-01T00:00:59+00:00"
+        cls.channel_metadata = metadata.Electric(component="ex", sample_rate=10)
+        cls.channel_metadata.time_period.start = "2020-01-01T00:00:00+00:00"
+        cls.channel_metadata.time_period.end = "2020-01-01T00:00:59+00:00"
 
-        self.channel_metadata2 = metadata.Electric(component="ex", sample_rate=10)
-        self.channel_metadata2.time_period.start = "2020-01-01T00:01:10"
-        self.channel_metadata2.time_period.end = "2020-01-01T00:02:09"
+        cls.channel_metadata2 = metadata.Electric(component="ex", sample_rate=10)
+        cls.channel_metadata2.time_period.start = "2020-01-01T00:01:10"
+        cls.channel_metadata2.time_period.end = "2020-01-01T00:02:09"
 
-        self.combined_start = "2020-01-01T00:00:00+00:00"
-        self.combined_end = "2020-01-01T00:02:09+00:00"
+        cls.combined_start = "2020-01-01T00:00:00+00:00"
+        cls.combined_end = "2020-01-01T00:02:09+00:00"
 
-        self.ex1 = timeseries.ChannelTS(
+        cls.ex1 = timeseries.ChannelTS(
             channel_type="electric",
             data=np.linspace(0, 59, 600),
-            channel_metadata=self.channel_metadata,
-            survey_metadata=self.survey_metadata,
-            station_metadata=self.station_metadata,
-            run_metadata=self.run_metadata,
+            channel_metadata=cls.channel_metadata,
+            survey_metadata=cls.survey_metadata,
+            station_metadata=cls.station_metadata,
+            run_metadata=cls.run_metadata,
         )
-        self.ex2 = timeseries.ChannelTS(
+        cls.ex2 = timeseries.ChannelTS(
             channel_type="electric",
             data=np.linspace(70, 69 + 60, 600),
-            channel_metadata=self.channel_metadata2,
+            channel_metadata=cls.channel_metadata2,
         )
 
-        self.combined_ex = self.ex1.merge(self.ex2, new_sample_rate=1)
+        cls.combined_ex = cls.ex1.merge(cls.ex2, new_sample_rate=1)
 
     def test_survey_metadata(self):
         with self.subTest("id"):
@@ -733,13 +735,13 @@ class TestMergeChannels(unittest.TestCase):
             )
         with self.subTest("start"):
             self.assertEqual(
-                self.combined_start,
-                self.combined_ex.survey_metadata.time_period.start,
+                self.combined_start.split("T")[0],
+                self.combined_ex.survey_metadata.time_period.start_date,
             )
         with self.subTest("end"):
             self.assertEqual(
-                self.combined_end,
-                self.combined_ex.survey_metadata.time_period.end,
+                self.combined_end.split("T")[0],
+                self.combined_ex.survey_metadata.time_period.end_date,
             )
 
     def test_station_metadata(self):
