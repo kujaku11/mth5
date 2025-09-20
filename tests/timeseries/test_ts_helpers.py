@@ -38,9 +38,13 @@ class TestMakeDtCoordinates(unittest.TestCase):
         dt = make_dt_coordinates(None, None, 16)
 
         with self.subTest("start"):
-            self.assertEqual(MTime(time_stamp=dt[0]), MTime(time_stamp="1980-01-01T00:00:00"))
+            self.assertEqual(
+                MTime(time_stamp=dt[0]), MTime(time_stamp="1980-01-01T00:00:00")
+            )
         with self.subTest("end"):
-            self.assertEqual(MTime(time_stamp=dt[-1]), MTime(time_stamp="1980-01-01T00:00:15"))
+            self.assertEqual(
+                MTime(time_stamp=dt[-1]), MTime(time_stamp="1980-01-01T00:00:15")
+            )
         with self.subTest("length"):
             self.assertEqual(16, len(dt))
 
@@ -48,9 +52,13 @@ class TestMakeDtCoordinates(unittest.TestCase):
         dt = make_dt_coordinates("1980-01-01T00:00:00.0010", 1, 16)
 
         with self.subTest("start"):
-            self.assertEqual(MTime(time_stamp=dt[0]), MTime(time_stamp="1980-01-01T00:00:00.001"))
+            self.assertEqual(
+                MTime(time_stamp=dt[0]), MTime(time_stamp="1980-01-01T00:00:00.001")
+            )
         with self.subTest("end"):
-            self.assertEqual(MTime(time_stamp=dt[-1]), MTime(time_stamp="1980-01-01T00:00:15.001"))
+            self.assertEqual(
+                MTime(time_stamp=dt[-1]), MTime(time_stamp="1980-01-01T00:00:15.001")
+            )
         with self.subTest("length"):
             self.assertEqual(16, len(dt))
 
@@ -58,9 +66,13 @@ class TestMakeDtCoordinates(unittest.TestCase):
         dt = make_dt_coordinates("1980-01-01T00:00:00.0000010", 1, 16)
 
         with self.subTest("start"):
-            self.assertEqual(MTime(time_stamp=dt[0]), MTime(time_stamp="1980-01-01T00:00:00.000001"))
+            self.assertEqual(
+                MTime(time_stamp=dt[0]), MTime(time_stamp="1980-01-01T00:00:00.000001")
+            )
         with self.subTest("end"):
-            self.assertEqual(MTime(time_stamp=dt[-1]), MTime(time_stamp="1980-01-01T00:00:15.000001"))
+            self.assertEqual(
+                MTime(time_stamp=dt[-1]), MTime(time_stamp="1980-01-01T00:00:15.000001")
+            )
         with self.subTest("length"):
             self.assertEqual(16, len(dt))
 
@@ -68,9 +80,15 @@ class TestMakeDtCoordinates(unittest.TestCase):
         dt = make_dt_coordinates("1980-01-01T00:00:00.0000000010", 1, 16)
 
         with self.subTest("start"):
-            self.assertEqual(MTime(time_stamp=dt[0]), MTime(time_stamp="1980-01-01T00:00:00.000000001"))
+            self.assertEqual(
+                MTime(time_stamp=dt[0]),
+                MTime(time_stamp="1980-01-01T00:00:00.000000001"),
+            )
         with self.subTest("end"):
-            self.assertEqual(MTime(time_stamp=dt[-1]), MTime(time_stamp="1980-01-01T00:00:15.000000001"))
+            self.assertEqual(
+                MTime(time_stamp=dt[-1]),
+                MTime(time_stamp="1980-01-01T00:00:15.000000001"),
+            )
         with self.subTest("length"):
             self.assertEqual(16, len(dt))
 
@@ -78,9 +96,13 @@ class TestMakeDtCoordinates(unittest.TestCase):
         dt = make_dt_coordinates("1980-01-01T00:00:00.000", 16, 16)
 
         with self.subTest("start"):
-            self.assertEqual(MTime(time_stamp=dt[0]), MTime(time_stamp="1980-01-01T00:00:00.00"))
+            self.assertEqual(
+                MTime(time_stamp=dt[0]), MTime(time_stamp="1980-01-01T00:00:00.00")
+            )
         with self.subTest("end"):
-            self.assertEqual(MTime(time_stamp=dt[-1]), MTime(time_stamp="1980-01-01T00:00:00.9375"))
+            self.assertEqual(
+                MTime(time_stamp=dt[-1]), MTime(time_stamp="1980-01-01T00:00:00.9375")
+            )
         with self.subTest("length"):
             self.assertEqual(16, len(dt))
 
@@ -88,9 +110,13 @@ class TestMakeDtCoordinates(unittest.TestCase):
         dt = make_dt_coordinates("1980-01-01T00:00:00.00000", 256, 16)
 
         with self.subTest("start"):
-            self.assertEqual(MTime(dt[0]), MTime("1980-01-01T00:00:00.0000"))
+            self.assertEqual(
+                MTime(time_stamp=dt[0]), MTime(time_stamp="1980-01-01T00:00:00.0000")
+            )
         with self.subTest("end"):
-            self.assertEqual(MTime(dt[-1]), MTime("1980-01-01T00:00:00.058594"))
+            self.assertEqual(
+                MTime(time_stamp=dt[-1]), MTime(time_stamp="1980-01-01T00:00:00.058594")
+            )
         with self.subTest("length"):
             self.assertEqual(16, len(dt))
 
@@ -98,11 +124,13 @@ class TestMakeDtCoordinates(unittest.TestCase):
         dt = make_dt_coordinates("1980-01-01T00:00:00.00000", 4096, 16)
 
         with self.subTest("start"):
-            self.assertEqual(MTime(dt[0]), MTime("1980-01-01T00:00:00.0000"))
+            self.assertEqual(
+                MTime(time_stamp=dt[0]), MTime(time_stamp="1980-01-01T00:00:00.0000")
+            )
         with self.subTest("end"):
             self.assertAlmostEqual(
-                MTime(dt[-1]).epoch_seconds,
-                MTime("1980-01-01T00:00:00.003662109").epoch_seconds,
+                MTime(time_stamp=dt[-1]).epoch_seconds,
+                MTime(time_stamp="1980-01-01T00:00:00.003662109").epoch_seconds,
                 6,
             )
         with self.subTest("length"):

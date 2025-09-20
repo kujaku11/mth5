@@ -74,7 +74,9 @@ class TestReadNIMS(unittest.TestCase):
         self.assertEqual(self.nims_obj.ground_electrode_info, None)
 
     def test_header_gps_stamp(self):
-        self.assertEqual(self.nims_obj.header_gps_stamp, MTime("2019-09-26 18:29:29"))
+        self.assertEqual(
+            self.nims_obj.header_gps_stamp, MTime(time_stamp="2019-09-26 18:29:29")
+        )
 
     def test_header_gps_latitude(self):
         self.assertEqual(self.nims_obj.header_gps_latitude, 34.7268)
@@ -135,11 +137,13 @@ class TestReadNIMS(unittest.TestCase):
         self.assertEqual(len(self.nims_obj.stamps), 402)
 
     def test_start(self):
-        self.assertEqual(self.nims_obj.start_time, MTime("2019-09-26T18:33:21+00:00"))
+        self.assertEqual(
+            self.nims_obj.start_time, MTime(time_stamp="2019-09-26T18:33:21+00:00")
+        )
 
     def test_end(self):
         self.assertEqual(
-            self.nims_obj.end_time, MTime("2019-10-01T15:07:07.875000+00:00")
+            self.nims_obj.end_time, MTime(time_stamp="2019-10-01T15:07:07.875000+00:00")
         )
 
     def test_latitude(self):

@@ -296,7 +296,7 @@ class TestMTH5AddData(unittest.TestCase):
         # check to make sure the metadata was transfered
         for cg in self.channel_groups:
             with self.subTest(f"{cg.metadata.component}.start"):
-                self.assertEqual(MTime("2020-01-01T12:00:00"), cg.start)
+                self.assertEqual(MTime(time_stamp="2020-01-01T12:00:00"), cg.start)
             with self.subTest(f"{cg.metadata.component}.sample_rate"):
                 self.assertEqual(1, cg.sample_rate)
             with self.subTest(f"{cg.metadata.component}.n_samples"):

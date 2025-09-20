@@ -424,9 +424,9 @@ class TestRunTS(unittest.TestCase):
         with self.subTest("sample rate"):
             self.assertEqual(self.run_object.sample_rate, self.sample_rate)
         with self.subTest("start"):
-            self.assertEqual(self.run_object.start, MTime(self.start))
+            self.assertEqual(self.run_object.start, MTime(time_stamp=self.start))
         with self.subTest("end"):
-            self.assertEqual(self.run_object.end, MTime(self.end))
+            self.assertEqual(self.run_object.end, MTime(time_stamp=self.end))
 
     def test_sample_interval(self):
         self.assertEqual(1.0 / self.sample_rate, self.run_object.sample_interval)
@@ -441,9 +441,9 @@ class TestRunTS(unittest.TestCase):
             with self.subTest(msg=f"{comp} sample rate"):
                 self.assertEqual(ch.sample_rate, self.sample_rate)
             with self.subTest(msg=f"{comp} start"):
-                self.assertEqual(ch.start, MTime(self.start))
+                self.assertEqual(ch.start, MTime(time_stamp=self.start))
             with self.subTest(msg=f"{comp} end"):
-                self.assertEqual(ch.end, MTime(self.end))
+                self.assertEqual(ch.end, MTime(time_stamp=self.end))
             with self.subTest(msg=f"{comp} component"):
                 self.assertEqual(ch.component, comp)
 
@@ -473,14 +473,16 @@ class TestRunTS(unittest.TestCase):
         with self.subTest("sample rate"):
             self.assertEqual(r_slice.sample_rate, self.sample_rate)
         with self.subTest("start not equal"):
-            self.assertEqual(r_slice.start, MTime(start))
+            self.assertEqual(r_slice.start, MTime(time_stamp=start))
 
         with self.subTest("start equal"):
             # the time index does not have a value at the requested location
             # so it grabs the closest one.
-            self.assertEqual(r_slice.start, MTime(start))
+            self.assertEqual(r_slice.start, MTime(time_stamp=start))
         with self.subTest("end"):
-            self.assertEqual(r_slice.end, MTime("2015-01-08T19:50:01.875000+00:00"))
+            self.assertEqual(
+                r_slice.end, MTime(time_stamp="2015-01-08T19:50:01.875000+00:00")
+            )
 
         with self.subTest("npts"):
             self.assertEqual(r_slice.dataset.ex.data.shape[0], npts)

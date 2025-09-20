@@ -143,8 +143,8 @@ class TestFCFromXarray(unittest.TestCase):
         # Expected properties of the test dataset stored as csv
         self.ds = read_fc_csv(csv_fn)
         self.expected_sr_decimation_level = 0.015380859375
-        self.expected_start = MTime(self.ds.time[0].values)
-        self.expected_end = MTime(self.ds.time[-1].values)
+        self.expected_start = MTime(time_stamp=self.ds.time[0].values)
+        self.expected_end = MTime(time_stamp=self.ds.time[-1].values)
         self.expected_window_step = 6144
         self.expected_shape = (6, 64)
         self.expected_time = np.array(
