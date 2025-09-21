@@ -300,7 +300,18 @@ class ChannelTS:
         survey_metadata.stations.append(metadata.Station(id="0"))
         survey_metadata.stations[0].runs.append(metadata.Run(id="0"))
 
-        ch_metadata = meta_classes[self.channel_type]()
+        # Create temporary channel metadata with valid default components
+        channel_type_lower = self.channel_type.lower()
+        if channel_type_lower == "electric":
+            ch_metadata = meta_classes[self.channel_type](component="ex")
+        elif channel_type_lower == "magnetic":
+            ch_metadata = meta_classes[self.channel_type](component="hx")
+        elif channel_type_lower == "auxiliary":
+            ch_metadata = meta_classes[self.channel_type](component="temperature")
+        else:
+            # Fallback for unknown types - try with a generic component
+            ch_metadata = meta_classes[self.channel_type](component="temp")
+
         ch_metadata.type = self.channel_type.lower()
         survey_metadata.stations[0].runs[0].channels.append(ch_metadata)
 

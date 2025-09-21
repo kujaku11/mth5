@@ -286,13 +286,13 @@ class RunTS:
                 # if a channelTS is input then it comes with run and station metadata
                 # use those first, then the user can update later.
 
-                if item.station_metadata.id not in ["0", None]:
-                    if station_metadata.id not in ["0", None]:
+                if item.station_metadata.id not in ["0", None, ""]:
+                    if station_metadata.id not in ["0", None, ""]:
                         station_metadata.update(item.station_metadata, match=["id"])
                     else:
                         station_metadata.update(item.station_metadata)
-                if item.run_metadata.id not in ["0", None]:
-                    if run_metadata.id not in ["0", None]:
+                if item.run_metadata.id not in ["0", None, ""]:
+                    if run_metadata.id not in ["0", None, ""]:
                         run_metadata.update(item.run_metadata, match=["id"])
                     else:
                         run_metadata.update(item.run_metadata)
@@ -453,11 +453,22 @@ class RunTS:
 
         filter_list = []
         if ch_name in self.dataset.keys():
-            for filter_name in self.dataset[ch_name].attrs["filter.name"]:
-                try:
-                    filter_list.append(self.filters[filter_name])
-                except KeyError:
-                    self.logger.debug(f"Could not find {filter_name} in filters")
+            if "filter.name" in self.dataset[ch_name].attrs.keys():
+                for filter_name in self.dataset[ch_name].attrs["filter.name"]:
+                    try:
+                        filter_list.append(self.filters[filter_name])
+                    except KeyError:
+                        self.logger.debug(f"Could not find {filter_name} in filters")
+            elif "filters" in self.dataset[ch_name].attrs.keys():
+                for ch_filter in self.dataset[ch_name].attrs["filters"]:
+                    try:
+                        filter_list.append(
+                            self.filters[ch_filter["applied_filter"]["name"]]
+                        )
+                    except KeyError:
+                        self.logger.debug(
+                            f"Could not find {ch_filter['applied_filter']['name']} in filters"
+                        )
         return ChannelResponse(filters_list=filter_list)
 
     def __getattr__(self, name):

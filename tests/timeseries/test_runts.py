@@ -91,7 +91,7 @@ class TestRunTSClass(unittest.TestCase):
         """Modified to workaround mt_metadata issue #264"""
         m1 = metadata.Station(id="0")
         m2 = self.run_object._validate_station_metadata({"id": "0"})
-        objects_are_equal = m1.__eq__(m2, ignore_keys=["provenance.creation_time"])
+        objects_are_equal = m1.__eq__(m2)
         self.assertTrue(objects_are_equal)
 
     def test_validate_survey_metadata(self):
@@ -292,7 +292,7 @@ class TestRunTS(unittest.TestCase):
         self.npts = 4096
 
         pz = PoleZeroFilter(
-            units_in="volts", units_out="nanotesla", name="instrument_response"
+            units_in="Volt", units_out="nanoTesla", name="instrument_response"
         )
         pz.poles = [
             (-6.283185 + 10.882477j),
@@ -533,7 +533,7 @@ class TestMergeRunTS(unittest.TestCase):
         self.end_02 = "2015-01-08T20:06:23.875000+00:00"
 
         self.pz1 = PoleZeroFilter(
-            units_in="volts", units_out="nanotesla", name="filter_1"
+            units_in="Volt", units_out="nanoTesla", name="filter_1"
         )
         self.pz1.poles = [
             (-6.283185 + 10.882477j),
@@ -756,23 +756,23 @@ class TestMergeRunTS(unittest.TestCase):
 
 class TestMisalignedRuns(unittest.TestCase):
     @classmethod
-    def setUpClass(self):
-        self.maxDiff = None
+    def setUpClass(cls):
+        cls.maxDiff = None
         channel_list = []
-        self.common_start = "2020-01-01T00:00:00+00:00"
-        self.sample_rate = 1.0
-        self.hx_n_samples = 4098
-        self.ey_n_samples = 4096
-        self.station_metadata = metadata.Station(id="mt001")
-        self.run_metadata = metadata.Run(id="001")
+        cls.common_start = "2020-01-01T00:00:00+00:00"
+        cls.sample_rate = 1.0
+        cls.hx_n_samples = 4098
+        cls.ey_n_samples = 4096
+        cls.station_metadata = metadata.Station(id="mt001")
+        cls.run_metadata = metadata.Run(id="001")
         channel_list = []
 
         ### HX
         hx_metadata = metadata.Magnetic(component="hx")
-        hx_metadata.time_period.start = self.common_start
-        hx_metadata.sample_rate = self.sample_rate
+        hx_metadata.time_period.start = cls.common_start
+        hx_metadata.sample_rate = cls.sample_rate
 
-        t = np.arange(self.hx_n_samples)
+        t = np.arange(cls.hx_n_samples)
         data = np.sum(
             [
                 np.cos(2 * np.pi * w * t + phi)
@@ -781,21 +781,21 @@ class TestMisalignedRuns(unittest.TestCase):
             axis=0,
         )
 
-        self.hx = ChannelTS(
+        cls.hx = ChannelTS(
             channel_type="magnetic",
             data=data,
             channel_metadata=hx_metadata,
-            run_metadata=self.run_metadata,
-            station_metadata=self.station_metadata,
+            run_metadata=cls.run_metadata,
+            station_metadata=cls.station_metadata,
         )
-        channel_list.append(self.hx)
+        channel_list.append(cls.hx)
 
         ## EY
         ey_metadata = metadata.Electric(component="ey")
-        ey_metadata.time_period.start = self.common_start
-        ey_metadata.sample_rate = self.sample_rate
+        ey_metadata.time_period.start = cls.common_start
+        ey_metadata.sample_rate = cls.sample_rate
 
-        t = np.arange(self.ey_n_samples)
+        t = np.arange(cls.ey_n_samples)
         data = np.sum(
             [
                 np.cos(2 * np.pi * w * t + phi)
@@ -804,34 +804,34 @@ class TestMisalignedRuns(unittest.TestCase):
             axis=0,
         )
 
-        self.ey = ChannelTS(
+        cls.ey = ChannelTS(
             channel_type="electric",
             data=data,
             channel_metadata=ey_metadata,
-            run_metadata=self.run_metadata,
-            station_metadata=self.station_metadata,
+            run_metadata=cls.run_metadata,
+            station_metadata=cls.station_metadata,
         )
-        channel_list.append(self.ey)
+        channel_list.append(cls.ey)
 
         ## bad channel
         ex_metadata = metadata.Electric(component="ex")
         ex_metadata.time_period.start = "2021-05-05T12:10:05+00:00"
-        ex_metadata.sample_rate = self.sample_rate + 10
+        ex_metadata.sample_rate = cls.sample_rate + 10
 
-        self.bad_ch = ChannelTS(
+        cls.bad_ch = ChannelTS(
             channel_type="electric",
             data=data,
             channel_metadata=ex_metadata,
-            run_metadata=self.run_metadata,
-            station_metadata=self.station_metadata,
+            run_metadata=cls.run_metadata,
+            station_metadata=cls.station_metadata,
         )
 
-        self.run_ts = RunTS(channel_list)
-        self.ch_list = [self.ey.data_array, self.hx.data_array]
-        self.bad_ch_list = [
-            self.ey.data_array,
-            self.hx.data_array,
-            self.bad_ch.data_array,
+        cls.run_ts = RunTS(channel_list)
+        cls.ch_list = [cls.ey.data_array, cls.hx.data_array]
+        cls.bad_ch_list = [
+            cls.ey.data_array,
+            cls.hx.data_array,
+            cls.bad_ch.data_array,
         ]
 
     def test_check_sample_rate(self):
