@@ -367,7 +367,16 @@ class ChannelTS:
                 pass
             channel_metadata = {self.channel_type: channel_metadata}
         self.channel_type = list(channel_metadata.keys())[0]
-        ch_metadata = meta_classes[self.channel_type]()
+        # Create channel metadata with proper default component
+        channel_type_lower = self.channel_type.lower()
+        if channel_type_lower == "electric":
+            ch_metadata = meta_classes[self.channel_type](component="ex")
+        elif channel_type_lower == "magnetic":
+            ch_metadata = meta_classes[self.channel_type](component="hx")
+        elif channel_type_lower == "auxiliary":
+            ch_metadata = meta_classes[self.channel_type](component="temperature")
+        else:
+            ch_metadata = meta_classes[self.channel_type]()
         self.logger.debug("Loading from metadata dict")
         ch_metadata.from_dict(channel_metadata)
         channel_metadata = ch_metadata.copy()
@@ -519,7 +528,18 @@ class ChannelTS:
                 runs[0] = metadata.Run(id="0")
             # be sure there is a level below
             if len(runs[0].channels) == 0:
-                ch_metadata = meta_classes[self.channel_type]()
+                # Create channel metadata with proper default component
+                channel_type_lower = self.channel_type.lower()
+                if channel_type_lower == "electric":
+                    ch_metadata = meta_classes[self.channel_type](component="ex")
+                elif channel_type_lower == "magnetic":
+                    ch_metadata = meta_classes[self.channel_type](component="hx")
+                elif channel_type_lower == "auxiliary":
+                    ch_metadata = meta_classes[self.channel_type](
+                        component="temperature"
+                    )
+                else:
+                    ch_metadata = meta_classes[self.channel_type]()
                 ch_metadata.type = self.channel_type.lower()
                 runs[0].channels.append(ch_metadata)
             stations = ListDict()
@@ -721,7 +741,16 @@ class ChannelTS:
             for key in [k for k in meta_dict.keys() if "run." in k]:
                 run_dict[key.split("run.")[-1]] = meta_dict.pop(key)
             self.channel_type = meta_dict["type"]
-            ch_metadata = meta_classes[self.channel_type]()
+            # Create channel metadata with proper default component
+            channel_type_lower = self.channel_type.lower()
+            if channel_type_lower == "electric":
+                ch_metadata = meta_classes[self.channel_type](component="ex")
+            elif channel_type_lower == "magnetic":
+                ch_metadata = meta_classes[self.channel_type](component="hx")
+            elif channel_type_lower == "auxiliary":
+                ch_metadata = meta_classes[self.channel_type](component="temperature")
+            else:
+                ch_metadata = meta_classes[self.channel_type]()
             ch_metadata.from_dict({self.channel_type: meta_dict})
 
             self.survey_metadata.from_dict({"survey": survey_dict})
@@ -770,7 +799,15 @@ class ChannelTS:
                 f"Changing metadata from {self.channel_type} to {value}, "
                 "will translate any similar attributes."
             )
-            channel_metadata = meta_classes[value]()
+            # Create channel metadata with proper default component
+            if value.lower() == "electric":
+                channel_metadata = meta_classes[value](component="ex")
+            elif value.lower() == "magnetic":
+                channel_metadata = meta_classes[value](component="hx")
+            elif value.lower() == "auxiliary":
+                channel_metadata = meta_classes[value](component="temperature")
+            else:
+                channel_metadata = meta_classes[value]()
             self.logger.debug(msg)
             for key in channel_metadata.to_dict(single=True).keys():
                 # need to skip type otherwise it keeps the same type

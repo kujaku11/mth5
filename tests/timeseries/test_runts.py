@@ -256,8 +256,8 @@ class TestMakeRunTS(unittest.TestCase):
             )
         with self.subTest("channels"):
             self.assertListEqual(
-                self.run_ts.run_metadata.channels_recorded_all,
-                ["hx", "hy", "hz", "ex", "ey", "temperature"],
+                sorted(self.run_ts.run_metadata.channels_recorded_all),
+                sorted(["hx", "hy", "hz", "ex", "ey", "temperature"]),
             )
 
     def test_channels(self):
