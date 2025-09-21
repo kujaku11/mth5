@@ -370,11 +370,11 @@ class ChannelTS:
         # Create channel metadata with proper default component
         channel_type_lower = self.channel_type.lower()
         if channel_type_lower == "electric":
-            ch_metadata = meta_classes[self.channel_type](component="ex")
+            ch_metadata = meta_classes[self.channel_type]()
         elif channel_type_lower == "magnetic":
-            ch_metadata = meta_classes[self.channel_type](component="hx")
+            ch_metadata = meta_classes[self.channel_type]()
         elif channel_type_lower == "auxiliary":
-            ch_metadata = meta_classes[self.channel_type](component="temperature")
+            ch_metadata = meta_classes[self.channel_type]()
         else:
             ch_metadata = meta_classes[self.channel_type]()
         self.logger.debug("Loading from metadata dict")
