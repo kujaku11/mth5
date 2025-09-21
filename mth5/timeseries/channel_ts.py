@@ -1208,7 +1208,11 @@ class ChannelTS:
         def bool_flip(x):
             return bool(int(x) - 1)
 
-        if self.channel_metadata.filter.name is []:
+        if hasattr(self.channel_metadata, "filter"):
+            if self.channel_metadata.filter.applied is []:
+                self.logger.warning("No filters to apply to calibrate time series data")
+                return self.copy()
+        elif self.channel_metadata.filters is []:
             self.logger.warning("No filters to apply to calibrate time series data")
             return self.copy()
 
@@ -1239,10 +1243,16 @@ class ChannelTS:
         )
 
         # update "applied" booleans
-        applied_filters = calibrated_ts.channel_metadata.filter.applied
-        for idx in indices_to_flip:
-            applied_filters[idx] = bool_flip(applied_filters[idx])
-        calibrated_ts.channel_metadata.filter.applied = applied_filters
+        if hasattr(calibrated_ts.channel_metadata, "filter"):
+            applied_filters = calibrated_ts.channel_metadata.filter.applied
+            for idx in indices_to_flip:
+                applied_filters[idx] = bool_flip(applied_filters[idx])
+            calibrated_ts.channel_metadata.filter.applied = applied_filters
+        else:
+            for idx in indices_to_flip:
+                calibrated_ts.channel_metadata.filters[idx].applied = bool_flip(
+                    calibrated_ts.channel_metadata.filters[idx].applied
+                )
 
         # update units
         calibrated_units = self.get_calibrated_units()

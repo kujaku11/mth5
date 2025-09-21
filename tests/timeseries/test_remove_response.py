@@ -27,7 +27,7 @@ class TestRemoveResponse(unittest.TestCase):
     def setUpClass(self):
         # pole zero filter
         pz1 = PoleZeroFilter(
-            units_in="nanotesla", units_out="volts", name="instrument_response"
+            units_in="nanoTesla", units_out="Volt", name="instrument_response"
         )
         pz1.poles = [
             (-6.283185 + 10.882477j),
@@ -38,13 +38,17 @@ class TestRemoveResponse(unittest.TestCase):
         pz1.normalization_factor = 18244400
 
         # channel properties
-        self.channel = ChannelTS()
-        self.channel.channel_metadata.filter.applied = [True,]
-        self.channel.channel_metadata.filter.name = ["instrument_response",]# "instrument_response2"]
+        self.channel = ChannelTS(channel_type="magnetic")
         self.channel.channel_metadata.component = "hx"
-        self.channel.channel_metadata.units = "volt"
-        #self.channel.channel_metadata.units = "digital counts"
-        self.channel.channel_response.filters_list = [pz1,]
+        self.channel.channel_metadata.units = "Volt"
+        self.channel.channel_metadata.add_filter(
+            name="instrument_response", applied=True
+        )
+
+        # self.channel.channel_metadata.units = "digital counts"
+        self.channel.channel_response.filters_list = [
+            pz1,
+        ]
         self.channel.sample_rate = 1
         n_samples = 4096
         self.t = np.arange(n_samples) * self.channel.sample_interval
@@ -76,7 +80,9 @@ class TestRemoveResponse(unittest.TestCase):
 
     def test_applied(self):
         self.assertTrue(
-            (np.array(self.calibrated_ts.channel_metadata.filter.applied) == False).all()
+            (
+                np.array(self.calibrated_ts.channel_metadata.filter.applied) == False
+            ).all()
         )
 
     def test_returned_metadata(self):
