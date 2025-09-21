@@ -466,6 +466,8 @@ class ChannelTS:
         """
         survey metadata
         """
+        self._survey_metadata.stations[0].runs.update_keys()
+        self._survey_metadata.stations.update_keys()
         return self._survey_metadata
 
     @survey_metadata.setter
@@ -486,7 +488,7 @@ class ChannelTS:
         """
         station metadata
         """
-
+        self._survey_metadata.stations.update_keys()
         return self.survey_metadata.stations[0]
 
     @station_metadata.setter
@@ -521,6 +523,8 @@ class ChannelTS:
         station metadata
         """
 
+        self._survey_metadata.stations[0].runs.update_keys()
+        self._survey_metadata.stations[0].runs[0].channels.update_keys()
         return self.survey_metadata.stations[0].runs[0]
 
     @run_metadata.setter
@@ -1094,15 +1098,9 @@ class ChannelTS:
                 )
 
     def get_calibration_operation(self):
-        if (
-            self.channel_response.units_out
-            == self.channel_metadata.unit_object.abbreviation
-        ):
+        if self.channel_response.units_out == self.channel_metadata.unit_object.name:
             calibration_operation = "divide"
-        elif (
-            self.channel_response.units_in
-            == self.channel_metadata.unit_object.abbreviation
-        ):
+        elif self.channel_response.units_in == self.channel_metadata.unit_object.name:
             calibration_operation = "multiply"
             self.logger.warning(
                 "Unexpected Inverse Filter is being corrected -- something maybe wrong here "
@@ -1133,10 +1131,7 @@ class ChannelTS:
         :rtype: tuple (of two strings_
         """
 
-        if (
-            self.channel_response.units_out
-            == self.channel_metadata.unit_object.abbreviation
-        ):
+        if self.channel_response.units_out == self.channel_metadata.unit_object.name:
             calibrated_units = self.channel_response.units_in
         elif (
             self.channel_response.units_in == None

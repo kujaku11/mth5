@@ -81,7 +81,8 @@ class TestRemoveResponse(unittest.TestCase):
     def test_applied(self):
         self.assertTrue(
             (
-                np.array(self.calibrated_ts.channel_metadata.filter.applied) == False
+                np.array(self.calibrated_ts.channel_metadata.filters[0].applied)
+                == False
             ).all()
         )
 
