@@ -24,6 +24,7 @@ from mt_metadata.base import BaseDict
 from mt_metadata import timeseries
 from mt_metadata.timeseries import filters
 from mt_metadata.utils.validators import validate_attribute
+from mt_metadata.utils.summarize import summarize_standards
 
 ts_classes = dict(inspect.getmembers(timeseries, inspect.isclass))
 flt_classes = dict(inspect.getmembers(filters, inspect.isclass))
@@ -134,9 +135,7 @@ class StandardsGroup(BaseGroup):
             raise MTH5TableError(msg)
         meta_item = self.summary_table.array[find]
         lines = ["", attribute_name, "-" * (len(attribute_name) + 4)]
-        for name, value in zip(
-            meta_item.dtype.names[1:], meta_item.item()[1:]
-        ):
+        for name, value in zip(meta_item.dtype.names[1:], meta_item.item()[1:]):
             if isinstance(value, (bytes, np.bytes_)):
                 value = value.decode()
             lines.append("\t{0:<14} {1}".format(name + ":", value))
@@ -150,6 +149,8 @@ class StandardsGroup(BaseGroup):
         :param summary_dict: Flattened dictionary of all metadata standards
                              within the survey.
         :type summary_dict: dictionary
+
+        TODO: need to adapt this to accept a dataframe.
 
         """
 
