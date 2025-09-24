@@ -122,9 +122,7 @@ def get_sampling_step(darray, dim=None, rtol=1e-3):
         t_scale = 1e3
     else:
         t_scale = 1
-    dt_avg = (
-        float(coord[-1] - coord[0]) / (len(coord) - 1)
-    ) / t_scale  # N-1 segments
+    dt_avg = (float(coord[-1] - coord[0]) / (len(coord) - 1)) / t_scale  # N-1 segments
     dt_first = float(coord[1] - coord[0]) / t_scale
 
     if abs(dt_avg - dt_first) > rtol * min(dt_first, dt_avg):
@@ -217,11 +215,13 @@ def frequency_filter(
         apply_kwargs = {}
     dim = get_maybe_only_dim(darray, dim)
 
-    f_crit_norm = np.asarray(f_crit, dtype=np.float)
+    f_crit_norm = np.asarray(f_crit, dtype=np.float64)
     if not in_nyq:  # normalize by Nyquist frequency
         f_crit_norm *= 2 * get_sampling_step(darray, dim)
     if np.any(
-        np.isnan(np.asarray(darray))
+        np.isnan(
+            np.asarray(darray.to_array() if isinstance(darray, xr.Dataset) else darray)
+        )
     ):  # only warn since simple forward-filter or FIR is valid
         warnings.warn(
             "data contains NaNs, filter will propagate them",
@@ -229,9 +229,7 @@ def frequency_filter(
             stacklevel=2,
         )
     if sosfiltfilt and irtype == "iir":
-        sos = scipy.signal.iirfilter(
-            order, f_crit_norm, output="sos", **kwargs
-        )
+        sos = scipy.signal.iirfilter(order, f_crit_norm, output="sos", **kwargs)
         if filtfilt:
             ret = xr.apply_ufunc(
                 sosfiltfilt,
@@ -412,7 +410,7 @@ def decimate(
     darray: Union[xr.Dataset, xr.DataArray],
     target_sample_rate: float,
     n_order: int = 8,
-    dim: Optional[str] = None
+    dim: Optional[str] = None,
 ):
     """
     Decimate data following the method of scipy.signal.decimate.
@@ -511,7 +509,9 @@ def resample_poly(darray, new_sample_rate, dim=None, pad_type="mean"):
             f"The ratio is {new_step}.  Use the new dimensions with caution."
         )
         # need to reset the end time
-        end_time = darray[dim].values[0] + np.timedelta64(int(np.rint(((ret[dim].size -1) / new_sample_rate)*1E9)), "ns")
+        end_time = darray[dim].values[0] + np.timedelta64(
+            int(np.rint(((ret[dim].size - 1) / new_sample_rate) * 1e9)), "ns"
+        )
         if dim in ["time"]:
             new_dim = pd.date_range(
                 darray[dim].values[0],
@@ -519,7 +519,9 @@ def resample_poly(darray, new_sample_rate, dim=None, pad_type="mean"):
                 periods=ret[dim].size,
             )
         else:
-            end_index = int(np.rint((ret[dim].size - (darray[dim].size / new_step)))) - 1
+            end_index = (
+                int(np.rint((ret[dim].size - (darray[dim].size / new_step)))) - 1
+            )
             new_dim = np.linspace(
                 darray[dim].values[0], darray[dim].values[end_index], ret[dim].size
             )
@@ -532,9 +534,7 @@ def resample_poly(darray, new_sample_rate, dim=None, pad_type="mean"):
             f"conflicting axes sizes {n_samples_data} data and {n_samples_axis}"
             " axes after resampling"
         )
-        logger.info(
-            f"trimming {dim} axis from {n_samples_axis} to {n_samples_data}"
-        )
+        logger.info(f"trimming {dim} axis from {n_samples_axis} to {n_samples_data}")
         new_dim = new_dim[:n_samples_data]
 
     ret[dim] = new_dim
