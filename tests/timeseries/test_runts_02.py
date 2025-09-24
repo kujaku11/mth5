@@ -74,9 +74,7 @@ class TestMakeRunTS(unittest.TestCase):
 
     def test_station_metadata(self):
         with self.subTest("station id"):
-            self.assertEqual(
-                self.run_ts.station_metadata.id, self.station_metadata.id
-            )
+            self.assertEqual(self.run_ts.station_metadata.id, self.station_metadata.id)
         with self.subTest("start"):
             self.assertEqual(
                 self.run_ts.station_metadata.time_period.start,
@@ -104,7 +102,7 @@ class TestMakeRunTS(unittest.TestCase):
         with self.subTest("channels"):
             self.assertListEqual(
                 self.run_ts.run_metadata.channels_recorded_all,
-                ["hx", "hy", "hz", "ex", "ey", "temperature"],
+                sorted(["hx", "hy", "hz", "ex", "ey", "temperature"]),
             )
 
     def test_channels(self):
