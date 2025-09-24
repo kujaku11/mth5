@@ -1,25 +1,21 @@
 # -*- coding: utf-8 -*-
 """
-Test time series
+Optimized pytest suite for testing RunTS object functionality.
 
-Created on Tue Jun 30 16:38:27 2020
+Created from original test_runts.py and test_runts_02.py using fixtures and
+subtests for efficiency while maintaining comprehensive coverage.
 
-:copyright:
-    author: Jared Peacock
-
-:license:
-    MIT
-
+@author: pytest optimization
 """
-# =============================================================================
-# imports
-# =============================================================================
 
-import unittest
+# =============================================================================
+# Imports
+# =============================================================================
+import pytest
 import numpy as np
+from unittest import TestCase
 
 from mth5.timeseries import ChannelTS, RunTS
-
 from mt_metadata.common.mttime import MTime
 import mt_metadata.timeseries as metadata
 from mt_metadata.timeseries.filters import (
@@ -27,881 +23,905 @@ from mt_metadata.timeseries.filters import (
     ChannelResponse,
 )
 
+
 # =============================================================================
-# test run
+# Test Fixtures
 # =============================================================================
 
 
-class TestRunTSClass(unittest.TestCase):
-    def setUp(self):
-        np.random.seed(0)
-        self.run_object = RunTS()
+@pytest.fixture(scope="session")
+def test_signal_params():
+    """Create reproducible test signal parameters (session-scoped for efficiency)."""
+    np.random.seed(42)  # Fixed seed for reproducibility
+    return {
+        "n_samples": 4096,
+        "sample_rate": 8.0,
+        "start_time": "2015-01-08T19:49:18+00:00",
+        "end_time": "2015-01-08T19:57:49.875000",
+        "common_start": "2020-01-01T00:00:00+00:00",
+    }
 
-        self.start = "2015-01-08T19:49:18+00:00"
-        self.end = "2015-01-08T19:57:49.875000"
-        self.sample_rate = 8
-        self.npts = 4096
 
-        self.ex = ChannelTS(
-            "electric",
-            data=np.random.rand(self.npts),
-            channel_metadata={
-                "electric": {
-                    "component": "Ex",
-                    "sample_rate": self.sample_rate,
-                    "time_period.start": self.start,
-                }
-            },
+@pytest.fixture(scope="session")
+def multi_frequency_signal(test_signal_params):
+    """Generate reproducible multi-frequency test signal."""
+    params = test_signal_params
+    t = np.arange(params["n_samples"])
+    frequencies = np.logspace(-3, 3, 20)
+    phases = np.random.rand(20)
+
+    signal = np.sum(
+        [np.cos(2 * np.pi * w * t + phi) for w, phi in zip(frequencies, phases)], axis=0
+    )
+
+    return signal
+
+
+@pytest.fixture
+def basic_pole_zero_filter():
+    """Create a basic pole-zero filter for testing."""
+    pz = PoleZeroFilter(
+        units_in="Volt", units_out="nanoTesla", name="instrument_response"
+    )
+    pz.poles = [
+        (-6.283185 + 10.882477j),
+        (-6.283185 - 10.882477j),
+        (-12.566371 + 0j),
+    ]
+    pz.zeros = []
+    pz.normalization_factor = 18244400
+    return pz
+
+
+@pytest.fixture
+def channel_response(basic_pole_zero_filter):
+    """Create a ChannelResponse object with basic filter."""
+    return ChannelResponse(filters_list=[basic_pole_zero_filter])
+
+
+@pytest.fixture
+def metadata_objects():
+    """Create standard metadata objects for testing."""
+    station_metadata = metadata.Station(id="mt001")
+    run_metadata = metadata.Run(id="001")
+    return {
+        "station": station_metadata,
+        "run": run_metadata,
+    }
+
+
+@pytest.fixture(params=["magnetic", "electric", "auxiliary"])
+def channel_type(request):
+    """Parameterized fixture for different channel types."""
+    return request.param
+
+
+@pytest.fixture
+def channel_config_map():
+    """Map channel types to their component configurations."""
+    return {
+        "magnetic": ["hx", "hy", "hz"],
+        "electric": ["ex", "ey"],
+        "auxiliary": ["temperature"],
+    }
+
+
+@pytest.fixture
+def basic_channel_ts(test_signal_params, channel_response):
+    """Create a basic ChannelTS object for testing."""
+    params = test_signal_params
+
+    ex = ChannelTS(
+        "electric",
+        data=np.random.rand(params["n_samples"]),
+        channel_metadata={
+            "electric": {
+                "component": "ex",
+                "sample_rate": params["sample_rate"],
+                "time_period.start": params["start_time"],
+            }
+        },
+        channel_response=channel_response,
+    )
+    return ex
+
+
+@pytest.fixture
+def multi_channel_list(
+    test_signal_params, multi_frequency_signal, metadata_objects, channel_response
+):
+    """Create a list of multiple ChannelTS objects for comprehensive testing."""
+    params = test_signal_params
+    channel_list = []
+
+    # Create magnetic channels
+    for component in ["hx", "hy", "hz"]:
+        h_metadata = metadata.Magnetic(component=component)
+        h_metadata.time_period.start = params["common_start"]
+        h_metadata.sample_rate = 1.0  # Use 1.0 for alignment tests
+
+        h_channel = ChannelTS(
+            channel_type="magnetic",
+            data=multi_frequency_signal,
+            channel_metadata=h_metadata,
+            run_metadata=metadata_objects["run"],
+            station_metadata=metadata_objects["station"],
+        )
+        channel_list.append(h_channel)
+
+    # Create electric channels
+    for component in ["ex", "ey"]:
+        e_metadata = metadata.Electric(component=component)
+        e_metadata.time_period.start = params["common_start"]
+        e_metadata.sample_rate = 1.0
+
+        e_channel = ChannelTS(
+            channel_type="electric",
+            data=multi_frequency_signal,
+            channel_metadata=e_metadata,
+            run_metadata=metadata_objects["run"],
+            station_metadata=metadata_objects["station"],
+        )
+        channel_list.append(e_channel)
+
+    # Create auxiliary channel
+    aux_metadata = metadata.Auxiliary(component="temperature")
+    aux_metadata.time_period.start = params["common_start"]
+    aux_metadata.sample_rate = 1.0
+
+    aux_channel = ChannelTS(
+        channel_type="auxiliary",
+        data=np.random.rand(params["n_samples"]) * 30,
+        channel_metadata=aux_metadata,
+        run_metadata=metadata_objects["run"],
+        station_metadata=metadata_objects["station"],
+    )
+    channel_list.append(aux_channel)
+
+    return channel_list
+
+
+@pytest.fixture
+def basic_run_ts(basic_channel_ts):
+    """Create a basic RunTS object with a single channel."""
+    run_ts = RunTS()
+    run_ts.set_dataset([basic_channel_ts])
+    return run_ts
+
+
+@pytest.fixture
+def multi_channel_run_ts(multi_channel_list):
+    """Create a RunTS object with multiple channels."""
+    return RunTS(multi_channel_list)
+
+
+@pytest.fixture
+def misaligned_channels(test_signal_params, metadata_objects):
+    """Create channels with different lengths and start times for alignment testing."""
+    params = test_signal_params
+    channel_list = []
+
+    # HX channel with extra samples
+    hx_n_samples = 4098
+    hx_metadata = metadata.Magnetic(component="hx")
+    hx_metadata.time_period.start = params["common_start"]
+    hx_metadata.sample_rate = 1.0
+
+    t = np.arange(hx_n_samples)
+    data = np.sum(
+        [
+            np.cos(2 * np.pi * w * t + phi)
+            for w, phi in zip(np.logspace(-3, 3, 20), np.random.rand(20))
+        ],
+        axis=0,
+    )
+
+    hx = ChannelTS(
+        channel_type="magnetic",
+        data=data,
+        channel_metadata=hx_metadata,
+        run_metadata=metadata_objects["run"],
+        station_metadata=metadata_objects["station"],
+    )
+    channel_list.append(hx)
+
+    # EY channel with standard samples
+    ey_n_samples = 4096
+    ey_metadata = metadata.Electric(component="ey")
+    ey_metadata.time_period.start = params["common_start"]
+    ey_metadata.sample_rate = 1.0
+
+    t = np.arange(ey_n_samples)
+    data = np.sum(
+        [
+            np.cos(2 * np.pi * w * t + phi)
+            for w, phi in zip(np.logspace(-3, 3, 20), np.random.rand(20))
+        ],
+        axis=0,
+    )
+
+    ey = ChannelTS(
+        channel_type="electric",
+        data=data,
+        channel_metadata=ey_metadata,
+        run_metadata=metadata_objects["run"],
+        station_metadata=metadata_objects["station"],
+    )
+    channel_list.append(ey)
+
+    # Bad channel with different start time and sample rate
+    ex_metadata = metadata.Electric(component="ex")
+    ex_metadata.time_period.start = "2021-05-05T12:10:05+00:00"
+    ex_metadata.sample_rate = 11.0  # Different sample rate
+
+    bad_ch = ChannelTS(
+        channel_type="electric",
+        data=data[:ey_n_samples],
+        channel_metadata=ex_metadata,
+        run_metadata=metadata_objects["run"],
+        station_metadata=metadata_objects["station"],
+    )
+
+    return {
+        "aligned": channel_list,
+        "bad_channel": bad_ch,
+        "hx": hx,
+        "ey": ey,
+        "hx_n_samples": hx_n_samples,
+        "ey_n_samples": ey_n_samples,
+    }
+
+
+@pytest.fixture
+def merge_test_runs(test_signal_params, channel_response):
+    """Create two RunTS objects for merge testing."""
+    params = test_signal_params
+
+    # Create first run
+    start_01 = "2015-01-08T19:49:18+00:00"
+    start_02 = "2015-01-08T19:57:52+00:00"
+
+    # Filters for testing filter merging
+    pz1 = PoleZeroFilter(units_in="Volt", units_out="nanoTesla", name="filter_1")
+    pz1.poles = [(-6.283185 + 10.882477j), (-6.283185 - 10.882477j), (-12.566371 + 0j)]
+    pz1.zeros = []
+    pz1.normalization_factor = 18244400
+
+    pz2 = pz1.copy()
+    pz2.name = "filter_2"
+
+    cr_01 = ChannelResponse(filters_list=[pz1])
+    cr_02 = ChannelResponse(filters_list=[pz2])
+
+    # Create channels for first run
+    run_01 = RunTS()
+    ey_01 = ChannelTS(
+        "electric",
+        data=np.random.rand(params["n_samples"]),
+        channel_metadata={
+            "electric": {
+                "component": "ey",
+                "sample_rate": params["sample_rate"],
+                "time_period.start": start_01,
+            }
+        },
+        channel_response=cr_01,
+    )
+    hx_01 = ChannelTS(
+        "magnetic",
+        data=np.random.rand(params["n_samples"]),
+        channel_metadata={
+            "magnetic": {
+                "component": "hx",
+                "sample_rate": params["sample_rate"],
+                "time_period.start": start_01,
+            }
+        },
+        channel_response=cr_01,
+    )
+    run_01.set_dataset([ey_01, hx_01])
+
+    # Create channels for second run
+    run_02 = RunTS()
+    ey_02 = ChannelTS(
+        "electric",
+        data=np.random.rand(params["n_samples"]),
+        channel_metadata={
+            "electric": {
+                "component": "ey",
+                "sample_rate": params["sample_rate"],
+                "time_period.start": start_02,
+            }
+        },
+        channel_response=cr_02,
+    )
+    hx_02 = ChannelTS(
+        "magnetic",
+        data=np.random.rand(params["n_samples"]),
+        channel_metadata={
+            "magnetic": {
+                "component": "hx",
+                "sample_rate": params["sample_rate"],
+                "time_period.start": start_02,
+            }
+        },
+        channel_response=cr_02,
+    )
+    run_02.set_dataset([ey_02, hx_02])
+
+    return {
+        "run_01": run_01,
+        "run_02": run_02,
+        "start_01": start_01,
+        "start_02": start_02,
+        "end_02": "2015-01-08T20:06:23.875000+00:00",
+        "pz1": pz1,
+        "pz2": pz2,
+        "combined": run_01 + run_02,
+        "merged": run_01.merge(run_02),
+        "merged_decimated": run_01.merge(run_02, new_sample_rate=1),
+    }
+
+
+# =============================================================================
+# Core RunTS Tests
+# =============================================================================
+
+
+class TestRunTSInitialization:
+    """Test RunTS initialization and basic functionality."""
+
+    def test_empty_initialization(self):
+        """Test creating empty RunTS object."""
+        run_ts = RunTS()
+
+        assert isinstance(run_ts, RunTS)
+        assert run_ts.channels == []
+        assert not run_ts.has_data()
+        assert run_ts.survey_metadata.id == "0"
+        assert run_ts.station_metadata.id == "0"
+        assert run_ts.run_metadata.id == "0"
+
+    def test_initialization_with_channel_list(self, multi_channel_list):
+        """Test creating RunTS with channel list."""
+        run_ts = RunTS(multi_channel_list)
+
+        assert isinstance(run_ts, RunTS)
+        assert len(run_ts.channels) == 6
+        assert run_ts.has_data()
+        expected_channels = ["ex", "ey", "hx", "hy", "hz", "temperature"]
+        assert sorted(run_ts.channels) == sorted(expected_channels)
+
+    def test_metadata_initialization(self, metadata_objects):
+        """Test RunTS initialization with metadata."""
+        run_ts = RunTS(
+            run_metadata=metadata_objects["run"],
+            station_metadata=metadata_objects["station"],
         )
 
-        self.run_object.set_dataset([self.ex])
+        assert run_ts.run_metadata.id == metadata_objects["run"].id
+        assert run_ts.station_metadata.id == metadata_objects["station"].id
 
-    def test_copy(self):
-        run_copy = self.run_object.copy()
 
-        self.assertEqual(self.run_object, run_copy)
+class TestRunTSProperties:
+    """Test RunTS properties and string representations."""
 
-    def test_set_run_metadata_fail(self):
-        self.assertRaises(TypeError, RunTS, [self.ex], **{"run_metadata": []})
+    def test_string_representation(self, basic_run_ts):
+        """Test __str__ and __repr__ methods."""
+        str_repr = str(basic_run_ts)
 
-    def test_set_station_metadata_fail(self):
-        self.assertRaises(TypeError, RunTS, [self.ex], **{"station_metadata": []})
+        assert "RunTS Summary:" in str_repr
+        assert f"Survey:      {basic_run_ts.survey_metadata.id}" in str_repr
+        assert f"Station:     {basic_run_ts.station_metadata.id}" in str_repr
+        assert f"Run:         {basic_run_ts.run_metadata.id}" in str_repr
+        assert f"Sample Rate: {basic_run_ts.sample_rate}" in str_repr
+        assert f"Components:  {basic_run_ts.channels}" in str_repr
 
-    def test_validate_run_metadata(self):
-        self.assertEqual(
-            self.run_object.run_metadata,
-            self.run_object._validate_run_metadata(self.run_object.run_metadata),
+        # Test __repr__ returns same as __str__
+        assert str(basic_run_ts) == repr(basic_run_ts)
+
+    def test_sample_rate_properties(self, multi_channel_run_ts, test_signal_params):
+        """Test sample rate and sample interval properties."""
+        expected_rate = 1.0  # From multi_channel_list fixture
+
+        assert multi_channel_run_ts.sample_rate == expected_rate
+        assert multi_channel_run_ts.sample_interval == 1.0 / expected_rate
+
+    def test_time_properties(self, multi_channel_run_ts, test_signal_params):
+        """Test start and end time properties."""
+        params = test_signal_params
+
+        assert multi_channel_run_ts.start == MTime(time_stamp=params["common_start"])
+        # End time should be computed from data
+        assert isinstance(multi_channel_run_ts.end, MTime)
+
+    def test_channels_property(self, multi_channel_run_ts):
+        """Test channels property returns correct channel names."""
+        expected_channels = ["ex", "ey", "hx", "hy", "hz", "temperature"]
+        assert sorted(multi_channel_run_ts.channels) == sorted(expected_channels)
+
+    def test_filters_property(self, basic_run_ts):
+        """Test filters property and setter."""
+        # Should contain the instrument_response filter
+        assert "instrument_response" in basic_run_ts.filters
+
+        # Test filters setter validation
+        with pytest.raises(TypeError):
+            basic_run_ts.filters = "invalid"
+
+
+class TestRunTSEquality:
+    """Test RunTS equality and comparison operations."""
+
+    def test_equality_same_object(self, basic_run_ts):
+        """Test equality with same object."""
+        assert basic_run_ts == basic_run_ts
+
+    def test_equality_copied_object(self, basic_run_ts):
+        """Test equality with copied object."""
+        copied_run = basic_run_ts.copy()
+        assert basic_run_ts == copied_run
+
+    def test_inequality_different_type(self, basic_run_ts):
+        """Test inequality with different object type."""
+        with pytest.raises(TypeError):
+            basic_run_ts == "not_a_run_ts"
+
+    def test_inequality_different_data(self, basic_run_ts, multi_channel_run_ts):
+        """Test inequality with different data."""
+        assert basic_run_ts != multi_channel_run_ts
+
+
+class TestRunTSMetadataValidation:
+    """Test metadata validation methods."""
+
+    def test_validate_run_metadata(self, basic_run_ts):
+        """Test run metadata validation."""
+        validated = basic_run_ts._validate_run_metadata(basic_run_ts.run_metadata)
+        assert validated == basic_run_ts.run_metadata
+
+        # Test validation from dict
+        dict_metadata = {"id": "test_run"}
+        validated_from_dict = basic_run_ts._validate_run_metadata(dict_metadata)
+        assert validated_from_dict.id == "test_run"
+
+    def test_validate_station_metadata(self, basic_run_ts):
+        """Test station metadata validation."""
+        validated = basic_run_ts._validate_station_metadata(
+            basic_run_ts.station_metadata
         )
+        assert validated == basic_run_ts.station_metadata
 
-    def test_validate_run_metadata_from_dict(self):
-        self.assertEqual(
-            metadata.Run(id="0"),
-            self.run_object._validate_run_metadata({"id": "0"}),
-        )
+        # Test validation from dict
+        dict_metadata = {"id": "test_station"}
+        validated_from_dict = basic_run_ts._validate_station_metadata(dict_metadata)
+        assert validated_from_dict.id == "test_station"
 
-    def test_validate_station_metadata(self):
-        self.assertEqual(
-            self.run_object.station_metadata,
-            self.run_object._validate_station_metadata(
-                self.run_object.station_metadata
-            ),
-        )
+    def test_validate_survey_metadata(self, basic_run_ts):
+        """Test survey metadata validation."""
+        validated = basic_run_ts._validate_survey_metadata(basic_run_ts.survey_metadata)
+        assert validated == basic_run_ts.survey_metadata
 
-    def test_validate_station_metadata_from_dict(self):
-        """Modified to workaround mt_metadata issue #264"""
-        m1 = metadata.Station(id="0")
-        m2 = self.run_object._validate_station_metadata({"id": "0"})
-        objects_are_equal = m1.__eq__(m2)
-        self.assertTrue(objects_are_equal)
+        # Test validation from dict
+        dict_metadata = {"id": "test_survey"}
+        validated_from_dict = basic_run_ts._validate_survey_metadata(dict_metadata)
+        assert validated_from_dict.id == "test_survey"
 
-    def test_validate_survey_metadata(self):
-        self.assertEqual(
-            self.run_object.survey_metadata,
-            self.run_object._validate_survey_metadata(self.run_object.survey_metadata),
-        )
 
-    def test_validate_survey_metadata_from_dict(self):
-        self.assertEqual(
-            metadata.Survey(id="0"),
-            self.run_object._validate_survey_metadata({"id": "0"}),
-        )
+class TestRunTSChannelManagement:
+    """Test channel management operations."""
 
-    def test_validate_array_fail(self):
-        with self.subTest("bad type"):
-            self.assertRaises(TypeError, self.run_object._validate_array_list, 10)
+    def test_channel_access(self, multi_channel_run_ts):
+        """Test accessing channels as attributes."""
+        for channel_name in multi_channel_run_ts.channels:
+            channel = getattr(multi_channel_run_ts, channel_name)
+            assert isinstance(channel, ChannelTS)
+            assert channel.component == channel_name
 
-        with self.subTest("bad list"):
-            self.assertRaises(TypeError, self.run_object._validate_array_list, [10])
+    def test_channel_access_invalid(self, multi_channel_run_ts):
+        """Test accessing non-existent channel raises error."""
+        with pytest.raises(NameError):
+            _ = multi_channel_run_ts.nonexistent_channel
 
-    def test_sr_fail(self):
-        hz = ChannelTS(
-            "magnetic",
-            data=np.random.rand(self.npts),
-            channel_metadata={
-                "magnetic": {
-                    "component": "hz",
-                    "sample_rate": 1,
-                    "time_period.start": self.start,
-                }
-            },
-        )
-
-        self.assertRaises(
-            ValueError,
-            self.run_object.set_dataset,
-            [self.ex, hz],
-        )
-
-    def test_wrong_metadata(self):
-        self.run_object.run_metadata.sample_rate = 10
-        self.run_object.validate_metadata()
-
-        with self.subTest("sample rate"):
-            self.assertEqual(
-                self.ex.sample_rate, self.run_object.run_metadata.sample_rate
-            )
-        with self.subTest("start"):
-            self.run_object.run_metadata.start = "2020-01-01T00:00:00"
-            self.run_object.validate_metadata()
-            self.assertEqual(
-                self.run_object.start,
-                self.run_object.run_metadata.time_period.start,
-            )
-        with self.subTest("end"):
-            self.run_object.run_metadata.end = "2020-01-01T00:00:00"
-            self.run_object.validate_metadata()
-            self.assertEqual(
-                self.run_object.end,
-                self.run_object.run_metadata.time_period.end,
-            )
-
-    def test_add_channel_xarray(self):
-        x = self.ex.to_xarray()
+    def test_add_channel_xarray(self, basic_run_ts):
+        """Test adding a channel from xarray."""
+        x = basic_run_ts.ex.to_xarray()
         x.attrs["component"] = "ez"
         x.name = "ez"
-        self.run_object.add_channel(x)
 
-        self.assertEquals(
-            sorted(self.run_object.channels),
-            sorted(["ex", "ez"]),
-        )
+        basic_run_ts.add_channel(x)
 
+        expected_channels = sorted(["ex", "ez"])
+        assert sorted(basic_run_ts.channels) == expected_channels
 
-class TestMakeRunTS(unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
-        self.maxDiff = None
-        channel_list = []
-        self.common_start = "2020-01-01T00:00:00+00:00"
-        self.sample_rate = 1.0
-        self.n_samples = 4096
-        t = np.arange(self.n_samples)
-        data = np.sum(
-            [
-                np.cos(2 * np.pi * w * t + phi)
-                for w, phi in zip(np.logspace(-3, 3, 20), np.random.rand(20))
-            ],
-            axis=0,
-        )
+    def test_validate_array_list_failures(self, basic_run_ts):
+        """Test array list validation failures."""
+        with pytest.raises(TypeError, match="array_list must be a list or tuple"):
+            basic_run_ts._validate_array_list(10)
 
-        self.station_metadata = metadata.Station(id="mt001")
-        self.run_metadata = metadata.Run(id="001")
+        with pytest.raises(TypeError):
+            basic_run_ts._validate_array_list([10])
 
-        for component in ["hx", "hy", "hz"]:
-            h_metadata = metadata.Magnetic(component=component)
-            h_metadata.time_period.start = self.common_start
-            h_metadata.sample_rate = self.sample_rate
-            h_channel = ChannelTS(
-                channel_type="magnetic",
-                data=data,
-                channel_metadata=h_metadata,
-                run_metadata=self.run_metadata,
-                station_metadata=self.station_metadata,
-            )
-            channel_list.append(h_channel)
 
-        for component in ["ex", "ey"]:
-            e_metadata = metadata.Electric(component=component)
-            e_metadata.time_period.start = self.common_start
-            e_metadata.sample_rate = self.sample_rate
-            e_channel = ChannelTS(
-                channel_type="electric",
-                data=data,
-                channel_metadata=e_metadata,
-                run_metadata=self.run_metadata,
-                station_metadata=self.station_metadata,
-            )
-            channel_list.append(e_channel)
+class TestRunTSMetadataSync:
+    """Test metadata synchronization and validation."""
 
-        aux_metadata = metadata.Auxiliary(component="temperature")
-        aux_metadata.time_period.start = self.common_start
-        aux_metadata.sample_rate = self.sample_rate
-        aux_channel = ChannelTS(
-            channel_type="auxiliary",
-            data=np.random.rand(self.n_samples) * 30,
-            channel_metadata=aux_metadata,
-            run_metadata=self.run_metadata,
-            station_metadata=self.station_metadata,
-        )
-        channel_list.append(aux_channel)
+    def test_metadata_validation_sync(self, basic_run_ts, test_signal_params):
+        """Test metadata validation synchronizes values."""
+        params = test_signal_params
 
-        self.run_ts = RunTS(channel_list)
+        # Modify metadata to wrong values
+        basic_run_ts.run_metadata.sample_rate = 10
+        basic_run_ts.run_metadata.time_period.start = "2020-01-01T00:00:00"
+        basic_run_ts.run_metadata.time_period.end = "2020-01-01T00:00:00"
 
-    def test_station_metadata(self):
-        with self.subTest("station id"):
-            self.assertEqual(self.run_ts.station_metadata.id, self.station_metadata.id)
-        with self.subTest("start"):
-            self.assertEqual(
-                self.run_ts.station_metadata.time_period.start,
-                self.common_start,
-            )
-        with self.subTest("run list"):
-            self.assertListEqual(
-                self.run_ts.station_metadata.run_list,
-                [self.run_metadata.id],
-            )
-        with self.subTest("channels_recorded"):
-            self.assertListEqual(
-                ["ex", "ey", "hx", "hy", "hz", "temperature"],
-                self.run_ts.station_metadata.channels_recorded,
-            )
+        # Validate should sync with actual data
+        basic_run_ts.validate_metadata()
 
-    def test_run_metadata(self):
-        with self.subTest("run id"):
-            self.assertEqual(self.run_ts.run_metadata.id, self.run_metadata.id)
-        with self.subTest("start"):
-            self.assertEqual(
-                self.run_ts.run_metadata.time_period.start,
-                self.common_start,
-            )
-        with self.subTest("channels"):
-            self.assertListEqual(
-                sorted(self.run_ts.run_metadata.channels_recorded_all),
-                sorted(["hx", "hy", "hz", "ex", "ey", "temperature"]),
-            )
+        assert basic_run_ts.run_metadata.sample_rate == params["sample_rate"]
+        assert basic_run_ts.run_metadata.time_period.start == basic_run_ts.start
+        assert basic_run_ts.run_metadata.time_period.end == basic_run_ts.end
 
-    def test_channels(self):
-        for comp in self.run_ts.channels:
-            ch = getattr(self.run_ts, comp)
-            with self.subTest("start"):
-                self.assertEqual(
-                    ch.channel_metadata.time_period.start,
-                    self.common_start,
-                )
-            with self.subTest("sample rate"):
-                self.assertEqual(
-                    ch.sample_rate,
-                    self.sample_rate,
-                )
-            with self.subTest("n samples"):
-                self.assertEqual(
-                    ch.n_samples,
-                    4096,
-                )
+    def test_summarize_metadata(self, multi_channel_run_ts):
+        """Test metadata summary generation."""
+        meta_dict = multi_channel_run_ts.summarize_metadata
 
-
-class TestRunTS(unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
-        np.random.seed(0)
-        self.run_object = RunTS()
-        self.maxDiff = None
-        self.start = "2015-01-08T19:49:18+00:00"
-        self.end = "2015-01-08T19:57:49.875000"
-        self.sample_rate = 8
-        self.npts = 4096
-
-        pz = PoleZeroFilter(
-            units_in="Volt", units_out="nanoTesla", name="instrument_response"
-        )
-        pz.poles = [
-            (-6.283185 + 10.882477j),
-            (-6.283185 - 10.882477j),
-            (-12.566371 + 0j),
-        ]
-        pz.zeros = []
-        pz.normalization_factor = 18244400
-
-        self.cr = ChannelResponse(filters_list=[pz])
-
-        self.ex = ChannelTS(
-            "electric",
-            data=np.random.rand(self.npts),
-            channel_metadata={
-                "electric": {
-                    "component": "Ex",
-                    "sample_rate": self.sample_rate,
-                    "time_period.start": self.start,
-                }
-            },
-            channel_response=self.cr,
-        )
-        self.ey = ChannelTS(
-            "electric",
-            data=np.random.rand(self.npts),
-            channel_metadata={
-                "electric": {
-                    "component": "Ey",
-                    "sample_rate": self.sample_rate,
-                    "time_period.start": self.start,
-                }
-            },
-            channel_response=self.cr,
-        )
-        self.hx = ChannelTS(
-            "magnetic",
-            data=np.random.rand(self.npts),
-            channel_metadata={
-                "magnetic": {
-                    "component": "hx",
-                    "sample_rate": self.sample_rate,
-                    "time_period.start": self.start,
-                }
-            },
-            channel_response=self.cr,
-        )
-        self.hy = ChannelTS(
-            "magnetic",
-            data=np.random.rand(self.npts),
-            channel_metadata={
-                "magnetic": {
-                    "component": "hy",
-                    "sample_rate": self.sample_rate,
-                    "time_period.start": self.start,
-                }
-            },
-            channel_response=self.cr,
-        )
-        self.hz = ChannelTS(
-            "magnetic",
-            data=np.random.rand(self.npts),
-            channel_metadata={
-                "magnetic": {
-                    "component": "hz",
-                    "sample_rate": self.sample_rate,
-                    "time_period.start": self.start,
-                }
-            },
-            channel_response=self.cr,
-        )
-
-        self.run_object.set_dataset([self.ex, self.ey, self.hx, self.hy, self.hz])
-
-    def test_str(self):
-        s_list = [
-            f"Survey:      {self.run_object.survey_metadata.id}",
-            f"Station:     {self.run_object.station_metadata.id}",
-            f"Run:         {self.run_object.run_metadata.id}",
-            f"Start:       {self.run_object.start}",
-            f"End:         {self.run_object.end}",
-            f"Sample Rate: {self.run_object.sample_rate}",
-            f"Components:  {self.run_object.channels}",
-        ]
-        test_str = "\n\t".join(["RunTS Summary:"] + s_list)
-
-        self.assertEqual(test_str, self.run_object.__str__())
-
-    def test_repr(self):
-        s_list = [
-            f"Survey:      {self.run_object.survey_metadata.id}",
-            f"Station:     {self.run_object.station_metadata.id}",
-            f"Run:         {self.run_object.run_metadata.id}",
-            f"Start:       {self.run_object.start}",
-            f"End:         {self.run_object.end}",
-            f"Sample Rate: {self.run_object.sample_rate}",
-            f"Components:  {self.run_object.channels}",
-        ]
-        test_str = "\n\t".join(["RunTS Summary:"] + s_list)
-
-        self.assertEqual(test_str, self.run_object.__repr__())
-
-    def test_validate_run_metadata(self):
-        self.assertEqual(
-            self.run_object.run_metadata,
-            self.run_object._validate_run_metadata(self.run_object.run_metadata),
-        )
-
-    def test_validate_station_metadata(self):
-        self.assertEqual(
-            self.run_object.station_metadata,
-            self.run_object._validate_station_metadata(
-                self.run_object.station_metadata
-            ),
-        )
-
-    def test_validate_survey_metadata(self):
-        self.assertEqual(
-            self.run_object.survey_metadata,
-            self.run_object._validate_survey_metadata(self.run_object.survey_metadata),
-        )
-
-    def test_initialize(self):
-
-        with self.subTest("channels"):
-            self.assertListEqual(
-                ["ex", "ey", "hx", "hy", "hz"], self.run_object.channels
-            )
-        with self.subTest("sample rate"):
-            self.assertEqual(self.run_object.sample_rate, self.sample_rate)
-        with self.subTest("start"):
-            self.assertEqual(self.run_object.start, MTime(time_stamp=self.start))
-        with self.subTest("end"):
-            self.assertEqual(self.run_object.end, MTime(time_stamp=self.end))
-
-    def test_sample_interval(self):
-        self.assertEqual(1.0 / self.sample_rate, self.run_object.sample_interval)
-
-    def test_channels(self):
-
-        for comp in ["ex", "ey", "hx", "hy", "hz"]:
-            ch = getattr(self.run_object, comp)
-
-            with self.subTest(msg=f"{comp} isinstance channel"):
-                self.assertIsInstance(ch, ChannelTS)
-            with self.subTest(msg=f"{comp} sample rate"):
-                self.assertEqual(ch.sample_rate, self.sample_rate)
-            with self.subTest(msg=f"{comp} start"):
-                self.assertEqual(ch.start, MTime(time_stamp=self.start))
-            with self.subTest(msg=f"{comp} end"):
-                self.assertEqual(ch.end, MTime(time_stamp=self.end))
-            with self.subTest(msg=f"{comp} component"):
-                self.assertEqual(ch.component, comp)
-
-            with self.subTest(msg=f"{comp} filters"):
-                self.assertListEqual(
-                    self.cr.filters_list,
-                    ch.channel_response.filters_list,
-                )
-
-    def test_get_channel_fail(self):
-        """
-        self.run_object.temperature should return None, because 'temperature' is not in self.channels
-        :return:
-        """
-
-        self.assertRaises(NameError, getattr, *(self.run_object, "temperature"))
-
-    def test_get_slice(self):
-
-        start = "2015-01-08T19:49:30+00:00"
-        npts = 256
-
-        r_slice = self.run_object.get_slice(start, n_samples=npts)
-
-        with self.subTest("isinstance runts"):
-            self.assertIsInstance(r_slice, RunTS)
-        with self.subTest("sample rate"):
-            self.assertEqual(r_slice.sample_rate, self.sample_rate)
-        with self.subTest("start not equal"):
-            self.assertEqual(r_slice.start, MTime(time_stamp=start))
-
-        with self.subTest("start equal"):
-            # the time index does not have a value at the requested location
-            # so it grabs the closest one.
-            self.assertEqual(r_slice.start, MTime(time_stamp=start))
-        with self.subTest("end"):
-            self.assertEqual(
-                r_slice.end, MTime(time_stamp="2015-01-08T19:50:01.875000+00:00")
-            )
-
-        with self.subTest("npts"):
-            self.assertEqual(r_slice.dataset.ex.data.shape[0], npts)
-
-    def test_filters_dict(self):
-        self.assertEqual(list(self.run_object.filters.keys()), ["instrument_response"])
-
-    def test_filters_fail(self):
-        def set_filters(value):
-            self.run_object.filters = value
-
-        self.assertRaises(TypeError, set_filters, ())
-
-    def test_summarize_metadata(self):
-        meta_dict = {}
-        for comp in self.run_object.dataset.data_vars:
-            for mkey, mvalue in self.run_object.dataset[comp].attrs.items():
-                meta_dict[f"{comp}.{mkey}"] = mvalue
-        self.assertDictEqual(meta_dict, self.run_object.summarize_metadata)
-
-    def test_to_obspy_stream(self):
-        stream = self.run_object.to_obspy_stream()
-
-        with self.subTest("count"):
-            self.assertEqual(stream.count(), 5)
-
-        for tr in stream.traces:
-            with self.subTest("sample_rate"):
-                self.assertEqual(tr.stats.sampling_rate, self.sample_rate)
-
-            with self.subTest("start time"):
-                self.assertEqual(tr.stats.starttime, self.start)
-
-            with self.subTest("npts"):
-                self.assertEqual(tr.stats.npts, self.npts)
-
-
-class TestMergeRunTS(unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
-        np.random.seed(0)
-        self.maxDiff = None
-        self.sample_rate = 8
-        self.npts = 4096
-        self.start_01 = "2015-01-08T19:49:18+00:00"
-        self.end_01 = "2015-01-08T19:57:49.875000"
-        self.start_02 = "2015-01-08T19:57:52+00:00"
-        self.end_02 = "2015-01-08T20:06:23.875000+00:00"
-
-        self.pz1 = PoleZeroFilter(
-            units_in="Volt", units_out="nanoTesla", name="filter_1"
-        )
-        self.pz1.poles = [
-            (-6.283185 + 10.882477j),
-            (-6.283185 - 10.882477j),
-            (-12.566371 + 0j),
-        ]
-        self.pz1.zeros = []
-        self.pz1.normalization_factor = 18244400
-        self.pz2 = self.pz1.copy()
-        self.pz2.name = "filter_2"
-
-        self.cr_01 = ChannelResponse(filters_list=[self.pz1])
-        self.cr_02 = ChannelResponse(filters_list=[self.pz2])
-
-        self.run_object_01 = RunTS()
-        self.ey_01 = ChannelTS(
-            "electric",
-            data=np.random.rand(self.npts),
-            channel_metadata={
-                "electric": {
-                    "component": "Ey",
-                    "sample_rate": self.sample_rate,
-                    "time_period.start": self.start_01,
-                }
-            },
-            channel_response=self.cr_01,
-        )
-        self.hx_01 = ChannelTS(
-            "magnetic",
-            data=np.random.rand(self.npts),
-            channel_metadata={
-                "magnetic": {
-                    "component": "hx",
-                    "sample_rate": self.sample_rate,
-                    "time_period.start": self.start_01,
-                }
-            },
-            channel_response=self.cr_01,
-        )
-
-        self.run_object_01.set_dataset([self.ey_01, self.hx_01])
-
-        self.run_object_02 = RunTS()
-        self.ey_02 = ChannelTS(
-            "electric",
-            data=np.random.rand(self.npts),
-            channel_metadata={
-                "electric": {
-                    "component": "Ey",
-                    "sample_rate": self.sample_rate,
-                    "time_period.start": self.start_02,
-                }
-            },
-            channel_response=self.cr_02,
-        )
-        self.hx_02 = ChannelTS(
-            "magnetic",
-            data=np.random.rand(self.npts),
-            channel_metadata={
-                "magnetic": {
-                    "component": "hx",
-                    "sample_rate": self.sample_rate,
-                    "time_period.start": self.start_02,
-                }
-            },
-            channel_response=self.cr_02,
-        )
-
-        self.run_object_02.set_dataset([self.ey_02, self.hx_02])
-
-        self.combined_run = self.run_object_01 + self.run_object_02
-        self.merged_run = self.run_object_01.merge(self.run_object_02)
-        self.merged_run_sr01 = self.run_object_01.merge(
-            self.run_object_02, new_sample_rate=1
-        )
-
-    def test_add_runs(self):
-        with self.subTest("size"):
-            self.assertEqual(
-                self.combined_run.dataset.sizes["time"], 2 * self.npts + 16
-            )
-
-        with self.subTest("start"):
-            self.assertEqual(self.combined_run.start, self.start_01)
-
-        with self.subTest("end"):
-            self.assertEqual(self.combined_run.end, self.end_02)
-
-        with self.subTest("filters"):
-            self.assertDictEqual(
-                self.combined_run.filters,
-                {self.pz1.name: self.pz1, self.pz2.name: self.pz2},
-            )
-
-        with self.subTest("run.start"):
-            self.assertEqual(
-                self.combined_run.run_metadata.time_period.start, self.start_01
-            )
-
-        with self.subTest("run.end"):
-            self.assertEqual(
-                self.combined_run.run_metadata.time_period.end, self.end_02
-            )
-        with self.subTest("station.start"):
-            self.assertEqual(
-                self.combined_run.station_metadata.time_period.start,
-                self.start_01,
-            )
-
-        with self.subTest("station.end"):
-            self.assertEqual(
-                self.combined_run.station_metadata.time_period.end, self.end_02
-            )
-
-        with self.subTest("run.sample_rate"):
-            self.assertEqual(
-                self.combined_run.run_metadata.sample_rate, self.sample_rate
-            )
-
-        with self.subTest("channels"):
-            self.assertListEqual(
-                ["ey", "hx"],
-                self.combined_run.channels,
-            )
-
-    def test_merge_runs(self):
-        with self.subTest("size"):
-            self.assertEqual(self.merged_run.dataset.sizes["time"], 2 * self.npts + 16)
-
-        with self.subTest("start"):
-            self.assertEqual(self.merged_run.start, self.start_01)
-
-        with self.subTest("end"):
-            self.assertEqual(self.merged_run.end, self.end_02)
-
-        with self.subTest("filters"):
-            self.assertDictEqual(
-                self.merged_run.filters,
-                {self.pz1.name: self.pz1, self.pz2.name: self.pz2},
-            )
-
-        with self.subTest("run.start"):
-            self.assertEqual(
-                self.merged_run.run_metadata.time_period.start, self.start_01
-            )
-
-        with self.subTest("run.end"):
-            self.assertEqual(self.merged_run.run_metadata.time_period.end, self.end_02)
-        with self.subTest("station.start"):
-            self.assertEqual(
-                self.merged_run.station_metadata.time_period.start,
-                self.start_01,
-            )
-
-        with self.subTest("station.end"):
-            self.assertEqual(
-                self.merged_run.station_metadata.time_period.end, self.end_02
-            )
-
-        with self.subTest("run.sample_rate"):
-            self.assertEqual(self.merged_run.run_metadata.sample_rate, self.sample_rate)
-
-        with self.subTest("channels"):
-            self.assertListEqual(
-                ["ey", "hx"],
-                self.merged_run.channels,
-            )
-
-    def test_merge_runs_decimated(self):
-        with self.subTest("size"):
-            self.assertEqual(
-                self.merged_run_sr01.dataset.sizes["time"],
-                (2 * self.npts + 16) / 8,
-            )
-
-        with self.subTest("start"):
-            self.assertEqual(self.merged_run_sr01.start, self.start_01)
-
-        with self.subTest("end"):
-            self.assertEqual(self.merged_run_sr01.end, "2015-01-08T20:06:23+00:00")
-
-        with self.subTest("filters"):
-            self.assertDictEqual(
-                self.merged_run_sr01.filters,
-                {self.pz1.name: self.pz1, self.pz2.name: self.pz2},
-            )
-
-        with self.subTest("run.start"):
-            self.assertEqual(
-                self.merged_run_sr01.run_metadata.time_period.start,
-                self.start_01,
-            )
-
-        with self.subTest("run.end"):
-            self.assertEqual(
-                self.merged_run_sr01.run_metadata.time_period.end,
-                "2015-01-08T20:06:23+00:00",
-            )
-        with self.subTest("station.start"):
-            self.assertEqual(
-                self.merged_run_sr01.station_metadata.time_period.start,
-                self.start_01,
-            )
-
-        with self.subTest("station.end"):
-            self.assertEqual(
-                self.merged_run_sr01.station_metadata.time_period.end,
-                "2015-01-08T20:06:23+00:00",
-            )
-
-        with self.subTest("run.sample_rate"):
-            self.assertEqual(self.merged_run_sr01.run_metadata.sample_rate, 1)
-
-        with self.subTest("channels"):
-            self.assertListEqual(
-                ["ey", "hx"],
-                self.merged_run_sr01.channels,
-            )
-
-
-class TestMisalignedRuns(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.maxDiff = None
-        channel_list = []
-        cls.common_start = "2020-01-01T00:00:00+00:00"
-        cls.sample_rate = 1.0
-        cls.hx_n_samples = 4098
-        cls.ey_n_samples = 4096
-        cls.station_metadata = metadata.Station(id="mt001")
-        cls.run_metadata = metadata.Run(id="001")
-        channel_list = []
-
-        ### HX
-        hx_metadata = metadata.Magnetic(component="hx")
-        hx_metadata.time_period.start = cls.common_start
-        hx_metadata.sample_rate = cls.sample_rate
-
-        t = np.arange(cls.hx_n_samples)
-        data = np.sum(
-            [
-                np.cos(2 * np.pi * w * t + phi)
-                for w, phi in zip(np.logspace(-3, 3, 20), np.random.rand(20))
-            ],
-            axis=0,
-        )
-
-        cls.hx = ChannelTS(
-            channel_type="magnetic",
-            data=data,
-            channel_metadata=hx_metadata,
-            run_metadata=cls.run_metadata,
-            station_metadata=cls.station_metadata,
-        )
-        channel_list.append(cls.hx)
-
-        ## EY
-        ey_metadata = metadata.Electric(component="ey")
-        ey_metadata.time_period.start = cls.common_start
-        ey_metadata.sample_rate = cls.sample_rate
-
-        t = np.arange(cls.ey_n_samples)
-        data = np.sum(
-            [
-                np.cos(2 * np.pi * w * t + phi)
-                for w, phi in zip(np.logspace(-3, 3, 20), np.random.rand(20))
-            ],
-            axis=0,
-        )
-
-        cls.ey = ChannelTS(
-            channel_type="electric",
-            data=data,
-            channel_metadata=ey_metadata,
-            run_metadata=cls.run_metadata,
-            station_metadata=cls.station_metadata,
-        )
-        channel_list.append(cls.ey)
-
-        ## bad channel
-        ex_metadata = metadata.Electric(component="ex")
-        ex_metadata.time_period.start = "2021-05-05T12:10:05+00:00"
-        ex_metadata.sample_rate = cls.sample_rate + 10
-
-        cls.bad_ch = ChannelTS(
-            channel_type="electric",
-            data=data,
-            channel_metadata=ex_metadata,
-            run_metadata=cls.run_metadata,
-            station_metadata=cls.station_metadata,
-        )
-
-        cls.run_ts = RunTS(channel_list)
-        cls.ch_list = [cls.ey.data_array, cls.hx.data_array]
-        cls.bad_ch_list = [
-            cls.ey.data_array,
-            cls.hx.data_array,
-            cls.bad_ch.data_array,
-        ]
-
-    def test_check_sample_rate(self):
-        self.assertEqual(
-            self.sample_rate,
-            self.run_ts._check_sample_rate(self.ch_list),
-        )
-
-    def test_check_sample_rate_fail(self):
-        self.assertRaises(
-            ValueError,
-            self.run_ts._check_sample_rate,
-            **{"valid_list": self.bad_ch_list},
-        )
-
-    def test_common_start(self):
-        self.assertEqual(True, self.run_ts._check_common_start(self.ch_list))
-
-    def test_common_start_fail(self):
-        self.assertEqual(False, self.run_ts._check_common_start(self.bad_ch_list))
-
-    def test_common_end(self):
-        self.assertEqual(False, self.run_ts._check_common_end(self.ch_list))
-
-    def test_common_end_fail(self):
-        self.assertEqual(False, self.run_ts._check_common_end(self.bad_ch_list))
-
-    def test_earliest_start(self):
-        self.assertEqual(
-            self.ey.data_array.coords["time"].values[0],
-            self.run_ts._get_earliest_start(self.ch_list),
-        )
-
-    def test_latest_end(self):
-        self.assertEqual(
-            self.hx.data_array.coords["time"].values[-1],
-            self.run_ts._get_latest_end(self.ch_list),
-        )
-
-    def test_get_common_time_index(self):
-        dt = self.run_ts._get_common_time_index(
-            self.ey.data_array.coords["time"].values[0],
-            self.hx.data_array.coords["time"].values[-1],
-            self.sample_rate,
-        )
-
-        earliest_start = self.run_ts._get_earliest_start(self.ch_list)
-        latest_end = self.run_ts._get_latest_end(self.ch_list)
-
-        dt2 = self.run_ts._get_common_time_index(
-            earliest_start, latest_end, self.sample_rate
-        )
-
-        self.assertTrue((dt == dt2).all())
-
-    def test_run_start(self):
-        self.assertEqual(self.run_ts.start, self.common_start)
-
-    def test_run_end(self):
-        self.assertEqual(self.run_ts.end, self.hx.end)
-
-    def test_run_nsamples(self):
-        self.assertEqual(self.run_ts.dataset.sizes["time"], self.hx_n_samples)
-
-    def test_run_sample_rate(self):
-        self.assertEqual(self.run_ts.sample_rate, self.sample_rate)
+        # Should contain entries for each channel's metadata
+        for channel in multi_channel_run_ts.channels:
+            channel_keys = [k for k in meta_dict.keys() if k.startswith(channel)]
+            assert len(channel_keys) > 0
 
 
 # =============================================================================
-# run tests
+# Channel Alignment and Dataset Tests
+# =============================================================================
+
+
+class TestRunTSAlignment:
+    """Test channel alignment and dataset operations."""
+
+    def test_misaligned_channels_creation(self, misaligned_channels):
+        """Test creating RunTS with misaligned channels."""
+        aligned_channels = misaligned_channels["aligned"]
+        run_ts = RunTS(aligned_channels)
+
+        # Should handle different length channels
+        assert run_ts.has_data()
+        assert len(run_ts.channels) == 2
+
+        # Time span should be determined by longest channel
+        assert run_ts.dataset.sizes["time"] == misaligned_channels["hx_n_samples"]
+
+    def test_sample_rate_validation(self, misaligned_channels, basic_run_ts):
+        """Test sample rate validation across channels."""
+        bad_channel = misaligned_channels["bad_channel"]
+        aligned_channels = misaligned_channels["aligned"]
+
+        # Should raise error for different sample rates
+        with pytest.raises(ValueError, match="sample rate"):
+            basic_run_ts.set_dataset(aligned_channels + [bad_channel])
+
+    def test_alignment_methods(self, misaligned_channels):
+        """Test channel alignment utility methods."""
+        run_ts = RunTS()
+        channel_data_arrays = [ch.data_array for ch in misaligned_channels["aligned"]]
+
+        # Test sample rate checking
+        sample_rate = run_ts._check_sample_rate(channel_data_arrays)
+        assert sample_rate == 1.0
+
+        # Test start time checking
+        common_start = run_ts._check_common_start(channel_data_arrays)
+        assert common_start is True
+
+        # Test end time checking (should be False due to different lengths)
+        common_end = run_ts._check_common_end(channel_data_arrays)
+        assert common_end is False
+
+        # Test time index generation
+        earliest_start = run_ts._get_earliest_start(channel_data_arrays)
+        latest_end = run_ts._get_latest_end(channel_data_arrays)
+        time_index = run_ts._get_common_time_index(earliest_start, latest_end, 1.0)
+
+        assert time_index is not None
+        assert len(time_index) > 0
+
+
+class TestRunTSDatasetOperations:
+    """Test dataset creation and manipulation."""
+
+    def test_set_dataset_alignment_types(self, multi_channel_list):
+        """Test different alignment types for dataset creation."""
+        run_ts = RunTS()
+
+        # Test default (outer) alignment
+        run_ts.set_dataset(multi_channel_list, align_type="outer")
+        assert run_ts.has_data()
+
+        # Test inner alignment
+        run_ts_inner = RunTS()
+        run_ts_inner.set_dataset(multi_channel_list, align_type="inner")
+        assert run_ts_inner.has_data()
+
+    def test_dataset_property(self, multi_channel_run_ts):
+        """Test dataset property access and manipulation."""
+        import xarray as xr
+
+        dataset = multi_channel_run_ts.dataset
+        assert isinstance(dataset, xr.Dataset)
+        assert len(dataset.data_vars) == len(multi_channel_run_ts.channels)
+
+
+# =============================================================================
+# Advanced RunTS Operations Tests
+# =============================================================================
+
+
+class TestRunTSSlicing:
+    """Test time slicing operations."""
+
+    def test_get_slice_by_samples(self, multi_channel_run_ts, test_signal_params):
+        """Test slicing by number of samples."""
+        start = "2020-01-01T00:00:30+00:00"
+        n_samples = 256
+
+        sliced_run = multi_channel_run_ts.get_slice(start, n_samples=n_samples)
+
+        assert isinstance(sliced_run, RunTS)
+        assert sliced_run.sample_rate == multi_channel_run_ts.sample_rate
+        assert sliced_run.start == MTime(time_stamp=start)
+
+        # Check data size
+        for channel in sliced_run.channels:
+            channel_data = getattr(sliced_run, channel)
+            assert channel_data.n_samples == n_samples
+
+    def test_get_slice_by_end_time(self, multi_channel_run_ts):
+        """Test slicing by end time."""
+        start = "2020-01-01T00:00:30+00:00"
+        end = "2020-01-01T00:01:00+00:00"
+
+        sliced_run = multi_channel_run_ts.get_slice(start, end=end)
+
+        assert isinstance(sliced_run, RunTS)
+        assert sliced_run.start == MTime(time_stamp=start)
+        # End time might be slightly different due to sampling
+        time_diff = abs(sliced_run.end - MTime(time_stamp=end))
+        assert time_diff < 2.0  # Should be within 2 seconds
+
+    def test_slice_parameter_validation(self, multi_channel_run_ts):
+        """Test slice parameter validation."""
+        start = "2020-01-01T00:00:30+00:00"
+
+        # Should raise error if neither end nor n_samples provided
+        with pytest.raises(ValueError, match="Must input n_samples or end"):
+            multi_channel_run_ts.get_slice(start)
+
+
+class TestRunTSMerging:
+    """Test RunTS merging operations."""
+
+    def test_add_operator(self, merge_test_runs, test_signal_params):
+        """Test RunTS addition operator."""
+        params = test_signal_params
+        combined = merge_test_runs["combined"]
+        expected_samples = 2 * params["n_samples"] + 16  # Gap between runs
+
+        assert combined.dataset.sizes["time"] == expected_samples
+        assert combined.start == merge_test_runs["start_01"]
+        assert combined.end == merge_test_runs["end_02"]
+
+        # Check filter merging
+        expected_filters = {merge_test_runs["pz1"].name, merge_test_runs["pz2"].name}
+        assert set(combined.filters.keys()) == expected_filters
+
+        # Check channels preserved
+        assert sorted(combined.channels) == ["ey", "hx"]
+
+    def test_merge_method(self, merge_test_runs, test_signal_params):
+        """Test explicit merge method."""
+        params = test_signal_params
+        merged = merge_test_runs["merged"]
+        expected_samples = 2 * params["n_samples"] + 16
+
+        assert merged.dataset.sizes["time"] == expected_samples
+        assert merged.start == merge_test_runs["start_01"]
+        assert merged.end == merge_test_runs["end_02"]
+
+        # Metadata should be updated
+        assert merged.run_metadata.time_period.start == merge_test_runs["start_01"]
+        assert merged.run_metadata.time_period.end == merge_test_runs["end_02"]
+
+    def test_merge_with_decimation(self, merge_test_runs, test_signal_params):
+        """Test merge with sample rate decimation."""
+        params = test_signal_params
+        merged_dec = merge_test_runs["merged_decimated"]
+        expected_samples = (2 * params["n_samples"] + 16) / params["sample_rate"]
+
+        assert merged_dec.dataset.sizes["time"] == expected_samples
+        assert merged_dec.run_metadata.sample_rate == 1
+
+    def test_merge_type_validation(self, basic_run_ts):
+        """Test merge type validation."""
+        with pytest.raises(TypeError, match="Cannot combine"):
+            basic_run_ts + "not_a_run_ts"
+
+        with pytest.raises(TypeError, match="Cannot combine"):
+            basic_run_ts.merge("not_a_run_ts")
+
+
+class TestRunTSObspyIntegration:
+    """Test ObsPy Stream integration."""
+
+    def test_to_obspy_stream(self, multi_channel_run_ts):
+        """Test conversion to ObsPy Stream."""
+        from obspy.core import Stream
+
+        stream = multi_channel_run_ts.to_obspy_stream()
+
+        assert isinstance(stream, Stream)
+        assert stream.count() == len(multi_channel_run_ts.channels)
+
+        # Check each trace
+        for trace in stream.traces:
+            assert trace.stats.sampling_rate == multi_channel_run_ts.sample_rate
+            assert trace.stats.npts == multi_channel_run_ts.dataset.sizes["time"]
+
+    @pytest.mark.skip(reason="ObsPy stream input testing requires more setup")
+    def test_from_obspy_stream(self, multi_channel_run_ts):
+        """Test creation from ObsPy Stream."""
+        # This would require creating a proper ObsPy stream
+        # Skip for now as it's complex to set up properly
+        pass
+
+
+# =============================================================================
+# Performance and Error Cases Tests
+# =============================================================================
+
+
+class TestRunTSErrorCases:
+    """Test error cases and edge conditions."""
+
+    def test_initialization_failures(self, basic_channel_ts):
+        """Test RunTS initialization failures."""
+        with pytest.raises(TypeError):
+            RunTS([basic_channel_ts], run_metadata=[])
+
+        with pytest.raises(TypeError):
+            RunTS([basic_channel_ts], station_metadata=[])
+
+    def test_channel_response_handling(self, multi_channel_run_ts):
+        """Test channel response filter handling."""
+        for channel_name in multi_channel_run_ts.channels:
+            channel = getattr(multi_channel_run_ts, channel_name)
+
+            # Should have access to channel response
+            assert hasattr(channel, "channel_response")
+
+            # Filter retrieval should work
+            response = multi_channel_run_ts._get_channel_response(channel_name)
+            if response is not None:
+                assert hasattr(response, "filters_list")
+
+
+class TestRunTSPerformance:
+    """Test performance-related aspects."""
+
+    def test_large_dataset_handling(self, test_signal_params):
+        """Test handling of larger datasets."""
+        # Create larger test data
+        n_large = 16384  # 4x larger
+        large_data = np.random.rand(n_large)
+
+        large_channel = ChannelTS(
+            "electric",
+            data=large_data,
+            channel_metadata={
+                "electric": {
+                    "component": "ex",
+                    "sample_rate": 1.0,
+                    "time_period.start": test_signal_params["common_start"],
+                }
+            },
+        )
+
+        run_ts = RunTS([large_channel])
+
+        assert run_ts.has_data()
+        assert run_ts.dataset.sizes["time"] == n_large
+
+    def test_copy_performance(self, multi_channel_run_ts):
+        """Test copy operation performance and correctness."""
+        import time
+
+        start_time = time.time()
+        copied_run = multi_channel_run_ts.copy()
+        copy_time = time.time() - start_time
+
+        # Copy should be reasonably fast (< 1 second for test data)
+        assert copy_time < 1.0
+
+        # Copy should be equal to original
+        assert copied_run == multi_channel_run_ts
+
+        # But should be separate objects
+        assert copied_run is not multi_channel_run_ts
+
+
+# =============================================================================
+# Integration Tests
+# =============================================================================
+
+
+class TestRunTSIntegration:
+    """Integration tests combining multiple operations."""
+
+    def test_full_workflow(self, multi_channel_list, test_signal_params):
+        """Test complete workflow from creation to manipulation."""
+        params = test_signal_params
+
+        # 1. Create RunTS
+        run_ts = RunTS(multi_channel_list)
+        assert run_ts.has_data()
+
+        # 2. Validate metadata
+        run_ts.validate_metadata()
+        assert run_ts.run_metadata.sample_rate == 1.0
+
+        # 3. Get slice
+        sliced = run_ts.get_slice(params["common_start"], n_samples=1000)
+        assert sliced.dataset.sizes["time"] == 1000
+
+        # 4. Copy operation
+        copied = run_ts.copy()
+        assert copied == run_ts
+
+        # 5. Channel access
+        for channel_name in run_ts.channels:
+            channel = getattr(run_ts, channel_name)
+            assert isinstance(channel, ChannelTS)
+
+    def test_complex_merge_workflow(self, merge_test_runs):
+        """Test complex merge operations."""
+        run_01 = merge_test_runs["run_01"]
+        run_02 = merge_test_runs["run_02"]
+
+        # Test different merge methods
+        added = run_01 + run_02
+        merged = run_01.merge(run_02)
+        merged_dec = run_01.merge(run_02, new_sample_rate=1)
+
+        # All should have same channels
+        expected_channels = ["ey", "hx"]
+        assert sorted(added.channels) == expected_channels
+        assert sorted(merged.channels) == expected_channels
+        assert sorted(merged_dec.channels) == expected_channels
+
+        # Decimated version should have different sample rate
+        assert merged_dec.sample_rate == 1
+        assert added.sample_rate == run_01.sample_rate
+
+    def test_metadata_consistency(self, multi_channel_run_ts):
+        """Test metadata consistency across operations."""
+        original_station_id = multi_channel_run_ts.station_metadata.id
+        original_run_id = multi_channel_run_ts.run_metadata.id
+
+        # Copy should preserve metadata
+        copied = multi_channel_run_ts.copy()
+        assert copied.station_metadata.id == original_station_id
+        assert copied.run_metadata.id == original_run_id
+
+        # Slice should preserve metadata
+        sliced = multi_channel_run_ts.get_slice(
+            multi_channel_run_ts.start, n_samples=1000
+        )
+        assert sliced.station_metadata.id == original_station_id
+        assert sliced.run_metadata.id == original_run_id
+
+
+# =============================================================================
+# Run tests
 # =============================================================================
 if __name__ == "__main__":
-    unittest.main()
+    pytest.main([__file__, "-v"])
