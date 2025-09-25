@@ -171,6 +171,18 @@ class StandardsGroup(BaseGroup):
             index = self.summary_table.add_row(key_list)
         self.logger.debug(f"Added {index} rows to Standards Group")
 
+    def summary_table_from_array(self, array):
+        """
+        Fill summary table from a numpy structured array
+
+        :param array: structured numpy array
+        :type array: numpy array
+
+        """
+        for index, row in enumerate(array):
+            index = self.summary_table.add_row(row)
+        self.logger.debug(f"Added {index} rows to Standards Group")
+
     def initialize_group(self):
         """
         Initialize the group by making a summary table that summarizes
