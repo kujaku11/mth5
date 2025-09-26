@@ -187,7 +187,10 @@ class NIMSHeader(object):
                 self.header_gps_longitude = self._get_longitude(
                     gps_list[4], gps_list[5]
                 )
-                self.header_gps_elevation = float(gps_list[6])
+                if gps_list[6] == "M":
+                    self.header_gps_elevation = 0.0
+                else: 
+                    self.header_gps_elevation = float(gps_list[6])
             elif "run" in key:
                 self.run_id = value.replace('"', "")
             else:

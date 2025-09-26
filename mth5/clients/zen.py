@@ -137,7 +137,7 @@ class ZenClient(ClientBase):
                         run_list.append(run_group.to_runts())
                 if combine:
                     # Combine runs and down sample to 1 second.
-                    combined_run = run_list[0].merge(run_list[1:], new_sample_rate=1)
+                    combined_run = run_list[0].merge(run_list[1:], new_sample_rate=8)
                     combined_run.run_metadata.id = "sr1_0001"
                     combined_run_group = station_group.add_run("sr1_0001")
                     combined_run_group.from_runts(combined_run)
