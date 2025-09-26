@@ -18,6 +18,8 @@ import pandas as pd
 from mth5.io.collection import Collection
 from mth5.io.nims import NIMS
 
+from mt_metadata.timeseries import Station
+
 # =============================================================================
 
 
@@ -39,10 +41,10 @@ class NIMSCollection(Collection):
 
     def __init__(self, file_path=None, **kwargs):
         super().__init__(file_path=file_path, **kwargs)
-        self.file_ext = "bin"
-
+        self.file_ext = "BIN"
+        self.station_metadata_dict = {}
         self.survey_id = "mt"
-
+        
     def to_dataframe(
         self, sample_rates=[1], run_name_zeros=2, calibration_path=None
     ):
@@ -70,12 +72,10 @@ class NIMSCollection(Collection):
             >>> lemi_df = lc.to_dataframe()
 
         """
-
         entries = []
         for fn in self.get_files(self.file_ext):
             nims_obj = NIMS(fn)
             nims_obj.read_header()
-
             entry = self.get_empty_entry_dict()
             entry["survey"] = self.survey_id
             entry["station"] = nims_obj.station
@@ -99,7 +99,7 @@ class NIMSCollection(Collection):
         )
         df.loc[:, "instrument_id"] = "NIMS"
         df = self._sort_df(self._set_df_dtypes(df), run_name_zeros)
-
+        
         return df
 
     def assign_run_names(self, df, zeros=2):
