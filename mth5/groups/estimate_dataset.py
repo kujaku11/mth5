@@ -67,7 +67,7 @@ class EstimateDataset:
         # if metadata is input, make sure that its the same class type amd write
         # to the hdf5 dataset
         if dataset_metadata is not None:
-            if not isinstance(dataset_metadata, type(self.metadata)):
+            if not isinstance(self.metadata, type(dataset_metadata)):
                 msg = (
                     f"metadata must be type metadata.{self._class_name} not "
                     "{type(dataset_metadata)}"
