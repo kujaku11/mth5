@@ -38,7 +38,11 @@ from mt_metadata.features import (
 )
 from mt_metadata.base import MetadataBase
 
-from mth5.helpers import get_tree, validate_name
+from mth5.helpers import (
+    get_tree,
+    validate_name,
+    add_attributes_to_metadata_class_pydantic,
+)
 from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import to_numpy_type, from_numpy_type
 from pydantic.fields import FieldInfo
@@ -157,47 +161,14 @@ class BaseGroup:
 
         """
 
-        self._metadata = MetadataBase()
+        metadata_obj = MetadataBase
         if self._class_name not in ["Standards"]:
             try:
-                self._metadata = meta_classes[self._class_name]()
+                metadata_obj = meta_classes[self._class_name]
             except KeyError:
-                self._metadata = MetadataBase()
+                metadata_obj = MetadataBase
         # add 2 attributes that will help with querying using the new Pydantic approach
-
-        # Create FieldInfo for mth5_type
-        mth5_type_field = FieldInfo(
-            annotation=str,
-            default=self._class_name.split("Group")[0],
-            description="type of group",
-            json_schema_extra={
-                "required": True,
-                "units": None,
-                "examples": ["group_name"],
-            },
-        )
-
-        # Use add_new_field to add mth5_type - this returns a class, not an instance
-        enhanced_class = self._metadata.add_new_field("mth5_type", mth5_type_field)
-
-        # Create FieldInfo for hdf5_reference
-        hdf5_ref_field = FieldInfo(
-            annotation=Union[h5py.Reference, None, str],
-            default=None,  # Will be set later
-            description="hdf5 internal reference",
-            json_schema_extra={
-                "required": True,
-                "units": None,
-                "examples": ["<HDF5 Group Reference>"],
-            },
-        )
-
-        # Create an instance of the enhanced class to add the second field
-        temp_instance = enhanced_class()
-        enhanced_class2 = temp_instance.add_new_field("hdf5_reference", hdf5_ref_field)
-
-        # Create final instance
-        self._metadata = enhanced_class2()
+        self._metadata = add_attributes_to_metadata_class_pydantic(metadata_obj)
 
     @property
     def metadata(self):

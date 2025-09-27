@@ -30,13 +30,11 @@ from mth5.helpers import (
     to_numpy_type,
     from_numpy_type,
     inherit_doc_string,
+    add_attributes_to_metadata_class_pydantic,
 )
 
 from mth5.timeseries import ChannelTS
 from mth5.timeseries.channel_ts import make_dt_coordinates
-
-from pydantic import FieldInfo
-
 
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
 
@@ -98,15 +96,14 @@ class ChannelDataset:
         # set metadata to the appropriate class.  Standards is not a
         # Base object so should be skipped. If the class name is not
         # defined yet set to Base class.
-        self.metadata = MetadataBase()
         try:
-            self.metadata = meta_classes[self._class_name]()
+            metadata_obj = meta_classes[self._class_name]
         except KeyError:
-            self.metadata = MetadataBase()
-        if not hasattr(self.metadata, "mth5_type"):
-            self._add_base_attributes()
-            self.metadata.hdf5_reference = self.hdf5_dataset.ref
-            self.metadata.mth5_type = self._class_name
+            metadata_obj = MetadataBase
+        # add mth5 attributes to the metadata class
+        self.metadata = add_attributes_to_metadata_class_pydantic(metadata_obj)
+        self.metadata.hdf5_reference = self.hdf5_dataset.ref
+        self.metadata.mth5_type = self._class_name
         # if the input data set already has filled attributes, namely if the
         # channel data already exists then read them in with our writing back
         if "mth5_type" in list(self.hdf5_dataset.attrs.keys()):
@@ -137,43 +134,6 @@ class ChannelDataset:
         if not "mth5_type" in list(self.hdf5_dataset.attrs.keys()):
             self.hdf5_dataset.attrs["mth5_type"] = self._class_name
             self.write_metadata()
-
-    def _add_base_attributes(self):
-        # add 2 attributes that will help with querying using the new Pydantic approach
-
-        # Create FieldInfo for mth5_type
-        mth5_type_field = FieldInfo(
-            annotation=str,
-            default=self._class_name.split("Group")[0],
-            description="type of group",
-            json_schema_extra={
-                "required": True,
-                "units": None,
-                "examples": ["group_name"],
-            },
-        )
-
-        # Use add_new_field to add mth5_type - this returns a class, not an instance
-        enhanced_class = self._metadata.add_new_field("mth5_type", mth5_type_field)
-
-        # Create FieldInfo for hdf5_reference
-        hdf5_ref_field = FieldInfo(
-            annotation=Union[h5py.Reference, None, str],
-            default=None,  # Will be set later
-            description="hdf5 internal reference",
-            json_schema_extra={
-                "required": True,
-                "units": None,
-                "examples": ["<HDF5 Group Reference>"],
-            },
-        )
-
-        # Create an instance of the enhanced class to add the second field
-        temp_instance = enhanced_class()
-        enhanced_class2 = temp_instance.add_new_field("hdf5_reference", hdf5_ref_field)
-
-        # Create final instance
-        self._metadata = enhanced_class2()
 
     def __str__(self):
         try:

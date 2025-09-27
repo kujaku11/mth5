@@ -21,6 +21,9 @@ import h5py
 import gc
 from loguru import logger
 
+from pydantic.fields import FieldInfo
+from typing import Union
+
 # =============================================================================
 # Acceptable compressions
 # =============================================================================
@@ -132,9 +135,7 @@ def get_tree(parent):
     """
     lines = ["{0}:".format(parent.name), "=" * 20]
     if not isinstance(parent, (h5py.File, h5py.Group)):
-        raise TypeError(
-            "Provided object is not a h5py.File or h5py.Group " "object"
-        )
+        raise TypeError("Provided object is not a h5py.File or h5py.Group " "object")
 
     def fancy_print(name, obj):
         # lines.append(name)
@@ -143,14 +144,10 @@ def get_tree(parent):
 
         if isinstance(obj, h5py.Group):
             lines.append(f"{spacing}|- Group: {group_name}")
-            lines.append(
-                "{0}{1}".format(spacing, (len(group_name) + 10) * "-")
-            )
+            lines.append("{0}{1}".format(spacing, (len(group_name) + 10) * "-"))
         elif isinstance(obj, h5py.Dataset):
             lines.append(f"{spacing}--> Dataset: {group_name}")
-            lines.append(
-                "{0}{1}".format(spacing, (len(group_name) + 15) * ".")
-            )
+            lines.append("{0}{1}".format(spacing, (len(group_name) + 15) * "."))
 
     # lines.append(parent.name)
     parent.visititems(fancy_print)
@@ -242,17 +239,10 @@ def from_numpy_type(value):
             float,
             bool,
             complex,
-            np.int_,
             np.int32,
             np.float64,
-            np.bool_,
             np.complex128,
             np.intp,
-            type(np.int_),
-            type(np.float64),
-            type(np.bool_),
-            type(np.complex128),
-            type(np.intp),
         ),
     ):
         return value
@@ -298,3 +288,37 @@ def validate_name(name, pattern=None):
     if name is None:
         return "unknown"
     return name.replace(" ", "_").replace(",", "")
+
+
+def add_attributes_to_metadata_class_pydantic(obj):
+
+    obj = obj()
+    # Create FieldInfo for mth5_type
+    mth5_type_field = FieldInfo(
+        annotation=str,
+        default=obj._class_name.split("Group")[0],
+        description="type of group",
+        json_schema_extra={
+            "required": True,
+            "units": None,
+            "examples": ["group_name"],
+        },
+    )
+
+    # Use add_new_field to add mth5_type - this returns a class, not an instance
+    enhanced_class = obj.add_new_field("mth5_type", mth5_type_field)()
+
+    # Create FieldInfo for hdf5_reference
+    hdf5_ref_field = FieldInfo(
+        annotation=Union[h5py.Reference, None, str],
+        default=None,  # Will be set later
+        description="hdf5 internal reference",
+        json_schema_extra={
+            "required": True,
+            "units": None,
+            "examples": ["<HDF5 Group Reference>"],
+        },
+    )
+
+    # Create an instance of the enhanced class to add the second field
+    return enhanced_class.add_new_field("hdf5_reference", hdf5_ref_field)()

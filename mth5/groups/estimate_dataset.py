@@ -18,7 +18,7 @@ from loguru import logger
 from mt_metadata.transfer_functions.tf.statistical_estimate import StatisticalEstimate
 
 from mth5.utils.exceptions import MTH5Error
-from mth5.helpers import to_numpy_type
+from mth5.helpers import to_numpy_type, add_attributes_to_metadata_class_pydantic
 
 # =============================================================================
 
@@ -54,12 +54,10 @@ class EstimateDataset:
         # set metadata to the appropriate class.  Standards is not a
         # Base object so should be skipped. If the class name is not
         # defined yet set to Base class.
-        self.metadata = StatisticalEstimate()
+        self.metadata = add_attributes_to_metadata_class_pydantic(StatisticalEstimate)
+        self.metadata.hdf5_reference = self.hdf5_dataset.ref
+        self.metadata.mth5_type = self._class_name
 
-        if not hasattr(self.metadata, "mth5_type"):
-            self._add_base_attributes()
-            self.metadata.hdf5_reference = self.hdf5_dataset.ref
-            self.metadata.mth5_type = self._class_name
         # if the input data set already has filled attributes, namely if the
         # channel data already exists then read them in with our writing back
         if "mth5_type" in list(self.hdf5_dataset.attrs.keys()):
@@ -87,42 +85,6 @@ class EstimateDataset:
         # if the attrs don't have the proper metadata keys yet write them
         if not "mth5_type" in list(self.hdf5_dataset.attrs.keys()):
             self.write_metadata()
-
-    def _add_base_attributes(self):
-        # add 2 attributes that will help with querying
-        # 1) the metadata class name
-        self.metadata.add_base_attribute(
-            "mth5_type",
-            self._class_name,
-            {
-                "type": str,
-                "required": True,
-                "style": "free form",
-                "description": "type of group",
-                "units": None,
-                "options": [],
-                "alias": [],
-                "example": "group_name",
-                "default": None,
-            },
-        )
-
-        # 2) the HDF5 reference that can be used instead of paths
-        self.metadata.add_base_attribute(
-            "hdf5_reference",
-            self.hdf5_dataset.ref,
-            {
-                "type": "h5py_reference",
-                "required": True,
-                "style": "free form",
-                "description": "hdf5 internal reference",
-                "units": None,
-                "options": [],
-                "alias": [],
-                "example": "<HDF5 Group Reference>",
-                "default": None,
-            },
-        )
 
     def __str__(self):
         return self.metadata.to_json()

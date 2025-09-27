@@ -434,17 +434,17 @@ class TestMTH5GetMethods(unittest.TestCase):
 
 class TestMTH5InReadMode(unittest.TestCase):
     @classmethod
-    def setUpClass(self):
-        self.fn = fn_path.joinpath("test.mth5")
-        self.mth5_obj = MTH5(file_version="0.1.0")
-        self.mth5_obj.open_mth5(self.fn, mode="w")
-        self.maxDiff = None
+    def setUpClass(cls):
+        cls.fn = fn_path.joinpath("test.mth5")
+        cls.mth5_obj = MTH5(file_version="0.1.0")
+        cls.mth5_obj.open_mth5(cls.fn, mode="w")
+        cls.maxDiff = None
 
-        station_group = self.mth5_obj.add_station("mt01")
+        station_group = cls.mth5_obj.add_station("mt01")
         station_group.metadata.location.latitude = 40
         station_group.metadata.location.longitude = -120
         station_group.update_metadata()
-        self.mth5_obj.close_mth5()
+        cls.mth5_obj.close_mth5()
 
     def test_get_station(self):
         m = MTH5()
