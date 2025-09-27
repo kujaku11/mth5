@@ -379,8 +379,7 @@ class ChannelTS:
             ch_metadata = meta_classes[self.channel_type]()
         self.logger.debug("Loading from metadata dict")
         ch_metadata.from_dict(channel_metadata)
-        channel_metadata = ch_metadata.copy()
-        return channel_metadata
+        return ch_metadata
 
     def _validate_run_metadata(self, run_metadata):
         """

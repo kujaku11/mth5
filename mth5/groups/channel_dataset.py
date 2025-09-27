@@ -207,13 +207,25 @@ class ChannelDataset:
             self.hdf5_dataset.parent.parent.parent.parent["Filters"]
         )
         f_list = []
-        for name in self.metadata.filter.name:
-            name = name.replace("/", " per ").lower()
-            try:
-                f_list.append(filters_group.to_filter_object(name))
-            except KeyError:
-                self.logger.warning(f"Could not locate filter {name}")
-                continue
+        # Check if filters field exists (new version with AppliedFilter objects)
+        if hasattr(self.metadata, "filters") and self.metadata.filters:
+            for applied_filter in self.metadata.filters:
+                if hasattr(applied_filter, "name"):
+                    name = applied_filter.name.replace("/", " per ").lower()
+                    try:
+                        f_list.append(filters_group.to_filter_object(name))
+                    except KeyError:
+                        self.logger.warning(f"Could not locate filter {name}")
+                        continue
+        # Fallback to old filter field for backward compatibility
+        elif hasattr(self.metadata, "filter") and hasattr(self.metadata.filter, "name"):
+            for name in self.metadata.filter.name:
+                name = name.replace("/", " per ").lower()
+                try:
+                    f_list.append(filters_group.to_filter_object(name))
+                except KeyError:
+                    self.logger.warning(f"Could not locate filter {name}")
+                    continue
         return ChannelResponse(filters_list=f_list)
 
     @property
@@ -638,10 +650,11 @@ class ChannelDataset:
         loads from memory (nearly half the size of xarray alone, not sure why)
 
         """
+        # Now that copy() method is robust, we can use direct copying
         return ChannelTS(
             channel_type=self.metadata.type,
             data=self.hdf5_dataset[()],
-            channel_metadata=self.metadata,
+            channel_metadata=self.metadata.copy(),
             run_metadata=self.run_metadata.copy(),
             station_metadata=self.station_metadata.copy(),
             survey_metadata=self.survey_metadata.copy(),
@@ -748,11 +761,25 @@ class ChannelDataset:
             self.logger.error(msg)
             raise TypeError(msg)
         if how == "replace":
-            self.metadata.from_dict(channel_ts_obj.channel_metadata.to_dict())
-            self.replace_dataset(channel_ts_obj.ts)
-            # apparently need to reset these otherwise they get overwritten with None
-            self.metadata.hdf5_reference = self.hdf5_dataset.ref
+            # Get the metadata dict first to avoid deepcopy issues with HDF5 references
+            # channel_ts_obj.channel_metadata.mth5_type = (
+            #     channel_ts_obj.channel_metadata._class_name
+            # )
+            metadata_dict = channel_ts_obj.channel_metadata.to_dict()
+            metadata_dict[channel_ts_obj.channel_metadata._class_name][
+                "mth5_type"
+            ] = channel_ts_obj.channel_metadata._class_name
+            # metadata_dict[channel_ts_obj.channel_metadata._class_name][
+            #     "hdf5_reference"
+            # ] = self.hdf5_dataset.ref
+            # Update metadata with MTH5-specific attributes
+            self.metadata.from_dict(metadata_dict)
             self.metadata.mth5_type = self._class_name
+            self.metadata.hdf5_reference = self.hdf5_dataset.ref
+            self.replace_dataset(channel_ts_obj.ts)
+            # # apparently need to reset these otherwise they get overwritten with None
+            # self.metadata.hdf5_reference = self.hdf5_dataset.ref
+            # self.metadata.mth5_type = self._class_name
             self.write_metadata()
         elif how == "extend":
             self.extend_dataset(
