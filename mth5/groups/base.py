@@ -298,7 +298,7 @@ class BaseGroup:
             new_group = self.hdf5_group.create_group(name)
             return_obj = group_class(new_group, **self.dataset_options)
             if group_metadata is None:
-                return_obj._metadata.set_attr_from_name(match, name)
+                return_obj._metadata.update_attribute(match, name)
             else:
                 return_obj.metadata = group_metadata
             return_obj.write_metadata()

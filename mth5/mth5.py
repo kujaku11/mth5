@@ -662,8 +662,10 @@ class MTH5:
 
         # create the default group
         root = self.__hdf5_obj.create_group(self._default_root_name)
+        # version 0.1.0 has a survey group at the root
         if self._default_root_name == "Survey":
             root_group = groups.SurveyGroup(root)
+            root_group.metadata.id = "default_survey"
             root_group.write_metadata()
         for group_name in self._default_subgroup_names:
             try:
