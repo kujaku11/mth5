@@ -547,7 +547,7 @@ class StationGroup(BaseGroup):
                 continue
             try:
                 key_group = self.get_run(key)
-                if key_group.metadata.mth5_type in ["Run"]:
+                if key_group.metadata.mth5_type in ["run"]:
                     self._metadata.add_run(key_group.metadata)
             except MTH5Error:
                 self.logger.warning(f"Could not find run {key}")

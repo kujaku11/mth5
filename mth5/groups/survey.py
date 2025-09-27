@@ -460,7 +460,7 @@ class SurveyGroup(BaseGroup):
                         if key_group.metadata.id in self._metadata.stations.keys():
                             continue
                         # skip non-station groups like Features, FCs, TransferFunction
-                        elif key_group.metadata.mth5_type not in ["Station"]:
+                        elif key_group.metadata.mth5_type not in ["station"]:
                             continue
                         self._metadata.add_station(key_group.metadata)
                     except MTH5Error:
