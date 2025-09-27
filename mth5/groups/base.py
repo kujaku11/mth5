@@ -20,6 +20,7 @@ import inspect
 import weakref
 from loguru import logger
 import h5py
+from pyparsing import Union
 
 
 from mt_metadata import timeseries as metadata
@@ -181,7 +182,7 @@ class BaseGroup:
 
         # Create FieldInfo for hdf5_reference
         hdf5_ref_field = FieldInfo(
-            annotation=h5py.Reference,
+            annotation=Union[h5py.Reference, None, str],
             default=None,  # Will be set later
             description="hdf5 internal reference",
             json_schema_extra={

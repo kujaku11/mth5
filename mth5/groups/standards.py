@@ -92,12 +92,27 @@ class StandardsGroup(BaseGroup):
 
         self._defaults_summary_attrs = {
             "name": "summary",
-            "max_shape": (500,),
+            "max_shape": (1000,),
             "dtype": STANDARDS_DTYPE,
         }
 
+        self._modules = [
+            "common",
+            "timeseries",
+            "timeseries.filters",
+            "transfer_functions.tf",
+            "features",
+            "features.weights",
+            "processing",
+            "processing.fourier_coefficients",
+            "processing.aurora",
+        ]
+
     @property
-    def summary_table(self):
+    def summary_table(self) -> MTH5Table:
+        return self._get_summary_table()
+
+    def _get_summary_table(self) -> MTH5Table:
         return MTH5Table(self.hdf5_group["summary"], STANDARDS_DTYPE)
 
     def get_attribute_information(self, attribute_name):
@@ -111,7 +126,7 @@ class StandardsGroup(BaseGroup):
         :return: prints a description of the attribute
         :raises MTH5TableError:  if attribute is not found
 
-        >>> standars = mth5_obj.standards_group
+        >>> standards = mth5_obj.standards_group
         >>> standards.get_attribute_information('survey.release_license')
         survey.release_license
         --------------------------
@@ -171,16 +186,38 @@ class StandardsGroup(BaseGroup):
             index = self.summary_table.add_row(key_list)
         self.logger.debug(f"Added {index} rows to Standards Group")
 
+    def get_standards_summary(self, modules: list[str] = None):
+        """
+        get standards for the modules given
+
+        Parameters
+        ----------
+        modules : list[str], optional
+            List of module names to include in the summary, by default None
+        """
+        if modules is None:
+            modules = self._modules
+
+        summaries = []
+        for module in modules:
+            summaries.append(
+                summarize_standards(module, output_type="array", dtype=STANDARDS_DTYPE)
+            )
+
+        return np.concatenate(summaries)
+
     def summary_table_from_array(self, array):
         """
         Fill summary table from a numpy structured array
 
         :param array: structured numpy array
-        :type array: numpy array
-
+        modules : list, optional
+            List of module names to include in the summary, by default None
         """
-        for index, row in enumerate(array):
-            index = self.summary_table.add_row(row)
+        summary_table = self._get_summary_table()
+
+        for index, row in enumerate(np.nditer(array)):
+            index = summary_table.add_row(row)
         self.logger.debug(f"Added {index} rows to Standards Group")
 
     def initialize_group(self):
@@ -224,6 +261,6 @@ class StandardsGroup(BaseGroup):
             "; ".join([f"{k} = {v}" for k, v in self.dataset_options.items()])
         )
 
-        self.summary_table_from_dict(summarize_metadata_standards())
+        self.summary_table_from_array(self.get_standards_summary())
 
         self.write_metadata()

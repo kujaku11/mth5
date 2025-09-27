@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from loguru import logger
+from typing import Union
 
 from mt_metadata import timeseries as metadata
 from mt_metadata.common.mttime import MTime
@@ -33,6 +34,8 @@ from mth5.helpers import (
 
 from mth5.timeseries import ChannelTS
 from mth5.timeseries.channel_ts import make_dt_coordinates
+
+from pydantic import FieldInfo
 
 
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
@@ -137,36 +140,31 @@ class ChannelDataset:
 
     def _add_base_attributes(self):
         # add 2 attributes that will help with querying using the new Pydantic approach
-        from pydantic import Field
 
         # Create FieldInfo for mth5_type
-        mth5_type_field = Field(
-            default=self._class_name,
+        mth5_type_field = FieldInfo(
+            annotation=str,
+            default=self._class_name.split("Group")[0],
             description="type of group",
             json_schema_extra={
                 "required": True,
-                "style": "free form",
                 "units": None,
-                "options": [],
-                "alias": [],
-                "example": "group_name",
+                "examples": ["group_name"],
             },
         )
 
-        # Use add_new_field to add mth5_type
-        enhanced_class = self.metadata.add_new_field("mth5_type", mth5_type_field)
+        # Use add_new_field to add mth5_type - this returns a class, not an instance
+        enhanced_class = self._metadata.add_new_field("mth5_type", mth5_type_field)
 
         # Create FieldInfo for hdf5_reference
-        hdf5_ref_field = Field(
+        hdf5_ref_field = FieldInfo(
+            annotation=Union[h5py.Reference, None, str],
             default=None,  # Will be set later
             description="hdf5 internal reference",
             json_schema_extra={
                 "required": True,
-                "style": "free form",
                 "units": None,
-                "options": [],
-                "alias": [],
-                "example": "<HDF5 Group Reference>",
+                "examples": ["<HDF5 Group Reference>"],
             },
         )
 
@@ -175,7 +173,7 @@ class ChannelDataset:
         enhanced_class2 = temp_instance.add_new_field("hdf5_reference", hdf5_ref_field)
 
         # Create final instance
-        self.metadata = enhanced_class2()
+        self._metadata = enhanced_class2()
 
     def __str__(self):
         try:
