@@ -92,7 +92,7 @@ class FeatureChannelDataset:
         # channel data already exists then read them in with our writing back
         if "mth5_type" in list(self.hdf5_dataset.attrs.keys()):
             self.metadata.from_dict(
-                {self.hdf5_dataset.attrs["mth5_type"]: self.hdf5_dataset.attrs}
+                {self.hdf5_dataset.attrs["mth5_type"]: dict(self.hdf5_dataset.attrs)}
             )
         # if metadata is input, make sure that its the same class type amd write
         # to the hdf5 dataset
@@ -137,7 +137,7 @@ class FeatureChannelDataset:
 
         """
 
-        self.metadata.from_dict({self._class_name: self.hdf5_dataset.attrs})
+        self.metadata.from_dict({self._class_name: dict(self.hdf5_dataset.attrs)})
 
     def write_metadata(self):
         """

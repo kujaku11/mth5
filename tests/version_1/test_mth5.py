@@ -32,11 +32,11 @@ helpers.close_open_files()
 
 class TestMTH5(unittest.TestCase):
     @classmethod
-    def setUpClass(self):
-        self.fn = fn_path.joinpath("test.mth5")
-        self.mth5_obj = MTH5(file_version="0.1.0")
-        self.mth5_obj.open_mth5(self.fn, mode="w")
-        self.maxDiff = None
+    def setUpClass(cls):
+        cls.fn = fn_path.joinpath("test.mth5")
+        cls.mth5_obj = MTH5(file_version="0.1.0")
+        cls.mth5_obj.open_mth5(cls.fn, mode="w")
+        cls.maxDiff = None
 
     def test_initial_standards_group_size(self):
         stable = self.mth5_obj.standards_group.summary_table
@@ -248,18 +248,18 @@ class TestMTH5(unittest.TestCase):
         )
 
     @classmethod
-    def tearDownClass(self):
-        self.mth5_obj.close_mth5()
-        self.fn.unlink()
+    def tearDownClass(cls):
+        cls.mth5_obj.close_mth5()
+        cls.fn.unlink()
 
 
 class TestMTH5AddData(unittest.TestCase):
     @classmethod
-    def setUpClass(self):
-        self.fn = fn_path.joinpath("test.mth5")
-        self.mth5_obj = MTH5(file_version="0.1.0")
-        self.mth5_obj.open_mth5(self.fn, mode="w")
-        self.maxDiff = None
+    def setUpClass(cls):
+        cls.fn = fn_path.joinpath("test.mth5")
+        cls.mth5_obj = MTH5(file_version="0.1.0")
+        cls.mth5_obj.open_mth5(cls.fn, mode="w")
+        cls.maxDiff = None
 
         ts_list = []
         for comp in ["ex", "ey", "hx", "hy", "hz"]:
@@ -286,9 +286,9 @@ class TestMTH5AddData(unittest.TestCase):
             ts_list.append(channel_ts)
         run_ts = RunTS(ts_list, {"run": {"id": "MT009a"}})
 
-        self.station = self.mth5_obj.add_station("MT009", survey="test")
-        self.rg = self.station.add_run("MT009a")
-        self.channel_groups = self.rg.from_runts(run_ts)
+        cls.station = cls.mth5_obj.add_station("MT009", survey="test")
+        cls.rg = cls.station.add_run("MT009a")
+        cls.channel_groups = cls.rg.from_runts(run_ts)
 
     def test_channels(self):
         self.assertListEqual(["ex", "ey", "hx", "hy", "hz"], self.rg.groups_list)

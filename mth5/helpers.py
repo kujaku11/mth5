@@ -292,6 +292,10 @@ def validate_name(name, pattern=None):
 
 def add_attributes_to_metadata_class_pydantic(obj):
 
+    if not inspect.isclass(obj):
+        raise TypeError("Input must be a class")
+
+    # Create an instance of the class
     obj = obj()
     # Create FieldInfo for mth5_type
     mth5_type_field = FieldInfo(

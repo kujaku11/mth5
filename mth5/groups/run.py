@@ -430,8 +430,14 @@ class RunGroup(BaseGroup):
                     chunks=chunks,
                     **self.dataset_options,
                 )
-            if channel_metadata and channel_metadata.component is None:
-                channel_metadata.component = channel_name
+            if channel_metadata:
+                if channel_metadata.component != channel_name:
+                    self.logger.warning(
+                        f"Channel name {channel_name} != "
+                        f"channel_metadata.component "
+                        f"{channel_metadata.component}, setting to {channel_name}"
+                    )
+                    channel_metadata.component = channel_name
             if channel_type.lower() in ["magnetic"]:
                 channel_obj = MagneticDataset(
                     channel_group, dataset_metadata=channel_metadata
@@ -465,7 +471,7 @@ class RunGroup(BaseGroup):
                 channel_obj.write_metadata()
                 self.logger.debug(f"Done with {channel_name}")
         # need to make sure the channel name is passed.
-        if channel_obj.metadata.component is None:
+        if channel_obj.metadata.component != channel_name:
             channel_obj.metadata.component = channel_name
             channel_obj.write_metadata()
         return channel_obj
@@ -519,7 +525,7 @@ class RunGroup(BaseGroup):
             raise MTH5Error(msg)
         if ch_dataset.attrs["mth5_type"].lower() in ["electric"]:
             ch_metadata = meta_classes["Electric"]()
-            ch_metadata.from_dict({"Electric": ch_dataset.attrs})
+            ch_metadata.from_dict({"Electric": dict(ch_dataset.attrs)})
             channel = ElectricDataset(
                 ch_dataset,
                 dataset_metadata=ch_metadata,
@@ -527,7 +533,7 @@ class RunGroup(BaseGroup):
             )
         elif ch_dataset.attrs["mth5_type"].lower() in ["magnetic"]:
             ch_metadata = meta_classes["Magnetic"]()
-            ch_metadata.from_dict({"Magnetic": ch_dataset.attrs})
+            ch_metadata.from_dict({"Magnetic": dict(ch_dataset.attrs)})
             channel = MagneticDataset(
                 ch_dataset,
                 dataset_metadata=ch_metadata,
@@ -535,7 +541,7 @@ class RunGroup(BaseGroup):
             )
         elif ch_dataset.attrs["mth5_type"].lower() in ["auxiliary"]:
             ch_metadata = meta_classes["Auxiliary"]()
-            ch_metadata.from_dict({"Auxiliary": ch_dataset.attrs})
+            ch_metadata.from_dict({"Auxiliary": dict(ch_dataset.attrs)})
             channel = AuxiliaryDataset(
                 ch_dataset,
                 dataset_metadata=ch_metadata,
@@ -603,9 +609,7 @@ class RunGroup(BaseGroup):
             if channel in ["summary"]:
                 continue
             ch_obj = self.get_channel(channel)
-            has_data_list.append(
-                f"{ch_obj.metadata.component}: {ch_obj.has_data()}"
-            )
+            has_data_list.append(f"{ch_obj.metadata.component}: {ch_obj.has_data()}")
             if not ch_obj.has_data():
                 has_data = False
 
@@ -718,33 +722,25 @@ class RunGroup(BaseGroup):
         # need to update the channels recorded
         if channel_ts_obj.channel_metadata.type == "electric":
             if self.metadata.channels_recorded_electric is None:
-                self.metadata.channels_recorded_electric = [
-                    channel_ts_obj.component
-                ]
+                self.metadata.channels_recorded_electric = [channel_ts_obj.component]
             elif (
-                channel_ts_obj.component
-                not in self.metadata.channels_recorded_electric
+                channel_ts_obj.component not in self.metadata.channels_recorded_electric
             ):
                 self.metadata.channels_recorded_electric.append(
                     channel_ts_obj.component
                 )
         elif channel_ts_obj.channel_metadata.type == "magnetic":
             if self.metadata.channels_recorded_magnetic is None:
-                self.metadata.channels_recorded_magnetic = [
-                    channel_ts_obj.component
-                ]
+                self.metadata.channels_recorded_magnetic = [channel_ts_obj.component]
             elif (
-                channel_ts_obj.component
-                not in self.metadata.channels_recorded_magnetic
+                channel_ts_obj.component not in self.metadata.channels_recorded_magnetic
             ):
                 self.metadata.channels_recorded_magnetic.append(
                     channel_ts_obj.component
                 )
         elif channel_ts_obj.channel_metadata.type == "auxiliary":
             if self.metadata.channels_recorded_auxiliary is None:
-                self.metadata.channels_recorded_auxiliary = [
-                    channel_ts_obj.component
-                ]
+                self.metadata.channels_recorded_auxiliary = [channel_ts_obj.component]
             elif (
                 channel_ts_obj.component
                 not in self.metadata.channels_recorded_auxiliary
@@ -777,9 +773,7 @@ class RunGroup(BaseGroup):
         """
         channel_summary = self.channel_summary.copy()
 
-        self._metadata.time_period.start = (
-            channel_summary.start.min().isoformat()
-        )
+        self._metadata.time_period.start = channel_summary.start.min().isoformat()
         self._metadata.time_period.end = channel_summary.end.max().isoformat()
         try:
             self._metadata.sample_rate = channel_summary.sample_rate.unique()[0]
