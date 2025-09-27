@@ -301,6 +301,8 @@ class BaseGroup:
                 return_obj._metadata.update_attribute(match, name)
             else:
                 return_obj.metadata = group_metadata
+            # need to add the hdf5 reference to the metadata
+            return_obj.metadata.hdf5_reference = new_group.ref
             return_obj.write_metadata()
             if hasattr(return_obj, "initialize_group"):
                 return_obj.initialize_group()

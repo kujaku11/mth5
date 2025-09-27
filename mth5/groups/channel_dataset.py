@@ -121,7 +121,14 @@ class ChannelDataset:
                 self.logger.error(msg)
                 raise MTH5Error(msg)
             # load from dict because of the extra attributes for MTH5
-            self.metadata.from_dict(dataset_metadata.to_dict())
+            # Filter out None values for mth5_type to avoid pydantic validation errors
+            metadata_dict = dataset_metadata.to_dict()
+            # Clean the dict to remove None values for mth5_type that might cause validation errors
+            for class_key, class_data in metadata_dict.items():
+                if isinstance(class_data, dict) and class_data.get("mth5_type") is None:
+                    class_data.pop("mth5_type", None)
+
+            self.metadata.from_dict(metadata_dict)
             self.metadata.hdf5_reference = self.hdf5_dataset.ref
             self.metadata.mth5_type = self._class_name
 
@@ -230,7 +237,7 @@ class ChannelDataset:
 
     @property
     def start(self):
-        return self.metadata.time_period._start_dt
+        return self.metadata.time_period.start
 
     @start.setter
     def start(self, value):
