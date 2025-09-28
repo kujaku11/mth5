@@ -401,8 +401,8 @@ class RunGroup(BaseGroup):
                                 estimate_size = (
                                     int(
                                         (
-                                            channel_metadata.time_period._end_dt
-                                            - channel_metadata.time_period._start_dt
+                                            channel_metadata.time_period.end
+                                            - channel_metadata.time_period.start
                                         )
                                         * channel_metadata.sample_rate
                                     ),

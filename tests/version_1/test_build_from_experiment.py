@@ -2,7 +2,7 @@
 """
 Created on Thu May 13 13:45:27 2021
 
-:copyright: 
+:copyright:
     Jared Peacock (jpeacock@usgs.gov)
 
 :license: MIT
@@ -32,14 +32,24 @@ helpers.close_open_files()
 
 class TestMTH5(unittest.TestCase):
     @classmethod
-    def setUpClass(self):
-        self.maxDiff = None
-        self.fn = fn_path.joinpath("test.h5")
-        self.mth5_obj = MTH5(file_version="0.1.0")
-        self.mth5_obj.open_mth5(self.fn, mode="w")
-        self.experiment = Experiment()
-        self.experiment.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)
-        self.mth5_obj.from_experiment(self.experiment)
+    def setUpClass(cls):
+        cls.maxDiff = None
+        cls.fn = fn_path.joinpath("test.h5")
+        cls.mth5_obj = MTH5(file_version="0.1.0")
+        cls.mth5_obj.open_mth5(cls.fn, mode="w")
+        cls.experiment = Experiment()
+        cls.experiment.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)
+        cls.mth5_obj.from_experiment(cls.experiment)
+
+    @classmethod
+    def tearDownClass(cls):
+        """Clean up by closing the MTH5 file."""
+        if hasattr(cls, "mth5_obj") and cls.mth5_obj is not None:
+            try:
+                cls.mth5_obj.close_mth5()
+            except Exception:
+                pass  # File might already be closed
+        helpers.close_open_files()
 
     def test_surveys(self):
         survey = self.experiment.surveys[0]
@@ -91,9 +101,7 @@ class TestMTH5(unittest.TestCase):
                     run_ts.survey_metadata.get_attr_from_name(key),
                 )
 
-        for key in (
-            self.experiment.surveys[0].stations[0].to_dict(single=True).keys()
-        ):
+        for key in self.experiment.surveys[0].stations[0].to_dict(single=True).keys():
             if key in ["hdf5_reference", "mth5_type"]:
                 continue
 
@@ -106,18 +114,12 @@ class TestMTH5(unittest.TestCase):
 
                 else:
                     self.assertEqual(
-                        self.experiment.surveys[0]
-                        .stations[0]
-                        .get_attr_from_name(key),
+                        self.experiment.surveys[0].stations[0].get_attr_from_name(key),
                         run_ts.station_metadata.get_attr_from_name(key),
                     )
 
         for key in (
-            self.experiment.surveys[0]
-            .stations[0]
-            .runs[0]
-            .to_dict(single=True)
-            .keys()
+            self.experiment.surveys[0].stations[0].runs[0].to_dict(single=True).keys()
         ):
             if key in ["hdf5_reference", "mth5_type"]:
                 continue
@@ -163,11 +165,7 @@ class TestMTH5(unittest.TestCase):
         channel_group = self.mth5_obj.get_channel(
             self.experiment.surveys[0].stations[0].id,
             self.experiment.surveys[0].stations[0].runs[0].id,
-            self.experiment.surveys[0]
-            .stations[0]
-            .runs[0]
-            .channels[0]
-            .component,
+            self.experiment.surveys[0].stations[0].runs[0].channels[0].component,
         )
         ch_ts = channel_group.to_channel_ts()
 
@@ -178,9 +176,7 @@ class TestMTH5(unittest.TestCase):
                     ch_ts.survey_metadata.get_attr_from_name(key),
                 )
 
-        for key in (
-            self.experiment.surveys[0].stations[0].to_dict(single=True).keys()
-        ):
+        for key in self.experiment.surveys[0].stations[0].to_dict(single=True).keys():
             if key in ["hdf5_reference", "mth5_type"]:
                 continue
 
@@ -192,18 +188,12 @@ class TestMTH5(unittest.TestCase):
                     )
                 else:
                     self.assertEqual(
-                        self.experiment.surveys[0]
-                        .stations[0]
-                        .get_attr_from_name(key),
+                        self.experiment.surveys[0].stations[0].get_attr_from_name(key),
                         ch_ts.station_metadata.get_attr_from_name(key),
                     )
 
         for key in (
-            self.experiment.surveys[0]
-            .stations[0]
-            .runs[0]
-            .to_dict(single=True)
-            .keys()
+            self.experiment.surveys[0].stations[0].runs[0].to_dict(single=True).keys()
         ):
             if key in [
                 "hdf5_reference",
@@ -289,9 +279,7 @@ class TestMTH5(unittest.TestCase):
             self.assertEqual(self.mth5_obj.channel_summary.dtype, CHANNEL_DTYPE)
         with self.subTest("test station"):
             self.assertTrue(
-                (
-                    self.mth5_obj.channel_summary.array["station"] == b"REW09"
-                ).all()
+                (self.mth5_obj.channel_summary.array["station"] == b"REW09").all()
             )
 
     def test_run_summary(self):
@@ -310,26 +298,38 @@ class TestMTH5(unittest.TestCase):
             self.assertEqual(run_summary.shape, (5, 15))
 
     @classmethod
-    def tearDownClass(self):
-        self.mth5_obj.close_mth5()
-        self.fn.unlink()
+    def tearDownClass(cls):
+        cls.mth5_obj.close_mth5()
+        cls.fn.unlink()
 
 
 class TestUpdateFromExperiment(unittest.TestCase):
     @classmethod
-    def setUpClass(self):
-        self.maxDiff = None
-        self.fn = fn_path.joinpath("test.h5")
-        self.mth5_obj = MTH5(file_version="0.1.0")
-        self.mth5_obj.open_mth5(self.fn, mode="w")
-        self.experiment = Experiment()
-        self.experiment.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)
-        self.mth5_obj.from_experiment(self.experiment)
+    def setUpClass(cls):
+        cls.maxDiff = None
+        cls.fn = fn_path.joinpath(
+            "test_update.h5"
+        )  # Use different filename to avoid conflicts
+        cls.mth5_obj = MTH5(file_version="0.1.0")
+        cls.mth5_obj.open_mth5(cls.fn, mode="w")
+        cls.experiment = Experiment()
+        cls.experiment.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)
+        cls.mth5_obj.from_experiment(cls.experiment)
 
-        self.experiment_02 = Experiment()
-        self.experiment_02.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)
-        self.experiment_02.surveys[0].id = "different_survey_name"
-        self.experiment_02.surveys[0].stations[0].location.latitude = 10
+        cls.experiment_02 = Experiment()
+        cls.experiment_02.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)
+        cls.experiment_02.surveys[0].id = "different_survey_name"
+        cls.experiment_02.surveys[0].stations[0].location.latitude = 10
+
+    @classmethod
+    def tearDownClass(cls):
+        """Clean up by closing the MTH5 file."""
+        if hasattr(cls, "mth5_obj") and cls.mth5_obj is not None:
+            try:
+                cls.mth5_obj.close_mth5()
+            except Exception:
+                pass  # File might already be closed
+        helpers.close_open_files()
 
     def test_update_from_new_experiment(self):
 
@@ -348,9 +348,9 @@ class TestUpdateFromExperiment(unittest.TestCase):
             )
 
     @classmethod
-    def tearDownClass(self):
-        self.mth5_obj.close_mth5()
-        self.fn.unlink()
+    def tearDownClass(cls):
+        cls.mth5_obj.close_mth5()
+        cls.fn.unlink()
 
 
 # =============================================================================

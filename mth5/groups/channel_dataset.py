@@ -297,8 +297,12 @@ class ChannelDataset:
         """
         meta_dict = self.metadata.to_dict()[self.metadata._class_name.lower()]
         for key, value in meta_dict.items():
-            value = to_numpy_type(value)
-            self.hdf5_dataset.attrs.create(key, value)
+            try:
+                value = to_numpy_type(value)
+                self.hdf5_dataset.attrs.create(key, value)
+            except Exception as e:
+                # Convert problematic values to string as fallback
+                self.hdf5_dataset.attrs.create(key, str(value))
 
     def replace_dataset(self, new_data_array):
         """

@@ -201,9 +201,7 @@ class MetronixChannelJSON(MetronixFileNameMetadata):
             raise IOError(f"Cannot find Metronix JSON file {self.fn}")
 
         with open(self.fn, "r") as fid:
-            self.metadata = json.load(
-                fid, object_hook=lambda d: SimpleNamespace(**d)
-            )
+            self.metadata = json.load(fid, object_hook=lambda d: SimpleNamespace(**d))
 
     def get_channel_metadata(self):
         """
@@ -247,9 +245,7 @@ class MetronixChannelJSON(MetronixFileNameMetadata):
             metadata_object.sensor.id = self.metadata.sensor_calibration.serial
             metadata_object.sensor.manufacturer = "Metronix Geophysics"
             metadata_object.sensor.type = "induction coil"
-            metadata_object.sensor.model = (
-                self.metadata.sensor_calibration.sensor
-            )
+            metadata_object.sensor.model = self.metadata.sensor_calibration.sensor
 
         else:
             msg = f"Do not understand channel component {self.component}"
@@ -258,7 +254,7 @@ class MetronixChannelJSON(MetronixFileNameMetadata):
 
         metadata_object.time_period.start = self.metadata.datetime
         metadata_object.time_period.end = (
-            metadata_object.time_period._start_dt + self.duration
+            metadata_object.time_period.start + self.duration
         )
 
         metadata_object.units = self.metadata.units
@@ -269,9 +265,7 @@ class MetronixChannelJSON(MetronixFileNameMetadata):
             ]
         else:
             metadata_object.filter.name = self.metadata.filter.split(",")
-        metadata_object.filter.applied = [True] * len(
-            metadata_object.filter.name
-        )
+        metadata_object.filter.applied = [True] * len(metadata_object.filter.name)
 
         return metadata_object
 
@@ -292,9 +286,7 @@ class MetronixChannelJSON(MetronixFileNameMetadata):
             frequencies=self.metadata.sensor_calibration.f,
             amplitudes=self.metadata.sensor_calibration.a,
             units_out=self.metadata.units,
-            units_in=self.metadata.sensor_calibration.units_amplitude.split(
-                "/"
-            )[-1],
+            units_in=self.metadata.sensor_calibration.units_amplitude.split("/")[-1],
         )
 
         if self.metadata.sensor_calibration.units_phase in ["degrees", "deg"]:

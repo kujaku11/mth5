@@ -192,9 +192,19 @@ def to_numpy_type(value):
         if np.any([type(x) in [str, bytes, np.str_] for x in value]):
             return np.array(value, dtype="S")
         else:
-            return np.array(value)
+            try:
+                return np.array(value)
+            except (ValueError, TypeError):
+                # If we can't convert to numpy array, convert to string representation
+                return str(value)
     else:
-        raise TypeError("Type {0} not understood".format(type(value)))
+        # For pydantic models and other complex objects, convert to string
+        try:
+            # First try to convert directly
+            return np.array(value)
+        except (ValueError, TypeError):
+            # If that fails, convert to string representation
+            return str(value)
 
 
 def validate_name(name):

@@ -924,7 +924,10 @@ class MTH5:
         if self.h5_is_write():
             if self.file_version in ["0.1.0"]:
                 sg = self.survey_group
-                sg.metadata.from_dict(experiment.surveys[survey_index].to_dict())
+                # Use skip_none=True to filter out None mth5_type values
+                sg.metadata.from_dict(
+                    experiment.surveys[survey_index].to_dict(), skip_none=True
+                )
                 sg.write_metadata()
                 for station in experiment.surveys[0].stations:
                     mt_station = self.add_station(station.id, station_metadata=station)
