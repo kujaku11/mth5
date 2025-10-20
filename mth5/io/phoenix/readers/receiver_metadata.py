@@ -93,9 +93,7 @@ class PhoenixReceiverMetadata:
 
     @property
     def channel_map(self):
-        return dict(
-            [(d.idx, d.tag.lower()) for d in self.obj.channel_map.mapping]
-        )
+        return dict([(d.idx, d.tag.lower()) for d in self.obj.channel_map.mapping])
 
     @property
     def lp_filter_base_name(self):
@@ -160,12 +158,10 @@ class PhoenixReceiverMetadata:
                     )
             c.channel_number = self.get_ch_index(tag)
             c.sensor.manufacturer = "Phoenix Geophysics"
-            c.units = "volts"
+            c.units = "volt"
             c.time_period.start = self.obj.start
             c.time_period.end = self.obj.stop
-            c.filter.name = [
-                f"{self.lp_filter_base_name}_{int(ch.lp)}hz_low_pass"
-            ]
+            c.filter.name = [f"{self.lp_filter_base_name}_{int(ch.lp)}hz_low_pass"]
             c.filter.applied = [True]
             if c.sensor.id is not None:
                 c.filter.name.append(f"coil_{c.sensor.id}_response")
