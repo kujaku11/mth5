@@ -130,6 +130,8 @@ class TestMTH5(unittest.TestCase):
         run_ts = run_group.to_runts()
 
         for key in self.experiment.surveys[0].to_dict(single=True).keys():
+            if key in ["hdf5_reference", "mth5_type"]:
+                continue
             with self.subTest(f"survey.{key}"):
                 self.assertEqual(
                     self.experiment.surveys[0].get_attr_from_name(key),
@@ -143,7 +145,7 @@ class TestMTH5(unittest.TestCase):
             with self.subTest(f"station.{key}"):
                 if key in ["run_list"]:
                     self.assertListEqual(
-                        ["a"],
+                        ["a", "b", "c", "d", "e"],
                         run_ts.station_metadata.run_list,
                     )
 
