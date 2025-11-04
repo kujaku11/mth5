@@ -1,23 +1,11 @@
 # -*- coding: utf-8 -*-
 """
+Test suite for MTH5 experiment building functionality.
+
 Created on Thu May 13 13:45:27 2021
 
 :copyright:
-    Jared             with self.subTest(run.id):
-                h5_run = self.mth5_obj.get_run(
-                    self.experiment.surveys[0].stations[0].id, run.id
-                )
-                rd = run.to_dict(single=True)
-                if "hdf5_reference" in rd:
-                    rd.pop("hdf5_reference")
-                if "mth5_type" in rd:
-                    rd.pop("mth5_type")
-
-                h5_rd = h5_run.metadata.to_dict(single=True)
-                if "hdf5_reference" in h5_rd:
-                    h5_rd.pop("hdf5_reference")
-                if "mth5_type" in h5_rd:
-                    h5_rd.pop("mth5_type")eacock@usgs.gov)
+    Jared Peacock (jpeacock@usgs.gov)
 
 :license: MIT
 
@@ -26,10 +14,11 @@ Created on Thu May 13 13:45:27 2021
 # Imports
 # =============================================================================
 
-import unittest
+import pytest
 from pathlib import Path
 import numpy as np
 import pandas as pd
+from typing import Generator
 
 from mth5 import CHANNEL_DTYPE
 from mth5 import helpers
@@ -37,207 +26,303 @@ from mth5.mth5 import MTH5
 from mt_metadata.timeseries import Experiment
 from mt_metadata import MT_EXPERIMENT_SINGLE_STATION
 
+# =============================================================================
+# Constants and Utilities
+# =============================================================================
+
 fn_path = Path(__file__).parent
-# =============================================================================
-#
-# =============================================================================
 helpers.close_open_files()
 
 
-class TestMTH5(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.maxDiff = None
-        cls.fn = fn_path.joinpath("test.h5")
-        cls.mth5_obj = MTH5(file_version="0.1.0")
-        cls.mth5_obj.open_mth5(cls.fn, mode="w")
-        cls.experiment = Experiment()
-        cls.experiment.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)
-        cls.mth5_obj.from_experiment(cls.experiment)
+def clean_metadata_dict(metadata_dict: dict) -> dict:
+    """Remove HDF5-specific keys from metadata dictionary."""
+    cleaned = metadata_dict.copy()
+    cleaned.pop("hdf5_reference", None)
+    cleaned.pop("mth5_type", None)
+    return cleaned
 
-    # @classmethod
-    # def tearDownClass(cls):
-    #     """Clean up by closing the MTH5 file."""
-    #     if hasattr(cls, "mth5_obj") and cls.mth5_obj is not None:
-    #         try:
-    #             cls.mth5_obj.close_mth5()
-    #         except Exception:
-    #             pass  # File might already be closed
-    #     helpers.close_open_files()
 
-    def test_surveys(self):
-        survey = self.experiment.surveys[0]
-        # Handle differences between original and MTH5-loaded metadata
-        sd = survey.to_dict(single=True)
-        if "hdf5_reference" in sd:
-            sd.pop("hdf5_reference")
-        if "mth5_type" in sd:
-            sd.pop("mth5_type")
+# =============================================================================
+# Fixtures
+# =============================================================================
 
-        h5_sd = self.mth5_obj.survey_group.metadata.to_dict(single=True)
-        if "hdf5_reference" in h5_sd:
-            h5_sd.pop("hdf5_reference")
-        if "mth5_type" in h5_sd:
-            h5_sd.pop("mth5_type")
 
-        self.assertEqual(sd, h5_sd)
+@pytest.fixture(scope="session")
+def experiment_from_xml() -> Experiment:
+    """Load experiment from XML file (session-scoped for efficiency)."""
+    experiment = Experiment()
+    experiment.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)
+    return experiment
 
-    def test_stations(self):
-        stations = self.experiment.surveys[0].stations
-        for station in stations:
-            with self.subTest(station.id):
-                h5_station = self.mth5_obj.get_station(station.id)
-                sd = station.to_dict(single=True)
-                if "hdf5_reference" in sd:
-                    sd.pop("hdf5_reference")
-                if "mth5_type" in sd:
-                    sd.pop("mth5_type")
 
-                h5_sd = h5_station.metadata.to_dict(single=True)
-                if "hdf5_reference" in h5_sd:
-                    h5_sd.pop("hdf5_reference")
-                if "mth5_type" in h5_sd:
-                    h5_sd.pop("mth5_type")
+@pytest.fixture(scope="session")
+def mth5_with_experiment(
+    experiment_from_xml: Experiment,
+) -> Generator[MTH5, None, None]:
+    """Create MTH5 file with experiment data (session-scoped for efficiency)."""
+    fn = fn_path.joinpath("test_pytest.h5")
+    mth5_obj = MTH5(file_version="0.1.0")
+    mth5_obj.open_mth5(fn, mode="w")
+    mth5_obj.from_experiment(experiment_from_xml)
 
-                self.assertDictEqual(h5_sd, sd)
+    yield mth5_obj
 
-    def test_runs(self):
-        runs = self.experiment.surveys[0].stations[0].runs
-        for run in runs:
-            with self.subTest(run.id):
-                h5_run = self.mth5_obj.get_run(
-                    self.experiment.surveys[0].stations[0].id, run.id
-                )
-                rd = run.to_dict(single=True)
-                if "hdf5_reference" in rd:
-                    rd.pop("hdf5_reference")
-                if "mth5_type" in rd:
-                    rd.pop("mth5_type")
+    # Cleanup
+    mth5_obj.close_mth5()
+    if fn.exists():
+        fn.unlink()
 
-                h5_rd = h5_run.metadata.to_dict(single=True)
-                if "hdf5_reference" in h5_rd:
-                    h5_rd.pop("hdf5_reference")
-                if "mth5_type" in h5_rd:
-                    h5_rd.pop("mth5_type")
 
-                self.assertDictEqual(h5_rd, rd)
+@pytest.fixture(scope="session")
+def modified_experiment(experiment_from_xml: Experiment) -> Experiment:
+    """Create a modified experiment for update testing."""
+    experiment_02 = Experiment()
+    experiment_02.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)
+    experiment_02.surveys[0].id = "different_survey_name"
+    experiment_02.surveys[0].stations[0].location.latitude = 10
+    return experiment_02
 
-    def test_to_run_ts(self):
-        run_group = self.mth5_obj.get_run(
-            self.experiment.surveys[0].stations[0].id,
-            self.experiment.surveys[0].stations[0].runs[0].id,
+
+@pytest.fixture(scope="session")
+def mth5_update_test(
+    experiment_from_xml: Experiment, modified_experiment: Experiment
+) -> Generator[tuple[MTH5, Experiment, Experiment], None, None]:
+    """MTH5 object for update testing."""
+    fn = fn_path.joinpath("test_update_pytest.h5")
+    mth5_obj = MTH5(file_version="0.1.0")
+    mth5_obj.open_mth5(fn, mode="w")
+    mth5_obj.from_experiment(experiment_from_xml)
+
+    yield mth5_obj, experiment_from_xml, modified_experiment
+
+    # Cleanup
+    mth5_obj.close_mth5()
+    if fn.exists():
+        fn.unlink()
+
+
+# =============================================================================
+# Test Classes
+# =============================================================================
+
+
+class TestMTH5ExperimentBuild:
+    """Test MTH5 experiment building and metadata consistency."""
+
+    def test_survey_metadata(
+        self, mth5_with_experiment: MTH5, experiment_from_xml: Experiment
+    ):
+        """Test survey metadata consistency between original and MTH5."""
+        survey = experiment_from_xml.surveys[0]
+
+        # Get cleaned metadata dictionaries
+        original_data = clean_metadata_dict(survey.to_dict(single=True))
+        h5_data = clean_metadata_dict(
+            mth5_with_experiment.survey_group.metadata.to_dict(single=True)
         )
+
+        assert original_data == h5_data
+
+    @pytest.mark.parametrize(
+        "station",
+        [
+            pytest.param(lambda exp: station, id=f"station_{i}")
+            for i, station in enumerate(["REW09"])
+        ],
+    )  # Will be dynamically populated
+    def test_station_metadata(
+        self, mth5_with_experiment: MTH5, experiment_from_xml: Experiment, station
+    ):
+        """Test station metadata consistency."""
+        # Get all stations dynamically for parametrization
+        stations = experiment_from_xml.surveys[0].stations
+
+        for station_obj in stations:
+            h5_station = mth5_with_experiment.get_station(station_obj.id)
+
+            original_data = clean_metadata_dict(station_obj.to_dict(single=True))
+            h5_data = clean_metadata_dict(h5_station.metadata.to_dict(single=True))
+
+            assert (
+                h5_data == original_data
+            ), f"Station {station_obj.id} metadata mismatch"
+
+    def test_run_metadata(
+        self, mth5_with_experiment: MTH5, experiment_from_xml: Experiment
+    ):
+        """Test run metadata consistency."""
+        runs = experiment_from_xml.surveys[0].stations[0].runs
+        station_id = experiment_from_xml.surveys[0].stations[0].id
+
+        for run in runs:
+            h5_run = mth5_with_experiment.get_run(station_id, run.id)
+
+            original_data = clean_metadata_dict(run.to_dict(single=True))
+            h5_data = clean_metadata_dict(h5_run.metadata.to_dict(single=True))
+
+            assert h5_data == original_data, f"Run {run.id} metadata mismatch"
+
+    def test_channel_metadata(
+        self, mth5_with_experiment: MTH5, experiment_from_xml: Experiment
+    ):
+        """Test channel metadata consistency."""
+        runs = experiment_from_xml.surveys[0].stations[0].runs
+        station_id = experiment_from_xml.surveys[0].stations[0].id
+
+        for run in runs:
+            h5_run = mth5_with_experiment.get_run(station_id, run.id)
+
+            for channel in run.channels:
+                h5_channel = h5_run.get_channel(channel.component)
+
+                original_data = clean_metadata_dict(channel.to_dict(single=True))
+                h5_data = clean_metadata_dict(h5_channel.metadata.to_dict(single=True))
+
+                assert (
+                    h5_data == original_data
+                ), f"Channel {run.id}/{channel.component} metadata mismatch"
+
+    def test_filter_metadata(
+        self, mth5_with_experiment: MTH5, experiment_from_xml: Experiment
+    ):
+        """Test filter metadata consistency."""
+        exp_filters = experiment_from_xml.surveys[0].filters
+
+        for key, value in exp_filters.items():
+            # Transform key to match how MTH5 stores filter names
+            stored_key = key.replace("/", " per ")
+            original_data = value.to_dict(single=True, required=False)
+            h5_filter = mth5_with_experiment.filters_group.to_filter_object(stored_key)
+            h5_data = h5_filter.to_dict(single=True, required=False)
+
+            for k in original_data.keys():
+                if k not in h5_data:
+                    continue
+
+                v1, v2 = original_data[k], h5_data[k]
+
+                if isinstance(v1, (float, int)):
+                    assert (
+                        abs(v1 - float(v2)) < 1e-5
+                    ), f"Filter {stored_key}.{k} numerical mismatch"
+                elif isinstance(v1, np.ndarray):
+                    if v1.dtype != v2.dtype:
+                        v2_converted = v2.astype(v1.dtype)
+                        assert (
+                            v1 == v2_converted
+                        ).all(), f"Filter {stored_key}.{k} array mismatch"
+                    else:
+                        assert v1.dtype == v2.dtype
+                        assert (
+                            v1 == v2
+                        ).all(), f"Filter {stored_key}.{k} array mismatch"
+                elif v1 is None and v2 == "None":
+                    continue  # Handle None vs 'None' string conversion
+                else:
+                    assert v1 == v2, f"Filter {stored_key}.{k} value mismatch"
+
+
+class TestMTH5TimeSeries:
+    """Test MTH5 time series functionality."""
+
+    def test_run_to_timeseries(
+        self, mth5_with_experiment: MTH5, experiment_from_xml: Experiment
+    ):
+        """Test conversion of run to time series."""
+        station_id = experiment_from_xml.surveys[0].stations[0].id
+        run_id = experiment_from_xml.surveys[0].stations[0].runs[0].id
+
+        run_group = mth5_with_experiment.get_run(station_id, run_id)
         run_ts = run_group.to_runts()
 
-        for key in self.experiment.surveys[0].to_dict(single=True).keys():
+        # Test survey metadata
+        survey_data = experiment_from_xml.surveys[0].to_dict(single=True)
+        for key in survey_data.keys():
             if key in ["hdf5_reference", "mth5_type"]:
                 continue
-            with self.subTest(f"survey.{key}"):
-                self.assertEqual(
-                    self.experiment.surveys[0].get_attr_from_name(key),
-                    run_ts.survey_metadata.get_attr_from_name(key),
+            expected = experiment_from_xml.surveys[0].get_attr_from_name(key)
+            actual = run_ts.survey_metadata.get_attr_from_name(key)
+            assert expected == actual, f"Survey metadata mismatch for {key}"
+
+        # Test station metadata
+        station_data = experiment_from_xml.surveys[0].stations[0].to_dict(single=True)
+        for key in station_data.keys():
+            if key in ["hdf5_reference", "mth5_type"]:
+                continue
+
+            if key == "run_list":
+                assert run_ts.station_metadata.run_list == ["a", "b", "c", "d", "e"]
+            else:
+                expected = (
+                    experiment_from_xml.surveys[0].stations[0].get_attr_from_name(key)
                 )
+                actual = run_ts.station_metadata.get_attr_from_name(key)
+                assert expected == actual, f"Station metadata mismatch for {key}"
 
-        for key in self.experiment.surveys[0].stations[0].to_dict(single=True).keys():
-            if key in ["hdf5_reference", "mth5_type"]:
-                continue
-
-            with self.subTest(f"station.{key}"):
-                if key in ["run_list"]:
-                    self.assertListEqual(
-                        ["a", "b", "c", "d", "e"],
-                        run_ts.station_metadata.run_list,
-                    )
-
-                else:
-                    self.assertEqual(
-                        self.experiment.surveys[0].stations[0].get_attr_from_name(key),
-                        run_ts.station_metadata.get_attr_from_name(key),
-                    )
-
-        for key in (
-            self.experiment.surveys[0].stations[0].runs[0].to_dict(single=True).keys()
-        ):
-            if key in ["hdf5_reference", "mth5_type"]:
-                continue
-            with self.subTest(f"run.{key}"):
-                if key in ["time_period.end"]:
-                    self.assertNotEqual(
-                        self.experiment.surveys[0]
-                        .stations[0]
-                        .runs[0]
-                        .get_attr_from_name(key),
-                        run_ts.run_metadata.get_attr_from_name(key),
-                    )
-                else:
-                    self.assertEqual(
-                        self.experiment.surveys[0]
-                        .stations[0]
-                        .runs[0]
-                        .get_attr_from_name(key),
-                        run_ts.run_metadata.get_attr_from_name(key),
-                    )
-
-    def test_channels(self):
-        runs = self.experiment.surveys[0].stations[0].runs
-        for run in runs:
-            h5_run = self.mth5_obj.get_run(
-                self.experiment.surveys[0].stations[0].id, run.id
-            )
-            for channel in run.channels:
-                with self.subTest(f"{run.id}/{channel.component}"):
-                    h5_channel = h5_run.get_channel(channel.component)
-
-                    sd = channel.to_dict(single=True)
-                    if "hdf5_reference" in sd:
-                        sd.pop("hdf5_reference")
-                    if "mth5_type" in sd:
-                        sd.pop("mth5_type")
-
-                    h5_sd = h5_channel.metadata.to_dict(single=True)
-                    if "hdf5_reference" in h5_sd:
-                        h5_sd.pop("hdf5_reference")
-                    if "mth5_type" in h5_sd:
-                        h5_sd.pop("mth5_type")
-
-                    self.assertDictEqual(h5_sd, sd)
-
-    def test_to_channel_ts(self):
-        channel_group = self.mth5_obj.get_channel(
-            self.experiment.surveys[0].stations[0].id,
-            self.experiment.surveys[0].stations[0].runs[0].id,
-            self.experiment.surveys[0].stations[0].runs[0].channels[0].component,
+        # Test run metadata
+        run_data = (
+            experiment_from_xml.surveys[0].stations[0].runs[0].to_dict(single=True)
         )
+        for key in run_data.keys():
+            if key in ["hdf5_reference", "mth5_type"]:
+                continue
+
+            expected = (
+                experiment_from_xml.surveys[0]
+                .stations[0]
+                .runs[0]
+                .get_attr_from_name(key)
+            )
+            actual = run_ts.run_metadata.get_attr_from_name(key)
+
+            if key == "time_period.end":
+                # Known issue: end time is off by one second
+                assert expected != actual
+            else:
+                assert expected == actual, f"Run metadata mismatch for {key}"
+
+    def test_channel_to_timeseries(
+        self, mth5_with_experiment: MTH5, experiment_from_xml: Experiment
+    ):
+        """Test conversion of channel to time series."""
+        station_id = experiment_from_xml.surveys[0].stations[0].id
+        run_id = experiment_from_xml.surveys[0].stations[0].runs[0].id
+        component = (
+            experiment_from_xml.surveys[0].stations[0].runs[0].channels[0].component
+        )
+
+        channel_group = mth5_with_experiment.get_channel(station_id, run_id, component)
         ch_ts = channel_group.to_channel_ts()
 
-        for key in self.experiment.surveys[0].to_dict(single=True).keys():
+        # Test survey metadata
+        survey_data = experiment_from_xml.surveys[0].to_dict(single=True)
+        for key in survey_data.keys():
             if key in ["hdf5_reference", "mth5_type"]:
                 continue
-            with self.subTest(f"survey.{key}"):
-                self.assertEqual(
-                    self.experiment.surveys[0].get_attr_from_name(key),
-                    ch_ts.survey_metadata.get_attr_from_name(key),
+            expected = experiment_from_xml.surveys[0].get_attr_from_name(key)
+            actual = ch_ts.survey_metadata.get_attr_from_name(key)
+            assert expected == actual, f"Survey metadata mismatch for {key}"
+
+        # Test station metadata
+        station_data = experiment_from_xml.surveys[0].stations[0].to_dict(single=True)
+        for key in station_data.keys():
+            if key in ["hdf5_reference", "mth5_type"]:
+                continue
+
+            if key in ["run_list", "channels_recorded"]:
+                assert ch_ts.station_metadata.run_list == ["a", "b", "c", "d", "e"]
+            else:
+                expected = (
+                    experiment_from_xml.surveys[0].stations[0].get_attr_from_name(key)
                 )
+                actual = ch_ts.station_metadata.get_attr_from_name(key)
+                assert expected == actual, f"Station metadata mismatch for {key}"
 
-        for key in self.experiment.surveys[0].stations[0].to_dict(single=True).keys():
-            if key in ["hdf5_reference", "mth5_type"]:
-                continue
-
-            with self.subTest(f"station.{key}"):
-                if key in ["run_list", "channels_recorded"]:
-                    self.assertListEqual(
-                        ["a", "b", "c", "d", "e"],
-                        ch_ts.station_metadata.run_list,
-                    )
-                else:
-                    self.assertEqual(
-                        self.experiment.surveys[0].stations[0].get_attr_from_name(key),
-                        ch_ts.station_metadata.get_attr_from_name(key),
-                    )
-
-        for key in (
-            self.experiment.surveys[0].stations[0].runs[0].to_dict(single=True).keys()
-        ):
+        # Test run metadata
+        run_data = (
+            experiment_from_xml.surveys[0].stations[0].runs[0].to_dict(single=True)
+        )
+        for key in run_data.keys():
             if key in [
                 "hdf5_reference",
                 "mth5_type",
@@ -246,172 +331,192 @@ class TestMTH5(unittest.TestCase):
                 "channels_recorded_auxiliary",
             ]:
                 continue
-            with self.subTest(f"run.{key}"):
-                self.assertEqual(
-                    self.experiment.surveys[0]
-                    .stations[0]
-                    .runs[0]
-                    .get_attr_from_name(key),
-                    ch_ts.run_metadata.get_attr_from_name(key),
-                )
 
-        for key in (
-            self.experiment.surveys[0]
+            expected = (
+                experiment_from_xml.surveys[0]
+                .stations[0]
+                .runs[0]
+                .get_attr_from_name(key)
+            )
+            actual = ch_ts.run_metadata.get_attr_from_name(key)
+            assert expected == actual, f"Run metadata mismatch for {key}"
+
+        # Test channel metadata
+        channel_data = (
+            experiment_from_xml.surveys[0]
             .stations[0]
             .runs[0]
             .channels[0]
             .to_dict(single=True)
-            .keys()
-        ):
-            if key in [
-                "hdf5_reference",
-                "mth5_type",
-                "filter.name",
-                "filter.applied",
-            ]:
+        )
+        for key in channel_data.keys():
+            if key in ["hdf5_reference", "mth5_type", "filter.name", "filter.applied"]:
                 continue
-            with self.subTest(f"channel.{key}"):
-                # end time is off by one second (bug?)
-                if key in ["time_period.end"]:
-                    self.assertNotEqual(
-                        self.experiment.surveys[0]
-                        .stations[0]
-                        .runs[0]
-                        .channels[0]
-                        .get_attr_from_name(key),
-                        ch_ts.station_metadata.get_attr_from_name(key),
-                    )
-                else:
-                    self.assertEqual(
-                        self.experiment.surveys[0]
-                        .stations[0]
-                        .runs[0]
-                        .channels[0]
-                        .get_attr_from_name(key),
-                        ch_ts.channel_metadata.get_attr_from_name(key),
-                    )
 
-    def test_filters(self):
-        exp_filters = self.experiment.surveys[0].filters
-
-        for key, value in exp_filters.items():
-            # Transform key to match how MTH5 stores filter names
-            # MTH5 replaces "/" with " per " but preserves original casing
-            stored_key = key.replace("/", " per ")
-            sd = value.to_dict(single=True, required=False)
-            h5_sd = self.mth5_obj.filters_group.to_filter_object(stored_key)
-            h5_sd = h5_sd.to_dict(single=True, required=False)
-            for k in sd.keys():
-                # Only test keys that exist in both dictionaries
-                if k not in h5_sd:
-                    continue
-                with self.subTest(f"{stored_key}_{k}"):
-                    v1 = sd[k]
-                    v2 = h5_sd[k]
-                    if isinstance(v1, (float, int)):
-                        self.assertAlmostEqual(v1, float(v2), 5)
-                    elif isinstance(v1, np.ndarray):
-                        # Handle dtype mismatches for complex arrays
-                        if v1.dtype != v2.dtype:
-                            # Convert v2 to same dtype as v1 if needed
-                            v2_converted = v2.astype(v1.dtype)
-                            self.assertTrue((v1 == v2_converted).all())
-                        else:
-                            self.assertEqual(v1.dtype, v2.dtype)
-                            self.assertTrue((v1 == v2).all())
-                    elif v1 is None and v2 == "None":
-                        # Handle None vs 'None' string conversion
-                        continue
-                    else:
-                        self.assertEqual(v1, v2)
-
-    def test_channel_summary(self):
-        self.mth5_obj.channel_summary.summarize()
-
-        with self.subTest("test shape"):
-            self.assertEqual(self.mth5_obj.channel_summary.shape, (25,))
-        with self.subTest("test nrows"):
-            self.assertEqual(self.mth5_obj.channel_summary.nrows, 25)
-        with self.subTest(("test dtype")):
-            self.assertEqual(self.mth5_obj.channel_summary.dtype, CHANNEL_DTYPE)
-        with self.subTest("test station"):
-            self.assertTrue(
-                (self.mth5_obj.channel_summary.array["station"] == b"REW09").all()
+            expected = (
+                experiment_from_xml.surveys[0]
+                .stations[0]
+                .runs[0]
+                .channels[0]
+                .get_attr_from_name(key)
             )
 
-    def test_run_summary(self):
-        self.mth5_obj.channel_summary.summarize()
-        run_summary = self.mth5_obj.channel_summary.to_run_summary()
-        with self.subTest("is dataframe"):
-            self.assertIsInstance(run_summary, pd.DataFrame)
-        with self.subTest("shape"):
-            self.assertEqual(run_summary.shape, (5, 15))
-
-    def test_run_summary_property(self):
-        run_summary = self.mth5_obj.run_summary
-        with self.subTest("is dataframe"):
-            self.assertIsInstance(run_summary, pd.DataFrame)
-        with self.subTest("shape"):
-            self.assertEqual(run_summary.shape, (5, 15))
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.mth5_obj.close_mth5()
-        cls.fn.unlink()
+            if key == "time_period.end":
+                # Known issue: end time is off by one second
+                actual = ch_ts.station_metadata.get_attr_from_name(key)
+                assert expected != actual
+            else:
+                actual = ch_ts.channel_metadata.get_attr_from_name(key)
+                assert expected == actual, f"Channel metadata mismatch for {key}"
 
 
-class TestUpdateFromExperiment(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.maxDiff = None
-        cls.fn = fn_path.joinpath(
-            "test_update.h5"
-        )  # Use different filename to avoid conflicts
-        cls.mth5_obj = MTH5(file_version="0.1.0")
-        cls.mth5_obj.open_mth5(cls.fn, mode="w")
-        cls.experiment = Experiment()
-        cls.experiment.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)
-        cls.mth5_obj.from_experiment(cls.experiment)
+class TestMTH5Summary:
+    """Test MTH5 summary functionality."""
 
-        cls.experiment_02 = Experiment()
-        cls.experiment_02.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)
-        cls.experiment_02.surveys[0].id = "different_survey_name"
-        cls.experiment_02.surveys[0].stations[0].location.latitude = 10
+    def test_channel_summary(self, mth5_with_experiment: MTH5):
+        """Test channel summary functionality."""
+        mth5_with_experiment.channel_summary.summarize()
 
-    @classmethod
-    def tearDownClass(cls):
-        """Clean up by closing the MTH5 file."""
-        if hasattr(cls, "mth5_obj") and cls.mth5_obj is not None:
-            try:
-                cls.mth5_obj.close_mth5()
-            except Exception:
-                pass  # File might already be closed
-        helpers.close_open_files()
+        assert mth5_with_experiment.channel_summary.shape == (25,)
+        assert mth5_with_experiment.channel_summary.nrows == 25
+        assert mth5_with_experiment.channel_summary.dtype == CHANNEL_DTYPE
+        assert (mth5_with_experiment.channel_summary.array["station"] == b"REW09").all()
 
-    def test_update_from_new_experiment(self):
+    def test_run_summary(self, mth5_with_experiment: MTH5):
+        """Test run summary functionality."""
+        mth5_with_experiment.channel_summary.summarize()
+        run_summary = mth5_with_experiment.channel_summary.to_run_summary()
 
-        self.mth5_obj.from_experiment(self.experiment_02, update=True)
+        assert isinstance(run_summary, pd.DataFrame)
+        assert run_summary.shape == (5, 15)
 
-        with self.subTest("new_survey"):
-            self.assertEqual(
-                self.mth5_obj.survey_group.metadata.id,
-                self.experiment_02.surveys[0].id,
-            )
-        with self.subTest("new_location"):
-            st = self.mth5_obj.get_station("REW09")
-            self.assertEqual(
-                st.metadata.location.latitude,
-                self.experiment_02.surveys[0].stations[0].location.latitude,
-            )
+    def test_run_summary_property(self, mth5_with_experiment: MTH5):
+        """Test run summary property."""
+        run_summary = mth5_with_experiment.run_summary
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.mth5_obj.close_mth5()
-        cls.fn.unlink()
+        assert isinstance(run_summary, pd.DataFrame)
+        assert run_summary.shape == (5, 15)
+
+
+class TestMTH5Update:
+    """Test MTH5 update functionality."""
+
+    def test_update_from_new_experiment(
+        self, mth5_update_test: tuple[MTH5, Experiment, Experiment]
+    ):
+        """Test updating MTH5 with modified experiment."""
+        mth5_obj, original_experiment, modified_experiment = mth5_update_test
+
+        # Perform update
+        mth5_obj.from_experiment(modified_experiment, update=True)
+
+        # Test survey ID update
+        assert mth5_obj.survey_group.metadata.id == modified_experiment.surveys[0].id
+
+        # Test location update
+        station = mth5_obj.get_station("REW09")
+        expected_lat = modified_experiment.surveys[0].stations[0].location.latitude
+        assert station.metadata.location.latitude == expected_lat
 
 
 # =============================================================================
-# Run
+# Parametrized Tests for Multiple Items
 # =============================================================================
-if __name__ == "__main__":
-    unittest.main()
+
+
+def pytest_generate_tests(metafunc):
+    """Generate parametrized tests dynamically."""
+    if "station_id" in metafunc.fixturenames:
+        # Load experiment to get station IDs
+        experiment = Experiment()
+        experiment.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)
+        station_ids = [station.id for station in experiment.surveys[0].stations]
+        metafunc.parametrize("station_id", station_ids)
+
+    elif "run_info" in metafunc.fixturenames:
+        # Load experiment to get run information
+        experiment = Experiment()
+        experiment.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)
+        run_infos = []
+        for station in experiment.surveys[0].stations:
+            for run in station.runs:
+                run_infos.append((station.id, run.id))
+        metafunc.parametrize(
+            "run_info", run_infos, ids=[f"{s}_{r}" for s, r in run_infos]
+        )
+
+    elif "channel_info" in metafunc.fixturenames:
+        # Load experiment to get channel information
+        experiment = Experiment()
+        experiment.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)
+        channel_infos = []
+        for station in experiment.surveys[0].stations:
+            for run in station.runs:
+                for channel in run.channels:
+                    channel_infos.append((station.id, run.id, channel.component))
+        metafunc.parametrize(
+            "channel_info",
+            channel_infos,
+            ids=[f"{s}_{r}_{c}" for s, r, c in channel_infos],
+        )
+
+
+def test_individual_station_metadata(
+    mth5_with_experiment: MTH5, experiment_from_xml: Experiment, station_id: str
+):
+    """Test individual station metadata (parametrized)."""
+    station = next(
+        s for s in experiment_from_xml.surveys[0].stations if s.id == station_id
+    )
+    h5_station = mth5_with_experiment.get_station(station_id)
+
+    original_data = clean_metadata_dict(station.to_dict(single=True))
+    h5_data = clean_metadata_dict(h5_station.metadata.to_dict(single=True))
+
+    assert h5_data == original_data
+
+
+def test_individual_run_metadata(
+    mth5_with_experiment: MTH5,
+    experiment_from_xml: Experiment,
+    run_info: tuple[str, str],
+):
+    """Test individual run metadata (parametrized)."""
+    station_id, run_id = run_info
+
+    # Find the run in the experiment
+    station = next(
+        s for s in experiment_from_xml.surveys[0].stations if s.id == station_id
+    )
+    run = next(r for r in station.runs if r.id == run_id)
+
+    h5_run = mth5_with_experiment.get_run(station_id, run_id)
+
+    original_data = clean_metadata_dict(run.to_dict(single=True))
+    h5_data = clean_metadata_dict(h5_run.metadata.to_dict(single=True))
+
+    assert h5_data == original_data
+
+
+def test_individual_channel_metadata(
+    mth5_with_experiment: MTH5,
+    experiment_from_xml: Experiment,
+    channel_info: tuple[str, str, str],
+):
+    """Test individual channel metadata (parametrized)."""
+    station_id, run_id, component = channel_info
+
+    # Find the channel in the experiment
+    station = next(
+        s for s in experiment_from_xml.surveys[0].stations if s.id == station_id
+    )
+    run = next(r for r in station.runs if r.id == run_id)
+    channel = next(c for c in run.channels if c.component == component)
+
+    h5_run = mth5_with_experiment.get_run(station_id, run_id)
+    h5_channel = h5_run.get_channel(component)
+
+    original_data = clean_metadata_dict(channel.to_dict(single=True))
+    h5_data = clean_metadata_dict(h5_channel.metadata.to_dict(single=True))
+
+    assert h5_data == original_data
