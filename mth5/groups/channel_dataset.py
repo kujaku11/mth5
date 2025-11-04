@@ -216,20 +216,24 @@ class ChannelDataset:
         f_list = []
         # Check if filters field exists (new version with AppliedFilter objects)
         if hasattr(self.metadata, "filters") and self.metadata.filters:
-            for applied_filter in self.metadata.filters:
+            for count, applied_filter in enumerate(self.metadata.filters, 1):
                 if hasattr(applied_filter, "name"):
                     name = applied_filter.name.replace("/", " per ").lower()
                     try:
-                        f_list.append(filters_group.to_filter_object(name))
+                        filt_obj = filters_group.to_filter_object(name)
+                        filt_obj.sequence_number = count
+                        f_list.append(filt_obj)
                     except KeyError:
                         self.logger.warning(f"Could not locate filter {name}")
                         continue
         # Fallback to old filter field for backward compatibility
         elif hasattr(self.metadata, "filter") and hasattr(self.metadata.filter, "name"):
-            for name in self.metadata.filter.name:
+            for count, name in enumerate(self.metadata.filter.name, 1):
                 name = name.replace("/", " per ").lower()
                 try:
-                    f_list.append(filters_group.to_filter_object(name))
+                    filt_obj = filters_group.to_filter_object(name)
+                    filt_obj.sequence_number = count
+                    f_list.append(filt_obj)
                 except KeyError:
                     self.logger.warning(f"Could not locate filter {name}")
                     continue

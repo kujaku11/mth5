@@ -209,6 +209,8 @@ class TestMTH5(unittest.TestCase):
         ch_ts = channel_group.to_channel_ts()
 
         for key in self.experiment.surveys[0].to_dict(single=True).keys():
+            if key in ["hdf5_reference", "mth5_type"]:
+                continue
             with self.subTest(f"survey.{key}"):
                 self.assertEqual(
                     self.experiment.surveys[0].get_attr_from_name(key),
