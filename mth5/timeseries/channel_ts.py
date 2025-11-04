@@ -1137,12 +1137,19 @@ class ChannelTS:
         if self.channel_metadata.filter_names != value.names:
 
             for ch_filter in self._channel_response.filters_list:
-                self.channel_metadata.add_filter(
-                    name=ch_filter.name,
-                    applied=False,
-                    stage=ch_filter.sequence_number,
-                    comments=ch_filter.comments,
-                )
+                if ch_filter.name in self.channel_metadata.filter_names:
+                    # update existing filter info
+                    existing_filter = self.channel_metadata.get_filter(ch_filter.name)
+                    existing_filter.applied = False
+                    existing_filter.stage = ch_filter.sequence_number
+                    existing_filter.comments = ch_filter.comments
+                else:
+                    self.channel_metadata.add_filter(
+                        name=ch_filter.name,
+                        applied=False,
+                        stage=ch_filter.sequence_number,
+                        comments=ch_filter.comments,
+                    )
 
     def get_calibration_operation(self):
         if self.channel_response.units_out == self.channel_metadata.unit_object.name:
