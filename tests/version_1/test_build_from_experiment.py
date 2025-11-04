@@ -55,15 +55,15 @@ class TestMTH5(unittest.TestCase):
         cls.experiment.from_xml(fn=MT_EXPERIMENT_SINGLE_STATION)
         cls.mth5_obj.from_experiment(cls.experiment)
 
-    @classmethod
-    def tearDownClass(cls):
-        """Clean up by closing the MTH5 file."""
-        if hasattr(cls, "mth5_obj") and cls.mth5_obj is not None:
-            try:
-                cls.mth5_obj.close_mth5()
-            except Exception:
-                pass  # File might already be closed
-        helpers.close_open_files()
+    # @classmethod
+    # def tearDownClass(cls):
+    #     """Clean up by closing the MTH5 file."""
+    #     if hasattr(cls, "mth5_obj") and cls.mth5_obj is not None:
+    #         try:
+    #             cls.mth5_obj.close_mth5()
+    #         except Exception:
+    #             pass  # File might already be closed
+    #     helpers.close_open_files()
 
     def test_surveys(self):
         survey = self.experiment.surveys[0]
@@ -183,7 +183,7 @@ class TestMTH5(unittest.TestCase):
                 self.experiment.surveys[0].stations[0].id, run.id
             )
             for channel in run.channels:
-                with self.subTest(f"{run.id}/ch.component"):
+                with self.subTest(f"{run.id}/{channel.component}"):
                     h5_channel = h5_run.get_channel(channel.component)
 
                     sd = channel.to_dict(single=True)

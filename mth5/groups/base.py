@@ -196,7 +196,18 @@ class BaseGroup:
             )
             self.logger.error(msg)
             raise MTH5Error(msg)
-        self._metadata.from_dict(metadata_object.to_dict())
+
+        # Instead of round-trip conversion, directly copy the metadata fields
+        # to preserve complex objects like Provenance that may lose information
+        # during to_dict/from_dict conversion
+        if hasattr(metadata_object, "__dict__"):
+            # For pydantic models, copy field values directly
+            for field_name, field_value in metadata_object.__dict__.items():
+                if hasattr(self._metadata, field_name):
+                    setattr(self._metadata, field_name, field_value)
+        else:
+            # Fallback to the original conversion method
+            self._metadata.from_dict(metadata_object.to_dict())
 
         # Note: mth5_type and hdf5_reference are set during field creation
         # They can be updated later if needed through the model's normal field assignment
