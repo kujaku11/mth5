@@ -259,7 +259,7 @@ class TransferFunctionGroup(BaseGroup):
         self._period_metadata = StatisticalEstimate(
             **{
                 "name": "period",
-                "data_type": "float",
+                "data_type": "real",
                 "description": "Periods at which transfer function is estimated",
                 "units": "samples per second",
             }

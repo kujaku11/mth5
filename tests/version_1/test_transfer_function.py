@@ -25,19 +25,19 @@ fn_path = Path(__file__).parent
 
 class TestTFGroup(unittest.TestCase):
     @classmethod
-    def setUpClass(self):
+    def setUpClass(cls):
 
-        self.maxDiff = None
-        self.fn = fn_path.joinpath("test.mth5")
-        self.mth5_obj = MTH5(file_version="0.1.0")
-        self.mth5_obj.open_mth5(self.fn, mode="a")
+        cls.maxDiff = None
+        cls.fn = fn_path.joinpath("test.mth5")
+        cls.mth5_obj = MTH5(file_version="0.1.0")
+        cls.mth5_obj.open_mth5(cls.fn, mode="a")
 
-        self.tf_obj = TF(TF_XML)
-        self.tf_obj.read()
+        cls.tf_obj = TF(TF_XML)
+        cls.tf_obj.read()
 
-        self.tf_group = self.mth5_obj.add_transfer_function(self.tf_obj)
-        self.tf_h5 = self.mth5_obj.get_transfer_function(
-            self.tf_obj.station, self.tf_obj.station
+        cls.tf_group = cls.mth5_obj.add_transfer_function(cls.tf_obj)
+        cls.tf_h5 = cls.mth5_obj.get_transfer_function(
+            cls.tf_obj.station, cls.tf_obj.station
         )
 
     def test_survey_metadata(self):
@@ -335,9 +335,9 @@ class TestTFGroup(unittest.TestCase):
         self.assertTrue(self.tf_group.has_estimate("covariance"))
 
     @classmethod
-    def tearDownClass(self):
-        self.mth5_obj.close_mth5()
-        self.fn.unlink()
+    def tearDownClass(cls):
+        cls.mth5_obj.close_mth5()
+        cls.fn.unlink()
 
 
 # =============================================================================
