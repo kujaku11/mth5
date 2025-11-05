@@ -2,7 +2,7 @@
 """
 Created on Tue May 11 10:35:30 2021
 
-:copyright: 
+:copyright:
     Jared Peacock (jpeacock@usgs.gov)
 
 :license: MIT
@@ -30,27 +30,27 @@ class TestFilters(unittest.TestCase):
     """
 
     @classmethod
-    def setUpClass(self):
-        self.fn = fn_path.joinpath("filter_test.h5")
-        self.m_obj = MTH5(file_version="0.1.0")
-        self.m_obj.open_mth5(self.fn, "w")
-        self.filter_group = self.m_obj.filters_group
+    def setUpClass(cls):
+        cls.fn = fn_path.joinpath("filter_test.h5")
+        cls.m_obj = MTH5(file_version="0.1.0")
+        cls.m_obj.open_mth5(cls.fn, "w")
+        cls.filter_group = cls.m_obj.filters_group
 
-        self.zpk = PoleZeroFilter()
-        self.zpk.units_in = "counts"
-        self.zpk.units_out = "mv"
-        self.zpk.name = "zpk_test"
-        self.zpk.poles = np.array([1 + 2j, 0, 1 - 2j])
-        self.zpk.zeros = np.array([10 - 1j, 10 + 1j])
+        cls.zpk = PoleZeroFilter()
+        cls.zpk.units_in = "counts"
+        cls.zpk.units_out = "mV"
+        cls.zpk.name = "zpk_test"
+        cls.zpk.poles = np.array([1 + 2j, 0, 1 - 2j])
+        cls.zpk.zeros = np.array([10 - 1j, 10 + 1j])
 
-        self.coefficient = CoefficientFilter()
-        self.coefficient.units_in = "volts"
-        self.coefficient.units_out = "millivolts per meter"
-        self.coefficient.name = "coefficient_test"
-        self.coefficient.gain = 10.0
+        cls.coefficient = CoefficientFilter()
+        cls.coefficient.units_in = "volt"
+        cls.coefficient.units_out = "milliVolt per meter"
+        cls.coefficient.name = "coefficient_test"
+        cls.coefficient.gain = 10.0
 
-        self.zpk_group = self.filter_group.add_filter(self.zpk)
-        self.coefficient_group = self.filter_group.add_filter(self.coefficient)
+        cls.zpk_group = cls.filter_group.add_filter(cls.zpk)
+        cls.coefficient_group = cls.filter_group.add_filter(cls.coefficient)
 
     def test_zpk_in(self):
 
@@ -66,9 +66,7 @@ class TestFilters(unittest.TestCase):
         self.assertEqual(self.zpk_group.attrs["units_out"], self.zpk.units_out)
 
     def test_zpk_poles(self):
-        self.assertTrue(
-            np.allclose(self.zpk_group["poles"][()], self.zpk.poles)
-        )
+        self.assertTrue(np.allclose(self.zpk_group["poles"][()], self.zpk.poles))
 
     def test_zpk_zeros(self):
         self.assertTrue(np.allclose(self.zpk_group["zeros"], self.zpk.zeros))
@@ -85,9 +83,7 @@ class TestFilters(unittest.TestCase):
         )
 
     def test_coefficient_name(self):
-        self.assertEqual(
-            self.coefficient_group.attrs["name"], self.coefficient.name
-        )
+        self.assertEqual(self.coefficient_group.attrs["name"], self.coefficient.name)
 
     def test_coefficient_units_in(self):
         self.assertEqual(
@@ -101,13 +97,11 @@ class TestFilters(unittest.TestCase):
         )
 
     def test_coefficient_out(self):
-        new_coefficient = self.filter_group.to_filter_object(
-            self.coefficient.name
-        )
+        new_coefficient = self.filter_group.to_filter_object(self.coefficient.name)
 
         self.assertTrue(new_coefficient == self.coefficient)
 
     @classmethod
-    def tearDownClass(self):
-        self.m_obj.close_mth5()
-        self.fn.unlink()
+    def tearDownClass(cls):
+        cls.m_obj.close_mth5()
+        cls.fn.unlink()
