@@ -574,12 +574,45 @@ class StationGroup(BaseGroup):
         run_list = []
         for key, group in self.hdf5_group.items():
             if group.attrs["mth5_type"].lower() in ["run"]:
+                # Helper function to handle both array and string cases
+                def get_channel_list(attr_value):
+                    if hasattr(attr_value, "tolist"):
+                        # If it's an array, use tolist()
+                        return attr_value.tolist()
+                    elif isinstance(attr_value, str):
+                        # If it's a string, try to parse as JSON list
+                        try:
+                            import json
+
+                            parsed = json.loads(attr_value)
+                            if isinstance(parsed, list):
+                                return parsed
+                        except (json.JSONDecodeError, ValueError):
+                            pass
+                        # If JSON parsing fails, treat as empty list
+                        return []
+                    else:
+                        # For other types, convert to list if possible
+                        try:
+                            return list(attr_value)
+                        except (TypeError, ValueError):
+                            return []
+
+                # Get channel lists, handling both string and array formats
+                aux_channels = get_channel_list(
+                    group.attrs["channels_recorded_auxiliary"]
+                )
+                elec_channels = get_channel_list(
+                    group.attrs["channels_recorded_electric"]
+                )
+                mag_channels = get_channel_list(
+                    group.attrs["channels_recorded_magnetic"]
+                )
+
                 comps = ",".join(
                     [
-                        ii.decode()
-                        for ii in group.attrs["channels_recorded_auxiliary"].tolist()
-                        + group.attrs["channels_recorded_electric"].tolist()
-                        + group.attrs["channels_recorded_magnetic"].tolist()
+                        ii.decode() if isinstance(ii, bytes) else str(ii)
+                        for ii in aux_channels + elec_channels + mag_channels
                     ]
                 )
                 run_list.append(

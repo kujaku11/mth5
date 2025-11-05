@@ -172,6 +172,26 @@ def to_numpy_type(value):
     # For now turn references into a generic string
     if isinstance(value, h5py.h5r.Reference):
         value = str(value)
+
+    # Handle type objects and classes that might come from pydantic serialization
+    if isinstance(value, type):
+        return str(value)
+
+    # Handle dictionaries and lists by converting to JSON
+    if isinstance(value, (dict, list)):
+        try:
+            import json
+
+            return json.dumps(value)
+        except (TypeError, ValueError):
+            # If JSON serialization fails, convert to string
+            return str(value)
+
+    # Handle numpy arrays with object dtype
+    if isinstance(value, np.ndarray) and value.dtype == np.dtype("O"):
+        # Try to convert to string representation
+        return str(value)
+
     if isinstance(
         value,
         (
@@ -193,7 +213,11 @@ def to_numpy_type(value):
             return np.array(value, dtype="S")
         else:
             try:
-                return np.array(value)
+                converted_array = np.array(value)
+                # Check if the resulting array has object dtype
+                if converted_array.dtype == np.dtype("O"):
+                    return str(value)
+                return converted_array
             except (ValueError, TypeError):
                 # If we can't convert to numpy array, convert to string representation
                 return str(value)
@@ -201,7 +225,11 @@ def to_numpy_type(value):
         # For pydantic models and other complex objects, convert to string
         try:
             # First try to convert directly
-            return np.array(value)
+            converted_array = np.array(value)
+            # Check if the resulting array has object dtype
+            if converted_array.dtype == np.dtype("O"):
+                return str(value)
+            return converted_array
         except (ValueError, TypeError):
             # If that fails, convert to string representation
             return str(value)
@@ -237,6 +265,25 @@ def from_numpy_type(value):
     if value is None:
         return "none"
 
+    # Convert "none" string back to None when reading from HDF5
+    if isinstance(value, str) and value.lower() == "none":
+        return None
+
+    # Handle JSON-like strings that represent dictionaries or lists from HDF5
+    if isinstance(value, str):
+        # Check if it looks like a JSON dictionary or list
+        if (value.startswith("{") and value.endswith("}")) or (
+            value.startswith("[") and value.endswith("]")
+        ):
+            try:
+                import json
+
+                parsed = json.loads(value)
+                return parsed
+            except (json.JSONDecodeError, ValueError):
+                # If JSON parsing fails, just return the string
+                pass
+
     # For now turn references into a generic string
     if isinstance(value, h5py.h5r.Reference):
         value = str(value)
@@ -253,9 +300,15 @@ def from_numpy_type(value):
             np.float64,
             np.complex128,
             np.intp,
+            np.bool_,  # Add support for numpy.bool_
         ),
     ):
         return value
+
+    # Handle deprecated numpy.bool (numpy >=1.20 deprecates numpy.bool)
+    if hasattr(np, "bool") and isinstance(value, np.bool):
+        return bool(value)
+
     # if isinstance(
     #     value,
     #     (
