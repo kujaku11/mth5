@@ -16,7 +16,7 @@ import xarray as xr
 from loguru import logger
 
 from mt_metadata.transfer_functions.tf.statistical_estimate import StatisticalEstimate
-
+from mt_metadata.utils.validators import validate_attribute
 from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import to_numpy_type, add_attributes_to_metadata_class_pydantic
 
@@ -75,9 +75,9 @@ class EstimateDataset:
                 self.logger.error(msg)
                 raise MTH5Error(msg)
             # load from dict because of the extra attributes for MTH5
-            self.metadata.from_dict(dataset_metadata.to_dict())
-            self.metadata.hdf5_reference = self.hdf5_dataset.ref
-            self.metadata.mth5_type = self._class_name
+            self.metadata.update(dataset_metadata)
+            # self.metadata.hdf5_reference = self.hdf5_dataset.ref
+            # self.metadata.mth5_type = self._class_name
 
             # write out metadata to make sure that its in the file.
             if write_metadata:
@@ -94,7 +94,7 @@ class EstimateDataset:
 
     @property
     def _class_name(self):
-        return self.__class__.__name__.split("Dataset")[0]
+        return validate_attribute(self.__class__.__name__.split("Dataset")[0])
 
     def read_metadata(self):
         """
