@@ -2,7 +2,7 @@
 """
 Created on Wed Mar 10 13:05:54 2021
 
-:copyright: 
+:copyright:
     Jared Peacock (jpeacock@usgs.gov)
 
 :license: MIT
@@ -27,18 +27,16 @@ class TestFromStationXML01(unittest.TestCase):
     """
 
     @classmethod
-    def setUpClass(self):
-        self.translator = stationxml.XMLInventoryMTExperiment()
-        self.experiment = self.translator.xml_to_mt(
-            stationxml_fn=STATIONXML_01
-        )
+    def setUpClass(cls):
+        cls.translator = stationxml.XMLInventoryMTExperiment()
+        cls.experiment = cls.translator.xml_to_mt(stationxml_fn=STATIONXML_01)
 
-        self.fn = fn_path.joinpath("from_stationxml.h5")
-        if self.fn.exists():
-            self.fn.unlink()
-        self.m = MTH5(file_version="0.1.0")
-        self.m.open_mth5(self.fn)
-        self.m.from_experiment(self.experiment, 0)
+        cls.fn = fn_path.joinpath("from_stationxml.h5")
+        if cls.fn.exists():
+            cls.fn.unlink()
+        cls.m = MTH5(file_version="0.1.0")
+        cls.m.open_mth5(cls.fn)
+        cls.m.from_experiment(cls.experiment, 0)
 
     def test_groups(self):
 
@@ -49,17 +47,11 @@ class TestFromStationXML01(unittest.TestCase):
         with self.subTest("has CAS04"):
             self.assertEqual(self.m.has_group("Survey/Stations/CAS04"), True)
         with self.subTest("has run 001"):
-            self.assertEqual(
-                self.m.has_group("Survey/Stations/CAS04/001"), True
-            )
+            self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001"), True)
         with self.subTest("has channel ey"):
-            self.assertEqual(
-                self.m.has_group("Survey/Stations/CAS04/001/ey"), True
-            )
+            self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001/ey"), True)
         with self.subTest("has channel hy"):
-            self.assertEqual(
-                self.m.has_group("Survey/Stations/CAS04/001/hy"), True
-            )
+            self.assertEqual(self.m.has_group("Survey/Stations/CAS04/001/hy"), True)
 
     def test_survey_metadata(self):
         with self.subTest("has network ZU"):
@@ -67,11 +59,11 @@ class TestFromStationXML01(unittest.TestCase):
         with self.subTest("test start"):
             self.assertEqual(
                 self.m.survey_group.metadata.time_period.start_date,
-                "2020-06-02",
+                "2020-01-01",
             )
         with self.subTest("test end"):
             self.assertEqual(
-                self.m.survey_group.metadata.time_period.end_date, "2020-07-13"
+                self.m.survey_group.metadata.time_period.end_date, "2023-12-31"
             )
         with self.subTest("survey summary"):
 
@@ -81,34 +73,34 @@ class TestFromStationXML01(unittest.TestCase):
             )
         with self.subTest("doi"):
             self.assertEqual(
-                self.m.survey_group.metadata.citation_dataset.doi,
-                "10.7914/SN/ZU_2020",
+                self.m.survey_group.metadata.citation_dataset.doi.unicode_string(),
+                "https://doi.org/10.7914/SN/ZU_2020",
             )
 
     def test_station_metadata(self):
         station_dict = {
-            "acquired_by.author": None,
+            "acquired_by.author": "",
             "channels_recorded": ["ey", "hy"],
             "data_type": "BBMT",
             "fdsn.id": "CAS04",
             "geographic_name": "Corral Hollow, CA, USA",
             "hdf5_reference": "<HDF5 object reference>",
             "id": "CAS04",
-            "location.declination.model": "WMM",
+            "location.declination.model": "IGRF",
             "location.declination.value": 0.0,
             "location.elevation": 329.3875,
             "location.latitude": 37.633351,
             "location.longitude": -121.468382,
-            "mth5_type": "Station",
-            "orientation.method": None,
+            "mth5_type": "station",
+            "orientation.method": "compass",
             "orientation.reference_frame": "geographic",
-            "provenance.software.author": None,
-            "provenance.software.name": None,
-            "provenance.software.version": None,
-            "provenance.submitter.author": None,
+            "provenance.software.author": "",
+            "provenance.software.name": "",
+            "provenance.software.version": "",
+            "provenance.submitter.author": "",
             "provenance.submitter.email": None,
             "provenance.submitter.organization": None,
-            "release_license": "CC0-1.0",
+            "release_license": None,
             "run_list": ["001"],
             "time_period.end": "2020-07-13T21:46:12+00:00",
             "time_period.start": "2020-06-02T18:41:43+00:00",
@@ -180,13 +172,11 @@ class TestFromStationXML01(unittest.TestCase):
         for f_name in self.experiment.surveys[0].filters.keys():
             with self.subTest(f_name):
                 exp_filter = self.experiment.surveys[0].filters[f_name]
-                h5_filter = self.m.survey_group.filters_group.to_filter_object(
-                    f_name
-                )
+                h5_filter = self.m.survey_group.filters_group.to_filter_object(f_name)
 
                 self.assertTrue(exp_filter, h5_filter)
 
     @classmethod
-    def tearDownClass(self):
-        self.m.close_mth5()
-        self.fn.unlink()
+    def tearDownClass(cls):
+        cls.m.close_mth5()
+        cls.fn.unlink()
