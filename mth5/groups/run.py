@@ -200,6 +200,8 @@ class RunGroup(BaseGroup):
 
     def __init__(self, group, run_metadata=None, **kwargs):
         super().__init__(group, group_metadata=run_metadata, **kwargs)
+        # Channel metadata cache to share objects between add_channel and metadata property
+        self._channel_metadata_cache = {}
 
     @property
     def station_metadata(self):
@@ -234,15 +236,36 @@ class RunGroup(BaseGroup):
         if not self._has_read_metadata:
             self.read_metadata()
             self._has_read_metadata = True
-        self._metadata.channels = []
-        for ch in self.groups_list:
-            meta_dict = dict(self.hdf5_group[ch].attrs)
-            for key, value in meta_dict.items():
-                meta_dict[key] = from_numpy_type(value)
-            ch_metadata = meta_classes[meta_dict["type"].capitalize()]()
-            ch_metadata.from_dict(meta_dict)
 
-            self._metadata.add_channel(ch_metadata)
+        # Only rebuild channels if they haven't been built yet or if the group list has changed
+        if not self._metadata.channels or len(self._metadata.channels) != len(
+            self.groups_list
+        ):
+            # Get current channel names from the groups and existing channels
+            current_group_names = set(self.groups_list)
+            existing_channel_names = set(ch.component for ch in self._metadata.channels)
+
+            # Only rebuild if there's actually a difference in the channel sets
+            if current_group_names != existing_channel_names:
+                # Clear and rebuild the channels list
+                self._metadata.channels = []
+                for ch in self.groups_list:
+                    # Check if we have cached metadata for this channel
+                    if ch in self._channel_metadata_cache:
+                        # Reuse cached metadata to prevent duplicate processing
+                        cached_metadata = self._channel_metadata_cache[ch]
+                        self._metadata.add_channel(cached_metadata)
+                    else:
+                        # Create new metadata if not cached
+                        meta_dict = dict(self.hdf5_group[ch].attrs)
+                        for key, value in meta_dict.items():
+                            meta_dict[key] = from_numpy_type(value)
+                        ch_metadata = meta_classes[meta_dict["type"].capitalize()]()
+                        ch_metadata.from_dict(meta_dict)
+                        # Cache the metadata for future use
+                        self._channel_metadata_cache[ch] = ch_metadata
+                        self._metadata.add_channel(ch_metadata)
+            # If channel sets are identical, skip rebuilding to prevent duplicates
         self._metadata.hdf5_reference = self.hdf5_group.ref
         return self._metadata
 
@@ -474,6 +497,11 @@ class RunGroup(BaseGroup):
         if channel_obj.metadata.component != channel_name:
             channel_obj.metadata.component = channel_name
             channel_obj.write_metadata()
+
+        # Cache the processed channel metadata to prevent duplicate processing in metadata property
+        # Use the channel object's metadata which has already been processed through from_dict
+        self._channel_metadata_cache[channel_name] = channel_obj.metadata
+
         return channel_obj
 
     def get_channel(self, channel_name):
@@ -581,6 +609,9 @@ class RunGroup(BaseGroup):
 
         try:
             del self.hdf5_group[channel_name]
+            # Remove from metadata cache if present
+            if channel_name in self._channel_metadata_cache:
+                del self._channel_metadata_cache[channel_name]
             self.logger.info(
                 "Deleting a channel does not reduce the HDF5"
                 "file size it simply remove the reference. If "

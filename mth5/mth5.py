@@ -22,6 +22,7 @@ Created on Sun Dec  9 20:50:41 2018
 # =============================================================================
 from pathlib import Path
 from platform import platform
+from copy import deepcopy
 
 import h5py
 from loguru import logger

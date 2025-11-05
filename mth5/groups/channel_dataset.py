@@ -129,6 +129,7 @@ class ChannelDataset:
                     class_data.pop("mth5_type", None)
 
             self.metadata.from_dict(metadata_dict)
+            # Always set these critical properties regardless of the path
             self.metadata.hdf5_reference = self.hdf5_dataset.ref
             self.metadata.mth5_type = self._class_name
 

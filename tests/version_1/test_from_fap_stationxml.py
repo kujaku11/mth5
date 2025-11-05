@@ -2,7 +2,7 @@
 """
 Created on Tue Jun  8 17:58:47 2021
 
-:copyright: 
+:copyright:
     Jared Peacock (jpeacock@usgs.gov)
 
 :license: MIT
@@ -28,21 +28,19 @@ class TestFAPMTH5(unittest.TestCase):
     """
 
     @classmethod
-    def setUpClass(self):
-        self.translator = XMLInventoryMTExperiment()
-        self.experiment = self.translator.xml_to_mt(
-            stationxml_fn=STATIONXML_FAP
-        )
+    def setUpClass(cls):
+        cls.translator = XMLInventoryMTExperiment()
+        cls.experiment = cls.translator.xml_to_mt(stationxml_fn=STATIONXML_FAP)
 
-        self.fn = fn_path.joinpath("from_fap_stationxml.h5")
-        # if self.fn.exists():
-        #     self.fn.unlink()
+        cls.fn = fn_path.joinpath("from_fap_stationxml.h5")
+        # if cls.fn.exists():
+        #     cls.fn.unlink()
 
-        self.m = MTH5(file_version="0.1.0")
-        self.m.open_mth5(self.fn, mode="a")
-        self.m.from_experiment(self.experiment, 0)
+        cls.m = MTH5(file_version="0.1.0")
+        cls.m.open_mth5(cls.fn, mode="a")
+        cls.m.from_experiment(cls.experiment, 0)
 
-        self.initial_has_entries = self.m.channel_summary._has_entries()
+        cls.initial_has_entries = cls.m.channel_summary._has_entries()
 
     def test_has_survey(self):
         self.assertEqual(self.m.has_group("Survey"), True)
@@ -76,9 +74,7 @@ class TestFAPMTH5(unittest.TestCase):
 
     def test_has_coefficient_filter(self):
         self.assertEqual(
-            self.m.has_group(
-                "Survey/Filters/coefficient/v to counts (electric)"
-            ),
+            self.m.has_group("Survey/Filters/coefficient/v to counts (electric)"),
             True,
         )
 
@@ -96,27 +92,21 @@ class TestFAPMTH5(unittest.TestCase):
     def test_fap(self):
         self.hx = self.m.get_channel("FL001", "a", "hx")
         fap = self.hx.channel_response.filters_list[0]
-        fap_exp = self.experiment.surveys[0].filters[
-            "frequency response table_00"
-        ]
+        fap_exp = self.experiment.surveys[0].filters["frequency response table_00"]
 
         with self.subTest("frequencies"):
-            self.assertTrue(
-                np.allclose(fap.frequencies, fap_exp.frequencies, 7)
-            )
+            self.assertTrue(np.allclose(fap.frequencies, fap_exp.frequencies, 7))
         with self.subTest("amplitude"):
             self.assertTrue(np.allclose(fap.amplitudes, fap_exp.amplitudes, 7))
         with self.subTest("phase"):
-            self.assertTrue(
-                np.allclose(fap.phases, np.deg2rad(fap_exp.phases), 7)
-            )
+            self.assertTrue(np.allclose(fap.phases, fap_exp.phases, 7))
 
         with self.subTest("np frequencies"):
             npt.assert_almost_equal(fap.frequencies, fap_exp.frequencies, 7)
         with self.subTest("np amplitude"):
             npt.assert_almost_equal(fap.amplitudes, fap_exp.amplitudes, 7)
         with self.subTest("np phase"):
-            npt.assert_almost_equal(fap.phases, np.deg2rad(fap_exp.phases), 7)
+            npt.assert_almost_equal(fap.phases, fap_exp.phases, 7)
 
         for k in ["gain", "units_in", "units_out", "name", "comments"]:
             with self.subTest(k):
@@ -127,23 +117,19 @@ class TestFAPMTH5(unittest.TestCase):
         coeff = self.hx.channel_response.filters_list[1]
         coeff_exp = self.experiment.surveys[0].filters["v to counts (electric)"]
 
-        self.assertDictEqual(
-            coeff.to_dict(single=True), coeff_exp.to_dict(single=True)
-        )
+        self.assertDictEqual(coeff.to_dict(single=True), coeff_exp.to_dict(single=True))
 
     def test_has_entries(self):
         self.assertEqual(False, self.initial_has_entries)
 
     def test_run_summary_has_data(self):
         run_summary = self.m.run_summary
-        self.assertListEqual(
-            run_summary.has_data.values.tolist(), [False, False]
-        )
+        self.assertListEqual(run_summary.has_data.values.tolist(), [False, False])
 
     @classmethod
-    def tearDownClass(self):
-        self.m.close_mth5()
-        self.fn.unlink()
+    def tearDownClass(cls):
+        cls.m.close_mth5()
+        cls.fn.unlink()
 
 
 # =============================================================================
