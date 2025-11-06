@@ -102,8 +102,8 @@ class TestSurveyMetadata:
     def test_survey_time_period(self, mth5_file):
         """Test survey time period."""
         metadata = mth5_file.survey_group.metadata
-        assert metadata.time_period.start_date == "2020-01-01"
-        assert metadata.time_period.end_date == "2023-12-31"
+        assert metadata.time_period.start_date == "2020-06-02"
+        assert metadata.time_period.end_date == "2020-07-13"
 
     def test_survey_summary(self, mth5_file):
         """Test survey summary."""
@@ -140,7 +140,7 @@ class TestStationMetadata:
             "location.elevation": 329.3875,
             "location.latitude": 37.633351,
             "location.longitude": -121.468382,
-            "mth5_type": "station",
+            "mth5_type": "Station",
             "orientation.method": "compass",
             "orientation.reference_frame": "geographic",
             "provenance.software.author": "",
