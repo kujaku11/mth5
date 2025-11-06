@@ -34,10 +34,10 @@ class TestMakeMTH5FDSNInventory(unittest.TestCase):
     """
 
     @classmethod
-    def setUpClass(self):
+    def setUpClass(cls):
 
-        self.fdsn = FDSN(mth5_version="0.1.0")
-        self.make_mth5 = MakeMTH5(
+        cls.fdsn = FDSN(mth5_version="0.1.0")
+        cls.make_mth5 = MakeMTH5(
             mth5_version="0.1.0", interact=True, save_path=Path().cwd()
         )
 
@@ -51,21 +51,19 @@ class TestMakeMTH5FDSNInventory(unittest.TestCase):
                 request_list.append(
                     [entry[0], entry[1], "", channel, entry[2], entry[3]]
                 )
-        self.logger = logger
-        self.csv_fn = Path().cwd().joinpath("test_inventory.csv")
-        self.mth5_path = Path().cwd()
+        cls.logger = logger
+        cls.csv_fn = Path().cwd().joinpath("test_inventory.csv")
+        cls.mth5_path = Path().cwd()
 
-        self.stations = ["CAS04", "NVR08"]
-        self.channels = ["LQE", "LQN", "LFE", "LFN", "LFZ"]
+        cls.stations = ["CAS04", "NVR08"]
+        cls.channels = ["LQE", "LQN", "LFE", "LFN", "LFZ"]
 
         # Turn list into dataframe
-        self.metadata_df = pd.DataFrame(
-            request_list, columns=self.fdsn.request_columns
-        )
+        cls.metadata_df = pd.DataFrame(request_list, columns=cls.fdsn.request_columns)
 
-        self.metadata_df.to_csv(self.csv_fn, index=False)
+        cls.metadata_df.to_csv(cls.csv_fn, index=False)
 
-        self.metadata_df_fail = pd.DataFrame(
+        cls.metadata_df_fail = pd.DataFrame(
             request_list,
             columns=["net", "sta", "loc", "chn", "startdate", "enddate"],
         )
@@ -83,9 +81,7 @@ class TestMakeMTH5FDSNInventory(unittest.TestCase):
             self.assertRaises(IOError, self.fdsn._validate_dataframe, "k.fail")
 
     def test_df_input_inventory(self):
-        inv, streams = self.fdsn.get_inventory_from_df(
-            self.metadata_df, data=False
-        )
+        inv, streams = self.fdsn.get_inventory_from_df(self.metadata_df, data=False)
         with self.subTest(name="stations"):
             self.assertListEqual(
                 sorted(self.stations),
@@ -95,28 +91,14 @@ class TestMakeMTH5FDSNInventory(unittest.TestCase):
             self.assertListEqual(
                 sorted(self.channels),
                 sorted(
-                    list(
-                        set(
-                            [
-                                ss.code
-                                for ss in inv.networks[0].stations[0].channels
-                            ]
-                        )
-                    )
+                    list(set([ss.code for ss in inv.networks[0].stations[0].channels]))
                 ),
             )
         with self.subTest(name="channels_NVR08"):
             self.assertListEqual(
                 sorted(self.channels),
                 sorted(
-                    list(
-                        set(
-                            [
-                                ss.code
-                                for ss in inv.networks[0].stations[1].channels
-                            ]
-                        )
-                    )
+                    list(set([ss.code for ss in inv.networks[0].stations[1].channels]))
                 ),
             )
 
@@ -131,28 +113,14 @@ class TestMakeMTH5FDSNInventory(unittest.TestCase):
             self.assertListEqual(
                 sorted(self.channels),
                 sorted(
-                    list(
-                        set(
-                            [
-                                ss.code
-                                for ss in inv.networks[0].stations[0].channels
-                            ]
-                        )
-                    )
+                    list(set([ss.code for ss in inv.networks[0].stations[0].channels]))
                 ),
             )
         with self.subTest(name="channels_NVR08"):
             self.assertListEqual(
                 sorted(self.channels),
                 sorted(
-                    list(
-                        set(
-                            [
-                                ss.code
-                                for ss in inv.networks[0].stations[1].channels
-                            ]
-                        )
-                    )
+                    list(set([ss.code for ss in inv.networks[0].stations[1].channels]))
                 ),
             )
 
@@ -210,8 +178,8 @@ class TestMakeMTH5FDSNInventory(unittest.TestCase):
             self.assertEqual(self.fdsn.mth5_version, "0.1.0")
 
     @classmethod
-    def tearDownClass(self):
-        self.csv_fn.unlink()
+    def tearDownClass(cls):
+        cls.csv_fn.unlink()
 
 
 @unittest.skipIf(
@@ -225,10 +193,10 @@ class TestMakeMTH5(unittest.TestCase):
     """
 
     @classmethod
-    def setUpClass(self):
+    def setUpClass(cls):
 
-        self.fdsn = FDSN(mth5_version="0.1.0")
-        self.fdsn.client = "IRIS"
+        cls.fdsn = FDSN(mth5_version="0.1.0")
+        cls.fdsn.client = "IRIS"
         # self.make_mth5 = MakeMTH5(
         #     mth5_version="0.1.0", interact=True, save_path=Path().cwd()
         # )
@@ -243,27 +211,25 @@ class TestMakeMTH5(unittest.TestCase):
                 request_list.append(
                     [entry[0], entry[1], "", channel, entry[2], entry[3]]
                 )
-        self.logger = logger
-        self.csv_fn = Path().cwd().joinpath("test_inventory.csv")
-        self.mth5_path = Path().cwd()
+        cls.logger = logger
+        cls.csv_fn = Path().cwd().joinpath("test_inventory.csv")
+        cls.mth5_path = Path().cwd()
 
-        self.stations = ["CAS04", "NVR08"]
-        self.channels = ["LQE", "LQN", "LFE", "LFN", "LFZ"]
+        cls.stations = ["CAS04", "NVR08"]
+        cls.channels = ["LQE", "LQN", "LFE", "LFN", "LFZ"]
 
         # Turn list into dataframe
-        self.metadata_df = pd.DataFrame(
-            request_list, columns=self.fdsn.request_columns
-        )
-        self.metadata_df.to_csv(self.csv_fn, index=False)
+        cls.metadata_df = pd.DataFrame(request_list, columns=cls.fdsn.request_columns)
+        cls.metadata_df.to_csv(cls.csv_fn, index=False)
 
-        self.metadata_df_fail = pd.DataFrame(
+        cls.metadata_df_fail = pd.DataFrame(
             request_list,
             columns=["net", "sta", "loc", "chn", "startdate", "enddate"],
         )
 
         try:
-            self.m = MakeMTH5.from_fdsn_client(
-                self.metadata_df,
+            cls.m = MakeMTH5.from_fdsn_client(
+                cls.metadata_df,
                 client="IRIS",
                 mth5_version="0.1.0",
                 interact=True,
@@ -271,10 +237,10 @@ class TestMakeMTH5(unittest.TestCase):
             )
 
         except FDSNNoDataException as error:
-            self.logger.warning(
+            cls.logger.warning(
                 "The requested data could not be found on the FDSN IRIS server, check data availability"
             )
-            self.logger.error(error)
+            cls.logger.error(error)
 
             raise Exception(
                 "The requested data could not be found on the FDSN IRIS server, check data availability"
@@ -325,9 +291,7 @@ class TestMakeMTH5(unittest.TestCase):
     def test_cas04_channels_to_ts(self):
         for run in ["a", "b", "c", "d"]:
             for ch in ["ex", "ey", "hx", "hy", "hz"]:
-                x = self.m.get_channel(
-                    "CAS04", run, ch, "CONUS_South"
-                ).to_channel_ts()
+                x = self.m.get_channel("CAS04", run, ch, "CONUS_South").to_channel_ts()
                 with self.subTest(name=f"has data CAS04.{run}.{ch}"):
                     self.assertTrue(abs(x.ts.mean()) > 0)
                 with self.subTest(name=f"has metadata CAS04.{run}.{ch}"):
@@ -352,10 +316,10 @@ class TestMakeMTH5(unittest.TestCase):
                     self.assertEqual(x.component, ch)
 
     @classmethod
-    def tearDownClass(self):
-        self.m.close_mth5()
-        self.m.filename.unlink()
-        self.csv_fn.unlink()
+    def tearDownClass(cls):
+        cls.m.close_mth5()
+        cls.m.filename.unlink()
+        cls.csv_fn.unlink()
 
 
 # =============================================================================
