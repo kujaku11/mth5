@@ -16,6 +16,45 @@ from mth5.groups import BaseGroup, EstimateDataset
 from mth5.helpers import validate_name, from_numpy_type
 from mth5.utils.exceptions import MTH5Error
 
+
+def _check_channel_in_output(output_channels, channel):
+    """
+    Helper function to check if a channel is in output_channels list.
+    Handles both normal lists and corrupted serialization from HDF5 attributes.
+
+    Parameters
+    ----------
+    output_channels : list
+        List of output channels, may be corrupted from HDF5 attribute serialization
+    channel : str
+        Channel name to check for
+
+    Returns
+    -------
+    bool
+        True if channel is found in output_channels
+    """
+    if not output_channels:
+        return False
+
+    # Handle normal case
+    if channel in output_channels:
+        return True
+
+    # Handle corrupted HDF5 attribute serialization case
+    # where ['ex', 'ey', 'hz'] becomes ['["ex"', '"ey"', '"hz"]']
+    for item in output_channels:
+        if isinstance(item, str):
+            # Check if the channel appears in the corrupted string
+            if f'"{channel}"' in item or f"'{channel}'" in item:
+                return True
+                # Also check for cases where the quotes are missing
+            if channel in item:
+                return True
+
+    return False
+
+
 from mt_metadata.transfer_functions.core import TF
 from mt_metadata.transfer_functions.tf.statistical_estimate import StatisticalEstimate
 from mt_metadata.timeseries import Run, Electric, Magnetic
@@ -279,17 +318,16 @@ class TransferFunctionGroup(BaseGroup):
             est = self.get_estimate("transfer_function")
             if est.hdf5_dataset.shape == (1, 1, 1):
                 return False
-            elif (
-                "ex" in est.metadata.output_channels
-                and "ey" in est.metadata.output_channels
-            ):
+            elif _check_channel_in_output(
+                est.metadata.output_channels, "ex"
+            ) and _check_channel_in_output(est.metadata.output_channels, "ey"):
                 return True
             return False
         elif estimate in ["tipper"]:
             est = self.get_estimate("transfer_function")
             if est.hdf5_dataset.shape == (1, 1, 1):
                 return False
-            elif "hz" in est.metadata.output_channels:
+            elif _check_channel_in_output(est.metadata.output_channels, "hz"):
                 return True
             return False
         elif estimate in ["covariance"]:
