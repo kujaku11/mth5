@@ -18,7 +18,10 @@ from loguru import logger
 from mt_metadata.transfer_functions.tf.statistical_estimate import StatisticalEstimate
 from mt_metadata.utils.validators import validate_attribute
 from mth5.utils.exceptions import MTH5Error
-from mth5.helpers import to_numpy_type, add_attributes_to_metadata_class_pydantic
+from mth5.helpers import (
+    to_numpy_type,
+    add_attributes_to_metadata_class_pydantic,
+)
 
 # =============================================================================
 
@@ -56,7 +59,7 @@ class EstimateDataset:
         # defined yet set to Base class.
         self.metadata = add_attributes_to_metadata_class_pydantic(StatisticalEstimate)
         self.metadata.hdf5_reference = self.hdf5_dataset.ref
-        self.metadata.mth5_type = self._class_name
+        self.metadata.mth5_type = validate_attribute(self._class_name)
 
         # if the input data set already has filled attributes, namely if the
         # channel data already exists then read them in with our writing back
@@ -94,7 +97,7 @@ class EstimateDataset:
 
     @property
     def _class_name(self):
-        return validate_attribute(self.__class__.__name__.split("Dataset")[0])
+        return self.__class__.__name__.split("Dataset")[0]
 
     def read_metadata(self):
         """

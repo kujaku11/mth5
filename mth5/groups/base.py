@@ -170,6 +170,10 @@ class BaseGroup:
         # add 2 attributes that will help with querying using the new Pydantic approach
         self._metadata = add_attributes_to_metadata_class_pydantic(metadata_obj)
 
+        # set mth5 specific parameters
+        self._metadata.mth5_type = self._class_name
+        self._metadata.hdf5_reference = self.hdf5_group.ref
+
     @property
     def metadata(self):
         """Metadata for the Group based on mt_metadata.timeseries"""

@@ -1548,7 +1548,7 @@ class MTH5:
         else:
             survey_group = self.survey_group
             # might need a better test here
-            if survey_group.metadata.id is None:
+            if survey_group.metadata.id in [None, "default_survey"]:
                 survey_group.metadata.update(tf_object.survey_metadata)
                 survey_group.write_metadata()
         try:

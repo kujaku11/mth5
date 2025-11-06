@@ -292,7 +292,7 @@ class TestTFGroup(unittest.TestCase):
                 ("longitude", -108.712288),
                 ("elevation", 1940.05),
                 ("tf_id", b"NMX20"),
-                ("units", b"none"),
+                ("units", b"milliVolt per kilometer per nanoTesla"),
                 ("has_impedance", True),
                 ("has_tipper", True),
                 ("has_covariance", True),
