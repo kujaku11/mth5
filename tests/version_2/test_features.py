@@ -17,37 +17,31 @@ from mth5.mth5 import MTH5
 
 class TestFeaturesSimple(unittest.TestCase):
     @classmethod
-    def setUpClass(self):
+    def setUpClass(cls):
 
-        self.m = MTH5(file_version="0.2.0")
-        self.mth5_fn = Path(__file__).parent.joinpath("test_feature.h5")
-        self.m.open_mth5(self.mth5_fn)
+        cls.m = MTH5(file_version="0.2.0")
+        cls.mth5_fn = Path(__file__).parent.joinpath("test_feature.h5")
+        cls.m.open_mth5(cls.mth5_fn)
 
-        self.survey_group = self.m.add_survey("top_survey")
-        self.station_group = self.m.add_station("mt01", survey="top_survey")
-        self.features_group = self.station_group.features_group
+        cls.survey_group = cls.m.add_survey("top_survey")
+        cls.station_group = cls.m.add_station("mt01", survey="top_survey")
+        cls.features_group = cls.station_group.features_group
 
         # add frequency feature, say coherence
-        self.feature_fc = self.features_group.add_feature_group("feature_fc")
-        self.fc_run = self.feature_fc.add_feature_run_group(
+        cls.feature_fc = cls.features_group.add_feature_group("feature_fc")
+        cls.fc_run = cls.feature_fc.add_feature_run_group(
             "coherence", domain="frequency"
         )
-        self.dl = self.fc_run.add_decimation_level("0")
-        self.feature_ch = self.dl.add_channel("ex_hy")
+        cls.dl = cls.fc_run.add_decimation_level("0")
+        cls.feature_ch = cls.dl.add_channel("ex_hy")
 
         # add time series feature say despiking
-        self.feature_ts = self.features_group.add_feature_group("feature_ts")
-        self.ts_run = self.feature_ts.add_feature_run_group(
-            "despike", domain="time"
-        )
-        self.ts_channel = self.ts_run.add_feature_channel(
-            "ex", "electric", None
-        )
+        cls.feature_ts = cls.features_group.add_feature_group("feature_ts")
+        cls.ts_run = cls.feature_ts.add_feature_run_group("despike", domain="time")
+        cls.ts_channel = cls.ts_run.add_feature_channel("ex", "electric", None)
 
     def test_feature_group(self):
-        self.assertEqual(
-            self.features_group.metadata.mth5_type, "MasterFeatures"
-        )
+        self.assertEqual(self.features_group.metadata.mth5_type, "MasterFeatures")
 
     def test_feature_fc(self):
         self.assertEqual(self.feature_fc.metadata.name, "feature_fc")
@@ -72,9 +66,9 @@ class TestFeaturesSimple(unittest.TestCase):
         self.assertEqual(self.ts_channel.metadata.component, "ex")
 
     @classmethod
-    def tearDownClass(self):
-        self.m.close_mth5()
-        self.mth5_fn.unlink()
+    def tearDownClass(cls):
+        cls.m.close_mth5()
+        cls.mth5_fn.unlink()
 
 
 # =============================================================================
