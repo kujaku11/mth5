@@ -13,6 +13,7 @@ Created on Wed Sep 30 11:47:01 2020
 
 from loguru import logger
 
+
 period_code_dict = {
     "F": {"min": 1000, "max": 5000},
     "G": {"min": 1000, "max": 5000},

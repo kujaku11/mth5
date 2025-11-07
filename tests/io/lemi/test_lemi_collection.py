@@ -12,23 +12,20 @@ import unittest
 from collections import OrderedDict
 from pathlib import Path
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from mth5.io.lemi import LEMICollection
+
 
 # =============================================================================
 
 
-@unittest.skipIf(
-    "peacock" not in str(Path(__file__).as_posix()), "local files"
-)
+@unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local files")
 class TestLEMICollection(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.lc = LEMICollection(
-            r"c:\Users\jpeacock\OneDrive - DOI\mt\lemi\DATA0110"
-        )
+        self.lc = LEMICollection(r"c:\Users\jpeacock\OneDrive - DOI\mt\lemi\DATA0110")
         self.lc.station_id = "mt01"
         self.lc.survey_id = "test"
 
@@ -72,8 +69,7 @@ class TestLEMICollection(unittest.TestCase):
         self.df = self.lc._set_df_dtypes(self.df)
         with self.subTest("start"):
             self.assertTrue(
-                self.df.start.dtype.type
-                == pd._libs.tslibs.timestamps.Timestamp
+                self.df.start.dtype.type == pd._libs.tslibs.timestamps.Timestamp
             )
         with self.subTest("end"):
             self.assertTrue(
@@ -121,9 +117,7 @@ class TestLEMICollection(unittest.TestCase):
         for key, rdf in self.runs[self.lc.station_id].items():
             rdf = rdf.fillna(0)
             with self.subTest(key):
-                self.assertTrue(
-                    (self.df[self.df.run == key].eq(rdf).all(axis=0).all())
-                )
+                self.assertTrue((self.df[self.df.run == key].eq(rdf).all(axis=0).all()))
 
 
 # =============================================================================

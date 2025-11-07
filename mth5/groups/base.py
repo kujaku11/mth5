@@ -18,34 +18,29 @@ Created on Fri May 29 15:09:48 2020
 # =============================================================================
 import inspect
 import weakref
-from loguru import logger
+
 import h5py
-from pyparsing import Union
-
-
+from loguru import logger
 from mt_metadata import timeseries as metadata
-from mt_metadata.transfer_functions.tf import TransferFunction
-from mt_metadata.processing.fourier_coefficients import (
-    Decimation,
-    FCChannel,
-    FC,
-)
+from mt_metadata.base import MetadataBase
 from mt_metadata.features import (
     Feature,
-    FeatureTSRun,
-    FeatureFCRun,
     FeatureDecimationChannel,
+    FeatureFCRun,
+    FeatureTSRun,
 )
-from mt_metadata.base import MetadataBase
+from mt_metadata.processing.fourier_coefficients import Decimation, FC, FCChannel
+from mt_metadata.transfer_functions.tf import TransferFunction
 
 from mth5.helpers import (
-    get_tree,
-    validate_name,
     add_attributes_to_metadata_class_pydantic,
+    from_numpy_type,
+    get_tree,
+    to_numpy_type,
+    validate_name,
 )
 from mth5.utils.exceptions import MTH5Error
-from mth5.helpers import to_numpy_type, from_numpy_type
-from pydantic.fields import FieldInfo
+
 
 # make a dictionary of available metadata classes
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))

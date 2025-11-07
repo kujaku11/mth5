@@ -13,12 +13,11 @@ from pathlib import Path
 
 from mth5.io.zen import Z3DSchedule
 
+
 # =============================================================================
 
 
-@unittest.skipIf(
-    "peacock" not in str(Path(__file__).as_posix()), "local files"
-)
+@unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local files")
 class TestZ3DHeader(unittest.TestCase):
     @classmethod
     def setUpClass(self):

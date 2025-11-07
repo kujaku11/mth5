@@ -9,11 +9,12 @@ Created on Fri Sep  2 13:50:51 2022
 # Imports
 # =============================================================================
 from mt_metadata.timeseries.filters import (
+    ChannelResponse,
+    CoefficientFilter,
     PoleZeroFilter,
     TimeDelayFilter,
-    CoefficientFilter,
-    ChannelResponse,
 )
+
 
 # =============================================================================
 
@@ -278,9 +279,7 @@ class Response(object):
             )
 
         elif channel[0] in ["b", "h"]:
-            return ChannelResponse(
-                filters_list=self._get_magnetic_filter(channel)
-            )
+            return ChannelResponse(filters_list=self._get_magnetic_filter(channel))
 
         else:
             raise ValueError(f"Channel {channel} not supported.")

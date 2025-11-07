@@ -58,9 +58,7 @@ class Collection:
             setattr(self, key, value)
 
     def __str__(self):
-        lines = [
-            f"Collection for file type {self.file_ext} in {self._file_path}"
-        ]
+        lines = [f"Collection for file type {self.file_ext} in {self._file_path}"]
 
         return "\n".join(lines)
 
@@ -145,7 +143,6 @@ class Collection:
         :rtype: TYPE
 
         """
-        pass
 
     def assign_run_names(self):
         """
@@ -154,7 +151,6 @@ class Collection:
         :rtype: TYPE
 
         """
-        pass
 
     def _set_df_dtypes(self, df):
         """

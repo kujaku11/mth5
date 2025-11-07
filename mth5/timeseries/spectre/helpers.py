@@ -2,25 +2,22 @@
 This is a placeholder module for functions that are used in testing and development of spectrograms.
 """
 
+import pathlib
+from typing import List, Literal, Optional, Union
+
+import xarray as xr
 from loguru import logger
-from mt_metadata.processing.aurora import DecimationLevel as AuroraDecimationLevel
 from mt_metadata.processing.fourier_coefficients import Decimation as FCDecimation
 from mt_metadata.processing.fourier_coefficients.decimation import (
     fc_decimations_creator,
-)
-from mt_metadata.processing.fourier_coefficients.decimation import (
     get_degenerate_fc_decimation,
 )
+
+import mth5
 from mth5.mth5 import MTH5
 from mth5.processing.spectre.stft import run_ts_to_stft_scipy
 from mth5.utils.helpers import path_or_mth5_object
-from typing import List, Literal, Optional, Union
 
-import mth5
-import numpy as np
-import pathlib
-import scipy.signal as ssig
-import xarray as xr
 
 GROUPBY_COLUMNS = ["survey", "station", "sample_rate"]
 
@@ -292,7 +289,6 @@ def calibrate_stft_obj(
         Time series of calibrated Fourier coefficients
     """
     for channel_id in stft_obj.keys():
-
         channel = run_obj.get_channel(channel_id)
         channel_response = channel.channel_response
         if not channel_response.filters_list:

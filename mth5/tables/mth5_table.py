@@ -19,6 +19,7 @@ from loguru import logger
 
 from mth5.utils.exceptions import MTH5TableError
 
+
 # =============================================================================
 # MTH5 Table Class
 # =============================================================================
@@ -103,9 +104,7 @@ class MTH5Table:
         """
 
         if not isinstance(value, np.dtype):
-            raise TypeError(
-                f"Input dtype must be np.dtype not type {type(value)}"
-            )
+            raise TypeError(f"Input dtype must be np.dtype not type {type(value)}")
 
         if value != self._default_dtype:
             self.update_dtype(value)
@@ -201,9 +200,9 @@ class MTH5Table:
                 msg = "If testing for between value must be an iterable of length 2."
                 self.logger.error(msg)
                 raise ValueError(msg)
-            index_values = np.where(
-                (test_array > value[0]) & (test_array < value[1])
-            )[0]
+            index_values = np.where((test_array > value[0]) & (test_array < value[1]))[
+                0
+            ]
         else:
             raise ValueError("Test {0} not understood".format(test))
         return index_values
@@ -256,14 +255,10 @@ class MTH5Table:
                 if match:
                     index = 0
                 else:
-                    new_shape = tuple(
-                        [self.nrows + 1] + [ii for ii in self.shape[1:]]
-                    )
+                    new_shape = tuple([self.nrows + 1] + [ii for ii in self.shape[1:]])
                     self.array.resize(new_shape)
             else:
-                new_shape = tuple(
-                    [self.nrows + 1] + [ii for ii in self.shape[1:]]
-                )
+                new_shape = tuple([self.nrows + 1] + [ii for ii in self.shape[1:]])
                 self.array.resize(new_shape)
         # add the row
         self.array[index] = row
@@ -285,9 +280,7 @@ class MTH5Table:
 
         """
         try:
-            row_index = self.locate("hdf5_reference", entry["hdf5_reference"])[
-                0
-            ]
+            row_index = self.locate("hdf5_reference", entry["hdf5_reference"])[0]
             return self.add_row(entry, index=row_index)
         except IndexError:
             self.logger.debug("Could not find row, adding a new one")

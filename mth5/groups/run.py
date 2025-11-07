@@ -13,25 +13,20 @@ import inspect
 import h5py
 import numpy as np
 import pandas as pd
-
 from mt_metadata import timeseries as metadata
 
 from mth5 import CHUNK_SIZE
 from mth5.groups import (
+    AuxiliaryDataset,
     BaseGroup,
     ChannelDataset,
     ElectricDataset,
     MagneticDataset,
-    AuxiliaryDataset,
 )
-from mth5.utils.exceptions import MTH5Error
-from mth5.helpers import (
-    to_numpy_type,
-    from_numpy_type,
-    validate_name,
-)
-
+from mth5.helpers import from_numpy_type, to_numpy_type, validate_name
 from mth5.timeseries import ChannelTS, RunTS
+from mth5.utils.exceptions import MTH5Error
+
 
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
 # =============================================================================

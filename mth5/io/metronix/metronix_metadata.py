@@ -11,14 +11,12 @@ Created on Fri Nov 22 13:23:42 2024
 import json
 from pathlib import Path
 from types import SimpleNamespace
-from loguru import logger
-import numpy as np
 
-from mt_metadata.timeseries import Magnetic, Electric
-from mt_metadata.timeseries.filters import (
-    FrequencyResponseTableFilter,
-    ChannelResponse,
-)
+import numpy as np
+from loguru import logger
+from mt_metadata.timeseries import Electric, Magnetic
+from mt_metadata.timeseries.filters import ChannelResponse, FrequencyResponseTableFilter
+
 
 # =============================================================================
 
@@ -35,7 +33,6 @@ class MetronixFileNameMetadata:
         self.fn = fn
 
     def __str__(self):
-
         if self.fn is not None:
             lines = [f"Metronix ATSS {self.file_type.upper()}:"]
             lines.append(f"\tSystem Name:    {self.system_name}")

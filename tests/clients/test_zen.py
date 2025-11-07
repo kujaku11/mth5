@@ -9,10 +9,10 @@ Created on Fri Oct 11 11:48:24 2024
 # Imports
 # =============================================================================
 import unittest
-
 from pathlib import Path
 
 from mth5.clients.zen import ZenClient
+
 
 # =============================================================================
 
@@ -71,7 +71,6 @@ class TestClientBase(unittest.TestCase):
         self.assertRaises(IOError, ZenClient, r"a:\\")
 
     def test_calibration_path_None(self):
-
         self.assertEqual(None, self.base.calibration_path)
 
 

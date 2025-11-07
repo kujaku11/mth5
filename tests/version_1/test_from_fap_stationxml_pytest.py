@@ -11,14 +11,15 @@ Pytest version of FAP StationXML tests with fixtures and subtests
 
 """
 
-import pytest
 from pathlib import Path
+
 import numpy as np
 import numpy.testing as npt
-from mth5.mth5 import MTH5
-
-from mt_metadata.timeseries.stationxml import XMLInventoryMTExperiment
+import pytest
 from mt_metadata import STATIONXML_FAP
+from mt_metadata.timeseries.stationxml import XMLInventoryMTExperiment
+
+from mth5.mth5 import MTH5
 
 
 @pytest.fixture(scope="session")

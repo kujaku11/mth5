@@ -2,9 +2,10 @@
 Module containing helper functions for working with xarray objects.
 """
 
+from typing import Optional, Union
+
 import numpy as np
 import xarray as xr
-from typing import Optional, Union
 
 
 def covariance_xr(

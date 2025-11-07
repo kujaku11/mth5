@@ -5,16 +5,19 @@ Created on Fri Nov 22 13:47:59 2024
 @author: jpeacock
 """
 
+import json
+
 # =============================================================================
 # Imports
 # =============================================================================
 import unittest
-from pathlib import Path
-import json
 from collections import OrderedDict
+from pathlib import Path
+
 import numpy as np
 
-from mth5.io.metronix import MetronixFileNameMetadata, MetronixChannelJSON
+from mth5.io.metronix import MetronixChannelJSON, MetronixFileNameMetadata
+
 
 # =============================================================================
 
@@ -463,9 +466,7 @@ class TestMetronixJSONMagnetic(unittest.TestCase):
                 ("name", "mfs-06_chopper_1"),
                 (
                     "phases",
-                    np.deg2rad(
-                        np.array(self.magnetic_dict["sensor_calibration"]["p"])
-                    ),
+                    np.deg2rad(np.array(self.magnetic_dict["sensor_calibration"]["p"])),
                 ),
                 ("type", "frequency response table"),
                 ("units_out", "mV"),

@@ -25,36 +25,31 @@ Author: GitHub Copilot (expanding on existing test_xr_scipy.py)
 # Imports
 # =============================================================================
 import warnings
-from types import GeneratorType
-from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
-from numpy.testing import assert_allclose
-from loguru import logger
+
 
 # Import the module under test
 try:
+    from mth5.timeseries.channel_ts import make_dt_coordinates
     from mth5.timeseries.scipy_filters import (
-        frequency_filter,
-        lowpass,
-        highpass,
         bandpass,
         bandstop,
         decimate,
+        detrend,
+        FilteringNaNWarning,
+        frequency_filter,
+        get_maybe_only_dim,
+        get_sampling_step,
+        highpass,
+        lowpass,
         resample_poly,
         savgol_filter,
-        detrend,
-        get_sampling_step,
-        get_maybe_only_dim,
         UnevenSamplingWarning,
-        FilteringNaNWarning,
-        DecimationWarning,
-        FilterAccessor,
     )
-    from mth5.timeseries.channel_ts import make_dt_coordinates
 
     # Test import successful
     SCIPY_FILTERS_AVAILABLE = True
@@ -1069,27 +1064,10 @@ def test_module_imports():
     assert SCIPY_FILTERS_AVAILABLE, "scipy_filters module should be available"
 
     # Test key functions are importable
-    from mth5.timeseries.scipy_filters import (
-        frequency_filter,
-        lowpass,
-        highpass,
-        bandpass,
-        bandstop,
-        decimate,
-        resample_poly,
-        savgol_filter,
-        detrend,
-    )
-
-    # Test warning classes are importable
-    from mth5.timeseries.scipy_filters import (
-        UnevenSamplingWarning,
-        FilteringNaNWarning,
-        DecimationWarning,
-    )
-
     # Test accessor is registered
     import xarray as xr
+
+    # Test warning classes are importable
 
     test_data = xr.DataArray([1, 2, 3], dims=["time"])
     assert hasattr(test_data, "sps_filters")

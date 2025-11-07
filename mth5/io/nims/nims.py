@@ -27,22 +27,23 @@ NIMS
     MIT
 """
 
+import datetime
+
 # =============================================================================
 # Imports
 # =============================================================================
 import struct
-import datetime
 
 import numpy as np
 import pandas as pd
+from mt_metadata.common.mttime import MTime
+from mt_metadata.timeseries import Auxiliary, Electric, Magnetic, Run, Station
 
+from mth5 import timeseries
 from mth5.io.nims.gps import GPS
 from mth5.io.nims.header import NIMSHeader
 from mth5.io.nims.response_filters import Response
-from mth5 import timeseries
 
-from mt_metadata.common.mttime import MTime
-from mt_metadata.timeseries import Station, Run, Electric, Magnetic, Auxiliary
 
 # =============================================================================
 # Exceptions
@@ -314,7 +315,6 @@ class NIMS(NIMSHeader):
     def hx(self):
         """HX"""
         if self.ts_data is not None:
-
             return timeseries.ChannelTS(
                 channel_type="magnetic",
                 data=self.ts_data.hx.to_numpy(),
@@ -387,7 +387,6 @@ class NIMS(NIMSHeader):
     def hz(self):
         """HZ"""
         if self.ts_data is not None:
-
             return timeseries.ChannelTS(
                 channel_type="magnetic",
                 data=self.ts_data.hz.to_numpy(),
@@ -425,7 +424,6 @@ class NIMS(NIMSHeader):
     def ex(self):
         """EX"""
         if self.ts_data is not None:
-
             return timeseries.ChannelTS(
                 channel_type="electric",
                 data=self.ts_data.ex.to_numpy(),
@@ -463,7 +461,6 @@ class NIMS(NIMSHeader):
     def ey(self):
         """EY"""
         if self.ts_data is not None:
-
             return timeseries.ChannelTS(
                 channel_type="electric",
                 data=self.ts_data.ey.to_numpy(),

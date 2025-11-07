@@ -5,16 +5,18 @@ Created on Wed Mar 23 14:09:38 2022
 @author: jpeacock
 """
 
+import h5py
+import numpy as np
+
 # =============================================================================
 # Imports
 # =============================================================================
 import pandas as pd
-import numpy as np
-import h5py
 
 from mth5 import TF_DTYPE
-from mth5.tables import MTH5Table
 from mth5.helpers import validate_name
+from mth5.tables import MTH5Table
+
 
 # =============================================================================
 
@@ -104,22 +106,12 @@ class TFSummaryTable(MTH5Table):
                                             node.parent.parent.attrs["id"]
                                         ).encode("utf-8"),
                                         validate_name(
-                                            node.parent.parent.parent.parent.attrs[
-                                                "id"
-                                            ]
+                                            node.parent.parent.parent.parent.attrs["id"]
                                         ).encode("utf-8"),
-                                        node.parent.parent.attrs[
-                                            "location.latitude"
-                                        ],
-                                        node.parent.parent.attrs[
-                                            "location.longitude"
-                                        ],
-                                        node.parent.parent.attrs[
-                                            "location.elevation"
-                                        ],
-                                        validate_name(node.attrs["id"]).encode(
-                                            "utf-8"
-                                        ),
+                                        node.parent.parent.attrs["location.latitude"],
+                                        node.parent.parent.attrs["location.longitude"],
+                                        node.parent.parent.attrs["location.elevation"],
+                                        validate_name(node.attrs["id"]).encode("utf-8"),
                                         node.attrs["units"],
                                         has_impedance,
                                         has_tipper,

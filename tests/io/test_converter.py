@@ -9,9 +9,11 @@ Test converters including
 # =============================================================================
 import unittest
 from pathlib import Path
-from mth5.io.conversion import MTH5ToMiniSEEDStationXML
-from mth5.data.make_mth5_from_asc import create_test1_h5
+
 from mth5.clients import MakeMTH5
+from mth5.data.make_mth5_from_asc import create_test1_h5
+from mth5.io.conversion import MTH5ToMiniSEEDStationXML
+
 
 # =============================================================================
 

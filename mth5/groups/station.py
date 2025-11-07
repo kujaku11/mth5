@@ -20,19 +20,19 @@ import inspect
 import h5py
 import numpy as np
 import pandas as pd
-
 from mt_metadata import timeseries as metadata
 from mt_metadata.common.mttime import MTime
 
 from mth5.groups import (
     BaseGroup,
-    RunGroup,
-    TransferFunctionsGroup,
     MasterFCGroup,
     MasterFeaturesGroup,
+    RunGroup,
+    TransferFunctionsGroup,
 )
 from mth5.helpers import from_numpy_type
 from mth5.utils.exceptions import MTH5Error
+
 
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
 # =============================================================================

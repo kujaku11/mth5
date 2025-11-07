@@ -8,23 +8,25 @@ Created on Tue May 11 15:31:31 2021
 :license: MIT
 
 """
+import warnings
+from io import StringIO
+
 # =============================================================================
 # Imports
 # =============================================================================
 from pathlib import Path
-from io import StringIO
-import warnings
+
 
 # supress the future warning from pandas about using datetime parser.
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
+
 import pandas as pd
 from loguru import logger
-from datetime import datetime
+from mt_metadata.common.mttime import MTime
+from mt_metadata.timeseries import Auxiliary, Electric, Magnetic, Run, Station
 
 from mth5.timeseries import ChannelTS, RunTS
-from mt_metadata.timeseries import Station, Run, Electric, Magnetic, Auxiliary
-from mt_metadata.common.mttime import MTime
 
 
 # =============================================================================

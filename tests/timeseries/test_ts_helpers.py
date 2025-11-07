@@ -4,20 +4,20 @@ Created on Wed Mar 29 14:30:08 2023
 
 @author: jpeacock
 """
-# =============================================================================
-# Imports
-# =============================================================================
-import pandas as pd
 import sys
 import unittest
 
+# =============================================================================
+# Imports
+# =============================================================================
 from mt_metadata.common.mttime import MTime
 
 from mth5.timeseries.ts_helpers import (
-    make_dt_coordinates,
-    get_decimation_sample_rates,
     _count_decimal_sig_figs,
+    get_decimation_sample_rates,
+    make_dt_coordinates,
 )
+
 
 # =============================================================================
 

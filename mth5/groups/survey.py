@@ -10,24 +10,24 @@ Created on Wed Dec 23 16:59:45 2020
 
 """
 
+import h5py
+
 # =============================================================================
 # Imports
 # =============================================================================
 import numpy as np
 import pandas as pd
-import h5py
+from mt_metadata.timeseries import Survey
 
 from mth5.groups import (
     BaseGroup,
-    MasterStationGroup,
     FiltersGroup,
+    MasterStationGroup,
     ReportsGroup,
     StandardsGroup,
 )
+from mth5.helpers import to_numpy_type, validate_name
 from mth5.utils.exceptions import MTH5Error
-from mth5.helpers import validate_name, to_numpy_type
-
-from mt_metadata.timeseries import Survey
 
 
 # =============================================================================

@@ -9,12 +9,14 @@ Created on Tue Oct 26 12:46:55 2021
 # =============================================================================
 import unittest
 from pathlib import Path
+
 import pandas as pd
 from loguru import logger
-
-from mth5.clients.make_mth5 import MakeMTH5
-from mth5.clients.fdsn import FDSN
 from obspy.clients.fdsn.header import FDSNNoDataException
+
+from mth5.clients.fdsn import FDSN
+from mth5.clients.make_mth5 import MakeMTH5
+
 
 expected_csv = Path(__file__).parent.joinpath("expected.csv")
 expected_df = pd.read_csv(expected_csv)
@@ -35,7 +37,6 @@ class TestMakeMTH5FDSNInventory(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-
         self.fdsn = FDSN(mth5_version="0.1.0")
         self.make_mth5 = MakeMTH5(
             mth5_version="0.1.0", interact=True, save_path=Path().cwd()
@@ -57,9 +58,7 @@ class TestMakeMTH5FDSNInventory(unittest.TestCase):
         self.stations = ["ORF08"]
 
         # Turn list into dataframe
-        self.metadata_df = pd.DataFrame(
-            request_list, columns=self.fdsn.request_columns
-        )
+        self.metadata_df = pd.DataFrame(request_list, columns=self.fdsn.request_columns)
 
         self.metadata_df.to_csv(self.csv_fn, index=False)
 
@@ -82,9 +81,7 @@ class TestMakeMTH5FDSNInventory(unittest.TestCase):
 
     def test_df_input_inventory(self):
         try:
-            inv, streams = self.fdsn.get_inventory_from_df(
-                self.metadata_df, data=False
-            )
+            inv, streams = self.fdsn.get_inventory_from_df(self.metadata_df, data=False)
 
         except FDSNNoDataException as error:
             msg = (
@@ -104,14 +101,7 @@ class TestMakeMTH5FDSNInventory(unittest.TestCase):
             self.assertListEqual(
                 sorted(self.channels),
                 sorted(
-                    list(
-                        set(
-                            [
-                                ss.code
-                                for ss in inv.networks[0].stations[0].channels
-                            ]
-                        )
-                    )
+                    list(set([ss.code for ss in inv.networks[0].stations[0].channels]))
                 ),
             )
 
@@ -126,14 +116,7 @@ class TestMakeMTH5FDSNInventory(unittest.TestCase):
             self.assertListEqual(
                 sorted(self.channels),
                 sorted(
-                    list(
-                        set(
-                            [
-                                ss.code
-                                for ss in inv.networks[0].stations[0].channels
-                            ]
-                        )
-                    )
+                    list(set([ss.code for ss in inv.networks[0].stations[0].channels]))
                 ),
             )
 
@@ -207,7 +190,6 @@ class TestMakeMTH5(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-
         self.fdsn = FDSN(mth5_version="0.1.0")
         self.fdsn.client = "IRIS"
         self.make_mth5 = MakeMTH5(
@@ -231,9 +213,7 @@ class TestMakeMTH5(unittest.TestCase):
         self.channels = ["MQE", "MQN", "MFE", "MFN", "MFZ"]
 
         # Turn list into dataframe
-        self.metadata_df = pd.DataFrame(
-            request_list, columns=self.fdsn.request_columns
-        )
+        self.metadata_df = pd.DataFrame(request_list, columns=self.fdsn.request_columns)
         self.metadata_df.to_csv(self.csv_fn, index=False)
 
         self.metadata_df_fail = pd.DataFrame(
@@ -242,9 +222,7 @@ class TestMakeMTH5(unittest.TestCase):
         )
 
         try:
-            self.m = self.make_mth5.from_fdsn_client(
-                self.metadata_df, client="IRIS"
-            )
+            self.m = self.make_mth5.from_fdsn_client(self.metadata_df, client="IRIS")
         except FDSNNoDataException as error:
             self.logger.warning(
                 "The requested data could not be found on the FDSN IRIS server, check data availability"

@@ -13,18 +13,19 @@ Created on Wed Dec 23 17:05:33 2020
 # Imports
 # =============================================================================
 import inspect
-import numpy as np
 
+import numpy as np
+from mt_metadata import timeseries
+from mt_metadata.base import BaseDict
+from mt_metadata.timeseries import filters
+from mt_metadata.utils.summarize import summarize_standards
+from mt_metadata.utils.validators import validate_attribute
+
+from mth5 import STANDARDS_DTYPE
 from mth5.groups.base import BaseGroup
 from mth5.tables import MTH5Table
 from mth5.utils.exceptions import MTH5TableError
-from mth5 import STANDARDS_DTYPE
 
-from mt_metadata.base import BaseDict
-from mt_metadata import timeseries
-from mt_metadata.timeseries import filters
-from mt_metadata.utils.validators import validate_attribute
-from mt_metadata.utils.summarize import summarize_standards
 
 ts_classes = dict(inspect.getmembers(timeseries, inspect.isclass))
 flt_classes = dict(inspect.getmembers(filters, inspect.isclass))

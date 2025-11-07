@@ -3,13 +3,13 @@
 # Imports
 # =============================================================================
 import unittest
+
 import pandas as pd
 
-from mth5.data.make_mth5_from_asc import MTH5_PATH, create_test12rr_h5
-from mth5.utils.helpers import close_open_files
-
-from mth5.processing.run_summary import RunSummary
+from mth5.data.make_mth5_from_asc import create_test12rr_h5, MTH5_PATH
 from mth5.processing import RUN_SUMMARY_COLUMNS
+from mth5.processing.run_summary import RunSummary
+from mth5.utils.helpers import close_open_files
 
 
 # =============================================================================

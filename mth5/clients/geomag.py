@@ -5,24 +5,25 @@ Created on Mon Nov 14 13:58:44 2022
 @author: jpeacock
 """
 
-# =============================================================================
-# Imports
-# =============================================================================
-import requests
 import json
-import sys
 import platform
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from mth5 import __version__ as mth5_version
-from mth5.timeseries import ChannelTS, RunTS
-from mth5.mth5 import MTH5
-
+# =============================================================================
+# Imports
+# =============================================================================
+import requests
 from mt_metadata.common.mttime import MTime
-from mt_metadata.timeseries import Survey, Station, Run, Magnetic
+from mt_metadata.timeseries import Magnetic, Run, Station, Survey
+
+from mth5 import __version__ as mth5_version
+from mth5.mth5 import MTH5
+from mth5.timeseries import ChannelTS, RunTS
+
 
 # =============================================================================
 
@@ -616,7 +617,6 @@ class USGSGeomag:
         fn = self._make_filename(self.save_path, request_df)
 
         with MTH5(**self.h5_kwargs) as m:
-
             m.open_mth5(fn)
 
             if self.mth5_version in ["0.1.0"]:

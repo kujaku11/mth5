@@ -2,7 +2,7 @@
 """
 Created on Tue Nov 26 15:54:12 2024
 
-Translated from 
+Translated from
 https://github.com/bfrmtx/MTHotel/blob/main/python/include/atss_file.py
 
 the atss files are two files; one for the header.json and one for the data.atss
@@ -19,10 +19,11 @@ that is equivalent to a numpy array of type np.float64
 # =============================================================================
 import numpy as np
 from loguru import logger
-
 from mt_metadata.timeseries import Run, Station, Survey
+
+from mth5.io.metronix import MetronixChannelJSON, MetronixFileNameMetadata
 from mth5.timeseries import ChannelTS
-from mth5.io.metronix import MetronixFileNameMetadata, MetronixChannelJSON
+
 
 # =============================================================================
 

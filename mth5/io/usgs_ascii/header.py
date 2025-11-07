@@ -8,19 +8,20 @@ Created on Thu Aug 27 16:54:09 2020
 
 """
 
+import json
+from collections import OrderedDict
+
 # =============================================================================
 # Imports
 # =============================================================================
 from pathlib import Path
-from urllib.request import Request, urlopen
 from urllib.error import HTTPError
-import json
-from collections import OrderedDict
+from urllib.request import Request, urlopen
 
 import numpy as np
 from loguru import logger
+from mt_metadata.timeseries import Electric, Magnetic, Run, Station, Survey
 
-from mt_metadata.timeseries import Magnetic, Electric, Run, Station, Survey
 
 # =============================================================================
 #  Metadata for usgs ascii file
@@ -67,7 +68,6 @@ class AsciiMetadata:
     """
 
     def __init__(self, fn=None, **kwargs):
-
         self.logger = logger
 
         self.fn = fn

@@ -11,8 +11,10 @@ Created on Fri Sep 15 16:33:28 2023
 import unittest
 
 import numpy as np
-from mth5.mth5 import MTH5
 from mt_metadata.timeseries import Electric
+
+from mth5.mth5 import MTH5
+
 
 # =============================================================================
 
@@ -37,9 +39,7 @@ class TestMTH5ChannelSlice(unittest.TestCase):
         self.assertEqual(0, self.ch_ds.get_index_from_time(self.ch_ds.start))
 
     def test_get_index_from_time_start_too_early(self):
-        self.assertEqual(
-            -5, self.ch_ds.get_index_from_time(self.ch_ds.start - 5)
-        )
+        self.assertEqual(-5, self.ch_ds.get_index_from_time(self.ch_ds.start - 5))
 
     def test_get_index_from_time_end(self):
         self.assertEqual(
@@ -87,9 +87,7 @@ class TestMTH5ChannelSlice(unittest.TestCase):
             self.assertEqual(data.end, self.ch_ds.end)
 
     def test_full_slice_from_points(self):
-        data = self.ch_ds.time_slice(
-            self.ch_ds.start, n_samples=self.n_samples
-        )
+        data = self.ch_ds.time_slice(self.ch_ds.start, n_samples=self.n_samples)
         with self.subTest("size"):
             self.assertEqual(data.data_array.size, self.n_samples)
         with self.subTest("start"):

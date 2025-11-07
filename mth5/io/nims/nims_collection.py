@@ -18,6 +18,7 @@ import pandas as pd
 from mth5.io.collection import Collection
 from mth5.io.nims import NIMS
 
+
 # =============================================================================
 
 
@@ -43,9 +44,7 @@ class NIMSCollection(Collection):
 
         self.survey_id = "mt"
 
-    def to_dataframe(
-        self, sample_rates=[1], run_name_zeros=2, calibration_path=None
-    ):
+    def to_dataframe(self, sample_rates=[1], run_name_zeros=2, calibration_path=None):
         """
         Create a data frame of each TXT file in a given directory.
 
@@ -94,9 +93,7 @@ class NIMSCollection(Collection):
         df = pd.DataFrame(entries)
         df.loc[:, "channel_id"] = 1
         df.loc[:, "sequence_number"] = 0
-        df.loc[:, "component"] = ",".join(
-            ["hx", "hy", "hz", "ex", "ey", "temperature"]
-        )
+        df.loc[:, "component"] = ",".join(["hx", "hy", "hz", "ex", "ey", "temperature"])
         df.loc[:, "instrument_id"] = "NIMS"
         df = self._sort_df(self._set_df_dtypes(df), run_name_zeros)
 
@@ -119,13 +116,9 @@ class NIMSCollection(Collection):
 
         for station in df.station.unique():
             count = 1
-            for row in (
-                df[df.station == station].sort_values("start").itertuples()
-            ):
+            for row in df[df.station == station].sort_values("start").itertuples():
                 if row.run is None:
-                    df.loc[
-                        row.Index, "run"
-                    ] = f"sr{row.sample_rate}_{count:0{zeros}}"
+                    df.loc[row.Index, "run"] = f"sr{row.sample_rate}_{count:0{zeros}}"
                 df.loc[row.Index, "sequence_number"] = count
                 count += 1
 

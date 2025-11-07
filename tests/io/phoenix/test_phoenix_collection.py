@@ -12,10 +12,11 @@ import unittest
 from collections import OrderedDict
 from pathlib import Path
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from mth5.io.phoenix import PhoenixCollection
+
 
 # =============================================================================
 
@@ -41,12 +42,7 @@ class TestPhoenixCollection(unittest.TestCase):
         self.assertEqual(
             992,
             len(
-                [
-                    fn.name
-                    for fn in self.pc.get_files(
-                        self.pc._file_extension_map[150]
-                    )
-                ]
+                [fn.name for fn in self.pc.get_files(self.pc._file_extension_map[150])]
             ),
         )
 
@@ -112,13 +108,7 @@ class TestPhoenixCollection(unittest.TestCase):
             rdf = rdf.fillna(0)
             with self.subTest(key):
                 self.assertTrue(
-                    (
-                        self.df[self.df.run == key]
-                        .iloc[0:8]
-                        .eq(rdf)
-                        .all(axis=0)
-                        .all()
-                    )
+                    (self.df[self.df.run == key].iloc[0:8].eq(rdf).all(axis=0).all())
                 )
 
 

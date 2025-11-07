@@ -12,11 +12,11 @@ is a fancy way of saying f x 6 and f x 8.
 # Imports
 # =============================================================================
 from pathlib import Path
+
 import numpy as np
 from loguru import logger
-
-from mt_metadata.timeseries.filters import FrequencyResponseTableFilter
 from mt_metadata.common.mttime import MTime
+from mt_metadata.timeseries.filters import FrequencyResponseTableFilter
 
 
 # =============================================================================
@@ -24,7 +24,6 @@ from mt_metadata.common.mttime import MTime
 # =============================================================================
 class CoilResponse:
     def __init__(self, calibration_file=None, angular_frequency=False):
-
         self.logger = logger
         self.coil_calibrations = {}
         self._n_frequencies = 48

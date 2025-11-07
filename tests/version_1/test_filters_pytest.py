@@ -13,17 +13,20 @@ Converted to pytest on November 4, 2025
 :license: MIT
 
 """
+from pathlib import Path
+from typing import Generator, Tuple
+
+import numpy as np
+
 # =============================================================================
 # Imports
 # =============================================================================
 import pytest
-from pathlib import Path
-import numpy as np
-from typing import Generator, Tuple
+from mt_metadata.timeseries.filters import CoefficientFilter, PoleZeroFilter
 
 from mth5 import helpers
 from mth5.mth5 import MTH5
-from mt_metadata.timeseries.filters import PoleZeroFilter, CoefficientFilter
+
 
 # =============================================================================
 # Constants and Utilities

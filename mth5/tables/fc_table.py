@@ -6,16 +6,19 @@
 
 """
 
+from typing import Optional
+
+import h5py
+import numpy as np
+
 # =============================================================================
 # Imports
 # =============================================================================
 import pandas as pd
-import numpy as np
-import h5py
 
 from mth5 import FC_DTYPE
 from mth5.tables import MTH5Table
-from typing import Optional, Union
+
 
 # =============================================================================
 
@@ -50,9 +53,7 @@ class FCSummaryTable(MTH5Table):
         ]:
             setattr(df, key, getattr(df, key).str.decode("utf-8"))
         try:
-            df.start = pd.to_datetime(
-                df.start.str.decode("utf-8"), format="mixed"
-            )
+            df.start = pd.to_datetime(df.start.str.decode("utf-8"), format="mixed")
             df.end = pd.to_datetime(df.end.str.decode("utf-8"), format="mixed")
         except ValueError:
             df.start = pd.to_datetime(df.start.str.decode("utf-8"))
@@ -122,9 +123,7 @@ def _get_fc_entry(
     fc_entry = np.array(
         [
             (
-                group.parent.parent.parent.parent.parent.parent.attrs[
-                    "id"
-                ].encode(
+                group.parent.parent.parent.parent.parent.parent.attrs["id"].encode(
                     "utf-8"
                 ),  # get survey from FCChannel
                 group.parent.parent.parent.parent.attrs["id"].encode(

@@ -27,16 +27,15 @@ from pathlib import Path
 
 import numpy as np
 from loguru import logger
-
 from mt_metadata.common.mttime import MTime
+from mt_metadata.timeseries import Electric, Magnetic, Run, Station
 from mt_metadata.timeseries.filters import (
     ChannelResponse,
-    FrequencyResponseTableFilter,
     CoefficientFilter,
+    FrequencyResponseTableFilter,
 )
-from mt_metadata.timeseries import Station, Run, Electric, Magnetic
 
-from mth5.io.zen import Z3DHeader, Z3DSchedule, Z3DMetadata
+from mth5.io.zen import Z3DHeader, Z3DMetadata, Z3DSchedule
 from mth5.io.zen.coil_response import CoilResponse
 from mth5.timeseries import ChannelTS
 
@@ -533,7 +532,6 @@ class Z3D:
             phase = fap_table.phase / 1e3
             find = True
         elif self.metadata.cal_board is not None:
-
             try:
                 fap_dict = self.metadata.cal_board[int(self.sample_rate)]
                 frequency = fap_dict["frequency"]
@@ -746,7 +744,6 @@ class Z3D:
         Read header, schedule, and metadata
         """
         with open(self.fn, "rb") as file_id:
-
             self._read_header(fid=file_id)
             self._read_schedule(fid=file_id)
             self._read_metadata(fid=file_id)
@@ -815,7 +812,6 @@ class Z3D:
             try:
                 data[gps_find + 1]
             except IndexError:
-                pass
                 self.logger.warning(
                     f"Failed gps stamp {ii+1} out of {len(gps_stamp_index)}"
                 )
@@ -877,7 +873,6 @@ class Z3D:
         # the added benefit of the with statement is that it will close the
         # file object upon reading completion.
         with open(self.fn, "rb") as file_id:
-
             self._read_header(fid=file_id)
             self._read_schedule(fid=file_id)
             self._read_metadata(fid=file_id)
@@ -1149,23 +1144,17 @@ class ZenGPSError(Exception):
     error for gps timing
     """
 
-    pass
-
 
 class ZenSamplingRateError(Exception):
     """
     error for different sampling rates
     """
 
-    pass
-
 
 class ZenInputFileError(Exception):
     """
     error for input files
     """
-
-    pass
 
 
 def read_z3d(fn, calibration_fn=None, logger_file_handler=None):

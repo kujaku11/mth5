@@ -2,25 +2,19 @@
 Proof of concept for issue #219
 
 """
-from loguru import logger
-from mt_metadata.timeseries import Survey
-from mth5.data.paths import SyntheticTestPaths
-from mth5.data.make_mth5_from_asc import _add_survey
-from mth5.data.make_mth5_from_asc import create_test3_h5
-from mth5.mth5 import MTH5
-from mth5.timeseries import ChannelTS
-from mth5.timeseries import RunTS
-from mth5.utils.helpers import add_filters
-from mth5.utils.helpers import get_channel_summary
-from mth5.utils.helpers import station_in_mth5
-from mth5.utils.helpers import survey_in_mth5
-from mth5.utils.extract_subset_mth5 import extract_subset
 
-import pathlib
+from loguru import logger
+
+from mth5.data.make_mth5_from_asc import create_test3_h5
+from mth5.data.paths import SyntheticTestPaths
+from mth5.utils.extract_subset_mth5 import extract_subset
+from mth5.utils.helpers import get_channel_summary
+
 
 synthetic_test_paths = SyntheticTestPaths()
 MTH5_PATH = synthetic_test_paths.mth5_path
 FILE_VERSION = "0.1.0"
+
 
 def _select_source_file():
     """
@@ -46,6 +40,7 @@ def _select_source_file():
 
     return source_file
 
+
 def _select_target_file():
     synthetic_test_paths = SyntheticTestPaths()
     MTH5_PATH = synthetic_test_paths.mth5_path
@@ -61,8 +56,6 @@ def _select_data_subset():
     return selected_df
 
 
-
-
 def test_extract_subset():
     source_file = _select_source_file()
     target_file = _select_target_file()
@@ -73,6 +66,7 @@ def test_extract_subset():
     subset_df.reset_index(inplace=True, drop=True)  # allow comparison
     assert (df2[compare_columns] == subset_df[compare_columns]).all().all()
     print(df2)
+
 
 def main():
     test_extract_subset()

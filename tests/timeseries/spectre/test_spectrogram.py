@@ -14,28 +14,28 @@ and use a MultivariateDataset.
 TODO: Add a test_cross_powers that operates on a multivariate dataset.
 
 """
-import mth5.mth5
+import unittest
+
+import numpy as np
+import pytest
 from loguru import logger
 from mt_metadata.processing.aurora import FrequencyBands
-from mth5.data.make_mth5_from_asc import create_mth5_synthetic_file
-from mth5.data.make_mth5_from_asc import create_test1_h5
-from mth5.data.make_mth5_from_asc import create_test2_h5
-from mth5.data.make_mth5_from_asc import create_test3_h5
-from mth5.data.make_mth5_from_asc import create_test12rr_h5
+from scipy.constants import mu_0
+
+from mth5.data.make_mth5_from_asc import (
+    create_mth5_synthetic_file,
+    create_test1_h5,
+    create_test2_h5,
+    create_test3_h5,
+    create_test12rr_h5,
+)
 from mth5.data.station_config import make_station_01
 from mth5.helpers import close_open_files
 from mth5.mth5 import MTH5
-from mth5.timeseries.spectre import MultivariateDataset
-from mth5.timeseries.spectre import Spectrogram
-from mth5.timeseries.spectre.helpers import add_fcs_to_mth5
-from mth5.timeseries.spectre.helpers import read_back_fcs
 from mth5.processing.spectre.frequency_band_helpers import half_octave
-from scipy.constants import mu_0
+from mth5.timeseries.spectre import MultivariateDataset, Spectrogram
+from mth5.timeseries.spectre.helpers import add_fcs_to_mth5, read_back_fcs
 
-import unittest
-import numpy as np
-import xarray as xr
-import pytest
 
 FORCE_MAKE_MTH5 = True  # Should be True except when debugging locally
 
@@ -422,8 +422,10 @@ def test_multivariate_spectrogram():
 
     """
     from mth5.mth5 import MTH5
-    from mth5.timeseries.spectre.multiple_station import make_multistation_spectrogram
-    from mth5.timeseries.spectre.multiple_station import FCRunChunk
+    from mth5.timeseries.spectre.multiple_station import (
+        FCRunChunk,
+        make_multistation_spectrogram,
+    )
 
     # get the path to an mth5 file that has multiple stations
     mth5_path_12rr = create_test12rr_h5(

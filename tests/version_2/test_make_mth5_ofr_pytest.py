@@ -9,18 +9,19 @@ equivalent test coverage. Version 0.2.0 introduces the survey-based hierarchy.
 @author: pytest translation for MTH5 version 0.2.0
 """
 
+from unittest.mock import Mock, patch
+
+import numpy as np
+import pandas as pd
+
 # =============================================================================
 # Imports
 # =============================================================================
 import pytest
-import pandas as pd
-import numpy as np
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
-from obspy import UTCDateTime, Stream, Trace, Inventory
-from obspy.core.inventory import Network, Station, Channel, Response
-from obspy.core.inventory.util import Equipment
+from obspy import Inventory, Stream, Trace, UTCDateTime
 from obspy.clients.fdsn.client import FDSNNoDataException
+from obspy.core.inventory import Channel, Network, Response, Station
+from obspy.core.inventory.util import Equipment
 
 from mth5.clients.fdsn import FDSN
 from mth5.clients.make_mth5 import MakeMTH5
@@ -838,7 +839,6 @@ if __name__ == "__main__":
     - Run specific class: pytest TestVersion020Features -v
     - Run with timing: pytest --durations=10 test_make_mth5_ofr_pytest.py
     """
-    import sys
 
     args = [__file__, "-v", "--tb=short"]
     pytest.main(args)

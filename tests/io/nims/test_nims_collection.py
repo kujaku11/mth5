@@ -12,17 +12,16 @@ import unittest
 from collections import OrderedDict
 from pathlib import Path
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from mth5.io.nims import NIMSCollection
+
 
 # =============================================================================
 
 
-@unittest.skipIf(
-    "peacock" not in str(Path(__file__).as_posix()), "local files"
-)
+@unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local files")
 class TestNIMSCollection(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -56,8 +55,7 @@ class TestNIMSCollection(unittest.TestCase):
         self.df = self.nc._set_df_dtypes(self.df)
         with self.subTest("start"):
             self.assertTrue(
-                self.df.start.dtype.type
-                == pd._libs.tslibs.timestamps.Timestamp
+                self.df.start.dtype.type == pd._libs.tslibs.timestamps.Timestamp
             )
         with self.subTest("end"):
             self.assertTrue(
@@ -89,9 +87,7 @@ class TestNIMSCollection(unittest.TestCase):
         for key, rdf in self.runs[self.station].items():
             rdf = rdf.fillna(0)
             with self.subTest(key):
-                self.assertTrue(
-                    (self.df[self.df.run == key].eq(rdf).all(axis=0).all())
-                )
+                self.assertTrue((self.df[self.df.run == key].eq(rdf).all(axis=0).all()))
 
 
 # =============================================================================

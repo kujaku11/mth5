@@ -8,11 +8,12 @@ Created on Fri Nov 22 13:22:44 2024
 # =============================================================================
 # Imports
 # =============================================================================
-from pathlib import Path
+
 import pandas as pd
 
 from mth5.io.collection import Collection
 from mth5.io.metronix import ATSS
+
 
 # =============================================================================
 
@@ -22,9 +23,7 @@ class MetronixCollection(Collection):
         super().__init__(file_path=file_path, **kwargs)
         self.file_ext = ["atss"]
 
-    def to_dataframe(
-        self, sample_rates=[128], run_name_zeros=0, calibration_path=None
-    ):
+    def to_dataframe(self, sample_rates=[128], run_name_zeros=0, calibration_path=None):
         """
         Create dataframe for metronix timeseries atss + json file sets
 
@@ -73,9 +72,7 @@ class MetronixCollection(Collection):
             entry["calibration_fn"] = None
             entries.append(entry)
         # make pandas dataframe and set data types
-        df = self._sort_df(
-            self._set_df_dtypes(pd.DataFrame(entries)), run_name_zeros
-        )
+        df = self._sort_df(self._set_df_dtypes(pd.DataFrame(entries)), run_name_zeros)
 
         return df
 
@@ -96,7 +93,7 @@ class MetronixCollection(Collection):
             return df
 
         for row in df.itertuples():
-            df.loc[row.Index, "run"] = (
-                f"sr{row.sample_rate:.0f}_{int(row.run.split('_')[1]):0{zeros}}"
-            )
+            df.loc[
+                row.Index, "run"
+            ] = f"sr{row.sample_rate:.0f}_{int(row.run.split('_')[1]):0{zeros}}"
         return df

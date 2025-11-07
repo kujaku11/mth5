@@ -5,24 +5,22 @@ Created on Fri Oct 11 10:57:54 2024
 @author: jpeacock
 """
 
+from mth5 import read_file
+from mth5.clients.base import ClientBase
+from mth5.io.lemi import LEMICollection
+
 # =============================================================================
 # Imports
 # =============================================================================
 from mth5.mth5 import MTH5
-from mth5 import read_file
-from mth5.clients.base import ClientBase
-from mth5.io.lemi import LEMICollection
+
 
 # =============================================================================
 
 
 class LEMI424Client(ClientBase):
     def __init__(
-        self,
-        data_path,
-        save_path=None,
-        mth5_filename="from_lemi424.h5",
-        **kwargs
+        self, data_path, save_path=None, mth5_filename="from_lemi424.h5", **kwargs
     ):
         super().__init__(
             data_path,
@@ -59,9 +57,7 @@ class LEMI424Client(ClientBase):
             survey_group = m.add_survey(self.collection.survey_id)
 
             for station_id in runs.keys():
-                station_group = survey_group.stations_group.add_station(
-                    station_id
-                )
+                station_group = survey_group.stations_group.add_station(station_id)
                 for run_id, run_df in runs[station_id].items():
                     run_group = station_group.add_run(run_id)
                     run_ts = read_file(run_df.fn.to_list())

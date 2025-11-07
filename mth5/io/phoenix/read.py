@@ -9,11 +9,9 @@ Created on Fri May  6 12:39:34 2022
 # Imports
 # =============================================================================
 from pathlib import Path
-from .readers import (
-    NativeReader,
-    DecimatedContinuousReader,
-    DecimatedSegmentedReader,
-)
+
+from .readers import DecimatedContinuousReader, DecimatedSegmentedReader, NativeReader
+
 
 # =============================================================================
 READERS = {

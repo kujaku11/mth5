@@ -12,10 +12,11 @@ import unittest
 from collections import OrderedDict
 from pathlib import Path
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from mth5.io.zen import Z3DCollection
+
 
 # =============================================================================
 
@@ -24,9 +25,7 @@ from mth5.io.zen import Z3DCollection
 class TestZ3DCollection(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.zc = Z3DCollection(
-            r"c:\Users\jpeacock\OneDrive - DOI\mt\example_z3d_data"
-        )
+        self.zc = Z3DCollection(r"c:\Users\jpeacock\OneDrive - DOI\mt\example_z3d_data")
 
         self.df = self.zc.to_dataframe([256, 4096])
         self.runs = self.zc.get_runs([256, 4096])

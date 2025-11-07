@@ -9,13 +9,14 @@ Created on Fri Aug 19 16:39:30 2022
 # Imports
 # =============================================================================
 import unittest
-from pathlib import Path
 from collections import OrderedDict
+from pathlib import Path
 
+from mt_metadata.common.mttime import MTime
 
 from mth5.io.nims import NIMS, read_nims
-from mt_metadata.common.mttime import MTime
 from mth5.utils.helpers import get_compare_dict
+
 
 # =============================================================================
 

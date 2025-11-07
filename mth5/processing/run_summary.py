@@ -45,10 +45,10 @@ from typing import Optional, Union
 import pandas as pd
 from loguru import logger
 
-from mth5.processing import RUN_SUMMARY_COLUMNS, MINI_SUMMARY_COLUMNS
-
 import mth5
+from mth5.processing import MINI_SUMMARY_COLUMNS, RUN_SUMMARY_COLUMNS
 from mth5.utils.helpers import initialize_mth5
+
 
 # =============================================================================
 

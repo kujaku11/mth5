@@ -10,8 +10,10 @@ Created on Sun Sep 11 21:58:30 2022
 # =============================================================================
 import unittest
 
+from mt_metadata.timeseries import Auxiliary, Electric, Magnetic
+
 from mth5.utils import fdsn_tools
-from mt_metadata.timeseries import Electric, Magnetic, Auxiliary
+
 
 # =============================================================================
 
@@ -105,15 +107,11 @@ class TestFDSNTools(unittest.TestCase):
             with self.subTest(msg=str(key)):
                 self.assertEqual(
                     value,
-                    fdsn_tools.get_orientation_code(
-                        key, orientation="vertical"
-                    ),
+                    fdsn_tools.get_orientation_code(key, orientation="vertical"),
                 )
 
     def test_orientation_fail(self):
-        self.assertRaises(
-            ValueError, fdsn_tools.get_orientation_code, 0, "juxtapose"
-        )
+        self.assertRaises(ValueError, fdsn_tools.get_orientation_code, 0, "juxtapose")
 
     def test_make_channel_code(self):
         with self.subTest("ex"):
@@ -152,25 +150,19 @@ class TestFDSNTools(unittest.TestCase):
         with self.subTest("ex"):
             self.assertEqual(
                 "ex",
-                fdsn_tools.make_mt_channel(
-                    fdsn_tools.read_channel_code("BQN")
-                ),
+                fdsn_tools.make_mt_channel(fdsn_tools.read_channel_code("BQN")),
             )
 
         with self.subTest("hx"):
             self.assertEqual(
                 "hx",
-                fdsn_tools.make_mt_channel(
-                    fdsn_tools.read_channel_code("FFN")
-                ),
+                fdsn_tools.make_mt_channel(fdsn_tools.read_channel_code("FFN")),
             )
 
         with self.subTest("temperature"):
             self.assertEqual(
                 "temperaturez",
-                fdsn_tools.make_mt_channel(
-                    fdsn_tools.read_channel_code("KKZ")
-                ),
+                fdsn_tools.make_mt_channel(fdsn_tools.read_channel_code("KKZ")),
             )
 
 

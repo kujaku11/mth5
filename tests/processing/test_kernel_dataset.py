@@ -1,17 +1,15 @@
 # =============================================================================
 # Imports
 # =============================================================================
-from pathlib import Path
-import pandas as pd
 import unittest
+from pathlib import Path
 
-from mth5.data.make_mth5_from_asc import MTH5_PATH, create_test12rr_h5
+import pandas as pd
 
+from mth5.data.make_mth5_from_asc import create_test12rr_h5, MTH5_PATH
 from mth5.processing import KERNEL_DATASET_COLUMNS, KernelDataset, RunSummary
-from mth5.processing.kernel_dataset import (
-    intervals_overlap,
-    overlap,
-)
+from mth5.processing.kernel_dataset import intervals_overlap, overlap
+
 
 # =============================================================================
 

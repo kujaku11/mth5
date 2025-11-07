@@ -8,12 +8,14 @@ Created on Fri Feb 16 12:11:32 2024
 # Imports
 # =============================================================================
 import unittest
-import numpy as np
-import h5py
 from pathlib import Path
+
+import h5py
+import numpy as np
 
 from mth5.tables import MTH5Table
 from mth5.utils.exceptions import MTH5TableError
+
 
 fn_path = Path(__file__).parent
 # =============================================================================
@@ -65,40 +67,35 @@ class TestMTH5Table(unittest.TestCase):
     def test_locate_eq(self):
         self.assertTrue(
             (
-                self.mth5_table.locate("a", 0, "eq")
-                == np.array([0, 1], dtype=np.int64)
+                self.mth5_table.locate("a", 0, "eq") == np.array([0, 1], dtype=np.int64)
             ).all(),
         )
 
     def test_locate_le(self):
         self.assertTrue(
             (
-                self.mth5_table.locate("a", 0, "le")
-                == np.array([0, 1], dtype=np.int64)
+                self.mth5_table.locate("a", 0, "le") == np.array([0, 1], dtype=np.int64)
             ).all(),
         )
 
     def test_locate_lt(self):
         self.assertTrue(
             (
-                self.mth5_table.locate("a", 0, "lt")
-                == np.array([], dtype=np.int64)
+                self.mth5_table.locate("a", 0, "lt") == np.array([], dtype=np.int64)
             ).all(),
         )
 
     def test_locate_ge(self):
         self.assertTrue(
             (
-                self.mth5_table.locate("a", 0, "ge")
-                == np.array([0, 1], dtype=np.int64)
+                self.mth5_table.locate("a", 0, "ge") == np.array([0, 1], dtype=np.int64)
             ).all(),
         )
 
     def test_locate_gt(self):
         self.assertTrue(
             (
-                self.mth5_table.locate("a", 0, "gt")
-                == np.array([], dtype=np.int64)
+                self.mth5_table.locate("a", 0, "gt") == np.array([], dtype=np.int64)
             ).all(),
         )
 

@@ -14,14 +14,12 @@ import h5py
 import numpy as np
 import xarray as xr
 from loguru import logger
-
 from mt_metadata.transfer_functions.tf.statistical_estimate import StatisticalEstimate
 from mt_metadata.utils.validators import validate_attribute
+
+from mth5.helpers import add_attributes_to_metadata_class_pydantic, to_numpy_type
 from mth5.utils.exceptions import MTH5Error
-from mth5.helpers import (
-    to_numpy_type,
-    add_attributes_to_metadata_class_pydantic,
-)
+
 
 # =============================================================================
 
@@ -49,7 +47,6 @@ class EstimateDataset:
     """
 
     def __init__(self, dataset, dataset_metadata=None, write_metadata=True, **kwargs):
-
         if dataset is not None and isinstance(dataset, (h5py.Dataset)):
             self.hdf5_dataset = weakref.ref(dataset)()
         self.logger = logger

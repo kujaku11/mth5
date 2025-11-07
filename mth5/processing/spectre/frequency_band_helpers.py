@@ -5,13 +5,13 @@ Bands can be defined by explicitly specifying band edges for each band, but here
 functions for other ways to specify.
 """
 
+from typing import Optional, Union
+
+import numpy as np
 import pandas as pd
 from loguru import logger
 from mt_metadata.common.band import Band as FrequencyBand
 from mt_metadata.processing.aurora import FrequencyBands
-from typing import Optional, Union
-
-import numpy as np
 
 
 def half_octave(

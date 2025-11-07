@@ -13,6 +13,7 @@ from pathlib import Path
 
 from mth5.io.phoenix.readers import PhoenixCalibration
 
+
 # =============================================================================
 cal_fn = Path(__file__).parent.joinpath("example_rxcal.json")
 
@@ -49,9 +50,7 @@ class TestPHXCalibrations(unittest.TestCase):
                     )
 
                 with self.subTest(f"{ch}_{lp}_calibration_date"):
-                    self.assertEqual(
-                        self.c.calibration_date.date, fap.calibration_date
-                    )
+                    self.assertEqual(self.c.calibration_date.date, fap.calibration_date)
 
                 with self.subTest(f"{ch}_{lp}_frequencies"):
                     self.assertTrue((fap.frequencies != 0).all())

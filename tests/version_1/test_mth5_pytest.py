@@ -10,24 +10,23 @@ Optimized for speed with session-scoped fixtures and reduced data sizes.
 @author: automated conversion from unittest
 """
 
+import shutil
+import tempfile
+from pathlib import Path
+
+import numpy as np
+
 # =============================================================================
 # Imports
 # =============================================================================
 import pytest
-from pathlib import Path
-import numpy as np
-import tempfile
-import shutil
-from unittest.mock import patch
-
-from mth5.mth5 import MTH5
-from mth5 import helpers
-from mth5 import groups
-from mth5.mth5 import _default_table_names
-from mth5.utils.exceptions import MTH5Error
-from mth5.timeseries import ChannelTS, RunTS
-from mth5.groups.standards import summarize_metadata_standards
 from mt_metadata.common.mttime import MTime
+
+from mth5 import groups, helpers
+from mth5.mth5 import _default_table_names, MTH5
+from mth5.timeseries import ChannelTS, RunTS
+from mth5.utils.exceptions import MTH5Error
+
 
 # Set numpy random seed for reproducible tests
 np.random.seed(42)

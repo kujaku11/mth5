@@ -9,12 +9,13 @@ Created on Fri Aug 19 16:39:30 2022
 # Imports
 # =============================================================================
 import unittest
-from pathlib import Path
 from collections import OrderedDict
+from pathlib import Path
 
 import numpy as np
+
 from mth5.io.phoenix import open_phoenix
-from mth5.utils.helpers import get_compare_dict
+
 
 # =============================================================================
 
@@ -164,7 +165,6 @@ class TestReadPhoenixNativeToChannelTS(unittest.TestCase):
         self.ch_ts = self.phx_obj.to_channel_ts(rxcal_fn=self.rxcal_fn)
 
     def test_metadata(self):
-
         ch_metadata = OrderedDict(
             [
                 ("channel_number", 0),
@@ -208,16 +208,12 @@ class TestReadPhoenixNativeToChannelTS(unittest.TestCase):
                     )
 
     def test_channel_response_length(self):
-        self.assertEqual(
-            2, len(self.ch_ts.channel_response.filters_list)
-        )
+        self.assertEqual(2, len(self.ch_ts.channel_response.filters_list))
 
     def test_channel_response_frequency_shape(self):
         self.assertEqual(
             (69,),
-            self.ch_ts.channel_response.filters_list[
-                0
-            ].frequencies.shape,
+            self.ch_ts.channel_response.filters_list[0].frequencies.shape,
         )
 
     def test_channel_size(self):

@@ -5,23 +5,21 @@ Created on Fri Dec 13 12:40:34 2024
 @author: jpeacock
 """
 
+import h5py
+
 # =============================================================================
 # Imports
 # =============================================================================
 import numpy as np
-import xarray as xr
 import pandas as pd
-import h5py
+import xarray as xr
+from mt_metadata.features import FeatureDecimationChannel
+from mt_metadata.processing.fourier_coefficients.decimation import Decimation
 
-from mth5.groups import BaseGroup, RunGroup, FeatureChannelDataset
-
+from mth5.groups import BaseGroup, FeatureChannelDataset, RunGroup
 from mth5.helpers import validate_name
 from mth5.utils.exceptions import MTH5Error
 
-from mt_metadata.features import FeatureDecimationChannel
-from mt_metadata.processing.fourier_coefficients.decimation import (
-    Decimation,
-)
 
 # =============================================================================
 """feature -> FeatureMasterGroup -> FeatureGroup -> DecimationLevelGroup -> ChannelGroup -> FeatureChannelDataset"""
@@ -105,7 +103,6 @@ class FeatureGroup(BaseGroup):
     """
 
     def __init__(self, group, feature_metadata=None, **kwargs):
-
         super().__init__(group, group_metadata=feature_metadata, **kwargs)
 
     def add_feature_run_group(
@@ -131,7 +128,6 @@ class FeatureGroup(BaseGroup):
                 )
 
         if domain in FREQUENCY_DOMAIN:
-
             return self._add_group(
                 feature_name,
                 FeatureFCRunGroup,
@@ -193,7 +189,6 @@ class FeatureTSRunGroup(BaseGroup):
     """
 
     def __init__(self, group, feature_run_metadata=None, **kwargs):
-
         super().__init__(group, group_metadata=feature_run_metadata, **kwargs)
 
         ### Use methods from RunGroup (might be slow cause initiating multiple
@@ -300,7 +295,6 @@ class FeatureFCRunGroup(BaseGroup):
     """
 
     def __init__(self, group, feature_run_metadata=None, **kwargs):
-
         super().__init__(group, group_metadata=feature_run_metadata, **kwargs)
 
     @BaseGroup.metadata.getter
@@ -500,7 +494,6 @@ class FeatureDecimationGroup(BaseGroup):
     """
 
     def __init__(self, group, decimation_level_metadata=None, **kwargs):
-
         super().__init__(group, group_metadata=decimation_level_metadata, **kwargs)
 
     @BaseGroup.metadata.getter
@@ -628,7 +621,6 @@ class FeatureDecimationGroup(BaseGroup):
             )
         else:
             for ch in data_array.data_vars.keys():
-
                 ch_metadata.name = ch
                 if ch in self.channel_summary.name.to_list():
                     self.remove_channel(ch)

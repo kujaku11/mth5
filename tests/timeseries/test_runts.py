@@ -8,20 +8,18 @@ subtests for efficiency while maintaining comprehensive coverage.
 @author: pytest optimization
 """
 
+
+import mt_metadata.timeseries as metadata
+import numpy as np
+
 # =============================================================================
 # Imports
 # =============================================================================
 import pytest
-import numpy as np
-from unittest import TestCase
+from mt_metadata.common.mttime import MTime
+from mt_metadata.timeseries.filters import ChannelResponse, PoleZeroFilter
 
 from mth5.timeseries import ChannelTS, RunTS
-from mt_metadata.common.mttime import MTime
-import mt_metadata.timeseries as metadata
-from mt_metadata.timeseries.filters import (
-    PoleZeroFilter,
-    ChannelResponse,
-)
 
 
 # =============================================================================
@@ -772,7 +770,6 @@ class TestRunTSObspyIntegration:
         """Test creation from ObsPy Stream."""
         # This would require creating a proper ObsPy stream
         # Skip for now as it's complex to set up properly
-        pass
 
 
 # =============================================================================

@@ -12,12 +12,14 @@ It creates a wrapper for scipy methods for xarray.
 
 import warnings
 from fractions import Fraction
-from loguru import logger
 from typing import Optional, Union
-import xarray as xr
-import scipy.signal
+
 import numpy as np
 import pandas as pd
+import scipy.signal
+import xarray as xr
+from loguru import logger
+
 
 try:
     from scipy.signal import sosfiltfilt

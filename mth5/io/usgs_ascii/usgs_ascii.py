@@ -12,17 +12,17 @@ Created on Thu Aug 27 16:54:09 2020
 # Imports
 # =============================================================================
 
-from pathlib import Path
-import time
 import datetime
-
 import gzip
+import time
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from mth5.timeseries import ChannelTS, RunTS
 from mth5.io.usgs_ascii import AsciiMetadata
+from mth5.timeseries import ChannelTS, RunTS
+
 
 # =============================================================================
 #  Metadata for usgs ascii file
@@ -72,7 +72,6 @@ class USGSascii(AsciiMetadata):
     def hx(self):
         """HX"""
         if self.ts is not None:
-
             return ChannelTS(
                 "magnetic",
                 data=self.ts.hx.to_numpy(),
@@ -87,7 +86,6 @@ class USGSascii(AsciiMetadata):
     def hy(self):
         """hy"""
         if self.ts is not None:
-
             return ChannelTS(
                 "magnetic",
                 data=self.ts.hy.to_numpy(),
@@ -102,7 +100,6 @@ class USGSascii(AsciiMetadata):
     def hz(self):
         """hz"""
         if self.ts is not None:
-
             return ChannelTS(
                 "magnetic",
                 data=self.ts.hz.to_numpy(),
@@ -117,7 +114,6 @@ class USGSascii(AsciiMetadata):
     def ex(self):
         """ex"""
         if self.ts is not None:
-
             return ChannelTS(
                 "electric",
                 data=self.ts.ex.to_numpy(),
@@ -132,7 +128,6 @@ class USGSascii(AsciiMetadata):
     def ey(self):
         """ey"""
         if self.ts is not None:
-
             return ChannelTS(
                 "electric",
                 data=self.ts.ey.to_numpy(),
@@ -146,7 +141,6 @@ class USGSascii(AsciiMetadata):
     def to_run_ts(self):
         """Get xarray for run"""
         if self.ts is not None:
-
             return RunTS(
                 array_list=[self.hx, self.hy, self.hz, self.ex, self.ey],
                 run_metadata=self.run_metadata.copy(),

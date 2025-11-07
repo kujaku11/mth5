@@ -10,9 +10,11 @@ Created on Mon Nov 14 15:33:20 2022
 # =============================================================================
 import unittest
 from collections import OrderedDict
+
 import numpy as np
 
 from mth5.clients.geomag import GeomagClient
+
 
 # =============================================================================
 
@@ -119,9 +121,7 @@ class TestGeomagClient(unittest.TestCase):
             "endtime": end,
         }
 
-        self.assertDictEqual(
-            request_dict, self.client._get_request_params(start, end)
-        )
+        self.assertDictEqual(request_dict, self.client._get_request_params(start, end))
 
 
 class TestGeomagClientGetData(unittest.TestCase):
@@ -237,9 +237,7 @@ class TestGeomagClientGetData(unittest.TestCase):
         for key, value in r.items():
             if key not in ["mth5_type", "hdf5_reference"]:
                 with self.subTest(key):
-                    self.assertEqual(
-                        value, self.r.run_metadata.get_attr_from_name(key)
-                    )
+                    self.assertEqual(value, self.r.run_metadata.get_attr_from_name(key))
 
     def test_hx_metadata(self):
         ch = OrderedDict(

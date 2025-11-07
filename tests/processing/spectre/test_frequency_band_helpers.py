@@ -4,23 +4,27 @@ Proof of concept for issue #209 mulitstation FCs
 TODO: Add test that builds FCs
 
 """
-from loguru import logger
-from mth5.processing.spectre.frequency_band_helpers import bands_of_constant_q
-from mth5.processing.spectre.frequency_band_helpers import half_octave
-from mth5.processing.spectre.frequency_band_helpers import log_spaced_frequencies
-from mth5.processing.spectre.frequency_band_helpers import partitioned_bands
-
-import numpy as np
 import unittest
 
-class TestHalfOctave(unittest.TestCase):
+import numpy as np
 
+from mth5.processing.spectre.frequency_band_helpers import (
+    bands_of_constant_q,
+    half_octave,
+    log_spaced_frequencies,
+    partitioned_bands,
+)
+
+
+class TestHalfOctave(unittest.TestCase):
     def setUp(self) -> None:
         pass
 
     def test_initialize(self):
         half_octave_band = half_octave(target_frequency=1.0)
-        n_octaves = np.log2(half_octave_band.frequency_max / half_octave_band.frequency_min)
+        n_octaves = np.log2(
+            half_octave_band.frequency_max / half_octave_band.frequency_min
+        )
         assert np.isclose(n_octaves, 0.5, atol=1e-2)  # Confirm you have ~0.5 octave.
 
     def test_fft_frequencies_argument(self):
@@ -29,29 +33,29 @@ class TestHalfOctave(unittest.TestCase):
         :return:
         """
         sample_rate = 500.0  # Hz
-        delta_t = 1./sample_rate
+        delta_t = 1.0 / sample_rate
         nfft = 128
         fft_freqs = np.fft.rfftfreq(n=nfft, d=delta_t)
         half_octave_band = half_octave(
-            target_frequency=sample_rate / 4.0,
-            fft_frequencies=fft_freqs
+            target_frequency=sample_rate / 4.0, fft_frequencies=fft_freqs
         )
-        n_octaves = np.log2(half_octave_band.frequency_max / half_octave_band.frequency_min)
+        n_octaves = np.log2(
+            half_octave_band.frequency_max / half_octave_band.frequency_min
+        )
         assert np.isclose(n_octaves, 0.5, atol=1e-2)  # Confirm you have ~0.5 octave.
 
     def test_fails_with_incompatible_arguments(self):
         """
-            Example showing exception raised when an incompatible fftfreqs and target freq are passed
+        Example showing exception raised when an incompatible fftfreqs and target freq are passed
         """
         sample_rate = 500.0  # Hz
-        delta_t = 1. / sample_rate
+        delta_t = 1.0 / sample_rate
         nfft = 128
         fft_freqs = np.fft.rfftfreq(n=nfft, d=delta_t)
         self.assertRaises(IndexError, half_octave, sample_rate * 4.0, fft_freqs)
 
 
 class TestLogSpacedFrequencies(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls) -> None:
         params_dict = {}
@@ -79,7 +83,7 @@ class TestLogSpacedFrequencies(unittest.TestCase):
         freqs = log_spaced_frequencies(
             f_lower_bound=params["f_lower_bound"],
             f_upper_bound=params["f_upper_bound"],
-            num_bands=params["num_bands"]
+            num_bands=params["num_bands"],
         )
         # check that the ratios of each value to its predescessor are all equal
         assert np.isclose(freqs[1:] / freqs[:-1], freqs[1] / freqs[0]).all()
@@ -90,7 +94,7 @@ class TestLogSpacedFrequencies(unittest.TestCase):
         freqs = log_spaced_frequencies(
             f_lower_bound=params["f_lower_bound"],
             f_upper_bound=params["f_upper_bound"],
-            num_bands_per_decade=params["num_bands_per_decade"]
+            num_bands_per_decade=params["num_bands_per_decade"],
         )
         # check that the ratios of each value to its predescessor are all equal
         assert np.isclose(freqs[1:] / freqs[:-1], freqs[1] / freqs[0]).all()
@@ -100,17 +104,16 @@ class TestLogSpacedFrequencies(unittest.TestCase):
         freqs = log_spaced_frequencies(
             f_lower_bound=params["f_lower_bound"],
             f_upper_bound=params["f_upper_bound"],
-            num_bands_per_octave=params["num_bands_per_octave"]
+            num_bands_per_octave=params["num_bands_per_octave"],
         )
         # check that the ratios of each value to its predescessor are all equal
         assert np.isclose(freqs[1:] / freqs[:-1], freqs[1] / freqs[0]).all()
 
 
 class TestFrequencyBandsCreation(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls) -> None:
-        """ Put stuff you only need to init once in here"""
+        """Put stuff you only need to init once in here"""
         params_dict = {}
         params_dict["log_spaced_frequencies"] = log_spaced_frequencies(
             f_lower_bound=0.01,
@@ -118,19 +121,17 @@ class TestFrequencyBandsCreation(unittest.TestCase):
             num_bands_per_decade=7.7,
         )
         params_dict["fractional bandwidths"] = [0.2, 0.5, 0.8]
-        params_dict["Q values"] = [1/x for x in params_dict["fractional bandwidths"]]
+        params_dict["Q values"] = [1 / x for x in params_dict["fractional bandwidths"]]
 
         cls.params_dict = params_dict
 
     def setUp(self) -> None:
-        """ Put stuff you want to reset every time in here """
-        pass
+        """Put stuff you want to reset every time in here"""
 
     def test_bands_of_constant_q(self):
         for Q in self.params_dict["Q values"]:
             frequency_bands = bands_of_constant_q(
-                band_center_frequencies=self.params_dict["log_spaced_frequencies"],
-                q=Q
+                band_center_frequencies=self.params_dict["log_spaced_frequencies"], q=Q
             )
             for i in range(frequency_bands.number_of_bands):
                 band = frequency_bands.band(i)
@@ -146,11 +147,11 @@ class TestFrequencyBandsCreation(unittest.TestCase):
         for i in range(frequency_bands.number_of_bands - 1):
             band = frequency_bands.band(i)
             assert band.lower_bound == fenceposts[i]
-            assert band.upper_bound == fenceposts[i+1]
+            assert band.upper_bound == fenceposts[i + 1]
+
 
 # =============================================================================
 # run
 # =============================================================================
 if __name__ == "__main__":
     unittest.main()
-

@@ -3,12 +3,14 @@
 # =============================================================================
 import functools
 import pathlib
+from typing import Union
 
 from loguru import logger
 
 from mth5.helpers import close_open_files
 from mth5.mth5 import MTH5
-from typing import Union
+
+
 # =============================================================================
 
 
@@ -27,6 +29,7 @@ def path_or_mth5_object(func):
     -------
 
     """
+
     @functools.wraps(func)
     def wrapper_decorator(*args, **kwargs):
         def call_function(func, *args, **kwargs):
@@ -40,7 +43,7 @@ def path_or_mth5_object(func):
         if isinstance(args[0], (pathlib.Path, str)):
             h5_path = args[0]
             mode = kwargs.get("mode", "a")
-            #with MTH5().open_mth5(h5_path, mode=mode) as m:
+            # with MTH5().open_mth5(h5_path, mode=mode) as m:
             with MTH5() as m:
                 m.open_mth5(h5_path, mode=mode)
                 new_args = [x for x in args]
@@ -59,9 +62,11 @@ def path_or_mth5_object(func):
 
     return wrapper_decorator
 
+
 @path_or_mth5_object
 def get_version(m):
     return m.file_version
+
 
 @path_or_mth5_object
 def get_channel_summary(m, show=True):
@@ -178,9 +183,7 @@ def read_back_data(
     processing_config["local_station_id"] = station_id
     config = processing_config
     m = initialize_mth5(config["mth5_path"], mode="r")
-    local_run_obj = m.get_run(
-        config["local_station_id"], run_id, survey=survey
-    )
+    local_run_obj = m.get_run(config["local_station_id"], run_id, survey=survey)
     local_run_ts = local_run_obj.to_runts()
     data_array = local_run_ts.dataset.to_array()
     logger.info(f"data shape = {data_array.shape}")
@@ -220,20 +223,22 @@ def get_compare_dict(input_dict):
 
 
 @path_or_mth5_object
-def station_in_mth5(m: Union[str, pathlib.Path, MTH5], station_id: str, survey_id: str = None):
+def station_in_mth5(
+    m: Union[str, pathlib.Path, MTH5], station_id: str, survey_id: str = None
+):
     """
-        Use groups list to check for station
-        Another way to do this is with channel_summary_df = m.channel_summary.to_dataframe()
+    Use groups list to check for station
+    Another way to do this is with channel_summary_df = m.channel_summary.to_dataframe()
 
-        :param m: mth5 object
-        :type m: Union[str, pathlib.Path, mth5.mth5.MTH5]
-        :param survey_id: the survey id
-        :type survey_id: str
-        :param station_id: the station id
-        :type station_id: str
+    :param m: mth5 object
+    :type m: Union[str, pathlib.Path, mth5.mth5.MTH5]
+    :param survey_id: the survey id
+    :type survey_id: str
+    :param station_id: the station id
+    :type station_id: str
 
-        :return station_exists: True or False if station is in h5
-        :rtype station_exists: bool
+    :return station_exists: True or False if station is in h5
+    :rtype station_exists: bool
 
     """
     file_version = m.file_version  # type: ignore # decorated by path_or_mth5_object
@@ -252,16 +257,16 @@ def station_in_mth5(m: Union[str, pathlib.Path, MTH5], station_id: str, survey_i
 @path_or_mth5_object
 def survey_in_mth5(m: Union[str, pathlib.Path, MTH5], survey_id: str = None):
     """
-        Use groups list to check for survey
-        Another way to do this is with channel_summary_df = m.channel_summary.to_dataframe()
+    Use groups list to check for survey
+    Another way to do this is with channel_summary_df = m.channel_summary.to_dataframe()
 
-        :param m: mth5 object
-        :type m: Union[str, pathlib.Path, mth5.mth5.MTH5]
-        :param survey_id: the survey id
-        :type survey_id: str
+    :param m: mth5 object
+    :type m: Union[str, pathlib.Path, mth5.mth5.MTH5]
+    :param survey_id: the survey id
+    :type survey_id: str
 
-        :return survey_exists: True or False if station is in h5
-        :rtype survey_exists: bool
+    :return survey_exists: True or False if station is in h5
+    :rtype survey_exists: bool
 
     """
     file_version = m.file_version  # type: ignore # decorated by path_or_mth5_object

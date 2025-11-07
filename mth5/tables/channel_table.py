@@ -5,20 +5,21 @@ Created on Wed Mar 23 14:09:38 2022
 @author: jpeacock
 """
 
+import h5py
+import numpy as np
+
 # =============================================================================
 # Imports
 # =============================================================================
 import pandas as pd
-import numpy as np
-import h5py
-
-from mth5 import CHANNEL_DTYPE, RUN_SUMMARY_COLUMNS
-from mth5.tables import MTH5Table
-
 from mt_metadata.transfer_functions import (
     ALLOWED_INPUT_CHANNELS,
     ALLOWED_OUTPUT_CHANNELS,
 )
+
+from mth5 import CHANNEL_DTYPE, RUN_SUMMARY_COLUMNS
+from mth5.tables import MTH5Table
+
 
 # =============================================================================
 
@@ -63,9 +64,7 @@ class ChannelSummaryTable(MTH5Table):
         ]:
             setattr(df, key, getattr(df, key).str.decode("utf-8"))
         try:
-            df.start = pd.to_datetime(
-                df.start.str.decode("utf-8"), format="mixed"
-            )
+            df.start = pd.to_datetime(df.start.str.decode("utf-8"), format="mixed")
             df.end = pd.to_datetime(df.end.str.decode("utf-8"), format="mixed")
         except ValueError:
             df.start = pd.to_datetime(df.start.str.decode("utf-8"))
@@ -96,9 +95,7 @@ class ChannelSummaryTable(MTH5Table):
             ch_entry = np.array(
                 [
                     (
-                        group.parent.parent.parent.parent.attrs["id"].encode(
-                            "utf-8"
-                        ),
+                        group.parent.parent.parent.parent.attrs["id"].encode("utf-8"),
                         group.parent.parent.attrs["id"].encode("utf-8"),
                         group.parent.attrs["id"].encode("utf-8"),
                         group.parent.parent.attrs["location.latitude"],

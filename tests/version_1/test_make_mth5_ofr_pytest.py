@@ -5,15 +5,15 @@ This is a pytest version of test_make_mth5_ofr.py that uses mocks to avoid
 external network dependencies while maintaining equivalent test coverage.
 """
 
-import pytest
-import pandas as pd
+from unittest.mock import Mock, patch
+
 import numpy as np
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
-from obspy import UTCDateTime, Stream, Trace, Inventory
-from obspy.core.inventory import Network, Station, Channel, Response
-from obspy.core.inventory.util import Equipment
+import pandas as pd
+import pytest
+from obspy import Inventory, Stream, Trace, UTCDateTime
 from obspy.clients.fdsn.client import FDSNNoDataException
+from obspy.core.inventory import Channel, Network, Response, Station
+from obspy.core.inventory.util import Equipment
 
 from mth5.clients.fdsn import FDSN
 from mth5.clients.make_mth5 import MakeMTH5

@@ -14,17 +14,15 @@ Revised 2022 by J. Peacock
 # Imports
 # =============================================================================
 from pathlib import Path
-from .header import Header
-from .calibrations import PhoenixCalibration
-from .config import PhoenixConfig
-from .receiver_metadata import PhoenixReceiverMetadata
-
-from mt_metadata.timeseries.filters import (
-    CoefficientFilter,
-    ChannelResponse,
-)
 
 from loguru import logger
+from mt_metadata.timeseries.filters import ChannelResponse, CoefficientFilter
+
+from .calibrations import PhoenixCalibration
+from .config import PhoenixConfig
+from .header import Header
+from .receiver_metadata import PhoenixReceiverMetadata
+
 
 # =============================================================================
 
@@ -89,9 +87,7 @@ class TSReaderBase(Header):
         try:
             self._base_path = Path(value)
         except TypeError:
-            raise TypeError(
-                f"Cannot set path from {value}, bad type {type(value)}"
-            )
+            raise TypeError(f"Cannot set path from {value}, bad type {type(value)}")
 
     @property
     def base_dir(self):
@@ -415,9 +411,7 @@ class TSReaderBase(Header):
                 self.logger.error(msg)
                 raise ValueError(msg)
 
-            return rx_cal_obj.get_filter(
-                self.channel_metadata.component, lp_name
-            )
+            return rx_cal_obj.get_filter(self.channel_metadata.component, lp_name)
         else:
             self.logger.error("Phoenix RX Calibration is None. Check file path")
 

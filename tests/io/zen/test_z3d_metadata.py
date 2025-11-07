@@ -15,12 +15,11 @@ import numpy as np
 
 from mth5.io.zen import Z3DMetadata
 
+
 # =============================================================================
 
 
-@unittest.skipIf(
-    "peacock" not in str(Path(__file__).as_posix()), "local files"
-)
+@unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local files")
 class TestZ3DMetadataEy(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -172,9 +171,7 @@ class TestZ3DMetadataEy(unittest.TestCase):
         self.assertEqual(getattr(self.z3d_obj, "unit_length"), None)
 
 
-@unittest.skipIf(
-    "peacock" not in str(Path(__file__).as_posix()), "local files"
-)
+@unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local files")
 class TestZ3DMetadataHx(unittest.TestCase):
     @classmethod
     def setUpClass(self):

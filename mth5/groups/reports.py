@@ -2,20 +2,22 @@
 """
 Created on Wed Dec 23 17:03:53 2020
 
-:copyright: 
+:copyright:
     Jared Peacock (jpeacock@usgs.gov)
 
 :license: MIT
 
 """
 
+import h5py
+
 # =============================================================================
 # Imports
 # =============================================================================
 import numpy as np
-import h5py
 
 from mth5.groups.base import BaseGroup
+
 
 # =============================================================================
 # Reports Group
@@ -27,7 +29,6 @@ class ReportsGroup(BaseGroup):
     """
 
     def __init__(self, group, **kwargs):
-
         super().__init__(group, **kwargs)
 
         # summary of reports

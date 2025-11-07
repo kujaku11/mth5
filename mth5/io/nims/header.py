@@ -9,9 +9,9 @@ Created on Thu Sep  1 12:57:32 2022
 # Imports
 # =============================================================================
 from pathlib import Path
+
 import dateutil
 from loguru import logger
-
 from mt_metadata.common.mttime import MTime
 
 

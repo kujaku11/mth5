@@ -12,6 +12,7 @@ import unittest
 
 from mth5.io.zen import zen_tools
 
+
 # =============================================================================
 
 
@@ -110,9 +111,7 @@ class TestZenSchedule(unittest.TestCase):
 
         self.assertListEqual(
             final,
-            self.zs.make_schedule(
-                self.zs.df_list, self.zs.df_time_list, repeat=2
-            ),
+            self.zs.make_schedule(self.zs.df_list, self.zs.df_time_list, repeat=2),
         )
 
     def test_convert_time_to_seconds(self):

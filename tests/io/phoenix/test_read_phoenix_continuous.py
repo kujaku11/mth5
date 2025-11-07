@@ -9,12 +9,13 @@ Created on Fri Aug 19 16:39:30 2022
 # Imports
 # =============================================================================
 import unittest
-from pathlib import Path
 from collections import OrderedDict
+from pathlib import Path
 
 import numpy as np
+
 from mth5.io.phoenix import open_phoenix
-from mth5.utils.helpers import get_compare_dict
+
 
 # =============================================================================
 

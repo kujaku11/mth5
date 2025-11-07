@@ -32,17 +32,16 @@ Run level: 'sample_rate', 1.0
 """
 
 import pathlib
-import scipy.signal as ssig
-from typing import Dict, List, Optional, Union
+from typing import List, Optional, Union
 
-import mt_metadata.timeseries
 import pandas as pd
+import scipy.signal as ssig
 from loguru import logger
-from mt_metadata.timeseries.filters.helper_functions import make_coefficient_filter
-from mt_metadata.timeseries import Run
-from mt_metadata.timeseries import Station
 from mt_metadata.processing.aurora import ChannelNomenclature
 from mt_metadata.processing.aurora.channel_nomenclature import SupportedNomenclatureEnum
+from mt_metadata.timeseries import Run, Station
+from mt_metadata.timeseries.filters.helper_functions import make_coefficient_filter
+
 
 ASCII_DATA_PATH = pathlib.Path(__file__).parent.resolve()
 

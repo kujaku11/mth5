@@ -6,10 +6,11 @@
 # =============================================================================
 from pathlib import Path
 
-from mth5.mth5 import MTH5
 from mth5 import read_file
 from mth5.clients.base import ClientBase
 from mth5.io.zen import Z3DCollection
+from mth5.mth5 import MTH5
+
 
 # =============================================================================
 
@@ -24,7 +25,6 @@ class ZenClient(ClientBase):
         mth5_filename="from_zen.h5",
         **kwargs,
     ):
-
         super().__init__(
             data_path,
             save_path=save_path,

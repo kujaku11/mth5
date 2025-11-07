@@ -4,19 +4,21 @@ Convert MTH5 to other formats
 - MTH5 -> miniSEED + StationXML
 """
 
+import datetime
+
 # ==================================================================================
 # Imports
 # ==================================================================================
 import re
 from pathlib import Path
+
 from loguru import logger
-import datetime
-
-from mth5.mth5 import MTH5
 from mt_metadata.timeseries.stationxml import XMLInventoryMTExperiment
-
 from obspy import read
 from obspy.core import UTCDateTime
+
+from mth5.mth5 import MTH5
+
 
 # ==================================================================================
 
@@ -209,10 +211,11 @@ def get_encoding(run_ts):
     return encoding
 
 
+import datetime
 from pathlib import Path
+
 from obspy import read
 from obspy.core import UTCDateTime
-import datetime
 
 
 def split_miniseed_by_day(input_file):

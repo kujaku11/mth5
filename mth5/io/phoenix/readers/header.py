@@ -17,14 +17,13 @@ Revised 2022 by J. Peacock
 # Imports
 # =============================================================================
 
-from datetime import datetime
-
-from struct import unpack_from
 import string
-from loguru import logger
+from datetime import datetime
+from struct import unpack_from
 
-from mt_metadata.timeseries import Station, Run, Electric, Magnetic
+from loguru import logger
 from mt_metadata.common.mttime import MTime
+from mt_metadata.timeseries import Electric, Magnetic, Run, Station
 
 
 # =============================================================================

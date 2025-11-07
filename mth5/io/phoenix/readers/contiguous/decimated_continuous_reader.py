@@ -16,10 +16,11 @@ Revised 2022 by J. Peacock
 # =============================================================================
 
 import numpy as np
+from mt_metadata.common.mttime import MTime
 
 from mth5.io.phoenix.readers import TSReaderBase
 from mth5.timeseries import ChannelTS
-from mt_metadata.common.mttime import MTime
+
 
 # =============================================================================
 

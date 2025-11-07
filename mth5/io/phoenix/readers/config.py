@@ -13,11 +13,12 @@ Created on Fri Jun 10 07:52:03 2022
 # Imports
 # =============================================================================
 from pathlib import Path
-from loguru import logger
 
+from loguru import logger
 from mt_metadata.timeseries import Station
 
 from .helpers import read_json_to_object
+
 
 # =============================================================================
 
@@ -29,7 +30,6 @@ class PhoenixConfig:
     """
 
     def __init__(self, fn=None, **kwargs):
-
         self.fn = fn
         self.obj = None
         self.logger = logger

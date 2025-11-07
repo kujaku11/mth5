@@ -5,18 +5,19 @@ The datasets are xarray/dataframe and are fundmentally multivariate.
 
 """
 
-# Standard library imports
-from loguru import logger
 from typing import List, Literal, Optional, Tuple, Union
 
 # Third-party imports
-import numpy as np
 import pandas as pd
 import xarray as xr
+
+# Standard library imports
+from loguru import logger
 
 # Local imports
 from mt_metadata.common.band import Band
 from mt_metadata.processing.aurora.frequency_bands import FrequencyBands
+
 from mth5.timeseries.xarray_helpers import covariance_xr, initialize_xrda_2d
 
 

@@ -11,18 +11,17 @@ Created from test_fcs.py with modern pytest patterns, fixtures, and optimization
 # Imports
 # =============================================================================
 from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
+from mt_metadata.common.mttime import MTime
 
 from mth5.mth5 import MTH5
+from mth5.timeseries.spectre import FCRunChunk, make_multistation_spectrogram
 from mth5.utils.exceptions import MTH5Error
-from mth5.timeseries.spectre import make_multistation_spectrogram
-from mth5.timeseries.spectre import FCRunChunk
-from mth5.timeseries.spectre import MultivariateDataset
 
-from mt_metadata.common.mttime import MTime
 
 # =============================================================================
 # Test Configuration

@@ -1,21 +1,22 @@
 import logging
-import mth5
-import pandas as pd
 import pathlib
 import unittest
 
-from mth5.data.make_mth5_from_asc import create_test1_h5
+import pandas as pd
+
+import mth5
 
 # from mth5.data.make_mth5_from_asc import create_test1_h5_with_nan
-from mth5.data.make_mth5_from_asc import create_test12rr_h5
-from mth5.data.make_mth5_from_asc import create_test2_h5
-from mth5.data.make_mth5_from_asc import create_test3_h5
-from mth5.data.make_mth5_from_asc import create_test3_h5
-from mth5.data.make_mth5_from_asc import create_test4_h5
+from mth5.data.make_mth5_from_asc import (
+    create_test1_h5,
+    create_test3_h5,
+    create_test4_h5,
+)
 from mth5.data.paths import SyntheticTestPaths
 from mth5.data.station_config import make_station_03
 from mth5.helpers import close_open_files
 from mth5.mth5 import MTH5
+
 
 synthetic_test_paths = SyntheticTestPaths()
 synthetic_test_paths.mkdirs()
@@ -76,9 +77,7 @@ class TestMetadataValuesSetCorrect(unittest.TestCase):
 
     def make_mth5(self):
         close_open_files()
-        mth5_path = create_test3_h5(
-            force_make_mth5=self.remake_mth5_for_each_test
-        )
+        mth5_path = create_test3_h5(force_make_mth5=self.remake_mth5_for_each_test)
         return mth5_path
 
     def make_run_summary(self):
@@ -94,9 +93,9 @@ class TestMetadataValuesSetCorrect(unittest.TestCase):
         run_summary_df = self.make_run_summary()
         station_03 = make_station_03()
         for run in station_03.runs:
-            summary_row = run_summary_df[
-                run_summary_df.id == run.run_metadata.id
-            ].iloc[0]
+            summary_row = run_summary_df[run_summary_df.id == run.run_metadata.id].iloc[
+                0
+            ]
             expected_start = run.run_metadata.time_period.start
             with self.subTest(run):
                 self.assertEqual(

@@ -7,11 +7,11 @@ time series filters
 
 # =================================================================
 import numpy as np
-from scipy import signal
-
+from loguru import logger
 from matplotlib import pyplot as plt
 from matplotlib.lines import Line2D
-from loguru import logger
+from scipy import signal
+
 
 # =================================================================
 
@@ -59,7 +59,6 @@ def butter_bandpass(lowcut, highcut, sample_rate, order=5):
         msg += "Lower band edge not defined, will treat as a Low Pass Filter\n"
         logger.info(msg)
         return signal.butter(order, high, analog=False, btype="lowpass", output="sos")
-
 
 
 def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
@@ -141,7 +140,7 @@ def zero_pad(input_array, power=2, pad_fill=0):
             "Exceeding memory allocation inherent in your computer 2**32. "
             "Limiting the zero pad to 2**32"
         )
-    pad_array = np.zeros(power ** npow)
+    pad_array = np.zeros(power**npow)
     if pad_fill != 0:
         pad_array[:] = pad_fill
     pad_array[0:len_array] = input_array
@@ -455,7 +454,7 @@ class RemoveInstrumentResponse:
             ts,
             self.bandpass["low"],
             self.bandpass["high"],
-            1./self.sample_interval,
+            1.0 / self.sample_interval,
             order=filter_order,
         )
 
@@ -506,11 +505,13 @@ class RemoveInstrumentResponse:
 
         return subplot_dict
 
-    def remove_instrument_response(self,
-                                   operation="divide",
-                                   include_decimation=None,
-                                   include_delay=None,
-                                   filters_to_remove=[]):
+    def remove_instrument_response(
+        self,
+        operation="divide",
+        include_decimation=None,
+        include_delay=None,
+        filters_to_remove=[],
+    ):
         """
         Remove instrument response following the recipe provided
 
@@ -527,7 +528,8 @@ class RemoveInstrumentResponse:
             if include_delay is None:
                 include_delay = self.include_delay
             filters_to_remove = self.channel_response.get_list_of_filters_to_remove(
-                include_decimation=include_decimation, include_delay=include_delay)
+                include_decimation=include_decimation, include_delay=include_delay
+            )
             if filters_to_remove is []:
                 raise ValueError("There are no filters in channel_response to remove")
 
@@ -585,9 +587,10 @@ class RemoveInstrumentResponse:
         # compute the complex response given the frequency range of the FFT
         # the complex response assumes frequencies are in reverse order and flip them on input
         # so we need to flip the complex reponse so it aligns with the fft.
-        cr = self.channel_response.complex_response(f,
-                                                    filters_list=filters_to_remove,
-                                                    )[::-1]
+        cr = self.channel_response.complex_response(
+            f,
+            filters_list=filters_to_remove,
+        )[::-1]
         # remove the DC term at frequency == 0
         cr[-1] = abs(cr[-2]) + 0.0j
 
@@ -607,18 +610,21 @@ class RemoveInstrumentResponse:
         # channel response, inverse fft
         if operation == "divide":
             calibrated_ts = np.fft.irfft(data / cr)[0 : self.ts.size]
-            self.logger.debug(f"Step {step}: Removing Calibration via divide channel response")
+            self.logger.debug(
+                f"Step {step}: Removing Calibration via divide channel response"
+            )
             step += 1
         elif operation == "multiply":
-            calibrated_ts = np.fft.irfft(data * cr)[0: self.ts.size]
-            self.logger.warning(f"Instrument response being applied rather that expected "
-                                f"operation of removing the response")
+            calibrated_ts = np.fft.irfft(data * cr)[0 : self.ts.size]
+            self.logger.warning(
+                f"Instrument response being applied rather that expected "
+                f"operation of removing the response"
+            )
             step += 1
         else:
             msg = f"Operation {operation} not recognized method of instrument response correction"
             logger.error(msg)
             raise Exception
-
 
         # If a time window was applied, need to un-apply it to reconstruct the signal.
         if self.t_window is not None:
@@ -760,7 +766,6 @@ def adaptive_notch_filter(
             dbstop = 10 * np.log10(abs(BX[nspot]) ** 2 / med_bx)
             if np.nan_to_num(dbstop) == 0.0 or dbstop < dbstop_limit:
                 filtlst.append("No need to filter \n")
-                pass
             else:
                 filtlst.append([freq[nspot], dbstop])
                 ws = 2 * np.array([freq[nspot] - fn, freq[nspot] + fn]) / df

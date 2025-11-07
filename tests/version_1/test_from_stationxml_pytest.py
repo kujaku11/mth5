@@ -10,14 +10,16 @@ Pytest version of StationXML tests with fixtures and subtests
 :license: MIT
 
 """
+from pathlib import Path
+
 # =============================================================================
 #  Imports
 # =============================================================================
 import pytest
-from pathlib import Path
-from mth5.mth5 import MTH5
-from mt_metadata.timeseries import stationxml
 from mt_metadata import STATIONXML_01
+from mt_metadata.timeseries import stationxml
+
+from mth5.mth5 import MTH5
 
 
 @pytest.fixture(scope="session")

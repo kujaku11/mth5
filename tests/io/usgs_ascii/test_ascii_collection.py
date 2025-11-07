@@ -12,23 +12,20 @@ import unittest
 from collections import OrderedDict
 from pathlib import Path
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from mth5.io.usgs_ascii import USGSasciiCollection
+
 
 # =============================================================================
 
 
-@unittest.skipIf(
-    "peacock" not in str(Path(__file__).as_posix()), "local files"
-)
+@unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local files")
 class TestUSGSasciiCollection(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.nc = USGSasciiCollection(
-            r"c:\Users\jpeacock\OneDrive - DOI\mt\usgs_ascii"
-        )
+        self.nc = USGSasciiCollection(r"c:\Users\jpeacock\OneDrive - DOI\mt\usgs_ascii")
 
         self.df = self.nc.to_dataframe([4])
         self.df = self.df.fillna(0)
@@ -57,8 +54,7 @@ class TestUSGSasciiCollection(unittest.TestCase):
         self.df = self.nc._set_df_dtypes(self.df)
         with self.subTest("start"):
             self.assertTrue(
-                self.df.start.dtype.type
-                == pd._libs.tslibs.timestamps.Timestamp
+                self.df.start.dtype.type == pd._libs.tslibs.timestamps.Timestamp
             )
         with self.subTest("end"):
             self.assertTrue(
@@ -90,9 +86,7 @@ class TestUSGSasciiCollection(unittest.TestCase):
         for key, rdf in self.runs[self.station].items():
             rdf = rdf.fillna(0)
             with self.subTest(key):
-                self.assertTrue(
-                    (self.df[self.df.run == key].eq(rdf).all(axis=0).all())
-                )
+                self.assertTrue((self.df[self.df.run == key].eq(rdf).all(axis=0).all()))
 
 
 # =============================================================================

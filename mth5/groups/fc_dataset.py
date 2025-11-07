@@ -9,20 +9,18 @@ Created on Thu Mar 10 09:02:16 2022
 # Imports
 # =============================================================================
 import weakref
+from typing import Optional, Union
 
 import h5py
 import numpy as np
 import xarray as xr
 from loguru import logger
+from mt_metadata.processing.fourier_coefficients import FCChannel
 
-from mth5.utils.exceptions import MTH5Error
 from mth5.helpers import to_numpy_type
 from mth5.timeseries.ts_helpers import make_dt_coordinates
+from mth5.utils.exceptions import MTH5Error
 
-from mt_metadata.processing.fourier_coefficients import (
-    FCChannel,
-)
-from typing import Optional, Union
 
 # =============================================================================
 
@@ -77,7 +75,6 @@ class FCChannelDataset:
         dataset_metadata: Optional[Union[FCChannel, None]] = None,
         **kwargs,
     ):
-
         if dataset is not None and isinstance(dataset, (h5py.Dataset)):
             self.hdf5_dataset = weakref.ref(dataset)()
         self.logger = logger

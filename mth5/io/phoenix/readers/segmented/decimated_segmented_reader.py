@@ -12,14 +12,14 @@ Revised 2022 by J. Peacock
 """
 
 
+from struct import unpack_from
+
 # =============================================================================
 # Imports
 # =============================================================================
 import numpy as np
-
-from struct import unpack_from
-
 from mt_metadata.common.mttime import MTime
+
 from mth5.io.phoenix.readers import TSReaderBase
 from mth5.timeseries import ChannelTS
 
@@ -132,7 +132,6 @@ class Segment(SubHeader):
     """
 
     def __init__(self, stream, **kwargs):
-
         super().__init__(**kwargs)
         self.stream = stream
         self.data = None

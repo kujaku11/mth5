@@ -1,17 +1,15 @@
 """
 Proof of concept for issue #209 mulitstation FCs
 
-TODO: Add test that builds FCs 
+TODO: Add test that builds FCs
 
 """
-from loguru import logger
-from mth5.timeseries.spectre import FCRunChunk
-from mth5.timeseries.spectre import MultivariateLabelScheme
 import unittest
+
+from mth5.timeseries.spectre import FCRunChunk, MultivariateLabelScheme
 
 
 class TestFCRunChunk(unittest.TestCase):
-
     def setUp(self) -> None:
         pass
 
@@ -29,19 +27,24 @@ class TestFCRunChunk(unittest.TestCase):
 
 
 class TestMultivariateLabelScheme(unittest.TestCase):
-
     def setUp(self) -> None:
         pass
 
     def test_initialize(unitte):
         mvls_default = MultivariateLabelScheme()
         mvls = MultivariateLabelScheme(
-            label_elements = ("station", "component",),
-            join_char = "_",
+            label_elements=(
+                "station",
+                "component",
+            ),
+            join_char="_",
         )
         assert mvls_default.id == mvls.id
         mvls = MultivariateLabelScheme(
-            label_elements=("foo", "bar",),
+            label_elements=(
+                "foo",
+                "bar",
+            ),
             join_char="_",
         )
         assert mvls_default.id != mvls.id
@@ -49,10 +52,8 @@ class TestMultivariateLabelScheme(unittest.TestCase):
         # print(mvls)
 
 
-
 # =============================================================================
 # run
 # =============================================================================
 if __name__ == "__main__":
     unittest.main()
-

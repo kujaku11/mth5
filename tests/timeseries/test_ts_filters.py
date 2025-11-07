@@ -69,15 +69,15 @@ def main():
 if __name__ == "__main__":
     main()
 """
+import unittest
+
 # =============================================================================
 # Imports
 # =============================================================================
 import numpy as np
-import scipy.signal as ssig
-import unittest
 
-from mth5.timeseries.ts_filters import butter_bandpass_filter
-from mth5.timeseries.ts_filters import butter_bandpass
+from mth5.timeseries.ts_filters import butter_bandpass, butter_bandpass_filter
+
 
 # =============================================================================
 #
@@ -97,7 +97,7 @@ class TestTSFilters(unittest.TestCase):
         self.data = np.random.random(self.n_samples)
         self.n_spectra = 4
 
-        self.frqs = np.fft.rfftfreq(self.n_samples, d=1. / self.sample_rate)[1:]
+        self.frqs = np.fft.rfftfreq(self.n_samples, d=1.0 / self.sample_rate)[1:]
         self.filter_args = self.n_spectra * [None]
         self.time_series = self.n_spectra * [None]
         self.spectra = self.n_spectra * [None]
@@ -110,11 +110,10 @@ class TestTSFilters(unittest.TestCase):
 
         for i_spectrum in range(self.n_spectra):
             corners = self.filter_args[i_spectrum]
-            #print(f"corners {corners}")
-            self.time_series[i_spectrum] = butter_bandpass_filter(self.data,
-                                                                  corners[0],
-                                                                  corners[1],
-                                                                  self.sample_rate)
+            # print(f"corners {corners}")
+            self.time_series[i_spectrum] = butter_bandpass_filter(
+                self.data, corners[0], corners[1], self.sample_rate
+            )
             self.spectra[i_spectrum] = np.fft.rfft(self.time_series[i_spectrum])
             self.amplitude_spectra[i_spectrum] = np.abs(self.spectra[i_spectrum][1:])
 
@@ -141,9 +140,9 @@ class TestTSFilters(unittest.TestCase):
 
         # check that corners [1.0, None] act as a HPF
         # take ratio of HPF to Original data
-        ratio = self.amplitude_spectra[1]/self.amplitude_spectra[0]
+        ratio = self.amplitude_spectra[1] / self.amplitude_spectra[0]
         # get indices of array where frequencies are in the cut band
-        low_cut_freq_ndxs =  np.where(self.frqs<self.filter_args[1][0])[0]
+        low_cut_freq_ndxs = np.where(self.frqs < self.filter_args[1][0])[0]
         # assert the spectral amplitude is diminished
         assert np.median(ratio[low_cut_freq_ndxs]) < 0.125
         # get indices of array where frequencies are in the pass band
@@ -175,11 +174,9 @@ class TestTSFilters(unittest.TestCase):
         assert np.median(ratio[high_cut_freq_ndxs]) < 1e-3
         assert np.isclose(np.median(ratio[bandpass_freq_ndxs]), 1, atol=2e-2)
 
-
     def test_butter_bandpass(self):
         with self.assertRaises(ValueError):
             butter_bandpass(None, None, self.sample_rate)
-
 
 
 # =============================================================================

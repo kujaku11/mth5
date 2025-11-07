@@ -10,15 +10,17 @@ Created on Wed Aug 31 10:32:44 2022
 @author: jpeacock
 """
 
+import pathlib
+from typing import Optional
+
 # =============================================================================
 # Imports
 # =============================================================================
 import pandas as pd
-import pathlib
 
 from mth5.io.collection import Collection
 from mth5.io.lemi import LEMI424
-from typing import Optional
+
 
 # =============================================================================
 
@@ -67,9 +69,7 @@ class LEMICollection(Collection):
         self.station_id = "mt001"
         self.survey_id = "mt"
 
-    def to_dataframe(
-        self, sample_rates=[1], run_name_zeros=4, calibration_path=None
-    ):
+    def to_dataframe(self, sample_rates=[1], run_name_zeros=4, calibration_path=None):
         """
         Create a data frame of each TXT file in a given directory.
 
@@ -106,9 +106,7 @@ class LEMICollection(Collection):
             entry["station"] = self.station_id
             entry["start"] = lemi_obj.start.isoformat()
             entry["end"] = lemi_obj.end.isoformat()
-            entry["component"] = ",".join(
-                lemi_obj.run_metadata.channels_recorded_all
-            )
+            entry["component"] = ",".join(lemi_obj.run_metadata.channels_recorded_all)
             entry["fn"] = fn
             entry["sample_rate"] = lemi_obj.sample_rate
             entry["file_size"] = lemi_obj.file_size

@@ -4,7 +4,6 @@ Uses fixtures and parameterized tests for efficiency and maintainability.
 """
 
 import numpy as np
-import pandas as pd
 import pytest
 import xarray as xr
 

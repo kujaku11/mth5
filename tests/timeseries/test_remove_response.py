@@ -7,20 +7,21 @@ Created from original test_remove_response.py using fixtures and subtests for ef
 @author: pytest optimization
 """
 
+from unittest import TestCase
+
+import numpy as np
+
 # =============================================================================
 # Imports
 # =============================================================================
 import pytest
-import numpy as np
-from unittest import TestCase
-
 from mt_metadata.timeseries.filters import (
-    PoleZeroFilter,
     CoefficientFilter,
     FrequencyResponseTableFilter,
+    PoleZeroFilter,
     TimeDelayFilter,
-    ChannelResponse,
 )
+
 from mth5.timeseries import ChannelTS
 
 

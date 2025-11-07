@@ -6,12 +6,11 @@ instead of making actual requests to USGS geomagnetic services for faster,
 more reliable testing.
 """
 
-import pytest
-import pandas as pd
+from unittest.mock import Mock, patch
+
 import numpy as np
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
-from collections import OrderedDict
+import pandas as pd
+import pytest
 
 from mth5.clients import MakeMTH5
 
@@ -51,7 +50,7 @@ class TestMakeMTH5GeomagPytest:
             observatory, elements, start_time, end_time, sampling_period
         ):
             """Create mock time series data for geomagnetic observatory."""
-            from datetime import datetime, timedelta
+            from datetime import datetime
 
             start_dt = datetime.fromisoformat(start_time.replace("T", " "))
             end_dt = datetime.fromisoformat(end_time.replace("T", " "))

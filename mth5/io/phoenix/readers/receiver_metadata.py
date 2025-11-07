@@ -9,11 +9,12 @@ Created on Tue Jun 20 15:06:08 2023
 # Imports
 # =============================================================================
 from pathlib import Path
-from loguru import logger
 
-from mt_metadata.timeseries import Survey, Station, Run, Electric, Magnetic
+from loguru import logger
+from mt_metadata.timeseries import Electric, Magnetic, Run, Station, Survey
 
 from .helpers import read_json_to_object
+
 
 # =============================================================================
 
@@ -93,9 +94,7 @@ class PhoenixReceiverMetadata:
 
     @property
     def channel_map(self):
-        return dict(
-            [(d.idx, d.tag.lower()) for d in self.obj.channel_map.mapping]
-        )
+        return dict([(d.idx, d.tag.lower()) for d in self.obj.channel_map.mapping])
 
     @property
     def lp_filter_base_name(self):
@@ -163,9 +162,7 @@ class PhoenixReceiverMetadata:
             c.units = "volts"
             c.time_period.start = self.obj.start
             c.time_period.end = self.obj.stop
-            c.filter.name = [
-                f"{self.lp_filter_base_name}_{int(ch.lp)}hz_low_pass"
-            ]
+            c.filter.name = [f"{self.lp_filter_base_name}_{int(ch.lp)}hz_low_pass"]
             c.filter.applied = [True]
             if c.sensor.id is not None:
                 c.filter.name.append(f"coil_{c.sensor.id}_response")

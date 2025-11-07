@@ -12,11 +12,12 @@
 # =============================================================================
 from pathlib import Path
 
-from mth5.mth5 import MTH5
 from mth5 import read_file
 from mth5.clients.base import ClientBase
 from mth5.io.phoenix import PhoenixCollection
 from mth5.io.phoenix.readers.calibrations import PhoenixCalibration
+from mth5.mth5 import MTH5
+
 
 # =============================================================================
 
@@ -92,9 +93,9 @@ class PhoenixClient(ClientBase):
             cal_path = Path(value)
             if cal_path.is_dir():
                 for fn in cal_path.glob("*scal.json"):
-                    self._sensor_calibration_dict[fn.stem.split("_")[0]] = (
-                        PhoenixCalibration(fn)
-                    )
+                    self._sensor_calibration_dict[
+                        fn.stem.split("_")[0]
+                    ] = PhoenixCalibration(fn)
             self._calibration_path = Path(value)
             if not self._calibration_path.exists():
                 raise IOError(f"Could not find {self._calibration_path}")
@@ -124,7 +125,6 @@ class PhoenixClient(ClientBase):
         run_dict = self.get_run_dict()
 
         with MTH5(**self.h5_kwargs) as m:
-
             m.open_mth5(self.save_path, "w")
 
             for station_id, station_dict in run_dict.items():
@@ -162,7 +162,6 @@ class PhoenixClient(ClientBase):
                             continue
 
                         if ch_ts.component in ["h1", "h2", "h3"]:
-
                             # for phx coils from generic response curves
                             if (
                                 ch_ts.channel_metadata.sensor.id

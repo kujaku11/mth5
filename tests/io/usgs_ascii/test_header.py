@@ -8,12 +8,14 @@ Created on Thu Sep 15 15:47:42 2022
 # Imports
 # =============================================================================
 import unittest
-from pathlib import Path
 from collections import OrderedDict
+from pathlib import Path
+
 import numpy as np
 
 from mth5.io.usgs_ascii import AsciiMetadata
 from mth5.utils.helpers import get_compare_dict
+
 
 # =============================================================================
 

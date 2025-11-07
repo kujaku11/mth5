@@ -20,25 +20,20 @@ convert them back if read in.
 # ==============================================================================
 import inspect
 
-import xarray as xr
 import numpy as np
 import scipy
+import xarray as xr
 from loguru import logger
-
 from matplotlib import pyplot as plt
-
 from mt_metadata import timeseries as metadata
-from mt_metadata.common.mttime import MTime
 from mt_metadata.common.list_dict import ListDict
+from mt_metadata.common.mttime import MTime
 from mt_metadata.timeseries.filters import ChannelResponse
+from obspy.core import Stream
 
 from .channel_ts import ChannelTS
-from .ts_helpers import (
-    make_dt_coordinates,
-    get_decimation_sample_rates,
-)
+from .ts_helpers import get_decimation_sample_rates, make_dt_coordinates
 
-from obspy.core import Stream
 
 # =============================================================================
 # make a dictionary of available metadata classes

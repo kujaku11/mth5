@@ -13,14 +13,8 @@ Created on Fri Feb  4 15:53:21 2022
 # Imports
 # =============================================================================
 import copy
-import numpy as np
-from obspy.clients.fdsn import Client as FDSNClient
-import pandas as pd
 import time
-
 from gzip import BadGzipFile
-from loguru import logger
-import obspy
 
 # from obspy.clients import fdsn
 # from obspy import UTCDateTime
@@ -29,9 +23,16 @@ import obspy
 # from obspy.core.inventory import Inventory
 from pathlib import Path
 
+import numpy as np
+import obspy
+import pandas as pd
+from loguru import logger
 from mt_metadata.timeseries.stationxml import XMLInventoryMTExperiment
+from obspy.clients.fdsn import Client as FDSNClient
+
 from mth5.mth5 import MTH5
 from mth5.timeseries import RunTS
+
 
 # =============================================================================
 
@@ -585,9 +586,9 @@ class FDSN:
                         max_tries=10,
                     )
 
-                    stations_dict[network_id][start_time][station_row.station] = (
-                        sta_inv.networks[0].stations[0]
-                    )
+                    stations_dict[network_id][start_time][
+                        station_row.station
+                    ] = sta_inv.networks[0].stations[0]
         return stations_dict
 
     def get_waveforms_from_request_row(self, client, row):

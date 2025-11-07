@@ -7,16 +7,19 @@ Created on Thu Aug  4 16:48:47 2022
 @author: jpeacock
 """
 
+from collections import OrderedDict
+
 # =============================================================================
 # Imports
 # =============================================================================
 from pathlib import Path
-from collections import OrderedDict
+
 import numpy as np
 import pandas as pd
 
-from mth5.io.phoenix import open_phoenix, PhoenixReceiverMetadata
 from mth5.io import Collection
+from mth5.io.phoenix import open_phoenix, PhoenixReceiverMetadata
+
 
 # =============================================================================
 
@@ -28,7 +31,6 @@ class PhoenixCollection(Collection):
     """
 
     def __init__(self, file_path=None, **kwargs):
-
         self._file_extension_map = {
             30: "td_30",
             150: "td_150",
@@ -118,18 +120,14 @@ class PhoenixCollection(Collection):
         for folder in station_folders:
             rec_fn = folder.joinpath(self._receiver_metadata_name)
             receiver_metadata = self._read_receiver_metadata_json(rec_fn)
-            self.metadata_dict[receiver_metadata.station_metadata.id] = (
-                receiver_metadata
-            )
+            self.metadata_dict[
+                receiver_metadata.station_metadata.id
+            ] = receiver_metadata
 
             for sr in sample_rates:
-                for fn in folder.rglob(
-                    f"*{self._file_extension_map[int(sr)]}"
-                ):
+                for fn in folder.rglob(f"*{self._file_extension_map[int(sr)]}"):
                     if "calibration" in fn.as_posix().lower():
-                        self.logger.debug(
-                            f"skipping calibration time series {fn}"
-                        )
+                        self.logger.debug(f"skipping calibration time series {fn}")
                         continue
                     try:
                         phx_obj = open_phoenix(fn)
@@ -141,9 +139,7 @@ class PhoenixCollection(Collection):
                         try:
                             start = segment.segment_start_time.isoformat()
                         except IOError:
-                            self.logger.warning(
-                                f"Could not read file {fn}, SKIPPING"
-                            )
+                            self.logger.warning(f"Could not read file {fn}, SKIPPING")
                             continue
                         end = segment.segment_end_time.isoformat()
                         n_samples = segment.n_samples
@@ -172,9 +168,7 @@ class PhoenixCollection(Collection):
                     entry["calibration_fn"] = None
                     entries.append(entry)
 
-        df = self._sort_df(
-            self._set_df_dtypes(pd.DataFrame(entries)), run_name_zeros
-        )
+        df = self._sort_df(self._set_df_dtypes(pd.DataFrame(entries)), run_name_zeros)
 
         return df
 
@@ -208,9 +202,7 @@ class PhoenixCollection(Collection):
                     sdf = rdf.loc[
                         (rdf.station == station) & (rdf.sample_rate == sr)
                     ].sort_values("sequence_number")
-                    starts = np.sort(
-                        sdf.loc[sdf.sample_rate == sr].start.unique()
-                    )
+                    starts = np.sort(sdf.loc[sdf.sample_rate == sr].start.unique())
                     ends = np.sort(sdf.loc[sdf.sample_rate == sr].end.unique())
 
                     # find any breaks in the data
@@ -223,7 +215,6 @@ class PhoenixCollection(Collection):
                     # out how to set pandas values
                     count = 1
                     if len(breaks) > 0:
-
                         start_breaks = starts[breaks]
                         for ii in range(len(start_breaks)):
                             count += 1
@@ -242,7 +233,6 @@ class PhoenixCollection(Collection):
 
                 # segmented data
                 else:
-
                     starts = rdf.loc[
                         (rdf.station == station) & (rdf.sample_rate == sr),
                         "start",

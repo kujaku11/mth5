@@ -17,8 +17,10 @@ import unittest
 from collections import OrderedDict
 from pathlib import Path
 
+from mt_metadata.timeseries import Run, Station
+
 from mth5.io.lemi import LEMI424
-from mt_metadata.timeseries import Station, Run
+
 
 # ==============================================================================
 # make an example text string similar to lemi data.

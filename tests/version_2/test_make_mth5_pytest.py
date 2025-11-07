@@ -35,19 +35,17 @@ Test coverage includes:
 @author: GitHub Copilot - MTH5 version 0.2.0 adaptation
 """
 
-import pytest
 from pathlib import Path
-import pandas as pd
-from unittest.mock import Mock, MagicMock, patch
-import numpy as np
-from datetime import datetime, timezone
-from obspy.core.inventory import Inventory, Network, Station, Channel, Site, Equipment
-from obspy.core.util import AttribDict
-from obspy import UTCDateTime
+from unittest.mock import Mock, patch
 
-from mth5.clients.make_mth5 import MakeMTH5
-from mth5.clients.fdsn import FDSN
+import pandas as pd
+import pytest
+from obspy import UTCDateTime
 from obspy.clients.fdsn.header import FDSNNoDataException
+from obspy.core.inventory import Channel, Inventory, Network, Site, Station
+
+from mth5.clients.fdsn import FDSN
+from mth5.clients.make_mth5 import MakeMTH5
 
 
 # =============================================================================
@@ -147,7 +145,9 @@ def mock_inventory():
             azimuth=(
                 0.0
                 if ch_code == "LFZ"
-                else 13.2 if ch_code in ["LFE", "LQE"] else 103.2
+                else 13.2
+                if ch_code in ["LFE", "LQE"]
+                else 103.2
             ),
             dip=90.0 if ch_code == "LFZ" else 0.0,
             sample_rate=1.0,
@@ -168,7 +168,9 @@ def mock_inventory():
             azimuth=(
                 0.0
                 if ch_code == "LFZ"
-                else 12.6 if ch_code in ["LFE", "LQE"] else 102.6
+                else 12.6
+                if ch_code in ["LFE", "LQE"]
+                else 102.6
             ),
             dip=90.0 if ch_code == "LFZ" else 0.0,
             sample_rate=1.0,

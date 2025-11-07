@@ -9,12 +9,14 @@ Created on Tue Oct 26 12:46:55 2021
 # =============================================================================
 import unittest
 from pathlib import Path
+
 import pandas as pd
 from loguru import logger
-
-from mth5.clients.make_mth5 import MakeMTH5
-from mth5.clients.fdsn import FDSN
 from obspy.clients.fdsn.header import FDSNNoDataException
+
+from mth5.clients.fdsn import FDSN
+from mth5.clients.make_mth5 import MakeMTH5
+
 
 # =============================================================================
 # Test various inputs for getting metadata
@@ -33,7 +35,6 @@ class TestMakeMTH5FDSNInventory(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-
         self.fdsn = FDSN(mth5_version="0.2.0")
         self.fdsn.client = "IRIS"
         self.make_mth5 = MakeMTH5(
@@ -59,9 +60,7 @@ class TestMakeMTH5FDSNInventory(unittest.TestCase):
         self.channels = ["LQE", "LQN", "LFE", "LFN", "LFZ"]
 
         # Turn list into dataframe
-        self.metadata_df = pd.DataFrame(
-            request_list, columns=self.fdsn.request_columns
-        )
+        self.metadata_df = pd.DataFrame(request_list, columns=self.fdsn.request_columns)
         self.metadata_df.to_csv(self.csv_fn, index=False)
 
         self.metadata_df_fail = pd.DataFrame(
@@ -70,9 +69,7 @@ class TestMakeMTH5FDSNInventory(unittest.TestCase):
         )
 
     def test_df_input_inventory(self):
-        inv, streams = self.fdsn.get_inventory_from_df(
-            self.metadata_df, data=False
-        )
+        inv, streams = self.fdsn.get_inventory_from_df(self.metadata_df, data=False)
         with self.subTest(name="stations"):
             self.assertListEqual(
                 sorted(self.stations),
@@ -82,28 +79,14 @@ class TestMakeMTH5FDSNInventory(unittest.TestCase):
             self.assertListEqual(
                 sorted(self.channels),
                 sorted(
-                    list(
-                        set(
-                            [
-                                ss.code
-                                for ss in inv.networks[0].stations[0].channels
-                            ]
-                        )
-                    )
+                    list(set([ss.code for ss in inv.networks[0].stations[0].channels]))
                 ),
             )
         with self.subTest(name="channels_NVR08"):
             self.assertListEqual(
                 sorted(self.channels),
                 sorted(
-                    list(
-                        set(
-                            [
-                                ss.code
-                                for ss in inv.networks[0].stations[1].channels
-                            ]
-                        )
-                    )
+                    list(set([ss.code for ss in inv.networks[0].stations[1].channels]))
                 ),
             )
 
@@ -118,28 +101,14 @@ class TestMakeMTH5FDSNInventory(unittest.TestCase):
             self.assertListEqual(
                 sorted(self.channels),
                 sorted(
-                    list(
-                        set(
-                            [
-                                ss.code
-                                for ss in inv.networks[0].stations[0].channels
-                            ]
-                        )
-                    )
+                    list(set([ss.code for ss in inv.networks[0].stations[0].channels]))
                 ),
             )
         with self.subTest(name="channels_NVR08"):
             self.assertListEqual(
                 sorted(self.channels),
                 sorted(
-                    list(
-                        set(
-                            [
-                                ss.code
-                                for ss in inv.networks[0].stations[1].channels
-                            ]
-                        )
-                    )
+                    list(set([ss.code for ss in inv.networks[0].stations[1].channels]))
                 ),
             )
 
@@ -213,7 +182,6 @@ class TestMakeMTH5(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-
         self.fdsn = FDSN(mth5_version="0.2.0")
         self.fdsn.client = "IRIS"
         # self.make_mth5 = MakeMTH5(
@@ -239,9 +207,7 @@ class TestMakeMTH5(unittest.TestCase):
         self.channels = ["LQE", "LQN", "LFE", "LFN", "LFZ"]
 
         # Turn list into dataframe
-        self.metadata_df = pd.DataFrame(
-            request_list, columns=self.fdsn.request_columns
-        )
+        self.metadata_df = pd.DataFrame(request_list, columns=self.fdsn.request_columns)
         self.metadata_df.to_csv(self.csv_fn, index=False)
 
         self.metadata_df_fail = pd.DataFrame(
@@ -283,7 +249,6 @@ class TestMakeMTH5(unittest.TestCase):
             self.assertEqual(self.m.filename.parent, self.mth5_path)
 
     def test_survey(self):
-
         sg = self.m.get_survey("CONUS_South")
         self.assertEqual(sg.metadata.id, "CONUS South")
 
@@ -317,9 +282,7 @@ class TestMakeMTH5(unittest.TestCase):
     def test_cas04_channels_to_ts(self):
         for run in ["a", "b", "c", "d"]:
             for ch in ["ex", "ey", "hx", "hy", "hz"]:
-                x = self.m.get_channel(
-                    "CAS04", run, ch, "CONUS_South"
-                ).to_channel_ts()
+                x = self.m.get_channel("CAS04", run, ch, "CONUS_South").to_channel_ts()
                 with self.subTest(name=f"has data CAS04.{run}.{ch}"):
                     self.assertTrue(abs(x.ts.mean()) > 0)
                 with self.subTest(name=f"has metadata CAS04.{run}.{ch}"):
@@ -337,9 +300,7 @@ class TestMakeMTH5(unittest.TestCase):
     def test_nvr08_channels_to_ts(self):
         for run in ["a", "b", "c"]:
             for ch in ["ex", "ey", "hx", "hy", "hz"]:
-                x = self.m.get_channel(
-                    "NVR08", run, ch, "CONUS_South"
-                ).to_channel_ts()
+                x = self.m.get_channel("NVR08", run, ch, "CONUS_South").to_channel_ts()
                 with self.subTest(name=f"has data NVR08.{run}.{ch}"):
                     self.assertTrue(abs(x.ts.mean()) > 0)
                 with self.subTest(name=f"has metadata NVR08.{run}.{ch}"):

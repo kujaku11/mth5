@@ -11,18 +11,20 @@ Created on Tue Jun  2 12:37:50 2020
     MIT
 
 """
+import gc
+import inspect
+
 # =============================================================================
 # Imports
 # =============================================================================
 from collections.abc import Iterable
-import inspect
-import numpy as np
-import h5py
-import gc
-from loguru import logger
-
-from pydantic.fields import FieldInfo
 from typing import Union
+
+import h5py
+import numpy as np
+from loguru import logger
+from pydantic.fields import FieldInfo
+
 
 # =============================================================================
 # Acceptable compressions
@@ -354,7 +356,6 @@ def validate_name(name, pattern=None):
 
 
 def add_attributes_to_metadata_class_pydantic(obj):
-
     if not inspect.isclass(obj):
         raise TypeError("Input must be a class")
 

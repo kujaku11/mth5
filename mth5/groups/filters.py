@@ -18,12 +18,13 @@ Need to make a group for FAP and FIR filters.
 
 from mth5.groups.base import BaseGroup
 from mth5.groups.filter_groups import (
-    ZPKGroup,
     CoefficientGroup,
-    TimeDelayGroup,
     FAPGroup,
     FIRGroup,
+    TimeDelayGroup,
+    ZPKGroup,
 )
+
 
 # =============================================================================
 # Filters Group

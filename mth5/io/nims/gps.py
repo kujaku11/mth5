@@ -30,7 +30,6 @@ class GPS(object):
     """
 
     def __init__(self, gps_string, index=0):
-
         self.logger = logger
 
         self.gps_string = gps_string

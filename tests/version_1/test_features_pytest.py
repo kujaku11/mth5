@@ -34,13 +34,15 @@ Final Results: 36 tests passing with 13 subtests - comprehensive MTH5 v0.1.0 fea
 @author: pytest translation for MTH5 Features v0.1.0 - optimized for efficiency
 """
 
+import shutil
+import tempfile
+from pathlib import Path
+
 # =============================================================================
 # Imports
 # =============================================================================
 import pytest
-from pathlib import Path
-import tempfile
-import shutil
+
 from mth5.mth5 import MTH5
 
 
@@ -529,7 +531,6 @@ if __name__ == "__main__":
     - Run with timing: pytest --durations=10 test_features_pytest.py
     - Run performance tests: pytest -m performance test_features_pytest.py
     """
-    import sys
 
     args = [__file__, "-v", "--tb=short"]
     pytest.main(args)

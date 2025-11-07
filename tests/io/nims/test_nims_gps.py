@@ -12,20 +12,19 @@ import unittest
 
 from mth5.io.nims import GPS, GPSError
 
+
 # =============================================================================
 
-gprmc_string = (
-    "GPRMC,183511,A,3443.6098,N,11544.1007,W,000.0,000.0,260919,013.1,E"
-)
-gpgga_string = (
-    "GPGGA,183511,3443.6098,N,11544.1007,W,1,04,2.6,937.2,M,-28.1,M,,"
-)
+gprmc_string = "GPRMC,183511,A,3443.6098,N,11544.1007,W,000.0,000.0,260919,013.1,E"
+gpgga_string = "GPGGA,183511,3443.6098,N,11544.1007,W,1,04,2.6,937.2,M,-28.1,M,,"
 
 
 class TestGPS(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.gprmc_string = "GPRMC,183511,A,3443.6098,N,11544.1007,W,000.0,000.0,260919,013.1,E*"
+        self.gprmc_string = (
+            "GPRMC,183511,A,3443.6098,N,11544.1007,W,000.0,000.0,260919,013.1,E*"
+        )
         self.gpgga_string = (
             "GPGGA,183511,3443.6098,N,11544.1007,W,1,04,2.6,937.2,M,-28.1,M,*"
         )
@@ -49,9 +48,7 @@ class TestGPS(unittest.TestCase):
         ]
 
     def test_validate_string(self):
-
         for aa, bb in zip(self.a_list, self.b_list):
-
             with self.subTest(aa[0:5]):
                 self.assertEqual(
                     aa[:-1],
@@ -60,7 +57,6 @@ class TestGPS(unittest.TestCase):
 
     def test_split_list(self):
         for aa, bb in zip(self.a_list, self.b_list):
-
             with self.subTest(aa[0:5]):
                 self.assertListEqual(
                     aa[:-1].split(","),
@@ -72,7 +68,6 @@ class TestGPS(unittest.TestCase):
             input_list = self.gps_obj._split_gps_string(bb)
             gps_list, error_list = self.gps_obj.validate_gps_list(input_list)
             with self.subTest(aa[0:5]):
-
                 self.assertListEqual(aa[:-1].split(","), gps_list)
 
             with self.subTest("error list"):
@@ -80,9 +75,7 @@ class TestGPS(unittest.TestCase):
 
     def test_validate_latitude_fail(self):
         with self.subTest("length"):
-            self.assertRaises(
-                GPSError, self.gps_obj._validate_latitude, "3443.60", "N"
-            )
+            self.assertRaises(GPSError, self.gps_obj._validate_latitude, "3443.60", "N")
 
         with self.subTest("hemisphere length"):
             self.assertRaises(
@@ -96,9 +89,7 @@ class TestGPS(unittest.TestCase):
 
     def test_validate_longitude_fail(self):
         with self.subTest("length"):
-            self.assertRaises(
-                GPSError, self.gps_obj._validate_longitude, "115.17", "W"
-            )
+            self.assertRaises(GPSError, self.gps_obj._validate_longitude, "115.17", "W")
 
         with self.subTest("hemisphere length"):
             self.assertRaises(
@@ -131,7 +122,9 @@ class TestGPS(unittest.TestCase):
 class TestGPRMC(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.gprmc_string = "GPRMC,183511,A,3443.6098,N,11544.1007,W,000.0,000.0,260919,013.1,E*"
+        self.gprmc_string = (
+            "GPRMC,183511,A,3443.6098,N,11544.1007,W,000.0,000.0,260919,013.1,E*"
+        )
         self.gps_obj = GPS(self.gprmc_string)
 
     def test_type(self):
@@ -150,9 +143,7 @@ class TestGPRMC(unittest.TestCase):
         self.assertAlmostEqual(self.gps_obj.declination, 13.1)
 
     def test_time_stamp(self):
-        self.assertEqual(
-            self.gps_obj.time_stamp.isoformat(), "2019-09-26T18:35:11"
-        )
+        self.assertEqual(self.gps_obj.time_stamp.isoformat(), "2019-09-26T18:35:11")
 
 
 class TestGPGGA(unittest.TestCase):
@@ -179,9 +170,7 @@ class TestGPGGA(unittest.TestCase):
         self.assertEqual(self.gps_obj.declination, None)
 
     def test_time_stamp(self):
-        self.assertEqual(
-            self.gps_obj.time_stamp.isoformat(), "1980-01-01T18:35:11"
-        )
+        self.assertEqual(self.gps_obj.time_stamp.isoformat(), "1980-01-01T18:35:11")
 
 
 # =============================================================================

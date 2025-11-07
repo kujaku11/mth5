@@ -12,13 +12,12 @@ Pytest suite for ChannelTS object - optimized with fixtures and subtests
 # imports
 # =============================================================================
 
-import pytest
 import numpy as np
 import pandas as pd
+import pytest
+from mt_metadata import timeseries as metadata
 
 from mth5 import timeseries
-from mt_metadata import timeseries as metadata
-from mt_metadata.timeseries.filters import CoefficientFilter
 
 
 # =============================================================================

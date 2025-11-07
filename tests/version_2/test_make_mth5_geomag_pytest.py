@@ -9,15 +9,15 @@ services for faster, more reliable testing.
 @author: pytest translation, adapted for MTH5 version 0.2.0
 """
 
+from unittest.mock import Mock, patch
+
+import numpy as np
+import pandas as pd
+
 # =============================================================================
 # Imports
 # =============================================================================
 import pytest
-import pandas as pd
-import numpy as np
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
-from collections import OrderedDict
 
 from mth5.clients import MakeMTH5
 
@@ -58,7 +58,7 @@ def mock_geomag_data():
 
     def create_mock_data(observatory, elements, start_time, end_time, sampling_period):
         """Create mock time series data for geomagnetic observatory."""
-        from datetime import datetime, timedelta
+        from datetime import datetime
 
         start_dt = datetime.fromisoformat(start_time.replace("T", " "))
         end_dt = datetime.fromisoformat(end_time.replace("T", " "))
@@ -726,7 +726,6 @@ if __name__ == "__main__":
     - Run specific class: pytest TestVersion020Features -v
     - Run with timing: pytest --durations=10 test_make_mth5_geomag_pytest.py
     """
-    import sys
 
     args = [__file__, "-v", "--tb=short"]
     pytest.main(args)

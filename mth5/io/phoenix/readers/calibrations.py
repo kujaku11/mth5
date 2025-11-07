@@ -16,10 +16,11 @@ sensor calibrations.
 from pathlib import Path
 
 import numpy as np
-from mt_metadata.timeseries.filters import FrequencyResponseTableFilter
 from mt_metadata.common.mttime import MTime
+from mt_metadata.timeseries.filters import FrequencyResponseTableFilter
 
 from .helpers import read_json_to_object
+
 
 # =============================================================================
 

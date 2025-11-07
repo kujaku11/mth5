@@ -15,12 +15,11 @@ import numpy as np
 
 from mth5.io.zen import Z3DHeader
 
+
 # =============================================================================
 
 
-@unittest.skipIf(
-    "peacock" not in str(Path(__file__).as_posix()), "local files"
-)
+@unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local files")
 class TestZ3DHeader(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -44,14 +43,10 @@ class TestZ3DHeader(unittest.TestCase):
         self.assertEqual(getattr(self.z3d_obj, "box_number"), 24.0)
 
     def test_box_serial(self):
-        self.assertEqual(
-            getattr(self.z3d_obj, "box_serial"), "0x0000010013A20040"
-        )
+        self.assertEqual(getattr(self.z3d_obj, "box_serial"), "0x0000010013A20040")
 
     def test_ch_factor(self):
-        self.assertEqual(
-            getattr(self.z3d_obj, "ch_factor"), 9.536743164062e-10
-        )
+        self.assertEqual(getattr(self.z3d_obj, "ch_factor"), 9.536743164062e-10)
 
     def test_channel(self):
         self.assertEqual(getattr(self.z3d_obj, "channel"), 5.0)

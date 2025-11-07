@@ -20,25 +20,22 @@ convert them back if read in.
 # ==============================================================================
 import inspect
 
+import mt_metadata.timeseries as metadata
 import numpy as np
 import pandas as pd
+import scipy
 import xarray as xr
 from loguru import logger
-import scipy
+from mt_metadata.common.list_dict import ListDict
+from mt_metadata.common.mttime import MTime
+from mt_metadata.common.units import get_unit_object
+from mt_metadata.timeseries.filters import ChannelResponse
+from obspy.core import Trace
 from scipy import signal
 
-import mt_metadata.timeseries as metadata
-from mt_metadata.timeseries.filters import ChannelResponse
-from mt_metadata.common.mttime import MTime
-from mt_metadata.common.list_dict import ListDict
-from mt_metadata.common.units import get_unit_object
-from mth5.utils import fdsn_tools
 from mth5.timeseries.ts_filters import RemoveInstrumentResponse
-from mth5.timeseries.ts_helpers import (
-    make_dt_coordinates,
-    get_decimation_sample_rates,
-)
-from obspy.core import Trace
+from mth5.timeseries.ts_helpers import get_decimation_sample_rates, make_dt_coordinates
+from mth5.utils import fdsn_tools
 
 
 # =============================================================================
@@ -113,7 +110,6 @@ class ChannelTS:
         survey_metadata=None,
         **kwargs,
     ):
-
         self.logger = logger
 
         self._channel_type = self._validate_channel_type(channel_type)
@@ -192,7 +188,6 @@ class ChannelTS:
         return self.__str__()
 
     def __eq__(self, other):
-
         if not isinstance(other, ChannelTS):
             raise TypeError(f"Cannot compare ChannelTS with {type(other)}.")
         if not other.channel_metadata == self.channel_metadata:
@@ -1135,7 +1130,6 @@ class ChannelTS:
 
         # update channel metadata
         if self.channel_metadata.filter_names != value.names:
-
             for ch_filter in self._channel_response.filters_list:
                 if ch_filter.name in self.channel_metadata.filter_names:
                     # update existing filter info

@@ -9,11 +9,11 @@ Created on Thu Mar 10 08:22:33 2022
 # Imports
 # =============================================================================
 import numpy as np
-import xarray as xr
 import pandas as pd
+import xarray as xr
 
 from mth5.groups import BaseGroup, EstimateDataset
-from mth5.helpers import validate_name, from_numpy_type
+from mth5.helpers import from_numpy_type, validate_name
 from mth5.utils.exceptions import MTH5Error
 
 
@@ -55,9 +55,9 @@ def _check_channel_in_output(output_channels, channel):
     return False
 
 
+from mt_metadata.timeseries import Electric, Magnetic, Run
 from mt_metadata.transfer_functions.core import TF
 from mt_metadata.transfer_functions.tf.statistical_estimate import StatisticalEstimate
-from mt_metadata.timeseries import Run, Electric, Magnetic
 
 
 # =============================================================================
@@ -119,9 +119,9 @@ class TransferFunctionsGroup(BaseGroup):
 
         if "1980" not in tf_object.station_metadata.time_period.start:
             if "1980" in self.hdf5_group.parent.attrs["time_period.start"]:
-                self.hdf5_group.parent.attrs["time_period.start"] = (
-                    tf_object.station_metadata.time_period.start
-                )
+                self.hdf5_group.parent.attrs[
+                    "time_period.start"
+                ] = tf_object.station_metadata.time_period.start
 
             elif (
                 self.hdf5_group.parent.attrs["time_period.start"]
@@ -131,15 +131,15 @@ class TransferFunctionsGroup(BaseGroup):
                     self.hdf5_group.parent.attrs["time_period.start"]
                     > tf_object.station_metadata.time_period.start
                 ):
-                    self.hdf5_group.parent.attrs["time_period.start"] = (
-                        tf_object.station_metadata.time_period.start
-                    )
+                    self.hdf5_group.parent.attrs[
+                        "time_period.start"
+                    ] = tf_object.station_metadata.time_period.start
 
         if "1980" not in tf_object.station_metadata.time_period.end:
             if "1980" in self.hdf5_group.parent.attrs["time_period.end"]:
-                self.hdf5_group.parent.attrs["time_period.end"] = (
-                    tf_object.station_metadata.time_period.end
-                )
+                self.hdf5_group.parent.attrs[
+                    "time_period.end"
+                ] = tf_object.station_metadata.time_period.end
 
             elif (
                 self.hdf5_group.parent.attrs["time_period.end"]
@@ -149,9 +149,9 @@ class TransferFunctionsGroup(BaseGroup):
                     self.hdf5_group.parent.attrs["time_period.end"]
                     > tf_object.station_metadata.time_period.end
                 ):
-                    self.hdf5_group.parent.attrs["time_period.end"] = (
-                        tf_object.station_metadata.time_period.end
-                    )
+                    self.hdf5_group.parent.attrs[
+                        "time_period.end"
+                    ] = tf_object.station_metadata.time_period.end
 
     def add_transfer_function(self, name, tf_object=None):
         """

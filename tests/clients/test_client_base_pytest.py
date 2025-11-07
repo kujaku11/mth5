@@ -29,13 +29,15 @@ Created on Fri Oct 11 11:48:24 2024
 @author: jpeacock - pytest translation optimized for efficiency
 """
 
+import shutil
+import tempfile
+from pathlib import Path
+
 # =============================================================================
 # Imports
 # =============================================================================
 import pytest
-from pathlib import Path
-import tempfile
-import shutil
+
 from mth5.clients.base import ClientBase
 
 
@@ -481,7 +483,6 @@ if __name__ == "__main__":
     - Run with timing: pytest --durations=10 test_client_base_pytest.py
     - Run performance tests: pytest -m performance test_client_base_pytest.py
     """
-    import sys
 
     args = [__file__, "-v", "--tb=short"]
     pytest.main(args)

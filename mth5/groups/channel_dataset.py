@@ -16,25 +16,23 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from loguru import logger
-from typing import Union
-
 from mt_metadata import timeseries as metadata
-from mt_metadata.common.mttime import MTime
 from mt_metadata.base import MetadataBase
+from mt_metadata.common.mttime import MTime
 from mt_metadata.timeseries.filters import ChannelResponse
 
 from mth5 import CHANNEL_DTYPE
-from mth5.utils.exceptions import MTH5Error
 from mth5.groups import FiltersGroup
 from mth5.helpers import (
-    to_numpy_type,
+    add_attributes_to_metadata_class_pydantic,
     from_numpy_type,
     inherit_doc_string,
-    add_attributes_to_metadata_class_pydantic,
+    to_numpy_type,
 )
-
 from mth5.timeseries import ChannelTS
 from mth5.timeseries.channel_ts import make_dt_coordinates
+from mth5.utils.exceptions import MTH5Error
+
 
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
 
@@ -477,12 +475,12 @@ class ChannelDataset:
                     )
 
                     # fill based on time, refill existing data first
-                    self.hdf5_dataset[self.get_index_from_time(old_start) :] = (
-                        old_slice.ts.values
-                    )
-                    self.hdf5_dataset[0 : self.get_index_from_time(end_time)] = (
-                        new_data_array
-                    )
+                    self.hdf5_dataset[
+                        self.get_index_from_time(old_start) :
+                    ] = old_slice.ts.values
+                    self.hdf5_dataset[
+                        0 : self.get_index_from_time(end_time)
+                    ] = new_data_array
 
                     if fill == "mean":
                         fill_value = np.mean(
@@ -534,12 +532,12 @@ class ChannelDataset:
 
                 # put back the existing data, which any overlapping times
                 # will be overwritten
-                self.hdf5_dataset[self.get_index_from_time(old_start) :] = (
-                    old_slice.ts.values
-                )
-                self.hdf5_dataset[0 : self.get_index_from_time(end_time)] = (
-                    new_data_array
-                )
+                self.hdf5_dataset[
+                    self.get_index_from_time(old_start) :
+                ] = old_slice.ts.values
+                self.hdf5_dataset[
+                    0 : self.get_index_from_time(end_time)
+                ] = new_data_array
         # append data
         elif start_t_diff > 0:
             old_end = self.end.copy()
@@ -574,9 +572,9 @@ class ChannelDataset:
                         )
                     )
 
-                    self.hdf5_dataset[self.get_index_from_time(start_time) :] = (
-                        new_data_array
-                    )
+                    self.hdf5_dataset[
+                        self.get_index_from_time(start_time) :
+                    ] = new_data_array
                     old_index = self.get_index_from_time(old_end)
                     if fill == "mean":
                         fill_value = np.mean(
@@ -638,9 +636,9 @@ class ChannelDataset:
 
                     # put back the existing data, which any overlapping times
                     # will be overwritten
-                    self.hdf5_dataset[self.get_index_from_time(start_time) :] = (
-                        new_data_array
-                    )
+                    self.hdf5_dataset[
+                        self.get_index_from_time(start_time) :
+                    ] = new_data_array
 
     def has_data(self):
         """
@@ -1159,14 +1157,12 @@ class ChannelDataset:
 @inherit_doc_string
 class ElectricDataset(ChannelDataset):
     def __init__(self, group, **kwargs):
-
         super().__init__(group, **kwargs)
 
 
 @inherit_doc_string
 class MagneticDataset(ChannelDataset):
     def __init__(self, group, **kwargs):
-
         super().__init__(group, **kwargs)
 
 

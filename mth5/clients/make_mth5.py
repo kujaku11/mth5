@@ -24,12 +24,8 @@ Updated on Wed Aug  25 19:57:00 2021
 # =============================================================================
 from pathlib import Path
 
-from . import FDSN
-from . import USGSGeomag
-from . import PhoenixClient
-from . import ZenClient
-from . import LEMI424Client
-from . import MetronixClient
+from . import FDSN, LEMI424Client, MetronixClient, PhoenixClient, USGSGeomag, ZenClient
+
 
 # =============================================================================
 

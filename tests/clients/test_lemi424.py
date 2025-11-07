@@ -9,10 +9,10 @@ Created on Fri Oct 11 11:48:24 2024
 # Imports
 # =============================================================================
 import unittest
-
 from pathlib import Path
 
 from mth5.clients.lemi424 import LEMI424Client
+
 
 # =============================================================================
 

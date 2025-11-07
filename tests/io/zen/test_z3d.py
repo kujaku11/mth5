@@ -9,25 +9,23 @@ Created on Sat Sep 10 21:00:28 2022
 # Imports
 # =============================================================================
 import unittest
-from pathlib import Path
 from collections import OrderedDict
+from pathlib import Path
 
 import numpy as np
+from mt_metadata.timeseries.filters import (
+    ChannelResponse,
+    CoefficientFilter,
+    FrequencyResponseTableFilter,
+)
 
 from mth5.io.zen import Z3D
 
-from mt_metadata.timeseries.filters import (
-    ChannelResponse,
-    FrequencyResponseTableFilter,
-    CoefficientFilter,
-)
 
 # =============================================================================
 
 
-@unittest.skipIf(
-    "peacock" not in str(Path(__file__).as_posix()), "local files"
-)
+@unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local files")
 class TestZ3DEY(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -91,9 +89,7 @@ class TestZ3DEY(unittest.TestCase):
         self.assertEqual(self.z3d.channel_number, 5)
 
     def test_gps_stamps_seconds(self):
-        self.assertEqual(
-            self.z3d.gps_stamps.size - 1, self.z3d.end - self.z3d.start
-        )
+        self.assertEqual(self.z3d.gps_stamps.size - 1, self.z3d.end - self.z3d.start)
 
     def test_get_gps_stamp_type(self):
         self.assertEqual(
@@ -134,14 +130,10 @@ class TestZ3DEY(unittest.TestCase):
         self.assertEqual(self.z3d._block_len, 65536)
 
     def test_gps_flag(self):
-        self.assertEqual(
-            self.z3d.gps_flag, b"\xff\xff\xff\x7f\x00\x00\x00\x80"
-        )
+        self.assertEqual(self.z3d.gps_flag, b"\xff\xff\xff\x7f\x00\x00\x00\x80")
 
     def test_get_gps_time(self):
-        self.assertTupleEqual(
-            self.z3d.get_gps_time(220216, 2210), (215.056, 2210.0)
-        )
+        self.assertTupleEqual(self.z3d.get_gps_time(220216, 2210), (215.056, 2210.0))
 
     def test_get_utc_date_time(self):
         self.assertEqual(
@@ -220,9 +212,7 @@ class TestZ3DEY(unittest.TestCase):
 
         for key, value in rm.items():
             with self.subTest(key):
-                self.assertEqual(
-                    value, self.z3d.run_metadata.get_attr_from_name(key)
-                )
+                self.assertEqual(value, self.z3d.run_metadata.get_attr_from_name(key))
 
     def test_station_metadata(self):
         sm = OrderedDict(
@@ -316,30 +306,25 @@ class TestZ3DEY(unittest.TestCase):
         #     #     zr.to_dict(single=True),
         #     # )
         with self.subTest("test_dipole_filter"):
-
             self.assertDictEqual(
                 self.z3d.dipole_filter.to_dict(single=True),
                 df.to_dict(single=True),
             )
 
         with self.subTest("test_conversion_filter"):
-
             self.assertEqual(
                 self.z3d.counts2mv_filter.to_dict(single=True),
                 cf.to_dict(single=True),
             )
 
         with self.subTest("channel_response"):
-
             cr = ChannelResponse(filters_list=[df, cf])
             self.assertListEqual(
                 cr.filters_list, self.z3d.channel_response.filters_list
             )
 
 
-@unittest.skipIf(
-    "peacock" not in str(Path(__file__).as_posix()), "local files"
-)
+@unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local files")
 class TestZ3DHY(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -633,9 +618,7 @@ class TestZ3DHY(unittest.TestCase):
 
         for key, value in rm.items():
             with self.subTest(key):
-                self.assertEqual(
-                    value, self.z3d.run_metadata.get_attr_from_name(key)
-                )
+                self.assertEqual(value, self.z3d.run_metadata.get_attr_from_name(key))
 
     def test_station_metadata(self):
         sm = OrderedDict(
@@ -683,7 +666,6 @@ class TestZ3DHY(unittest.TestCase):
         # )
 
     def test_coil_response_filter(self):
-
         with self.subTest("frequency"):
             self.assertTrue(
                 np.isclose(
@@ -693,9 +675,7 @@ class TestZ3DHY(unittest.TestCase):
 
         with self.subTest("amplitude"):
             self.assertTrue(
-                np.isclose(
-                    self.z3d.coil_response.amplitudes, self.cr.amplitudes
-                ).all()
+                np.isclose(self.z3d.coil_response.amplitudes, self.cr.amplitudes).all()
             )
 
         with self.subTest("phase"):
@@ -704,19 +684,15 @@ class TestZ3DHY(unittest.TestCase):
             )
 
     def test_conversion_filter(self):
-
         self.assertEqual(
             self.z3d.counts2mv_filter.to_dict(single=True),
             self.cf.to_dict(single=True),
         )
 
     def channel_response(self):
-
         cr = ChannelResponse(filters_list=[self.cf, self.cr])
 
-        self.assertListEqual(
-            cr.filters_list, self.z3d.channel_response.filters_list
-        )
+        self.assertListEqual(cr.filters_list, self.z3d.channel_response.filters_list)
 
 
 # =============================================================================

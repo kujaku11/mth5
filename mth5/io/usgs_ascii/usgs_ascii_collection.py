@@ -18,6 +18,7 @@ import pandas as pd
 from mth5.io.collection import Collection
 from mth5.io.usgs_ascii import USGSascii
 
+
 # =============================================================================
 
 
@@ -38,9 +39,7 @@ class USGSasciiCollection(Collection):
         super().__init__(file_path=file_path, **kwargs)
         self.file_ext = "asc"
 
-    def to_dataframe(
-        self, sample_rates=[4], run_name_zeros=4, calibration_path=None
-    ):
+    def to_dataframe(self, sample_rates=[4], run_name_zeros=4, calibration_path=None):
         """
         Create a data frame of each TXT file in a given directory.
 
@@ -77,9 +76,7 @@ class USGSasciiCollection(Collection):
             entry["start"] = asc_obj.start
             entry["end"] = asc_obj.end
             entry["channel_id"] = 1
-            entry["component"] = ",".join(
-                asc_obj.run_metadata.channels_recorded_all
-            )
+            entry["component"] = ",".join(asc_obj.run_metadata.channels_recorded_all)
             entry["fn"] = fn
             entry["sample_rate"] = asc_obj.sample_rate
             entry["file_size"] = asc_obj.file_size
@@ -91,9 +88,7 @@ class USGSasciiCollection(Collection):
             entries.append(entry)
 
         # make pandas dataframe and set data types
-        df = self._sort_df(
-            self._set_df_dtypes(pd.DataFrame(entries)), run_name_zeros
-        )
+        df = self._sort_df(self._set_df_dtypes(pd.DataFrame(entries)), run_name_zeros)
 
         return df
 
@@ -116,13 +111,9 @@ class USGSasciiCollection(Collection):
 
         for station in df.station.unique():
             count = 1
-            for row in (
-                df[df.station == station].sort_values("start").itertuples()
-            ):
+            for row in df[df.station == station].sort_values("start").itertuples():
                 if row.run is None:
-                    df.loc[
-                        row.Index, "run"
-                    ] = f"sr{row.sample_rate}_{count:0{zeros}}"
+                    df.loc[row.Index, "run"] = f"sr{row.sample_rate}_{count:0{zeros}}"
                 df.loc[row.Index, "sequence_number"] = count
                 count += 1
 

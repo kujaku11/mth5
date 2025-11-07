@@ -15,12 +15,12 @@ Created on Sat Apr  4 12:40:40 2020
 # Imports
 # =============================================================================
 import pandas as pd
+from mt_metadata.timeseries import Station
 
 from mth5.io.collection import Collection
 from mth5.io.zen import Z3D
 from mth5.io.zen.coil_response import CoilResponse
 
-from mt_metadata.timeseries import Station
 
 # =============================================================================
 # Collection of Z3D Files
@@ -112,13 +112,9 @@ class Z3DCollection(Collection):
         ):
             z3d_obj = Z3D(z3d_fn)
             z3d_obj.read_all_info()
-            station_metadata.append(
-                z3d_obj.station_metadata.to_dict(single=True)
-            )
+            station_metadata.append(z3d_obj.station_metadata.to_dict(single=True))
             if not int(z3d_obj.sample_rate) in sample_rates:
-                self.logger.warning(
-                    f"{z3d_obj.sample_rate} not in {sample_rates}"
-                )
+                self.logger.warning(f"{z3d_obj.sample_rate} not in {sample_rates}")
                 return
 
             entry = self.get_empty_entry_dict()
@@ -148,13 +144,9 @@ class Z3DCollection(Collection):
 
             entries.append(entry)
         # make pandas dataframe and set data types
-        df = self._sort_df(
-            self._set_df_dtypes(pd.DataFrame(entries)), run_name_zeros
-        )
+        df = self._sort_df(self._set_df_dtypes(pd.DataFrame(entries)), run_name_zeros)
 
-        self.station_metadata_dict = self._sort_station_metadata(
-            station_metadata
-        )
+        self.station_metadata_dict = self._sort_station_metadata(station_metadata)
 
         return df
 

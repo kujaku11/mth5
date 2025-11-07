@@ -48,27 +48,24 @@ TODO: Might need to groupby survey & station, for now consider station_id  uniqu
 
 """
 
+import copy
+
 # =============================================================================
 # Imports
 # =============================================================================
 from pathlib import Path
-import copy
 from typing import Optional, Union
 
+import mt_metadata.timeseries
 import pandas as pd
 from loguru import logger
-
-import mt_metadata.timeseries
 from mt_metadata.common.list_dict import ListDict
 
 import mth5.timeseries.run_ts
+from mth5.processing import KERNEL_DATASET_DTYPE, MINI_SUMMARY_COLUMNS
+from mth5.processing.run_summary import RunSummary
 from mth5.utils.helpers import initialize_mth5
 
-from mth5.processing.run_summary import RunSummary
-from mth5.processing import (
-    KERNEL_DATASET_DTYPE,
-    MINI_SUMMARY_COLUMNS,
-)
 
 # =============================================================================
 
@@ -926,13 +923,13 @@ class KernelDataset:
             raise ValueError("mth5 objects have not been initialized yet.")
 
         if self._has_df():
-            self._df.loc[self._df.station == self.local_station_id, "mth5_obj"] = (
-                self.local_mth5_obj
-            )
+            self._df.loc[
+                self._df.station == self.local_station_id, "mth5_obj"
+            ] = self.local_mth5_obj
             if self.remote_station_id is not None:
-                self._df.loc[self._df.station == self.remote_station_id, "mth5_obj"] = (
-                    self.remote_mth5_obj
-                )
+                self._df.loc[
+                    self._df.station == self.remote_station_id, "mth5_obj"
+                ] = self.remote_mth5_obj
 
     def close_mth5s(self) -> None:
         """Loop over all unique mth5_objs in dataset df and make sure they are closed.+."""

@@ -35,32 +35,28 @@ Development Notes:
 # Imports
 # =============================================================================
 
+import pathlib
+from typing import List, Literal, Optional, Union
+
 import numpy as np
 import pandas as pd
-import pathlib
-
 from loguru import logger
+from mt_metadata.processing.aurora import ChannelNomenclature
+from mt_metadata.timeseries import Electric, Magnetic, Survey
+
 from mth5.data.paths import SyntheticTestPaths
-from mth5.data.station_config import make_filters
-from mth5.data.station_config import make_station_01
-from mth5.data.station_config import make_station_02
-from mth5.data.station_config import make_station_03
-from mth5.data.station_config import make_station_04
-from mth5.data.station_config import SyntheticRun
-from mth5.data.station_config import SyntheticStation
+from mth5.data.station_config import (
+    make_filters,
+    make_station_01,
+    make_station_02,
+    make_station_03,
+    make_station_04,
+    SyntheticRun,
+    SyntheticStation,
+)
 from mth5.mth5 import MTH5
 from mth5.timeseries import ChannelTS, RunTS
 from mth5.utils.helpers import add_filters
-from mt_metadata.processing.aurora import (
-    ChannelNomenclature,
-)
-from mt_metadata.processing.aurora.channel_nomenclature import SupportedNomenclatureEnum
-
-from mt_metadata.timeseries import Electric
-from mt_metadata.timeseries import Magnetic
-from mt_metadata.timeseries import Survey
-
-from typing import List, Literal, Optional, Union
 
 
 # =============================================================================
@@ -92,7 +88,6 @@ def create_run_ts_from_synthetic_run(
 
     ch_list = []
     for i_col, col in enumerate(df.columns):
-
         data = df[col].values
         if col in channel_nomenclature.ex_ey:
             channel_metadata = Electric()

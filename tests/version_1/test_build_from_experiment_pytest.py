@@ -14,17 +14,18 @@ Created on Thu May 13 13:45:27 2021
 # Imports
 # =============================================================================
 
-import pytest
 from pathlib import Path
-import numpy as np
-import pandas as pd
 from typing import Generator
 
-from mth5 import CHANNEL_DTYPE
-from mth5 import helpers
-from mth5.mth5 import MTH5
-from mt_metadata.timeseries import Experiment
+import numpy as np
+import pandas as pd
+import pytest
 from mt_metadata import MT_EXPERIMENT_SINGLE_STATION
+from mt_metadata.timeseries import Experiment
+
+from mth5 import CHANNEL_DTYPE, helpers
+from mth5.mth5 import MTH5
+
 
 # =============================================================================
 # Constants and Utilities

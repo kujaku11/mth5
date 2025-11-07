@@ -3,12 +3,12 @@
 Module to read and parse native Phoenix Geophysics data formats of the MTU-5C
 Family.
 
-This module implements Streamed readers for segmented-decimated time series 
+This module implements Streamed readers for segmented-decimated time series
 formats of the MTU-5C family.
 
 :author: Jorge Torres-Solis
 
-Revised 2022 by J. Peacock 
+Revised 2022 by J. Peacock
 
 """
 
@@ -16,12 +16,14 @@ Revised 2022 by J. Peacock
 # Imports
 # =============================================================================
 
+from struct import unpack, unpack_from
+
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
 
-from struct import unpack_from, unpack
 from mth5.io.phoenix.readers import TSReaderBase
 from mth5.timeseries import ChannelTS
+
 
 AD_IN_AD_UNITS = 0
 AD_INPUT_VOLTS = 1
@@ -52,9 +54,7 @@ class NativeReader(TSReaderBase):
         **kwargs,
     ):
         # Init the base class
-        super().__init__(
-            path, num_files, header_length, report_hw_sat, **kwargs
-        )
+        super().__init__(path, num_files, header_length, report_hw_sat, **kwargs)
 
         self._chunk_size = 4096
 
@@ -115,7 +115,6 @@ class NativeReader(TSReaderBase):
         _data_buf = np.empty([num_frames * 20])  # 20 samples packed in a frame
 
         while frames_in_buf < num_frames:
-
             dataFrame = self.stream.read(64)
             if not dataFrame:
                 if not self.open_next():
@@ -137,9 +136,7 @@ class NativeReader(TSReaderBase):
 
             for ptrSamp in range(0, 60, 3):
                 # unpack expects 4 bytes, but the frames are only 3?
-                value = unpack(
-                    ">i", dataFrame[ptrSamp : ptrSamp + 3] + b"\x00"
-                )[0]
+                value = unpack(">i", dataFrame[ptrSamp : ptrSamp + 3] + b"\x00")[0]
                 _data_buf[_idx_buf] = value * self.scale_factor
                 _idx_buf += 1
             frames_in_buf += 1

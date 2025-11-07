@@ -6,18 +6,17 @@ Translated from test_transfer_function.py for optimized efficiency.
 @author: pytest translation, adapted for MTH5 version 0.2.0
 """
 
+from pathlib import Path
+
 # =============================================================================
 # Imports
 # =============================================================================
 import pytest
-from pathlib import Path
-from collections import OrderedDict
+from mt_metadata import TF_XML
+from mt_metadata.transfer_functions.core import TF
 
 from mth5.mth5 import MTH5
 from mth5.utils.exceptions import MTH5Error
-
-from mt_metadata.transfer_functions.core import TF
-from mt_metadata import TF_XML
 
 
 # =============================================================================

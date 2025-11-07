@@ -14,9 +14,9 @@ import unittest
 from pathlib import Path
 from platform import platform
 
-from mth5.mth5 import MTH5
-from mth5 import helpers
 from mth5 import __version__ as mth5_version
+from mth5 import helpers
+from mth5.mth5 import MTH5
 
 
 fn_path = Path(__file__).parent
@@ -124,9 +124,7 @@ class TestMTH5Basics(unittest.TestCase):
             )
         with self.subTest("run"):
             self.assertEqual(
-                self.mth5_obj._make_h5_path(
-                    survey="test", station="mt01", run="001"
-                ),
+                self.mth5_obj._make_h5_path(survey="test", station="mt01", run="001"),
                 "/Experiment/Surveys/test/Stations/mt01/001",
             )
         with self.subTest("channel"):
@@ -185,6 +183,7 @@ class TestWithMTH5(unittest.TestCase):
         self.m.close_mth5()
         self.fn.unlink()
 
+
 class TestFileVersionStability(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -199,24 +198,25 @@ class TestFileVersionStability(unittest.TestCase):
 
     def test_v1_stays_v1_when_opened_by_v2_obj(self):
         m = MTH5(file_version="0.2.0")
-        assert (m.file_version == "0.2.0")
+        assert m.file_version == "0.2.0"
         m.open_mth5(self.fn1)
-        assert (m.file_version == "0.1.0")
+        assert m.file_version == "0.1.0"
         m.close_mth5()
-        assert (m.file_version == "0.2.0")
+        assert m.file_version == "0.2.0"
 
     def test_v2_stays_v2_when_opened_by_v1_obj(self):
         m = MTH5(file_version="0.1.0")
-        assert (m.file_version == "0.1.0")
+        assert m.file_version == "0.1.0"
         m.open_mth5(self.fn2)
-        assert (m.file_version == "0.2.0")
+        assert m.file_version == "0.2.0"
         m.close_mth5()
-        assert (m.file_version == "0.1.0")
+        assert m.file_version == "0.1.0"
 
     def test_get_version(self):
         from mth5.utils.helpers import get_version
+
         file_version = get_version(self.fn1)
-        assert (file_version == "0.1.0")
+        assert file_version == "0.1.0"
 
     @classmethod
     def tearDownClass(self):

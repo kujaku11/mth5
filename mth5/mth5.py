@@ -17,35 +17,33 @@ Created on Sun Dec  9 20:50:41 2018
 
 """
 
+
 # =============================================================================
 # Imports
 # =============================================================================
 from pathlib import Path
 from platform import platform
-from copy import deepcopy
 
 import h5py
 from loguru import logger
-
-from mth5.utils.exceptions import MTH5Error
-from mth5 import __version__ as mth5_version
-from mth5 import groups
-from mth5.tables import ChannelSummaryTable, FCSummaryTable, TFSummaryTable
-
-from mth5 import helpers
-from mth5 import (
-    CHANNEL_DTYPE,
-    FC_DTYPE,
-    TF_DTYPE,
-    ACCEPTABLE_FILE_SUFFIXES,
-    ACCEPTABLE_FILE_TYPES,
-    ACCEPTABLE_FILE_VERSIONS,
-    ACCEPTABLE_DATA_LEVELS,
-)
-
 from mt_metadata.common.mttime import get_now_utc
 from mt_metadata.timeseries import Experiment
 from mt_metadata.transfer_functions.core import TF
+
+from mth5 import __version__ as mth5_version
+from mth5 import (
+    ACCEPTABLE_DATA_LEVELS,
+    ACCEPTABLE_FILE_SUFFIXES,
+    ACCEPTABLE_FILE_TYPES,
+    ACCEPTABLE_FILE_VERSIONS,
+    CHANNEL_DTYPE,
+    FC_DTYPE,
+    groups,
+    helpers,
+    TF_DTYPE,
+)
+from mth5.tables import ChannelSummaryTable, FCSummaryTable, TFSummaryTable
+from mth5.utils.exceptions import MTH5Error
 
 
 # =============================================================================

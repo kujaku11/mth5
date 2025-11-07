@@ -9,14 +9,13 @@ Created on Sat Sep 23 17:35:56 2023
 # Imports
 # =============================================================================
 import unittest
-from pathlib import Path
 from collections import OrderedDict
+from pathlib import Path
 from types import SimpleNamespace
 
-import numpy as np
 from mth5.io.phoenix.readers.base import TSReaderBase
 from mth5.io.phoenix.readers.config import PhoenixConfig
-from mth5.utils.helpers import get_compare_dict
+
 
 # =============================================================================
 
@@ -142,9 +141,7 @@ class TestReadPhoenixContinuous(unittest.TestCase):
             ]
         )
 
-        self.assertDictEqual(
-            self.phx_obj.channel_metadata.to_dict(single=True), ch
-        )
+        self.assertDictEqual(self.phx_obj.channel_metadata.to_dict(single=True), ch)
 
     def test_run_metadata(self):
         rn = OrderedDict(
@@ -205,9 +202,7 @@ class TestReadPhoenixContinuous(unittest.TestCase):
             ]
         )
 
-        self.assertDictEqual(
-            self.phx_obj.station_metadata.to_dict(single=True), st
-        )
+        self.assertDictEqual(self.phx_obj.station_metadata.to_dict(single=True), st)
 
     def test_get_dipole_filter(self):
         self.assertEqual(self.phx_obj.get_dipole_filter(), None)
@@ -224,9 +219,7 @@ class TestReadPhoenixContinuous(unittest.TestCase):
             ]
         )
 
-        self.assertDictEqual(
-            self.phx_obj.get_v_to_mv_filter().to_dict(single=True), f
-        )
+        self.assertDictEqual(self.phx_obj.get_v_to_mv_filter().to_dict(single=True), f)
 
     def test_get_channel_response(self):
         cr = self.phx_obj.get_channel_response()
