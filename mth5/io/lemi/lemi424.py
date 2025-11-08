@@ -15,6 +15,7 @@ from io import StringIO
 # Imports
 # =============================================================================
 from pathlib import Path
+from typing import Any
 
 
 # supress the future warning from pandas about using datetime parser.
@@ -30,27 +31,33 @@ from mth5.timeseries import ChannelTS, RunTS
 
 
 # =============================================================================
-def lemi_date_parser(year, month, day, hour, minute, second):
+def lemi_date_parser(
+    year: int, month: int, day: int, hour: int, minute: int, second: int
+) -> pd.Series:
     """
-    convenience function to combine the date-time columns that are output by
-    lemi into a single column
+    Combine the date-time columns that are output by LEMI into a single column.
 
-    Assumes UTC
+    Assumes UTC timezone.
 
-    :param year: year
-    :type year: int
-    :param month: month
-    :type month: int
-    :param day: day of the month
-    :type day: int
-    :param hour: hour in 24 hr format
-    :type hour: int
-    :param minute: minutes in the hour
-    :type minute: int
-    :param second: seconds in the minute
-    :type second: int
-    :return: date time as a single column
-    :rtype: :class:`pandas.DateTime`
+    Parameters
+    ----------
+    year : int
+        Year value.
+    month : int
+        Month value (1-12).
+    day : int
+        Day of the month (1-31).
+    hour : int
+        Hour in 24-hour format (0-23).
+    minute : int
+        Minutes in the hour (0-59).
+    second : int
+        Seconds in the minute (0-59).
+
+    Returns
+    -------
+    pd.DatetimeIndex
+        Combined date-time as a pandas DatetimeIndex.
 
     """
     dt_df = pd.DataFrame(
@@ -70,20 +77,28 @@ def lemi_date_parser(year, month, day, hour, minute, second):
     return pd.to_datetime(dt_df)
 
 
-def lemi_position_parser(position):
+def lemi_position_parser(position: float) -> float:
     """
-    convenience function to parse the location strings into a decimal float
+    Parse LEMI location strings into decimal degrees.
+
     Uses the hemisphere for the sign.
 
-    .. note:: the format of the location is odd in that it is multiplied by
-     100 within the LEMI to provide a single floating point value that
-     includes the degrees and decimal degrees --> {degrees}{degrees[mm.ss]}.
-     For example 40.50166 would be represented as 4030.1.
+    Notes
+    -----
+    The format of the location is odd in that it is multiplied by
+    100 within the LEMI to provide a single floating point value that
+    includes the degrees and decimal degrees --> {degrees}{degrees[mm.ss]}.
+    For example 40.50166 would be represented as 4030.1.
 
-    :param position: DESCRIPTION
-    :type position: TYPE
-    :return: DESCRIPTION
-    :rtype: TYPE
+    Parameters
+    ----------
+    position : float
+        LEMI position value to parse.
+
+    Returns
+    -------
+    float
+        Decimal degrees position.
 
     """
     pos = f"{float(position) / 100}".split(".")
@@ -94,14 +109,22 @@ def lemi_position_parser(position):
     return location
 
 
-def lemi_hemisphere_parser(hemisphere):
+def lemi_hemisphere_parser(hemisphere: str) -> int:
     """
-    convert hemisphere into a value [-1, 1].  Assumes the prime meridian is 0.
+    Convert hemisphere into a value [-1, 1].
 
-    :param hemisphere: hemisphere string [ 'N' | 'S' | 'E' | 'W']
-    :type hemisphere: string
-    :return: unity with a sign for the given hemisphere
-    :rtype: signed integer
+    Assumes the prime meridian is 0.
+
+    Parameters
+    ----------
+    hemisphere : str
+        Hemisphere string. Valid values are 'N', 'S', 'E', 'W'.
+
+    Returns
+    -------
+    int
+        Unity with a sign for the given hemisphere.
+        Returns -1 for 'S' or 'W', 1 for 'N' or 'E'.
 
     """
     if hemisphere in ["S", "W"]:
@@ -111,77 +134,48 @@ def lemi_hemisphere_parser(hemisphere):
 
 class LEMI424:
     """
-    Read in a LEMI424 file, this is a place holder until IRIS finalizes
-    their reader.
+    Read and process LEMI424 magnetotelluric data files.
 
-    :param fn: full path to LEMI424 file
-    :type fn: :class:`pathlib.Path` or string
-    :param sample_rate: sample rate of the file, default is 1.0
-    :type sample_rate: float
-    :param chunk_size: chunk size for pandas to use, does not change reading
-     time much for a single day file. default is 8640
-    :type chunk_size: integer
-    :param file_column_names: column names of the LEMI424 file
-    :type file_column_names: list of strings
-    :param dtypes: data types for each column
-    :type dtypes: dictionary with keys of column names and values of data types
-    :param data_column_names: same as file_column names with and added column
-     for date, which is the combined date and time columns.
-    :type data_column_names: dictionary with keys of column names and values
-     of data types
+    This is a placeholder until IRIS finalizes their reader.
 
-    :LEMI424 File Column Names:
+    Parameters
+    ----------
+    fn : str or pathlib.Path, optional
+        Full path to LEMI424 file, by default None.
+    **kwargs : dict
+        Additional keyword arguments for configuration.
 
-        - **year**
-        - **month**
-        - **day**
-        - **hour**
-        - **minute**
-        - **second**
-        - **bx**
-        - **by**
-        - **bz**
-        - **temperature_e**
-        - **temperature_h**
-        - **e1**
-        - **e2**
-        - **e3**
-        - **e4**
-        - **battery**
-        - **elevation**
-        - **latitude**
-        - **lat_hemisphere**
-        - **longitude**
-        - **lon_hemisphere**
-        - **n_satellites**
-        - **gps_fix**
-        - **time_diff**
+    Attributes
+    ----------
+    sample_rate : float
+        Sample rate of the file, default is 1.0.
+    chunk_size : int
+        Chunk size for pandas to use, default is 8640.
+    file_column_names : list of str
+        Column names of the LEMI424 file.
+    dtypes : dict
+        Data types for each column.
+    data_column_names : list of str
+        Same as file_column_names with an added column for date.
+    data : pd.DataFrame or None
+        The loaded data.
 
-    :Data Column Names:
+    Notes
+    -----
+    LEMI424 File Column Names:
+        year, month, day, hour, minute, second, bx, by, bz,
+        temperature_e, temperature_h, e1, e2, e3, e4, battery,
+        elevation, latitude, lat_hemisphere, longitude,
+        lon_hemisphere, n_satellites, gps_fix, time_diff
 
-        - **date**
-        - **bx**
-        - **by**
-        - **bz**
-        - **temperature_e**
-        - **temperature_h**
-        - **e1**
-        - **e2**
-        - **e3**
-        - **e4**
-        - **battery**
-        - **elevation**
-        - **latitude**
-        - **lat_hemisphere**
-        - **longitude**
-        - **lon_hemisphere**
-        - **n_satellites**
-        - **gps_fix**
-        - **time_diff**
+    Data Column Names:
+        date, bx, by, bz, temperature_e, temperature_h, e1, e2,
+        e3, e4, battery, elevation, latitude, lat_hemisphere,
+        longitude, lon_hemisphere, n_satellites, gps_fix, time_diff
 
     """
 
-    def __init__(self, fn=None, **kwargs):
+    def __init__(self, fn: str | Path | None = None, **kwargs: Any) -> None:
         self.logger = logger
         self.fn = fn
         self.sample_rate = 1.0
@@ -241,7 +235,8 @@ class LEMI424:
 
         self.data_column_names = ["date"] + self.file_column_names[6:]
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Return string representation of LEMI424 object."""
         lines = ["LEMI 424 data", "-" * 20]
         lines.append(f"start:      {self.start.isoformat()}")
         lines.append(f"end:        {self.end.isoformat()}")
@@ -252,13 +247,30 @@ class LEMI424:
 
         return "\n".join(lines)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """Return string representation of LEMI424 object."""
         return self.__str__()
 
-    def __add__(self, other):
+    def __add__(self, other: "LEMI424 | pd.DataFrame") -> "LEMI424":
         """
-        Can append other LEMI424 objects together as long as the start and
-        end times match up.
+        Append other LEMI424 objects or DataFrames together.
+
+        The start and end times should match up for proper concatenation.
+
+        Parameters
+        ----------
+        other : LEMI424 or pd.DataFrame
+            Object to append to this LEMI424 instance.
+
+        Returns
+        -------
+        LEMI424
+            New LEMI424 object with combined data.
+
+        Raises
+        ------
+        ValueError
+            If data is None or if DataFrame columns don't match.
 
         """
         if not self._has_data():
@@ -269,7 +281,7 @@ class LEMI424:
             new.data = pd.concat([new.data, other.data])
             return new
         elif isinstance(other, pd.DataFrame):
-            if not other.columns != self.data.columns:
+            if not other.columns.equals(self.data.columns):
                 raise ValueError("DataFrame columns are not the same.")
             new = LEMI424()
             new.__dict__.update(self.__dict__)
@@ -279,20 +291,34 @@ class LEMI424:
             raise ValueError(f"Cannot add {type(other)} to pd.DataFrame.")
 
     @property
-    def data(self):
+    def data(self) -> pd.DataFrame | None:
         """
-        Data represented as a :class:`pandas.DataFrame` with data_column names
+        Data represented as a pandas DataFrame with data column names.
+
+        Returns
+        -------
+        pd.DataFrame or None
+            The loaded data or None if no data is loaded.
 
         """
         return self._data
 
     @data.setter
-    def data(self, data):
+    def data(self, data: pd.DataFrame | None) -> None:
         """
-        Make sure if data is set that it is a pandas data frame with the proper
-        column names
-        """
+        Set data ensuring it is a pandas DataFrame with proper column names.
 
+        Parameters
+        ----------
+        data : pd.DataFrame or None
+            Data to set. Must have proper column names if not None.
+
+        Raises
+        ------
+        ValueError
+            If column names don't match expected format.
+
+        """
         if data is None:
             self._data = None
         elif isinstance(data, pd.DataFrame):
@@ -311,19 +337,49 @@ class LEMI424:
             else:
                 self._data = data
 
-    def _has_data(self):
-        """check to see if has data or not"""
+    def _has_data(self) -> bool:
+        """
+        Check if object has data loaded.
+
+        Returns
+        -------
+        bool
+            True if data is loaded, False otherwise.
+
+        """
         if self.data is not None:
             return True
         return False
 
     @property
-    def fn(self):
-        """full path to LEMI424 file"""
+    def fn(self) -> Path | None:
+        """
+        Full path to LEMI424 file.
+
+        Returns
+        -------
+        pathlib.Path or None
+            Path to the file or None if not set.
+
+        """
         return self._fn
 
     @fn.setter
-    def fn(self, value):
+    def fn(self, value: str | Path | None) -> None:
+        """
+        Set the file path.
+
+        Parameters
+        ----------
+        value : str, pathlib.Path, or None
+            Path to the LEMI424 file.
+
+        Raises
+        ------
+        IOError
+            If the file does not exist.
+
+        """
         if value is not None:
             value = Path(value)
             if not value.exists():
@@ -331,58 +387,130 @@ class LEMI424:
         self._fn = value
 
     @property
-    def file_size(self):
-        """size of file in bytes"""
+    def file_size(self) -> int | None:
+        """
+        Size of file in bytes.
+
+        Returns
+        -------
+        int or None
+            File size in bytes or None if no file is set.
+
+        """
         if self.fn is not None:
             return self.fn.stat().st_size
 
     @property
-    def start(self):
-        """start time of data collection in the LEMI424 file"""
+    def start(self) -> MTime | None:
+        """
+        Start time of data collection in the LEMI424 file.
+
+        Returns
+        -------
+        MTime or None
+            Start time or None if no data is loaded.
+
+        """
         if self._has_data():
             return MTime(time_stamp=self.data.index[0])
 
     @property
-    def end(self):
-        """end time of data collection in the LEMI424 file"""
+    def end(self) -> MTime | None:
+        """
+        End time of data collection in the LEMI424 file.
+
+        Returns
+        -------
+        MTime or None
+            End time or None if no data is loaded.
+
+        """
         if self._has_data():
             return MTime(time_stamp=self.data.index[-1])
 
     @property
-    def latitude(self):
-        """median latitude where data have been collected in the LEMI424 file"""
+    def latitude(self) -> float | None:
+        """
+        Median latitude where data have been collected.
+
+        Returns
+        -------
+        float or None
+            Median latitude in degrees or None if no data is loaded.
+
+        """
         if self._has_data():
             return self.data.latitude.median() * self.data.lat_hemisphere.median()
 
     @property
-    def longitude(self):
-        """median longitude where data have been collected in the LEMI424 file"""
+    def longitude(self) -> float | None:
+        """
+        Median longitude where data have been collected.
+
+        Returns
+        -------
+        float or None
+            Median longitude in degrees or None if no data is loaded.
+
+        """
         if self._has_data():
             return self.data.longitude.median() * self.data.lon_hemisphere.median()
 
     @property
-    def elevation(self):
-        """median elevation where data have been collected in the LEMI424 file"""
+    def elevation(self) -> float | None:
+        """
+        Median elevation where data have been collected.
+
+        Returns
+        -------
+        float or None
+            Median elevation in meters or None if no data is loaded.
+
+        """
         if self._has_data():
             return self.data.elevation.median()
 
     @property
-    def n_samples(self):
-        """number of samples in the file"""
+    def n_samples(self) -> int | None:
+        """
+        Number of samples in the file.
+
+        Returns
+        -------
+        int or None
+            Number of samples or None if no data/file available.
+
+        """
         if self._has_data():
             return self.data.shape[0]
         elif self.fn is not None and self.fn.exists():
             return round(self.fn.stat().st_size / 152.0)
 
     @property
-    def gps_lock(self):
-        """has GPS lock"""
+    def gps_lock(self) -> Any | None:
+        """
+        GPS lock status array.
+
+        Returns
+        -------
+        numpy.ndarray or None
+            GPS fix values or None if no data is loaded.
+
+        """
         if self._has_data():
             return self.data.gps_fix.values
 
     @property
-    def station_metadata(self):
-        """station metadata as :class:`mt_metadata.timeseries.Station`"""
+    def station_metadata(self) -> Station:
+        """
+        Station metadata as mt_metadata.timeseries.Station object.
+
+        Returns
+        -------
+        mt_metadata.timeseries.Station
+            Station metadata object.
+
+        """
         s = Station()
         if self._has_data():
             s.location.latitude = self.latitude
@@ -394,8 +522,16 @@ class LEMI424:
         return s
 
     @property
-    def run_metadata(self):
-        """run metadata as :class:`mt_metadata.timeseries.Run`"""
+    def run_metadata(self) -> Run:
+        """
+        Run metadata as mt_metadata.timeseries.Run object.
+
+        Returns
+        -------
+        mt_metadata.timeseries.Run
+            Run metadata object.
+
+        """
         r = Run()
         r.id = "a"
         r.sample_rate = self.sample_rate
@@ -415,21 +551,28 @@ class LEMI424:
                 r.add_channel(Magnetic(component=ch_h))
         return r
 
-    def read(self, fn=None, fast=True):
+    def read(self, fn: str | Path | None = None, fast: bool = True) -> None:
         """
-        Read a LEMI424 file using pandas.  The `fast` way will read in the
-        first and last line to get the start and end time to make a time index.
-        Then it will read in the data skipping parsing the date time columns.
-        It will check to make sure the expected amount of points are correct.
-        If not then it will read in the slower way which used the date time
-        parser to ensure any time gaps are respected.
+        Read a LEMI424 file using pandas.
 
-        :param fn: full path to file, defaults to None.  Uses LEMI424.fn if
-         not provided
-        :type fn: string or :class:`pathlib.Path`, optional
-        :param fast: read the fast way (True) or not (False)
-        :return: DESCRIPTION
-        :rtype: TYPE
+        The `fast` way will read in the first and last line to get the start
+        and end time to make a time index. Then it will read in the data
+        skipping parsing the date time columns. It will check to make sure
+        the expected amount of points are correct. If not then it will read
+        in the slower way which uses the date time parser to ensure any
+        time gaps are respected.
+
+        Parameters
+        ----------
+        fn : str, pathlib.Path, or None, optional
+            Full path to file. Uses LEMI424.fn if not provided, by default None.
+        fast : bool, optional
+            Read the fast way (True) or not (False), by default True.
+
+        Raises
+        ------
+        IOError
+            If file cannot be found.
 
         """
         if fn is not None:
@@ -551,18 +694,20 @@ class LEMI424:
             et = MTime(time_stamp=None).now()
             self.logger.debug(f"Reading {self.fn.name} took {et - st:.2f} seconds")
 
-    def read_metadata(self):
+    def read_metadata(self) -> None:
         """
-        Read only first and last rows to get important metadata to use in
-        the collection.
+        Read only first and last rows to get important metadata.
+
+        This method is used to extract essential metadata from the collection
+        without loading the entire dataset.
 
         """
 
         with open(self.fn) as fid:
             first_line = fid.readline()
+            last_line = first_line  # Default to first line for single-line files
             for line in fid:
-                pass  # iterate to the end
-            last_line = line
+                last_line = line  # Update for multi-line files
         lines = StringIO(f"{first_line}\n{last_line}")
 
         self.data = pd.read_csv(
@@ -590,18 +735,23 @@ class LEMI424:
             index_col="date",
         )
 
-    def to_run_ts(self, fn=None, e_channels=["e1", "e2"]):
+    def to_run_ts(
+        self, fn: str | Path | None = None, e_channels: list[str] = ["e1", "e2"]
+    ) -> RunTS:
         """
-        Create a :class:`mth5.timeseries.RunTS` object from the data
+        Create a RunTS object from the data.
 
-        :param fn: full path to file, defaults to None.  Will use LEMI424.fn
-         if None.
-        :type fn: string or :class:`pathlib.Path`, optional
-        :param e_channels: columns for the electric channels to use,
-         defaults to ["e1", "e2"]
-        :type e_channels: list of strings, optional
-        :return: RunTS object
-        :rtype: :class:`mth5.timeseries.RunTS`
+        Parameters
+        ----------
+        fn : str, pathlib.Path, or None, optional
+            Full path to file. Will use LEMI424.fn if None, by default None.
+        e_channels : list of str, optional
+            Column names for the electric channels to use, by default ["e1", "e2"].
+
+        Returns
+        -------
+        mth5.timeseries.RunTS
+            RunTS object containing the data.
 
         """
 
@@ -632,17 +782,27 @@ class LEMI424:
 # =============================================================================
 # define the reader
 # =============================================================================
-def read_lemi424(fn, e_channels=["e1", "e2"], fast=True):
+def read_lemi424(
+    fn: str | Path | list[str | Path],
+    e_channels: list[str] = ["e1", "e2"],
+    fast: bool = True,
+) -> RunTS:
     """
     Read a LEMI 424 TXT file.
 
-    :param fn: input file name
-    :type fn: string or Path
-    :param e_channels: A list of electric channels to read,
-    defaults to ["e1", "e2"]
-    :type e_channels: list of strings, optional
-    :return: A RunTS object with appropriate metadata
-    :rtype: :class:`mth5.timeseries.RunTS`
+    Parameters
+    ----------
+    fn : str or pathlib.Path
+        Input file name.
+    e_channels : list of str, optional
+        A list of electric channels to read, by default ["e1", "e2"].
+    fast : bool, optional
+        Use fast reading method, by default True.
+
+    Returns
+    -------
+    mth5.timeseries.RunTS
+        A RunTS object with appropriate metadata.
 
     """
 
