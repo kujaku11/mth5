@@ -466,7 +466,7 @@ def make_station_04(
         run_001,
     ]
     station_metadata.run_list = [
-        run_001,
+        run_001.run_metadata.id,
     ]
     station.station_metadata = station_metadata
     return station

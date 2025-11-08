@@ -100,7 +100,7 @@ class TestMetadataValuesSetCorrect(unittest.TestCase):
             with self.subTest(run):
                 self.assertEqual(
                     summary_row.start,
-                    pd.Timestamp(expected_start).tz_convert(None),
+                    pd.Timestamp(str(expected_start)).tz_convert(None),
                 )
 
 

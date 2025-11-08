@@ -41,8 +41,9 @@ from typing import List, Literal, Optional, Union
 import numpy as np
 import pandas as pd
 from loguru import logger
+from mt_metadata.common.comment import Comment
 from mt_metadata.processing.aurora import ChannelNomenclature
-from mt_metadata.timeseries import Electric, Magnetic, Survey
+from mt_metadata.timeseries import AppliedFilter, Electric, Magnetic, Survey
 
 from mth5.data.paths import SyntheticTestPaths
 from mth5.data.station_config import (
@@ -91,7 +92,7 @@ def create_run_ts_from_synthetic_run(
         data = df[col].values
         if col in channel_nomenclature.ex_ey:
             channel_metadata = Electric()
-            channel_metadata.units = "millivolts per kilometer"
+            channel_metadata.units = "milliVolt per kilometer"
         elif col in channel_nomenclature.hx_hy_hz:
             channel_metadata = Magnetic()
             channel_metadata.units = "nanotesla"
@@ -118,10 +119,14 @@ def create_run_ts_from_synthetic_run(
                 chts.channel_metadata.measurement_azimuth = 90.0
 
         # Set filters
-        chts.channel_metadata.filter.name = run.filters[col]
-        chts.channel_metadata.filter.applied = len(run.filters[col]) * [
-            True,
-        ]
+        for stage_num, filter_name in enumerate(run.filters[col], start=1):
+            applied_filter = AppliedFilter(
+                name=filter_name,
+                applied=True,
+                stage=stage_num,
+                comments=Comment(author="system", time_stamp="2024-01-01"),
+            )
+            chts.channel_metadata.add_filter(applied_filter=applied_filter)
 
         ch_list.append(chts)
 
