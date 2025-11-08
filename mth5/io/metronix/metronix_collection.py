@@ -1,5 +1,16 @@
 # -*- coding: utf-8 -*-
 """
+Metronix collection utilities for managing ATSS files.
+
+This module provides classes for collecting and managing Metronix ATSS
+(Audio Time Series System) files and creating pandas DataFrames with
+metadata for processing workflows.
+
+Classes
+-------
+MetronixCollection
+    Collection class for managing Metronix ATSS files
+
 Created on Fri Nov 22 13:22:44 2024
 
 @author: jpeacock
@@ -8,6 +19,9 @@ Created on Fri Nov 22 13:22:44 2024
 # =============================================================================
 # Imports
 # =============================================================================
+
+from pathlib import Path
+from typing import Any, Union
 
 import pandas as pd
 
@@ -19,23 +33,91 @@ from mth5.io.metronix import ATSS
 
 
 class MetronixCollection(Collection):
-    def __init__(self, file_path=None, **kwargs):
+    """
+    Collection class for managing Metronix ATSS files.
+
+    This class extends the base Collection class to handle Metronix ATSS
+    (Audio Time Series System) files and their associated JSON metadata files.
+    It provides functionality to create pandas DataFrames with comprehensive
+    metadata for processing workflows.
+
+    Parameters
+    ----------
+    file_path : Union[str, Path, None], optional
+        Path to directory containing Metronix ATSS files, by default None
+    **kwargs
+        Additional keyword arguments passed to parent Collection class
+
+    Attributes
+    ----------
+    file_ext : list[str]
+        List of file extensions to search for (["atss"])
+
+    Examples
+    --------
+    >>> from mth5.io.metronix import MetronixCollection
+    >>> collection = MetronixCollection("/path/to/metronix/files")
+    >>> df = collection.to_dataframe(sample_rates=[128, 256])
+    """
+
+    def __init__(self, file_path: Union[str, Path, None] = None, **kwargs: Any) -> None:
         super().__init__(file_path=file_path, **kwargs)
-        self.file_ext = ["atss"]
+        self.file_ext: list[str] = ["atss"]
 
-    def to_dataframe(self, sample_rates=[128], run_name_zeros=0, calibration_path=None):
+    def to_dataframe(
+        self,
+        sample_rates: list[int] = [128],
+        run_name_zeros: int = 0,
+        calibration_path: Union[str, Path, None] = None,
+    ) -> pd.DataFrame:
         """
-        Create dataframe for metronix timeseries atss + json file sets
+        Create DataFrame for Metronix timeseries ATSS + JSON file sets.
 
-        :param sample_rates: DESCRIPTION, defaults to [128]
-        :type sample_rates: TYPE, optional
-        :param run_name_zeros: DESCRIPTION, defaults to 4
-        :type run_name_zeros: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Processes all ATSS files in the collection directory, extracts metadata,
+        and creates a comprehensive pandas DataFrame with information about each
+        channel including timing, location, and instrument details.
 
+        Parameters
+        ----------
+        sample_rates : list[int], optional
+            List of sample rates to include in Hz, by default [128]
+        run_name_zeros : int, optional
+            Number of zeros for zero-padding run names. If 0, run names
+            are unchanged. If > 0, run names are formatted as
+            'sr{sample_rate}_{run_number:0{zeros}d}', by default 0
+        calibration_path : Union[str, Path, None], optional
+            Path to calibration files (currently unused), by default None
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with columns:
+            - survey: Survey ID
+            - station: Station ID
+            - run: Run ID
+            - start: Start time (datetime)
+            - end: End time (datetime)
+            - channel_id: Channel number
+            - component: Component name (ex, ey, hx, hy, hz)
+            - fn: File path
+            - sample_rate: Sample rate in Hz
+            - file_size: File size in bytes
+            - n_samples: Number of samples
+            - sequence_number: Sequence number (always 0)
+            - dipole: Dipole length (always 0)
+            - coil_number: Coil serial number (magnetic channels only)
+            - latitude: Latitude in decimal degrees
+            - longitude: Longitude in decimal degrees
+            - elevation: Elevation in meters
+            - instrument_id: Instrument/system number
+            - calibration_fn: Calibration file path (always None)
+
+        Examples
+        --------
+        >>> collection = MetronixCollection("/path/to/files")
+        >>> df = collection.to_dataframe(sample_rates=[128, 256])
+        >>> df = collection.to_dataframe(run_name_zeros=4)  # Zero-pad run names
         """
-
         entries = []
         for atss_fn in set(self.get_files(self.file_ext)):
             atss_obj = ATSS(atss_fn)
@@ -76,18 +158,43 @@ class MetronixCollection(Collection):
 
         return df
 
-    def assign_run_names(self, df, zeros=0):
+    def assign_run_names(self, df: pd.DataFrame, zeros: int = 0) -> pd.DataFrame:
         """
-        assign run names, if zeros is 0 then run name is unchanged, otherwise
-        the run name will be `sr{sample_rate}_{run_number:zeros}
+        Assign formatted run names based on sample rate and run number.
 
-        :param df: DESCRIPTION
-        :type df: TYPE
-        :param zeros: DESCRIPTION, defaults to 0
-        :type zeros: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
+        If zeros is 0, run names are unchanged. Otherwise, run names are
+        formatted as 'sr{sample_rate}_{run_number:0{zeros}d}' where the
+        run number is extracted from the original run name after the first
+        underscore.
 
+        Parameters
+        ----------
+        df : pd.DataFrame
+            DataFrame containing run information with 'run' and 'sample_rate' columns
+        zeros : int, optional
+            Number of zeros for zero-padding run numbers. If 0, run names
+            are unchanged, by default 0
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with updated run names
+
+        Examples
+        --------
+        >>> df = pd.DataFrame({
+        ...     'run': ['run_1', 'run_2'],
+        ...     'sample_rate': [128, 256]
+        ... })
+        >>> collection = MetronixCollection()
+        >>> result = collection.assign_run_names(df, zeros=3)
+        >>> print(result['run'].tolist())
+        ['sr128_001', 'sr256_002']
+
+        Notes
+        -----
+        The method expects run names to be in format 'prefix_number' where
+        'number' can be extracted and converted to an integer for formatting.
         """
         if zeros == 0:
             return df

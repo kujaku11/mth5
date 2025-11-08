@@ -15,6 +15,8 @@ from collections import OrderedDict
 from pathlib import Path
 
 import numpy as np
+from mt_metadata.timeseries import AppliedFilter, Electric, Magnetic
+from mt_metadata.timeseries.filters import FrequencyResponseTableFilter
 
 from mth5.io.metronix import MetronixChannelJSON, MetronixFileNameMetadata
 
@@ -430,9 +432,14 @@ class TestMetronixJSONMagnetic(unittest.TestCase):
             [
                 ("channel_number", 2),
                 ("component", "hx"),
-                ("data_quality.rating.value", 0),
-                ("filter.applied", [True, True, True]),
-                ("filter.name", ["adb-lf", "lf-rf-4", "mfs-06_chopper_1"]),
+                (
+                    "filters",
+                    [
+                        AppliedFilter(name="adb-lf", applied=True, stage=1),
+                        AppliedFilter(name="lf-rf-4", applied=True, stage=2),
+                        AppliedFilter(name="mfs-06_chopper_1", applied=True, stage=3),
+                    ],
+                ),
                 ("location.elevation", 1088.31),
                 ("location.latitude", 39.026196666666664),
                 ("location.longitude", 29.123953333333333),
@@ -456,13 +463,13 @@ class TestMetronixJSONMagnetic(unittest.TestCase):
                     "amplitudes",
                     np.array(self.magnetic_dict["sensor_calibration"]["a"]),
                 ),
-                ("calibration_date", "2006-12-01"),
+                ("calibration_date", "2006-12-01T11:23:02"),
                 (
                     "frequencies",
                     np.array(self.magnetic_dict["sensor_calibration"]["f"]),
                 ),
                 ("gain", 1.0),
-                ("instrument_type", None),
+                ("instrument_type", ""),
                 ("name", "mfs-06_chopper_1"),
                 (
                     "phases",
@@ -500,11 +507,13 @@ class TestMetronixJSONMagnetic(unittest.TestCase):
 
     def test_channel_metadata(self):
         magnetic_metadata = self.magnetic.get_channel_metadata()
-        self.assertEqual(self.expected_magnetic_metadata, magnetic_metadata)
+        expected_metadata = Magnetic(**self.expected_magnetic_metadata)
+        self.assertEqual(expected_metadata, magnetic_metadata)
 
     def test_get_sensor_response_filter(self):
         fap = self.magnetic.get_sensor_response_filter()
-        self.assertEqual(self.expected_fap, fap)
+        expected_fap = FrequencyResponseTableFilter(**self.expected_fap)
+        self.assertEqual(expected_fap, fap)
 
     @classmethod
     def tearDownClass(self):
@@ -549,10 +558,14 @@ class TestMetronixJSONElectric(unittest.TestCase):
                 ("channel_number", 0),
                 ("component", "ex"),
                 ("contact_resistance.start", 572.3670043945312),
-                ("data_quality.rating.value", 0),
-                ("dipole_length", None),
-                ("filter.applied", [True, True]),
-                ("filter.name", ["adb-lf", "lf-rf-4"]),
+                ("dipole_length", 0),
+                (
+                    "filters",
+                    [
+                        AppliedFilter(name="adb-lf", applied=True, stage=1),
+                        AppliedFilter(name="lf-rf-4", applied=True, stage=2),
+                    ],
+                ),
                 ("measurement_azimuth", 0.0),
                 ("measurement_tilt", 0.0),
                 ("negative.elevation", 0.0),
@@ -603,7 +616,8 @@ class TestMetronixJSONElectric(unittest.TestCase):
 
     def test_to_mt_metadata(self):
         electric_metadata = self.electric.get_channel_metadata()
-        self.assertEqual(self.expected_electric_metadata, electric_metadata)
+        expected_metadata = Electric(**self.expected_electric_metadata)
+        self.assertEqual(expected_metadata, electric_metadata)
 
     def test_get_sensor_response_filter(self):
         fap = self.electric.get_sensor_response_filter()
