@@ -93,6 +93,7 @@ class Collection:
 
         if file_path is None:
             self._file_path = None
+            return
         if not isinstance(file_path, Path):
             file_path = Path(file_path)
         self._file_path = file_path
@@ -112,6 +113,9 @@ class Collection:
 
         """
 
+        if self.file_path is None:
+            return []
+
         if isinstance(extension, (list, tuple)):
             fn_list = []
             for ext in extension:
@@ -120,7 +124,7 @@ class Collection:
             fn_list = list(self.file_path.rglob(f"*.{extension}"))
         return sorted(list(set(fn_list)))
 
-    def to_dataframe(self):
+    def to_dataframe(self, sample_rates=None, run_name_zeros=4, calibration_path=None):
         """
         Get a data frame of the file summary with column names:
 
@@ -139,18 +143,38 @@ class Collection:
             - **instrument_id**: instrument id
             - **calibration_fn**: calibration file
 
+        :param sample_rates: list of sample rates to process, defaults to None
+        :type sample_rates: list, optional
+        :param run_name_zeros: number of zeros in run name, defaults to 4
+        :type run_name_zeros: int, optional
+        :param calibration_path: path to calibration files, defaults to None
+        :type calibration_path: str or Path, optional
         :return: summary table of file names,
-        :rtype: TYPE
+        :rtype: pandas.DataFrame
 
         """
+        import pandas as pd
 
-    def assign_run_names(self):
+        # Base implementation returns empty DataFrame with proper columns
+        # Subclasses should override this method
+        return pd.DataFrame(columns=self._columns)
+
+    def assign_run_names(self, df, zeros=4):
         """
+        Assign run names to a dataframe. This is a base method that should
+        be overridden by subclasses.
 
-        :return: DESCRIPTION
-        :rtype: TYPE
-
+        :param df: dataframe with file information
+        :type df: pandas.DataFrame
+        :param zeros: number of zeros in run name, defaults to 4
+        :type zeros: int, optional
+        :return: dataframe with run names assigned
+        :rtype: pandas.DataFrame
         """
+        # Base implementation - subclasses should override this
+        if "run" not in df.columns:
+            df["run"] = "sr1_0001"  # Default run name
+        return df
 
     def _set_df_dtypes(self, df):
         """
