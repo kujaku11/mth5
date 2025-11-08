@@ -86,7 +86,16 @@ class TestMetadataValuesSetCorrect(unittest.TestCase):
             m = m.open_mth5(mth5_path)
             station_id = m.station_list[0]  # station should be named "test3"
             self.assertTrue(station_id == "test3")
-            station_obj = m.get_station(station_id)
+            # For version 0.2.0 files, need to specify survey
+            try:
+                station_obj = m.get_station(station_id)
+            except ValueError:
+                # Try with survey parameter for v0.2.0 files
+                if hasattr(m, "surveys_group") and m.surveys_group:
+                    survey_id = m.surveys_group.groups_list[0]
+                else:
+                    survey_id = "EMTF Synthetic"
+                station_obj = m.get_station(station_id, survey=survey_id)
             return station_obj.run_summary
 
     def test_start_times_correct(self):
