@@ -1,25 +1,70 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Nov 26 15:54:12 2024
+ATSS (Audio Time Series System) file reader for Metronix data.
 
-Translated from
+This module provides functionality to read and process Metronix ATSS binary
+time series files and their associated JSON metadata files. ATSS files contain
+double precision floating point time series data equivalent to numpy arrays
+of type np.float64.
+
+The ATSS format consists of two files:
+- .atss file: Binary time series data (np.float64 values)
+- .json file: Metadata in JSON format
+
+This implementation is translated from:
 https://github.com/bfrmtx/MTHotel/blob/main/python/include/atss_file.py
 
-the atss files are two files; one for the header.json and one for the data.atss
-both have the same name, but different extensions
-the header.json contains the metadata and the data.atss contains the time series data
-data.atss is a binary file, containing double precision floating point numbers
-that is equivalent to a numpy array of type np.float64
+Classes
+-------
+ATSS : MetronixFileNameMetadata
+    Main class for reading ATSS files and converting to ChannelTS objects.
 
-@author: jpeacock
+Functions
+---------
+read_atss : function
+    Convenience function to read ATSS file and return ChannelTS object.
+
+Notes
+-----
+ATSS files store time series data as consecutive double precision floating
+point numbers in binary format, making them efficient for large datasets.
+
+Examples
+--------
+>>> from mth5.io.metronix.metronix_atss import ATSS, read_atss
+>>>
+>>> # Using the ATSS class directly
+>>> atss = ATSS('data/station001.atss')
+>>> data = atss.read_atss()
+>>> channel_ts = atss.to_channel_ts()
+>>>
+>>> # Using the convenience function
+>>> channel_ts = read_atss('data/station001.atss')
+
+Author
+------
+jpeacock
+
+Created
+-------
+Tue Nov 26 15:54:12 2024
 """
 
 # =============================================================================
 # Imports
 # =============================================================================
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any
+
 import numpy as np
 from loguru import logger
 from mt_metadata.timeseries import Run, Station, Survey
+from mt_metadata.timeseries.auxiliary import Auxiliary
+from mt_metadata.timeseries.electric import Electric
+from mt_metadata.timeseries.filters import ChannelResponse
+from mt_metadata.timeseries.magnetic import Magnetic
 
 from mth5.io.metronix import MetronixChannelJSON, MetronixFileNameMetadata
 from mth5.timeseries import ChannelTS
@@ -29,7 +74,40 @@ from mth5.timeseries import ChannelTS
 
 
 class ATSS(MetronixFileNameMetadata):
-    def __init__(self, fn=None, **kwargs):
+    """
+    ATSS (Audio Time Series System) file reader for Metronix data.
+
+    Handles reading and processing of Metronix ATSS binary time series files
+    and their associated JSON metadata files. ATSS files contain double precision
+    floating point time series data equivalent to numpy arrays of type np.float64.
+
+    Parameters
+    ----------
+    fn : str or Path, optional
+        Path to the ATSS file. If provided, metadata will be automatically
+        loaded if the corresponding JSON file exists.
+    **kwargs
+        Additional keyword arguments passed to parent class.
+
+    Attributes
+    ----------
+    header : MetronixChannelJSON
+        Metadata handler for the associated JSON file.
+
+    Notes
+    -----
+    ATSS files come in pairs:
+    - .atss file: Binary time series data (np.float64)
+    - .json file: Metadata in JSON format
+
+    Examples
+    --------
+    >>> atss = ATSS('data/station001_run001_ch001.atss')
+    >>> data = atss.read_atss()
+    >>> channel_ts = atss.to_channel_ts()
+    """
+
+    def __init__(self, fn: str | Path | None = None, **kwargs: Any) -> None:
         super().__init__(fn=fn, **kwargs)
 
         self.header = MetronixChannelJSON()
@@ -37,30 +115,80 @@ class ATSS(MetronixFileNameMetadata):
             self.header.read(self.metadata_fn)
 
     @property
-    def metadata_fn(self):
-        """metadata JSON file, same name as the atss file with extension json"""
+    def metadata_fn(self) -> Path | None:
+        """
+        Path to the metadata JSON file.
+
+        Returns the path to the JSON metadata file that corresponds to this
+        ATSS file. The JSON file has the same base name as the ATSS file
+        but with a .json extension.
+
+        Returns
+        -------
+        Path or None
+            Path to the JSON metadata file, or None if no ATSS file is set.
+
+        Examples
+        --------
+        >>> atss = ATSS('data/station001.atss')
+        >>> atss.metadata_fn
+        PosixPath('data/station001.json')
+        """
         if self.fn is not None:
             return self.fn.parent.joinpath(f"{self.fn.stem}.json")
 
-    def has_metadata_file(self):
-        """has metadata file (.json)"""
+    def has_metadata_file(self) -> bool:
+        """
+        Check if metadata JSON file exists.
+
+        Returns
+        -------
+        bool
+            True if the metadata JSON file exists, False otherwise.
+
+        Examples
+        --------
+        >>> atss = ATSS('data/station001.atss')
+        >>> atss.has_metadata_file()
+        True
+        """
         if self.fn is not None:
             return self.metadata_fn.exists()
         return False
 
-    def read_atss(self, fn=None, start=0, stop=0):
+    def read_atss(
+        self, fn: str | Path | None = None, start: int = 0, stop: int = 0
+    ) -> np.ndarray:
         """
+        Read binary ATSS time series data.
 
-        :param fn: DESCRIPTION, defaults to None
-        :type fn: TYPE, optional
-        :param start: DESCRIPTION, defaults to 0
-        :type start: TYPE, optional
-        :param wl: DESCRIPTION, defaults to 0
-        :type wl: TYPE, optional
-        :raises ValueError: DESCRIPTION
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Reads double precision floating point time series data from the ATSS
+        binary file. Data is stored as consecutive np.float64 values.
 
+        Parameters
+        ----------
+        fn : str or Path, optional
+            Path to ATSS file. If None, uses the current file path.
+        start : int, default 0
+            Starting sample index (0-based).
+        stop : int, default 0
+            Ending sample index. If 0, reads to end of file.
+
+        Returns
+        -------
+        np.ndarray
+            Time series data as 1D array of np.float64 values.
+
+        Raises
+        ------
+        ValueError
+            If stop index exceeds the number of samples in the file.
+
+        Examples
+        --------
+        >>> atss = ATSS('data/station001.atss')
+        >>> data = atss.read_atss()  # Read entire file
+        >>> data_slice = atss.read_atss(start=1000, stop=2000)  # Read subset
         """
         if fn is not None:
             self.fn = fn
@@ -80,21 +208,70 @@ class ATSS(MetronixFileNameMetadata):
 
         return data_array
 
-    def write_atss(self, data_array, filename):
+    def write_atss(self, data_array: np.ndarray, filename: str | Path) -> None:
+        """
+        Write time series data to ATSS binary file.
+
+        Writes numpy array data as double precision floating point values
+        to a binary ATSS file.
+
+        Parameters
+        ----------
+        data_array : np.ndarray
+            Time series data to write. Will be converted to np.float64.
+        filename : str or Path
+            Output file path for the ATSS binary file.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> atss = ATSS()
+        >>> data = np.random.randn(10000)
+        >>> atss.write_atss(data, 'output.atss')
+        """
         with open(filename, "wb") as fid:
             data_bytes = data_array.tobytes()
             fid.write(data_bytes)
 
     @property
-    def channel_metadata(self):
+    def channel_metadata(self) -> Electric | Magnetic | Auxiliary:
+        """
+        Channel metadata from the JSON header file.
+
+        Returns
+        -------
+        Electric or Magnetic or Auxiliary
+            Channel metadata object based on the channel type.
+        """
         return self.header.get_channel_metadata()
 
     @property
-    def channel_response(self):
+    def channel_response(self) -> ChannelResponse:
+        """
+        Channel response information from the JSON header file.
+
+        Returns
+        -------
+        ChannelResponse
+            Channel response/calibration information.
+        """
         return self.header.get_channel_response()
 
     @property
-    def channel_type(self):
+    def channel_type(self) -> str:
+        """
+        Determine channel type from component name.
+
+        Channel type is determined from the component identifier in the filename:
+        - Components starting with 'e': electric
+        - Components starting with 'h': magnetic
+        - All others: auxiliary
+
+        Returns
+        -------
+        str
+            Channel type: 'electric', 'magnetic', or 'auxiliary'.
+        """
         if self.fn_exists:
             if self.component.startswith("e"):
                 return "electric"
@@ -104,30 +281,66 @@ class ATSS(MetronixFileNameMetadata):
                 return "auxiliary"
 
     @property
-    def run_id(self):
-        """run ID from the file path expect station\run\ts.atss"""
+    def run_id(self) -> str | None:
+        """
+        Extract run ID from file path.
+
+        Expects file path structure: .../station/run/timeseries.atss
+        The run ID is extracted from the parent directory name.
+
+        Returns
+        -------
+        str or None
+            Run identifier, or None if file doesn't exist.
+        """
         if self.fn.exists:
             return self.fn.parent.name
 
     @property
-    def station_id(self):
-        """station ID from the file path expect station\run\ts.atss"""
+    def station_id(self) -> str | None:
+        """
+        Extract station ID from file path.
+
+        Expects file path structure: .../station/run/timeseries.atss
+        The station ID is extracted from the grandparent directory name.
+
+        Returns
+        -------
+        str or None
+            Station identifier, or None if file doesn't exist.
+        """
         if self.fn.exists:
             return self.fn.parent.parent.name
 
     @property
-    def survey_id(self):
-        """station ID from the file path expect survey\stations\station\run\ts.atss"""
+    def survey_id(self) -> str | None:
+        """
+        Extract survey ID from file path.
+
+        Expects file path structure: .../survey/stations/station/run/timeseries.atss
+        The survey ID is extracted from the great-great-grandparent directory name.
+
+        Returns
+        -------
+        str or None
+            Survey identifier, or None if file doesn't exist.
+        """
         if self.fn.exists:
             return self.fn.parent.parent.parent.parent.name
 
     @property
-    def run_metadata(self):
+    def run_metadata(self) -> Run:
         """
+        Generate run-level metadata.
 
-        :return: run metadata
-        :rtype: :class:`mt_metadata.timeseries.Run`
+        Creates a Run metadata object populated with information from the
+        ATSS file and its associated JSON metadata.
 
+        Returns
+        -------
+        Run
+            Run metadata object with data logger info, sample rate,
+            and channel metadata.
         """
         run = Run(id=self.run_id)
         run.data_logger.id = self.system_number
@@ -139,12 +352,17 @@ class ATSS(MetronixFileNameMetadata):
         return run
 
     @property
-    def station_metadata(self):
+    def station_metadata(self) -> Station:
         """
+        Generate station-level metadata.
 
-        :return: station metadata
-        :rtype: :class:`mt_metadata.timeseries.Station`
+        Creates a Station metadata object populated with location information
+        from the JSON metadata and run information.
 
+        Returns
+        -------
+        Station
+            Station metadata object with location coordinates and run metadata.
         """
         station = Station(id=self.station_id)
         station.location.latitude = self.header.metadata.latitude
@@ -155,30 +373,51 @@ class ATSS(MetronixFileNameMetadata):
         return station
 
     @property
-    def survey_metadata(self):
+    def survey_metadata(self) -> Survey:
         """
+        Generate survey-level metadata.
 
-        :return: survey metadata
-        :rtype: :class:`mt_metadata.timeseries.Survey`
+        Creates a Survey metadata object that includes station metadata
+        and overall time period information.
 
+        Returns
+        -------
+        Survey
+            Survey metadata object containing station information.
         """
         survey = Survey(id=self.survey_id)
         survey.add_station(self.station_metadata)
         survey.update_time_period()
         return survey
 
-    def to_channel_ts(self, fn=None):
+    def to_channel_ts(self, fn: str | Path | None = None) -> ChannelTS:
         """
+        Create a ChannelTS object from ATSS data.
 
-        Create mth5.timeseries.ChannelTS object
+        Converts the ATSS time series data and metadata into a ChannelTS
+        object suitable for use with MTH5 workflows.
 
-        Can be slow because of pandas.datetimelike.py creating a time index.
+        Parameters
+        ----------
+        fn : str or Path, optional
+            Path to ATSS file. If None, uses current file path.
 
-        :param fn: DESCRIPTION, defaults to None
-        :type fn: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Returns
+        -------
+        ChannelTS
+            Time series object with data, metadata, and response information.
 
+        Warnings
+        --------
+        Can be slow due to pandas datetime index creation for large datasets.
+        A warning is logged if the metadata JSON file is missing.
+
+        Examples
+        --------
+        >>> atss = ATSS('data/station001.atss')
+        >>> channel_ts = atss.to_channel_ts()
+        >>> print(channel_ts.sample_rate)
+        1024.0
         """
         if not self.has_metadata_file():
             logger.warning(
@@ -196,11 +435,36 @@ class ATSS(MetronixFileNameMetadata):
         )
 
 
-def read_atss(fn, calibration_fn=None, logger_file_handler=None):
+def read_atss(
+    fn: str | Path,
+    calibration_fn: str | Path | None = None,
+    logger_file_handler: Any = None,
+) -> ChannelTS:
     """
-    generic tool to read z3d file
-    """
+    Generic tool to read ATSS file and return ChannelTS object.
 
+    Convenience function that creates an ATSS object and converts it
+    to a ChannelTS in a single call.
+
+    Parameters
+    ----------
+    fn : str or Path
+        Path to the ATSS file to read.
+    calibration_fn : str or Path, optional
+        Path to calibration file (currently unused).
+    logger_file_handler : Any, optional
+        Logger file handler (currently unused).
+
+    Returns
+    -------
+    ChannelTS
+        Time series object with data and metadata from the ATSS file.
+
+    Examples
+    --------
+    >>> channel_ts = read_atss('data/station001.atss')
+    >>> print(f"Loaded {len(channel_ts.ts)} samples")
+    """
     atss_obj = ATSS(fn)
     return atss_obj.to_channel_ts()
 
