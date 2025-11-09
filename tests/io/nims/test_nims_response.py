@@ -30,14 +30,14 @@ class TestNIMSResponse(unittest.TestCase):
             pc_hp = self.response.get_electric_high_pass(hardware="pc")
             pc_dict = OrderedDict(
                 [
-                    ("calibration_date", "1980-01-01"),
                     ("gain", 1.0),
                     ("name", "nims_1_pole_butterworth"),
                     ("normalization_factor", 1.0),
                     ("poles", np.array([-3.333333e-05 + 0.0j])),
+                    ("sequence_number", 0),
                     ("type", "zpk"),
-                    ("units_in", "V"),
-                    ("units_out", "V"),
+                    ("units_in", "Volt"),
+                    ("units_out", "Volt"),
                     ("zeros", np.array([0.0 + 0.0j])),
                 ]
             )
@@ -48,14 +48,14 @@ class TestNIMSResponse(unittest.TestCase):
             hp_hp = self.response.get_electric_high_pass(hardware="HP")
             hp_dict = OrderedDict(
                 [
-                    ("calibration_date", "1980-01-01"),
                     ("gain", 1.0),
                     ("name", "nims_1_pole_butterworth"),
                     ("normalization_factor", 1.0),
                     ("poles", np.array([-1.66667e-04 + 0.0j])),
+                    ("sequence_number", 0),
                     ("type", "zpk"),
-                    ("units_in", "V"),
-                    ("units_out", "V"),
+                    ("units_in", "Volt"),
+                    ("units_out", "Volt"),
                     ("zeros", np.array([0.0 + 0.0j])),
                 ]
             )
@@ -66,12 +66,12 @@ class TestNIMSResponse(unittest.TestCase):
         dp = self.response.dipole_filter(100)
         dp_dict = OrderedDict(
             [
-                ("calibration_date", "1980-01-01"),
                 ("gain", 100.0),
                 ("name", "dipole_100.00"),
+                ("sequence_number", 0),
                 ("type", "coefficient"),
-                ("units_in", "V/m"),
-                ("units_out", "V"),
+                ("units_in", "Volt per meter"),
+                ("units_out", "Volt"),
             ]
         )
 
@@ -84,10 +84,10 @@ class TestNIMSResponse(unittest.TestCase):
             self.assertEqual(6, len(ex.filters_list))
 
         with self.subTest("units_in"):
-            self.assertEqual("mV/km", ex.units_in)
+            self.assertEqual("milliVolt per kilometer", ex.units_in)
 
         with self.subTest("units_out"):
-            self.assertEqual("count", ex.units_out)
+            self.assertEqual("digital counts", ex.units_out)
 
     def test_get_magnetic_filters(self):
         hx = self.response.get_channel_response("hx")
@@ -96,10 +96,10 @@ class TestNIMSResponse(unittest.TestCase):
             self.assertEqual(3, len(hx.filters_list))
 
         with self.subTest("units_in"):
-            self.assertEqual("nT", hx.units_in)
+            self.assertEqual("nanoTesla", hx.units_in)
 
         with self.subTest("units_out"):
-            self.assertEqual("count", hx.units_out)
+            self.assertEqual("digital counts", hx.units_out)
 
 
 # =============================================================================
