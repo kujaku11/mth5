@@ -39,9 +39,9 @@ class TestPHXCalibrations(unittest.TestCase):
             for lp in [10000, 1000, 100, 10]:
                 fap = self.c.get_filter(ch, lp)
                 with self.subTest(f"{ch}_{lp}_units_in"):
-                    self.assertEqual(fap.units_in, "V")
+                    self.assertEqual(fap.units_in, "Volt")
                 with self.subTest(f"{ch}_{lp}_units_out"):
-                    self.assertEqual(fap.units_out, "V")
+                    self.assertEqual(fap.units_out, "Volt")
 
                 with self.subTest(f"{ch}_{lp}_name"):
                     self.assertEqual(
@@ -50,7 +50,7 @@ class TestPHXCalibrations(unittest.TestCase):
                     )
 
                 with self.subTest(f"{ch}_{lp}_calibration_date"):
-                    self.assertEqual(self.c.calibration_date.date, fap.calibration_date)
+                    self.assertEqual(self.c.calibration_date, fap.calibration_date)
 
                 with self.subTest(f"{ch}_{lp}_frequencies"):
                     self.assertTrue((fap.frequencies != 0).all())

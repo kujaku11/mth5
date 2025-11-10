@@ -8,13 +8,22 @@ Created on Fri May  6 12:39:34 2022
 # =============================================================================
 # Imports
 # =============================================================================
+from __future__ import annotations
+
 from pathlib import Path
+from typing import Any, TYPE_CHECKING
 
 from .readers import DecimatedContinuousReader, DecimatedSegmentedReader, NativeReader
 
 
+if TYPE_CHECKING:
+    from mth5.timeseries import ChannelTS
+
+
 # =============================================================================
-READERS = {
+# Dictionary for reader types
+# =============================================================================
+READERS: dict[str, type] = {
     "bin": NativeReader,
     "td_24k": DecimatedSegmentedReader,
     "td_150": DecimatedContinuousReader,
@@ -22,16 +31,31 @@ READERS = {
 }
 
 
-def open_phoenix(file_name, **kwargs):
+def open_phoenix(
+    file_name: str | Path, **kwargs: Any
+) -> DecimatedContinuousReader | DecimatedSegmentedReader | NativeReader:
     """
-    Will put the file into the appropriate container
+    Open a Phoenix Geophysics data file in the appropriate container.
 
+    Parameters
+    ----------
+    file_name : str or pathlib.Path
+        Full path to the Phoenix data file to open.
+    **kwargs : Any
+        Additional keyword arguments to pass to the reader constructor.
 
-    :param file_name: full path to file to open
-    :type file_name: string or :class:`pathlib.Path`
-    :return: The appropriate container based on file extension
-    :rtype:
+    Returns
+    -------
+    reader : DecimatedContinuousReader | DecimatedSegmentedReader | NativeReader
+        The appropriate Phoenix reader container based on file extension:
+        - .bin files: NativeReader
+        - .td_24k files: DecimatedSegmentedReader
+        - .td_150/.td_30 files: DecimatedContinuousReader
 
+    Raises
+    ------
+    KeyError
+        If the file extension is not supported by any Phoenix reader.
     """
     file_name = Path(file_name)
     extension = file_name.suffix[1:]
@@ -41,16 +65,36 @@ def open_phoenix(file_name, **kwargs):
     return READERS[extension](file_name, **kwargs)
 
 
-def read_phoenix(file_name, **kwargs):
+def read_phoenix(file_name: str | Path, **kwargs: Any) -> ChannelTS:
     """
-    Read a Phoenix file into a ChannelTS object
-    :param file_name: DESCRIPTION
-    :type file_name: TYPE
-    :return: DESCRIPTION
-    :rtype: TYPE
+    Read a Phoenix Geophysics data file into a ChannelTS object.
 
+    Parameters
+    ----------
+    file_name : str or pathlib.Path
+        Path to the Phoenix data file to read.
+    **kwargs : Any
+        Additional keyword arguments. May include:
+
+        - rxcal_fn : str or pathlib.Path, optional
+            Path to receiver calibration file.
+        - scal_fn : str or pathlib.Path, optional
+            Path to sensor calibration file.
+        - Other arguments passed to the Phoenix reader constructor.
+
+    Returns
+    -------
+    channel_ts : ChannelTS
+        Time series data object containing the Phoenix file data
+        with calibration applied if calibration files were provided.
+
+    Raises
+    ------
+    KeyError
+        If the file extension is not supported by any Phoenix reader.
+    ValueError
+        If the file cannot be read or converted to ChannelTS format.
     """
-
     phnx_obj = open_phoenix(file_name, **kwargs)
     rxcal_fn = kwargs.pop("rxcal_fn", None)
     scal_fn = kwargs.pop("scal_fn", None)
