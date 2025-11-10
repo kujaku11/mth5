@@ -46,7 +46,7 @@ class NIMSHeader(object):
         2         <-- S ELECTRODE ID
         4         <-- W ELECTRODE ID
         Cu        <-- GROUND ELECTRODE INFO
-        GPS INFO: 01/10/19 16:16:42 1616.7000 3443.6088 115.7350 W 946.6
+        GPS INFO: 26/09/19 18:29:29 34.7268 N 115.7350 W 939.8
         OPERATOR: KP
         COMMENT: N/S CRS: .95/.96 DCV: 3.5 ACV:1
         E/W CRS: .85/.86 DCV: 1.5 ACV: 1
@@ -75,7 +75,7 @@ class NIMSHeader(object):
         self.w_electrode_id = None
         self.ground_electrode_info = None
         self.header_gps_stamp = None
-        self.header_gps_longitude = None
+        self.header_gps_latitude = None
         self.header_gps_longitude = None
         self.header_gps_elevation = None
         self.operator = None
@@ -182,7 +182,9 @@ class NIMSHeader(object):
             elif "gps" in key:
                 gps_list = value.split()
                 self.header_gps_stamp = MTime(
-                    dateutil.parser.parse(" ".join(gps_list[0:2]), dayfirst=True)
+                    time_stamp=dateutil.parser.parse(
+                        " ".join(gps_list[0:2]), dayfirst=True
+                    ).isoformat()
                 )
                 self.header_gps_latitude = self._get_latitude(gps_list[2], gps_list[3])
                 self.header_gps_longitude = self._get_longitude(
