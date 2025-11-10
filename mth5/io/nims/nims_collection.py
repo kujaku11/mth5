@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-LEMI 424 Collection
-====================
+NIMS Collection
+===============
 
-Collection of TXT files combined into runs
+Collection of NIMS binary files combined into runs for magnetotelluric data processing.
 
 Created on Wed Aug 31 10:32:44 2022
 
@@ -13,6 +13,11 @@ Created on Wed Aug 31 10:32:44 2022
 # =============================================================================
 # Imports
 # =============================================================================
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any, Union
+
 import pandas as pd
 
 from mth5.io.collection import Collection
@@ -24,50 +29,109 @@ from mth5.io.nims import NIMS
 
 class NIMSCollection(Collection):
     """
-    Collection of NIMS files into runs.
+    Collection of NIMS binary files into runs.
 
+    This class provides functionality for organizing and processing multiple NIMS
+    binary files into a structured format for magnetotelluric data analysis.
 
-    .. code-block:: python
+    Parameters
+    ----------
+    file_path : str or Path, optional
+        Path to the directory containing NIMS binary files.
+    **kwargs : dict
+        Additional keyword arguments passed to the parent Collection class.
 
-        >>> from mth5.io.nims import LEMICollection
-        >>> lc = NIMSCollection(r"/path/to/single/lemi/station")
-        >>> lc.station_id = "mt001"
-        >>> lc.survey_id = "test_survey"
-        >>> run_dict = lc.get_runs(1)
+    Attributes
+    ----------
+    file_ext : str
+        File extension for NIMS binary files ('bin').
+    survey_id : str
+        Survey identifier, defaults to 'mt'.
 
+    Examples
+    --------
+    >>> from mth5.io.nims import NIMSCollection
+    >>> nc = NIMSCollection(r"/path/to/nims/station")
+    >>> nc.survey_id = "mt001"
+    >>> df = nc.to_dataframe()
 
+    See Also
+    --------
+    mth5.io.collection.Collection : Base collection class
+    mth5.io.nims.NIMS : NIMS file reader
     """
 
-    def __init__(self, file_path=None, **kwargs):
-        super().__init__(file_path=file_path, **kwargs)
-        self.file_ext = "bin"
-
-        self.survey_id = "mt"
-
-    def to_dataframe(self, sample_rates=[1], run_name_zeros=2, calibration_path=None):
+    def __init__(self, file_path: Union[str, Path, None] = None, **kwargs: Any) -> None:
         """
-        Create a data frame of each TXT file in a given directory.
+        Initialize NIMSCollection instance.
 
-        .. note:: This assumes the given directory contains a single station
+        Parameters
+        ----------
+        file_path : str or Path, optional
+            Path to the directory containing NIMS binary files.
+        **kwargs : dict
+            Additional keyword arguments passed to the parent Collection class.
+        """
+        super().__init__(file_path=file_path, **kwargs)
+        self.file_ext: str = "bin"
+        self.survey_id: str = "mt"
 
-        :param sample_rates: sample rate to get, will always be 1 for LEMI data
-         defaults to [1]
-        :type sample_rates: int or list, optional
-        :param run_name_zeros: number of zeros to assing to the run name,
-         defaults to 4
-        :type run_name_zeros: int, optional
-        :param calibration_path: path to calibration files, defaults to None
-        :type calibration_path: string or Path, optional
-        :return: Dataframe with information of each TXT file in the given
-         directory.
-        :rtype: :class:`pandas.DataFrame`
+    def to_dataframe(
+        self,
+        sample_rates: Union[int, list[int]] = [1],
+        run_name_zeros: int = 2,
+        calibration_path: Union[str, Path, None] = None,
+    ) -> pd.DataFrame:
+        """
+        Create a DataFrame of each NIMS binary file in the collection directory.
 
-        :Example:
+        This method processes all NIMS binary files in the specified directory and
+        extracts metadata to create a structured DataFrame suitable for further
+        magnetotelluric data processing.
 
-            >>> from mth5.io.lemi import LEMICollection
-            >>> lc = LEMICollection("/path/to/single/lemi/station")
-            >>> lemi_df = lc.to_dataframe()
+        Parameters
+        ----------
+        sample_rates : int or list of int, default [1]
+            Sample rates to include in the DataFrame. Note that for NIMS data,
+            this parameter is present for interface consistency but all files
+            will be processed regardless of their sample rate.
+        run_name_zeros : int, default 2
+            Number of zeros to use when formatting run names in the output.
+        calibration_path : str or Path, optional
+            Path to calibration files. Currently not used in NIMS processing
+            but included for interface consistency.
 
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame containing metadata for each NIMS file with columns:
+            - survey : Survey identifier
+            - station : Station name from NIMS file
+            - run : Run identifier from NIMS file
+            - start : Start time in ISO format
+            - end : End time in ISO format
+            - fn : File path
+            - sample_rate : Sampling rate
+            - file_size : File size in bytes
+            - n_samples : Number of samples
+            - dipole : Electric dipole lengths [Ex, Ey]
+            - channel_id : Channel identifier (always 1)
+            - sequence_number : Sequence number (always 0)
+            - component : Comma-separated component list
+            - instrument_id : Instrument identifier (always 'NIMS')
+
+        Notes
+        -----
+        This method assumes the directory contains files from a single station.
+        Each NIMS file is read to extract header information including timing,
+        station identification, and measurement parameters.
+
+        Examples
+        --------
+        >>> from mth5.io.nims import NIMSCollection
+        >>> nc = NIMSCollection("/path/to/nims/station")
+        >>> df = nc.to_dataframe(run_name_zeros=3)
+        >>> print(df[['station', 'run', 'start', 'sample_rate']])
         """
 
         entries = []
@@ -99,19 +163,46 @@ class NIMSCollection(Collection):
 
         return df
 
-    def assign_run_names(self, df, zeros=2):
+    def assign_run_names(self, df: pd.DataFrame, zeros: int = 2) -> pd.DataFrame:
         """
-        Assign run names assuming a row represents single station
+        Assign standardized run names to DataFrame entries by station.
 
-        Run names are assigned as sr{sample_rate}_{run_number:0{zeros}}.
+        This method assigns run names following the pattern 'sr{sample_rate}_{run_number}'
+        where run_number is zero-padded according to the zeros parameter. Run names
+        are assigned sequentially within each station, ordered by start time.
 
-        :param df: Dataframe with the appropriate columns
-        :type df: :class:`pandas.DataFrame`
-        :param zeros: number of zeros in run name, defaults to 4
-        :type zeros: int, optional
-        :return: Dataframe with run names
-        :rtype: :class:`pandas.DataFrame`
+        Parameters
+        ----------
+        df : pd.DataFrame
+            DataFrame containing NIMS file metadata with required columns:
+            'station', 'start', 'run', 'sample_rate'. The DataFrame will be
+            modified in-place.
+        zeros : int, default 2
+            Number of zeros to use for zero-padding the run number in the
+            generated run names (e.g., zeros=2 gives '01', '02', etc.).
 
+        Returns
+        -------
+        pd.DataFrame
+            The input DataFrame with updated 'run' and 'sequence_number' columns.
+            Run names follow the format 'sr{sample_rate}_{run_number:0{zeros}}'.
+
+        Notes
+        -----
+        - Existing run names (non-None values) are preserved
+        - Files are processed in chronological order within each station
+        - Sequence numbers are assigned incrementally starting from 1
+        - Only files with None run names receive new assignments
+
+        Examples
+        --------
+        >>> import pandas as pd
+        >>> from mth5.io.nims import NIMSCollection
+        >>> # Assuming df has columns: station, start, run, sample_rate
+        >>> nc = NIMSCollection()
+        >>> df_updated = nc.assign_run_names(df, zeros=3)
+        >>> print(df_updated['run'].tolist())
+        ['sr8_001', 'sr8_002', 'sr1_001']
         """
 
         for station in df.station.unique():
