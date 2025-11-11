@@ -8,6 +8,11 @@ Created on Wed Aug 24 11:35:59 2022
 # =============================================================================
 # Imports
 # =============================================================================
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any, BinaryIO, Dict, Optional, Union
+
 import numpy as np
 from loguru import logger
 
@@ -15,120 +20,205 @@ from loguru import logger
 # =============================================================================
 class Z3DMetadata:
     """
-    Will read in the metadata information of a Z3D file and make each metadata
-    entry an attirbute.The attributes are left in capitalization of the Z3D
-    file.
+    Read metadata information from a Z3D file and make each metadata entry an attribute.
 
-    :param fn: full path to Z3D file
-    :type fn: string or :class:`pathlib.Path`
-    :param fid:  file object ex. open(Z3Dfile, 'rb')
-    :type fid: file
+    The attributes are left in capitalization of the Z3D file format.
 
-    ======================== ==================================================
-    Attributes               Definition
-    ======================== ==================================================
-    _header_length           length of header in bits (512)
-    _metadata_length         length of metadata blocks (512)
-    _schedule_metadata_len   length of schedule meta data (512)
-    board_cal                board calibration np.ndarray()
-    cal_ant                  antenna calibration
-    cal_board                board calibration
-    cal_ver                  calibration version
-    ch_azimuth               channel azimuth
-    ch_cmp                   channel component
-    ch_length                channel length (or # of coil)
-    ch_number                channel number on the ZEN board
-    ch_xyz1                  channel xyz location (not sure)
-    ch_xyz2                  channel xyz location (not sure)
-    coil_cal                 coil calibration np.ndarray (freq, amp, phase)
-    fid                      file object
-    find_metadata            boolean of finding metadata
-    fn                       full path to Z3D file
-    gdp_operator             operater of the survey
-    gdp_progver              program version
-    job_by                   job preformed by
-    job_for                  job for
-    job_name                 job name
-    job_number               job number
-    m_tell                   location in the file where the last metadata
-                             block was found.
-    rx_aspace                electrode spacing
-    rx_sspace                not sure
-    rx_xazimuth              x azimuth of electrode
-    rx_xyz0                  not sure
-    rx_yazimuth              y azimuth of electrode
-    survey_type              type of survey
-    unit_length              length units (m)
-    ======================== ==================================================
+    Parameters
+    ----------
+    fn : str or pathlib.Path, optional
+        Full path to Z3D file.
+    fid : BinaryIO, optional
+        File object (e.g., open(Z3Dfile, 'rb')).
+    **kwargs : dict
+        Additional keyword arguments to set as attributes.
 
-    :Example:
+    Attributes
+    ----------
+    _header_length : int
+        Length of header in bits (512).
+    _metadata_length : int
+        Length of metadata blocks (512).
+    _schedule_metadata_len : int
+        Length of schedule meta data (512).
+    board_cal : np.ndarray or None
+        Board calibration array with frequency, rate, amplitude, phase.
+    cal_ant : str or None
+        Antenna calibration information.
+    cal_board : dict or None
+        Board calibration dictionary.
+    cal_ver : str or None
+        Calibration version.
+    ch_azimuth : str or None
+        Channel azimuth.
+    ch_cmp : str or None
+        Channel component.
+    ch_length : str or None
+        Channel length (or number of coils).
+    ch_number : str or None
+        Channel number on the ZEN board.
+    ch_xyz1 : str or None
+        Channel xyz location.
+    ch_xyz2 : str or None
+        Channel xyz location.
+    ch_cres : str or None
+        Channel resistance.
+    coil_cal : np.ndarray or None
+        Coil calibration array (frequency, amplitude, phase).
+    fid : BinaryIO or None
+        File object.
+    find_metadata : bool
+        Boolean flag for finding metadata.
+    fn : str or pathlib.Path or None
+        Full path to Z3D file.
+    gdp_operator : str or None
+        Operator of the survey.
+    gdp_progver : str or None
+        Program version.
+    gdp_temp : str or None
+        GDP temperature.
+    gdp_volt : str or None
+        GDP voltage.
+    job_by : str or None
+        Job performed by.
+    job_for : str or None
+        Job for.
+    job_name : str or None
+        Job name.
+    job_number : str or None
+        Job number.
+    line_name : str or None
+        Survey line name.
+    m_tell : int
+        Location in the file where the last metadata block was found.
+    notes : str or None
+        Additional notes from metadata.
+    rx_aspace : str or None
+        Electrode spacing.
+    rx_sspace : str or None
+        Receiver spacing.
+    rx_xazimuth : str or None
+        X azimuth of electrode.
+    rx_xyz0 : str or None
+        Receiver xyz coordinates.
+    rx_yazimuth : str or None
+        Y azimuth of electrode.
+    rx_zpositive : str
+        Z positive direction (default 'down').
+    station : str or None
+        Station name.
+    survey_type : str or None
+        Type of survey.
+    unit_length : str or None
+        Length units (m).
+    count : int
+        Counter for metadata blocks read.
 
-        >>> import mtpy.usgs.zen as zen
-        >>> Z3Dfn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
-        >>> header_obj = zen.Z3DMetadata()
-        >>> header_obj.read_metadata()
+    Examples
+    --------
+    >>> from mth5.io.zen import Z3DMetadata
+    >>> Z3Dfn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
+    >>> header_obj = Z3DMetadata(fn=Z3Dfn)
+    >>> header_obj.read_metadata()
 
     """
 
-    def __init__(self, fn=None, fid=None, **kwargs):
+    def __init__(
+        self,
+        fn: Optional[Union[str, Path]] = None,
+        fid: Optional[BinaryIO] = None,
+        **kwargs: Any,
+    ) -> None:
         self.logger = logger
-        self.fn = fn
-        self.fid = fid
-        self.find_metadata = True
-        self.board_cal = None
-        self.coil_cal = None
-        self._metadata_length = 512
-        self._header_length = 512
-        self._schedule_metadata_len = 512
-        self.m_tell = 0
+        self.fn: Optional[Union[str, Path]] = fn
+        self.fid: Optional[BinaryIO] = fid
+        self.find_metadata: bool = True
+        self.board_cal: Optional[Union[list, np.ndarray]] = None
+        self.coil_cal: Optional[Union[list, np.ndarray]] = None
+        self._metadata_length: int = 512
+        self._header_length: int = 512
+        self._schedule_metadata_len: int = 512
+        self.m_tell: int = 0
 
-        self.cal_ant = None
-        self.cal_board = None
-        self.cal_ver = None
-        self.ch_azimuth = None
-        self.ch_cmp = None
-        self.ch_length = None
-        self.ch_number = None
-        self.ch_xyz1 = None
-        self.ch_xyz2 = None
-        self.ch_cres = None
-        self.gdp_operator = None
-        self.gdp_progver = None
-        self.gdp_volt = None
-        self.gdp_temp = None
-        self.job_by = None
-        self.job_for = None
-        self.job_name = None
-        self.job_number = None
-        self.rx_aspace = None
-        self.rx_sspace = None
-        self.rx_xazimuth = None
-        self.rx_xyz0 = None
-        self.rx_yazimuth = None
-        self.rx_zpositive = "down"
-        self.line_name = None
-        self.survey_type = None
-        self.unit_length = None
-        self.station = None
-        self.count = 0
-        self.notes = None
+        self.cal_ant: Optional[str] = None
+        self.cal_board: Optional[Dict[str, Any]] = None
+        self.cal_ver: Optional[str] = None
+        self.ch_azimuth: Optional[str] = None
+        self.ch_cmp: Optional[str] = None
+        self.ch_length: Optional[str] = None
+        self.ch_number: Optional[str] = None
+        self.ch_xyz1: Optional[str] = None
+        self.ch_xyz2: Optional[str] = None
+        self.ch_cres: Optional[str] = None
+        self.gdp_operator: Optional[str] = None
+        self.gdp_progver: Optional[str] = None
+        self.gdp_volt: Optional[str] = None
+        self.gdp_temp: Optional[str] = None
+        self.job_by: Optional[str] = None
+        self.job_for: Optional[str] = None
+        self.job_name: Optional[str] = None
+        self.job_number: Optional[str] = None
+        self.rx_aspace: Optional[str] = None
+        self.rx_sspace: Optional[str] = None
+        self.rx_xazimuth: Optional[str] = None
+        self.rx_xyz0: Optional[str] = None
+        self.rx_yazimuth: Optional[str] = None
+        self.rx_zpositive: str = "down"
+        self.line_name: Optional[str] = None
+        self.survey_type: Optional[str] = None
+        self.unit_length: Optional[str] = None
+        self.station: Optional[str] = None
+        self.count: int = 0
+        self.notes: Optional[str] = None
 
         for key in kwargs:
             setattr(self, key, kwargs[key])
 
-    def read_metadata(self, fn=None, fid=None):
+    def read_metadata(
+        self, fn: Optional[Union[str, Path]] = None, fid: Optional[BinaryIO] = None
+    ) -> None:
         """
-        read meta data
+        Read metadata from Z3D file.
 
-        :param string fn: full path to file, optional if already initialized.
-        :param file fid: open file object, optional if already initialized.
+        Parses the metadata blocks in a Z3D file and populates the object's
+        attributes with the extracted values. Also reads calibration data
+        for both board and coil calibrations.
+
+        Parameters
+        ----------
+        fn : str or pathlib.Path, optional
+            Full path to file. If None, uses the instance's fn attribute.
+        fid : BinaryIO, optional
+            Open file object. If None, uses the instance's fid attribute or
+            opens the file specified by fn.
+
+        Raises
+        ------
+        UnicodeDecodeError
+            If metadata blocks cannot be decoded as text.
+
+        Notes
+        -----
+        This method reads metadata blocks sequentially from the Z3D file,
+        starting after the header and schedule metadata sections. It processes:
+
+        - Standard metadata records with key=value pairs
+        - Board calibration data (cal.brd format)
+        - Coil calibration data (cal.ant format)
+        - Calibration data blocks (caldata format)
+
+        The method automatically determines the station name from available
+        metadata fields in the following priority:
+        1. line_name + rx_xyz0 (first coordinate)
+        2. rx_stn
+        3. ch_stn
         """
         if fn is not None:
             self.fn = fn
         if fid is not None:
             self.fid = fid
         if self.fn is None and self.fid is None:
-            self.logger.waringn("No Z3D file to read")
+            self.logger.warning("No Z3D file to read")
         elif self.fn is None:
             if self.fid is not None:
                 self.fid.seek(self._header_length + self._schedule_metadata_len)
@@ -279,12 +369,10 @@ class Z3DMetadata:
         if len(self.coil_cal) > 0:
             a = np.array(self.coil_cal)
             a = a.reshape((int(a.size / 3), 3))
-            self.coil_cal = np.core.records.fromrecords(
-                a, names="frequency, amplitude, phase"
-            )
+            self.coil_cal = np.rec.fromrecords(a, names="frequency, amplitude, phase")
         if len(self.board_cal) > 0:
             try:
-                self.board_cal = np.core.records.fromrecords(
+                self.board_cal = np.rec.fromrecords(
                     self.board_cal, names="frequency, rate, amplitude, phase"
                 )
             except ValueError:
