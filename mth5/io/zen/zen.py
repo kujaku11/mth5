@@ -24,6 +24,7 @@ Updated August 2020 (JP)
 import datetime
 import struct
 from pathlib import Path
+from typing import Any, BinaryIO, List, Optional, Union
 
 import numpy as np
 from loguru import logger
@@ -45,78 +46,72 @@ from mth5.timeseries import ChannelTS
 # ==============================================================================
 class Z3D:
     """
-    Deals with the raw Z3D files output by zen.
-    Arguments
-    -----------
-        **fn** : string
-                 full path to .Z3D file to be read in
-    ======================== ================================ =================
-    Attributes               Description                      Default Value
-    ======================== ================================ =================
-    _block_len               length of data block to read in  65536
-                             as chunks faster reading
-    _counts_to_mv_conversion conversion factor to convert     9.53674316406e-10
-                             counts to mv
-    _gps_bytes               number of bytes for a gps stamp  16
-    _gps_dtype               data type for a gps stamp        see below
-    _gps_epoch               starting date of GPS time
-                             format is a tuple                (1980, 1, 6, 0,
-                                                               0, 0, -1, -1, 0)
-    _gps_f0                  first gps flag in raw binary
-    _gps_f1                  second gps flag in raw binary
-    _gps_flag_0              first gps flag as an int32       2147483647
-    _gps_flag_1              second gps flag as an int32      -2147483648
-    _gps_stamp_length        bit length of gps stamp          64
-    _leap_seconds            leap seconds, difference         16
-                             between UTC time and GPS
-                             time.  GPS time is ahead
-                             by this much
-    _week_len                week length in seconds           604800
-    df                       sampling rate of the data        256
-    fn                       Z3D file name                    None
-    gps_flag                 full gps flag                    _gps_f0+_gps_f1
-    gps_stamps               np.ndarray of gps stamps         None
-    header                   Z3DHeader object                 Z3DHeader
-    metadata                 Z3DMetadata                      Z3DMetadata
-    schedule                 Z3DSchedule                      Z3DSchedule
-    time_series              np.ndarra(len_data)              None
-    units                    units in which the data is in    counts
-    zen_schedule             time when zen was set to         None
-                             run
-    ======================== ================================ =================
+    A class for reading and processing Z3D files output by Zen data loggers.
 
-    * gps_dtype is formated as np.dtype([('flag0', np.int32),
-                                        ('flag1', np.int32),
-                                        ('time', np.int32),
-                                        ('lat', np.float64),
-                                        ('lon', np.float64),
-                                        ('num_sat', np.int32),
-                                        ('gps_sens', np.int32),
-                                        ('temperature', np.float32),
-                                        ('voltage', np.float32),
-                                        ('num_fpga', np.int32),
-                                        ('num_adc', np.int32),
-                                        ('pps_count', np.int32),
-                                        ('dac_tune', np.int32),
-                                        ('block_len', np.int32)])
+    This class handles the parsing of Z3D binary files which contain GPS-stamped
+    time series data from magnetotelluric measurements. It provides methods for
+    reading file headers, metadata, schedule information, and time series data,
+    as well as converting between different units and formats.
 
+    Parameters
+    ----------
+    fn : str or Path, optional
+        Full path to the .Z3D file to be read. Default is None.
+    **kwargs : dict
+        Additional keyword arguments including:
+        - stamp_len : int, default 64
+            GPS stamp length in bits
 
-    :Example:
+    Attributes
+    ----------
+    fn : Path or None
+        Path to the Z3D file
+    calibration_fn : str or None
+        Path to calibration file
+    header : Z3DHeader
+        Header information object
+    schedule : Z3DSchedule
+        Schedule information object
+    metadata : Z3DMetadata
+        Metadata information object
+    gps_stamps : numpy.ndarray or None
+        Array of GPS time stamps
+    time_series : numpy.ndarray or None
+        Time series data array
+    sample_rate : float or None
+        Data sampling rate in Hz
+    units : str
+        Data units, default 'counts'
 
-        >>> import mtpy.usgs.zen as zen
-        >>> zt = zen.Zen3D(r"/home/mt/mt00/mt00_20150522_080000_256_EX.Z3D")
-        >>> zt.read_z3d()
-        >>> ------- Reading /home/mt/mt00/mt00_20150522_080000_256_EX.Z3D -----
-            --> Reading data took: 0.322 seconds
-            Scheduled time was 2015-05-22,08:00:16 (GPS time)
-            1st good stamp was 2015-05-22,08:00:18 (GPS time)
-            difference of 2.00 seconds
-            found 6418 GPS time stamps
-            found 1642752 data points
-        >>> zt.plot_time_series()
+    Notes
+    -----
+    GPS data type is formatted as::
+
+        numpy.dtype([('flag0', numpy.int32),
+                     ('flag1', numpy.int32),
+                     ('time', numpy.int32),
+                     ('lat', numpy.float64),
+                     ('lon', numpy.float64),
+                     ('num_sat', numpy.int32),
+                     ('gps_sens', numpy.int32),
+                     ('temperature', numpy.float32),
+                     ('voltage', numpy.float32),
+                     ('num_fpga', numpy.int32),
+                     ('num_adc', numpy.int32),
+                     ('pps_count', numpy.int32),
+                     ('dac_tune', numpy.int32),
+                     ('block_len', numpy.int32)])
+
+    Examples
+    --------
+    >>> from mth5.io.zen import Z3D
+    >>> z3d = Z3D(r"/path/to/data/station_20150522_080000_256_EX.Z3D")
+    >>> z3d.read_z3d()
+    >>> print(f"Found {z3d.gps_stamps.shape[0]} GPS time stamps")
+    >>> print(f"Found {z3d.time_series.size} data points")
     """
 
-    def __init__(self, fn=None, **kwargs):
+    def __init__(self, fn: Optional[Union[str, Path]] = None, **kwargs: Any) -> None:
         self.logger = logger
         self.fn = fn
         self.calibration_fn = None
@@ -175,24 +170,62 @@ class Z3D:
             setattr(self, key, value)
 
     @property
-    def fn(self):
+    def fn(self) -> Optional[Path]:
+        """
+        Get the Z3D file path.
+
+        Returns
+        -------
+        Path or None
+            Path to the Z3D file, or None if not set.
+        """
         return self._fn
 
     @fn.setter
-    def fn(self, fn):
+    def fn(self, fn: Optional[Union[str, Path]]) -> None:
+        """
+        Set the Z3D file path.
+
+        Parameters
+        ----------
+        fn : str, Path, or None
+            Path to the Z3D file to set.
+        """
         if fn is not None:
             self._fn = Path(fn)
         else:
             self._fn = None
 
     @property
-    def file_size(self):
+    def file_size(self) -> int:
+        """
+        Get the size of the Z3D file in bytes.
+
+        Returns
+        -------
+        int
+            File size in bytes, or 0 if no file is set.
+        """
         if self.fn is not None:
             return self.fn.stat().st_size
         return 0
 
     @property
-    def n_samples(self):
+    def n_samples(self) -> int:
+        """
+        Get the number of data samples in the file.
+
+        Returns
+        -------
+        int
+            Number of data samples. Calculated from file size if time_series
+            is not loaded, otherwise returns the actual array size.
+
+        Notes
+        -----
+        Calculation assumes 4 bytes per sample and accounts for metadata blocks.
+        If sample_rate is available, adds buffer for GPS stamps.
+        """
         if self.time_series is None:
             if self.sample_rate:
                 return int(
@@ -206,23 +239,45 @@ class Z3D:
             return self.time_series.size
 
     @property
-    def station(self):
+    def station(self) -> Optional[str]:
         """
-        station name
+        Get the station name.
+
+        Returns
+        -------
+        str or None
+            Station identifier name.
         """
         return self.metadata.station
 
     @station.setter
-    def station(self, station):
+    def station(self, station: str) -> None:
         """
-        station name
+        Set the station name.
+
+        Parameters
+        ----------
+        station : str
+            Station identifier name to set.
         """
         self.metadata.station = station
 
     @property
-    def dipole_length(self):
+    def dipole_length(self) -> float:
         """
-        dipole length
+        Get the dipole length for electric field measurements.
+
+        Returns
+        -------
+        float
+            Dipole length in meters. Calculated from electrode positions
+            if not directly specified in metadata. Returns 0 for magnetic
+            channels or if positions are not available.
+
+        Notes
+        -----
+        Length is calculated from xyz coordinates using Euclidean distance
+        formula when position data is available in metadata.
         """
         length = 0
         if self.metadata.ch_length is not None:
@@ -248,9 +303,14 @@ class Z3D:
         return length
 
     @property
-    def azimuth(self):
+    def azimuth(self) -> Optional[float]:
         """
-        azimuth of instrument setup
+        Get the azimuth of instrument setup.
+
+        Returns
+        -------
+        float or None
+            Azimuth angle in degrees from north, or None if not available.
         """
         if self.metadata.ch_azimuth is not None:
             return float(self.metadata.ch_azimuth)
@@ -260,50 +320,88 @@ class Z3D:
             return None
 
     @property
-    def component(self):
+    def component(self) -> str:
         """
-        channel
+        Get the channel component identifier.
+
+        Returns
+        -------
+        str
+            Channel component name in lowercase (e.g., 'ex', 'hy', 'hz').
         """
         return self.metadata.ch_cmp.lower()
 
     @property
-    def latitude(self):
+    def latitude(self) -> Optional[float]:
         """
-        latitude in decimal degrees
+        Get the latitude in decimal degrees.
+
+        Returns
+        -------
+        float or None
+            Latitude coordinate in decimal degrees, or None if not available.
         """
         return self.header.lat
 
     @property
-    def longitude(self):
+    def longitude(self) -> Optional[float]:
         """
-        longitude in decimal degrees
+        Get the longitude in decimal degrees.
+
+        Returns
+        -------
+        float or None
+            Longitude coordinate in decimal degrees, or None if not available.
         """
         return self.header.long
 
     @property
-    def elevation(self):
+    def elevation(self) -> Optional[float]:
         """
-        elevation in meters
+        Get the elevation in meters.
+
+        Returns
+        -------
+        float or None
+            Elevation above sea level in meters, or None if not available.
         """
         return self.header.alt
 
     @property
-    def sample_rate(self):
+    def sample_rate(self) -> Optional[float]:
         """
-        sampling rate
+        Get the sampling rate in Hz.
+
+        Returns
+        -------
+        float or None
+            Data sampling rate in samples per second, or None if not available.
         """
         return self.header.ad_rate
 
     @sample_rate.setter
-    def sample_rate(self, sampling_rate):
+    def sample_rate(self, sampling_rate: Optional[float]) -> None:
         """
-        sampling rate
+        Set the sampling rate.
+
+        Parameters
+        ----------
+        sampling_rate : float or None
+            Sampling rate in Hz to set.
         """
         if sampling_rate is not None:
             self.header.ad_rate = float(sampling_rate)
 
     @property
-    def start(self):
+    def start(self) -> MTime:
+        """
+        Get the start time of the data.
+
+        Returns
+        -------
+        MTime
+            Start time from GPS stamps if available, otherwise scheduled time.
+        """
         if self.gps_stamps is not None:
             return self.get_UTC_date_time(
                 self.header.gpsweek, self.gps_stamps["time"][0]
@@ -311,7 +409,16 @@ class Z3D:
         return self.zen_schedule
 
     @property
-    def end(self):
+    def end(self) -> Union[MTime, float]:
+        """
+        Get the end time of the data.
+
+        Returns
+        -------
+        MTime or float
+            End time from GPS stamps if available, otherwise calculated
+            from start time and number of samples.
+        """
         if self.gps_stamps is not None:
             return self.get_UTC_date_time(
                 self.header.gpsweek, self.gps_stamps["time"][-1]
@@ -319,19 +426,33 @@ class Z3D:
         return self.start + (self.n_samples / self.sample_rate)
 
     @property
-    def zen_schedule(self):
+    def zen_schedule(self) -> MTime:
         """
-        zen schedule data and time
-        """
+        Get the zen schedule date and time.
 
+        Returns
+        -------
+        MTime
+            Scheduled start time from header or schedule object.
+        """
         if self.header.old_version is True:
             return MTime(time_stamp=self.header.schedule)
         return self.schedule.initial_start
 
     @zen_schedule.setter
-    def zen_schedule(self, schedule_dt):
+    def zen_schedule(self, schedule_dt: Union[MTime, str, datetime.datetime]) -> None:
         """
-        on setting set schedule datetime
+        Set the zen schedule datetime.
+
+        Parameters
+        ----------
+        schedule_dt : MTime, str, or datetime.datetime
+            Schedule datetime to set.
+
+        Raises
+        ------
+        TypeError
+            If schedule_dt is not a valid time type.
         """
         if not isinstance(schedule_dt, MTime):
             schedule_dt = MTime(time_stamp=schedule_dt)
@@ -339,9 +460,14 @@ class Z3D:
         self.schedule.initial_start = schedule_dt
 
     @property
-    def coil_number(self):
+    def coil_number(self) -> Optional[str]:
         """
-        coil number
+        Get the coil number identifier.
+
+        Returns
+        -------
+        str or None
+            Coil antenna number identifier, or None if not available.
         """
         if self.metadata.cal_ant is not None:
             return self.metadata.cal_ant
@@ -351,7 +477,16 @@ class Z3D:
             return None
 
     @property
-    def channel_number(self):
+    def channel_number(self) -> int:
+        """
+        Get the channel number.
+
+        Returns
+        -------
+        int
+            Channel number identifier. Maps component names to standard
+            channel numbers or uses metadata channel number.
+        """
         if self.metadata.ch_number:
             ch_num = int(float(self.metadata.ch_number))
             if ch_num > 6:
@@ -600,13 +735,19 @@ class Z3D:
             dipole.comments = "convert to electric field"
         return dipole
 
-    def _get_gps_stamp_type(self, old_version=False):
+    def _get_gps_stamp_type(self, old_version: bool = False) -> None:
         """
-        get the correct stamp type.
-        Older versions the stamp length was 36 bits
-        New versions have a 64 bit stamp
-        """
+        Set the correct GPS stamp data type.
 
+        Configure GPS stamp structure for different Z3D file versions.
+        Older versions use 36-bit stamps while newer versions use 64-bit stamps.
+
+        Parameters
+        ----------
+        old_version : bool, default False
+            If True, configure for older Z3D file format with 36-bit stamps.
+            If False, use newer 64-bit stamp format.
+        """
         if old_version is True:
             self._gps_dtype = np.dtype(
                 [
@@ -628,35 +769,36 @@ class Z3D:
             return
 
     # ======================================
-    def _read_header(self, fn=None, fid=None):
+    def _read_header(
+        self, fn: Optional[Union[str, Path]] = None, fid: Optional[BinaryIO] = None
+    ) -> None:
         """
-        read header information from Z3D file
-        Arguments
-        ---------------
-            **fn** : string
-                     full path to Z3D file to read
-            **fid** : file object
-                      if the file is open give the file id object
-        Outputs:
+        Read header information from Z3D file.
+
+        Parameters
         ----------
-            * fills the Zen3ZD.header object's attributes
+        fn : str, Path, or None, optional
+            Full path to Z3D file to read. If None, uses current fn attribute.
+        fid : BinaryIO or None, optional
+            Open file object. If provided, reads from this instead of opening fn.
 
-        Example with just a file name
-        ------------
-            >>> import mtpy.usgs.zen as zen
-            >>> fn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
-            >>> Z3Dobj = zen.Zen3D()
-            >>> Z3Dobj.read_header(fn)
+        Notes
+        -----
+        Populates the header object's attributes and handles version-specific
+        logic for older Z3D file formats.
 
-        Example with file object
-        ------------
-            >>> import mtpy.usgs.zen as zen
-            >>> fn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
-            >>> Z3Dfid = open(fn, 'rb')
-            >>> Z3Dobj = zen.Zen3D()
-            >>> Z3Dobj.read_header(fid=Z3Dfid)
+        Examples
+        --------
+        Read header from file path:
+
+        >>> z3d = Z3D()
+        >>> z3d._read_header("/path/to/file.Z3D")
+
+        Read header from open file object:
+
+        >>> with open("/path/to/file.Z3D", 'rb') as f:
+        ...     z3d._read_header(fid=f)
         """
-
         if fn is not None:
             self.fn = fn
         self.header.read_header(fn=self.fn, fid=fid)
@@ -665,35 +807,36 @@ class Z3D:
                 self.header.box_number = "6666"
 
     # ======================================
-    def _read_schedule(self, fn=None, fid=None):
+    def _read_schedule(
+        self, fn: Optional[Union[str, Path]] = None, fid: Optional[BinaryIO] = None
+    ) -> None:
         """
-        read schedule information from Z3D file
-        Arguments
-        ---------------
-            **fn** : string
-                     full path to Z3D file to read
-            **fid** : file object
-                      if the file is open give the file id object
-        Outputs:
+        Read schedule information from Z3D file.
+
+        Parameters
         ----------
-            * fills the Zen3ZD.schedule object's attributes
+        fn : str, Path, or None, optional
+            Full path to Z3D file to read. If None, uses current fn attribute.
+        fid : BinaryIO or None, optional
+            Open file object. If provided, reads from this instead of opening fn.
 
-        Example with just a file name
-        ------------
-            >>> import mtpy.usgs.zen as zen
-            >>> fn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
-            >>> Z3Dobj = zen.Zen3D()
-            >>> Z3Dobj.read_schedule(fn)
+        Notes
+        -----
+        Populates the schedule object's attributes. For older file versions,
+        extracts schedule information from the header.
 
-        Example with file object
-        ------------
-            >>> import mtpy.usgs.zen as zen
-            >>> fn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
-            >>> Z3Dfid = open(fn, 'rb')
-            >>> Z3Dobj = zen.Zen3D()
-            >>> Z3Dobj.read_schedule(fid=Z3Dfid)
+        Examples
+        --------
+        Read schedule from file path:
+
+        >>> z3d = Z3D()
+        >>> z3d._read_schedule("/path/to/file.Z3D")
+
+        Read schedule from open file object:
+
+        >>> with open("/path/to/file.Z3D", 'rb') as f:
+        ...     z3d._read_schedule(fid=f)
         """
-
         if fn is not None:
             self.fn = fn
         self.schedule.read_schedule(fn=self.fn, fid=fid)
@@ -703,35 +846,36 @@ class Z3D:
             )
 
     # ======================================
-    def _read_metadata(self, fn=None, fid=None):
+    def _read_metadata(
+        self, fn: Optional[Union[str, Path]] = None, fid: Optional[BinaryIO] = None
+    ) -> None:
         """
-        read header information from Z3D file
-        Arguments
-        ---------------
-            **fn** : string
-                     full path to Z3D file to read
-            **fid** : file object
-                      if the file is open give the file id object
-        Outputs:
+        Read metadata information from Z3D file.
+
+        Parameters
         ----------
-            * fills the Zen3ZD.metadata object's attributes
+        fn : str, Path, or None, optional
+            Full path to Z3D file to read. If None, uses current fn attribute.
+        fid : BinaryIO or None, optional
+            Open file object. If provided, reads from this instead of opening fn.
 
-        Example with just a file name
-        ------------
-            >>> import mtpy.usgs.zen as zen
-            >>> fn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
-            >>> Z3Dobj = zen.Zen3D()
-            >>> Z3Dobj.read_metadata(fn)
+        Notes
+        -----
+        Populates the metadata object's attributes. For older file versions,
+        sets schedule metadata length to 0.
 
-        Example with file object
-        ------------
-            >>> import mtpy.usgs.zen as zen
-            >>> fn = r"/home/mt/mt01/mt01_20150522_080000_256_EX.Z3D"
-            >>> Z3Dfid = open(fn, 'rb')
-            >>> Z3Dobj = zen.Zen3D()
-            >>> Z3Dobj.read_metadata(fid=Z3Dfid)
+        Examples
+        --------
+        Read metadata from file path:
+
+        >>> z3d = Z3D()
+        >>> z3d._read_metadata("/path/to/file.Z3D")
+
+        Read metadata from open file object:
+
+        >>> with open("/path/to/file.Z3D", 'rb') as f:
+        ...     z3d._read_metadata(fid=f)
         """
-
         if fn is not None:
             self.fn = fn
         if self.header.old_version:
@@ -739,21 +883,45 @@ class Z3D:
         self.metadata.read_metadata(fn=self.fn, fid=fid)
 
     # =====================================
-    def read_all_info(self):
+    def read_all_info(self) -> None:
         """
-        Read header, schedule, and metadata
+        Read header, schedule, and metadata from Z3D file.
+
+        Convenience method to read all file information in one call.
+        Opens the file once and reads all sections sequentially.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the Z3D file does not exist.
         """
         with open(self.fn, "rb") as file_id:
             self._read_header(fid=file_id)
             self._read_schedule(fid=file_id)
             self._read_metadata(fid=file_id)
 
-    def _find_first_gps_flag(self, fid) -> int:
+    def _find_first_gps_flag(self, fid: BinaryIO) -> int:
         """
-        find the first GPS flag, shoud be at the end of the metadata, but sometimes
-        that is incorrect.  There is a few extra bytes of data.  So need to go
-        byte by byte to find the first GPS flag.
+        Find the first GPS flag in the file.
 
+        The GPS flag should be at the end of the metadata, but sometimes
+        there are extra bytes. This method searches byte by byte to find
+        the first GPS flag.
+
+        Parameters
+        ----------
+        fid : BinaryIO
+            File object positioned after metadata.
+
+        Returns
+        -------
+        int
+            File position of the first GPS flag.
+
+        Notes
+        -----
+        Includes failsafe to prevent infinite loops by limiting search
+        to first 15000 bytes.
         """
         find_gps_flag = False
         fid_tell = self.metadata.m_tell - 1
@@ -770,17 +938,23 @@ class Z3D:
             except AttributeError:
                 continue
 
-    def _read_raw_string(self, fid):
+    def _read_raw_string(self, fid: BinaryIO) -> np.ndarray:
         """
-        read raw sting into data
+        Read raw binary data from Z3D file into array.
 
-        :param fid: DESCRIPTION
-        :type fid: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Reads the entire data portion of the file as 32-bit integers,
+        starting from after the metadata section.
 
+        Parameters
+        ----------
+        fid : BinaryIO
+            Open file object positioned after metadata.
+
+        Returns
+        -------
+        numpy.ndarray
+            Array of int32 values containing both data and GPS stamps.
         """
-
         # move the read value to where the end of the metadata is
         self.metadata.m_tell = self._find_first_gps_flag(fid)
         fid.seek(self.metadata.m_tell)
@@ -805,9 +979,25 @@ class Z3D:
             data_count += test_str.size
         return data
 
-    def _unpack_data(self, data, gps_stamp_index):
-        """ """
+    def _unpack_data(self, data: np.ndarray, gps_stamp_index: List[int]) -> np.ndarray:
+        """
+        Unpack GPS stamps from raw data array and remove them.
 
+        Extract GPS timestamp information from the raw data array at
+        specified indices and zero out those positions.
+
+        Parameters
+        ----------
+        data : numpy.ndarray
+            Raw data array containing both time series and GPS stamps.
+        gps_stamp_index : list of int
+            Indices where GPS stamps are located in the data array.
+
+        Returns
+        -------
+        numpy.ndarray
+            Data array with GPS stamps extracted and positions zeroed.
+        """
         for ii, gps_find in enumerate(gps_stamp_index):
             try:
                 data[gps_find + 1]
@@ -835,35 +1025,37 @@ class Z3D:
         return data
 
     # ======================================
-    def read_z3d(self, z3d_fn=None):
+    def read_z3d(self, z3d_fn: Optional[Union[str, Path]] = None) -> None:
         """
-        read in z3d file and populate attributes accordingly
+        Read and parse Z3D file data.
 
-        1. Read in the entire file as chunks as np.int32.
+        Comprehensive method to read a Z3D file and populate all object attributes.
+        Performs the following operations:
 
-        2. Extract the gps stamps and convert accordingly. Check to make sure
-           gps time stamps are 1 second apart and incrementing as well as
-           checking the number of data points between stamps is the
-           same as the sampling rate.
+        1. Read file as chunks of 32-bit integers
+        2. Extract and validate GPS stamps
+        3. Check GPS time stamp consistency (1 second intervals)
+        4. Verify data block lengths match sampling rate
+        5. Convert GPS time to seconds relative to GPS week
+        6. Skip initial buffered data (first 2 seconds)
+        7. Populate time series array with non-zero data
 
-        3. Converts gps_stamps['time'] to seconds relative to header.gps_week
-            Note we skip the first two gps stamps because there is something
-            wrong with the data there due to some type of buffering.
-            Therefore the first GPS time is when the time series starts, so you
-            will notice that gps_stamps[0]['block_len'] = 0, this is because there
-            is nothing previous to this time stamp and so the 'block_len' measures
-            backwards from the corresponding time index.
+        Parameters
+        ----------
+        z3d_fn : str, Path, or None, optional
+            Path to Z3D file to read. If None, uses current fn attribute.
 
-        4. Put the data chunks into Pandas data frame that is indexed by time
+        Raises
+        ------
+        ZenGPSError
+            If data is too short or GPS timing issues prevent parsing.
 
-        :Example:
-
-        >>> from mth5.io import zen
-        >>> z_obj = zen.Z3D(r"home/mt_data/zen/mt001.z3d")
-        >>> z_obj.read_z3d()
-
+        Examples
+        --------
+        >>> z3d = Z3D(r"/path/to/data/station_20150522_080000_256_EX.Z3D")
+        >>> z3d.read_z3d()
+        >>> print(f"Read {z3d.time_series.size} data points")
         """
-
         if z3d_fn is not None:
             self.fn = z3d_fn
         self.logger.debug(f"Reading {self.fn}")
@@ -922,16 +1114,28 @@ class Z3D:
         self.logger.debug(f"Reading data took: {read_time:.3f} seconds")
 
     # =================================================
-    def get_gps_stamp_index(self, ts_data, old_version=False):
+    def get_gps_stamp_index(
+        self, ts_data: np.ndarray, old_version: bool = False
+    ) -> List[int]:
         """
-        locate the time stamps in a given time series.
+        Locate GPS time stamp indices in time series data.
 
-        Looks for gps_flag_0 first, if the file is newer, then makes sure the
-        next value is gps_flag_1
+        Searches for GPS flag patterns in the data array. For newer files,
+        verifies that flag_1 follows flag_0.
 
-        :returns: list of gps stamps indicies
+        Parameters
+        ----------
+        ts_data : numpy.ndarray
+            Time series data array containing GPS stamps.
+        old_version : bool, default False
+            If True, only searches for single GPS flag (old format).
+            If False, validates flag pairs (new format).
+
+        Returns
+        -------
+        list of int
+            List of indices where GPS stamps are located.
         """
-
         # find the gps stamps
         gps_stamp_find = np.where(ts_data == self._gps_flag_0)[0]
 
@@ -944,13 +1148,20 @@ class Z3D:
         return gps_stamp_find
 
     # =================================================
-    def trim_data(self):
+    def trim_data(self) -> None:
         """
-        apparently need to skip the first 2 seconds of data because of
-        something to do with the SD buffer
+        Trim the first 2 seconds of data due to SD buffer issues.
 
-        This method will be deprecated after field testing
+        Remove the first 2 GPS stamps and corresponding time series data
+        to account for SD card buffering artifacts in early data.
 
+        Notes
+        -----
+        This method may be deprecated after field testing confirms
+        the buffer behavior is consistent across all instruments.
+
+        .. deprecated::
+           This method will be deprecated after field testing.
         """
         # the block length is the number of data points before the time stamp
         # therefore the first block length is 0.  The indexing in python
@@ -961,12 +1172,23 @@ class Z3D:
         self.time_series = self.time_series[ts_skip:]
 
     # =================================================
-    def check_start_time(self):
+    def check_start_time(self) -> MTime:
         """
-        check to make sure the scheduled start time is similar to
-        the first good gps stamp
-        """
+        Validate scheduled start time against first GPS stamp.
 
+        Compare the scheduled start time from the file header with
+        the actual first GPS timestamp to identify timing discrepancies.
+
+        Returns
+        -------
+        MTime
+            UTC start time from the first valid GPS stamp.
+
+        Notes
+        -----
+        Logs warnings if the difference exceeds the maximum allowed
+        time difference (default 20 seconds).
+        """
         # make sure the time is in gps time
         zen_start_utc = self.get_UTC_date_time(
             self.header.gpsweek, self.gps_stamps["time"][0]
@@ -986,10 +1208,18 @@ class Z3D:
         return zen_start_utc
 
     # ==================================================
-    def validate_gps_time(self):
+    def validate_gps_time(self) -> bool:
         """
-        make sure each time stamp is 1 second apart
+        Validate that GPS time stamps are consistently 1 second apart.
 
+        Returns
+        -------
+        bool
+            True if all GPS stamps are properly spaced, False otherwise.
+
+        Notes
+        -----
+        Logs debug information for any stamps that are more than 1 second apart.
         """
         # need to put the gps time into seconds
         t_diff = np.diff(self.gps_stamps["time"]) / 1024
@@ -1004,10 +1234,23 @@ class Z3D:
         return True
 
     # ===================================================
-    def validate_time_blocks(self):
+    def validate_time_blocks(self) -> bool:
         """
-        validate gps time stamps and make sure each block is the proper length
+        Validate GPS time stamps and verify data block lengths.
 
+        Check that each GPS stamp block contains the expected number
+        of data points (should equal sample rate for 1-second blocks).
+
+        Returns
+        -------
+        bool
+            True if all blocks have correct length, False otherwise.
+
+        Notes
+        -----
+        If bad blocks are detected near the beginning (index < 5),
+        this method will automatically skip those blocks and trim
+        the time series data accordingly.
         """
         # first check if the gps stamp blocks are of the correct length
         bad_blocks = np.where(self.gps_stamps["block_len"][1:] != self.header.ad_rate)[
@@ -1026,10 +1269,18 @@ class Z3D:
         return True
 
     # ==================================================
-    def convert_gps_time(self):
+    def convert_gps_time(self) -> None:
         """
-        convert gps time integer to relative seconds from gps_week
+        Convert GPS time integers to floating point seconds.
 
+        Transform GPS time from integer format to float and convert
+        from GPS time units to seconds relative to the GPS week.
+
+        Notes
+        -----
+        GPS time is initially stored as integers in units of 1/1024 seconds.
+        This method converts to floating point seconds and applies the
+        necessary scaling factors.
         """
         # need to convert gps_time to type float from int
         dt = self._gps_dtype.descr
@@ -1048,39 +1299,66 @@ class Z3D:
         self.gps_stamps["time"][:] = time_conv
 
     # ==================================================
-    def convert_counts_to_mv(self, data):
+    def convert_counts_to_mv(self, data: np.ndarray) -> np.ndarray:
         """
-        convert the time series from counts to millivolts
+        Convert time series data from counts to millivolts.
 
+        Parameters
+        ----------
+        data : numpy.ndarray
+            Time series data in digital counts.
+
+        Returns
+        -------
+        numpy.ndarray
+            Time series data converted to millivolts.
         """
-
         data *= self._counts_to_mv_conversion
         return data
 
-    # ==================================================
-    def convert_mv_to_counts(self, data):
+    def convert_mv_to_counts(self, data: np.ndarray) -> np.ndarray:
         """
-        convert millivolts to counts assuming no other scaling has been applied
+        Convert time series data from millivolts to counts.
 
+        Parameters
+        ----------
+        data : numpy.ndarray
+            Time series data in millivolts.
+
+        Returns
+        -------
+        numpy.ndarray
+            Time series data converted to digital counts.
+
+        Notes
+        -----
+        Assumes no other scaling has been applied to the data.
         """
-
         data /= self._counts_to_mv_conversion
         return data
 
     # ==================================================
-    def get_gps_time(self, gps_int, gps_week=0):
+    def get_gps_time(self, gps_int: int, gps_week: int = 0) -> tuple[float, int]:
         """
-        from the gps integer get the time in seconds.
+        Convert GPS integer timestamp to seconds and GPS week.
 
-        :param int gps_int: integer from the gps time stamp line
-        :param int gps_week: relative gps week, if the number of seconds is
-                            larger than a week then a week is subtracted from
-                            the seconds and computed from gps_week += 1
-        :returns: gps_time as number of seconds from the beginning of the relative
-                  gps week.
+        Parameters
+        ----------
+        gps_int : int
+            Integer from the GPS time stamp line.
+        gps_week : int, default 0
+            Relative GPS week. If seconds exceed one week, this is incremented.
 
+        Returns
+        -------
+        tuple[float, int]
+            GPS time in seconds from beginning of GPS week, and updated GPS week.
+
+        Notes
+        -----
+        GPS integers are in units of 1/1024 seconds. This method handles
+        week rollovers when seconds exceed 604800.
         """
-
         gps_seconds = gps_int / 1024.0
 
         gps_ms = (gps_seconds - np.floor(gps_int / 1024.0)) * (1.024)
@@ -1095,16 +1373,29 @@ class Z3D:
         return gps_time, gps_week
 
     # ==================================================
-    def get_UTC_date_time(self, gps_week, gps_time):
+    def get_UTC_date_time(self, gps_week: int, gps_time: float) -> MTime:
         """
-        get the actual date and time of measurement as UTC.
+        Convert GPS week and time to UTC datetime.
 
+        Calculate the actual UTC date and time of measurement from
+        GPS week number and seconds within that week.
 
-        :param int gps_week: integer value of gps_week that the data was collected
-        :param int gps_time: number of seconds from beginning of gps_week
+        Parameters
+        ----------
+        gps_week : int
+            GPS week number when data was collected.
+        gps_time : float
+            Number of seconds from beginning of GPS week.
 
-        :return: :class:`mth5.utils.mttime.MTime`
+        Returns
+        -------
+        MTime
+            UTC datetime object for the measurement time.
 
+        Notes
+        -----
+        Automatically handles GPS time rollover when seconds exceed
+        one week (604800 seconds).
         """
         # need to check to see if the time in seconds is more than a gps week
         # if it is add 1 to the gps week and reduce the gps time by a week
@@ -1121,11 +1412,18 @@ class Z3D:
         return MTime(time_stamp=utc_seconds, gps_time=True)
 
     # =================================================
-    def to_channelts(self):
+    def to_channelts(self) -> ChannelTS:
         """
-        fill time series object
-        """
+        Convert Z3D data to ChannelTS time series object.
 
+        Create a ChannelTS object populated with the time series data
+        and all associated metadata from the Z3D file.
+
+        Returns
+        -------
+        ChannelTS
+            Time series object with data, metadata, and instrument response.
+        """
         return ChannelTS(
             self.channel_metadata.type,
             data=self.time_series,
@@ -1140,28 +1438,47 @@ class Z3D:
 #  Error instances for Zen
 # ==============================================================================
 class ZenGPSError(Exception):
-    """
-    error for gps timing
-    """
+    """Exception raised for GPS timing errors in Z3D files."""
 
 
 class ZenSamplingRateError(Exception):
-    """
-    error for different sampling rates
-    """
+    """Exception raised for sampling rate inconsistencies."""
 
 
 class ZenInputFileError(Exception):
-    """
-    error for input files
-    """
+    """Exception raised for Z3D file input/reading errors."""
 
 
-def read_z3d(fn, calibration_fn=None, logger_file_handler=None):
+def read_z3d(
+    fn: Union[str, Path],
+    calibration_fn: Optional[Union[str, Path]] = None,
+    logger_file_handler: Optional[Any] = None,
+) -> Optional[ChannelTS]:
     """
-    generic tool to read z3d file
-    """
+    Read a Z3D file and return a ChannelTS object.
 
+    Convenience function to read Z3D files with error handling.
+
+    Parameters
+    ----------
+    fn : str or Path
+        Path to the Z3D file to read.
+    calibration_fn : str, Path, or None, optional
+        Path to calibration file. Default is None.
+    logger_file_handler : optional
+        Logger file handler to add to Z3D logger. Default is None.
+
+    Returns
+    -------
+    ChannelTS or None
+        Time series object if successful, None if GPS timing errors occur.
+
+    Examples
+    --------
+    >>> ts = read_z3d("/path/to/data/station_EX.Z3D")
+    >>> if ts is not None:
+    ...     print(f"Read {ts.n_samples} samples")
+    """
     z3d_obj = Z3D(fn, calibration_fn=calibration_fn)
     if logger_file_handler:
         z3d_obj.logger.addHandler(logger_file_handler)
