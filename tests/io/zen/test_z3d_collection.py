@@ -18,20 +18,27 @@ import pandas as pd
 from mth5.io.zen import Z3DCollection
 
 
+try:
+    import mth5_test_data
+
+    zen_path = mth5_test_data.get_test_data_path("zen")
+except ImportError:
+    raise unittest.SkipTest("mth5_test_data not available")
+
+
 # =============================================================================
 
 
-@unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local files")
+# @unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local files")
 class TestZ3DCollection(unittest.TestCase):
     @classmethod
-    def setUpClass(self):
-        self.zc = Z3DCollection(r"c:\Users\jpeacock\OneDrive - DOI\mt\example_z3d_data")
+    def setUpClass(cls) -> None:
+        cls.zc = Z3DCollection(zen_path)
 
-        self.df = self.zc.to_dataframe([256, 4096])
-        self.runs = self.zc.get_runs([256, 4096])
-
-        self.station = self.df.station.unique()[0]
-        self.maxDiff = None
+        cls.df = cls.zc.to_dataframe([256, 4096, 1024])
+        cls.runs = cls.zc.get_runs([256, 4096, 1024])
+        cls.station = cls.df.station.unique()[0]
+        cls.maxDiff = None
 
     def test_file_path(self):
         self.assertIsInstance(self.zc.file_path, Path)
