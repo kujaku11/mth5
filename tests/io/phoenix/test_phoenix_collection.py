@@ -18,29 +18,34 @@ import pandas as pd
 from mth5.io.phoenix import PhoenixCollection
 
 
+try:
+    import mth5_test_data
+
+    phx_data_path = mth5_test_data.get_test_data_path("phoenix") / "sample_data"
+    has_test_data = True
+except ImportError:
+    has_test_data = False
 # =============================================================================
 
 
-@unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local files")
+# @unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local files")
 class TestPhoenixCollection(unittest.TestCase):
     @classmethod
-    def setUpClass(self):
-        self.pc = PhoenixCollection(
-            r"c:\Users\jpeacock\OneDrive - DOI\mt\phoenix_example_data\10291_2019-09-06-015630"
-        )
+    def setUpClass(cls):
+        cls.pc = PhoenixCollection(phx_data_path / "10128_2021-04-27-032436")
 
-        self.df = self.pc.to_dataframe([150, 24000])
-        self.df = self.df.fillna(0)
-        self.runs = self.pc.get_runs([150, 24000])
+        cls.df = cls.pc.to_dataframe([150, 24000])
+        cls.df = cls.df.fillna(0)
+        cls.runs = cls.pc.get_runs([150, 24000])
 
-        self.station = self.df.station.unique()[0]
+        cls.station = cls.df.station.unique()[0]
 
     def test_file_path(self):
         self.assertIsInstance(self.pc.file_path, Path)
 
     def test_get_files(self):
         self.assertEqual(
-            992,
+            8,
             len(
                 [fn.name for fn in self.pc.get_files(self.pc._file_extension_map[150])]
             ),
@@ -53,7 +58,7 @@ class TestPhoenixCollection(unittest.TestCase):
         )
 
     def test_df_shape(self):
-        self.assertEqual(self.df.shape, (1984, 19))
+        self.assertEqual(self.df.shape, (12, 19))
 
     def test_df_types(self):
         self.df = self.pc._set_df_dtypes(self.df)
@@ -89,16 +94,16 @@ class TestPhoenixCollection(unittest.TestCase):
         run_names = self.df[self.df.sample_rate == 24000].run.unique()
 
         with self.subTest("len"):
-            self.assertEqual(124, run_names.size)
+            self.assertEqual(1, run_names.size)
 
         with self.subTest("first"):
             self.assertEqual(run_names[0], "sr24k_0001")
 
         with self.subTest("last"):
-            self.assertEqual(run_names[-1], "sr24k_0124")
+            self.assertEqual(run_names[-1], "sr24k_0001")
 
     def test_runs_keys(self):
-        self.assertEqual(125, len(self.runs[self.station].keys()))
+        self.assertEqual(2, len(self.runs[self.station].keys()))
 
     def test_run_dtype(self):
         self.assertIsInstance(self.runs, OrderedDict)
@@ -108,7 +113,7 @@ class TestPhoenixCollection(unittest.TestCase):
             rdf = rdf.fillna(0)
             with self.subTest(key):
                 self.assertTrue(
-                    (self.df[self.df.run == key].iloc[0:8].eq(rdf).all(axis=0).all())
+                    (self.df[self.df.run == key].iloc[0:4].eq(rdf).all(axis=0).all())
                 )
 
 
