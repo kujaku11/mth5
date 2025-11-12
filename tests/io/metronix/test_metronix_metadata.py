@@ -30,9 +30,9 @@ try:
         / "stations"
         / "saricam"
     )
-    has_data = True
+    has_data_import = True
 except ImportError:
-    has_data = False
+    has_data_import = False
 
 # =============================================================================
 
