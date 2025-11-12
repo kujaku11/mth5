@@ -114,6 +114,24 @@ class Z3D:
     """
 
     def __init__(self, fn: str | Path | None = None, **kwargs: Any) -> None:
+        """
+        Initialize Z3D file reader object.
+
+        Parameters
+        ----------
+        fn : str or Path, optional
+            Full path to the Z3D file to be processed, by default None
+        **kwargs : dict
+            Additional keyword arguments:
+            - stamp_len : int, default 64
+                GPS stamp length in bits
+
+        Examples
+        --------
+        >>> z3d = Z3D("/path/to/file.Z3D")
+        >>> z3d.read_z3d()
+        >>> print(z3d.station)
+        """
         self.logger = logger
         self.fn = fn
         self.calibration_fn = None
@@ -505,7 +523,33 @@ class Z3D:
 
     @property
     def channel_metadata(self):
-        """Channel metadata"""
+        """
+        Generate Channel metadata object from Z3D file information.
+
+        Creates either an Electric or Magnetic metadata object based on the
+        component type, populated with channel-specific parameters, sensor
+        information, and data statistics.
+
+        Returns
+        -------
+        Electric or Magnetic
+            Channel metadata object appropriate for the measurement type:
+            - Electric: includes dipole length, AC/DC statistics
+            - Magnetic: includes sensor details, field min/max values
+
+        Notes
+        -----
+        Electric channels (ex, ey) get dipole length and voltage statistics.
+        Magnetic channels (hx, hy, hz) get sensor information and field
+        strength statistics computed from the first and last seconds of data.
+
+        Examples
+        --------
+        >>> z3d = Z3D("/path/to/file.Z3D")
+        >>> z3d.read_z3d()
+        >>> ch_meta = z3d.channel_metadata
+        >>> print(f"Channel component: {ch_meta.component}")
+        """
 
         # fill the time series object
         if "e" in self.component:
@@ -562,7 +606,25 @@ class Z3D:
 
     @property
     def station_metadata(self):
-        """station metadta"""
+        """
+        Generate Station metadata object from Z3D file information.
+
+        Creates a Station metadata object populated with location and timing
+        information extracted from the Z3D file header and metadata.
+
+        Returns
+        -------
+        Station
+            Station metadata object with populated fields including station ID,
+            coordinates, elevation, time period, and operator information.
+
+        Examples
+        --------
+        >>> z3d = Z3D("/path/to/file.Z3D")
+        >>> z3d.read_all_info()
+        >>> station_meta = z3d.station_metadata
+        >>> print(station_meta.id)
+        """
 
         sm = Station()
         sm.id = self.station
@@ -578,7 +640,25 @@ class Z3D:
 
     @property
     def run_metadata(self):
-        """Run metadata"""
+        """
+        Generate Run metadata object from Z3D file information.
+
+        Creates a Run metadata object populated with data logger information,
+        timing details, and measurement parameters extracted from the Z3D file.
+
+        Returns
+        -------
+        Run
+            Run metadata object with populated fields including data logger
+            details, sample rate, time period, and data type information.
+
+        Examples
+        --------
+        >>> z3d = Z3D("/path/to/file.Z3D")
+        >>> z3d.read_all_info()
+        >>> run_meta = z3d.run_metadata
+        >>> print(f"Sample rate: {run_meta.sample_rate}")
+        """
         rm = Run()
         rm.data_logger.firmware.version = self.header.version
         rm.data_logger.id = self.header.data_logger
@@ -598,11 +678,29 @@ class Z3D:
     @property
     def counts2mv_filter(self):
         """
-        Create a counts2mv coefficient filter
+        Create a counts to millivolts coefficient filter.
 
-        .. note:: Needs to be 1/channel factor because we divided the
-         instrument response from the data.
+        Generate a coefficient filter for converting digital counts to millivolts
+        using the channel factor from the Z3D file header.
 
+        Returns
+        -------
+        CoefficientFilter
+            Filter object configured for counts to millivolts conversion with
+            gain set to the inverse of the channel factor.
+
+        Notes
+        -----
+        The gain is set to 1/channel_factor because this represents the
+        inverse operation when the instrument response has been divided
+        from the data during processing.
+
+        Examples
+        --------
+        >>> z3d = Z3D("/path/to/file.Z3D")
+        >>> z3d.read_all_info()
+        >>> filter_obj = z3d.counts2mv_filter
+        >>> print(f"Conversion gain: {filter_obj.gain}")
         """
 
         c2mv = CoefficientFilter()
@@ -712,6 +810,25 @@ class Z3D:
 
     @property
     def channel_response(self):
+        """
+        Generate comprehensive channel response for the Z3D data.
+
+        Creates a ChannelResponse object containing all applicable filters
+        including coil response, dipole conversion, and counts-to-millivolts
+        transformation.
+
+        Returns
+        -------
+        ChannelResponse
+            Channel response object with appropriate filter chain for
+            converting raw Z3D data to physical units.
+
+        Notes
+        -----
+        The filter chain includes:
+        - Coil response (for magnetic channels) or dipole filter (for electric)
+        - Counts to millivolts conversion filter
+        """
         filter_list = []
         # don't have a good handle on the zen response yet.
         # if self.zen_response:
@@ -726,6 +843,31 @@ class Z3D:
 
     @property
     def dipole_filter(self):
+        """
+        Create dipole conversion filter for electric field measurements.
+
+        Generate a coefficient filter for converting electric field measurements
+        from millivolts per kilometer to millivolts using the dipole length.
+
+        Returns
+        -------
+        CoefficientFilter or None
+            Filter object for dipole conversion if dipole_length is non-zero,
+            None otherwise.
+
+        Notes
+        -----
+        The gain is set to dipole_length/1000 to convert from mV/km to mV.
+        This represents the physical dipole length scaling for electric
+        field measurements.
+
+        Examples
+        --------
+        >>> z3d = Z3D("/path/to/electric.Z3D")
+        >>> z3d.read_all_info()
+        >>> if z3d.dipole_filter is not None:
+        ...     print(f"Dipole length: {z3d.dipole_length} m")
+        """
         dipole = None
         # needs to be the inverse for processing
         if self.dipole_length != 0:
