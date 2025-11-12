@@ -314,7 +314,7 @@ class PhoenixReceiverMetadata:
                     # Convert any numeric values to strings if mapping to string fields
                     if isinstance(value, (int, float)) and "id" in m_value:
                         value = str(value)
-                    c.set_attr_from_name(m_value, value)
+                    c.update_attribute(m_value, value)
                 except AttributeError:
                     self.logger.error(
                         f"recmeta.json does not contain attribute '{p_key}' for "
@@ -386,7 +386,7 @@ class PhoenixReceiverMetadata:
                     # Convert sensor.id from int to str if needed
                     if p_key == "serial" and isinstance(value, int):
                         value = str(value)
-                    c.set_attr_from_name(m_value, value)
+                    c.update_attribute(m_value, value)
                 except AttributeError:
                     self.logger.error(
                         f"recmeta.json does not contain attribute '{p_key}' for "
