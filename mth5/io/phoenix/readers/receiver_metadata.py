@@ -17,7 +17,9 @@ from types import SimpleNamespace
 from typing import Any, TYPE_CHECKING
 
 from loguru import logger
+from mt_metadata.common import Comment
 from mt_metadata.timeseries import Electric, Magnetic, Run, Station, Survey
+from mt_metadata.timeseries.filtered import AppliedFilter
 
 from .helpers import read_json_to_object
 
@@ -307,17 +309,40 @@ class PhoenixReceiverMetadata:
             for p_key, m_value in self._e_map.items():
                 if p_key == "ty":
                     m_value = "electric"
-                c.set_attr_from_name(m_value, getattr(ch, p_key))
+                try:
+                    value = getattr(ch, p_key)
+                    # Convert any numeric values to strings if mapping to string fields
+                    if isinstance(value, (int, float)) and "id" in m_value:
+                        value = str(value)
+                    c.set_attr_from_name(m_value, value)
+                except AttributeError:
+                    self.logger.error(
+                        f"recmeta.json does not contain attribute '{p_key}' for "
+                        f"channel '{ch.tag}'."
+                    )
             c.channel_number = self.get_ch_index(tag)
             c.dipole_length = ch.length1 + ch.length2
-            c.units = "volts"
+            c.units = "V"
             c.time_period.start = self.obj.start
             c.time_period.end = self.obj.stop
-            c.filter.name = [  # type: ignore[attr-defined]
-                f"{self.lp_filter_base_name}_{int(ch.lp)}hz_low_pass",
-                f"dipole_{int(c.dipole_length)}m",
+            c.filters = [
+                AppliedFilter(
+                    name=f"{self.lp_filter_base_name}_{int(ch.lp)}hz_low_pass",
+                    applied=True,
+                    stage=1,
+                    comments=Comment(
+                        author="", time_stamp="1980-01-01T00:00:00+00:00", value=""
+                    ),
+                ),
+                AppliedFilter(
+                    name=f"dipole_{int(c.dipole_length)}m",
+                    applied=True,
+                    stage=2,
+                    comments=Comment(
+                        author="", time_stamp="1980-01-01T00:00:00+00:00", value=""
+                    ),
+                ),
             ]
-            c.filter.applied = [True, True]  # type: ignore[attr-defined]
         return c
 
     def _to_magnetic_metadata(self, tag: str) -> Magnetic:
@@ -346,26 +371,49 @@ class PhoenixReceiverMetadata:
         if self.has_obj() and self.obj is not None:
             ch = self.obj.chconfig.chans[self.get_ch_index(tag)]
 
+            c.channel_number = self.get_ch_index(tag)
+            c.units = "V"
+            c.time_period.start = self.obj.start
+            c.time_period.end = self.obj.stop
+            # Set manufacturer before processing other sensor attributes
+            c.sensor.manufacturer = "Phoenix Geophysics"
+
             for p_key, m_value in self._h_map.items():
                 if p_key == "ty":
                     m_value = "magnetic"
                 try:
-                    c.set_attr_from_name(m_value, getattr(ch, p_key))
+                    value = getattr(ch, p_key)
+                    # Convert sensor.id from int to str if needed
+                    if p_key == "serial" and isinstance(value, int):
+                        value = str(value)
+                    c.set_attr_from_name(m_value, value)
                 except AttributeError:
                     self.logger.error(
                         f"recmeta.json does not contain attribute '{p_key}' for "
                         f"channel '{ch.tag}'."
                     )
-            c.channel_number = self.get_ch_index(tag)
-            c.sensor.manufacturer = "Phoenix Geophysics"
-            c.units = "volts"
-            c.time_period.start = self.obj.start
-            c.time_period.end = self.obj.stop
-            c.filter.name = [f"{self.lp_filter_base_name}_{int(ch.lp)}hz_low_pass"]  # type: ignore[attr-defined]
-            c.filter.applied = [True]  # type: ignore[attr-defined]
-            if c.sensor.id is not None:
-                c.filter.name.append(f"coil_{c.sensor.id}_response")  # type: ignore[attr-defined]
-                c.filter.applied.append(True)  # type: ignore[attr-defined]
+            c.filters = [
+                AppliedFilter(
+                    name=f"{self.lp_filter_base_name}_{int(ch.lp)}hz_low_pass",
+                    applied=True,
+                    stage=1,
+                    comments=Comment(
+                        author="", time_stamp="1980-01-01T00:00:00+00:00", value=""
+                    ),
+                )
+            ]
+            # Add coil response filter using the raw serial value
+            if hasattr(ch, "serial") and ch.serial is not None:
+                c.filters.append(
+                    AppliedFilter(
+                        name=f"coil_{ch.serial}_response",
+                        applied=True,
+                        stage=2,
+                        comments=Comment(
+                            author="", time_stamp="1980-01-01T00:00:00+00:00", value=""
+                        ),
+                    )
+                )
 
         return c
 
@@ -465,7 +513,7 @@ class PhoenixReceiverMetadata:
         """
         s = Station()  # type: ignore[call-arg]
         if self.has_obj() and self.obj is not None:
-            s.id = self.obj.layout.Station_Name
+            s.id = self.obj.layout.Station_Name.replace(" ", "_")
             s.comments = self.obj.layout.Notes
             try:
                 s.acquired_by.organization = self.obj.layout.Company_Name

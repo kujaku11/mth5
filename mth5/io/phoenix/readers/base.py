@@ -562,8 +562,8 @@ class TSReaderBase(Header):
             Filter that converts volts to millivolts with gain of 1000
         """
         conversion = CoefficientFilter()
-        conversion.units_out = "millivolts"
-        conversion.units_in = "volts"
+        conversion.units_out = "mV"
+        conversion.units_in = "V"
         conversion.name = "v_to_mv"
         conversion.gain = 1e3
 

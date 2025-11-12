@@ -1287,7 +1287,7 @@ class Header:
         sample_rate = self.sample_rate
         if sample_rate is not None:
             r.sample_rate = sample_rate
-            r.id = f"sr{sample_rate}_0001"
+            r.id = f"sr{int(sample_rate)}_0001"
 
         battery_voltage = self.battery_voltage_v
         if battery_voltage is not None:
