@@ -21,10 +21,12 @@ Updated August 2020 (JP)
 
 # ==============================================================================
 
+from __future__ import annotations
+
 import datetime
 import struct
 from pathlib import Path
-from typing import Any, BinaryIO, List, Optional, Union
+from typing import Any, BinaryIO
 
 import numpy as np
 from loguru import logger
@@ -111,7 +113,7 @@ class Z3D:
     >>> print(f"Found {z3d.time_series.size} data points")
     """
 
-    def __init__(self, fn: Optional[Union[str, Path]] = None, **kwargs: Any) -> None:
+    def __init__(self, fn: str | Path | None = None, **kwargs: Any) -> None:
         self.logger = logger
         self.fn = fn
         self.calibration_fn = None
@@ -170,7 +172,7 @@ class Z3D:
             setattr(self, key, value)
 
     @property
-    def fn(self) -> Optional[Path]:
+    def fn(self) -> Path | None:
         """
         Get the Z3D file path.
 
@@ -182,7 +184,7 @@ class Z3D:
         return self._fn
 
     @fn.setter
-    def fn(self, fn: Optional[Union[str, Path]]) -> None:
+    def fn(self, fn: str | Path | None) -> None:
         """
         Set the Z3D file path.
 
@@ -239,7 +241,7 @@ class Z3D:
             return self.time_series.size
 
     @property
-    def station(self) -> Optional[str]:
+    def station(self) -> str | None:
         """
         Get the station name.
 
@@ -303,7 +305,7 @@ class Z3D:
         return length
 
     @property
-    def azimuth(self) -> Optional[float]:
+    def azimuth(self) -> float | None:
         """
         Get the azimuth of instrument setup.
 
@@ -332,7 +334,7 @@ class Z3D:
         return self.metadata.ch_cmp.lower()
 
     @property
-    def latitude(self) -> Optional[float]:
+    def latitude(self) -> float | None:
         """
         Get the latitude in decimal degrees.
 
@@ -344,7 +346,7 @@ class Z3D:
         return self.header.lat
 
     @property
-    def longitude(self) -> Optional[float]:
+    def longitude(self) -> float | None:
         """
         Get the longitude in decimal degrees.
 
@@ -356,7 +358,7 @@ class Z3D:
         return self.header.long
 
     @property
-    def elevation(self) -> Optional[float]:
+    def elevation(self) -> float | None:
         """
         Get the elevation in meters.
 
@@ -368,7 +370,7 @@ class Z3D:
         return self.header.alt
 
     @property
-    def sample_rate(self) -> Optional[float]:
+    def sample_rate(self) -> float | None:
         """
         Get the sampling rate in Hz.
 
@@ -380,7 +382,7 @@ class Z3D:
         return self.header.ad_rate
 
     @sample_rate.setter
-    def sample_rate(self, sampling_rate: Optional[float]) -> None:
+    def sample_rate(self, sampling_rate: float | None) -> None:
         """
         Set the sampling rate.
 
@@ -409,7 +411,7 @@ class Z3D:
         return self.zen_schedule
 
     @property
-    def end(self) -> Union[MTime, float]:
+    def end(self) -> MTime | float:
         """
         Get the end time of the data.
 
@@ -440,7 +442,7 @@ class Z3D:
         return self.schedule.initial_start
 
     @zen_schedule.setter
-    def zen_schedule(self, schedule_dt: Union[MTime, str, datetime.datetime]) -> None:
+    def zen_schedule(self, schedule_dt: MTime | str | datetime.datetime) -> None:
         """
         Set the zen schedule datetime.
 
@@ -460,7 +462,7 @@ class Z3D:
         self.schedule.initial_start = schedule_dt
 
     @property
-    def coil_number(self) -> Optional[str]:
+    def coil_number(self) -> str | None:
         """
         Get the coil number identifier.
 
@@ -770,7 +772,7 @@ class Z3D:
 
     # ======================================
     def _read_header(
-        self, fn: Optional[Union[str, Path]] = None, fid: Optional[BinaryIO] = None
+        self, fn: str | Path | None = None, fid: BinaryIO | None = None
     ) -> None:
         """
         Read header information from Z3D file.
@@ -808,7 +810,7 @@ class Z3D:
 
     # ======================================
     def _read_schedule(
-        self, fn: Optional[Union[str, Path]] = None, fid: Optional[BinaryIO] = None
+        self, fn: str | Path | None = None, fid: BinaryIO | None = None
     ) -> None:
         """
         Read schedule information from Z3D file.
@@ -847,7 +849,7 @@ class Z3D:
 
     # ======================================
     def _read_metadata(
-        self, fn: Optional[Union[str, Path]] = None, fid: Optional[BinaryIO] = None
+        self, fn: str | Path | None = None, fid: BinaryIO | None = None
     ) -> None:
         """
         Read metadata information from Z3D file.
@@ -979,7 +981,7 @@ class Z3D:
             data_count += test_str.size
         return data
 
-    def _unpack_data(self, data: np.ndarray, gps_stamp_index: List[int]) -> np.ndarray:
+    def _unpack_data(self, data: np.ndarray, gps_stamp_index: list[int]) -> np.ndarray:
         """
         Unpack GPS stamps from raw data array and remove them.
 
@@ -1025,7 +1027,7 @@ class Z3D:
         return data
 
     # ======================================
-    def read_z3d(self, z3d_fn: Optional[Union[str, Path]] = None) -> None:
+    def read_z3d(self, z3d_fn: str | Path | None = None) -> None:
         """
         Read and parse Z3D file data.
 
@@ -1116,7 +1118,7 @@ class Z3D:
     # =================================================
     def get_gps_stamp_index(
         self, ts_data: np.ndarray, old_version: bool = False
-    ) -> List[int]:
+    ) -> list[int]:
         """
         Locate GPS time stamp indices in time series data.
 
@@ -1145,7 +1147,7 @@ class Z3D:
                 for gps_find in gps_stamp_find
                 if ts_data[gps_find + 1] == self._gps_flag_1
             ]
-        return gps_stamp_find
+        return list(gps_stamp_find)
 
     # =================================================
     def trim_data(self) -> None:
@@ -1450,10 +1452,10 @@ class ZenInputFileError(Exception):
 
 
 def read_z3d(
-    fn: Union[str, Path],
-    calibration_fn: Optional[Union[str, Path]] = None,
-    logger_file_handler: Optional[Any] = None,
-) -> Optional[ChannelTS]:
+    fn: str | Path,
+    calibration_fn: str | Path | None = None,
+    logger_file_handler: Any | None = None,
+) -> ChannelTS | None:
     """
     Read a Z3D file and return a ChannelTS object.
 
