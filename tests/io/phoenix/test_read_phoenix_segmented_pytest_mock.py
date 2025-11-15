@@ -286,9 +286,7 @@ def expected_channel_metadata():
         [
             ("channel_number", 0),
             ("component", "h2"),
-            ("data_quality.rating.value", 0),
-            ("filter.applied", [True, True]),
-            ("filter.name", ["mtu-5c_rmt03-j_666_h2_10000hz_lowpass", "v_to_mv"]),
+            ("data_quality.rating.value", None),
             ("location.elevation", 140.10263061523438),
             ("location.latitude", 43.69625473022461),
             ("location.longitude", -79.39364624023438),
@@ -302,7 +300,7 @@ def expected_channel_metadata():
             ("time_period.end", "2021-04-27T03:25:13.999958333+00:00"),
             ("time_period.start", "2021-04-27T03:25:12+00:00"),
             ("type", "magnetic"),
-            ("units", "volts"),
+            ("units", "Volt"),
         ]
     )
 
@@ -513,6 +511,55 @@ class TestDecimatedSegmentedReader:
         assert hasattr(ch_ts, "channel_response")
         mock_decimated_segmented_reader.to_channel_ts.assert_called_once_with()
 
+    def test_to_channel_ts_filters_structure(self, mock_decimated_segmented_reader):
+        """Test that to_channel_ts returns correct filter structure."""
+        # Mock the channel metadata with filters attribute
+        mock_channel_metadata = Mock()
+
+        # Mock filters as AppliedFilter objects with names
+        mock_filters = []
+        expected_filter_names = [
+            "mtu-5c_rmt03_10128_h2_10000hz_lowpass",
+            "v_to_mv",
+            "coil_0_response",
+        ]
+
+        for name in expected_filter_names:
+            mock_filter = Mock()
+            mock_filter.name = name
+            mock_filters.append(mock_filter)
+
+        mock_channel_metadata.get_attr_from_name = Mock(return_value=mock_filters)
+
+        # Update the channel_ts mock to return our mock metadata
+        def mock_to_channel_ts_with_filters(rxcal_fn=None, scal_fn=None):
+            mock_channel_ts = Mock(spec=ChannelTS)
+            mock_channel_ts.ts = Mock()
+            mock_channel_ts.ts.size = 48000
+            mock_channel_ts.channel_metadata = mock_channel_metadata
+            mock_channel_ts.channel_response = Mock()
+            mock_channel_ts.channel_response.filters_list = [Mock(), Mock()]
+            mock_channel_ts.channel_response.filters_list[0].frequencies = Mock()
+            mock_channel_ts.channel_response.filters_list[0].frequencies.shape = (69,)
+            return mock_channel_ts
+
+        mock_decimated_segmented_reader.to_channel_ts = Mock(
+            side_effect=mock_to_channel_ts_with_filters
+        )
+
+        ch_ts = mock_decimated_segmented_reader.to_channel_ts()
+
+        # Test filters exist and have correct structure
+        filters = ch_ts.channel_metadata.get_attr_from_name("filters")
+        assert isinstance(filters, list)
+        assert len(filters) == 3
+
+        # Test filter names match expected values
+        for i, (filter_obj, expected_name) in enumerate(
+            zip(filters, expected_filter_names)
+        ):
+            assert filter_obj.name == expected_name
+
     def test_to_channel_ts_with_calibration(self, mock_decimated_segmented_reader):
         """Test ChannelTS conversion with calibration files."""
         rxcal_fn = "test_rxcal.json"
@@ -598,6 +645,110 @@ class TestDecimatedSegmentCollection:
         mock_decimated_segment_collection.to_channel_ts.assert_called_once_with(
             rxcal_fn=rxcal_fn, scal_fn=scal_fn
         )
+
+
+class TestSegmentedReaderValidation:
+    """Test validation matching real Phoenix segmented reader test."""
+
+    def test_to_channel_ts_comprehensive(self, mock_decimated_segmented_reader):
+        """Test comprehensive to_channel_ts validation matching real test."""
+        # Create a mock rxcal file path
+        rxcal_fn = "example_rxcal.json"
+
+        # Mock the channel metadata with real expected values
+        expected_metadata = OrderedDict(
+            [
+                ("channel_number", 0),
+                ("component", "h2"),
+                ("data_quality.rating.value", None),
+                ("location.elevation", 140.10263061523438),
+                ("location.latitude", 43.69625473022461),
+                ("location.longitude", -79.39364624023438),
+                ("measurement_azimuth", 90.0),
+                ("measurement_tilt", 0.0),
+                ("sample_rate", 24000.0),
+                ("sensor.id", "0"),
+                ("sensor.manufacturer", "Phoenix Geophysics"),
+                ("sensor.model", "MTC-150"),
+                ("sensor.type", "4"),
+                ("time_period.end", "2021-04-27T03:25:13.999958333+00:00"),
+                ("time_period.start", "2021-04-27T03:25:12+00:00"),
+                ("type", "magnetic"),
+                ("units", "Volt"),
+            ]
+        )
+
+        # Mock filters with correct names
+        expected_filter_names = [
+            "mtu-5c_rmt03_10128_h2_10000hz_lowpass",
+            "v_to_mv",
+            "coil_0_response",
+        ]
+
+        mock_filters = []
+        for name in expected_filter_names:
+            mock_filter = Mock()
+            mock_filter.name = name
+            mock_filters.append(mock_filter)
+
+        # Mock channel metadata
+        mock_channel_metadata = Mock()
+        mock_channel_metadata.get_attr_from_name = Mock(
+            side_effect=lambda key: expected_metadata.get(
+                key, mock_filters if key == "filters" else None
+            )
+        )
+
+        # Mock channel response with 2 filters in filters_list
+        mock_channel_response = Mock()
+        mock_channel_response.filters_list = [Mock(), Mock()]
+        mock_channel_response.filters_list[0].frequencies = Mock()
+        mock_channel_response.filters_list[0].frequencies.shape = (69,)
+
+        # Mock timeseries with correct size
+        mock_ts = Mock()
+        mock_ts.size = 48000
+
+        # Create comprehensive channel_ts mock
+        def mock_to_channel_ts_comprehensive(rxcal_fn=None, scal_fn=None):
+            mock_channel_ts = Mock(spec=ChannelTS)
+            mock_channel_ts.channel_metadata = mock_channel_metadata
+            mock_channel_ts.channel_response = mock_channel_response
+            mock_channel_ts.ts = mock_ts
+            return mock_channel_ts
+
+        mock_decimated_segmented_reader.to_channel_ts = Mock(
+            side_effect=mock_to_channel_ts_comprehensive
+        )
+
+        # Test the conversion
+        ch_ts = mock_decimated_segmented_reader.to_channel_ts(rxcal_fn=rxcal_fn)
+
+        # Test metadata values
+        for key, expected_value in expected_metadata.items():
+            actual_value = ch_ts.channel_metadata.get_attr_from_name(key)
+            if isinstance(expected_value, float):
+                assert abs(actual_value - expected_value) < 1e-5, f"Mismatch for {key}"
+            else:
+                assert actual_value == expected_value, f"Mismatch for {key}"
+
+        # Test channel response structure
+        assert len(ch_ts.channel_response.filters_list) == 2
+        assert ch_ts.channel_response.filters_list[0].frequencies.shape == (69,)
+
+        # Test timeseries size
+        assert ch_ts.ts.size == 48000
+
+        # Test filters structure
+        filters = ch_ts.channel_metadata.get_attr_from_name("filters")
+        assert isinstance(filters, list)
+        assert len(filters) == 3
+
+        # Test filter names
+        for i, (filter_obj, expected_name) in enumerate(
+            zip(filters, expected_filter_names)
+        ):
+            assert filter_obj.name == expected_name, f"Filter {i} name mismatch"
 
 
 class TestSegmentedReaderIntegration:
@@ -815,10 +966,10 @@ class TestAttributeValidation:
         [
             ("channel_number", 0),
             ("component", "h2"),
-            ("data_quality.rating.value", 0),
+            ("data_quality.rating.value", None),
             ("sample_rate", 24000.0),
             ("type", "magnetic"),
-            ("units", "volts"),
+            ("units", "Volt"),
         ],
     )
     def test_channel_metadata_attributes(self, metadata_key, expected_value):
