@@ -590,9 +590,22 @@ class TSReaderBase(Header):
         ch_metadata = self.channel_metadata.copy()
 
         filter_list = []
+
+        # Check if a lowpass filter already exists in metadata
+        has_lowpass = any("lowpass" in f.name for f in ch_metadata.filters)
+
         if rxcal_fn is not None:
             rx_filter = self.get_receiver_lowpass_filter(rxcal_fn)
             if rx_filter is not None:
+                if has_lowpass:
+                    # Update the filter name to match existing metadata filter name
+                    existing_lowpass = next(
+                        f for f in ch_metadata.filters if "lowpass" in f.name
+                    )
+                    rx_filter.name = existing_lowpass.name
+                    self.logger.debug(
+                        f"Using existing lowpass filter name: {existing_lowpass.name}"
+                    )
                 filter_list.append(rx_filter)
 
         filter_list.append(self.get_v_to_mv_filter())
