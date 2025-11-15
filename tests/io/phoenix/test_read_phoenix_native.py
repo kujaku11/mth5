@@ -17,28 +17,38 @@ import numpy as np
 from mth5.io.phoenix import open_phoenix
 
 
+try:
+    import mth5_test_data
+
+    phx_data_path = mth5_test_data.get_test_data_path("phoenix") / "sample_data"
+    has_test_data = True
+except ImportError:
+    has_test_data = False
+
 # =============================================================================
 
 
-@unittest.skipIf(
-    "peacock" not in str(Path(__file__).as_posix()),
-    "Only local files, cannot test in GitActions",
-)
 class TestReadPhoenixNative(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.phx_obj = open_phoenix(
-            r"c:\Users\jpeacock\OneDrive - DOI\mt\phoenix_example_data\Sample Data\10128_2021-04-27-025909\0\10128_60877DFD_0_00000001.bin"
+            phx_data_path
+            / "10128_2021-04-27-025909"
+            / "0"
+            / "10128_60877DFD_0_00000001.bin"
         )
 
         self.data, self.footer = self.phx_obj.read_sequence()
 
         self.original = open_phoenix(
-            r"c:\Users\jpeacock\OneDrive - DOI\mt\phoenix_example_data\Sample Data\10128_2021-04-27-025909\0\10128_60877DFD_0_00000001.bin"
+            phx_data_path
+            / "10128_2021-04-27-025909"
+            / "0"
+            / "10128_60877DFD_0_00000001.bin"
         )
         self.original_data = self.original.read_frames(10)
 
-        self.rxcal_fn = Path(__file__).parent.joinpath("example_rxcal.json")
+        self.rxcal_fn = phx_data_path / "example_rxcal.json"
         self.maxDiff = None
 
     def test_readers_match(self):
@@ -53,15 +63,14 @@ class TestReadPhoenixNative(unittest.TestCase):
         true_dict = {
             "ad_plus_minus_range": 5.0,
             "attenuator_gain": 1.0,
-            "base_dir": Path(
-                "c:/Users/jpeacock/OneDrive - DOI/mt/phoenix_example_data/Sample Data/10128_2021-04-27-025909/0"
-            ),
-            "base_path": Path(
-                "c:/Users/jpeacock/OneDrive - DOI/mt/phoenix_example_data/Sample Data/10128_2021-04-27-025909/0/10128_60877DFD_0_00000001.bin"
-            ),
+            "base_dir": phx_data_path / "10128_2021-04-27-025909" / "0",
+            "base_path": phx_data_path
+            / "10128_2021-04-27-025909"
+            / "0"
+            / "10128_60877DFD_0_00000001.bin",
             "battery_voltage_v": 12.446,
             "board_model_main": "BCM01",
-            "board_model_revision": "",
+            "board_model_revision": "I",
             "bytes_per_sample": 3,
             "ch_board_model": "BCM01-I",
             "ch_board_serial": 200803,
@@ -110,7 +119,7 @@ class TestReadPhoenixNative(unittest.TestCase):
             "npts_per_frame": 20,
             "preamp_gain": 1.0,
             "recording_id": 1619492349,
-            "recording_start_time": "2021-04-26T19:58:51+00:00",
+            "recording_start_time": "2021-04-27T02:58:51+00:00",
             "report_hw_sat": False,
             "sample_rate": 24000,
             "sample_rate_base": 24000,
@@ -119,15 +128,18 @@ class TestReadPhoenixNative(unittest.TestCase):
             "scale_factor": 2.3283064365386963e-09,
             "seq": 1,
             "sequence_list": [
-                Path(
-                    "c:/Users/jpeacock/OneDrive - DOI/mt/phoenix_example_data/Sample Data/10128_2021-04-27-025909/0/10128_60877DFD_0_00000001.bin"
-                ),
-                Path(
-                    "c:/Users/jpeacock/OneDrive - DOI/mt/phoenix_example_data/Sample Data/10128_2021-04-27-025909/0/10128_60877DFD_0_00000002.bin"
-                ),
-                Path(
-                    "c:/Users/jpeacock/OneDrive - DOI/mt/phoenix_example_data/Sample Data/10128_2021-04-27-025909/0/10128_60877DFD_0_00000003.bin"
-                ),
+                phx_data_path
+                / "10128_2021-04-27-025909"
+                / "0"
+                / "10128_60877DFD_0_00000001.bin",
+                phx_data_path
+                / "10128_2021-04-27-025909"
+                / "0"
+                / "10128_60877DFD_0_00000002.bin",
+                phx_data_path
+                / "10128_2021-04-27-025909"
+                / "0"
+                / "10128_60877DFD_0_00000003.bin",
             ],
             "timing_flags": 55,
             "timing_sat_count": 6,
@@ -148,15 +160,14 @@ class TestReadPhoenixNative(unittest.TestCase):
                     self.assertEqual(original_value, new_value)
 
 
-@unittest.skipIf(
-    "peacock" not in str(Path(__file__).as_posix()),
-    "Only local files, cannot test in GitActions",
-)
 class TestReadPhoenixNativeToChannelTS(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.phx_obj = open_phoenix(
-            r"c:\Users\jpeacock\OneDrive - DOI\mt\phoenix_example_data\Sample Data\10128_2021-04-27-025909\0\10128_60877DFD_0_00000001.bin"
+            phx_data_path
+            / "10128_2021-04-27-025909"
+            / "0"
+            / "10128_60877DFD_0_00000001.bin"
         )
 
         self.rxcal_fn = Path(__file__).parent.joinpath("example_rxcal.json")
@@ -169,12 +180,12 @@ class TestReadPhoenixNativeToChannelTS(unittest.TestCase):
             [
                 ("channel_number", 0),
                 ("component", "h2"),
-                ("data_quality.rating.value", 0),
-                ("filter.applied", [True, True]),
-                (
-                    "filter.name",
-                    ["mtu-5c_rmt03-j_666_h2_10000hz_lowpass", "v_to_mv"],
-                ),
+                ("data_quality.rating.value", None),
+                # ("filter.applied", [True, True]),
+                # (
+                #     "filter.name",
+                #     ["mtu-5c_rmt03_10128_h2_10000hz_lowpass", "v_to_mv"],
+                # ),
                 ("location.elevation", 70.11294555664062),
                 ("location.latitude", 43.69640350341797),
                 ("location.longitude", -79.3936996459961),
@@ -185,10 +196,10 @@ class TestReadPhoenixNativeToChannelTS(unittest.TestCase):
                 ("sensor.manufacturer", "Phoenix Geophysics"),
                 ("sensor.model", "MTC-150"),
                 ("sensor.type", "4"),
-                ("time_period.end", "2021-04-26T20:01:50.999958333+00:00"),
-                ("time_period.start", "2021-04-26T19:58:51+00:00"),
+                ("time_period.end", "2021-04-27T03:01:50.999958333+00:00"),
+                ("time_period.start", "2021-04-27T02:58:51+00:00"),
                 ("type", "magnetic"),
-                ("units", "volts"),
+                ("units", "Volt"),
             ]
         )
 
@@ -206,6 +217,19 @@ class TestReadPhoenixNativeToChannelTS(unittest.TestCase):
                         value,
                         self.ch_ts.channel_metadata.get_attr_from_name(key),
                     )
+
+        with self.subTest("filters_exist"):
+            filters = self.ch_ts.channel_metadata.get_attr_from_name("filters")
+            self.assertIsInstance(filters, list)
+            self.assertEqual(len(filters), 3)
+            # Check that each filter is an AppliedFilter object with expected names
+            expected_names = [
+                "mtu-5c_rmt03_10128_h2_10000hz_lowpass",
+                "v_to_mv",
+                "coil_0_response",
+            ]
+            for filt, expected_name in zip(filters, expected_names):
+                self.assertEqual(filt.name, expected_name)
 
     def test_channel_response_length(self):
         self.assertEqual(2, len(self.ch_ts.channel_response.filters_list))

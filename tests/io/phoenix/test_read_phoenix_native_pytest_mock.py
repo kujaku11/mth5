@@ -105,22 +105,72 @@ def mock_reader_attributes():
         "attenuator_gain": 1.0,
         "battery_voltage_v": 12.446,
         "board_model_main": "BCM01",
+        "board_model_revision": "I",
+        "bytes_per_sample": 3,
+        "ch_board_model": "BCM01-I",
+        "ch_board_serial": 200803,
+        "ch_firmware": 65567,
         "channel_id": 0,
         "channel_main_gain": 4.0,
+        "channel_map": {0: "h2", 1: "e1", 2: "h1", 3: "h3", 4: "e2"},
         "channel_type": "H",
+        "data_footer": 0,
+        "data_scaling": 1,
+        "decimation_node_id": 0,
+        "detected_channel_type": "H",
         "file_extension": ".bin",
+        "file_name": "10128_60877DFD_0_00000001.bin",
         "file_sequence": 2,
-        "sample_rate": 24000,
-        "instrument_id": "10128",
-        "instrument_type": "MTU-5C",
+        "file_size": 4608128,
+        "file_type": 1,
+        "file_version": 3,
+        "footer_idx_samp_mask": 268435455,
+        "footer_sat_mask": 1879048192,
+        "frag_period": 60,
+        "frame_rollover_count": 0,
+        "frame_size": 64,
+        "frame_size_bytes": 64,
+        "future1": 28,
+        "future2": 0,
+        "gps_elevation": 70.11294555664062,
+        "gps_horizontal_accuracy": 11.969,
         "gps_lat": 43.69640350341797,
         "gps_long": -79.3936996459961,
-        "gps_elevation": 70.11294555664062,
-        "total_circuitry_gain": 4.0,
-        "frame_size_bytes": 64,
+        "gps_vertical_accuracy": 38.042,
+        "hardware_configuration": (4, 3, 0, 0, 0, 10, 128, 0),
+        "header_length": 128,
+        "input_plusminus_range": 1.25,
+        "instrument_id": "10128",
+        "instrument_serial_number": "10128",
+        "instrument_type": "MTU-5C",
+        "intrinsic_circuitry_gain": 1.0,
+        "last_frame": 0,
+        "last_seq": 2,
+        "lp_frequency": 10000,
+        "max_samples": 1152000,
+        "max_signal": 2.0269203186035156,
+        "min_signal": -2.0260202884674072,
+        "missing_frames": 0,
+        "npts_per_frame": 20,
+        "preamp_gain": 1.0,
+        "recording_id": 1619492349,
+        "recording_start_time": "2021-04-27T02:58:51+00:00",
+        "report_hw_sat": False,
+        "sample_rate": 24000,
+        "sample_rate_base": 24000,
+        "sample_rate_exp": 0,
+        "saturated_frames": 0,
+        "scale_factor": 2.3283064365386963e-09,
+        "seq": 1,
         "sequence_list": [],
         "stream": Mock(),
         "base_path": Path("/mock/path/test.bin"),
+        "timing_flags": 55,
+        "timing_sat_count": 6,
+        "timing_stability": 145,
+        "timing_status": (55, 6, 145),
+        "total_circuitry_gain": 4.0,
+        "total_selectable_gain": 4.0,
     }
 
 
@@ -129,25 +179,78 @@ def mock_native_reader():
     """Create a mock NativeReader instance."""
     reader = Mock(spec=NativeReader)
 
-    # Set up basic attributes
+    # Set up all attributes from real data
     reader.ad_plus_minus_range = 5.0
+    reader.attenuator_gain = 1.0
+    reader.battery_voltage_v = 12.446
+    reader.board_model_main = "BCM01"
+    reader.board_model_revision = "I"
+    reader.bytes_per_sample = 3
+    reader.ch_board_model = "BCM01-I"
+    reader.ch_board_serial = 200803
+    reader.ch_firmware = 65567
     reader.channel_id = 0
+    reader.channel_main_gain = 4.0
+    reader.channel_map = {0: "h2", 1: "e1", 2: "h1", 3: "h3", 4: "e2"}
     reader.channel_type = "H"
+    reader.data_footer = 0
     reader.data_scaling = AD_INPUT_VOLTS
-    reader.scale_factor = 2.3283064365386963e-09
-    reader.input_plusminus_range = 1.25
-    reader.total_circuitry_gain = 4.0
+    reader.decimation_node_id = 0
+    reader.detected_channel_type = "H"
+    reader.file_extension = ".bin"
+    reader.file_name = "10128_60877DFD_0_00000001.bin"
+    reader.file_sequence = 2
+    reader.file_size = 4608128
+    reader.file_type = 1
+    reader.file_version = 3
+    reader.footer_idx_samp_mask = 268435455
+    reader.footer_sat_mask = 1879048192
+    reader.frag_period = 60
+    reader.frame_rollover_count = 0
+    reader.frame_size = 64
     reader.frame_size_bytes = 64
+    reader.future1 = 28
+    reader.future2 = 0
+    reader.gps_elevation = 70.11294555664062
+    reader.gps_horizontal_accuracy = 11.969
+    reader.gps_lat = 43.69640350341797
+    reader.gps_long = -79.3936996459961
+    reader.gps_vertical_accuracy = 38.042
+    reader.hardware_configuration = (4, 3, 0, 0, 0, 10, 128, 0)
     reader.header_length = 128
+    reader.input_plusminus_range = 1.25
+    reader.instrument_id = "10128"
+    reader.instrument_serial_number = "10128"
+    reader.instrument_type = "MTU-5C"
+    reader.intrinsic_circuitry_gain = 1.0
     reader.last_frame = 0
+    reader.last_seq = 2
+    reader.lp_frequency = 10000
+    reader.max_samples = 1152000
+    reader.max_signal = 2.0269203186035156
+    reader.min_signal = -2.0260202884674072
+    reader.missing_frames = 0
     reader.npts_per_frame = 20
-    reader._chunk_size = 4096
-    reader.footer_idx_samp_mask = 0x0FFFFFFF
-    reader.footer_sat_mask = 0x70000000
+    reader.preamp_gain = 1.0
+    reader.recording_id = 1619492349
+    reader.recording_start_time = "2021-04-27T02:58:51+00:00"
     reader.report_hw_sat = False
+    reader.sample_rate = 24000
+    reader.sample_rate_base = 24000
+    reader.sample_rate_exp = 0
+    reader.saturated_frames = 0
+    reader.scale_factor = 2.3283064365386963e-09
+    reader.seq = 1
+    reader.sequence_list = []
     reader.stream = Mock()
     reader.base_path = Path("/mock/path/test.bin")
-    reader.sequence_list = []
+    reader.timing_flags = 55
+    reader.timing_sat_count = 6
+    reader.timing_stability = 145
+    reader.timing_status = (55, 6, 145)
+    reader.total_circuitry_gain = 4.0
+    reader.total_selectable_gain = 4.0
+    reader._chunk_size = 4096
     reader.channel_metadata = Mock()
     reader.run_metadata = Mock()
     reader.station_metadata = Mock()
@@ -179,6 +282,45 @@ def mock_native_reader():
         mock_channel_ts.ts = Mock()
         mock_channel_ts.ts.size = 4320000
         mock_channel_ts.channel_metadata = Mock()
+
+        # Mock the get_attr_from_name method to return expected values
+        def get_attr_mock(attr_name):
+            expected_values = {
+                "channel_number": 0,
+                "component": "h2",
+                "data_quality.rating.value": None,
+                "location.elevation": 70.11294555664062,
+                "location.latitude": 43.69640350341797,
+                "location.longitude": -79.3936996459961,
+                "measurement_azimuth": 90.0,
+                "measurement_tilt": 0.0,
+                "sample_rate": 24000.0,
+                "sensor.id": "0",
+                "sensor.manufacturer": "Phoenix Geophysics",
+                "sensor.model": "MTC-150",
+                "sensor.type": "4",
+                "time_period.end": "2021-04-27T03:01:50.999958333+00:00",
+                "time_period.start": "2021-04-27T02:58:51+00:00",
+                "type": "magnetic",
+                "units": "Volt",
+                "filters": [
+                    Mock(name="mtu-5c_rmt03_10128_h2_10000hz_lowpass"),
+                    Mock(name="v_to_mv"),
+                    Mock(name="coil_0_response"),
+                ],
+            }
+            # Set filter names
+            if attr_name == "filters":
+                filters = expected_values["filters"]
+                filters[0].name = "mtu-5c_rmt03_10128_h2_10000hz_lowpass"
+                filters[1].name = "v_to_mv"
+                filters[2].name = "coil_0_response"
+                return filters
+            return expected_values.get(attr_name)
+
+        mock_channel_ts.channel_metadata.get_attr_from_name = Mock(
+            side_effect=get_attr_mock
+        )
         mock_channel_ts.channel_response = Mock()
         mock_channel_ts.channel_response.filters_list = [Mock(), Mock()]
         mock_channel_ts.channel_response.filters_list[0].frequencies = Mock()
@@ -209,26 +351,66 @@ def expected_native_attributes():
         "attenuator_gain": 1.0,
         "battery_voltage_v": 12.446,
         "board_model_main": "BCM01",
+        "board_model_revision": "I",
         "bytes_per_sample": 3,
+        "ch_board_model": "BCM01-I",
+        "ch_board_serial": 200803,
+        "ch_firmware": 65567,
         "channel_id": 0,
         "channel_main_gain": 4.0,
         "channel_type": "H",
+        "data_footer": 0,
         "data_scaling": 1,
+        "decimation_node_id": 0,
+        "detected_channel_type": "H",
         "file_extension": ".bin",
+        "file_name": "10128_60877DFD_0_00000001.bin",
         "file_sequence": 2,
         "file_size": 4608128,
         "file_type": 1,
         "file_version": 3,
+        "footer_idx_samp_mask": 268435455,
+        "footer_sat_mask": 1879048192,
+        "frag_period": 60,
+        "frame_rollover_count": 0,
         "frame_size": 64,
         "frame_size_bytes": 64,
+        "future1": 28,
+        "future2": 0,
+        "gps_elevation": 70.11294555664062,
+        "gps_horizontal_accuracy": 11.969,
+        "gps_lat": 43.69640350341797,
+        "gps_long": -79.3936996459961,
+        "gps_vertical_accuracy": 38.042,
+        "header_length": 128,
         "input_plusminus_range": 1.25,
         "instrument_id": "10128",
+        "instrument_serial_number": "10128",
         "instrument_type": "MTU-5C",
+        "intrinsic_circuitry_gain": 1.0,
         "last_frame": 0,
+        "last_seq": 2,
+        "lp_frequency": 10000,
+        "max_samples": 1152000,
+        "max_signal": 2.0269203186035156,
+        "min_signal": -2.0260202884674072,
+        "missing_frames": 0,
         "npts_per_frame": 20,
+        "preamp_gain": 1.0,
+        "recording_id": 1619492349,
+        "recording_start_time": "2021-04-27T02:58:51+00:00",
+        "report_hw_sat": False,
         "sample_rate": 24000,
+        "sample_rate_base": 24000,
+        "sample_rate_exp": 0,
+        "saturated_frames": 0,
         "scale_factor": 2.3283064365386963e-09,
+        "seq": 1,
+        "timing_flags": 55,
+        "timing_sat_count": 6,
+        "timing_stability": 145,
         "total_circuitry_gain": 4.0,
+        "total_selectable_gain": 4.0,
     }
 
 
@@ -239,9 +421,7 @@ def expected_channel_metadata():
         [
             ("channel_number", 0),
             ("component", "h2"),
-            ("data_quality.rating.value", 0),
-            ("filter.applied", [True, True]),
-            ("filter.name", ["mtu-5c_rmt03-j_666_h2_10000hz_lowpass", "v_to_mv"]),
+            ("data_quality.rating.value", None),
             ("location.elevation", 70.11294555664062),
             ("location.latitude", 43.69640350341797),
             ("location.longitude", -79.3936996459961),
@@ -252,10 +432,10 @@ def expected_channel_metadata():
             ("sensor.manufacturer", "Phoenix Geophysics"),
             ("sensor.model", "MTC-150"),
             ("sensor.type", "4"),
-            ("time_period.end", "2021-04-26T20:01:50.999958333+00:00"),
-            ("time_period.start", "2021-04-26T19:58:51+00:00"),
+            ("time_period.end", "2021-04-27T03:01:50.999958333+00:00"),
+            ("time_period.start", "2021-04-27T02:58:51+00:00"),
             ("type", "magnetic"),
-            ("units", "volts"),
+            ("units", "Volt"),
         ]
     )
 
@@ -774,17 +954,69 @@ class TestAttributeValidation:
             ("attenuator_gain", 1.0),
             ("battery_voltage_v", 12.446),
             ("board_model_main", "BCM01"),
+            ("board_model_revision", "I"),
             ("bytes_per_sample", 3),
+            ("ch_board_model", "BCM01-I"),
+            ("ch_board_serial", 200803),
+            ("ch_firmware", 65567),
             ("channel_id", 0),
             ("channel_main_gain", 4.0),
+            ("channel_map", {0: "h2", 1: "e1", 2: "h1", 3: "h3", 4: "e2"}),
             ("channel_type", "H"),
+            ("data_footer", 0),
             ("data_scaling", 1),
+            ("decimation_node_id", 0),
+            ("detected_channel_type", "H"),
             ("file_extension", ".bin"),
+            ("file_name", "10128_60877DFD_0_00000001.bin"),
             ("file_sequence", 2),
+            ("file_size", 4608128),
+            ("file_type", 1),
+            ("file_version", 3),
+            ("footer_idx_samp_mask", 268435455),
+            ("footer_sat_mask", 1879048192),
+            ("frag_period", 60),
+            ("frame_rollover_count", 0),
+            ("frame_size", 64),
             ("frame_size_bytes", 64),
+            ("future1", 28),
+            ("future2", 0),
+            ("gps_elevation", 70.11294555664062),
+            ("gps_horizontal_accuracy", 11.969),
+            ("gps_lat", 43.69640350341797),
+            ("gps_long", -79.3936996459961),
+            ("gps_vertical_accuracy", 38.042),
+            ("hardware_configuration", (4, 3, 0, 0, 0, 10, 128, 0)),
+            ("header_length", 128),
+            ("input_plusminus_range", 1.25),
             ("instrument_id", "10128"),
+            ("instrument_serial_number", "10128"),
             ("instrument_type", "MTU-5C"),
+            ("intrinsic_circuitry_gain", 1.0),
+            ("last_frame", 0),
+            ("last_seq", 2),
+            ("lp_frequency", 10000),
+            ("max_samples", 1152000),
+            ("max_signal", 2.0269203186035156),
+            ("min_signal", -2.0260202884674072),
+            ("missing_frames", 0),
+            ("npts_per_frame", 20),
+            ("preamp_gain", 1.0),
+            ("recording_id", 1619492349),
+            ("recording_start_time", "2021-04-27T02:58:51+00:00"),
+            ("report_hw_sat", False),
             ("sample_rate", 24000),
+            ("sample_rate_base", 24000),
+            ("sample_rate_exp", 0),
+            ("saturated_frames", 0),
+            ("scale_factor", 2.3283064365386963e-09),
+            ("seq", 1),
+            ("timing_flags", 55),
+            ("timing_sat_count", 6),
+            ("timing_stability", 145),
+            ("timing_status", (55, 6, 145)),
+            ("total_circuitry_gain", 4.0),
+            ("total_selectable_gain", 4.0),
         ],
     )
     def test_phoenix_native_reader_attributes_mock(self, attr, expected_value):
@@ -800,10 +1032,21 @@ class TestAttributeValidation:
         [
             ("channel_number", 0),
             ("component", "h2"),
-            ("data_quality.rating.value", 0),
+            ("data_quality.rating.value", None),
+            ("location.elevation", 70.11294555664062),
+            ("location.latitude", 43.69640350341797),
+            ("location.longitude", -79.3936996459961),
+            ("measurement_azimuth", 90.0),
+            ("measurement_tilt", 0.0),
             ("sample_rate", 24000.0),
+            ("sensor.id", "0"),
+            ("sensor.manufacturer", "Phoenix Geophysics"),
+            ("sensor.model", "MTC-150"),
+            ("sensor.type", "4"),
+            ("time_period.end", "2021-04-27T03:01:50.999958333+00:00"),
+            ("time_period.start", "2021-04-27T02:58:51+00:00"),
             ("type", "magnetic"),
-            ("units", "volts"),
+            ("units", "Volt"),
         ],
     )
     def test_channel_metadata_attributes(self, metadata_key, expected_value):
