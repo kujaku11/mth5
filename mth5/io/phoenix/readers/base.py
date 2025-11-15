@@ -522,10 +522,10 @@ class TSReaderBase(Header):
         if hasattr(ch_metadata, "dipole_length"):
             dp_filter = CoefficientFilter()
             dp_filter.gain = ch_metadata.dipole_length / 1000
-            dp_filter.units_in = "millivolts"
-            dp_filter.units_out = "millivolts per kilometer"
+            dp_filter.units_in = "milliVolt"
+            dp_filter.units_out = "milliVolt per kilometer"
 
-            for f_name in ch_metadata.filter.name:
+            for f_name in ch_metadata.filter_names:
                 if "dipole" in f_name:
                     dp_filter.name = f_name
 
@@ -601,6 +601,11 @@ class TSReaderBase(Header):
             sensor_filter = self.get_sensor_filter(scal_fn)
             if sensor_filter is not None:
                 filter_list.append(sensor_filter)
+            else:
+                self.logger.warning(
+                    "Could not find Phoenix coil sensor calibration filter "
+                    f"for channel {ch_metadata.comp}"
+                )
 
         if ch_metadata.type in ["electric"]:
             dipole_filter = self.get_dipole_filter()

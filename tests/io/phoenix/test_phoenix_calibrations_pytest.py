@@ -20,6 +20,15 @@ from mt_metadata.timeseries.filters import FrequencyResponseTableFilter
 from mth5.io.phoenix.readers import PhoenixCalibration
 
 
+try:
+    import mth5_test_data
+
+    phx_data_path = mth5_test_data.get_test_data_path("phoenix") / "sample_data"
+    has_test_data = True
+except ImportError:
+    has_test_data = False
+
+
 # =============================================================================
 # Fixtures
 # =============================================================================
@@ -28,7 +37,7 @@ from mth5.io.phoenix.readers import PhoenixCalibration
 @pytest.fixture
 def cal_file_path():
     """Fixture providing path to the example calibration file."""
-    return Path(__file__).parent.joinpath("example_rxcal.json")
+    return phx_data_path / "example_rxcal.json"
 
 
 @pytest.fixture

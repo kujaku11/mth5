@@ -326,21 +326,20 @@ class PhoenixReceiverMetadata:
             c.time_period.start = self.obj.start
             c.time_period.end = self.obj.stop
             c.filters = [
-                AppliedFilter(
-                    name=f"{self.lp_filter_base_name}_{int(ch.lp)}hz_low_pass",
+                AppliedFilter(  # type: ignore[call-arg]
+                    name=f"{self.lp_filter_base_name}_{ch.tag}_{int(ch.lp)}hz_lowpass",
                     applied=True,
                     stage=1,
-                    comments=Comment(
-                        author="", time_stamp="1980-01-01T00:00:00+00:00", value=""
-                    ),
                 ),
-                AppliedFilter(
-                    name=f"dipole_{int(c.dipole_length)}m",
+                AppliedFilter(  # type: ignore[call-arg]
+                    name="v_to_mv",
                     applied=True,
                     stage=2,
-                    comments=Comment(
-                        author="", time_stamp="1980-01-01T00:00:00+00:00", value=""
-                    ),
+                ),
+                AppliedFilter(  # type: ignore[call-arg]
+                    name=f"dipole_{int(c.dipole_length)}m",
+                    applied=True,
+                    stage=3,
                 ),
             ]
         return c
@@ -392,15 +391,19 @@ class PhoenixReceiverMetadata:
                         f"recmeta.json does not contain attribute '{p_key}' for "
                         f"channel '{ch.tag}'."
                     )
+
+            # low pass filter of the receiver
             c.filters = [
-                AppliedFilter(
-                    name=f"{self.lp_filter_base_name}_{int(ch.lp)}hz_low_pass",
+                AppliedFilter(  # type: ignore[call-arg]
+                    name=f"{self.lp_filter_base_name}_{ch.tag}_{int(ch.lp)}hz_lowpass",
                     applied=True,
                     stage=1,
-                    comments=Comment(
-                        author="", time_stamp="1980-01-01T00:00:00+00:00", value=""
-                    ),
-                )
+                ),
+                AppliedFilter(  # type: ignore[call-arg]
+                    name="v_to_mv",
+                    applied=True,
+                    stage=2,
+                ),
             ]
             # Add coil response filter using the raw serial value
             if hasattr(ch, "serial") and ch.serial is not None:
@@ -408,7 +411,7 @@ class PhoenixReceiverMetadata:
                     AppliedFilter(
                         name=f"coil_{ch.serial}_response",
                         applied=True,
-                        stage=2,
+                        stage=3,
                         comments=Comment(
                             author="", time_stamp="1980-01-01T00:00:00+00:00", value=""
                         ),
