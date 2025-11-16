@@ -200,7 +200,7 @@ class TestPhoenixCalibrationProperties:
 
     def test_base_filter_name_property(self, phoenix_calibration):
         """Test base_filter_name property."""
-        expected_name = "mtu-5c_rmt03-j_666"
+        expected_name = "mtu-5c_rmt03_10128"
         assert phoenix_calibration.base_filter_name == expected_name
 
     def test_base_filter_name_no_data(self):
@@ -244,13 +244,13 @@ class TestPhoenixCalibrationMethods:
     def test_get_filter_lp_name(self, phoenix_calibration):
         """Test get_filter_lp_name method."""
         result = phoenix_calibration.get_filter_lp_name("e1", 1000)
-        expected = "mtu-5c_rmt03-j_666_e1_1000hz_lowpass"
+        expected = "mtu-5c_rmt03_10128_e1_1000hz_lowpass"
         assert result == expected
 
     def test_get_filter_sensor_name(self, phoenix_calibration):
         """Test get_filter_sensor_name method."""
         result = phoenix_calibration.get_filter_sensor_name("test_sensor")
-        expected = "mtu-5c_rmt03-j_666_test_sensor"
+        expected = "mtu-5c_rmt03_10128_test_sensor"
         assert result == expected
 
     @patch("mth5.io.phoenix.readers.calibrations.read_json_to_object")
@@ -474,7 +474,7 @@ class TestPhoenixCalibrationIntegration:
         # Verify initialization
         assert cal._has_read()
         assert isinstance(cal.calibration_date, MTime)
-        assert cal.base_filter_name == "mtu-5c_rmt03-j_666"
+        assert cal.base_filter_name == "mtu-5c_rmt03_10128"
 
         # Test all channels exist
         for channel in ["e1", "e2", "h1", "h2", "h3"]:

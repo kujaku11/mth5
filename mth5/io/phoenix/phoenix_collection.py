@@ -70,7 +70,7 @@ class PhoenixCollection(Collection):
             return PhoenixReceiverMetadata(fn=rec_fn)
         else:
             self.logger.warning(
-                f"Could not fine {self._receiver_metadata_name} in {self.file_path}"
+                f"Could not find {self._receiver_metadata_name} in {self.file_path}"
             )
             return None
 
