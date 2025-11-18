@@ -71,7 +71,7 @@ class AsciiMetadata:
         self.logger = logger
 
         self.fn = fn
-        self.missing_data_flag = np.NaN
+        self.missing_data_flag = np.nan
         self.coordinate_system = None
         self._metadata_len = 30
         self._survey_metadata = Survey()

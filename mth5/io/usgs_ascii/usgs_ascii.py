@@ -66,7 +66,7 @@ class USGSascii(AsciiMetadata):
             setattr(self, key, kwargs[key])
 
     ### need copy in the metadata otherwise the order in the channels
-    ### gets messed up.
+    ### gets messed up
 
     @property
     def hx(self):
@@ -166,7 +166,9 @@ class USGSascii(AsciiMetadata):
             skiprows=data_line,
             dtype=np.float32,
         )
-        dt_index = pd.date_range(start=self.start, periods=self.n_samples, end=self.end)
+        dt_index = pd.date_range(
+            start=self.start.time_stamp, periods=self.n_samples, end=self.end.time_stamp
+        )
         self.ts.index = dt_index
         self.ts.columns = self.ts.columns.str.lower()
 
