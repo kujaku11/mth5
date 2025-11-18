@@ -56,21 +56,16 @@ class TestZ3DCollection(unittest.TestCase):
         self.assertEqual(self.df.shape, (10, 19))
 
     def test_df_types(self):
-        self.df = self.zc._set_df_dtypes(self.df)
+        df = self.zc._set_df_dtypes(self.df)
         with self.subTest("start"):
-            self.assertTrue(
-                self.df.start.dtype.type == pd._libs.tslibs.timestamps.Timestamp
-            )
+            self.assertTrue(df.start.dtype == pd.api.types.is_datetime64_any_dtype)
         with self.subTest("end"):
-            self.assertTrue(
-                self.df.end.dtype.type == pd._libs.tslibs.timestamps.Timestamp
-            )
+            self.assertTrue(df.end.dtype == pd.api.types.is_datetime64_any_dtype)
 
         with self.subTest("instrument_id"):
-            self.assertTrue(self.df.instrument_id.dtype.type == np.object_)
-
+            self.assertTrue(df.instrument_id.dtype.type == np.object_)
         with self.subTest("calibration_fn"):
-            self.assertTrue(self.df.calibration_fn.dtype.type == np.object_)
+            self.assertTrue(df.calibration_fn.dtype.type == np.object_)
 
     def test_survey_id(self):
         self.assertTrue((self.df.survey == "").all())
