@@ -17,16 +17,20 @@ from mth5.io.usgs_ascii import AsciiMetadata
 from mth5.utils.helpers import get_compare_dict
 
 
+try:
+    import mth5_test_data
+
+    ascii_data_path = mth5_test_data.get_test_data_path("usgs_ascii")
+except ImportError:
+    ascii_data_path = None
 # =============================================================================
 
 
-@unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local file")
+@unittest.skipIf(ascii_data_path is None, "local file")
 class TestAsciiMetadata(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.header = AsciiMetadata(
-            fn=r"C:\Users\jpeacock\OneDrive - DOI\mt\usgs_ascii\rgr003a_converted.asc"
-        )
+        self.header = AsciiMetadata(fn=ascii_data_path / "rgr006a_converted.asc")
         self.header.read_metadata()
         self.maxDiff = None
 
@@ -43,7 +47,7 @@ class TestAsciiMetadata(unittest.TestCase):
         self.assertEqual(self.header.missing_data_flag, "1.000e+09")
 
     def test_end(self):
-        self.assertEqual(self.header.end, "2012-08-24T16:25:26+00:00")
+        self.assertEqual(self.header.end, "2012-08-25T00:06:08.750000+00:00")
 
     def test_ex(self):
         self.assertDictEqual(
@@ -71,8 +75,8 @@ class TestAsciiMetadata(unittest.TestCase):
                     ("positive.manufacturer", None),
                     ("positive.type", None),
                     ("sample_rate", 4.0),
-                    ("time_period.end", "2012-08-24T16:25:26+00:00"),
-                    ("time_period.start", "2012-08-21T22:02:27+00:00"),
+                    ("time_period.end", "2012-08-25T00:06:08.750000+00:00"),
+                    ("time_period.start", "2012-08-21T01:21:37+00:00"),
                     ("type", "electric"),
                     ("units", None),
                 ]
@@ -105,8 +109,8 @@ class TestAsciiMetadata(unittest.TestCase):
                     ("positive.manufacturer", None),
                     ("positive.type", None),
                     ("sample_rate", 4.0),
-                    ("time_period.end", "2012-08-24T16:25:26+00:00"),
-                    ("time_period.start", "2012-08-21T22:02:27+00:00"),
+                    ("time_period.end", "2012-08-25T00:06:08.750000+00:00"),
+                    ("time_period.start", "2012-08-21T01:21:37+00:00"),
                     ("type", "electric"),
                     ("units", None),
                 ]
@@ -132,8 +136,8 @@ class TestAsciiMetadata(unittest.TestCase):
                     ("sensor.id", "2311-11"),
                     ("sensor.manufacturer", None),
                     ("sensor.type", None),
-                    ("time_period.end", "2012-08-24T16:25:26+00:00"),
-                    ("time_period.start", "2012-08-21T22:02:27+00:00"),
+                    ("time_period.end", "2012-08-25T00:06:08.750000+00:00"),
+                    ("time_period.start", "2012-08-21T01:21:37+00:00"),
                     ("type", "magnetic"),
                     ("units", None),
                 ]
@@ -159,8 +163,8 @@ class TestAsciiMetadata(unittest.TestCase):
                     ("sensor.id", "2311-11"),
                     ("sensor.manufacturer", None),
                     ("sensor.type", None),
-                    ("time_period.end", "2012-08-24T16:25:26+00:00"),
-                    ("time_period.start", "2012-08-21T22:02:27+00:00"),
+                    ("time_period.end", "2012-08-25T00:06:08.750000+00:00"),
+                    ("time_period.start", "2012-08-21T01:21:37+00:00"),
                     ("type", "magnetic"),
                     ("units", None),
                 ]
@@ -186,8 +190,8 @@ class TestAsciiMetadata(unittest.TestCase):
                     ("sensor.id", "2311-11"),
                     ("sensor.manufacturer", None),
                     ("sensor.type", None),
-                    ("time_period.end", "2012-08-24T16:25:26+00:00"),
-                    ("time_period.start", "2012-08-21T22:02:27+00:00"),
+                    ("time_period.end", "2012-08-25T00:06:08.750000+00:00"),
+                    ("time_period.start", "2012-08-21T01:21:37+00:00"),
                     ("type", "magnetic"),
                     ("units", None),
                 ]
@@ -207,7 +211,7 @@ class TestAsciiMetadata(unittest.TestCase):
         self.assertEqual(self.header.n_samples, 955916)
 
     def test_run_id(self):
-        self.assertEqual(self.header.run_id, "rgr003a")
+        self.assertEqual(self.header.run_id, "rgr006a")
 
     def test_run_metadata(self):
         od = OrderedDict(
@@ -225,10 +229,10 @@ class TestAsciiMetadata(unittest.TestCase):
                 ("data_logger.timing_system.uncertainty", 0.0),
                 ("data_logger.type", None),
                 ("data_type", "BBMT"),
-                ("id", "rgr003a"),
+                ("id", "rgr006a"),
                 ("sample_rate", 4.0),
-                ("time_period.end", "2012-08-24T16:25:26+00:00"),
-                ("time_period.start", "2012-08-21T22:02:27+00:00"),
+                ("time_period.end", "2012-08-25T00:06:08.750000+00:00"),
+                ("time_period.start", "2012-08-21T01:21:37+00:00"),
             ]
         )
 
@@ -246,7 +250,7 @@ class TestAsciiMetadata(unittest.TestCase):
         self.assertEqual(self.header.site_id, "003")
 
     def test_start(self):
-        self.assertEqual(self.header.start, "2012-08-21T22:02:27+00:00")
+        self.assertEqual(self.header.start, "2012-08-21T01:21:37+00:00")
 
     def test_station_metadata(self):
         od = OrderedDict(
@@ -273,9 +277,9 @@ class TestAsciiMetadata(unittest.TestCase):
                 ("provenance.submitter.name", None),
                 ("provenance.submitter.organization", None),
                 ("release_license", "CC0-1.0"),
-                ("run_list", ["rgr003a"]),
-                ("time_period.end", "2012-08-24T16:25:26+00:00"),
-                ("time_period.start", "2012-08-21T22:02:27+00:00"),
+                ("run_list", ["rgr006a"]),
+                ("time_period.end", "2012-08-25T00:06:08.750000+00:00"),
+                ("time_period.start", "2012-08-21T01:21:37+00:00"),
             ]
         )
 
@@ -321,13 +325,13 @@ class TestAsciiMetadata(unittest.TestCase):
     def test_write_header(self):
         original = [
             "SurveyID: RGR",
-            "SiteID: 003",
-            "RunID: rgr003a",
+            "SiteID: 006",
+            "RunID: rgr006a",
             "SiteLatitude: 39.282",
             "SiteLongitude: -108.1582",
             "SiteElevation: 1803.0",
-            "AcqStartTime: 2012-08-21T22:02:27+00:00",
-            "AcqStopTime: 2012-08-24T16:25:26+00:00",
+            "AcqStartTime: 2012-08-21T01:21:37+00:00",
+            "AcqStopTime: 2012-08-25T00:06:08.750000+00:00",
             "AcqSmpFreq: 4.0",
             "AcqNumSmp: 955916",
             "Nchan: 5",
