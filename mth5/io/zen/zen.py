@@ -1547,8 +1547,11 @@ class Z3D:
             gps_week += 1
             gps_time -= self._week_len
         # compute seconds using weeks and gps time
+        # Convert gps_time to Python float to avoid precision issues with numpy types
         utc_seconds = (
-            self._gps_epoch.epoch_seconds + (gps_week * self._week_len) + gps_time
+            self._gps_epoch.epoch_seconds
+            + (gps_week * self._week_len)
+            + float(gps_time)
         )
 
         # compute date and time from seconds and return a datetime object

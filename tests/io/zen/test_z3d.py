@@ -10,7 +10,6 @@ Created on Sat Sep 10 21:00:28 2022
 # =============================================================================
 import unittest
 from collections import OrderedDict
-from pathlib import Path
 
 import numpy as np
 from mt_metadata.timeseries.filters import (
@@ -22,16 +21,22 @@ from mt_metadata.timeseries.filters import (
 from mth5.io.zen import Z3D
 
 
+try:
+    import mth5_test_data
+
+    z3d_data_path = mth5_test_data.get_test_data_path("zen")
+except ImportError:
+    z3d_data_path = None
+
+
 # =============================================================================
 
 
-@unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local files")
+@unittest.skipIf(z3d_data_path is None, "local files")
 class TestZ3DEY(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.fn = Path(
-            r"c:\Users\jpeacock\OneDrive - DOI\mt\example_z3d_data\bm100_20220517_131017_256_EY.Z3D"
-        )
+        self.fn = z3d_data_path / "bm100_20220517_131017_256_EY.Z3D"
         self.z3d = Z3D(self.fn)
         self.z3d.read_z3d()
 
@@ -74,13 +79,13 @@ class TestZ3DEY(unittest.TestCase):
         self.assertEqual(self.z3d.sample_rate, 256)
 
     def test_start(self):
-        self.assertEqual(self.z3d.start, "2022-05-17T13:09:58+00:00")
+        self.assertEqual(self.z3d.start, "2022-05-17T13:09:59+00:00")
 
     def test_end(self):
         self.assertEqual(self.z3d.end, "2022-05-17T15:54:42+00:00")
 
     def test_zen_schedule(self):
-        self.assertEqual(self.z3d.zen_schedule, "2022-05-17T13:09:58+00:00")
+        self.assertEqual(self.z3d.zen_schedule, "2022-05-17T13:09:59+00:00")
 
     def test_coil_number(self):
         self.assertEqual(self.z3d.coil_number, None)
@@ -133,12 +138,12 @@ class TestZ3DEY(unittest.TestCase):
         self.assertEqual(self.z3d.gps_flag, b"\xff\xff\xff\x7f\x00\x00\x00\x80")
 
     def test_get_gps_time(self):
-        self.assertTupleEqual(self.z3d.get_gps_time(220216, 2210), (215.056, 2210.0))
+        self.assertTupleEqual(self.z3d.get_gps_time(220217, 2210), (215.057, 2210.0))
 
     def test_get_utc_date_time(self):
         self.assertEqual(
-            self.z3d.get_UTC_date_time(2210, 220216),
-            "2022-05-17T13:09:58+00:00",
+            self.z3d.get_UTC_date_time(2210, 220217),
+            "2022-05-17T13:09:59+00:00",
         )
 
     def test_channel_metadata(self):
@@ -324,13 +329,11 @@ class TestZ3DEY(unittest.TestCase):
             )
 
 
-@unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local files")
+@unittest.skipIf(z3d_data_path is None, "local files")
 class TestZ3DHY(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.fn = Path(
-            r"c:\Users\jpeacock\OneDrive - DOI\mt\example_z3d_data\bm100_20220517_131017_256_HY.Z3D"
-        )
+        self.fn = z3d_data_path / "bm100_20220517_131017_256_HY.Z3D"
         self.z3d = Z3D(self.fn)
         self.z3d.read_z3d()
 
