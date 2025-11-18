@@ -136,8 +136,8 @@ class CoilResponse:
             fap.frequencies = cal["frequency"]
             fap.amplitudes = cal["amplitude"]
             fap.phases = cal["phase"]
-            fap.units_out = "millivolts"
-            fap.units_in = "nanotesla"
+            fap.units_out = "milliVolt"
+            fap.units_in = "nanoTesla"
             fap.name = f"ant4_{coil_number}_response"
             fap.instrument_type = "ANT4 induction coil"
             fap.calibration_date = MTime(

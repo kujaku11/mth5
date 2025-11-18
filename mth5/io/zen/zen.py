@@ -31,7 +31,7 @@ from typing import Any, BinaryIO
 import numpy as np
 from loguru import logger
 from mt_metadata.common.mttime import MTime
-from mt_metadata.timeseries import Electric, Magnetic, Run, Station
+from mt_metadata.timeseries import AppliedFilter, Electric, Magnetic, Run, Station
 from mt_metadata.timeseries.filters import (
     ChannelResponse,
     CoefficientFilter,
@@ -177,9 +177,9 @@ class Z3D:
         self._block_len = 2**16
         # the number in the cac files is for volts, we want mV
         self._counts_to_mv_conversion = 9.5367431640625e-10 * 1e3
-        self.num_sec_to_skip = 2
+        self.num_sec_to_skip = 1
 
-        self.units = "counts"
+        self.units = "digital counts"
         self.sample_rate = None
         self.time_series = None
         self._max_time_diff = 20
@@ -599,9 +599,8 @@ class Z3D:
             ch.measurement_azimuth = 90
         ch.units = "digital counts"
         ch.channel_number = self.channel_number
-        ch.filter.name = self.channel_response.names
-        ch.filter.applied = [True] * len(self.channel_response.names)
-
+        for count, f in enumerate(self.channel_response.filters_list, 1):
+            ch.add_filter(AppliedFilter(name=f.name, applied=True, stage=count))
         return ch
 
     @property
@@ -667,7 +666,7 @@ class Z3D:
         rm.time_period.start = self.start.isoformat()
         rm.time_period.end = self.end.isoformat()
         rm.sample_rate = self.sample_rate
-        rm.data_type = "MTBB"
+        rm.data_type = "BBMT"
         rm.time_period.start = self.start.isoformat()
         rm.time_period.end = self.end.isoformat()
         rm.acquired_by.author = self.metadata.gdp_operator
@@ -678,15 +677,15 @@ class Z3D:
     @property
     def counts2mv_filter(self):
         """
-        Create a counts to millivolts coefficient filter.
+        Create a counts to milliVolt coefficient filter.
 
-        Generate a coefficient filter for converting digital counts to millivolts
+        Generate a coefficient filter for converting digital counts to milliVolt
         using the channel factor from the Z3D file header.
 
         Returns
         -------
         CoefficientFilter
-            Filter object configured for counts to millivolts conversion with
+            Filter object configured for counts to milliVolt conversion with
             gain set to the inverse of the channel factor.
 
         Notes
@@ -704,11 +703,11 @@ class Z3D:
         """
 
         c2mv = CoefficientFilter()
-        c2mv.units_in = "millivolts"
+        c2mv.units_in = "milliVolt"
         c2mv.units_out = "digital counts"
         c2mv.name = "zen_counts2mv"
         c2mv.gain = 1.0 / self.header.ch_factor
-        c2mv.comments = "digital counts to millivolts"
+        c2mv.comments = "digital counts to milliVolt"
 
         return c2mv
 
@@ -726,8 +725,8 @@ class Z3D:
             # looks like zen outputs radial frequency
             if self.metadata.cal_ant is not None:
                 fap = FrequencyResponseTableFilter()
-                fap.units_in = "nanotesla"
-                fap.units_out = "millivolts"
+                fap.units_in = "nanoTesla"
+                fap.units_out = "milliVolt"
                 fap.frequencies = (1 / (2 * np.pi)) * self.metadata.coil_cal.frequency
                 fap.amplitudes = self.metadata.coil_cal.amplitude
                 fap.phases = self.metadata.coil_cal.phase / 1e3
@@ -796,8 +795,8 @@ class Z3D:
                 amp[index] = item_a
                 phases[index] = item_p
             fap = FrequencyResponseTableFilter()
-            fap.units_in = "millivolts"
-            fap.units_out = "millivolts"
+            fap.units_in = "milliVolt"
+            fap.units_out = "milliVolt"
             fap.frequencies = freq
             fap.amplitudes = amp
             fap.phases = phases
@@ -814,7 +813,7 @@ class Z3D:
         Generate comprehensive channel response for the Z3D data.
 
         Creates a ChannelResponse object containing all applicable filters
-        including coil response, dipole conversion, and counts-to-millivolts
+        including coil response, dipole conversion, and counts-to-milliVolt
         transformation.
 
         Returns
@@ -827,7 +826,7 @@ class Z3D:
         -----
         The filter chain includes:
         - Coil response (for magnetic channels) or dipole filter (for electric)
-        - Counts to millivolts conversion filter
+        - Counts to milliVolt conversion filter
         """
         filter_list = []
         # don't have a good handle on the zen response yet.
@@ -847,7 +846,7 @@ class Z3D:
         Create dipole conversion filter for electric field measurements.
 
         Generate a coefficient filter for converting electric field measurements
-        from millivolts per kilometer to millivolts using the dipole length.
+        from milliVolt per kilometer to milliVolt using the dipole length.
 
         Returns
         -------
@@ -872,8 +871,8 @@ class Z3D:
         # needs to be the inverse for processing
         if self.dipole_length != 0:
             dipole = CoefficientFilter()
-            dipole.units_in = "millivolts per kilometer"
-            dipole.units_out = "millivolts"
+            dipole.units_in = "milliVolt per kilometer"
+            dipole.units_out = "milliVolt"
             dipole.name = f"dipole_{self.dipole_length:.2f}m"
             dipole.gain = self.dipole_length / 1000.0
             dipole.comments = "convert to electric field"
@@ -1125,10 +1124,11 @@ class Z3D:
 
     def _unpack_data(self, data: np.ndarray, gps_stamp_index: list[int]) -> np.ndarray:
         """
-        Unpack GPS stamps from raw data array and remove them.
+        Unpack GPS stamps from raw data array and extract clean time series.
 
         Extract GPS timestamp information from the raw data array at
-        specified indices and zero out those positions.
+        specified indices and return a contiguous array of time series data
+        with GPS stamps removed and all data blocks concatenated.
 
         Parameters
         ----------
@@ -1140,8 +1140,15 @@ class Z3D:
         Returns
         -------
         numpy.ndarray
-            Data array with GPS stamps extracted and positions zeroed.
+            Clean time series data array with GPS stamps removed and
+            all data blocks concatenated, including final block after last GPS stamp.
         """
+        if len(gps_stamp_index) == 0:
+            return data
+
+        # Extract GPS stamps and calculate block lengths
+        time_series_blocks = []
+
         for ii, gps_find in enumerate(gps_stamp_index):
             try:
                 data[gps_find + 1]
@@ -1150,23 +1157,57 @@ class Z3D:
                     f"Failed gps stamp {ii+1} out of {len(gps_stamp_index)}"
                 )
                 break
+
             if (
                 self.header.old_version is True
                 or data[gps_find + 1] == self._gps_flag_1
             ):
+                # Extract GPS stamp
                 gps_str = struct.pack(
                     "<" + "i" * int(self._gps_bytes),
                     *data[int(gps_find) : int(gps_find + self._gps_bytes)],
                 )
                 self.gps_stamps[ii] = np.frombuffer(gps_str, dtype=self._gps_dtype)
+
+                # Calculate block length and extract data block before this GPS stamp
                 if ii > 0:
-                    self.gps_stamps[ii]["block_len"] = (
-                        gps_find - gps_stamp_index[ii - 1] - self._gps_bytes
-                    )
+                    block_start = gps_stamp_index[ii - 1] + int(self._gps_bytes)
+                    block_end = gps_find
+                    block_len = block_end - block_start
+                    self.gps_stamps[ii]["block_len"] = block_len
+
+                    # Extract the data block
+                    if block_len > 0:
+                        time_series_blocks.append(data[block_start:block_end])
                 elif ii == 0:
+                    # First GPS stamp - data before it (if any)
                     self.gps_stamps[ii]["block_len"] = 0
-                data[int(gps_find) : int(gps_find + self._gps_bytes)] = 0
-        return data
+                    if gps_find > 0:
+                        time_series_blocks.append(data[:gps_find])
+
+        # Handle the final block of data after the last GPS stamp
+        if len(gps_stamp_index) > 0:
+            last_gps_pos = gps_stamp_index[-1]
+            remaining_data_start = last_gps_pos + int(self._gps_bytes)
+
+            if remaining_data_start < data.size:
+                final_block = data[remaining_data_start:]
+                # Only include final block if it contains significant non-zero data
+                non_zero_count = np.count_nonzero(final_block)
+                if non_zero_count > 0:
+                    self.logger.debug(
+                        f"Including final block with {final_block.size} samples "
+                        f"({non_zero_count} non-zero)"
+                    )
+                    time_series_blocks.append(final_block)
+
+        # Concatenate all blocks to form clean time series
+        if time_series_blocks:
+            clean_data = np.concatenate(time_series_blocks)
+        else:
+            clean_data = np.array([], dtype=data.dtype)
+
+        return clean_data
 
     # ======================================
     def read_z3d(self, z3d_fn: str | Path | None = None) -> None:
@@ -1233,10 +1274,7 @@ class Z3D:
 
         # read data chunks and GPS stamps
         self.gps_stamps = np.zeros(len(gps_stamp_find), dtype=self._gps_dtype)
-        data = self._unpack_data(data, gps_stamp_find)
-
-        # fill the time series
-        self.time_series = data[np.nonzero(data)]
+        self.time_series = self._unpack_data(data, gps_stamp_find)
 
         # validate everything
         if not self.validate_gps_time():
@@ -1445,7 +1483,7 @@ class Z3D:
     # ==================================================
     def convert_counts_to_mv(self, data: np.ndarray) -> np.ndarray:
         """
-        Convert time series data from counts to millivolts.
+        Convert time series data from counts to milliVolt.
 
         Parameters
         ----------
@@ -1455,19 +1493,19 @@ class Z3D:
         Returns
         -------
         numpy.ndarray
-            Time series data converted to millivolts.
+            Time series data converted to milliVolt.
         """
         data *= self._counts_to_mv_conversion
         return data
 
     def convert_mv_to_counts(self, data: np.ndarray) -> np.ndarray:
         """
-        Convert time series data from millivolts to counts.
+        Convert time series data from milliVolt to counts.
 
         Parameters
         ----------
         data : numpy.ndarray
-            Time series data in millivolts.
+            Time series data in milliVolt.
 
         Returns
         -------

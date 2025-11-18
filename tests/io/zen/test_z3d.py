@@ -79,13 +79,13 @@ class TestZ3DEY(unittest.TestCase):
         self.assertEqual(self.z3d.sample_rate, 256)
 
     def test_start(self):
-        self.assertEqual(self.z3d.start, "2022-05-17T13:09:59+00:00")
+        self.assertEqual(self.z3d.start, "2022-05-17T13:09:58+00:00")
 
     def test_end(self):
         self.assertEqual(self.z3d.end, "2022-05-17T15:54:42+00:00")
 
     def test_zen_schedule(self):
-        self.assertEqual(self.z3d.zen_schedule, "2022-05-17T13:09:59+00:00")
+        self.assertEqual(self.z3d.zen_schedule, "2022-05-17T13:09:58+00:00")
 
     def test_coil_number(self):
         self.assertEqual(self.z3d.coil_number, None)
@@ -157,11 +157,11 @@ class TestZ3DEY(unittest.TestCase):
                 ("dc.end", 0.019371436521409924),
                 ("dc.start", 0.019130984313785026),
                 ("dipole_length", 56.0),
-                ("filter.applied", [True, True]),
-                (
-                    "filter.name",
-                    ["dipole_56.00m", "zen_counts2mv"],
-                ),
+                # ("filter.applied", [True, True]),
+                # (
+                #     "filter.name",
+                #     ["dipole_56.00m", "zen_counts2mv"],
+                # ),
                 ("measurement_azimuth", 90.0),
                 ("measurement_tilt", 0.0),
                 ("negative.elevation", 0.0),
@@ -188,6 +188,13 @@ class TestZ3DEY(unittest.TestCase):
             with self.subTest(key):
                 self.assertEqual(
                     value, self.z3d.channel_metadata.get_attr_from_name(key)
+                )
+
+        with self.subTest("filters"):
+            for name in ["dipole_56.00m", "zen_counts2mv"]:
+                self.assertIn(
+                    name,
+                    self.z3d.channel_metadata.filter_names,
                 )
 
     def test_run_metadata(self):
@@ -294,7 +301,7 @@ class TestZ3DEY(unittest.TestCase):
             **OrderedDict(
                 [
                     ("calibration_date", "1980-01-01"),
-                    ("comments", "digital counts to millivolts"),
+                    ("comments", "digital counts to milliVolt"),
                     ("gain", 1048576000.000055),
                     ("name", "zen_counts2mv"),
                     ("type", "coefficient"),
@@ -457,7 +464,7 @@ class TestZ3DHY(unittest.TestCase):
                         ),
                     ),
                     ("gain", 1.0),
-                    ("instrument_type", None),
+                    ("instrument_type", ""),
                     ("name", "ant4_2324_response"),
                     (
                         "phases",
@@ -529,7 +536,7 @@ class TestZ3DHY(unittest.TestCase):
                     ("comments", "data logger response read from z3d file"),
                     ("frequencies", np.array([2.0])),
                     ("gain", 1.0),
-                    ("instrument_type", None),
+                    ("instrument_type", ""),
                     ("name", "zen024_256_response"),
                     ("phases", np.array([-1.53334])),
                     ("type", "frequency response table"),
@@ -543,7 +550,7 @@ class TestZ3DHY(unittest.TestCase):
             **OrderedDict(
                 [
                     ("calibration_date", "1980-01-01"),
-                    ("comments", "digital counts to millivolts"),
+                    ("comments", "digital counts to milliVolt"),
                     ("gain", 1048576000.000055),
                     ("name", "zen_counts2mv"),
                     ("type", "coefficient"),
@@ -559,14 +566,14 @@ class TestZ3DHY(unittest.TestCase):
                 ("channel_number", 2),
                 ("component", "hy"),
                 ("data_quality.rating.value", 0),
-                ("filter.applied", [True, True]),
-                (
-                    "filter.name",
-                    [
-                        "ant4_2324_response",
-                        "zen_counts2mv",
-                    ],
-                ),
+                # ("filter.applied", [True, True]),
+                # (
+                #     "filter.name",
+                #     [
+                #         "ant4_2324_response",
+                #         "zen_counts2mv",
+                #     ],
+                # ),
                 ("h_field_max.end", 0.02879215431213228),
                 ("h_field_max.start", 0.03145987892150714),
                 ("h_field_min.end", 0.02772834396362159),
@@ -593,6 +600,18 @@ class TestZ3DHY(unittest.TestCase):
                 self.assertEqual(
                     value, self.z3d.channel_metadata.get_attr_from_name(key)
                 )
+
+        with self.subTest("test filters"):
+            filters = self.z3d.channel_metadata.filters
+            self.assertEqual(2, len(filters))
+            self.assertDictEqual(
+                filters[0].to_dict(single=True),
+                self.cr.to_dict(single=True),
+            )
+            self.assertDictEqual(
+                filters[1].to_dict(single=True),
+                self.cf.to_dict(single=True),
+            )
 
     def test_run_metadata(self):
         rm = OrderedDict(
