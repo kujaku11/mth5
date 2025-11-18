@@ -808,7 +808,7 @@ class ChannelTS:
                 if key in ["type"]:
                     continue
                 try:
-                    channel_metadata.set_attr_from_name(key, m_dict[key])
+                    channel_metadata.update_attribute(key, m_dict[key])
                 except KeyError:
                     pass
             self._channel_type = value

@@ -285,6 +285,13 @@ class FDSN:
         streams_and_run_timings_match = False
         run_start = run_group.metadata.time_period.start
         run_end = run_group.metadata.time_period.end
+
+        # Handle MTime objects by converting to string first
+        if hasattr(run_start, "isoformat"):
+            run_start = run_start.isoformat()
+        if hasattr(run_end, "isoformat"):
+            run_end = run_end.isoformat()
+
         cond1 = stream_start >= obspy.UTCDateTime(run_start)
         cond2 = stream_end <= obspy.UTCDateTime(run_end)
         if cond1 and cond2:  # paired up
