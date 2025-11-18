@@ -9,21 +9,28 @@ Created on Sat Sep 10 21:00:28 2022
 # Imports
 # =============================================================================
 import unittest
-from pathlib import Path
 
 import numpy as np
 
 from mth5.io.zen import Z3DHeader
 
 
+try:
+    import mth5_test_data
+
+    z3d_test_path = mth5_test_data.get_test_data_path("zen")
+except ImportError:
+    z3d_test_path = None
+
+
 # =============================================================================
 
 
-@unittest.skipIf("peacock" not in str(Path(__file__).as_posix()), "local files")
+@unittest.skipIf(z3d_test_path is None, "local files")
 class TestZ3DHeader(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.fn = r"c:\Users\jpeacock\OneDrive - DOI\mt\example_z3d_data\bm100_20220517_131017_256_EY.Z3D"
+        self.fn = z3d_test_path / "bm100_20220517_131017_256_EY.Z3D"
         self.z3d_obj = Z3DHeader(fn=self.fn)
         self.z3d_obj.read_header()
 
