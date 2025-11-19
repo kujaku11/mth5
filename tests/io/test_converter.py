@@ -23,24 +23,59 @@ from mth5.io.conversion import MTH5ToMiniSEEDStationXML
 # =============================================================================
 
 
-@pytest.fixture(scope="session")
-def mth5_test_files():
-    """Create test MTH5 files once for the entire test session."""
-    mth5_path_v1 = create_test1_h5("0.1.0", force_make_mth5=False)
-    mth5_path_v2 = create_test1_h5("0.2.0", force_make_mth5=False)
+@pytest.fixture(scope="function")
+def mth5_test_files(tmp_path):
+    """Create test MTH5 files for each test in a unique temporary directory.
+
+    This avoids conflicts when running tests in parallel with pytest-xdist.
+    Each test process gets its own MTH5 files in a unique temporary directory.
+    """
+
+    # Create unique MTH5 files in the test's temporary directory
+    # This ensures no conflicts between parallel test processes
+    mth5_path_v1 = create_test1_h5(
+        "0.1.0",
+        target_folder=tmp_path,
+        force_make_mth5=True,  # Always create fresh files
+    )
+    mth5_path_v2 = create_test1_h5(
+        "0.2.0",
+        target_folder=tmp_path,
+        force_make_mth5=True,  # Always create fresh files
+    )
     return {"v1": mth5_path_v1, "v2": mth5_path_v2}
 
 
 @pytest.fixture
 def converter():
-    """Create a fresh converter instance for each test."""
+    """Create a fresh converter instance for each test with default behavior.
+
+    This fixture provides the default converter behavior for testing
+    basic functionality like path validation.
+    """
     return MTH5ToMiniSEEDStationXML()
 
 
 @pytest.fixture
 def temp_path(tmp_path):
-    """Provide a temporary path for test outputs."""
+    """Provide a temporary path for test outputs.
+
+    tmp_path is automatically cleaned up by pytest after each test.
+    This fixture is kept for backward compatibility.
+    """
     return tmp_path
+
+
+@pytest.fixture
+def process_safe_converter(tmp_path):
+    """Create a converter instance that's safe for parallel test execution.
+
+    This fixture ensures that each test process gets its own converter
+    with a unique output directory to prevent file conflicts.
+    """
+    conv = MTH5ToMiniSEEDStationXML()
+    conv.save_path = tmp_path
+    return conv
 
 
 # =============================================================================
@@ -114,8 +149,14 @@ class TestMTH5ToMiniSEEDStationXMLConversion:
     TODO: Add methods to check accuracy of the converted files.
     """
 
-    def convert(self, version, mth5_test_files):
-        """Convert MTH5 file to miniSEED and StationXML."""
+    def convert(self, version, mth5_test_files, tmp_path=None):
+        """Convert MTH5 file to miniSEED and StationXML.
+
+        Args:
+            version: MTH5 version to convert
+            mth5_test_files: Fixture containing MTH5 file paths
+            tmp_path: Optional temporary path for output (for process safety)
+        """
         if version in ["1", 1, "0.1.0"]:
             h5_path = mth5_test_files["v1"]
         elif version in ["2", 2, "0.2.0"]:
@@ -123,86 +164,65 @@ class TestMTH5ToMiniSEEDStationXMLConversion:
         else:
             raise ValueError(f"Unsupported version: {version}")
 
+        # Use save_path if tmp_path not provided (for process safety)
+        save_path = tmp_path if tmp_path else h5_path.parent
         return MTH5ToMiniSEEDStationXML.convert_mth5_to_ms_stationxml(
-            h5_path, network_code="ZU"
+            h5_path, network_code="ZU", save_path=save_path
         )
 
-    def _cleanup_conversion_files(self, stationxml, miniseeds):
-        """Clean up files created during conversion testing."""
-        try:
-            if stationxml.exists():
-                stationxml.unlink()
-        except Exception:
-            pass
-
-        for fn in miniseeds:
-            try:
-                if fn.exists():
-                    fn.unlink()
-            except Exception:
-                pass
-
-    def test_conversion_v1(self, mth5_test_files, subtests):
+    def test_conversion_v1(self, mth5_test_files, tmp_path, subtests):
         """Test conversion for v1 with subtests."""
-        stationxml, miniseeds = self.convert("0.1.0", mth5_test_files)
+        stationxml, miniseeds = self.convert("0.1.0", mth5_test_files, tmp_path)
 
-        try:
-            with subtests.test("StationXML was written"):
-                assert (
-                    stationxml.exists()
-                ), f"StationXML file should exist: {stationxml}"
-                assert stationxml.suffix == ".xml"
+        with subtests.test("StationXML was written"):
+            assert stationxml.exists(), f"StationXML file should exist: {stationxml}"
+            assert stationxml.suffix == ".xml"
 
-            with subtests.test("miniseeds were written"):
-                assert (
-                    len(miniseeds) == 5
-                ), f"Should create 5 miniSEED files, got {len(miniseeds)}"
-                # Check that all miniSEED files exist
-                for mseed in miniseeds:
-                    assert mseed.exists(), f"MiniSEED file should exist: {mseed}"
-                    assert mseed.suffix == ".mseed"
+        with subtests.test("miniseeds were written"):
+            assert (
+                len(miniseeds) == 5
+            ), f"Should create 5 miniSEED files, got {len(miniseeds)}"
+            # Check that all miniSEED files exist
+            for mseed in miniseeds:
+                assert mseed.exists(), f"MiniSEED file should exist: {mseed}"
+                assert mseed.suffix == ".mseed"
 
-            # Skip the MTH5 round-trip creation test due to validation issues
-            # This matches what the original unittest does - it tests file creation
-            with subtests.test("new MTH5 created would work"):
-                # Just check that we have the inputs needed for round-trip
-                assert stationxml.exists()
-                assert len(miniseeds) == 5
-                # The original test would create an MTH5 file here, but we skip due to validation issues
+        # Skip the MTH5 round-trip creation test due to validation issues
+        # This matches what the original unittest does - it tests file creation
+        with subtests.test("new MTH5 created would work"):
+            # Just check that we have the inputs needed for round-trip
+            assert stationxml.exists()
+            assert len(miniseeds) == 5
+            # The original test would create an MTH5 file here, but we skip due to validation issues
 
-        finally:
-            self._cleanup_conversion_files(stationxml, miniseeds)
+        # No explicit cleanup needed - tmp_path is automatically cleaned up
 
-    def test_conversion_v2(self, mth5_test_files, subtests):
+    def test_conversion_v2(self, mth5_test_files, tmp_path, subtests):
         """Test conversion for v2 with subtests."""
-        stationxml, miniseeds = self.convert("0.2.0", mth5_test_files)
+        stationxml, miniseeds = self.convert("0.2.0", mth5_test_files, tmp_path)
 
-        try:
-            with subtests.test("StationXML was written"):
-                assert (
-                    stationxml.exists()
-                ), f"StationXML file should exist: {stationxml}"
-                assert stationxml.suffix == ".xml"
+        with subtests.test("StationXML was written"):
+            assert stationxml.exists(), f"StationXML file should exist: {stationxml}"
+            assert stationxml.suffix == ".xml"
 
-            with subtests.test("miniseeds were written"):
-                assert (
-                    len(miniseeds) == 5
-                ), f"Should create 5 miniSEED files, got {len(miniseeds)}"
-                # Check that all miniSEED files exist
-                for mseed in miniseeds:
-                    assert mseed.exists(), f"MiniSEED file should exist: {mseed}"
-                    assert mseed.suffix == ".mseed"
+        with subtests.test("miniseeds were written"):
+            assert (
+                len(miniseeds) == 5
+            ), f"Should create 5 miniSEED files, got {len(miniseeds)}"
+            # Check that all miniSEED files exist
+            for mseed in miniseeds:
+                assert mseed.exists(), f"MiniSEED file should exist: {mseed}"
+                assert mseed.suffix == ".mseed"
 
-            # Skip the MTH5 round-trip creation test due to validation issues
-            # This matches what the original unittest does - it tests file creation
-            with subtests.test("new MTH5 created would work"):
-                # Just check that we have the inputs needed for round-trip
-                assert stationxml.exists()
-                assert len(miniseeds) == 5
-                # The original test would create an MTH5 file here, but we skip due to validation issues
+        # Skip the MTH5 round-trip creation test due to validation issues
+        # This matches what the original unittest does - it tests file creation
+        with subtests.test("new MTH5 created would work"):
+            # Just check that we have the inputs needed for round-trip
+            assert stationxml.exists()
+            assert len(miniseeds) == 5
+            # The original test would create an MTH5 file here, but we skip due to validation issues
 
-        finally:
-            self._cleanup_conversion_files(stationxml, miniseeds)
+        # No explicit cleanup needed - tmp_path is automatically cleaned up
 
 
 class TestMTH5ToMiniSEEDStationXMLErrorHandling:
@@ -241,34 +261,28 @@ class TestMTH5ToMiniSEEDStationXMLPerformance:
     """Performance-focused tests for MTH5 conversion."""
 
     @pytest.mark.performance
-    def test_conversion_timing(self, mth5_test_files):
+    def test_conversion_timing(self, mth5_test_files, tmp_path):
         """Test conversion timing to ensure reasonable performance."""
         import time
 
         start_time = time.time()
 
         stationxml, miniseeds = MTH5ToMiniSEEDStationXML.convert_mth5_to_ms_stationxml(
-            mth5_test_files["v1"], network_code="ZU"
+            mth5_test_files["v1"], network_code="ZU", save_path=tmp_path
         )
 
         end_time = time.time()
         conversion_time = end_time - start_time
-
-        # Cleanup
-        try:
-            stationxml.unlink()
-            for fn in miniseeds:
-                fn.unlink()
-        except Exception:
-            pass
 
         # Assert that conversion completes in reasonable time (60 seconds)
         assert (
             conversion_time < 60.0
         ), f"Conversion took too long: {conversion_time:.2f} seconds"
 
+        # No explicit cleanup needed - tmp_path is automatically cleaned up
+
     @pytest.mark.performance
-    def test_memory_usage_conversion(self, mth5_test_files):
+    def test_memory_usage_conversion(self, mth5_test_files, tmp_path):
         """Test conversion memory usage to detect memory leaks."""
         try:
             import os
@@ -284,15 +298,9 @@ class TestMTH5ToMiniSEEDStationXMLPerformance:
                     stationxml,
                     miniseeds,
                 ) = MTH5ToMiniSEEDStationXML.convert_mth5_to_ms_stationxml(
-                    mth5_test_files["v1"], network_code="ZU"
+                    mth5_test_files["v1"], network_code="ZU", save_path=tmp_path
                 )
-                # Immediate cleanup
-                try:
-                    stationxml.unlink()
-                    for fn in miniseeds:
-                        fn.unlink()
-                except Exception:
-                    pass
+                # Files are automatically cleaned up with tmp_path
 
             final_memory = process.memory_info().rss
             memory_increase = final_memory - initial_memory
@@ -315,30 +323,24 @@ class TestMTH5ToMiniSEEDStationXMLPerformance:
 class TestMTH5ConversionIntegration:
     """Integration tests for full conversion workflow."""
 
-    def test_conversion_workflow_basic(self, mth5_test_files, subtests):
+    def test_conversion_workflow_basic(self, mth5_test_files, tmp_path, subtests):
         """Test basic conversion workflow."""
         with subtests.test("v1 conversion workflow"):
             (
                 stationxml,
                 miniseeds,
             ) = MTH5ToMiniSEEDStationXML.convert_mth5_to_ms_stationxml(
-                mth5_test_files["v1"], network_code="ZU"
+                mth5_test_files["v1"], network_code="ZU", save_path=tmp_path
             )
 
             # Verify files are created
             assert stationxml.exists()
-            assert stationxml.parent == mth5_test_files["v1"].parent
+            assert stationxml.parent == tmp_path  # Files should be in tmp_path
             assert len(miniseeds) == 5
 
-            # Cleanup
-            try:
-                stationxml.unlink()
-                for fn in miniseeds:
-                    fn.unlink()
-            except:
-                pass
+            # No explicit cleanup needed - tmp_path is automatically cleaned up
 
-    def test_conversion_with_custom_network_codes(self, mth5_test_files):
+    def test_conversion_with_custom_network_codes(self, mth5_test_files, tmp_path):
         """Test conversion with different network codes."""
         test_codes = ["AB", "XY", "Z9"]
 
@@ -347,20 +349,14 @@ class TestMTH5ConversionIntegration:
                 stationxml,
                 miniseeds,
             ) = MTH5ToMiniSEEDStationXML.convert_mth5_to_ms_stationxml(
-                mth5_test_files["v1"], network_code=network_code
+                mth5_test_files["v1"], network_code=network_code, save_path=tmp_path
             )
 
             # Verify conversion completed
             assert stationxml.exists()
             assert len(miniseeds) == 5
 
-            # Cleanup
-            try:
-                stationxml.unlink()
-                for fn in miniseeds:
-                    fn.unlink()
-            except:
-                pass
+        # No explicit cleanup needed - tmp_path is automatically cleaned up
 
 
 # =============================================================================
@@ -370,13 +366,6 @@ class TestMTH5ConversionIntegration:
 pytestmark = [
     pytest.mark.integration,  # Mark all tests as integration tests
 ]
-
-
-# Optional: Custom pytest hooks for additional functionality
-def pytest_configure(config):
-    """Configure pytest with custom markers."""
-    config.addinivalue_line("markers", "performance: mark test as performance test")
-    config.addinivalue_line("markers", "integration: mark test as integration test")
 
 
 if __name__ == "__main__":
