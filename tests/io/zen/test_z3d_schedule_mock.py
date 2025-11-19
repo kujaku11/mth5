@@ -27,6 +27,16 @@ from mt_metadata.common.mttime import MTime
 from mth5.io.zen import Z3DSchedule
 
 
+try:
+    pass
+
+    HAS_MTH5_TEST_DATA = True
+except ImportError:
+    HAS_MTH5_TEST_DATA = False
+
+
+@pytest.mark.skipif(not HAS_MTH5_TEST_DATA, reason="mth5_test_data not available")
+
 # =============================================================================
 # Fixtures
 # =============================================================================

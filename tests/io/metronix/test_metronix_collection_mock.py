@@ -23,6 +23,16 @@ import pytest
 from mth5.io.metronix.metronix_collection import MetronixCollection
 
 
+try:
+    pass
+
+    HAS_MTH5_TEST_DATA = True
+except ImportError:
+    HAS_MTH5_TEST_DATA = False
+
+
+@pytest.mark.skipif(not HAS_MTH5_TEST_DATA, reason="mth5_test_data not available")
+
 # =============================================================================
 # Fixtures
 # =============================================================================

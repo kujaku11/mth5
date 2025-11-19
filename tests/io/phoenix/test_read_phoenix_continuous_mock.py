@@ -24,6 +24,17 @@ from mth5.io.phoenix.readers.contiguous.decimated_continuous_reader import (
 )
 
 
+try:
+    pass
+
+    HAS_MTH5_TEST_DATA = True
+except ImportError:
+    HAS_MTH5_TEST_DATA = False
+
+
+@pytest.mark.skipif(not HAS_MTH5_TEST_DATA, reason="mth5_test_data not available")
+
+
 # =============================================================================
 # Fixtures
 # =============================================================================

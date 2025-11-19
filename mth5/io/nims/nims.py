@@ -1258,8 +1258,10 @@ class NIMS(NIMSHeader):
 
         for key, index in self._block_dict.items():
             if "temp" in key:
-                # compute temperature
-                t_value = data[:, index[0]] * 256 + data[:, index[1]]
+                # compute temperature - cast to int32 to avoid uint8 overflow
+                t_value = data[:, index[0]].astype(np.int32) * 256 + data[
+                    :, index[1]
+                ].astype(np.int32)
 
                 # something to do with the bits where you have to subtract
                 t_value[np.where(t_value > 32768)] -= 65536
@@ -1287,9 +1289,11 @@ class NIMS(NIMSHeader):
             channel_arr = np.zeros((data.shape[0], 8), dtype=float)
             for kk in range(self.sample_rate):
                 index = self.indices[kk, cc]
-                value = (data[:, index] * 256 + data[:, index + 1]) * np.array(
-                    [256]
-                ) + data[:, index + 2]
+                # Cast to int32 to avoid uint8 overflow
+                value = (
+                    data[:, index].astype(np.int32) * 256
+                    + data[:, index + 1].astype(np.int32)
+                ) * np.array([256]) + data[:, index + 2].astype(np.int32)
                 value[np.where(value > self._int_max)] -= self._int_factor
                 channel_arr[:, kk] = value
             data_array[comp][:] = channel_arr.flatten()
