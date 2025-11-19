@@ -48,15 +48,15 @@ def rxcal_fn():
     return Path(__file__).parent.joinpath("example_rxcal.json")
 
 
-@pytest.fixture(scope="module", params=["0", "1", "2", "4"])
+@pytest.fixture(scope="function", params=["0", "1", "2", "4"])
 def channel_id(request):
-    """Parametrized channel IDs for testing multiple channels."""
+    """Parametrized channel IDs for testing multiple channels - function scope to avoid parallel execution issues."""
     return request.param
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def phoenix_reader_ch0(phoenix_data_path):
-    """Phoenix reader for channel 0."""
+    """Phoenix reader for channel 0 - function scope to avoid parallel execution issues."""
     return open_phoenix(
         phoenix_data_path
         / "10128_2021-04-27-032436"
@@ -65,9 +65,9 @@ def phoenix_reader_ch0(phoenix_data_path):
     )
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def phoenix_readers(phoenix_data_path):
-    """Dictionary of Phoenix readers for different channels."""
+    """Dictionary of Phoenix readers for different channels - function scope to avoid parallel execution issues."""
     readers = {}
     channel_files = {
         "0": "10128_608783F4_0_00000001.td_24k",
@@ -84,15 +84,15 @@ def phoenix_readers(phoenix_data_path):
     return readers
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def segment_ch0(phoenix_reader_ch0):
-    """Read segment for channel 0."""
+    """Read segment for channel 0 - function scope to avoid parallel execution issues."""
     return phoenix_reader_ch0.read_segment()
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def segments(phoenix_readers):
-    """Dictionary of segments for different channels."""
+    """Dictionary of segments for different channels - function scope to avoid parallel execution issues."""
     segments = {}
     for ch_id, reader in phoenix_readers.items():
         segments[ch_id] = reader.read_segment()
@@ -408,13 +408,33 @@ class TestPhoenixSegmentedReader:
 
     @pytest.mark.parametrize("channel", ["0", "1", "2", "4"])
     def test_subheader_multi_channel(
-        self, segments, expected_subheader_values, channel
+        self, phoenix_data_path, expected_subheader_values, channel
     ):
         """Test subheader values for multiple channels."""
-        if channel not in segments:
+        # Create fresh reader to avoid shared state issues
+        from mth5.io.phoenix import open_phoenix
+
+        channel_files = {
+            "0": "10128_608783F4_0_00000001.td_24k",
+            "1": "10128_608783F4_1_00000001.td_24k",
+            "2": "10128_608783F4_2_00000001.td_24k",
+            "4": "10128_608783F4_4_00000001.td_24k",
+        }
+
+        if channel not in channel_files:
+            pytest.skip(f"Channel {channel} not defined")
+
+        file_path = (
+            phoenix_data_path
+            / "10128_2021-04-27-032436"
+            / channel
+            / channel_files[channel]
+        )
+        if not file_path.exists():
             pytest.skip(f"Channel {channel} data not available")
 
-        segment = segments[channel]
+        reader = open_phoenix(file_path)
+        segment = reader.read_segment()
         expected = expected_subheader_values[channel]
 
         # Test only the common keys that should be consistent across channels
@@ -486,13 +506,32 @@ class TestPhoenixSegmentedReader:
 
     @pytest.mark.parametrize("channel", ["0", "1", "2", "4"])
     def test_reader_attributes_multi_channel(
-        self, phoenix_readers, expected_reader_attributes, channel
+        self, phoenix_data_path, expected_reader_attributes, channel
     ):
         """Test reader attributes for multiple channels."""
-        if channel not in phoenix_readers:
+        # Create fresh reader to avoid shared state issues
+        from mth5.io.phoenix import open_phoenix
+
+        channel_files = {
+            "0": "10128_608783F4_0_00000001.td_24k",
+            "1": "10128_608783F4_1_00000001.td_24k",
+            "2": "10128_608783F4_2_00000001.td_24k",
+            "4": "10128_608783F4_4_00000001.td_24k",
+        }
+
+        if channel not in channel_files:
+            pytest.skip(f"Channel {channel} not defined")
+
+        file_path = (
+            phoenix_data_path
+            / "10128_2021-04-27-032436"
+            / channel
+            / channel_files[channel]
+        )
+        if not file_path.exists():
             pytest.skip(f"Channel {channel} data not available")
 
-        reader = phoenix_readers[channel]
+        reader = open_phoenix(file_path)
 
         # Test key attributes that should vary by channel
         key_attrs = ["channel_id", "channel_type", "detected_channel_type"]
@@ -557,17 +596,36 @@ class TestPhoenixSegmentedReader:
     @pytest.mark.parametrize("channel", ["0", "1", "2", "4"])
     def test_to_channel_ts_multi_channel(
         self,
-        phoenix_readers,
+        phoenix_data_path,
         rxcal_fn,
         expected_channel_metadata,
         expected_filter_names,
         channel,
     ):
         """Test channel TS conversion for multiple channels."""
-        if channel not in phoenix_readers:
+        # Create fresh reader to avoid shared state issues
+        from mth5.io.phoenix import open_phoenix
+
+        channel_files = {
+            "0": "10128_608783F4_0_00000001.td_24k",
+            "1": "10128_608783F4_1_00000001.td_24k",
+            "2": "10128_608783F4_2_00000001.td_24k",
+            "4": "10128_608783F4_4_00000001.td_24k",
+        }
+
+        if channel not in channel_files:
+            pytest.skip(f"Channel {channel} not defined")
+
+        file_path = (
+            phoenix_data_path
+            / "10128_2021-04-27-032436"
+            / channel
+            / channel_files[channel]
+        )
+        if not file_path.exists():
             pytest.skip(f"Channel {channel} data not available")
 
-        reader = phoenix_readers[channel]
+        reader = open_phoenix(file_path)
         ch_ts = reader.to_channel_ts(rxcal_fn=rxcal_fn)
 
         expected_metadata = expected_channel_metadata[channel]
@@ -657,12 +715,31 @@ class TestPhoenixSegmentedReaderAdvanced:
         assert actual_duration == pytest.approx(duration_seconds, rel=1e-10)
 
     @pytest.mark.parametrize("channel", ["0", "1", "2", "4"])
-    def test_channel_response_structure(self, phoenix_readers, rxcal_fn, channel):
+    def test_channel_response_structure(self, phoenix_data_path, rxcal_fn, channel):
         """Test channel response structure for different channels."""
-        if channel not in phoenix_readers:
+        # Create fresh reader to avoid shared state issues
+        from mth5.io.phoenix import open_phoenix
+
+        channel_files = {
+            "0": "10128_608783F4_0_00000001.td_24k",
+            "1": "10128_608783F4_1_00000001.td_24k",
+            "2": "10128_608783F4_2_00000001.td_24k",
+            "4": "10128_608783F4_4_00000001.td_24k",
+        }
+
+        if channel not in channel_files:
+            pytest.skip(f"Channel {channel} not defined")
+
+        file_path = (
+            phoenix_data_path
+            / "10128_2021-04-27-032436"
+            / channel
+            / channel_files[channel]
+        )
+        if not file_path.exists():
             pytest.skip(f"Channel {channel} data not available")
 
-        reader = phoenix_readers[channel]
+        reader = open_phoenix(file_path)
         ch_ts = reader.to_channel_ts(rxcal_fn=rxcal_fn)
 
         # All channels should have channel response
@@ -676,15 +753,36 @@ class TestPhoenixSegmentedReaderAdvanced:
             if hasattr(first_filter, "frequencies"):
                 assert first_filter.frequencies.shape[0] > 0
 
-    def test_channel_metadata_consistency(self, phoenix_readers, rxcal_fn):
+    def test_channel_metadata_consistency(self, phoenix_data_path, rxcal_fn):
         """Test consistency of channel metadata across channels."""
-        available_channels = list(phoenix_readers.keys())
+        # Create fresh readers to avoid shared state issues
+        from mth5.io.phoenix import open_phoenix
+
+        channel_files = {
+            "0": "10128_608783F4_0_00000001.td_24k",
+            "1": "10128_608783F4_1_00000001.td_24k",
+            "2": "10128_608783F4_2_00000001.td_24k",
+            "4": "10128_608783F4_4_00000001.td_24k",
+        }
+
+        available_channels = []
+        for ch_id, filename in channel_files.items():
+            file_path = phoenix_data_path / "10128_2021-04-27-032436" / ch_id / filename
+            if file_path.exists():
+                available_channels.append(ch_id)
+
         if len(available_channels) < 2:
             pytest.skip("Need at least 2 channels for consistency testing")
 
         channel_ts_list = []
         for channel in available_channels:
-            reader = phoenix_readers[channel]
+            file_path = (
+                phoenix_data_path
+                / "10128_2021-04-27-032436"
+                / channel
+                / channel_files[channel]
+            )
+            reader = open_phoenix(file_path)
             ch_ts = reader.to_channel_ts(rxcal_fn=rxcal_fn)
             channel_ts_list.append((channel, ch_ts))
 
@@ -704,15 +802,31 @@ class TestPhoenixSegmentedReaderAdvanced:
                 else:
                     assert actual_value == reference_value
 
-    def test_electric_vs_magnetic_channels(self, phoenix_readers, rxcal_fn):
+    def test_electric_vs_magnetic_channels(self, phoenix_data_path, rxcal_fn):
         """Test differences between electric and magnetic channels."""
+        # Create fresh readers to avoid shared state issues
+        from mth5.io.phoenix import open_phoenix
+
         magnetic_channels = ["0", "2"]
         electric_channels = ["1", "4"]
 
+        channel_files = {
+            "0": "10128_608783F4_0_00000001.td_24k",
+            "1": "10128_608783F4_1_00000001.td_24k",
+            "2": "10128_608783F4_2_00000001.td_24k",
+            "4": "10128_608783F4_4_00000001.td_24k",
+        }
+
         # Test magnetic channels
         for channel in magnetic_channels:
-            if channel in phoenix_readers:
-                reader = phoenix_readers[channel]
+            file_path = (
+                phoenix_data_path
+                / "10128_2021-04-27-032436"
+                / channel
+                / channel_files[channel]
+            )
+            if file_path.exists():
+                reader = open_phoenix(file_path)
                 ch_ts = reader.to_channel_ts(rxcal_fn=rxcal_fn)
 
                 # Magnetic channels should have type "magnetic"
@@ -725,8 +839,14 @@ class TestPhoenixSegmentedReaderAdvanced:
 
         # Test electric channels
         for channel in electric_channels:
-            if channel in phoenix_readers:
-                reader = phoenix_readers[channel]
+            file_path = (
+                phoenix_data_path
+                / "10128_2021-04-27-032436"
+                / channel
+                / channel_files[channel]
+            )
+            if file_path.exists():
+                reader = open_phoenix(file_path)
                 ch_ts = reader.to_channel_ts(rxcal_fn=rxcal_fn)
 
                 # Electric channels should have type "electric"
@@ -737,24 +857,39 @@ class TestPhoenixSegmentedReaderAdvanced:
                 filter_names = [f.name for f in filters]
                 assert not any("coil" in name for name in filter_names)
 
-    def test_data_integrity(self, phoenix_readers):
+    def test_data_integrity(self, phoenix_data_path):
         """Test data integrity across channels."""
-        for channel, reader in phoenix_readers.items():
-            segment = reader.read_segment()
+        # Create fresh readers to avoid shared state issues
+        from mth5.io.phoenix import open_phoenix
 
-            # Test data properties
-            assert segment.data is not None
-            assert len(segment.data) == segment.n_samples
-            assert segment.n_samples == 48000  # Expected for this dataset
+        channel_files = {
+            "0": "10128_608783F4_0_00000001.td_24k",
+            "1": "10128_608783F4_1_00000001.td_24k",
+            "2": "10128_608783F4_2_00000001.td_24k",
+            "4": "10128_608783F4_4_00000001.td_24k",
+        }
 
-            # Test data is finite
-            import numpy as np
+        for channel, filename in channel_files.items():
+            file_path = (
+                phoenix_data_path / "10128_2021-04-27-032436" / channel / filename
+            )
+            if file_path.exists():
+                reader = open_phoenix(file_path)
+                segment = reader.read_segment()
 
-            assert np.all(np.isfinite(segment.data))
+                # Test data properties
+                assert segment.data is not None
+                assert len(segment.data) == segment.n_samples
+                assert segment.n_samples == 48000  # Expected for this dataset
 
-            # Test data range is reasonable (not all zeros, not extreme values)
-            assert not np.all(segment.data == 0)
-            assert np.max(np.abs(segment.data)) < 1e6  # Reasonable range
+                # Test data is finite
+                import numpy as np
+
+                assert np.all(np.isfinite(segment.data))
+
+                # Test data range is reasonable (not all zeros, not extreme values)
+                assert not np.all(segment.data == 0)
+                assert np.max(np.abs(segment.data)) < 1e6  # Reasonable range
 
     @pytest.mark.parametrize("metadata_only", [True, False])
     def test_performance_metadata_vs_data(self, phoenix_reader_ch0, metadata_only):
@@ -857,19 +992,34 @@ class TestPhoenixSegmentedReaderAdvanced:
             assert len(filters_with) >= len(filters_without)
 
     def test_channel_component_mapping(
-        self, phoenix_readers, expected_channel_metadata
+        self, phoenix_data_path, expected_channel_metadata
     ):
         """Test channel component mapping correctness."""
+        # Create fresh readers to avoid shared state issues
+        from mth5.io.phoenix import open_phoenix
+
         expected_components = {"0": "h2", "1": "e1", "2": "h1", "4": "e2"}
 
-        for channel, reader in phoenix_readers.items():
+        channel_files = {
+            "0": "10128_608783F4_0_00000001.td_24k",
+            "1": "10128_608783F4_1_00000001.td_24k",
+            "2": "10128_608783F4_2_00000001.td_24k",
+            "4": "10128_608783F4_4_00000001.td_24k",
+        }
+
+        for channel, filename in channel_files.items():
             if channel in expected_components:
-                ch_ts = reader.to_channel_ts()
-                actual_component = ch_ts.channel_metadata.get_attr_from_name(
-                    "component"
+                file_path = (
+                    phoenix_data_path / "10128_2021-04-27-032436" / channel / filename
                 )
-                expected_component = expected_components[channel]
-                assert actual_component == expected_component
+                if file_path.exists():
+                    reader = open_phoenix(file_path)
+                    ch_ts = reader.to_channel_ts()
+                    actual_component = ch_ts.channel_metadata.get_attr_from_name(
+                        "component"
+                    )
+                    expected_component = expected_components[channel]
+                    assert actual_component == expected_component
 
 
 # =============================================================================

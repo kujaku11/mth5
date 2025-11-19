@@ -162,7 +162,7 @@ class USGSascii(AsciiMetadata):
         data_line = self.read_metadata()
         self.ts = pd.read_csv(
             self.fn,
-            delim_whitespace=True,
+            sep="\s+",
             skiprows=data_line,
             dtype=np.float32,
         )

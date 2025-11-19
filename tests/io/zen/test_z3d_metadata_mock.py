@@ -35,8 +35,9 @@ except ImportError:
     HAS_MTH5_TEST_DATA = False
 
 
-@pytest.mark.skipif(not HAS_MTH5_TEST_DATA, reason="mth5_test_data not available")
-
+@pytest.mark.skipif(
+    HAS_MTH5_TEST_DATA, reason="Skipping mock tests - real data available"
+)
 # =============================================================================
 # Fixtures
 # =============================================================================
@@ -294,7 +295,7 @@ class TestZ3DMetadataCalibrationConversions:
 
         # Simulate the numpy conversion from read_metadata
         try:
-            zm.board_cal = np.core.records.fromrecords(
+            zm.board_cal = np.rec.fromrecords(
                 zm.board_cal, names="frequency, rate, amplitude, phase"
             )
 
@@ -329,9 +330,7 @@ class TestZ3DMetadataCalibrationConversions:
         if len(zm.coil_cal) > 0:
             a = np.array(zm.coil_cal)
             a = a.reshape((int(a.size / 3), 3))
-            zm.coil_cal = np.core.records.fromrecords(
-                a, names="frequency, amplitude, phase"
-            )
+            zm.coil_cal = np.rec.fromrecords(a, names="frequency, amplitude, phase")
 
         assert isinstance(zm.coil_cal, np.ndarray)
         assert zm.coil_cal.dtype.names == ("frequency", "amplitude", "phase")
@@ -354,7 +353,7 @@ class TestZ3DMetadataCalibrationConversions:
 
         # Simulate error handling
         try:
-            zm.board_cal = np.core.records.fromrecords(
+            zm.board_cal = np.rec.fromrecords(
                 zm.board_cal, names="frequency, rate, amplitude, phase"
             )
         except ValueError:
@@ -616,7 +615,7 @@ class TestZ3DMetadataIntegration:
         # 5. Simulate numpy conversion
         if len(zm.board_cal) > 0:
             try:
-                zm.board_cal = np.core.records.fromrecords(
+                zm.board_cal = np.rec.fromrecords(
                     zm.board_cal, names="frequency, rate, amplitude, phase"
                 )
             except ValueError:
@@ -661,16 +660,14 @@ class TestZ3DMetadataIntegration:
 
         # Convert both to numpy arrays
         if len(zm.board_cal) > 0:
-            zm.board_cal = np.core.records.fromrecords(
+            zm.board_cal = np.rec.fromrecords(
                 zm.board_cal, names="frequency, rate, amplitude, phase"
             )
 
         if len(zm.coil_cal) > 0:
             a = np.array(zm.coil_cal)
             a = a.reshape((int(a.size / 3), 3))
-            zm.coil_cal = np.core.records.fromrecords(
-                a, names="frequency, amplitude, phase"
-            )
+            zm.coil_cal = np.rec.fromrecords(a, names="frequency, amplitude, phase")
 
         # Test both exist and are properly formatted
         assert isinstance(zm.board_cal, np.ndarray)
@@ -712,7 +709,7 @@ class TestZ3DMetadataPerformance:
         import time
 
         start_time = time.time()
-        zm.board_cal = np.core.records.fromrecords(
+        zm.board_cal = np.rec.fromrecords(
             zm.board_cal, names="frequency, rate, amplitude, phase"
         )
         end_time = time.time()

@@ -25,8 +25,9 @@ except ImportError:
     HAS_MTH5_TEST_DATA = False
 
 
-@pytest.mark.skipif(not HAS_MTH5_TEST_DATA, reason="mth5_test_data not available")
-
+@pytest.mark.skipif(
+    HAS_MTH5_TEST_DATA, reason="Skipping mock tests - real data available"
+)
 # =============================================================================
 # Fixtures
 # =============================================================================

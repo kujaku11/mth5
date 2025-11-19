@@ -593,7 +593,7 @@ class TestLEMI424RunTSConversion:
             "temperature_h",
         ]
         assert run_ts.channels == expected_channels
-        assert run_ts.dataset.dims["time"] == 60
+        assert run_ts.dataset.sizes["time"] == 60
 
     def test_to_run_ts_custom_channels(self, lemi_obj_with_data):
         """Test conversion to RunTS with custom electric channels."""
@@ -760,7 +760,7 @@ class TestLEMI424Integration:
         # Convert to RunTS
         run_ts = lemi_obj.to_run_ts()
         assert isinstance(run_ts, RunTS)
-        assert run_ts.dataset.dims["time"] == 60
+        assert run_ts.dataset.sizes["time"] == 60
 
     def test_metadata_workflow(self, lemi_test_file):
         """Test metadata-only workflow."""
@@ -803,7 +803,7 @@ class TestReadLemi424Function:
         """Test reading single file with read_lemi424 function."""
         run_ts = read_lemi424(lemi_test_file)
         assert isinstance(run_ts, RunTS)
-        assert run_ts.dataset.dims["time"] == 60
+        assert run_ts.dataset.sizes["time"] == 60
 
     def test_read_with_custom_channels(self, lemi_test_file):
         """Test reading with custom electric channels."""
@@ -827,7 +827,7 @@ class TestReadLemi424Function:
         run_ts = read_lemi424(file_list)
         assert isinstance(run_ts, RunTS)
         # The actual behavior shows 180 samples (3x60), adjust expectation
-        assert run_ts.dataset.dims["time"] == 180  # Observed behavior
+        assert run_ts.dataset.sizes["time"] == 180  # Observed behavior
 
     def test_read_with_fast_parameter(self, lemi_test_file):
         """Test reading with fast parameter."""
@@ -836,7 +836,7 @@ class TestReadLemi424Function:
 
         assert isinstance(run_ts_fast, RunTS)
         assert isinstance(run_ts_slow, RunTS)
-        assert run_ts_fast.dataset.dims["time"] == run_ts_slow.dataset.dims["time"]
+        assert run_ts_fast.dataset.sizes["time"] == run_ts_slow.dataset.sizes["time"]
 
 
 # ==============================================================================
