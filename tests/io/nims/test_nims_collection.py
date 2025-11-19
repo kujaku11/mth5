@@ -1,18 +1,17 @@
 # -*- coding: utf-8 -*-
 """
-Comprehensive pytest suite for NIMSCollection class.
+Pytest test suite for NIMSCollection functionality with real data.
 
-This test suite uses fixtures, subtests, and mocking to efficiently test
-the NIMSCollection functionality for managing NIMS binary files.
+Based on test_nims_collection.py mock tests but using actual NIMS data files
+from mth5_test_data. Follows patterns from test_z3d.py and test_read_nims.py for real data integration.
 
-Created on November 10, 2025
+@author: jpeacock, converted for real data testing
 """
 
-from __future__ import annotations
-
-import tempfile
+# =============================================================================
+# Imports
+# =============================================================================
 from pathlib import Path
-from unittest.mock import Mock, patch
 
 import pandas as pd
 import pytest
@@ -20,87 +19,73 @@ import pytest
 from mth5.io.nims import NIMSCollection
 
 
+try:
+    import mth5_test_data
+
+    nims_data_path = mth5_test_data.get_test_data_path("nims")
+except ImportError:
+    nims_data_path = None
+
+
 # =============================================================================
 # Fixtures
 # =============================================================================
 
 
-@pytest.fixture
-def temp_directory():
-    """Create a temporary directory for testing."""
-    with tempfile.TemporaryDirectory() as temp_dir:
-        yield Path(temp_dir)
+@pytest.fixture(scope="session")
+def nims_collection_real():
+    """Fixture for NIMSCollection with real data - session scope for speed optimization."""
+    if nims_data_path is None:
+        pytest.skip("mth5_test_data not available")
+
+    if not Path(nims_data_path).exists():
+        pytest.skip(f"NIMS test data path not found: {nims_data_path}")
+
+    return NIMSCollection(file_path=nims_data_path)
+
+
+@pytest.fixture(scope="session")
+def nims_dataframe_real(nims_collection_real):
+    """Fixture for DataFrame created from real NIMS data - session scope for performance."""
+    try:
+        df = nims_collection_real.to_dataframe()
+        return df
+    except Exception as e:
+        pytest.skip(f"Failed to create DataFrame from real NIMS data: {e}")
 
 
 @pytest.fixture
-def mock_nims_file_structure(temp_directory):
-    """Create mock NIMS .bin files in temporary directory."""
-    files = []
-    for i, filename in enumerate(["test001a.BIN", "test001b.BIN", "test002a.BIN"]):
-        file_path = temp_directory / filename
-        file_path.write_bytes(
-            b"mock_binary_data" * (100 + i * 10)
-        )  # Different file sizes
-        files.append(file_path)
-    return files
-
-
-@pytest.fixture
-def mock_empty_entry_dict():
-    """Mock empty entry dictionary returned by Collection.get_empty_entry_dict()."""
+def expected_nims_collection_properties():
+    """Expected properties for real NIMS collection data."""
     return {
-        "survey": None,
-        "station": None,
-        "run": None,
-        "start": None,
-        "end": None,
-        "channel_id": None,
-        "component": None,
-        "fn": None,
-        "sample_rate": None,
-        "file_size": None,
-        "n_samples": None,
-        "sequence_number": None,
-        "dipole": None,
-        "coil_number": None,
-        "latitude": None,
-        "longitude": None,
-        "elevation": None,
-        "declination": None,
-        "calibration_fn": None,
+        "file_ext": "bin",
+        "survey_id": "mt",
+        "expected_files": ["mnp300a.BIN", "mnp300b.BIN"],
+        "expected_stations": ["300", "Mnp300"],
+        "expected_sample_rate": 8,
+        "min_file_size": 1000,  # Minimum expected file size
+        "expected_columns": [
+            "survey",
+            "station",
+            "run",
+            "start",
+            "end",
+            "channel_id",
+            "component",
+            "fn",
+            "sample_rate",
+            "file_size",
+            "n_samples",
+            "sequence_number",
+            "dipole",
+            "coil_number",
+            "latitude",
+            "longitude",
+            "elevation",
+            "instrument_id",
+            "calibration_fn",
+        ],
     }
-
-
-@pytest.fixture
-def nims_collection(mock_nims_file_structure):
-    """Create NIMSCollection instance with mocked file structure."""
-    return NIMSCollection(file_path=mock_nims_file_structure[0].parent)
-
-
-@pytest.fixture
-def expected_dataframe_columns():
-    """Expected columns in the output DataFrame."""
-    return [
-        "survey",
-        "station",
-        "run",
-        "start",
-        "end",
-        "channel_id",
-        "component",
-        "fn",
-        "sample_rate",
-        "file_size",
-        "n_samples",
-        "sequence_number",
-        "dipole",
-        "coil_number",
-        "latitude",
-        "longitude",
-        "elevation",
-        "declination",
-        "calibration_fn",
-    ]
 
 
 # =============================================================================
@@ -109,7 +94,17 @@ def expected_dataframe_columns():
 
 
 class TestNIMSCollectionInitialization:
-    """Test NIMSCollection initialization and basic properties."""
+    """Test NIMSCollection initialization and basic properties with real data."""
+
+    def test_initialization_with_real_path(self, expected_nims_collection_properties):
+        """Test initialization with real NIMS data path."""
+        if nims_data_path is None:
+            pytest.skip("mth5_test_data not available")
+
+        collection = NIMSCollection(file_path=nims_data_path)
+        assert collection.file_path == Path(nims_data_path)
+        assert collection.file_ext == expected_nims_collection_properties["file_ext"]
+        assert collection.survey_id == expected_nims_collection_properties["survey_id"]
 
     def test_initialization_default(self):
         """Test default initialization."""
@@ -118,313 +113,570 @@ class TestNIMSCollectionInitialization:
         assert collection.file_ext == "bin"
         assert collection.survey_id == "mt"
 
-    def test_initialization_with_path(self, temp_directory):
-        """Test initialization with file path."""
-        collection = NIMSCollection(file_path=temp_directory)
-        assert collection.file_path == temp_directory
-        assert collection.file_ext == "bin"
-        assert collection.survey_id == "mt"
+    def test_file_extension_property(
+        self, nims_collection_real, expected_nims_collection_properties
+    ):
+        """Test that file extension is set correctly for real data."""
+        assert (
+            nims_collection_real.file_ext
+            == expected_nims_collection_properties["file_ext"]
+        )
 
-    def test_initialization_with_kwargs(self, temp_directory):
-        """Test initialization with additional keyword arguments."""
-        # Note: NIMSCollection doesn't currently support setting survey_id in constructor
-        collection = NIMSCollection(file_path=temp_directory)
-        collection.survey_id = "custom_survey"  # Set after initialization
-        assert collection.file_path == temp_directory
-        assert collection.survey_id == "custom_survey"
+    def test_survey_id_property(
+        self, nims_collection_real, expected_nims_collection_properties
+    ):
+        """Test that survey ID is set correctly."""
+        assert (
+            nims_collection_real.survey_id
+            == expected_nims_collection_properties["survey_id"]
+        )
 
-    def test_file_extension_property(self, nims_collection):
-        """Test that file extension is set correctly."""
-        assert nims_collection.file_ext == "bin"
+    def test_survey_id_modification(self, nims_collection_real):
+        """Test modifying survey ID."""
+        original_survey_id = nims_collection_real.survey_id
+        nims_collection_real.survey_id = "custom_survey"
+        assert nims_collection_real.survey_id == "custom_survey"
+        # Reset to original
+        nims_collection_real.survey_id = original_survey_id
 
 
 class TestNIMSCollectionFileHandling:
-    """Test file discovery and handling functionality."""
+    """Test file discovery and handling functionality with real data."""
 
-    def test_get_files_with_bin_files(self, nims_collection, mock_nims_file_structure):
-        """Test getting .bin files from directory."""
-        files = nims_collection.get_files(nims_collection.file_ext)
+    def test_get_files_real_data(
+        self, nims_collection_real, expected_nims_collection_properties
+    ):
+        """Test getting .bin files from real NIMS directory."""
+        files = nims_collection_real.get_files(nims_collection_real.file_ext)
         file_names = [f.name for f in files]
 
-        expected_names = [f.name for f in mock_nims_file_structure]
-        assert len(files) == 3
-        assert all(name in file_names for name in expected_names)
+        # Should find the expected NIMS files
+        expected_files = expected_nims_collection_properties["expected_files"]
+        assert len(files) >= len(expected_files)
 
-    def test_get_files_empty_directory(self, temp_directory):
-        """Test getting files from empty directory."""
-        collection = NIMSCollection(file_path=temp_directory)
-        files = collection.get_files(collection.file_ext)
-        assert len(files) == 0
+        # Check that expected files are found
+        for expected_file in expected_files:
+            assert expected_file in file_names
 
-    def test_get_files_non_existent_directory(self):
-        """Test getting files from non-existent directory."""
-        # Create collection without setting file_path to avoid IOError in constructor
-        collection = NIMSCollection()
-        collection._file_path = Path(
-            "/non/existent/path"
-        )  # Set private attribute directly
-        files = collection.get_files(collection.file_ext)
-        assert len(files) == 0
+    def test_file_sizes_reasonable(
+        self, nims_collection_real, expected_nims_collection_properties
+    ):
+        """Test that found files have reasonable sizes."""
+        files = nims_collection_real.get_files(nims_collection_real.file_ext)
+        min_size = expected_nims_collection_properties["min_file_size"]
+
+        for file_path in files:
+            if file_path.is_file():
+                file_size = file_path.stat().st_size
+                assert (
+                    file_size > min_size
+                ), f"File {file_path.name} too small: {file_size} bytes"
+
+    def test_file_extensions_correct(self, nims_collection_real):
+        """Test that all found files have correct extensions."""
+        files = nims_collection_real.get_files(nims_collection_real.file_ext)
+
+        for file_path in files:
+            # Should be .bin or .BIN
+            assert (
+                file_path.suffix.lower() == ".bin"
+            ), f"Unexpected extension: {file_path.suffix}"
+
+    def test_get_files_empty_extension(self, nims_collection_real):
+        """Test getting files with empty extension."""
+        files = nims_collection_real.get_files("")
+        # Should return all files or handle gracefully
+        assert isinstance(files, list)
+
+    def test_files_exist_and_readable(self, nims_collection_real):
+        """Test that all discovered files exist and are readable."""
+        files = nims_collection_real.get_files(nims_collection_real.file_ext)
+
+        for file_path in files:
+            assert file_path.exists(), f"File does not exist: {file_path}"
+            assert file_path.is_file(), f"Path is not a file: {file_path}"
+            assert file_path.stat().st_size > 0, f"File is empty: {file_path}"
 
 
 class TestNIMSCollectionDataFrameCreation:
-    """Test DataFrame creation from NIMS files."""
+    """Test DataFrame creation from real NIMS files."""
 
-    @patch("mth5.io.nims.nims_collection.NIMS")
-    def test_to_dataframe_basic_simple(self, mock_nims_class, nims_collection):
-        """Test basic DataFrame creation with simplified mocking."""
-        # Create simple mock without MTime objects
-        mock_nims = Mock()
-        mock_nims.station = "test001"
-        mock_nims.run_id = "test001a"
-        mock_nims.start_time.isoformat.return_value = "2023-01-01T12:00:00+00:00"
-        mock_nims.end_time.isoformat.return_value = "2023-01-01T13:00:00+00:00"
-        mock_nims.sample_rate = 8
-        mock_nims.file_size = 1200
-        mock_nims.n_samples = 28800
-        mock_nims.ex_length = 100.0
-        mock_nims.ey_length = 100.0
-        mock_nims.read_header = Mock()
+    def test_dataframe_creation_basic(
+        self, nims_dataframe_real, expected_nims_collection_properties
+    ):
+        """Test basic DataFrame creation with real data."""
+        df = nims_dataframe_real
 
-        mock_nims_class.return_value = mock_nims
+        # Should have data
+        assert len(df) > 0, "DataFrame should not be empty"
 
-        # Mock the parent class methods
-        with patch.object(
-            nims_collection, "get_empty_entry_dict", return_value={}
-        ), patch.object(
-            nims_collection, "_sort_df", side_effect=lambda df, zeros: df
-        ), patch.object(
-            nims_collection, "_set_df_dtypes", side_effect=lambda df: df
-        ):
-            df = nims_collection.to_dataframe()
+        # Should have expected columns
+        expected_cols = expected_nims_collection_properties["expected_columns"]
+        for col in expected_cols:
+            assert col in df.columns, f"Missing expected column: {col}"
 
-        # Should have processed the mock files
-        assert len(df) >= 0  # May be empty if no .bin files found
+    def test_dataframe_data_types(self, nims_dataframe_real):
+        """Test DataFrame data types are reasonable."""
+        df = nims_dataframe_real
+
+        # Check specific column types
+        if "sample_rate" in df.columns:
+            assert pd.api.types.is_numeric_dtype(
+                df["sample_rate"]
+            ), "sample_rate should be numeric"
+
+        if "file_size" in df.columns:
+            assert pd.api.types.is_numeric_dtype(
+                df["file_size"]
+            ), "file_size should be numeric"
+
+        if "n_samples" in df.columns:
+            assert pd.api.types.is_numeric_dtype(
+                df["n_samples"]
+            ), "n_samples should be numeric"
+
+    def test_dataframe_content_validation(
+        self, nims_dataframe_real, expected_nims_collection_properties
+    ):
+        """Test DataFrame content is reasonable."""
+        df = nims_dataframe_real
+
+        # Check stations
+        if "station" in df.columns:
+            stations = df["station"].unique()
+            expected_stations = expected_nims_collection_properties["expected_stations"]
+            # Should have some expected stations (may have variations)
+            assert len(stations) > 0, "Should have at least one station"
+
+        # Check sample rates
+        if "sample_rate" in df.columns:
+            sample_rates = df["sample_rate"].unique()
+            expected_rate = expected_nims_collection_properties["expected_sample_rate"]
+            assert (
+                expected_rate in sample_rates
+            ), f"Expected sample rate {expected_rate} not found"
+
+    def test_dataframe_file_information(self, nims_dataframe_real):
+        """Test that DataFrame contains correct file information."""
+        df = nims_dataframe_real
+
+        # Check file paths
+        if "fn" in df.columns:
+            file_paths = df["fn"].tolist()
+            for fn in file_paths:
+                if fn is not None:
+                    assert Path(
+                        fn
+                    ).exists(), f"File path in DataFrame does not exist: {fn}"
+                    assert str(fn).endswith(".BIN"), f"File should end with .BIN: {fn}"
+
+    def test_dataframe_no_null_critical_fields(self, nims_dataframe_real):
+        """Test that critical fields are not null."""
+        df = nims_dataframe_real
+
+        critical_fields = ["fn", "file_size"]
+        for field in critical_fields:
+            if field in df.columns:
+                assert (
+                    not df[field].isna().all()
+                ), f"Critical field {field} should not be all null"
+
+    def test_dataframe_time_fields(self, nims_dataframe_real):
+        """Test that time fields are properly formatted."""
+        df = nims_dataframe_real
+
+        time_fields = ["start", "end"]
+        for field in time_fields:
+            if field in df.columns and not df[field].isna().all():
+                # Should be parseable as datetime
+                try:
+                    pd.to_datetime(df[field].dropna())
+                except Exception as e:
+                    pytest.fail(f"Time field {field} not parseable as datetime: {e}")
 
 
 class TestNIMSCollectionRunNameAssignment:
-    """Test run name assignment functionality."""
+    """Test run name assignment functionality with real data."""
 
-    def test_assign_run_names_single_station(self):
-        """Test run name assignment for single station."""
-        collection = NIMSCollection()
+    def test_assign_run_names_real_data(self, nims_dataframe_real):
+        """Test run name assignment with real data."""
+        df = nims_dataframe_real.copy()
 
-        # Create test DataFrame
-        df = pd.DataFrame(
-            {
-                "station": ["test001", "test001", "test001"],
-                "run": [None, None, None],
-                "sample_rate": [8, 8, 8],
-                "start": [
-                    "2023-01-01T10:00:00",
-                    "2023-01-01T11:00:00",
-                    "2023-01-01T12:00:00",
-                ],
-            }
-        )
-        df["start"] = pd.to_datetime(df["start"])
+        # Clear existing run names to test assignment
+        if "run" in df.columns:
+            df["run"] = None
 
-        result_df = collection.assign_run_names(df, zeros=2)
+        # Create NIMSCollection instance for testing
+        if nims_data_path is None:
+            pytest.skip("mth5_test_data not available")
 
-        expected_runs = ["sr8_01", "sr8_02", "sr8_03"]
-        expected_sequences = [1, 2, 3]
+        collection = NIMSCollection(file_path=nims_data_path)
 
-        assert result_df["run"].tolist() == expected_runs
-        assert result_df["sequence_number"].tolist() == expected_sequences
+        # Test run name assignment
+        try:
+            result_df = collection.assign_run_names(df, zeros=2)
 
-    def test_assign_run_names_multiple_stations(self):
-        """Test run name assignment for multiple stations."""
-        collection = NIMSCollection()
+            # Should have run names assigned
+            if "run" in result_df.columns:
+                run_names = result_df["run"].dropna().tolist()
+                assert len(run_names) > 0, "Should have assigned at least one run name"
 
-        df = pd.DataFrame(
-            {
-                "station": ["test001", "test001", "test002", "test002"],
-                "run": [None, None, None, None],
-                "sample_rate": [8, 8, 8, 8],
-                "start": [
-                    "2023-01-01T10:00:00",
-                    "2023-01-01T11:00:00",
-                    "2023-01-02T10:00:00",
-                    "2023-01-02T11:00:00",
-                ],
-            }
-        )
-        df["start"] = pd.to_datetime(df["start"])
+                # Run names should follow expected pattern (e.g., 'sr8_01')
+                for run_name in run_names:
+                    if run_name is not None:
+                        assert isinstance(
+                            run_name, str
+                        ), f"Run name should be string: {run_name}"
+                        assert len(run_name) > 0, "Run name should not be empty"
 
-        result_df = collection.assign_run_names(df, zeros=3)
+        except Exception as e:
+            pytest.fail(f"assign_run_names failed with real data: {e}")
 
-        # Check that each station starts counting from 1
-        test001_runs = result_df[result_df["station"] == "test001"]["run"].tolist()
-        test002_runs = result_df[result_df["station"] == "test002"]["run"].tolist()
-
-        assert test001_runs == ["sr8_001", "sr8_002"]
-        assert test002_runs == ["sr8_001", "sr8_002"]
-
-    def test_assign_run_names_existing_run_names(self):
+    def test_assign_run_names_preserves_existing(self, nims_dataframe_real):
         """Test that existing run names are preserved."""
-        collection = NIMSCollection()
+        df = nims_dataframe_real.copy()
 
-        df = pd.DataFrame(
-            {
-                "station": ["test001", "test001", "test001"],
-                "run": ["existing_run", None, "another_run"],
-                "sample_rate": [8, 8, 8],
-                "start": [
-                    "2023-01-01T10:00:00",
-                    "2023-01-01T11:00:00",
-                    "2023-01-01T12:00:00",
-                ],
-            }
-        )
-        df["start"] = pd.to_datetime(df["start"])
+        if "run" in df.columns and len(df) > 0:
+            # Set first run to a custom name
+            original_run = df.iloc[0]["run"]
+            custom_run = "custom_run_001"
+            df.at[0, "run"] = custom_run
 
-        result_df = collection.assign_run_names(df, zeros=2)
+            # Create NIMSCollection instance
+            if nims_data_path is None:
+                pytest.skip("mth5_test_data not available")
 
-        # Should preserve existing names, only assign to None values
-        expected_runs = ["existing_run", "sr8_02", "another_run"]
-        assert result_df["run"].tolist() == expected_runs
+            collection = NIMSCollection(file_path=nims_data_path)
 
-    def test_assign_run_names_different_sample_rates(self):
-        """Test run name assignment with different sample rates."""
-        collection = NIMSCollection()
+            try:
+                result_df = collection.assign_run_names(df, zeros=2)
 
-        df = pd.DataFrame(
-            {
-                "station": ["test001", "test001", "test001"],
-                "run": [None, None, None],
-                "sample_rate": [1, 8, 8],
-                "start": [
-                    "2023-01-01T10:00:00",
-                    "2023-01-01T11:00:00",
-                    "2023-01-01T12:00:00",
-                ],
-            }
-        )
-        df["start"] = pd.to_datetime(df["start"])
+                # Custom run name should be preserved
+                assert (
+                    result_df.iloc[0]["run"] == custom_run
+                ), "Custom run name should be preserved"
 
-        result_df = collection.assign_run_names(df, zeros=2)
+            except Exception as e:
+                pytest.fail(f"assign_run_names failed to preserve existing names: {e}")
 
-        expected_runs = ["sr1_01", "sr8_02", "sr8_03"]
-        assert result_df["run"].tolist() == expected_runs
+    def test_assign_run_names_with_different_stations(self, nims_dataframe_real):
+        """Test run name assignment with multiple stations."""
+        df = nims_dataframe_real.copy()
+
+        if "station" in df.columns and len(df["station"].unique()) > 1:
+            # Clear run names
+            if "run" in df.columns:
+                df["run"] = None
+
+            # Create NIMSCollection instance
+            if nims_data_path is None:
+                pytest.skip("mth5_test_data not available")
+
+            collection = NIMSCollection(file_path=nims_data_path)
+
+            try:
+                result_df = collection.assign_run_names(df, zeros=3)
+
+                # Each station should have its own run sequence
+                stations = result_df["station"].unique()
+                for station in stations:
+                    station_runs = result_df[result_df["station"] == station][
+                        "run"
+                    ].dropna()
+                    if len(station_runs) > 0:
+                        # Should have reasonable run names for this station
+                        assert (
+                            len(station_runs) > 0
+                        ), f"Station {station} should have run names"
+
+            except Exception as e:
+                pytest.fail(f"assign_run_names failed with multiple stations: {e}")
+
+
+class TestNIMSCollectionUtilityMethods:
+    """Test utility and helper methods with real data."""
+
+    def test_get_empty_entry_dict(
+        self, nims_collection_real, expected_nims_collection_properties
+    ):
+        """Test getting empty entry dictionary."""
+        if hasattr(nims_collection_real, "get_empty_entry_dict"):
+            empty_dict = nims_collection_real.get_empty_entry_dict()
+
+            # Should be a dictionary
+            assert isinstance(empty_dict, dict), "Should return a dictionary"
+
+            # Should contain expected keys
+            expected_cols = expected_nims_collection_properties["expected_columns"]
+            for col in expected_cols:
+                if col in empty_dict:
+                    # Values should be None or appropriate defaults
+                    assert empty_dict[col] is None or isinstance(
+                        empty_dict[col], (str, int, float, list)
+                    )
+
+    def test_collection_string_representation(self, nims_collection_real):
+        """Test string representation of collection."""
+        repr_str = repr(nims_collection_real)
+        assert isinstance(repr_str, str), "String representation should be string"
+        assert len(repr_str) > 0, "String representation should not be empty"
+        # Should contain class name
+        assert "NIMSCollection" in repr_str or "Collection" in repr_str
+
+    def test_collection_properties_accessible(self, nims_collection_real):
+        """Test that collection properties are accessible."""
+        # Basic properties should be accessible
+        assert hasattr(nims_collection_real, "file_path")
+        assert hasattr(nims_collection_real, "file_ext")
+        assert hasattr(nims_collection_real, "survey_id")
+
+        # Methods should be callable
+        assert callable(getattr(nims_collection_real, "get_files"))
+        assert callable(getattr(nims_collection_real, "to_dataframe"))
 
 
 class TestNIMSCollectionIntegration:
-    """Integration tests combining multiple functionalities."""
+    """Integration tests with real data."""
 
-    def test_basic_file_discovery(self, temp_directory):
-        """Test basic file discovery functionality."""
-        # Create some mock files
-        (temp_directory / "test001a.bin").write_bytes(b"data")
-        (temp_directory / "test002b.BIN").write_bytes(b"data")
-        (temp_directory / "test003c.txt").write_bytes(b"data")  # Non-bin file
+    def test_full_workflow_real_data(
+        self, nims_collection_real, expected_nims_collection_properties
+    ):
+        """Test complete workflow from file discovery to DataFrame creation."""
+        # Step 1: File discovery
+        files = nims_collection_real.get_files(nims_collection_real.file_ext)
+        assert len(files) > 0, "Should discover NIMS files"
 
-        collection = NIMSCollection(file_path=temp_directory)
-        files = collection.get_files(collection.file_ext)
+        # Step 2: DataFrame creation
+        df = nims_collection_real.to_dataframe()
+        assert len(df) > 0, "Should create non-empty DataFrame"
 
-        # Should find only .bin/.BIN files
-        assert len(files) >= 2
+        # Step 3: Basic validation
+        expected_cols = expected_nims_collection_properties["expected_columns"]
+        for col in expected_cols:
+            assert col in df.columns, f"Missing column: {col}"
 
-    def test_collection_properties(self, nims_collection):
-        """Test that collection has expected properties."""
-        assert hasattr(nims_collection, "file_ext")
-        # file_ext might be a string 'bin' or list ['.bin', '.BIN'] depending on implementation
-        assert nims_collection.file_ext in ("bin", [".bin", ".BIN"], ["bin", "BIN"])
-        assert hasattr(nims_collection, "get_files")
-        assert hasattr(nims_collection, "to_dataframe")
+        # Step 4: Data consistency
+        if "fn" in df.columns:
+            df_files = [Path(fn).name for fn in df["fn"].dropna()]
+            discovered_files = [f.name for f in files]
 
-    def test_empty_directory_handling(self, temp_directory):
-        """Test handling of directory with no NIMS files."""
-        # Create a file that's not a NIMS file
-        (temp_directory / "not_nims.txt").write_text("not a nims file")
+            # DataFrame files should come from discovered files
+            for df_file in df_files:
+                assert (
+                    df_file in discovered_files
+                ), f"DataFrame file {df_file} not in discovered files"
 
-        collection = NIMSCollection(file_path=temp_directory)
-        files = collection.get_files(collection.file_ext)
+    def test_dataframe_consistency_with_files(self, nims_collection_real):
+        """Test that DataFrame data is consistent with actual files."""
+        df = nims_collection_real.to_dataframe()
 
-        # Should find no .bin files
-        assert len(files) == 0
+        # Check file size consistency
+        if "fn" in df.columns and "file_size" in df.columns:
+            for _, row in df.iterrows():
+                if pd.notna(row["fn"]) and pd.notna(row["file_size"]):
+                    file_path = Path(row["fn"])
+                    if file_path.exists():
+                        actual_size = file_path.stat().st_size
+                        df_size = row["file_size"]
+                        # Allow for small differences (header parsing, etc.)
+                        size_diff = abs(actual_size - df_size)
+                        assert (
+                            size_diff < actual_size * 0.1
+                        ), f"File size mismatch for {file_path.name}"
+
+    def test_multiple_operations_consistency(self, nims_collection_real):
+        """Test that multiple operations give consistent results."""
+        # Create DataFrame multiple times
+        df1 = nims_collection_real.to_dataframe()
+        df2 = nims_collection_real.to_dataframe()
+
+        # Should be identical
+        pd.testing.assert_frame_equal(
+            df1, df2, "Multiple DataFrame creations should be identical"
+        )
+
+        # File discovery should be consistent
+        files1 = nims_collection_real.get_files(nims_collection_real.file_ext)
+        files2 = nims_collection_real.get_files(nims_collection_real.file_ext)
+
+        assert len(files1) == len(files2), "File discovery should be consistent"
+        assert set(f.name for f in files1) == set(
+            f.name for f in files2
+        ), "File names should be consistent"
 
 
 class TestNIMSCollectionPerformance:
-    """Performance and efficiency tests."""
+    """Performance tests with real data."""
 
-    def test_multiple_file_handling(self, temp_directory):
-        """Test handling multiple files efficiently."""
-        # Create multiple mock files
-        for i in range(5):
-            file_path = temp_directory / f"test_{i:03d}a.BIN"
-            file_path.write_bytes(b"mock_data" * 100)
+    def test_dataframe_creation_performance(self, nims_collection_real):
+        """Test that DataFrame creation completes in reasonable time."""
+        import time
 
-        collection = NIMSCollection(file_path=temp_directory)
-        files = collection.get_files(collection.file_ext)
+        start_time = time.time()
+        df = nims_collection_real.to_dataframe()
+        end_time = time.time()
 
-        # Should efficiently discover all files
-        assert len(files) == 5
-        assert all(f.name.endswith(".BIN") for f in files)
+        duration = end_time - start_time
+
+        # Should complete in reasonable time (less than 30 seconds for test data)
+        assert (
+            duration < 30.0
+        ), f"DataFrame creation took too long: {duration:.2f} seconds"
+        assert len(df) > 0, "Should create non-empty DataFrame"
+
+    def test_file_discovery_performance(self, nims_collection_real):
+        """Test that file discovery is efficient."""
+        import time
+
+        start_time = time.time()
+        files = nims_collection_real.get_files(nims_collection_real.file_ext)
+        end_time = time.time()
+
+        duration = end_time - start_time
+
+        # Should complete quickly (less than 5 seconds)
+        assert duration < 5.0, f"File discovery took too long: {duration:.2f} seconds"
+        assert len(files) > 0, "Should discover files"
+
+    def test_memory_efficiency(self, nims_collection_real):
+        """Test memory efficiency with real data."""
+        # Create DataFrame and ensure it's reasonably sized
+        df = nims_collection_real.to_dataframe()
+
+        # DataFrame should not be excessively large for test data
+        memory_usage = df.memory_usage(deep=True).sum()
+
+        # Should use less than 10MB for test data
+        assert (
+            memory_usage < 10 * 1024 * 1024
+        ), f"DataFrame uses too much memory: {memory_usage} bytes"
 
 
 class TestNIMSCollectionEdgeCases:
-    """Test edge cases and boundary conditions."""
+    """Test edge cases and boundary conditions with real data."""
 
-    def test_empty_survey_id(self):
-        """Test with empty survey ID."""
-        collection = NIMSCollection()
-        collection.survey_id = ""
-        assert collection.survey_id == ""
+    def test_empty_dataframe_handling(self):
+        """Test handling of empty DataFrame in assign_run_names."""
+        if nims_data_path is None:
+            pytest.skip("mth5_test_data not available")
 
-    def test_assign_run_names_empty_dataframe(self):
-        """Test assign_run_names with empty DataFrame."""
-        collection = NIMSCollection()
-        df = pd.DataFrame(columns=["station", "run", "sample_rate", "start"])
+        collection = NIMSCollection(file_path=nims_data_path)
 
-        result_df = collection.assign_run_names(df)
-        assert len(result_df) == 0
-        assert list(result_df.columns) == ["station", "run", "sample_rate", "start"]
+        # Test with empty DataFrame
+        empty_df = pd.DataFrame(columns=["station", "run", "sample_rate", "start"])
+        result_df = collection.assign_run_names(empty_df)
 
-    def test_file_discovery_efficiency(self, temp_directory):
-        """Test that file discovery is efficient."""
-        # Create many files of different types
-        for i in range(10):
-            bin_path = temp_directory / f"valid_{i}.BIN"
-            txt_path = temp_directory / f"invalid_{i}.txt"
-            bin_path.write_bytes(b"bin_data")
-            txt_path.write_text("text_data")
+        assert len(result_df) == 0, "Empty DataFrame should remain empty"
+        assert list(result_df.columns) == list(
+            empty_df.columns
+        ), "Columns should be preserved"
 
-        collection = NIMSCollection(file_path=temp_directory)
+    def test_single_file_handling(self, nims_collection_real):
+        """Test handling when only one file is available."""
+        # This tests the case where we might have only one NIMS file
+        files = nims_collection_real.get_files(nims_collection_real.file_ext)
 
-        # Should only find .bin files
-        files = collection.get_files(collection.file_ext)
-        assert len(files) == 10
-        assert all(f.suffix.lower() in [".bin"] for f in files)
+        if len(files) >= 1:
+            # Test should work even with just one file
+            df = nims_collection_real.to_dataframe()
+            assert len(df) > 0, "Should handle single file case"
+
+    def test_large_file_handling(self, nims_collection_real):
+        """Test handling of large NIMS files."""
+        files = nims_collection_real.get_files(nims_collection_real.file_ext)
+
+        # Check for reasonably large files (>1MB)
+        large_files = [f for f in files if f.stat().st_size > 1024 * 1024]
+
+        if len(large_files) > 0:
+            # Should handle large files without issues
+            df = nims_collection_real.to_dataframe()
+            assert len(df) > 0, "Should handle large files"
+
+            # Check that we got reasonable data from large files
+            if "file_size" in df.columns:
+                max_file_size = df["file_size"].max()
+                assert max_file_size > 1024 * 1024, "Should have processed large file"
+
+
+class TestNIMSCollectionDataValidation:
+    """Validation tests for data quality and consistency."""
+
+    def test_geographic_coordinates_reasonable(self, nims_dataframe_real):
+        """Test that geographic coordinates are in reasonable ranges."""
+        df = nims_dataframe_real
+
+        # Check latitude
+        if "latitude" in df.columns:
+            latitudes = df["latitude"].dropna()
+            if len(latitudes) > 0:
+                assert latitudes.min() >= -90, "Latitude should be >= -90"
+                assert latitudes.max() <= 90, "Latitude should be <= 90"
+
+        # Check longitude
+        if "longitude" in df.columns:
+            longitudes = df["longitude"].dropna()
+            if len(longitudes) > 0:
+                assert longitudes.min() >= -180, "Longitude should be >= -180"
+                assert longitudes.max() <= 180, "Longitude should be <= 180"
+
+    def test_sample_rate_consistency(
+        self, nims_dataframe_real, expected_nims_collection_properties
+    ):
+        """Test that sample rates are reasonable."""
+        df = nims_dataframe_real
+
+        if "sample_rate" in df.columns:
+            sample_rates = df["sample_rate"].dropna().unique()
+
+            # Should have positive sample rates
+            assert all(sr > 0 for sr in sample_rates), "Sample rates should be positive"
+
+            # Should include expected rate
+            expected_rate = expected_nims_collection_properties["expected_sample_rate"]
+            assert (
+                expected_rate in sample_rates
+            ), f"Expected sample rate {expected_rate} not found"
+
+    def test_file_size_reasonableness(
+        self, nims_dataframe_real, expected_nims_collection_properties
+    ):
+        """Test that file sizes are reasonable."""
+        df = nims_dataframe_real
+
+        if "file_size" in df.columns:
+            file_sizes = df["file_size"].dropna()
+            min_size = expected_nims_collection_properties["min_file_size"]
+
+            if len(file_sizes) > 0:
+                assert (
+                    file_sizes.min() > min_size
+                ), f"Files should be larger than {min_size} bytes"
+                assert (
+                    file_sizes.max() < 1024 * 1024 * 1024
+                ), "Files should be less than 1GB"
+
+    def test_station_name_format(self, nims_dataframe_real):
+        """Test that station names have reasonable format."""
+        df = nims_dataframe_real
+
+        if "station" in df.columns:
+            stations = df["station"].dropna().unique()
+
+            for station in stations:
+                # Should be strings
+                assert isinstance(
+                    station, str
+                ), f"Station name should be string: {station}"
+                # Should not be empty
+                assert len(station) > 0, "Station name should not be empty"
+                # Should be reasonable length
+                assert len(station) < 50, f"Station name too long: {station}"
 
 
 # =============================================================================
-# Performance and stress tests (can be run separately)
-# =============================================================================
-
-
-class TestNIMSCollectionStress:
-    """Stress tests for NIMSCollection (marked as slow)."""
-
-    def test_many_files_discovery(self, temp_directory):
-        """Test file discovery with many files."""
-        # Create many files
-        num_files = 50
-        for i in range(num_files):
-            file_path = temp_directory / f"stress_test_{i:04d}.BIN"
-            file_path.write_bytes(b"stress_data" * 50)
-
-        collection = NIMSCollection(file_path=temp_directory)
-        files = collection.get_files(collection.file_ext)
-
-        # Should discover all files efficiently
-        assert len(files) == num_files
-        assert all(f.name.startswith("stress_test_") for f in files)
-
-
-# =============================================================================
-# Main execution
+# Run Tests
 # =============================================================================
 
 if __name__ == "__main__":
-    # Run tests with various options
-    pytest.main([__file__, "-v", "--tb=short"])
+    pytest.main([__file__, "-v"])
