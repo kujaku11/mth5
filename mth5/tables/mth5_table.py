@@ -311,7 +311,7 @@ class MTH5Table:
         try:
             return self.add_row(null_array, index=index)
         except IndexError as error:
-            msg = f"Could not find index {index} in shape {self.shape()}"
+            msg = f"Could not find index {index} in shape {self.shape}"
             self.logger.exception(msg)
             raise IndexError(f"{error}\n{msg}")
 
