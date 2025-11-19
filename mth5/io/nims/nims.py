@@ -1485,7 +1485,7 @@ class NIMS(NIMSHeader):
         """
 
         # set the index to be UTC time
-        dt_freq = "{0:.0f}N".format(1.0 / (sample_rate) * 1e9)
+        dt_freq = "{0:.0f}ns".format(1.0 / (sample_rate) * 1e9)
         if stop_time is not None:
             dt_index = pd.date_range(
                 start=start_time,
