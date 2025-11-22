@@ -64,6 +64,12 @@ MTH5_TYPES = {
             target_folder=folder, file_version="0.1.0", force_make_mth5=True
         ),
     },
+    "test1_v2": {
+        "cache_name": "test1_v2_global.h5",
+        "create_func": lambda folder: create_test1_h5(
+            target_folder=folder, file_version="0.2.0", force_make_mth5=True
+        ),
+    },
     "test2": {
         "cache_name": "test2_global.h5",
         "create_func": lambda folder: create_test2_h5(
@@ -183,6 +189,19 @@ def global_test1_mth5():
     Safe for read-only operations across multiple tests.
     """
     file_path = create_session_mth5_file("test1", with_fcs=False)
+    yield file_path
+    # Cleanup handled by atexit
+
+
+@pytest.fixture(scope="session")
+def global_test1_v2_mth5():
+    """
+    Session-scoped fixture providing a cached test1 MTH5 file (version 0.2.0).
+
+    This file is created once per test session and reused by all tests.
+    Safe for read-only operations across multiple tests.
+    """
+    file_path = create_session_mth5_file("test1_v2", with_fcs=False)
     yield file_path
     # Cleanup handled by atexit
 

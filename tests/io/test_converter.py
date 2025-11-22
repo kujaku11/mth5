@@ -6,6 +6,8 @@ Test converters including
 Pytest version with fixtures and optimizations for speed.
 """
 
+import tempfile
+import uuid
 from pathlib import Path
 from unittest.mock import patch
 
@@ -14,7 +16,6 @@ from unittest.mock import patch
 # =============================================================================
 import pytest
 
-from mth5.data.make_mth5_from_asc import create_test1_h5
 from mth5.io.conversion import MTH5ToMiniSEEDStationXML
 
 
@@ -24,26 +25,38 @@ from mth5.io.conversion import MTH5ToMiniSEEDStationXML
 
 
 @pytest.fixture(scope="function")
-def mth5_test_files(tmp_path):
-    """Create test MTH5 files for each test in a unique temporary directory.
+def mth5_test_files(global_test1_mth5, global_test1_v2_mth5):
+    """Create test MTH5 files for each test using global cache.
 
     This avoids conflicts when running tests in parallel with pytest-xdist.
-    Each test process gets its own MTH5 files in a unique temporary directory.
+    Each test process gets its own MTH5 files copied from the global cache.
     """
+    import shutil
 
-    # Create unique MTH5 files in the test's temporary directory
-    # This ensures no conflicts between parallel test processes
-    mth5_path_v1 = create_test1_h5(
-        "0.1.0",
-        target_folder=tmp_path,
-        force_make_mth5=True,  # Always create fresh files
-    )
-    mth5_path_v2 = create_test1_h5(
-        "0.2.0",
-        target_folder=tmp_path,
-        force_make_mth5=True,  # Always create fresh files
-    )
-    return {"v1": mth5_path_v1, "v2": mth5_path_v2}
+    # Create unique temporary directory for this test
+    temp_dir = tempfile.mkdtemp()
+    unique_id = str(uuid.uuid4())[:8]
+
+    # Copy from global cache to unique files
+    mth5_path_v1 = Path(temp_dir) / f"test1_v1_{unique_id}.h5"
+    mth5_path_v2 = Path(temp_dir) / f"test1_v2_{unique_id}.h5"
+
+    shutil.copy2(global_test1_mth5, mth5_path_v1)
+    shutil.copy2(global_test1_v2_mth5, mth5_path_v2)
+
+    yield {"v1": mth5_path_v1, "v2": mth5_path_v2}
+
+    # Cleanup
+    for path in [mth5_path_v1, mth5_path_v2]:
+        if path.exists():
+            try:
+                path.unlink()
+            except (OSError, PermissionError):
+                pass
+    try:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+    except (OSError, PermissionError):
+        pass
 
 
 @pytest.fixture

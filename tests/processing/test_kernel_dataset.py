@@ -1,134 +1,25 @@
 # =============================================================================
 # Imports
 # =============================================================================
-import tempfile
-import uuid
 from pathlib import Path
 
 import pandas as pd
 import pytest
 
-from mth5.data.make_mth5_from_asc import create_test12rr_h5
 from mth5.processing import KERNEL_DATASET_COLUMNS, KernelDataset, RunSummary
 from mth5.processing.kernel_dataset import intervals_overlap, overlap
 
 
 # =============================================================================
-# Optimized test file creation
-# =============================================================================
-
-# Module-level cache for shared read-only test data
-_CACHED_MTH5_PATH = None
-_CACHED_RUN_SUMMARY = None
-
-
-def create_fast_test_mth5(target_folder):
-    """Create a fast MTH5 file for testing with minimal overhead."""
-    import shutil
-
-    # Check for global cache first (much faster)
-    global_cache = (
-        Path(tempfile.gettempdir()) / "mth5_test_cache" / "test12rr_global.h5"
-    )
-    if global_cache.exists():
-        # Copy from global cache for maximum speed
-        unique_id = str(uuid.uuid4())[:8]
-        target_file = Path(target_folder) / f"test12rr_{unique_id}.h5"
-        shutil.copy2(global_cache, target_file)
-        return target_file
-
-    # Check if we have a local cached version in the target folder
-    cache_file = Path(target_folder) / "test12rr_cache.h5"
-    if cache_file.exists():
-        # Copy from cache for speed
-        unique_id = str(uuid.uuid4())[:8]
-        target_file = Path(target_folder) / f"test12rr_{unique_id}.h5"
-        shutil.copy2(cache_file, target_file)
-        return target_file
-
-    # Create file with optimized settings
-    path = create_test12rr_h5(
-        target_folder=target_folder,
-        file_version="0.1.0",  # Faster than 0.2.0
-        force_make_mth5=True,
-    )
-
-    # Create global cache directory if it doesn't exist
-    global_cache.parent.mkdir(parents=True, exist_ok=True)
-
-    # Cache globally for maximum reuse
-    if not global_cache.exists():
-        try:
-            shutil.copy2(path, global_cache)
-        except (OSError, PermissionError):
-            pass  # If global caching fails, continue without it
-
-    # Cache locally as backup
-    if not cache_file.exists():
-        try:
-            shutil.copy2(path, cache_file)
-        except (OSError, PermissionError):
-            pass  # If caching fails, continue without it
-
-    return path
-
-
-def get_cached_mth5_and_run_summary():
-    """Get cached MTH5 path and RunSummary for read-only tests."""
-    global _CACHED_MTH5_PATH, _CACHED_RUN_SUMMARY
-
-    if _CACHED_MTH5_PATH is None or not _CACHED_MTH5_PATH.exists():
-        temp_dir = tempfile.mkdtemp()
-        _CACHED_MTH5_PATH = create_fast_test_mth5(temp_dir)
-        _CACHED_RUN_SUMMARY = None  # Reset run summary cache
-
-    if _CACHED_RUN_SUMMARY is None:
-        _CACHED_RUN_SUMMARY = RunSummary()
-        _CACHED_RUN_SUMMARY.from_mth5s([_CACHED_MTH5_PATH])
-
-    return _CACHED_MTH5_PATH, _CACHED_RUN_SUMMARY
-
-
-# =============================================================================
-# Fixtures
+# Fixtures using global cache from conftest.py
 # =============================================================================
 
 
 @pytest.fixture
-def mth5_path():
-    """Create or get test MTH5 file path."""
-
-    from mth5.utils.helpers import close_open_files
-
-    # Create unique temporary directory for each test
-    temp_dir = tempfile.mkdtemp()
-
-    # Always create fresh file for each test using optimized function
-    path = create_fast_test_mth5(temp_dir)
-
-    yield path
-
-    # Cleanup
-    close_open_files()
-    if path.exists():
-        try:
-            path.unlink()
-        except (OSError, PermissionError):
-            pass  # Handle case where file is still locked
-    try:
-        # Clean up temp directory
-        import shutil
-
-        shutil.rmtree(temp_dir, ignore_errors=True)
-    except (OSError, PermissionError):
-        pass
-
-
-@pytest.fixture
-def base_run_summary(mth5_path):
-    """Create base RunSummary from MTH5 file."""
+def base_run_summary(global_test12rr_mth5):
+    """Create base RunSummary from global MTH5 file."""
     run_summary = RunSummary()
-    run_summary.from_mth5s([mth5_path])
+    run_summary.from_mth5s([global_test12rr_mth5])
     return run_summary
 
 
@@ -139,29 +30,26 @@ def run_summary(base_run_summary):
 
 
 @pytest.fixture
-def kernel_dataset(run_summary):
-    """Create KernelDataset with test1 local and test2 remote stations."""
-    kd = KernelDataset()
-    kd.from_run_summary(run_summary, "test1", "test2")
-    return kd
+def mth5_path(fresh_test12rr_mth5):
+    """Create fresh MTH5 file for tests that modify data."""
+    # Return the fresh copy from global fixture
+    return fresh_test12rr_mth5
 
 
 @pytest.fixture(scope="session")
-def shared_mth5_path():
+def shared_mth5_path(global_test12rr_mth5):
     """Shared MTH5 path for read-only tests (session scope for speed)."""
     from mth5.utils.helpers import close_open_files
 
-    mth5_path, _ = get_cached_mth5_and_run_summary()
-    yield mth5_path
-
-    # Session cleanup
+    yield global_test12rr_mth5
     close_open_files()
 
 
 @pytest.fixture(scope="session")
-def shared_run_summary():
+def shared_run_summary(global_test12rr_mth5):
     """Shared RunSummary for read-only tests (session scope for speed)."""
-    _, run_summary = get_cached_mth5_and_run_summary()
+    run_summary = RunSummary()
+    run_summary.from_mth5s([global_test12rr_mth5])
     return run_summary
 
 
@@ -171,6 +59,12 @@ def shared_kernel_dataset(shared_run_summary):
     kd = KernelDataset()
     kd.from_run_summary(shared_run_summary.clone(), "test1", "test2")
     return kd
+
+
+@pytest.fixture
+def kernel_dataset(run_summary):
+    """Create KernelDataset with test1 local and test2 remote stations."""
+    kd = KernelDataset()
     kd.from_run_summary(run_summary, "test1", "test2")
     return kd
 
