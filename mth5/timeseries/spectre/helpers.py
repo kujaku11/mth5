@@ -303,7 +303,7 @@ def calibrate_stft_obj(
             include_decimation=False, include_delay=False
         )
         indices_to_flip = [
-            i for i in indices_to_flip if channel.metadata.filter.applied[i]
+            i for i in indices_to_flip if channel.metadata.filters[i].applied
         ]
         filters_to_remove = [channel_response.filters_list[i] for i in indices_to_flip]
         if not filters_to_remove:
