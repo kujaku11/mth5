@@ -39,6 +39,7 @@ jobs:
         conda install pytest-cov
         conda install pytest-subtests
         conda install pytest-xdist[psutil]
+        conda install pytest-benchmark
         pip install "mt_metadata[obspy] @ git+https://github.com/kujaku11/mt_metadata.git@pydantic"
 
     - name: Install Our Package

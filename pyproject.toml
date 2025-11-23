@@ -43,12 +43,14 @@ test = [
     "pytest>=3",
     "pytest-xdist",
     "pytest-subtests",
+    "pytest-benchmark",
 ]
 dev = [
     "pytest>=3",
     "pytest-xdist",
     "pytest-subtests",
     "pytest-runner",
+    "pytest-benchmark",
     "black",
     "flake8",
     "isort",
