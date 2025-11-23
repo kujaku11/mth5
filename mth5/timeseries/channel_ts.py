@@ -1050,7 +1050,7 @@ class ChannelTS:
 
         if not isinstance(start_time, MTime):
             start_time = MTime(time_stamp=start_time)
-        self.channel_metadata.time_period.start = start_time.iso_str
+        self.channel_metadata.time_period.start = start_time.isoformat()
         if self.has_data():
             if start_time == MTime(
                 time_stamp=self.data_array.coords.indexes["time"][0].isoformat()
@@ -1592,7 +1592,7 @@ class ChannelTS:
 
         # add metadata
         obspy_trace.stats.channel = fdsn_tools.make_channel_code(self.channel_metadata)
-        obspy_trace.stats.starttime = self.start.iso_str
+        obspy_trace.stats.starttime = self.start.isoformat()
         obspy_trace.stats.sampling_rate = self.sample_rate
         if self.station_metadata.fdsn.id is None:
             self.station_metadata.fdsn.id = self.station_metadata.id

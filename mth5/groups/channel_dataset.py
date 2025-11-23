@@ -246,7 +246,7 @@ class ChannelDataset:
     def start(self, value):
         """set start time and validate through metadata validator"""
         if isinstance(value, MTime):
-            self.metadata.time_period.start = value.iso_str
+            self.metadata.time_period.start = value.isoformat()
         else:
             self.metadata.time_period.start = value
 
@@ -389,7 +389,7 @@ class ChannelDataset:
         ...                     channel_metadata={'electric':{
         ...                        'component': 'ex',
         ...                        'sample_rate': 8,
-        ...                        'time_period.start':(ex.end+(1)).iso_str}})
+        ...                        'time_period.start':(ex.end+(1)).isoformat()}}})
         >>> ex.extend_dataset(t.ts, t.start, t.sample_rate, fill='median',
         ...                   max_gap_seconds=2)
         2020-07-02T18:02:47 - mth5.groups.Electric.extend_dataset - INFO -

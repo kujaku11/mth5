@@ -640,7 +640,7 @@ class RunTS:
                         f"updating metatdata value to {self.start}"
                     )
                     self.logger.warning(msg)
-                self.run_metadata.time_period.start = self.start.iso_str
+                self.run_metadata.time_period.start = self.start.isoformat()
             # check end time
             if self.end != self.run_metadata.time_period.end:
                 if self.run_metadata.time_period.end != "1980-01-01T00:00:00+00:00":
@@ -650,7 +650,7 @@ class RunTS:
                         f"updating metatdata value to {self.end}"
                     )
                     self.logger.warning(msg)
-                self.run_metadata.time_period.end = self.end.iso_str
+                self.run_metadata.time_period.end = self.end.isoformat()
             # check sample rate
             data_sr = self._compute_sample_rate()
             if self.sample_rate != data_sr:
