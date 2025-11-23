@@ -59,7 +59,7 @@ COEFFICIENT_TEST_DATA = {
 @pytest.fixture(scope="session")
 def test_h5_file(make_worker_safe_path) -> Generator[Path, None, None]:
     """Session-scoped fixture providing the test HDF5 file path."""
-    test_file = make_worker_safe_path("filter_test_pytest.h5")
+    test_file = make_worker_safe_path("filter_test_pytest.h5", Path(__file__).parent)
     yield test_file
     # Cleanup
     if test_file.exists():

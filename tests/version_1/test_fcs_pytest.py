@@ -188,7 +188,7 @@ def fc_mth5_file(fc_test_dataset, fc_test_constants, make_worker_safe_path):
 
     This replaces the old setUpClass method with better resource management.
     """
-    h5_filename = make_worker_safe_path("fc_test_pytest.h5")
+    h5_filename = make_worker_safe_path("fc_test_pytest.h5", Path(__file__).parent)
 
     # Create the MTH5 file
     m = MTH5()

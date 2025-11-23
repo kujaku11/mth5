@@ -372,6 +372,117 @@ def pytest_sessionfinish(session, exitstatus):
 
 
 # =============================================================================
+# Pytest-xdist worker-safe fixtures
+# =============================================================================
+
+
+@pytest.fixture(scope="session")
+def worker_id(request):
+    """
+    Get the current pytest-xdist worker ID.
+
+    Returns:
+        str: Worker ID (e.g., 'gw0', 'gw1', 'master') or 'master' if not using xdist
+    """
+    if hasattr(request.config, "workerinput"):
+        return request.config.workerinput["workerid"]
+    return "master"
+
+
+@pytest.fixture
+def test_dir_path(request):
+    """
+    Get the test directory path for the current test file.
+
+    This fixture returns the directory of the test file that's currently running.
+    Works correctly with pytest-xdist and provides context-aware paths.
+    """
+    # Get the path of the test file that's requesting this fixture
+    return Path(request.fspath).parent
+
+
+def get_worker_safe_filename(base_filename: str, worker_id: str) -> str:
+    """
+    Generate a worker-safe filename by inserting the worker ID before the extension.
+
+    Args:
+        base_filename: Original filename (e.g., "test.h5")
+        worker_id: Worker ID from pytest-xdist (e.g., "gw0", "master")
+
+    Returns:
+        str: Worker-safe filename (e.g., "test_gw0.h5", "test_master.h5")
+    """
+    path = Path(base_filename)
+    stem = path.stem
+    suffix = path.suffix
+    return f"{stem}_{worker_id}{suffix}"
+
+
+@pytest.fixture(scope="session")
+def make_worker_safe_path(worker_id):
+    """
+    Factory fixture to create worker-safe file paths.
+
+    Returns a function that takes a base filename and optional directory path,
+    and returns a Path object with the worker ID inserted to avoid conflicts
+    in parallel testing.
+
+    Usage in session-scoped fixtures:
+        @pytest.fixture(scope="session")
+        def my_fixture(make_worker_safe_path):
+            # Use with explicit directory
+            fn = make_worker_safe_path("test.h5", Path(__file__).parent)
+            # Or use current directory
+            fn = make_worker_safe_path("test.h5")
+    """
+
+    def _make_path(base_filename: str, directory: Path | None = None) -> Path:
+        """
+        Create worker-safe path for the given filename.
+
+        Args:
+            base_filename: Name of the file (e.g., "test.h5")
+            directory: Directory to place the file (defaults to current directory)
+        """
+        safe_filename = get_worker_safe_filename(base_filename, worker_id)
+        if directory is None:
+            return Path(safe_filename)
+        return Path(directory) / safe_filename
+
+    return _make_path
+
+
+@pytest.fixture(scope="session")
+def cleanup_test_files(request, test_dir_path):
+    """
+    Register test files for cleanup after session ends.
+
+    Returns a function to register files for cleanup.
+    """
+    files_to_cleanup = []
+
+    def _register_file(filepath: Path):
+        """Register a file for cleanup."""
+        if filepath not in files_to_cleanup:
+            files_to_cleanup.append(filepath)
+
+    def _cleanup():
+        """Clean up registered files."""
+        for filepath in files_to_cleanup:
+            if filepath.exists():
+                try:
+                    filepath.unlink()
+                except (PermissionError, OSError) as e:
+                    # Log but don't fail if cleanup fails
+                    print(f"Warning: Could not delete {filepath}: {e}")
+
+    # Register cleanup function
+    request.addfinalizer(_cleanup)
+
+    return _register_file
+
+
+# =============================================================================
 # Pytest plugin configuration
 # =============================================================================
 

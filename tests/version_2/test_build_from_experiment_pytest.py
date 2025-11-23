@@ -60,9 +60,10 @@ def experiment_from_xml() -> Experiment:
 @pytest.fixture(scope="session")
 def mth5_with_experiment(
     experiment_from_xml: Experiment,
+    make_worker_safe_path,
 ) -> Generator[MTH5, None, None]:
     """Create MTH5 file with experiment data (session-scoped for efficiency)."""
-    fn = fn_path.joinpath("test_pytest_v2.h5")
+    fn = make_worker_safe_path("test_pytest_v2.h5", Path(__file__).parent)
     mth5_obj = MTH5(file_version="0.2.0")  # Key difference: using 0.2.0
     mth5_obj.open_mth5(fn, mode="w")
     mth5_obj.from_experiment(experiment_from_xml)
@@ -93,10 +94,12 @@ def modified_experiment(experiment_from_xml: Experiment) -> Experiment:
 
 @pytest.fixture(scope="session")
 def mth5_update_test(
-    experiment_from_xml: Experiment, modified_experiment: Experiment
+    experiment_from_xml: Experiment,
+    modified_experiment: Experiment,
+    make_worker_safe_path,
 ) -> Generator[tuple[MTH5, Experiment, Experiment], None, None]:
     """MTH5 object for update testing."""
-    fn = fn_path.joinpath("test_update_pytest_v2.h5")
+    fn = make_worker_safe_path("test_update_pytest_v2.h5", Path(__file__).parent)
     mth5_obj = MTH5(file_version="0.2.0")  # Using 0.2.0 for update test too
     mth5_obj.open_mth5(fn, mode="w")
     mth5_obj.from_experiment(experiment_from_xml)

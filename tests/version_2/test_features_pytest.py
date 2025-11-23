@@ -53,9 +53,9 @@ def test_dir():
 
 
 @pytest.fixture(scope="session")
-def mth5_file_path(test_dir):
+def mth5_file_path(test_dir, make_worker_safe_path):
     """Path for the MTH5 test file."""
-    return test_dir / "test_feature_pytest.h5"
+    return make_worker_safe_path("test_feature_pytest.h5", Path(__file__).parent)
 
 
 @pytest.fixture(scope="session")

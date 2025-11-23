@@ -31,9 +31,9 @@ def test_data_path():
 
 
 @pytest.fixture(scope="session")
-def mth5_file_path(test_data_path):
+def mth5_file_path(make_worker_safe_path):
     """Get the test MTH5 file path."""
-    return test_data_path / "test.mth5"
+    return make_worker_safe_path("test.mth5", Path(__file__).parent)
 
 
 @pytest.fixture(scope="session")

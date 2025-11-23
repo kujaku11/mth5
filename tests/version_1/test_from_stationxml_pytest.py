@@ -14,6 +14,8 @@ Pytest version of StationXML tests with fixtures and subtests
 # =============================================================================
 #  Imports
 # =============================================================================
+from pathlib import Path
+
 import pytest
 from mt_metadata import STATIONXML_01
 from mt_metadata.timeseries import stationxml
@@ -31,7 +33,7 @@ def experiment():
 @pytest.fixture(scope="session")
 def mth5_file(experiment, make_worker_safe_path):
     """Create MTH5 file from experiment - session scoped for efficiency."""
-    fn = make_worker_safe_path("from_stationxml_pytest.h5")
+    fn = make_worker_safe_path("from_stationxml_pytest.h5", Path(__file__).parent)
 
     # Clean up any existing file
     if fn.exists():
