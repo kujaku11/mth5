@@ -29,7 +29,7 @@ dependencies = [
     "h5py",
     "pyyaml",
     "scipy",
-    "mt_metadata >=1.0.0",
+    "mt_metadata",
 ]
 
 [project.urls]
