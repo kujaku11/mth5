@@ -79,7 +79,7 @@ def get_maybe_only_dim(darray, dim):
             if isinstance(darray, xr.DataArray):
                 return darray.dims[0]
             elif isinstance(darray, xr.Dataset):
-                return list(darray.dims.keys())[0]
+                return list(darray.sizes.keys())[0]
         else:
             raise ValueError("Specify the dimension")
     else:

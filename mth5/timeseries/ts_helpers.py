@@ -102,7 +102,7 @@ def make_dt_coordinates(start_time, sample_rate, n_samples, end_time=None):
     dt_index = pd.date_range(
         start=start_time.iso_no_tz,
         end=end_time.iso_no_tz,
-        periods=n_samples,
+        periods=int(round(n_samples)),
     )
 
     ## need to enforce some rounding errors otherwise an expected time step

@@ -524,12 +524,12 @@ class TestRunTSChannelManagement:
     def test_add_channel_xarray(self, basic_run_ts):
         """Test adding a channel from xarray."""
         x = basic_run_ts.ex.to_xarray()
-        x.attrs["component"] = "ez"
-        x.name = "ez"
+        x.attrs["component"] = "ey"
+        x.name = "ey"
 
         basic_run_ts.add_channel(x)
 
-        expected_channels = sorted(["ex", "ez"])
+        expected_channels = sorted(["ex", "ey"])
         assert sorted(basic_run_ts.channels) == expected_channels
 
     def test_validate_array_list_failures(self, basic_run_ts):

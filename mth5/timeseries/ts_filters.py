@@ -629,7 +629,8 @@ class RemoveInstrumentResponse:
         # If a time window was applied, need to un-apply it to reconstruct the signal.
         if self.t_window is not None:
             w = self.get_window(self.t_window, self.t_window_params, calibrated_ts.size)
-            calibrated_ts = calibrated_ts / w
+            with np.errstate(divide="ignore", invalid="ignore"):
+                calibrated_ts = calibrated_ts / w
             self.logger.debug(f"Step {step}: Un-applying Time Window")
             step += 1
         if self.bandpass:

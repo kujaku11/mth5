@@ -807,6 +807,10 @@ class ChannelTS:
                 # need to skip type otherwise it keeps the same type
                 if key in ["type"]:
                     continue
+                # Skip component when changing channel types to avoid validation conflicts
+                # The new metadata already has appropriate default component for the type
+                if key in ["component"] and self._channel_type != value:
+                    continue
                 try:
                     channel_metadata.update_attribute(key, m_dict[key])
                 except KeyError:
