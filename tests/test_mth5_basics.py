@@ -10,9 +10,11 @@ Created on Thu Jun 18 16:54:19 2020
 # Imports
 # =============================================================================
 
-import unittest
 from pathlib import Path
 from platform import platform
+from typing import Generator
+
+import pytest
 
 from mth5 import __version__ as mth5_version
 from mth5 import helpers
@@ -21,81 +23,82 @@ from mth5.mth5 import MTH5
 
 fn_path = Path(__file__).parent
 # =============================================================================
-#
+# Fixtures
 # =============================================================================
 helpers.close_open_files()
 
 
-class TestMTH5Basics(unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
-        self.mth5_obj = MTH5()
-        self.maxDiff = None
+@pytest.fixture(scope="session")
+def mth5_obj():
+    """Session-scoped MTH5 object for basic tests."""
+    obj = MTH5()
+    yield obj
+    obj.close_mth5()
 
-    def test_str(self):
-        self.assertEqual(
-            self.mth5_obj.__str__(),
-            "HDF5 file is closed and cannot be accessed.",
-        )
 
-    def test_repr(self):
-        self.assertEqual(
-            self.mth5_obj.__repr__(),
-            "HDF5 file is closed and cannot be accessed.",
-        )
+# =============================================================================
+# Test MTH5 Basics
+# =============================================================================
 
-    def test_file_type(self):
-        self.assertEqual(self.mth5_obj.file_type, "mth5")
 
-    def test_set_file_type_fail(self):
-        def set_file_type(value):
-            self.mth5_obj.file_type = value
+class TestMTH5Basics:
+    """Test basic MTH5 functionality without file operations."""
 
-        with self.subTest("bad value"):
-            self.assertRaises(ValueError, set_file_type, 10)
-        with self.subTest("bad file type"):
-            self.assertRaises(ValueError, set_file_type, "asdf")
+    def test_str(self, mth5_obj):
+        assert mth5_obj.__str__() == "HDF5 file is closed and cannot be accessed."
 
-    def test_set_file_version_fail(self):
-        def set_file_version(value):
-            self.mth5_obj.file_version = value
+    def test_repr(self, mth5_obj):
+        assert mth5_obj.__repr__() == "HDF5 file is closed and cannot be accessed."
 
-        with self.subTest("bad value"):
-            self.assertRaises(ValueError, set_file_version, 10)
-        with self.subTest("bad file version"):
-            self.assertRaises(ValueError, set_file_version, "4")
+    def test_file_type(self, mth5_obj):
+        assert mth5_obj.file_type == "mth5"
 
-    def test_set_data_level_fail(self):
-        def set_data_level(value):
-            self.mth5_obj.data_level = value
+    def test_set_file_type_fail(self, mth5_obj, subtests):
+        with subtests.test("bad value"):
+            with pytest.raises(ValueError):
+                mth5_obj.file_type = 10
+        with subtests.test("bad file type"):
+            with pytest.raises(ValueError):
+                mth5_obj.file_type = "asdf"
 
-        with self.subTest("bad value"):
-            self.assertRaises(ValueError, set_data_level, "y")
-        with self.subTest("bad data level"):
-            self.assertRaises(ValueError, set_data_level, "10")
+    def test_set_file_version_fail(self, mth5_obj, subtests):
+        with subtests.test("bad value"):
+            with pytest.raises(ValueError):
+                mth5_obj.file_version = 10
+        with subtests.test("bad file version"):
+            with pytest.raises(ValueError):
+                mth5_obj.file_version = "4"
 
-    def test_filename_fail(self):
-        self.mth5_obj.filename = "filename.txt"
-        with self.subTest("isinstance path"):
-            self.assertIsInstance(self.mth5_obj.filename, Path)
-        with self.subTest("extension"):
-            self.assertEqual(self.mth5_obj.filename.suffix, ".h5")
+    def test_set_data_level_fail(self, mth5_obj, subtests):
+        with subtests.test("bad value"):
+            with pytest.raises(ValueError):
+                mth5_obj.data_level = "y"
+        with subtests.test("bad data level"):
+            with pytest.raises(ValueError):
+                mth5_obj.data_level = "10"
 
-    def test_set_filename(self):
+    def test_filename_fail(self, mth5_obj, subtests):
+        mth5_obj.filename = "filename.txt"
+        with subtests.test("isinstance path"):
+            assert isinstance(mth5_obj.filename, Path)
+        with subtests.test("extension"):
+            assert mth5_obj.filename.suffix == ".h5"
+
+    def test_set_filename(self, mth5_obj):
         fn = Path("fake/path/filename.h5")
-        self.mth5_obj.filename = fn
-        self.assertEqual(self.mth5_obj.filename, fn)
+        mth5_obj.filename = fn
+        assert mth5_obj.filename == fn
 
-    def test_is_read(self):
-        self.assertEqual(self.mth5_obj.h5_is_read(), False)
+    def test_is_read(self, mth5_obj):
+        assert mth5_obj.h5_is_read() == False
 
-    def test_is_write(self):
-        self.assertEqual(self.mth5_obj.h5_is_write(), False)
+    def test_is_write(self, mth5_obj):
+        assert mth5_obj.h5_is_write() == False
 
-    def test_validation(self):
-        self.assertEqual(self.mth5_obj.validate_file(), False)
+    def test_validation(self, mth5_obj):
+        assert mth5_obj.validate_file() == False
 
-    def test_file_attributes(self):
+    def test_file_attributes(self, mth5_obj):
         file_attrs = {
             "file.type": "MTH5",
             "file.version": "0.2.0",
@@ -106,126 +109,152 @@ class TestMTH5Basics(unittest.TestCase):
         }
 
         for key, value_og in file_attrs.items():
-            self.assertEqual(value_og, self.mth5_obj.file_attributes[key])
+            assert value_og == mth5_obj.file_attributes[key]
 
-    def test_station_list(self):
-        self.assertListEqual([], self.mth5_obj.station_list)
+    def test_station_list(self, mth5_obj):
+        assert mth5_obj.station_list == []
 
-    def test_make_h5_path(self):
-        with self.subTest("survey"):
-            self.assertEqual(
-                self.mth5_obj._make_h5_path(survey="test"),
-                "/Experiment/Surveys/test",
+    def test_make_h5_path(self, mth5_obj, subtests):
+        with subtests.test("survey"):
+            assert mth5_obj._make_h5_path(survey="test") == "/Experiment/Surveys/test"
+        with subtests.test("station"):
+            assert (
+                mth5_obj._make_h5_path(survey="test", station="mt01")
+                == "/Experiment/Surveys/test/Stations/mt01"
             )
-        with self.subTest("station"):
-            self.assertEqual(
-                self.mth5_obj._make_h5_path(survey="test", station="mt01"),
-                "/Experiment/Surveys/test/Stations/mt01",
+        with subtests.test("run"):
+            assert (
+                mth5_obj._make_h5_path(survey="test", station="mt01", run="001")
+                == "/Experiment/Surveys/test/Stations/mt01/001"
             )
-        with self.subTest("run"):
-            self.assertEqual(
-                self.mth5_obj._make_h5_path(survey="test", station="mt01", run="001"),
-                "/Experiment/Surveys/test/Stations/mt01/001",
-            )
-        with self.subTest("channel"):
-            self.assertEqual(
-                self.mth5_obj._make_h5_path(
+        with subtests.test("channel"):
+            assert (
+                mth5_obj._make_h5_path(
                     survey="test", station="mt01", run="001", channel="ex"
-                ),
-                "/Experiment/Surveys/test/Stations/mt01/001/ex",
+                )
+                == "/Experiment/Surveys/test/Stations/mt01/001/ex"
             )
-        with self.subTest("tf_id"):
-            self.assertEqual(
-                self.mth5_obj._make_h5_path(
+        with subtests.test("tf_id"):
+            assert (
+                mth5_obj._make_h5_path(
                     survey="test",
                     station="mt01",
                     run="001",
                     channel="ex",
                     tf_id="mt01a",
-                ),
-                "/Experiment/Surveys/test/Stations/mt01/Transfer_Functions/mt01a",
+                )
+                == "/Experiment/Surveys/test/Stations/mt01/Transfer_Functions/mt01a"
             )
 
-    @classmethod
-    def tearDownClass(self):
-        self.mth5_obj.close_mth5()
+
+# =============================================================================
+# Test With MTH5 File
+# =============================================================================
 
 
-class TestWithMTH5(unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
-        self.fn = Path().cwd().joinpath("test.h5")
-        with MTH5() as self.m:
-            self.m.open_mth5(self.fn)
-            self.m.add_survey("test")
-        self.m.open_mth5(self.m.filename)
+@pytest.fixture(scope="session")
+def mth5_test_file(make_worker_safe_path) -> Generator[tuple[MTH5, Path], None, None]:
+    """Session-scoped MTH5 file for testing with file operations."""
+    fn = make_worker_safe_path("test.h5", Path(__file__).parent)
+    with MTH5() as m:
+        m.open_mth5(fn)
+        m.add_survey("test")
 
-    def test_validate(self):
-        self.assertEqual(self.m.validate_file(), True)
+    m = MTH5()
+    m.open_mth5(fn)
 
-    def test_station_list(self):
-        self.assertListEqual([], self.m.station_list)
+    yield m, fn
 
-    def test_other_syntax(self):
-        with MTH5().open_mth5(self.fn) as m:
+    m.close_mth5()
+    if fn.exists():
+        fn.unlink()
+
+
+class TestWithMTH5:
+    """Test MTH5 with file operations."""
+
+    def test_validate(self, mth5_test_file):
+        m, fn = mth5_test_file
+        assert m.validate_file() == True
+
+    def test_station_list(self, mth5_test_file):
+        m, fn = mth5_test_file
+        assert m.station_list == []
+
+    def test_other_syntax(self, make_worker_safe_path):
+        """Test alternative MTH5 usage syntax."""
+        fn = make_worker_safe_path("test_other.h5", Path(__file__).parent)
+
+        with MTH5().open_mth5(fn) as m:
             m.add_survey("test2")
-        m.open_mth5(self.fn)
+
+        m = MTH5()
+        m.open_mth5(fn)
 
         # test_validate
-        self.assertEqual(m.validate_file(), True)
+        assert m.validate_file() == True
 
         # test_station_list
-        self.assertListEqual([], m.station_list)
+        assert m.station_list == []
+
         m.close_mth5()
-
-    @classmethod
-    def tearDownClass(self):
-        self.m.close_mth5()
-        self.fn.unlink()
+        if fn.exists():
+            fn.unlink()
 
 
-class TestFileVersionStability(unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
-        self.fn1 = Path().cwd().joinpath("test_v010.h5")
-        self.fn2 = Path().cwd().joinpath("test_v020.h5")
-        with MTH5(file_version="0.1.0") as self.m:
-            self.m.open_mth5(self.fn1)
-            self.m.add_station("test_station")
-        with MTH5(file_version="0.2.0") as self.m:
-            self.m.open_mth5(self.fn2)
-            self.m.add_survey("test_survey")
+# =============================================================================
+# Test File Version Stability
+# =============================================================================
 
-    def test_v1_stays_v1_when_opened_by_v2_obj(self):
+
+@pytest.fixture(scope="session")
+def version_test_files(
+    make_worker_safe_path,
+) -> Generator[tuple[Path, Path], None, None]:
+    """Session-scoped version test files."""
+    fn1 = make_worker_safe_path("test_v010.h5", Path(__file__).parent)
+    fn2 = make_worker_safe_path("test_v020.h5", Path(__file__).parent)
+
+    with MTH5(file_version="0.1.0") as m:
+        m.open_mth5(fn1)
+        m.add_station("test_station")
+
+    with MTH5(file_version="0.2.0") as m:
+        m.open_mth5(fn2)
+        m.add_survey("test_survey")
+
+    yield fn1, fn2
+
+    if fn1.exists():
+        fn1.unlink()
+    if fn2.exists():
+        fn2.unlink()
+
+
+class TestFileVersionStability:
+    """Test file version stability."""
+
+    def test_v1_stays_v1_when_opened_by_v2_obj(self, version_test_files):
+        fn1, fn2 = version_test_files
         m = MTH5(file_version="0.2.0")
         assert m.file_version == "0.2.0"
-        m.open_mth5(self.fn1)
+        m.open_mth5(fn1)
         assert m.file_version == "0.1.0"
         m.close_mth5()
         assert m.file_version == "0.2.0"
 
-    def test_v2_stays_v2_when_opened_by_v1_obj(self):
+    def test_v2_stays_v2_when_opened_by_v1_obj(self, version_test_files):
+        fn1, fn2 = version_test_files
         m = MTH5(file_version="0.1.0")
         assert m.file_version == "0.1.0"
-        m.open_mth5(self.fn2)
+        m.open_mth5(fn2)
         assert m.file_version == "0.2.0"
         m.close_mth5()
         assert m.file_version == "0.1.0"
 
-    def test_get_version(self):
+    def test_get_version(self, version_test_files):
         from mth5.utils.helpers import get_version
 
-        file_version = get_version(self.fn1)
+        fn1, fn2 = version_test_files
+        file_version = get_version(fn1)
         assert file_version == "0.1.0"
-
-    @classmethod
-    def tearDownClass(self):
-        self.fn1.unlink()
-        self.fn2.unlink()
-
-
-# =============================================================================
-# Run
-# =============================================================================
-if __name__ == "__main__":
-    unittest.main()
