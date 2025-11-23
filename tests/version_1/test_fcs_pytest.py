@@ -28,7 +28,7 @@ from mth5.utils.exceptions import MTH5Error
 # =============================================================================
 fn_path = Path(__file__).parent
 csv_fn = fn_path.joinpath("test1_dec_level_3.csv")
-h5_filename = fn_path.joinpath("fc_test_pytest.h5")
+# h5_filename moved to fixture to support pytest-xdist
 
 
 # =============================================================================
@@ -182,12 +182,14 @@ def fc_test_constants():
 
 
 @pytest.fixture(scope="session")
-def fc_mth5_file(fc_test_dataset, fc_test_constants):
+def fc_mth5_file(fc_test_dataset, fc_test_constants, make_worker_safe_path):
     """
     Session-scoped fixture that creates an MTH5 file with FC test data.
 
     This replaces the old setUpClass method with better resource management.
     """
+    h5_filename = make_worker_safe_path("fc_test_pytest.h5")
+
     # Create the MTH5 file
     m = MTH5()
     m.file_version = "0.1.0"

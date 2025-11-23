@@ -10,7 +10,6 @@ Pytest version of StationXML tests with fixtures and subtests
 :license: MIT
 
 """
-from pathlib import Path
 
 # =============================================================================
 #  Imports
@@ -30,10 +29,9 @@ def experiment():
 
 
 @pytest.fixture(scope="session")
-def mth5_file(experiment):
+def mth5_file(experiment, make_worker_safe_path):
     """Create MTH5 file from experiment - session scoped for efficiency."""
-    fn_path = Path(__file__).parent
-    fn = fn_path.joinpath("from_stationxml_pytest.h5")
+    fn = make_worker_safe_path("from_stationxml_pytest.h5")
 
     # Clean up any existing file
     if fn.exists():

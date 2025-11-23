@@ -11,7 +11,6 @@ Pytest version of FAP StationXML tests with fixtures and subtests
 
 """
 
-from pathlib import Path
 
 import numpy as np
 import numpy.testing as npt
@@ -30,10 +29,9 @@ def experiment():
 
 
 @pytest.fixture(scope="session")
-def mth5_file(experiment):
+def mth5_file(experiment, make_worker_safe_path):
     """Create MTH5 file from experiment - session scoped for efficiency."""
-    fn_path = Path(__file__).parent
-    fn = fn_path.joinpath("from_fap_stationxml_pytest.h5")
+    fn = make_worker_safe_path("from_fap_stationxml_pytest.h5")
 
     # Clean up any existing file
     if fn.exists():
