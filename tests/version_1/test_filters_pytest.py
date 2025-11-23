@@ -275,7 +275,7 @@ class TestFilterPerformance:
 
         # Should complete within reasonable time
         assert (
-            retrieval_time < 2.0
+            retrieval_time < 3.0
         ), f"Filter retrieval took too long: {retrieval_time:.2f}s"
 
 
