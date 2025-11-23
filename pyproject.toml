@@ -68,6 +68,17 @@ mth5 = [
     "utils/*.yaml",
 ]
 
+# Additional files to include in source distributions
+# (corresponds to MANIFEST.in)
+# Note: README.md is already included via project.readme
+# License files are automatically included by setuptools
+[tool.setuptools]
+license-files = ["LICENSE"]
+
+# For complete manifest control, MANIFEST.in is still used
+# This includes: AUTHORS.rst, CONTRIBUTING.rst, HISTORY.rst,
+# tests/*, docs/*, and examples/notebooks/*.TXT
+
 [tool.pytest.ini_options]
 markers = [
     "performance: mark test as performance test",
