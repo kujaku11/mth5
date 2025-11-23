@@ -86,18 +86,54 @@ def mth5_test_versions():
 
 
 @pytest.fixture
-def mth5_creation_functions():
-    """Provide access to real MTH5 creation functions now that they work."""
+def mth5_creation_functions(tmp_path, worker_id):
+    """
+    Provide worker-safe MTH5 creation functions.
+
+    Wraps the real creation functions to use temporary directories with
+    worker-safe paths to avoid file locking issues with pytest-xdist.
+    """
     from mth5.data.make_mth5_from_asc import (
         create_test1_h5,
         create_test3_h5,
         create_test4_h5,
     )
 
+    # Create worker-specific temp directory
+    worker_temp = tmp_path / f"mth5_worker_{worker_id}"
+    worker_temp.mkdir(parents=True, exist_ok=True)
+
+    def create_test1_h5_safe(**kwargs):
+        """Worker-safe wrapper for create_test1_h5."""
+        kwargs.setdefault("target_folder", worker_temp)
+        # Convert source_folder to Path if provided as string
+        if "source_folder" in kwargs and isinstance(kwargs["source_folder"], str):
+            kwargs["source_folder"] = pathlib.Path(kwargs["source_folder"])
+        kwargs.setdefault("force_make_mth5", True)
+        return create_test1_h5(**kwargs)
+
+    def create_test3_h5_safe(**kwargs):
+        """Worker-safe wrapper for create_test3_h5."""
+        kwargs.setdefault("target_folder", worker_temp)
+        # Convert source_folder to Path if provided as string
+        if "source_folder" in kwargs and isinstance(kwargs["source_folder"], str):
+            kwargs["source_folder"] = pathlib.Path(kwargs["source_folder"])
+        kwargs.setdefault("force_make_mth5", True)
+        return create_test3_h5(**kwargs)
+
+    def create_test4_h5_safe(**kwargs):
+        """Worker-safe wrapper for create_test4_h5."""
+        kwargs.setdefault("target_folder", worker_temp)
+        # Convert source_folder to Path if provided as string
+        if "source_folder" in kwargs and isinstance(kwargs["source_folder"], str):
+            kwargs["source_folder"] = pathlib.Path(kwargs["source_folder"])
+        kwargs.setdefault("force_make_mth5", True)
+        return create_test4_h5(**kwargs)
+
     return {
-        "create_test1_h5": create_test1_h5,
-        "create_test3_h5": create_test3_h5,
-        "create_test4_h5": create_test4_h5,
+        "create_test1_h5": create_test1_h5_safe,
+        "create_test3_h5": create_test3_h5_safe,
+        "create_test4_h5": create_test4_h5_safe,
     }
 
 
@@ -110,12 +146,16 @@ def station_config():
 
 
 @pytest.fixture
-def mth5_file_and_summary():
-    """Create real MTH5 file and return file with summary data."""
+def mth5_file_and_summary(tmp_path, worker_id):
+    """Create real MTH5 file in worker-safe location and return file with summary data."""
     from mth5.data.make_mth5_from_asc import create_test3_h5
     from mth5.mth5 import MTH5
 
-    mth5_path = create_test3_h5(force_make_mth5=True)
+    # Create worker-specific temp directory
+    worker_temp = tmp_path / f"mth5_worker_{worker_id}_summary"
+    worker_temp.mkdir(parents=True, exist_ok=True)
+
+    mth5_path = create_test3_h5(target_folder=worker_temp, force_make_mth5=True)
 
     with MTH5() as m:
         m.open_mth5(mth5_path)
@@ -759,7 +799,7 @@ class TestEnhancedCoverage:
             # Real function should handle invalid version appropriately
             try:
                 result = mth5_creation_functions["create_test1_h5"](
-                    file_version=version, source_folder="/tmp"
+                    file_version=version
                 )
                 # If no exception, function handled it gracefully
                 assert result is not None
@@ -767,10 +807,8 @@ class TestEnhancedCoverage:
                 # Expected behavior for invalid version
                 pass
         else:
-            # Should succeed for valid versions
-            result = mth5_creation_functions["create_test1_h5"](
-                file_version=version, source_folder="/tmp"
-            )
+            # Should succeed for valid versions (source_folder defaults to correct location)
+            result = mth5_creation_functions["create_test1_h5"](file_version=version)
             assert result is not None
 
     def test_logging_integration(self):
