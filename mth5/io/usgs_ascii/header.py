@@ -226,7 +226,15 @@ class AsciiMetadata:
 
     @start.setter
     def start(self, time_string):
-        self.station_metadata.time_period.start = time_string
+        # Always convert to UTC ISO string
+        import pandas as pd
+
+        ts = pd.Timestamp(time_string)
+        if ts.tz is None:
+            ts = ts.tz_localize("UTC")
+        else:
+            ts = ts.tz_convert("UTC")
+        self.station_metadata.time_period.start = ts.isoformat()
 
     @property
     def end(self):
@@ -234,7 +242,15 @@ class AsciiMetadata:
 
     @end.setter
     def end(self, time_string):
-        self._station_metadata.time_period.end = time_string
+        # Always convert to UTC ISO string
+        import pandas as pd
+
+        ts = pd.Timestamp(time_string)
+        if ts.tz is None:
+            ts = ts.tz_localize("UTC")
+        else:
+            ts = ts.tz_convert("UTC")
+        self._station_metadata.time_period.end = ts.isoformat()
 
     @property
     def n_channels(self):
