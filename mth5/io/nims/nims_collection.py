@@ -135,7 +135,9 @@ class NIMSCollection(Collection):
         """
 
         entries = []
-        for fn in self.get_files(self.file_ext):
+        for fn in self.get_files(
+            [self.file_ext, self.file_ext.lower(), self.file_ext.upper()]
+        ):
             nims_obj = NIMS(fn)
             nims_obj.read_header()
 

@@ -74,14 +74,149 @@ class AsciiMetadata:
         self.missing_data_flag = np.nan
         self.coordinate_system = None
         self._metadata_len = 30
+        from mt_metadata.common import (
+            Comment,
+            DataTypeEnum,
+            Fdsn,
+            TimePeriod,
+            TimePeriodDate,
+        )
+        from mt_metadata.timeseries import Electrode, StartEndRange
+
+        # Survey, Station, Run: instantiate and set required fields directly
         self._survey_metadata = Survey()
+        self._survey_metadata.id = ""
+        self._survey_metadata.datum = "WGS 84"
+        self._survey_metadata.geographic_name = ""
+        self._survey_metadata.name = ""
+        self._survey_metadata.project = ""
+        self._survey_metadata.summary = ""
+        self._survey_metadata.time_period = TimePeriodDate(
+            start_date="1970-01-01", end_date="1970-01-02"
+        )
+
         self._station_metadata = Station()
+        self._station_metadata.id = ""
+        self._station_metadata.channels_recorded = []
+        self._station_metadata.geographic_name = ""
+        self._station_metadata.run_list = []
+        self._station_metadata.data_type = DataTypeEnum.BBMT
+
         self._run_metadata = Run()
-        self.ex_metadata = Electric(component="ex")
-        self.ey_metadata = Electric(component="ey")
-        self.hx_metadata = Magnetic(component="hx")
-        self.hy_metadata = Magnetic(component="hy")
-        self.hz_metadata = Magnetic(component="hz")
+        self._run_metadata.id = ""
+        self._run_metadata.sample_rate = 0.0
+        self._run_metadata.channels_recorded_auxiliary = []
+        self._run_metadata.channels_recorded_electric = []
+        self._run_metadata.channels_recorded_magnetic = []
+        self._run_metadata.data_type = DataTypeEnum.BBMT
+
+        # Electric required fields (all base fields)
+        self.ex_metadata = Electric(
+            channel_number=0,
+            channel_id=None,
+            comments=Comment(),
+            component="ex",
+            measurement_azimuth=0.0,
+            measurement_tilt=0.0,
+            sample_rate=0.0,
+            translated_azimuth=None,
+            translated_tilt=None,
+            type="electric",
+            units="",
+            filters=[],
+            time_period=TimePeriod(),
+            fdsn=Fdsn(),
+            dipole_length=0.0,
+            positive=Electrode(),
+            negative=Electrode(),
+            contact_resistance=StartEndRange(),
+            ac=StartEndRange(),
+            dc=StartEndRange(),
+        )
+        self.ey_metadata = Electric(
+            channel_number=0,
+            channel_id=None,
+            comments=Comment(),
+            component="ey",
+            measurement_azimuth=0.0,
+            measurement_tilt=0.0,
+            sample_rate=0.0,
+            translated_azimuth=None,
+            translated_tilt=None,
+            type="electric",
+            units="",
+            filters=[],
+            time_period=TimePeriod(),
+            fdsn=Fdsn(),
+            dipole_length=0.0,
+            positive=Electrode(),
+            negative=Electrode(),
+            contact_resistance=StartEndRange(),
+            ac=StartEndRange(),
+            dc=StartEndRange(),
+        )
+        from mt_metadata.timeseries import BasicLocation, Sensor
+
+        self.hx_metadata = Magnetic(
+            channel_number=0,
+            channel_id=None,
+            comments=Comment(),
+            component="hx",
+            measurement_azimuth=0.0,
+            measurement_tilt=0.0,
+            sample_rate=0.0,
+            translated_azimuth=None,
+            translated_tilt=None,
+            type="magnetic",
+            units="",
+            filters=[],
+            time_period=TimePeriod(),
+            fdsn=Fdsn(),
+            sensor=Sensor(),
+            location=BasicLocation(),
+            h_field_min=StartEndRange(),
+            h_field_max=StartEndRange(),
+        )
+        self.hy_metadata = Magnetic(
+            channel_number=0,
+            channel_id=None,
+            comments=Comment(),
+            component="hy",
+            measurement_azimuth=0.0,
+            measurement_tilt=0.0,
+            sample_rate=0.0,
+            translated_azimuth=None,
+            translated_tilt=None,
+            type="magnetic",
+            units="",
+            filters=[],
+            time_period=TimePeriod(),
+            fdsn=Fdsn(),
+            sensor=Sensor(),
+            location=BasicLocation(),
+            h_field_min=StartEndRange(),
+            h_field_max=StartEndRange(),
+        )
+        self.hz_metadata = Magnetic(
+            channel_number=0,
+            channel_id=None,
+            comments=Comment(),
+            component="hz",
+            measurement_azimuth=0.0,
+            measurement_tilt=0.0,
+            sample_rate=0.0,
+            translated_azimuth=None,
+            translated_tilt=None,
+            type="magnetic",
+            units="",
+            filters=[],
+            time_period=TimePeriod(),
+            fdsn=Fdsn(),
+            sensor=Sensor(),
+            location=BasicLocation(),
+            h_field_min=StartEndRange(),
+            h_field_max=StartEndRange(),
+        )
 
         self.channel_order = ["hx", "ex", "hy", "ey", "hz"]
 
