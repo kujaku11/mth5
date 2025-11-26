@@ -1280,14 +1280,13 @@ class Z3D:
 
         # validate everything
         if not self.validate_gps_time():
-            self.logger.warning(
+            self.logger.debug(
                 f"GPS stamps are not 1 second apart for file {self.fn.name}."
             )
         if not self.validate_time_blocks():
-            pass
-            # self.logger.warning(
-            #     f"Time block between stamps was not the sample rate for file {self.fn.name}"
-            # )
+            self.logger.debug(
+                f"Time block between stamps was not the sample rate for file {self.fn.name}"
+            )
         self.convert_gps_time()
         self.zen_schedule = self.check_start_time()
         self.logger.debug(f"found {self.gps_stamps.shape[0]} GPS time stamps")
@@ -1453,7 +1452,7 @@ class Z3D:
                 return True
             for bb in bad_blocks:
                 self.logger.warning(
-                    f"Data block {bb} has {self.gps_stamps['block_len'][bb]} samples, "
+                    f"Data block {bb} has {self.gps_stamps['block_len'][bb+1]} samples, "
                     f"expected {self.header.ad_rate} samples."
                 )
             return False
