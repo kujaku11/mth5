@@ -234,7 +234,7 @@ class BaseGroup:
             meta_dict[key] = from_numpy_type(value)
         # Defensive check: skip if meta_dict is empty
         if not meta_dict:
-            self.logger.warning(
+            self.logger.debug(
                 f"No metadata found for {self._class_name}, skipping from_dict."
             )
             return
