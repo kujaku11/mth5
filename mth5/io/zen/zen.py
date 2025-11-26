@@ -832,13 +832,15 @@ class Z3D:
         # don't have a good handle on the zen response yet.
         # if self.zen_response:
         #     filter_list.append(self.zen_response)
+        frequencies = np.empty(0)
         if self.coil_response:
             filter_list.append(self.coil_response)
+            frequencies = self.coil_response.frequencies
         elif self.dipole_filter:
             filter_list.append(self.dipole_filter)
 
         filter_list.append(self.counts2mv_filter)
-        return ChannelResponse(filters_list=filter_list)
+        return ChannelResponse(filters_list=filter_list, frequencies=frequencies)
 
     @property
     def dipole_filter(self):
@@ -1282,9 +1284,10 @@ class Z3D:
                 f"GPS stamps are not 1 second apart for file {self.fn.name}."
             )
         if not self.validate_time_blocks():
-            self.logger.warning(
-                f"Time block between stamps was not the sample rate for file {self.fn.name}"
-            )
+            pass
+            # self.logger.warning(
+            #     f"Time block between stamps was not the sample rate for file {self.fn.name}"
+            # )
         self.convert_gps_time()
         self.zen_schedule = self.check_start_time()
         self.logger.debug(f"found {self.gps_stamps.shape[0]} GPS time stamps")
@@ -1409,8 +1412,8 @@ class Z3D:
         bad_times = np.where(abs(t_diff) > 1)[0]
         if len(bad_times) > 0:
             for bb in bad_times:
-                self.logger.debug(
-                    f"ZEN bad GPS time at index {bb} > 1 second " f"({t_diff[bb]})"
+                self.logger.warning(
+                    f"time difference between GPS stamps is > 1 second [{t_diff[bb]} s] for data block {bb}"
                 )
             return False
         return True
@@ -1446,7 +1449,13 @@ class Z3D:
                 self.time_series = self.time_series[ts_skip:]
 
                 self.logger.warning(f"Skipped the first {bad_blocks[-1]} seconds")
-                self.logger.warning(f"Skipped first {ts_skip} poins in time series")
+                self.logger.warning(f"Skipped first {ts_skip} points in time series")
+                return True
+            for bb in bad_blocks:
+                self.logger.warning(
+                    f"Data block {bb} has {self.gps_stamps['block_len'][bb]} samples, "
+                    f"expected {self.header.ad_rate} samples."
+                )
             return False
         return True
 

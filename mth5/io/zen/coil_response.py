@@ -141,7 +141,7 @@ class CoilResponse:
             fap.name = f"ant4_{coil_number}_response"
             fap.instrument_type = "ANT4 induction coil"
             fap.calibration_date = MTime(
-                self.calibration_file.stat().st_mtime
+                time_stamp=self.calibration_file.stat().st_mtime
             ).isoformat()
 
             if extrapolate:
