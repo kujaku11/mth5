@@ -1412,7 +1412,7 @@ class Z3D:
         if len(bad_times) > 0:
             for bb in bad_times:
                 self.logger.warning(
-                    f"time difference between GPS stamps is > 1 second [{t_diff[bb]} s] for data block {bb}"
+                    f"Data block {bb} has a time difference between GPS stamps > 1 second [{t_diff[bb]} s]"
                 )
             return False
         return True
