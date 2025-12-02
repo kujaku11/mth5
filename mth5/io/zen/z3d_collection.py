@@ -240,13 +240,15 @@ class Z3DCollection(Collection):
             z3d_obj.read_all_info()
             station_metadata.append(z3d_obj.station_metadata.to_dict(single=True))
 
-            # Validate sample rate
+            # Validate sample rate: skip files with unsupported sample rates
             if (
                 z3d_obj.sample_rate is not None
                 and int(z3d_obj.sample_rate) not in sample_rates
             ):
-                self.logger.warning(f"{z3d_obj.sample_rate} not in {sample_rates}")
-                return pd.DataFrame()  # Return empty dataframe instead of None
+                self.logger.warning(
+                    f"Skipping {z3d_fn}: {z3d_obj.sample_rate} not in {sample_rates}"
+                )
+                continue
 
             entry = self.get_empty_entry_dict()
             entry["survey"] = z3d_obj.metadata.job_name
@@ -283,6 +285,16 @@ class Z3DCollection(Collection):
                 entry["calibration_fn"] = None
 
             entries.append(entry)
+
+        # If no entries were collected, return an empty DataFrame with the
+        # expected columns so downstream dtype/sorting code can operate
+        # without raising attribute errors.
+        if len(entries) == 0:
+            df = pd.DataFrame(columns=self._columns)
+            df = self._sort_df(self._set_df_dtypes(df), run_name_zeros)
+            # Ensure station metadata dict is at least an empty dict
+            self.station_metadata_dict = {}
+            return df
 
         # Create and process dataframe
         df = self._sort_df(self._set_df_dtypes(pd.DataFrame(entries)), run_name_zeros)
