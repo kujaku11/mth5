@@ -116,13 +116,34 @@ class Collection:
         if self.file_path is None:
             return []
 
+        fn_list = []
+
+        # If an empty extension is requested, return all files under the
+        # directory (rglob "*"), letting callers filter as needed.
+        if extension == "":
+            fn_list = list(self.file_path.rglob("*"))
+            return sorted([p for p in fn_list if p.is_file()])
+
+        # If a list/tuple was passed, respect it (allowing callers to
+        # explicitly provide multiple extensions).
         if isinstance(extension, (list, tuple)):
-            fn_list = []
-            for ext in extension:
-                fn_list += list(self.file_path.rglob(f"*.{ext}"))
+            exts = list(extension)
         else:
-            fn_list = list(self.file_path.rglob(f"*.{extension}"))
-        return sorted(list(set(fn_list)))
+            # For a single extension string, search case-insensitively by
+            # including lower/upper forms to accommodate filesystems that
+            # may be case-sensitive (e.g., Linux CI runners).
+            exts = [extension, extension.lower(), extension.upper()]
+
+        seen = set()
+        for ext in exts:
+            if not ext:
+                continue
+            for p in self.file_path.rglob(f"*.{ext}"):
+                if p.is_file() and p not in seen:
+                    seen.add(p)
+                    fn_list.append(p)
+
+        return sorted(fn_list)
 
     def to_dataframe(self, sample_rates=None, run_name_zeros=4, calibration_path=None):
         """
