@@ -211,10 +211,11 @@ class USGSascii(AsciiMetadata):
                 ),
             )
         if compression:
+            # Use conventional suffixes: zip -> .zip, gzip -> .gz
             if compress_type == "zip":
-                save_fn = save_fn.with_suffix(save_fn.suffix + ".gz")
+                save_fn = save_fn.with_suffix(save_fn.suffix + ".zip")
             elif compress_type == "gzip":
-                save_fn = save_fn.with_suffix(save_fn.suffix + ".gzip")
+                save_fn = save_fn.with_suffix(save_fn.suffix + ".gz")
         return save_fn
 
     def write(
@@ -272,6 +273,7 @@ class USGSascii(AsciiMetadata):
             chn_list=[c.capitalize() for c in self.ts.columns]
         )
         if compress == True and compress_type == "gzip":
+            # gzip expects bytes; encode strings before writing
             with gzip.open(save_fn, "wb") as fid:
                 h_line = [
                     "".join(
@@ -281,7 +283,8 @@ class USGSascii(AsciiMetadata):
                         ]
                     )
                 ]
-                fid.write("\n".join(meta_lines + h_line) + "\n")
+                header_bytes = ("\n".join(meta_lines + h_line) + "\n").encode("utf-8")
+                fid.write(header_bytes)
 
                 # write out data
                 if full is False:
@@ -291,7 +294,7 @@ class USGSascii(AsciiMetadata):
                     lines = "\n".join(
                         ["".join(out[ii, :]) for ii in range(out.shape[0])]
                     )
-                    fid.write(lines + "\n")
+                    fid.write((lines + "\n").encode("utf-8"))
                     self.logger.debug(f"END --> {time.ctime()}")
                     et = datetime.datetime.now()
                     write_time = et - st
@@ -308,14 +311,76 @@ class USGSascii(AsciiMetadata):
                     lines = "\n".join(
                         ["".join(out[ii, :]) for ii in range(out.shape[0])]
                     )
-                    fid.write(lines + "\n")
+                    fid.write((lines + "\n").encode("utf-8"))
         else:
             if compress == True and compress_type == "zip":
-                self.logger.debug("ZIPPING")
-                save_fn = save_fn[0:-4]
-                zip_file = True
-                self.logger.debug(zip_file)
-            with open(save_fn, "w") as fid:
+                # Create a temporary .asc file, then zip it into the final
+                # .zip archive. `save_fn` is expected to be a Path ending with
+                # ".zip" (from _make_file_name).
+                import zipfile
+
+                zip_path = Path(save_fn)
+                # inner asc filename is the zip name without the .zip suffix
+                asc_name = zip_path.name[:-4]
+                asc_temp = zip_path.parent / asc_name
+
+                # write the ascii file
+                need_zip = False
+                with open(asc_temp, "w", encoding="utf-8") as fid:
+                    h_line = [
+                        "".join(
+                            [
+                                "{0:>{1}}".format(c.capitalize(), s_num)
+                                for c in self.ts.columns
+                            ]
+                        )
+                    ]
+                    fid.write("\n".join(meta_lines + h_line) + "\n")
+
+                    # write out data
+                    if full is False:
+                        out = np.array(self.ts[0:chunk_size])
+                        out[np.where(out == 0)] = float(self.MissingDataFlag)
+                        out = np.char.mod(str_fmt, out)
+                        lines = "\n".join(
+                            ["".join(out[ii, :]) for ii in range(out.shape[0])]
+                        )
+                        fid.write(lines + "\n")
+                        self.logger.debug(f"END --> {time.ctime()}")
+                        et = datetime.datetime.now()
+                        write_time = et - st
+                        self.logger.debug(
+                            f"Writing took: {write_time.total_seconds()} seconds"
+                        )
+                        need_zip = True
+                    else:
+                        for chunk in range(int(self.ts.shape[0] / chunk_size)):
+                            out = np.array(
+                                self.ts[chunk * chunk_size : (chunk + 1) * chunk_size]
+                            )
+                            out[np.where(out == 0)] = float(self.MissingDataFlag)
+                            out = np.char.mod(str_fmt, out)
+                            lines = "\n".join(
+                                ["".join(out[ii, :]) for ii in range(out.shape[0])]
+                            )
+                            fid.write(lines + "\n")
+
+                # create zip and clean up (only if we need it)
+                if need_zip:
+                    try:
+                        with zipfile.ZipFile(
+                            zip_path, "w", compression=zipfile.ZIP_DEFLATED
+                        ) as zf:
+                            zf.write(asc_temp, arcname=asc_temp.name)
+                    finally:
+                        try:
+                            asc_temp.unlink(missing_ok=True)
+                        except Exception:
+                            pass
+                    return
+
+            # default uncompressed write
+            with open(save_fn, "w", encoding="utf-8") as fid:
                 h_line = [
                     "".join(
                         [

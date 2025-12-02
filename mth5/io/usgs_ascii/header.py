@@ -233,15 +233,31 @@ class AsciiMetadata:
             self.logger.error("could not connect to get elevation from national map.")
             self.logger.debug(nm_url.format(self.longitude, self.latitude))
             return self.station_metadata.location.elevation
-        # read the xml response and convert to a float
-        info = json.loads(response.read().decode())
+        # read the json response and convert to a float.  Be defensive:
+        # network requests may return non-json or empty responses in CI
+        # environments. If parsing fails, fall back to stored station value.
         try:
-            nm_elev = round(float(info["value"]), 1)
-        except ValueError:
+            body = response.read().decode()
+            info = json.loads(body)
+            try:
+                nm_elev = round(float(info.get("value", 0)), 1)
+            except (ValueError, TypeError):
+                self.logger.warning(
+                    "could not read elevation from national map url. Setting to 0"
+                )
+                nm_elev = 0
+        except json.JSONDecodeError:
             self.logger.warning(
-                "could not read elevation from national map url. Setting to 0"
+                "national map returned non-json response; using stored elevation"
             )
-            nm_elev = 0
+            nm_elev = self.station_metadata.location.elevation
+        except Exception:
+            # Any other issue should fall back to stored elevation
+            self.logger.debug(
+                "unexpected error parsing national map response; using stored elevation"
+            )
+            nm_elev = self.station_metadata.location.elevation
+
         return nm_elev
 
     @elevation.setter
