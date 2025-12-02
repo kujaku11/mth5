@@ -124,10 +124,17 @@ class Collection:
             fn_list = list(self.file_path.rglob("*"))
             return sorted([p for p in fn_list if p.is_file()])
 
-        # If a list/tuple was passed, respect it (allowing callers to
-        # explicitly provide multiple extensions).
+        # If a list/tuple was passed, expand each provided extension to
+        # include lower/upper forms so searches are case-insensitive.
         if isinstance(extension, (list, tuple)):
-            exts = list(extension)
+            exts = []
+            for e in list(extension):
+                if not e:
+                    continue
+                # add the original plus lower/upper variants, avoiding duplicates
+                for candidate in (e, e.lower(), e.upper()):
+                    if candidate not in exts:
+                        exts.append(candidate)
         else:
             # For a single extension string, search case-insensitively by
             # including lower/upper forms to accommodate filesystems that
