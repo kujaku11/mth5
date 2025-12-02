@@ -157,10 +157,53 @@ class NIMSCollection(Collection):
 
         # make pandas dataframe and set data types
         df = pd.DataFrame(entries)
-        df.loc[:, "channel_id"] = 1
-        df.loc[:, "sequence_number"] = 0
-        df.loc[:, "component"] = ",".join(["hx", "hy", "hz", "ex", "ey", "temperature"])
-        df.loc[:, "instrument_id"] = "NIMS"
+
+        # If there are no entries, create an empty DataFrame with the
+        # expected columns so subsequent scalar assignments and dtype
+        # enforcement work without raising (pandas raises when assigning
+        # scalars into an empty frame with no defined index).
+        if df.empty:
+            expected_cols = [
+                "survey",
+                "station",
+                "run",
+                "start",
+                "end",
+                "fn",
+                "sample_rate",
+                "file_size",
+                "n_samples",
+                "dipole",
+                "channel_id",
+                "sequence_number",
+                "component",
+                "instrument_id",
+            ]
+            df = pd.DataFrame(columns=expected_cols)
+
+        # Populate/ensure scalar columns exist
+        if "channel_id" not in df.columns:
+            df["channel_id"] = 1
+        else:
+            df.loc[:, "channel_id"] = df.loc[:, "channel_id"].fillna(1)
+
+        if "sequence_number" not in df.columns:
+            df["sequence_number"] = 0
+        else:
+            df.loc[:, "sequence_number"] = df.loc[:, "sequence_number"].fillna(0)
+
+        if "component" not in df.columns:
+            df["component"] = ",".join(["hx", "hy", "hz", "ex", "ey", "temperature"])
+        else:
+            df.loc[:, "component"] = df.loc[:, "component"].fillna(
+                ",".join(["hx", "hy", "hz", "ex", "ey", "temperature"])
+            )
+
+        if "instrument_id" not in df.columns:
+            df["instrument_id"] = "NIMS"
+        else:
+            df.loc[:, "instrument_id"] = df.loc[:, "instrument_id"].fillna("NIMS")
+
         df = self._sort_df(self._set_df_dtypes(df), run_name_zeros)
 
         return df

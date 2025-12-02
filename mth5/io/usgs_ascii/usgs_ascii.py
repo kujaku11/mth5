@@ -212,9 +212,9 @@ class USGSascii(AsciiMetadata):
             )
         if compression:
             if compress_type == "zip":
-                save_fn = save_fn + ".zip"
+                save_fn = save_fn.with_suffix(save_fn.suffix + ".gz")
             elif compress_type == "gzip":
-                save_fn = save_fn + ".gz"
+                save_fn = save_fn.with_suffix(save_fn.suffix + ".gzip")
         return save_fn
 
     def write(
