@@ -593,7 +593,7 @@ class KernelDataset:
         if self._has_df() and self.df is not None:
             local_data = self.local_df
             if local_data is not None and not local_data.empty:
-                return local_data.input_channels[0]
+                return local_data.input_channels.iat[0]
         return []
 
     @property
@@ -614,7 +614,32 @@ class KernelDataset:
         if self._has_df() and self.df is not None:
             local_data = self.local_df
             if local_data is not None and not local_data.empty:
-                return local_data.output_channels[0]
+                return local_data.output_channels.iat[0]
+        return []
+
+    @property
+    def remote_channels(self) -> list[str]:
+        """
+        Get remote reference channels from dataframe.
+
+        Returns
+        -------
+        list[str]
+            Remote reference channel identifiers
+
+        Raises
+        ------
+        AttributeError
+            If dataframe is not available or remote_df has no remote_channels
+        """
+        if (
+            self._has_df()
+            and self.df is not None
+            and self.remote_station_id is not None
+        ):
+            remote_data = self.remote_df
+            if remote_data is not None and not remote_data.empty:
+                return remote_data.input_channels.iat[0]
         return []
 
     @property
