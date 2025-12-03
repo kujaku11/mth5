@@ -361,12 +361,16 @@ class TestPhoenixClientReceiverCalibration:
         """Test setting receiver calibration from file path."""
         rx_cal_file = mock_calibration_files["rx_cal_file"]
 
-        # This test is expected to fail due to a bug in the PhoenixClient implementation
-        # The setter has an UnboundLocalError when setting from file path
-        with pytest.raises(
-            UnboundLocalError, match="cannot access local variable 'fn'"
-        ):
-            basic_phoenix_client.receiver_calibration_dict = rx_cal_file
+        # Setting with a single file should populate the receiver calibration
+        # dict with the derived key from the filename stem (e.g., RX001).
+        basic_phoenix_client.receiver_calibration_dict = rx_cal_file
+
+        # Verify the dictionary was populated correctly
+        assert isinstance(basic_phoenix_client.receiver_calibration_dict, dict)
+        assert len(basic_phoenix_client.receiver_calibration_dict) == 1
+        key = rx_cal_file.stem.split("_")[0]
+        assert key in basic_phoenix_client.receiver_calibration_dict
+        assert basic_phoenix_client.receiver_calibration_dict[key] == rx_cal_file
 
     def test_receiver_calibration_dict_directory_path(
         self, basic_phoenix_client, mock_calibration_files

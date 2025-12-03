@@ -65,8 +65,11 @@ class PhoenixClient(ClientBase):
                 ):
                     self._receiver_calibration_dict[fn.stem.split("_")[0]] = fn
             elif receiver_path.is_file():
+                # Single file provided - use its stem to derive the receiver id
+                # e.g., 'RX001_rxcal.json' -> 'RX001'
                 self._receiver_calibration_dict = {}
-                self._receiver_calibration_dict[fn.stem.split("_")[0]] = receiver_path
+                key = receiver_path.stem.split("_")[0]
+                self._receiver_calibration_dict[key] = receiver_path
         else:
             raise TypeError(f"type {type(value)} not supported.")
 
