@@ -619,7 +619,8 @@ class TestLEMI424ClientPerformance:
 
     def test_very_long_filename(self, basic_lemi_client, temp_data_dir):
         """Test handling of very long filenames."""
-        long_filename = "very_" * 50 + "long_filename.h5"
+        # Use a shorter repetition to avoid platform-dependent filename length limits
+        long_filename = "very_" * 10 + "long_filename.h5"
         long_path = temp_data_dir / long_filename
 
         basic_lemi_client.save_path = long_path
