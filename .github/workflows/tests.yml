@@ -32,6 +32,17 @@ jobs:
         auto-update-conda: true
         python-version: ${{ matrix.python-version }}
 
+    - name: Cache MTH5 Test Fixtures
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/mth5_global_test_cache
+          /tmp/mth5_global_test_cache
+          ${{ runner.temp }}/mth5_global_test_cache
+        key: mth5-fixtures-${{ runner.os }}-${{ hashFiles('mth5/data/make_mth5_from_asc.py', 'tests/conftest.py') }}
+        restore-keys: |
+          mth5-fixtures-${{ runner.os }}-
+
     - name: Install Env
       run: |
         python --version

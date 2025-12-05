@@ -51,7 +51,14 @@ from mth5.timeseries.spectre.helpers import add_fcs_to_mth5
 # =============================================================================
 
 # Global cache directory - persists across test sessions
-GLOBAL_CACHE_DIR = Path(tempfile.gettempdir()) / "mth5_global_test_cache"
+# Use user's home directory for better cross-platform compatibility with CI/CD
+_DEFAULT_CACHE_DIR = Path.home() / "mth5_global_test_cache"
+
+# Allow override via environment variable (useful for CI/CD systems)
+import os
+
+
+GLOBAL_CACHE_DIR = Path(os.getenv("MTH5_TEST_CACHE_DIR", _DEFAULT_CACHE_DIR))
 
 # Track cached files for cleanup
 _CACHED_FILES = {}
