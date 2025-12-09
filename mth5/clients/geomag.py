@@ -51,7 +51,6 @@ class GeomagClient:
     def __init__(self, **kwargs):
         self._base_url = r"https://geomag.usgs.gov/ws/data/"
         self._timeout = 120
-        self._max_length = 172800
 
         self._valid_observatories = [
             "BDT",
@@ -124,7 +123,7 @@ class GeomagClient:
         self.format = "json"
         self._timeout = 120
         self.observatory = "FRN"
-        self._max_length = 172800
+        self._max_length = 144000
         self.start = None
         self.end = None
 
@@ -261,7 +260,12 @@ class GeomagClient:
 
     def get_chunks(self):
         """
-        Get the number of chunks of allowable sized to request
+        Get the number of chunks of allowable sized to request, includes the elements
+
+        So the max length is the maximum time period that can be requested but includes
+        the number of elements in the request.  So if the max length is 172800 seconds
+        and the sampling period is 1 second, then the maximum number of elements that can
+        be requested is 172800 / (1 * len(elements)).
 
         :return: DESCRIPTION
         :rtype: TYPE
@@ -272,7 +276,7 @@ class GeomagClient:
             dt = np.arange(
                 np.datetime64(self._start.iso_no_tz),
                 np.datetime64(self._end.iso_no_tz),
-                np.timedelta64(self._max_length * self.sampling_period, "s"),
+                np.timedelta64(int((round(self._max_length / len(self.elements))) * self.sampling_period), "s"),
             )
             dt = np.append(dt, np.array([np.datetime64(self._end.iso_no_tz)]))
 
