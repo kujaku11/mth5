@@ -307,7 +307,7 @@ class Z3D:
     def start(self):
         if self.gps_stamps is not None:
             return self.get_UTC_date_time(
-                self.header.gpsweek, self.gps_stamps["time"][0]
+                self.header.gpsweek, float(self.gps_stamps["time"][0])
             )
         return self.zen_schedule
 
@@ -315,7 +315,7 @@ class Z3D:
     def end(self):
         if self.gps_stamps is not None:
             return self.get_UTC_date_time(
-                self.header.gpsweek, self.gps_stamps["time"][-1]
+                self.header.gpsweek, float(self.gps_stamps["time"][-1])
             )
         return self.start + (self.n_samples / self.sample_rate)
 
@@ -972,7 +972,7 @@ class Z3D:
 
         # make sure the time is in gps time
         zen_start_utc = self.get_UTC_date_time(
-            self.header.gpsweek, self.gps_stamps["time"][0]
+            self.header.gpsweek, float(self.gps_stamps["time"][0])
         )
 
         # estimate the time difference between the two
