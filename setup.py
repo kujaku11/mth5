@@ -2,7 +2,8 @@
 
 """The setup script."""
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
+
 
 with open("README.md") as readme_file:
     readme = readme_file.read()
@@ -49,12 +50,12 @@ setup(
     name="mth5",
     packages=find_packages(include=["mth5", "mth5.*"]),
     package_data={
-      'mth5': ['data/*.asc'],
+        "mth5": ["data/*.asc"],
     },
     setup_requires=setup_requirements,
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/kujaku11/mth5",
-    version="0.5.0",
+    version="0.5.1",
     zip_safe=False,
 )
