@@ -69,11 +69,14 @@ import mt_metadata.timeseries
 import pandas as pd
 from loguru import logger
 from mt_metadata.common.list_dict import ListDict
+from mt_metadata.timeseries import Survey
+from mt_metadata.transfer_functions.tf import Station
 
 import mth5.timeseries.run_ts
 from mth5.processing import KERNEL_DATASET_DTYPE, MINI_SUMMARY_COLUMNS
 from mth5.processing.run_summary import RunSummary
 from mth5.utils.helpers import initialize_mth5
+from mth5.mth5 import MTH5
 
 
 # =============================================================================
@@ -803,6 +806,57 @@ class KernelDataset:
 
         self.df = df
 
+        self.survey_metadata = self.get_metadata_from_df(self.local_df)
+
+    def get_metadata_from_df(self, df: pd.DataFrame) -> Survey:
+        """
+        Extract metadata from the dataframe.  The data frame should only include one
+        station.  So use self.local_df or self.remote_df.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Dataframe to extract metadata from
+
+        Returns
+        -------
+        dict[str, Any]
+            Dictionary containing survey metadata
+        """
+        if df is None or df.empty:
+            return {}
+        
+        mth5_path = df["mth5_path"].unique()[0]
+        if len(mth5_path) == 0:
+            raise ValueError(
+                f"Cannot find MTH5 path for local station {self.local_station_id}")
+        
+        h5_station_reference = df["station_hdf5_reference"].unique()[0]
+        
+        with MTH5() as m:
+            m.open_mth5(mth5_path)
+            station_group = m.from_reference(h5_station_reference)
+            survey_metadata = station_group.survey_metadata
+
+        # survey metadata returns a time series station, so need to update to a 
+        # transfer function object
+
+        tf_station = Station()
+        tf_station.update(survey_metadata.stations[self.local_station_id])
+
+        # remove runs that are not in the dataframe
+        processing_runs = df.run.unique()
+        for run in tf_station.runs.keys():
+            if run not in processing_runs:
+                tf_station.remove_run(run)
+
+        # add to survey metadata by removing the old one first
+        survey_metadata.remove_station(self.local_station_id)
+        survey_metadata.add_station(tf_station)
+
+        
+        return survey_metadata
+
     @property
     def mini_summary(self) -> pd.DataFrame:
         """
@@ -1133,6 +1187,7 @@ class KernelDataset:
         sample_rate = self.df.sample_rate.unique()[0]
         return sample_rate
 
+    #this should be deprecated in the future in favor of usin get_metadata_from_df
     def update_survey_metadata(
         self, i: int, row: pd.Series, run_ts: mth5.timeseries.run_ts.RunTS
     ) -> None:
@@ -1244,9 +1299,9 @@ class KernelDataset:
             run_ts = run_obj.to_runts(start=row.start, end=row.end)
             self.df["run_dataarray"].at[i] = run_ts.dataset.to_array("channel")
 
-            self.update_survey_metadata(i, row, run_ts)
+            #self.update_survey_metadata(i, row, run_ts)
 
-        logger.info("Dataset dataframe initialized successfully")
+        logger.info("Dataset dataframe initialized successfully, updated metadata.")
 
     def add_columns_for_processing(self) -> None:
         """Add columns to the dataframe used during processing.
