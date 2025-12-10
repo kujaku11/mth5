@@ -386,7 +386,7 @@ class KernelDataset:
                     f"KernelDataset DataFrame needs column {col}, adding and "
                     f"setting dtype to {assigned_dtype}."
                 )
-                logger.info(msg)
+                logger.debug(msg)
 
         return df
 

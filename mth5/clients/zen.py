@@ -35,6 +35,7 @@ class ZenClient(ClientBase):
 
         self.calibration_path = calibration_path
         self.collection = Z3DCollection(self.data_path)
+        self.station_stem = None
 
     @property
     def calibration_path(self):
@@ -88,6 +89,24 @@ class ZenClient(ClientBase):
         return list(
             set([station_dict[k].survey.unique()[0] for k in station_dict.keys()])
         )[0]
+    
+    def _get_station_group_id(self, station_id):
+        """
+        Get the station group id from the station id.
+        :param station_id: DESCRIPTION
+        :type station_id: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        if self.station_stem is not None:
+            if not station_id.startswith(self.station_stem):
+                return f"{self.station_stem}{station_id}"
+            else:
+                return station_id
+        else:
+            return station_id
+            
 
     def make_mth5_from_zen(self, survey_id=None, combine=True, **kwargs):
         """
@@ -114,13 +133,16 @@ class ZenClient(ClientBase):
             m.open_mth5(self.save_path, "w")
 
             for station_id, station_dict in runs.items():
+                
                 if survey_id is None:
                     survey_id = self.get_survey(station_dict)
                 survey_group = m.add_survey(survey_id)
-                station_group = survey_group.stations_group.add_station(station_id)
+                station_group_id = self._get_station_group_id(station_id)
+                station_group = survey_group.stations_group.add_station(station_group_id)
                 station_group.metadata.update(
                     self.collection.station_metadata_dict[station_id]
                 )
+                station_group.metadata.id = station_group_id
                 station_group.write_metadata()
                 if combine:
                     run_list = []
