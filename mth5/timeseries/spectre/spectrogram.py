@@ -440,4 +440,12 @@ def extract_band(
         extracted_band = extracted_band.to_dataset("variable")
     if channels:
         extracted_band = extracted_band[channels]
+
+    if len(extracted_band.frequency) == 0:
+        msg = (
+            f"Frequency band {frequency_band} does not overlap with the frequencies "
+            f"of the input dataset.  Frequencies in dataset are: {fft_obj.frequency.values}. "
+            "Skipping band extraction. Consider reforming the bands."
+        )
+        logger.warning(msg)
     return extracted_band
