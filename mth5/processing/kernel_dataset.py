@@ -73,10 +73,10 @@ from mt_metadata.timeseries import Survey
 from mt_metadata.transfer_functions.tf import Station
 
 import mth5.timeseries.run_ts
+from mth5.mth5 import MTH5
 from mth5.processing import KERNEL_DATASET_DTYPE, MINI_SUMMARY_COLUMNS
 from mth5.processing.run_summary import RunSummary
 from mth5.utils.helpers import initialize_mth5
-from mth5.mth5 import MTH5
 
 
 # =============================================================================
@@ -825,20 +825,21 @@ class KernelDataset:
         """
         if df is None or df.empty:
             return {}
-        
+
         mth5_path = df["mth5_path"].unique()[0]
         if len(mth5_path) == 0:
             raise ValueError(
-                f"Cannot find MTH5 path for local station {self.local_station_id}")
-        
+                f"Cannot find MTH5 path for local station {self.local_station_id}"
+            )
+
         h5_station_reference = df["station_hdf5_reference"].unique()[0]
-        
+
         with MTH5() as m:
             m.open_mth5(mth5_path)
             station_group = m.from_reference(h5_station_reference)
             survey_metadata = station_group.survey_metadata
 
-        # survey metadata returns a time series station, so need to update to a 
+        # survey metadata returns a time series station, so need to update to a
         # transfer function object
 
         tf_station = Station()
@@ -854,7 +855,6 @@ class KernelDataset:
         survey_metadata.remove_station(self.local_station_id)
         survey_metadata.add_station(tf_station)
 
-        
         return survey_metadata
 
     @property
@@ -887,10 +887,7 @@ class KernelDataset:
     @property
     def local_survey_metadata(self) -> mt_metadata.timeseries.Survey:
         """Return survey metadata for local station."""
-        if self.local_station_id in self.survey_metadata.keys():
-            return self.survey_metadata[self.local_survey_id]
-        else:
-            return {}
+        return self.survey_metadata
         # except KeyError:
         #     msg = f"Unexpected key {self.local_survey_id} not found in survey_metadata"
         #     msg += f"{msg} WARNING -- Maybe old MTH5 -- trying to use key '0'"
@@ -1187,7 +1184,7 @@ class KernelDataset:
         sample_rate = self.df.sample_rate.unique()[0]
         return sample_rate
 
-    #this should be deprecated in the future in favor of usin get_metadata_from_df
+    # this should be deprecated in the future in favor of usin get_metadata_from_df
     def update_survey_metadata(
         self, i: int, row: pd.Series, run_ts: mth5.timeseries.run_ts.RunTS
     ) -> None:
@@ -1299,7 +1296,7 @@ class KernelDataset:
             run_ts = run_obj.to_runts(start=row.start, end=row.end)
             self.df["run_dataarray"].at[i] = run_ts.dataset.to_array("channel")
 
-            #self.update_survey_metadata(i, row, run_ts)
+            # self.update_survey_metadata(i, row, run_ts)
 
         logger.info("Dataset dataframe initialized successfully, updated metadata.")
 
