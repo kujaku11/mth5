@@ -1068,6 +1068,9 @@ class ChannelDataset:
             data = ChannelTS(
                 self.metadata.type,
                 data=self.hdf5_dataset[regional_ref],
+                survey_metadata=self.survey_metadata.copy(),
+                station_metadata=self.station_metadata.copy(),
+                run_metadata=self.run_metadata.copy(),
                 channel_metadata={self.metadata.type: meta_dict},
                 channel_response=self.channel_response,
             )

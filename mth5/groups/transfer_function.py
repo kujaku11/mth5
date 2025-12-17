@@ -121,7 +121,7 @@ class TransferFunctionsGroup(BaseGroup):
             if "1980" in self.hdf5_group.parent.attrs["time_period.start"]:
                 self.hdf5_group.parent.attrs[
                     "time_period.start"
-                ] = tf_object.station_metadata.time_period.start
+                ] = tf_object.station_metadata.time_period.start.isoformat()
 
             elif (
                 self.hdf5_group.parent.attrs["time_period.start"]
@@ -133,13 +133,13 @@ class TransferFunctionsGroup(BaseGroup):
                 ):
                     self.hdf5_group.parent.attrs[
                         "time_period.start"
-                    ] = tf_object.station_metadata.time_period.start
+                    ] = tf_object.station_metadata.time_period.start.isoformat()
 
         if "1980" not in tf_object.station_metadata.time_period.end:
             if "1980" in self.hdf5_group.parent.attrs["time_period.end"]:
                 self.hdf5_group.parent.attrs[
                     "time_period.end"
-                ] = tf_object.station_metadata.time_period.end
+                ] = tf_object.station_metadata.time_period.end.isoformat()
 
             elif (
                 self.hdf5_group.parent.attrs["time_period.end"]
@@ -151,7 +151,7 @@ class TransferFunctionsGroup(BaseGroup):
                 ):
                     self.hdf5_group.parent.attrs[
                         "time_period.end"
-                    ] = tf_object.station_metadata.time_period.end
+                    ] = tf_object.station_metadata.time_period.end.isoformat()
 
     def add_transfer_function(self, name, tf_object=None):
         """
