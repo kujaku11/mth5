@@ -50,6 +50,9 @@ def path_or_mth5_object(func):
                 new_args[0] = m
                 new_args = tuple(new_args)
                 result = call_function(func, *new_args, **kwargs)
+                # Explicit flush before context manager exit
+                if mode != "r":
+                    m._MTH5__hdf5_obj.flush()
 
         elif isinstance(args[0], MTH5):
             result = call_function(func, *args, **kwargs)
