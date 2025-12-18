@@ -260,6 +260,12 @@ class RunGroup(BaseGroup):
                         meta_dict = dict(self.hdf5_group[ch].attrs)
                         for key, value in meta_dict.items():
                             meta_dict[key] = from_numpy_type(value)
+                        # Skip groups that don't have the 'type' attribute (not channels)
+                        if "type" not in meta_dict:
+                            self.logger.debug(
+                                f"Skipping non-channel group {ch}: missing 'type' attribute"
+                            )
+                            continue
                         ch_metadata = meta_classes[meta_dict["type"].capitalize()]()
                         ch_metadata.from_dict(meta_dict)
                         # Cache the metadata for future use
