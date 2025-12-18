@@ -171,13 +171,23 @@ class FCChannelDataset:
 
         """
         meta_dict = self.metadata.to_dict()[self.metadata._class_name.lower()]
+
+        # Force include component field to prevent "e_default" error
+        if "component" not in meta_dict and hasattr(self.metadata, "component"):
+            meta_dict["component"] = self.metadata.component
+
+        # Force include sample_rate field to prevent 0.0 errors
+        if "sample_rate" not in meta_dict and hasattr(self.metadata, "sample_rate"):
+            meta_dict["sample_rate"] = self.metadata.sample_rate
+
+        # Use attrs assignment instead of create() to update existing attrs
         for key, value in meta_dict.items():
             value = to_numpy_type(value)
-            self.hdf5_dataset.attrs.create(key, value)
+            self.hdf5_dataset.attrs[key] = value
 
         # Add the mth5_type attribute that is expected by channel_summary
         if "mth5_type" not in self.hdf5_dataset.attrs:
-            self.hdf5_dataset.attrs.create("mth5_type", "FCChannel")
+            self.hdf5_dataset.attrs["mth5_type"] = "FCChannel"
 
     @property
     def n_windows(self):

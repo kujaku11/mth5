@@ -240,6 +240,11 @@ class RunGroup(BaseGroup):
             current_group_names = set(self.groups_list)
             existing_channel_names = set(ch.component for ch in self._metadata.channels)
 
+            self.logger.debug(f"DEBUG metadata getter: run={self._metadata.id}")
+            self.logger.debug(f"  groups_list={self.groups_list}")
+            self.logger.debug(f"  current_group_names={current_group_names}")
+            self.logger.debug(f"  existing_channel_names={existing_channel_names}")
+
             # Only rebuild if there's actually a difference in the channel sets
             if current_group_names != existing_channel_names:
                 # Clear and rebuild the channels list
@@ -286,9 +291,13 @@ class RunGroup(BaseGroup):
         """
 
         ch_list = []
+        self.logger.debug(f"DEBUG channel_summary: iterating over hdf5_group.items()")
+        self.logger.debug(f"  hdf5_group.keys() = {list(self.hdf5_group.keys())}")
         for key, group in self.hdf5_group.items():
+            self.logger.debug(f"  Processing key='{key}'")
             try:
                 ch_type = group.attrs["type"]
+                self.logger.debug(f"    ch_type='{ch_type}'")
                 if ch_type in ["electric", "magnetic", "auxiliary"]:
                     ch_list.append(
                         (
@@ -302,8 +311,13 @@ class RunGroup(BaseGroup):
                             group.ref,
                         )
                     )
-            except KeyError:
-                pass
+                    self.logger.debug(f"    Added channel '{group.attrs['component']}'")
+                else:
+                    self.logger.debug(
+                        f"    Skipped - type '{ch_type}' not in allowed list"
+                    )
+            except KeyError as e:
+                self.logger.debug(f"    Skipped - KeyError: {e}")
         ch_summary = np.array(
             ch_list,
             dtype=np.dtype(
@@ -329,9 +343,20 @@ class RunGroup(BaseGroup):
 
         """
 
-        for key, value in self.metadata.to_dict(single=True).items():
+        # Use required=True to filter out fields with default/None values
+        # But this causes issues because sample_rate=0 is filtered out
+        # So we need custom logic: always include sample_rate if it exists in the model
+        meta_dict = self.metadata.to_dict(single=True, required=True)
+
+        # Force include sample_rate even if it's 0 or None
+        if "sample_rate" not in meta_dict and hasattr(self._metadata, "sample_rate"):
+            meta_dict["sample_rate"] = self._metadata.sample_rate
+
+        for key, value in meta_dict.items():
             value = to_numpy_type(value)
-            self.hdf5_group.attrs.create(key, value)
+            # Use assignment instead of create() to update existing attributes
+            # This allows updating existing attributes without errors
+            self.hdf5_group.attrs[key] = value
 
     def add_channel(
         self,
@@ -853,7 +878,17 @@ class RunGroup(BaseGroup):
         self.logger.info(
             f"DEBUG update_metadata: Final sample_rate = {self._metadata.sample_rate}"
         )
-        self.write_metadata()
+        self.logger.info("DEBUG update_metadata: About to call write_metadata()")
+        try:
+            self.write_metadata()
+            self.logger.info(
+                "DEBUG update_metadata: write_metadata() completed successfully"
+            )
+        except Exception as e:
+            self.logger.error(
+                f"DEBUG update_metadata: write_metadata() failed with exception: {e}"
+            )
+            raise
 
     def plot(self, start=None, end=None, n_samples=None):
         """

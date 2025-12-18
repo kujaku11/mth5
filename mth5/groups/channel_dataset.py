@@ -299,13 +299,41 @@ class ChannelDataset:
 
         """
         meta_dict = self.metadata.to_dict()[self.metadata._class_name.lower()]
+
+        # Force include critical fields that might be filtered out by to_dict()
+        # component: Required to identify the channel
+        if "component" not in meta_dict and hasattr(self.metadata, "component"):
+            meta_dict["component"] = self.metadata.component
+            self.logger.info(
+                f"DEBUG channel write_metadata: Forced component = {self.metadata.component}"
+            )
+
+        # sample_rate: Required for proper time series handling
+        if "sample_rate" not in meta_dict and hasattr(self.metadata, "sample_rate"):
+            meta_dict["sample_rate"] = self.metadata.sample_rate
+            self.logger.info(
+                f"DEBUG channel write_metadata: {self.metadata.component} - Forced sample_rate = {self.metadata.sample_rate}"
+            )
+        elif "sample_rate" in meta_dict:
+            self.logger.info(
+                f"DEBUG channel write_metadata: {self.metadata.component} sample_rate = {meta_dict['sample_rate']}"
+            )
+        else:
+            self.logger.warning(
+                f"DEBUG channel write_metadata: {self.metadata.component} - NO sample_rate attribute!"
+            )
+
         for key, value in meta_dict.items():
             try:
                 value = to_numpy_type(value)
-                self.hdf5_dataset.attrs.create(key, value)
+                # Use attrs assignment instead of attrs.create() to allow updates
+                self.hdf5_dataset.attrs[key] = value
             except Exception as e:
                 # Convert problematic values to string as fallback
-                self.hdf5_dataset.attrs.create(key, str(value))
+                try:
+                    self.hdf5_dataset.attrs[key] = str(value)
+                except Exception:
+                    self.logger.warning(f"Could not write {key} = {value}: {e}")
 
     def replace_dataset(self, new_data_array):
         """

@@ -247,10 +247,22 @@ class BaseGroup:
 
         """
 
+        self.logger.info(f"DEBUG write_metadata ENTRY: {self._class_name}")
         try:
-            for key, value in self.metadata.to_dict(single=True).items():
+            meta_dict = self.metadata.to_dict(single=True)
+            self.logger.info(
+                f"DEBUG write_metadata: {self._class_name} meta_dict keys = {list(meta_dict.keys())[:10]}"
+            )  # Show first 10 keys
+            if "sample_rate" in meta_dict:
+                self.logger.info(
+                    f"DEBUG write_metadata: {self._class_name} sample_rate IN dict = {meta_dict['sample_rate']}"
+                )
+            for key, value in meta_dict.items():
                 value = to_numpy_type(value)
-                self.logger.debug(f"wrote metadata {key} = {value}")
+                if key == "sample_rate":
+                    self.logger.info(
+                        f"DEBUG write_metadata: {self._class_name} {key} = {value} (type={type(value)})"
+                    )
                 self.hdf5_group.attrs.create(key, value)
         except KeyError as key_error:
             if "no write intent" in str(key_error):
