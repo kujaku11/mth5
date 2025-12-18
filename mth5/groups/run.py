@@ -244,7 +244,12 @@ class RunGroup(BaseGroup):
             if current_group_names != existing_channel_names:
                 # Clear and rebuild the channels list
                 self._metadata.channels = []
+                # List of known non-channel subgroups to skip
+                non_channel_groups = {"Features"}
                 for ch in self.groups_list:
+                    # Skip non-channel groups
+                    if ch in non_channel_groups:
+                        continue
                     # Check if we have cached metadata for this channel
                     if ch in self._channel_metadata_cache:
                         # Reuse cached metadata to prevent duplicate processing
@@ -685,7 +690,18 @@ class RunGroup(BaseGroup):
             msg = f"Input must be a mth5.timeseries.RunTS object not {type(run_ts_obj)}"
             self.logger.error(msg)
             raise MTH5Error(msg)
+
+        # Debug: log sample_rate before and after update
+        self.logger.info(
+            f"DEBUG from_runts: Before update, self._metadata.sample_rate = {self._metadata.sample_rate}"
+        )
+        self.logger.info(
+            f"DEBUG from_runts: run_ts_obj.run_metadata.sample_rate = {run_ts_obj.run_metadata.sample_rate}"
+        )
         self._metadata.update(run_ts_obj.run_metadata)
+        self.logger.info(
+            f"DEBUG from_runts: After update, self._metadata.sample_rate = {self._metadata.sample_rate}"
+        )
 
         channels = []
 
@@ -799,13 +815,27 @@ class RunGroup(BaseGroup):
         """
         channel_summary = self.channel_summary.copy()
 
+        self.logger.info(
+            f"DEBUG update_metadata: sample_rate before channel_summary check = {self._metadata.sample_rate}"
+        )
+        self.logger.info(
+            f"DEBUG update_metadata: channel_summary shape = {channel_summary.shape}"
+        )
+
         self._metadata.time_period.start = channel_summary.start.min().isoformat()
         self._metadata.time_period.end = channel_summary.end.max().isoformat()
         try:
-            self._metadata.sample_rate = channel_summary.sample_rate.unique()[0]
+            new_sample_rate = channel_summary.sample_rate.unique()[0]
+            self.logger.info(
+                f"DEBUG update_metadata: Got new_sample_rate from channel_summary = {new_sample_rate}"
+            )
+            self._metadata.sample_rate = new_sample_rate
         except IndexError:
             # Only set sample_rate to 0 if it wasn't already set to a valid value
             # This happens when update_metadata is called before channels are fully written
+            self.logger.info(
+                f"DEBUG update_metadata: IndexError - channel_summary.sample_rate.unique() failed"
+            )
             if self._metadata.sample_rate is None or self._metadata.sample_rate <= 0:
                 msg = "There maybe no channels associated with this run -- setting sample_rate to 0"
                 self.logger.critical(msg)
@@ -814,6 +844,9 @@ class RunGroup(BaseGroup):
                 # Keep the existing valid sample_rate from run metadata
                 msg = f"Channel summary empty, keeping existing sample_rate={self._metadata.sample_rate}"
                 self.logger.warning(msg)
+        self.logger.info(
+            f"DEBUG update_metadata: Final sample_rate = {self._metadata.sample_rate}"
+        )
         self.write_metadata()
 
     def plot(self, start=None, end=None, n_samples=None):
