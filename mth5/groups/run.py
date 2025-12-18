@@ -804,9 +804,16 @@ class RunGroup(BaseGroup):
         try:
             self._metadata.sample_rate = channel_summary.sample_rate.unique()[0]
         except IndexError:
-            msg = "There maybe no channels associated with this run -- setting sample_rate to 0"
-            self.logger.critical(msg)
-            self._metadata.sample_rate = 0
+            # Only set sample_rate to 0 if it wasn't already set to a valid value
+            # This happens when update_metadata is called before channels are fully written
+            if self._metadata.sample_rate is None or self._metadata.sample_rate <= 0:
+                msg = "There maybe no channels associated with this run -- setting sample_rate to 0"
+                self.logger.critical(msg)
+                self._metadata.sample_rate = 0
+            else:
+                # Keep the existing valid sample_rate from run metadata
+                msg = f"Channel summary empty, keeping existing sample_rate={self._metadata.sample_rate}"
+                self.logger.warning(msg)
         self.write_metadata()
 
     def plot(self, start=None, end=None, n_samples=None):

@@ -133,11 +133,22 @@ class RunSummary:
         """
         return copy.deepcopy(self)
 
-    def from_mth5s(self, mth5_list) -> list:
+    def from_mth5s(self, mth5_list, deduplicate=False) -> list:
         """Iterates over mth5s in list and creates one big dataframe
         summarizing the runs
+
+        Parameters
+        ----------
+        mth5_list : list
+            List of mth5 paths or MTH5 objects
+        deduplicate : bool, optional
+            If True, remove duplicate rows based on string representation.
+            Default is False to preserve runs from different stations that have
+            identical metadata.
         """
-        run_summary_df = extract_run_summaries_from_mth5s(mth5_list)
+        run_summary_df = extract_run_summaries_from_mth5s(
+            mth5_list, deduplicate=deduplicate
+        )
         self.df = run_summary_df
 
     def _warn_no_data_runs(self):
