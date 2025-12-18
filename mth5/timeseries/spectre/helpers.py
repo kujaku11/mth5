@@ -119,7 +119,9 @@ def add_fcs_to_mth5(
                     raise ValueError(msg)
 
                 if ts_decimation.level != 0:  # Apply decimation
-                    target_sample_rate = run_xrds.sample_rate / ts_decimation.factor
+                    # Get sample_rate from run metadata instead of dataset
+                    current_sample_rate = run_obj.metadata.sample_rate
+                    target_sample_rate = current_sample_rate / ts_decimation.factor
                     run_xrds.sps_filters.decimate(target_sample_rate=target_sample_rate)
 
                 _add_spectrogram_to_mth5(

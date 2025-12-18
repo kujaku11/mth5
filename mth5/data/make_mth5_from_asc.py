@@ -131,6 +131,10 @@ def create_run_ts_from_synthetic_run(
         ch_list.append(chts)
 
     # make a RunTS object
+    if run.run_metadata.sample_rate == 0:
+        msg = "Run sample rate cannot be zero, something is fishy, setting to 1.0 Hz"
+        logger.warning(msg)
+        run.run_metadata.sample_rate = 1.0
     runts = RunTS(array_list=ch_list, run_metadata=run.run_metadata)
 
     return runts
