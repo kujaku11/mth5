@@ -599,14 +599,15 @@ class StationGroup(BaseGroup):
                             return []
 
                 # Get channel lists, handling both string and array formats
+                # Use .get() with default empty lists to handle missing attributes
                 aux_channels = get_channel_list(
-                    group.attrs["channels_recorded_auxiliary"]
+                    group.attrs.get("channels_recorded_auxiliary", [])
                 )
                 elec_channels = get_channel_list(
-                    group.attrs["channels_recorded_electric"]
+                    group.attrs.get("channels_recorded_electric", [])
                 )
                 mag_channels = get_channel_list(
-                    group.attrs["channels_recorded_magnetic"]
+                    group.attrs.get("channels_recorded_magnetic", [])
                 )
 
                 comps = ",".join(
