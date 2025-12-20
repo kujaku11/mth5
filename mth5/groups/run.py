@@ -244,8 +244,12 @@ class RunGroup(BaseGroup):
             if current_group_names != existing_channel_names:
                 # Clear and rebuild the channels list
                 self._metadata.channels = []
+                # List of known non-channel subgroups to skip
+                non_channel_groups = {"Features"}
                 for ch in self.groups_list:
-                    # Check if we have cached metadata for this channel
+                    # Skip non-channel groups
+                    if ch in non_channel_groups:
+                        continue
                     if ch in self._channel_metadata_cache:
                         # Reuse cached metadata to prevent duplicate processing
                         cached_metadata = self._channel_metadata_cache[ch]
