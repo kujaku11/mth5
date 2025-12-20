@@ -268,7 +268,7 @@ def make_station_01(
         sample_rate=1.0,
         channels=station.channel_nomenclature.channels,
         raw_data_path=ASCII_DATA_PATH.joinpath("test1.asc"),
-        start=None,
+        start="1980-01-01T00:00:00+00:00",
     )
 
     # assign indices to set to Nan (not used 2024-06-06)
