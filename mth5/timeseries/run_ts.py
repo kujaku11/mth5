@@ -302,23 +302,36 @@ class RunTS:
         # need to make sure that the station metadata was actually updated,
         # should have an ID.
         run_metadata.channels = channels
-        if station_metadata.id not in ["0", None]:
+        if station_metadata.id not in ["0", None, ""]:
             station_metadata.runs = ListDict()
             station_metadata.runs.append(run_metadata)
             # need to add the other runs that are in the metadata for
             # completeness.
             for run in self.station_metadata.runs:
-                if run.id not in [run_metadata.id, "0", None]:
-                    station_metadata.runs.append(run)
+                if run.id not in [run_metadata.id, "0", None, ""]:
+                    station_metadata.add_run(run)
+
+            if self.station_metadata.id != station_metadata.id:
+                logger.warning(
+                    f"Station ID {station_metadata.id} from ChannelTS does "
+                    "not match original station ID {self.station_metadata.id}. "
+                    "Updating ID to match."
+                )
             self.station_metadata = station_metadata
         # if the run metadata was updated
-        elif run_metadata.id not in ["0", None]:
+        elif run_metadata.id not in ["0", None, ""]:
+            if self.run_metadata.id != run_metadata.id:
+                logger.warning(
+                    f"Run ID {run_metadata.id} from ChannelTS does "
+                    "not match original run ID {self.run_metadata.id}. "
+                    "Updating ID to match."
+                )
             self.run_metadata = run_metadata
         # if the run metadata or station metadata was not updated from channel
         # metadata, then update just the channels.
         else:
             self.run_metadata.channels = channels
-        # first need to align the time series.
+        # need to align the time series.
         valid_list = self._align_channels(valid_list)
 
         return valid_list
@@ -537,9 +550,12 @@ class RunTS:
 
         if survey_metadata is not None:
             survey_metadata = self._validate_survey_metadata(survey_metadata)
-            self._survey_metadata.update(
-                self._validate_survey_metadata(survey_metadata)
-            )
+            self._survey_metadata.update(survey_metadata)
+            for station in survey_metadata.stations:
+                if station.id not in self._survey_metadata.stations.keys():
+                    self._survey_metadata.add_station(
+                        self._validate_station_metadata(station)
+                    )
 
     @property
     def station_metadata(self):
