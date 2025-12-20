@@ -116,6 +116,12 @@ def get_sampling_step(darray, dim=None, rtol=1e-3):
 
     coord = darray.coords[dim]
 
+    if len(coord) < 2:
+        raise ValueError(
+            f"Cannot compute sampling step for coordinate with less than 2 samples. "
+            f"Got {len(coord)} samples."
+        )
+
     if "ns" in coord.dtype.descr[0][1]:
         t_scale = 1e9
     elif "us" in coord.dtype.descr[0][1]:
