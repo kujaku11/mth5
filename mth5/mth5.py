@@ -766,10 +766,13 @@ class MTH5:
             if self.h5_is_write():
                 self.channel_summary.summarize()
                 self.tf_summary.summarize()
+                self.fc_summary.summarize()
+
                 self.__hdf5_obj.flush()
             self.logger.info(f"Flushing and closing {str(self.filename)}")
             self.__hdf5_obj.close()
-        except (AttributeError, ValueError):
+        except (AttributeError, ValueError) as e:
+            self.logger.error(f"Error in close_mth5: {e}")
             helpers.close_open_files()
 
     def h5_is_write(self):
