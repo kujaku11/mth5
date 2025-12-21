@@ -834,6 +834,11 @@ class KernelDataset:
 
         h5_station_reference = df["station_hdf5_reference"].unique()[0]
 
+        if h5_station_reference is None:
+            logger.warning(
+                f"Cannot find h5_station_reference for local station {self.local_station_id}"
+            )
+            return {}
         with MTH5() as m:
             m.open_mth5(mth5_path)
             station_group = m.from_reference(h5_station_reference)
