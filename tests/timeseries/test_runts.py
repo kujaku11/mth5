@@ -184,6 +184,11 @@ def basic_run_ts(basic_channel_ts):
     """Create a basic RunTS object with a single channel."""
     run_ts = RunTS()
     run_ts.set_dataset([basic_channel_ts])
+    run_ts.survey_metadata.id = "basic_survey"
+    run_ts.station_metadata.id = "basic_station"
+    run_ts.run_metadata.id = "basic_run"
+    # Properly update station metadata to include the run
+    run_ts.station_metadata.runs = [run_ts.run_metadata]
     return run_ts
 
 
