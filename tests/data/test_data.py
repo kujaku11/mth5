@@ -145,6 +145,30 @@ def station_config():
     return make_station_03()
 
 
+@pytest.fixture(scope="session")
+def session_mth5_file_and_summary(tmp_path_factory):
+    """Create real MTH5 file once per session for read-only tests."""
+    from mth5.data.make_mth5_from_asc import create_test3_h5
+    from mth5.mth5 import MTH5
+
+    # Create session-level temp directory
+    session_temp = tmp_path_factory.mktemp("mth5_session_summary")
+
+    mth5_path = create_test3_h5(target_folder=session_temp, force_make_mth5=True)
+
+    with MTH5() as m:
+        m.open_mth5(mth5_path)
+        station_id = m.station_list[0]  # type: ignore
+        station_obj = m.get_station(station_id)
+        run_summary = station_obj.run_summary.copy()  # Copy to avoid reference issues
+
+    return {
+        "mth5_path": mth5_path,
+        "station_id": station_id,
+        "run_summary": run_summary,
+    }
+
+
 @pytest.fixture
 def mth5_file_and_summary(tmp_path, worker_id):
     """Create real MTH5 file in worker-safe location and return file with summary data."""
@@ -343,9 +367,11 @@ class TestMakeSyntheticMTH5:
 class TestMetadataValuesSetCorrect:
     """Test that metadata values are set correctly (Aurora issue #188)."""
 
-    def test_start_times_correct_real(self, station_config, mth5_file_and_summary):
+    def test_start_times_correct_real(
+        self, station_config, session_mth5_file_and_summary
+    ):
         """Test that start times are set correctly using real data."""
-        run_summary_df = mth5_file_and_summary["run_summary"]
+        run_summary_df = session_mth5_file_and_summary["run_summary"]
 
         # Test with real station config and real MTH5 data
         for run in station_config.runs:
@@ -358,9 +384,9 @@ class TestMetadataValuesSetCorrect:
             expected_timestamp = pd.Timestamp(str(expected_start)).tz_convert(None)
             assert summary_row.start == expected_timestamp
 
-    def test_run_summary_structure_real(self, mth5_file_and_summary):
+    def test_run_summary_structure_real(self, session_mth5_file_and_summary):
         """Test that run summary has expected structure using real data."""
-        run_summary_df = mth5_file_and_summary["run_summary"]
+        run_summary_df = session_mth5_file_and_summary["run_summary"]
 
         # Should be a DataFrame
         assert isinstance(run_summary_df, pd.DataFrame)
@@ -373,14 +399,16 @@ class TestMetadataValuesSetCorrect:
         # Should have at least one row
         assert len(run_summary_df) > 0
 
-    def test_station_id_correct_real(self, mth5_file_and_summary):
+    def test_station_id_correct_real(self, session_mth5_file_and_summary):
         """Test that station ID is set correctly using real data."""
-        station_id = mth5_file_and_summary["station_id"]
+        station_id = session_mth5_file_and_summary["station_id"]
         assert station_id == "test3"
 
-    def test_multiple_runs_handling_real(self, station_config, mth5_file_and_summary):
+    def test_multiple_runs_handling_real(
+        self, station_config, session_mth5_file_and_summary
+    ):
         """Test handling of multiple runs in the station using real data."""
-        run_summary_df = mth5_file_and_summary["run_summary"]
+        run_summary_df = session_mth5_file_and_summary["run_summary"]
 
         # Should have same number of runs in summary as in station config
         assert len(run_summary_df) == len(station_config.runs)
@@ -713,16 +741,16 @@ class TestBackwardCompatibility:
         assert isinstance(result, pathlib.Path)
 
     def test_original_metadata_test_structure_real(
-        self, station_config, mth5_file_and_summary
+        self, station_config, session_mth5_file_and_summary
     ):
         """Test original metadata test structure with real functionality."""
         close_open_files()
 
         # Test that we can access station data
-        station_id = mth5_file_and_summary["station_id"]
+        station_id = session_mth5_file_and_summary["station_id"]
         assert station_id == "test3"
 
-        run_summary = mth5_file_and_summary["run_summary"]
+        run_summary = session_mth5_file_and_summary["run_summary"]
 
         # Test original start times logic with real data
         for run in station_config.runs:

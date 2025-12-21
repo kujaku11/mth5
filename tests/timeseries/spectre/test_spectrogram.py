@@ -140,6 +140,37 @@ def test_frequency_bands():
     return FrequencyBands(edges)
 
 
+@pytest.fixture(params=["test1", "test2", "test3", "test12rr"])
+def single_mth5_path(request):
+    """Create a single MTH5 path using global cache - parameterized for parallel execution."""
+    # Import the global cache function from the main conftest.py
+    import os
+    import sys
+
+    sys.path.append(os.path.join(os.path.dirname(__file__), "..", ".."))
+    from conftest import create_fast_mth5_copy
+
+    temp_dir = tempfile.mkdtemp()
+    mth5_type = request.param
+    path = create_fast_mth5_copy(mth5_type, temp_dir)
+
+    yield path
+
+    # Cleanup
+    close_open_files()
+    if path.exists():
+        try:
+            path.unlink()
+        except (OSError, PermissionError):
+            pass
+    try:
+        import shutil
+
+        shutil.rmtree(temp_dir, ignore_errors=True)
+    except (OSError, PermissionError):
+        pass
+
+
 @pytest.fixture
 def multiple_mth5_paths():
     """Create multiple MTH5 paths using global cache for tests that need multiple files."""
@@ -185,12 +216,14 @@ def multiple_mth5_paths():
 class TestFourierCoefficients:
     """Test Fourier coefficient operations with optimized fixtures."""
 
-    def test_add_fcs_to_multiple_files(self, multiple_mth5_paths):
-        """Test adding Fourier coefficients to multiple synthetic files."""
-        # This replaces the unittest TestAddFourierCoefficientsToSyntheticData
-        for mth5_path in multiple_mth5_paths:
-            add_fcs_to_mth5_file(mth5_path, fc_decimations=None)
-            read_back_fcs_file(mth5_path)
+    def test_add_fcs_to_single_file(self, single_mth5_path):
+        """Test adding Fourier coefficients to a single synthetic file.
+
+        Parameterized to run on test1, test2, test3, test12rr for parallel execution.
+        This replaces the sequential loop in test_add_fcs_to_multiple_files.
+        """
+        add_fcs_to_mth5_file(single_mth5_path, fc_decimations=None)
+        read_back_fcs_file(single_mth5_path)
 
 
 class TestCrossPowers:
