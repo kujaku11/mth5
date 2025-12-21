@@ -554,7 +554,7 @@ class RunTS:
             for station in survey_metadata.stations:
                 if station.id not in self._survey_metadata.stations.keys():
                     self._survey_metadata.add_station(
-                        self._validate_station_metadata(station)
+                        self._validate_station_metadata(station), update=False
                     )
 
     @property
