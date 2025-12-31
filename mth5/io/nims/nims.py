@@ -757,6 +757,8 @@ class NIMS(NIMSHeader):
         """
         if self.ts_data is not None:
             station_metadata = Station()
+            if self.run_id is None:
+                self.run_id = f"001"
             station_metadata.from_dict(
                 {
                     "Station": {
@@ -1158,13 +1160,18 @@ class NIMS(NIMSHeader):
                 info_array[d["sequence_index"] + 1],
             ):
                 duplicate_list.append(d)
+
+        if len(duplicate_list) == 0:
+            self.logger.info(f"Duplicate block count is zero")
+            return info_array, data_array, None
         self.logger.debug(f"Deleting {len(duplicate_list)} duplicate blocks")
         ### get the index of the blocks to be removed, namely the 1st duplicate
         ### block
         remove_sequence_index = [d["sequence_index"] for d in duplicate_list]
-        remove_data_index = np.array(
-            [np.arange(d["ts_index_0"], d["ts_index_1"], 1) for d in duplicate_list]
-        ).flatten()
+        remove_data_index = np.concatenate(
+            [np.arange(d["ts_index_0"], d["ts_index_1"]) for d in duplicate_list]
+        ).astype(int)
+
         ### remove the data
         return_info_array = np.delete(info_array, remove_sequence_index)
         return_data_array = np.delete(data_array, remove_data_index)
@@ -1222,7 +1229,7 @@ class NIMS(NIMSHeader):
         data = np.frombuffer(self._raw_string, dtype=np.uint8)
 
         ### need to make sure that the data starts with a full block
-        find_first = self.find_sequence(data[0 : self.block_size * 5])[0]
+        find_first = self.find_sequence(data[0 : self.block_size * 10])[0]
         data = data[find_first:]
 
         ### get GPS stamps from the binary string first
@@ -1419,15 +1426,6 @@ class NIMS(NIMSHeader):
         ### check timing first to make sure there is no drift
         timing_valid, self.gaps, time_difference = self.check_timing(stamps)
 
-        ### need to trim off the excess number of points that are present because of
-        ### data gaps.  This will be the time difference times the sample rate
-        if time_difference > 0:
-            remove_points = int(time_difference * self.sample_rate)
-            data_array = data_array[0:-remove_points]
-            self.logger.info(
-                f"Trimmed {remove_points} points off the end of the time "
-                "series because of timing gaps"
-            )
         ### first GPS stamp within the data is at a given index that is
         ### assumed to be the number of seconds from the start of the run.
         ### therefore make the start time the first GPS stamp time minus
