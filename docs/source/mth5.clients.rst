@@ -44,6 +44,14 @@ mth5.clients.make\_mth5 module
    :undoc-members:
    :show-inheritance:
 
+mth5.clients.metronix module
+----------------------------
+
+.. automodule:: mth5.clients.metronix
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 mth5.clients.phoenix module
 ---------------------------
 
