@@ -463,6 +463,30 @@ class MTUTable:
             return 0.0
 
     @property
+    def channel_keys(self) -> dict[str, int]:
+        """
+        Get list of channel keys present in the TBL metadata.
+
+        Returns
+        -------
+        dict[str, int]
+            Dictionary of channel keys and their corresponding values found in tbl_dict (e.g., 'CHEX', 'CHEY', 'CHHX', etc.).
+
+        Examples
+        --------
+        >>> tbl = MTUTable('/data', 'file.TBL')
+        >>> tbl.read_tbl()
+        >>> keys = tbl.channel_keys
+        >>> print(keys)
+        {'ex': 1, 'ey': 2, 'hx': 3, 'hy': 4, 'hz': 5}
+        """
+        channel_keys = {}
+        for key in ["CHEX", "CHEY", "CHHX", "CHHY", "CHHZ"]:
+            if key in self.tbl_dict:
+                channel_keys[f"{key[2:].lower()}"] = self.tbl_dict[key]
+        return channel_keys
+
+    @property
     def survey_metadata(self) -> Survey:
         """
         Extract survey metadata from TBL file.

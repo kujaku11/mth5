@@ -541,6 +541,149 @@ class TestMTUTableCoordinateConversion:
 
 
 # =============================================================================
+# Channel Keys Tests
+# =============================================================================
+
+
+class TestMTUTableChannelKeys:
+    """Test channel_keys property method."""
+
+    def test_channel_keys_returns_dict(self, loaded_tbl_table):
+        """Test that channel_keys returns a dictionary."""
+        keys = loaded_tbl_table.channel_keys
+        assert isinstance(keys, dict)
+
+    def test_channel_keys_with_all_channels(self, temp_tbl_file, empty_tbl_table):
+        """Test channel_keys when all channel types are present."""
+        # Add all channel types
+        with open(temp_tbl_file, "ab") as f:
+            for i, ch in enumerate(["CHEX", "CHEY", "CHHX", "CHHY", "CHHZ"], 1):
+                f.write(ch.encode() + b"\x00" * (12 - len(ch)))
+                f.write(struct.pack("<i", i) + b"\x00" * 9)
+
+        empty_tbl_table.file_path = temp_tbl_file
+        empty_tbl_table.read_tbl()
+        keys = empty_tbl_table.channel_keys
+
+        assert len(keys) == 5
+        assert "ex" in keys
+        assert "ey" in keys
+        assert "hx" in keys
+        assert "hy" in keys
+        assert "hz" in keys
+        assert keys["ex"] == 1
+        assert keys["ey"] == 2
+        assert keys["hx"] == 3
+        assert keys["hy"] == 4
+        assert keys["hz"] == 5
+
+    def test_channel_keys_with_partial_channels(self, temp_tbl_file, empty_tbl_table):
+        """Test channel_keys when only some channels are present."""
+        # Add only electric channels
+        with open(temp_tbl_file, "ab") as f:
+            f.write(b"CHEX\x00\x00\x00\x00\x00\x00\x00\x00")
+            f.write(struct.pack("<i", 1) + b"\x00" * 9)
+            f.write(b"CHEY\x00\x00\x00\x00\x00\x00\x00\x00")
+            f.write(struct.pack("<i", 2) + b"\x00" * 9)
+
+        empty_tbl_table.file_path = temp_tbl_file
+        empty_tbl_table.read_tbl()
+        keys = empty_tbl_table.channel_keys
+
+        assert len(keys) == 2
+        assert "ex" in keys
+        assert "ey" in keys
+        assert "hx" not in keys
+        assert "hy" not in keys
+        assert "hz" not in keys
+
+    def test_channel_keys_with_no_channels(self, temp_tbl_file, empty_tbl_table):
+        """Test channel_keys when no channel keys are present."""
+        empty_tbl_table.file_path = temp_tbl_file
+        empty_tbl_table.read_tbl()
+        keys = empty_tbl_table.channel_keys
+
+        assert isinstance(keys, dict)
+        assert len(keys) == 0
+
+    def test_channel_keys_without_metadata(self, empty_tbl_table):
+        """Test channel_keys returns empty dict without loaded metadata."""
+        keys = empty_tbl_table.channel_keys
+        assert isinstance(keys, dict)
+        assert len(keys) == 0
+
+    def test_channel_keys_values_are_integers(self, temp_tbl_file, empty_tbl_table):
+        """Test that channel_keys values are integers."""
+        with open(temp_tbl_file, "ab") as f:
+            f.write(b"CHHX\x00\x00\x00\x00\x00\x00\x00\x00")
+            f.write(struct.pack("<i", 10) + b"\x00" * 9)
+
+        empty_tbl_table.file_path = temp_tbl_file
+        empty_tbl_table.read_tbl()
+        keys = empty_tbl_table.channel_keys
+
+        assert "hx" in keys
+        assert isinstance(keys["hx"], int)
+        assert keys["hx"] == 10
+
+    def test_channel_keys_lowercase_component_names(
+        self, temp_tbl_file, empty_tbl_table
+    ):
+        """Test that channel keys use lowercase component names."""
+        with open(temp_tbl_file, "ab") as f:
+            f.write(b"CHEX\x00\x00\x00\x00\x00\x00\x00\x00")
+            f.write(struct.pack("<i", 5) + b"\x00" * 9)
+
+        empty_tbl_table.file_path = temp_tbl_file
+        empty_tbl_table.read_tbl()
+        keys = empty_tbl_table.channel_keys
+
+        # Should be lowercase 'ex', not 'EX'
+        assert "ex" in keys
+        assert "EX" not in keys
+
+    @pytest.mark.parametrize(
+        "ch_tag,expected_key,value",
+        [
+            ("CHEX", "ex", 1),
+            ("CHEY", "ey", 2),
+            ("CHHX", "hx", 3),
+            ("CHHY", "hy", 4),
+            ("CHHZ", "hz", 5),
+        ],
+    )
+    def test_channel_keys_individual_channels(
+        self, temp_tbl_file, empty_tbl_table, ch_tag, expected_key, value
+    ):
+        """Test each channel type individually (parameterized)."""
+        with open(temp_tbl_file, "ab") as f:
+            f.write(ch_tag.encode() + b"\x00" * (12 - len(ch_tag)))
+            f.write(struct.pack("<i", value) + b"\x00" * 9)
+
+        empty_tbl_table.file_path = temp_tbl_file
+        empty_tbl_table.read_tbl()
+        keys = empty_tbl_table.channel_keys
+
+        assert expected_key in keys
+        assert keys[expected_key] == value
+
+    def test_channel_keys_real_data(self, loaded_tbl_table):
+        """Test channel_keys with real TBL file data."""
+        keys = loaded_tbl_table.channel_keys
+
+        # Real file should have channel keys if they're defined
+        if keys:
+            assert isinstance(keys, dict)
+            # All keys should be lowercase component names
+            for key in keys.keys():
+                assert key in ["ex", "ey", "hx", "hy", "hz"]
+                assert key.islower()
+            # All values should be integers
+            for value in keys.values():
+                assert isinstance(value, int)
+
+
+# =============================================================================
 # Calibration Calculation Tests
 # =============================================================================
 
