@@ -5,13 +5,17 @@ time series binary files in Matlab (and Python)
 A bunch of simple scripts to read the legacy Phoenix MTU-5A binary format
 files ... including the time series (.TSN) and table (.TBL) formats.
 
+Original files by:
+
 DONG Hao
 donghao@cugb.edu.cn
 China University of Geosciences, Beijing
+
+Updated and adapted to Python by:
+Peacock, J.R. (2025-12-31)
 """
 
-# from .read_tbl import read_tbl
-# from .read_tsn import read_tsn
+from .mtu_table import MTUTable
 
-# __all__ = ["read_tbl", "read_tsn"]
+__all__ = ["MTUTable"]
 # __version__ = "1.0.0"
