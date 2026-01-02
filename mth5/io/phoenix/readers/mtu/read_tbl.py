@@ -2,40 +2,7 @@ import struct
 from pathlib import Path
 
 from loguru import logger
-from mt_metadata.timeseries import Survey
-
-
-def find_tbl_tag(fid, tag, inum):
-    """
-    find_tbl_tag - find the position of a certain tag at its "inum"th occurrence
-    in file - and returns the tag values, for the legacy Phoenix MTU-5A TBL
-    format
-
-    =======================================================================
-    note:
-    yes, it's a bit silly to search for the tag each time from the beginning
-    it doesn't matter too much as the file is quite small
-    Hao
-    2012.07.04
-    Beijing
-    =======================================================================
-    """
-    # firstly return to the beginning of the file
-    fid.seek(0, 0)
-    # read a first tag group
-    ctemp = fid.read(25)
-    n = 0
-    # continue reading, until we got the "inum" occurrence
-    while tag.encode() not in ctemp or n != inum:
-        # the size (tag + value) is always 25 bytes
-        ctemp = fid.read(25)
-        if tag.encode() in ctemp:
-            n += 1
-        if len(ctemp) == 0:
-            logger.warning(f"Tag {tag} not found in TBL file.")
-            return None, 0
-    pos = fid.tell()
-    return ctemp, pos
+from mt_metadata.timeseries import Electric, Magnetic, Run, Station, Survey
 
 
 class MTUTable:
@@ -145,6 +112,7 @@ class MTUTable:
         self.fpath = Path(fpath)
         self.fname = fname
         self.file = self.fpath / self.fname
+        self.tbl_dict = {}
 
         # TBL tag data type mapping
         # Format: 'TAG': ('type', description)
@@ -190,8 +158,8 @@ class MTUTable:
             "LPFR": ("byte", "Low-pass/VLF filter parameter"),
             "ACDC": ("byte", "AC/DC coupling"),
             "FSCV": ("double", "Full scaling A-D converter voltage"),
-            "TEMP": ("double", "Temperature"),
-            "TERR": ("double", "Temperature error"),
+            "TEMP": ("int", "Temperature"),
+            "TERR": ("int", "Temperature error"),
             "V5SR": ("int", "MTU-5 serial number"),
             # Additional tags that may appear in TBL files
             "DECL": ("double", "Declination"),
@@ -211,11 +179,11 @@ class MTUTable:
             "STDE": ("double", "Standard error in Electric channels"),
             "STDH": ("double", "Standard error in Magnetic channels"),
             "SPTH": ("char", "system path"),
-            "CHEX": ("char", "EX channel type"),
-            "CHEY": ("char", "EY channel type"),
-            "CHHX": ("char", "HX channel type"),
-            "CHHY": ("char", "HY channel type"),
-            "CHHZ": ("char", "HZ channel type"),
+            "CHEX": ("int", "EX channel type"),
+            "CHEY": ("int", "EY channel type"),
+            "CHHX": ("int", "HX channel type"),
+            "CHHY": ("int", "HY channel type"),
+            "CHHZ": ("int", "HZ channel type"),
         }
 
     def decode_tbl_value(self, value_bytes, data_type):
@@ -240,7 +208,7 @@ class MTUTable:
         elif data_type == "time":
             # Time format: bytes are [sec, min, hour, day, month, year-2000]
             # Return formatted string: YYYY-MM-DD HH:MM:SS
-            return f"{value_bytes[4]:02}-{value_bytes[3]:02}-20{value_bytes[5]:02}T{value_bytes[2]:02}:{value_bytes[1]:02}:{value_bytes[0]:02}"
+            return f"20{value_bytes[5]:02}-{value_bytes[4]:02}-{value_bytes[3]:02}-T{value_bytes[2]:02}:{value_bytes[1]:02}:{value_bytes[0]:02}"
         else:
             # Return raw bytes for unknown types
             return value_bytes
@@ -310,187 +278,175 @@ class MTUTable:
     def read_tbl(self):
         self.tbl_dict = self._get_dictionary_from_tbl(self.file, decode_values=True)
 
+    def _has_metadata(self):
+        return bool(self.tbl_dict)
+
+    def _read_latitude(self, lat_str):
+        """Convert degree-minute string to decimal degrees."""
+        try:
+            parts = lat_str.split(",", 1)
+            value = float(parts[0]) / 100.0
+            quadrant = parts[1]
+            hemisphere = 1
+            if quadrant.lower().startswith("s"):
+                hemisphere = -1
+
+            return value * hemisphere
+
+        except Exception as e:
+            logger.warning(f"Failed to parse latitude '{lat_str}': {e}")
+            return 0.0
+
+    def _read_longitude(self, lon_str):
+        """Convert degree-minute string to decimal degrees."""
+        try:
+            parts = lon_str.split(",", 1)
+            value = float(parts[0]) / 100.0
+            quadrant = parts[1]
+            hemisphere = 1
+            if quadrant.lower().startswith("w"):
+                hemisphere = -1
+
+            return value * hemisphere
+
+        except Exception as e:
+            logger.warning(f"Failed to parse longitude '{lon_str}': {e}")
+            return 0.0
+
     @property
     def survey_metadata(self):
         survey = Survey()
-        # Populate survey metadata from tbl_dict as needed
+        if not self._has_metadata():
+            logger.warning(
+                "No TBL metadata loaded. Call read_tbl() first. Returning empty Survey."
+            )
+        else:
+            survey.id = self.tbl_dict.get("SRVY", "Unknown_Survey")
+            survey.acquired_by.author = self.tbl_dict.get("CMPY", "Unknown_Company")
+            survey.add_station(self.station_metadata)
+
         return survey
 
+    @property
+    def station_metadata(self):
+        station = Station()
+        if not self._has_metadata():
+            logger.warning(
+                "No TBL metadata loaded. Call read_tbl() first. Returning empty Station."
+            )
+        else:
+            station.id = self.tbl_dict.get("SITE", "Unknown_Site")
+            # location
+            station.location.elevation = self.tbl_dict.get("ELEV", 0.0)
+            station.location.latitude = self._read_latitude(
+                self.tbl_dict.get("LATG", "0.0,N")
+            )
+            station.location.longitude = self._read_longitude(
+                self.tbl_dict.get("LONG", "0.0,E")
+            )
+            station.location.declination.value = self.tbl_dict.get("DECL", 0.0)
 
-def read_tbl(fpath, fname):
-    """
-    read_tbl - reads a (binary) TBL table file of the legacy Phoenix format
-    (MTU-5A) and output the "info" metadata dictionary
+            # time
+            station.time_period.start = self.tbl_dict.get("STIM", "1980-01-01T00:00:00")
+            station.time_period.end = self.tbl_dict.get("ETIM", "1980-01-01T00:00:00")
 
-    Parameters:
-        fpath: path to the tbl
-        fname: name of the tbl file (including extensions)
+            # runs
+            station.add_run(self.run_metadata)
+            # Populate station metadata from tbl_dict as needed
+        return station
 
-    Returns:
-        info: output dict of the TBL metadata
-    """
-    info = {}
+    @property
+    def run_metadata(self):
+        run = Run()
+        if not self._has_metadata():
+            logger.warning(
+                "No TBL metadata loaded. Call read_tbl() first. Returning empty Run."
+            )
+        else:
+            # Populate run metadata from tbl_dict as needed
+            run.id = f"run_{self.tbl_dict.get('SNUM', 'Unknown')}"
+            run.data_logger.id = f"MTU_{self.tbl_dict.get('SNUM', 'Unknown')}"
+            run.data_logger.firmware.version = self.tbl_dict.get(
+                "HW", "Unknown_Version"
+            )
+            run.data_logger.timing_system.type = "GPS"
+            run.data_logger.timing_system.n_satellites = self.tbl_dict.get("NSAT", 0)
 
-    # first open the file
-    filepath = Path(fpath) / fname
-    with open(filepath, "rb") as fid:
-        # ========================= site basic info  ========================== #
-        find_tbl_tag(fid, "SNUM", 1)
-        fid.seek(-13, 1)
-        info["SNUM"] = struct.unpack("<i", fid.read(4))[0]
+            run.add_channel(self.ex_metadata)
+            run.add_channel(self.ey_metadata)
+            run.add_channel(self.hx_metadata)
+            run.add_channel(self.hy_metadata)
+            run.add_channel(self.hz_metadata)
 
-        ctemp, _ = find_tbl_tag(fid, "SITE", 1)
-        info["SITE"] = ctemp[12:24].decode("latin-1").strip("\x00")
+        return run
 
-        ctemp, _ = find_tbl_tag(fid, "FILE", 1)
-        info["FILE"] = ctemp[12:24].decode("latin-1").strip("\x00")
+    @property
+    def ex_metadata(self):
+        ex_channel = Electric(component="ex")
+        if not self._has_metadata():
+            logger.warning(
+                "No TBL metadata loaded. Call read_tbl() first. Returning empty EX channel."
+            )
+        else:
+            ex_channel.dipole_length = self.tbl_dict.get("EXLN", 0.0)
+            ex_channel.measurement_azimuth = self.tbl_dict.get("EAZM", 0.0)
+            ex_channel.ac.start = self.tbl_dict.get("EXAC", 0.0)
+            ex_channel.dc.start = self.tbl_dict.get("EXDC", 0.0)
+            ex_channel.channel_number = self.tbl_dict.get("CHEX", 4)
+        return ex_channel
 
-        ctemp, _ = find_tbl_tag(fid, "CMPY", 1)
-        info["CMPY"] = ctemp[12:24].decode("latin-1").strip("\x00")
+    @property
+    def ey_metadata(self):
+        ey_channel = Electric(component="ey")
+        if not self._has_metadata():
+            logger.warning(
+                "No TBL metadata loaded. Call read_tbl() first. Returning empty EY channel."
+            )
+        else:
+            ey_channel.dipole_length = self.tbl_dict.get("EYLN", 0.0)
+            ey_channel.measurement_azimuth = self.tbl_dict.get("EAZM", 0.0) + 90.0
+            ey_channel.ac.start = self.tbl_dict.get("EYAC", 0.0)
+            ey_channel.dc.start = self.tbl_dict.get("EYDC", 0.0)
+            ey_channel.channel_number = self.tbl_dict.get("CHEY", 5)
+        return ey_channel
 
-        ctemp, _ = find_tbl_tag(fid, "SRVY", 1)
-        info["SRVY"] = ctemp[12:24].decode("latin-1").strip("\x00")
+    @property
+    def hx_metadata(self):
+        hx_channel = Magnetic(component="hx")
+        if not self._has_metadata():
+            logger.warning(
+                "No TBL metadata loaded. Call read_tbl() first. Returning empty HX channel."
+            )
+        else:
+            hx_channel.h_field_max = self.tbl_dict.get("HXAC", 0.0)
+            hx_channel.channel_number = self.tbl_dict.get("CHHX", 1)
+            hx_channel.measurement_azimuth = self.tbl_dict.get("HAZM", 0.0)
+            hx_channel.sensor.id = self.tbl_dict.get("HXSN", "Unknown_serial")
+        return hx_channel
 
-        ctemp, _ = find_tbl_tag(fid, "LATG", 1)
-        info["LATG"] = ctemp[12:24].decode("latin-1").strip("\x00")
+    @property
+    def hy_metadata(self):
+        hy_channel = Magnetic(component="hy")
+        if not self._has_metadata():
+            logger.warning(
+                "No TBL metadata loaded. Call read_tbl() first. Returning empty HY channel."
+            )
+        else:
+            hy_channel.h_field_max = self.tbl_dict.get("HYAC", 0.0)
+            hy_channel.channel_number = self.tbl_dict.get("CHHY", 2)
+            hy_channel.measurement_azimuth = self.tbl_dict.get("HAZM", 0.0) + 90.0
+            hy_channel.sensor.id = self.tbl_dict.get("HYSN", "Unknown_serial")
+        return hy_channel
 
-        ctemp, _ = find_tbl_tag(fid, "LNGG", 1)
-        info["LONG"] = ctemp[12:24].decode("latin-1").strip("\x00")
-
-        find_tbl_tag(fid, "ELEV", 1)
-        fid.seek(-13, 1)
-        info["ELEV"] = struct.unpack("<i", fid.read(4))[0]
-
-        find_tbl_tag(fid, "NREF", 1)
-        fid.seek(-13, 1)
-        info["NREF"] = struct.unpack("<i", fid.read(4))[0]
-
-        # ==================== starting and ending time  ====================== #
-        # output as a string
-        ctemp, _ = find_tbl_tag(fid, "STIM", 1)
-        info[
-            "STIM"
-        ] = f"{ctemp[16]}-{ctemp[15]}-20{ctemp[17]} {ctemp[14]}:{ctemp[13]}:{ctemp[12]}"
-
-        # output as a string
-        ctemp, _ = find_tbl_tag(fid, "ETIM", 1)
-        info[
-            "ETIM"
-        ] = f"{ctemp[16]}-{ctemp[15]}-20{ctemp[17]} {ctemp[14]}:{ctemp[13]}:{ctemp[12]}"
-
-        # ======================== E and H channels  ========================== #
-        find_tbl_tag(fid, "EXLN", 1)
-        fid.seek(-13, 1)
-        info["EXLN"] = struct.unpack("<d", fid.read(8))[0]
-
-        find_tbl_tag(fid, "EYLN", 1)
-        fid.seek(-13, 1)
-        info["EYLN"] = struct.unpack("<d", fid.read(8))[0]
-
-        # find_tbl_tag(fid,'EZLN',1);
-        # fid.seek(-13, 1)
-        # info['EZLN'] = struct.unpack('<d', fid.read(8))[0]
-
-        ctemp, _ = find_tbl_tag(fid, "HXSN", 1)
-        info["HXSN"] = ctemp[12:24].decode("latin-1").strip("\x00")
-
-        ctemp, _ = find_tbl_tag(fid, "HYSN", 1)
-        info["HYSN"] = ctemp[12:24].decode("latin-1").strip("\x00")
-
-        ctemp, _ = find_tbl_tag(fid, "HZSN", 1)
-        info["HZSN"] = ctemp[12:24].decode("latin-1").strip("\x00")
-
-        find_tbl_tag(fid, "EAZM", 1)
-        fid.seek(-13, 1)
-        info["EAZM"] = struct.unpack("<d", fid.read(8))[0]
-
-        find_tbl_tag(fid, "HAZM", 1)
-        fid.seek(-13, 1)
-        info["HAZM"] = struct.unpack("<d", fid.read(8))[0]
-
-        # ================== L3, L4 and L5 sample parameter =================== #
-        find_tbl_tag(fid, "HSMP", 1)
-        fid.seek(-13, 1)
-        info["HSMP"] = struct.unpack("<i", fid.read(4))[0]
-
-        find_tbl_tag(fid, "L3NS", 1)
-        fid.seek(-13, 1)
-        info["L3NS"] = struct.unpack("<i", fid.read(4))[0]
-
-        find_tbl_tag(fid, "L4NS", 1)
-        fid.seek(-13, 1)
-        info["L4NS"] = struct.unpack("<i", fid.read(4))[0]
-
-        find_tbl_tag(fid, "SRL3", 1)
-        fid.seek(-13, 1)
-        info["SRL3"] = struct.unpack("<i", fid.read(4))[0]
-
-        find_tbl_tag(fid, "SRL4", 1)
-        fid.seek(-13, 1)
-        info["SRL4"] = struct.unpack("<i", fid.read(4))[0]
-
-        find_tbl_tag(fid, "SRL5", 1)
-        fid.seek(-13, 1)
-        info["SRL5"] = struct.unpack("<i", fid.read(4))[0]
-
-        # ======================== gain and filtering ========================= #
-        ctemp, _ = find_tbl_tag(fid, "LFRQ", 1)
-        info["LFRQ"] = ctemp[12]
-
-        find_tbl_tag(fid, "EGNC", 1)
-        fid.seek(-13, 1)
-        info["EGNC"] = struct.unpack("<i", fid.read(4))[0]
-
-        find_tbl_tag(fid, "HGNC", 1)
-        fid.seek(-13, 1)
-        info["HGNC"] = struct.unpack("<i", fid.read(4))[0]
-
-        find_tbl_tag(fid, "EGN", 2)
-        fid.seek(-13, 1)
-        info["EGN"] = struct.unpack("<i", fid.read(4))[0]
-
-        find_tbl_tag(fid, "HGN", 2)
-        fid.seek(-13, 1)
-        info["HGN"] = struct.unpack("<i", fid.read(4))[0]
-
-        find_tbl_tag(fid, "HATT", 1)
-        fid.seek(-13, 1)
-        info["HATT"] = struct.unpack("<d", fid.read(8))[0]
-
-        find_tbl_tag(fid, "HNOM", 1)
-        fid.seek(-13, 1)
-        info["HNOM"] = struct.unpack("<d", fid.read(8))[0]
-
-        find_tbl_tag(fid, "TCMB", 1)
-        fid.seek(-13, 1)
-        info["TCMB"] = struct.unpack("<B", fid.read(1))[0]
-
-        find_tbl_tag(fid, "TALS", 1)
-        fid.seek(-13, 1)
-        info["TALS"] = struct.unpack("<B", fid.read(1))[0]
-
-        find_tbl_tag(fid, "LPFR", 1)
-        fid.seek(-13, 1)
-        info["LPFR"] = struct.unpack("<B", fid.read(1))[0]
-
-        find_tbl_tag(fid, "ACDC", 1)
-        fid.seek(-13, 1)
-        info["ACDC"] = struct.unpack("<B", fid.read(1))[0]
-
-        find_tbl_tag(fid, "FSCV", 1)
-        fid.seek(-13, 1)
-        info["FSCV"] = struct.unpack("<d", fid.read(8))[0]
-
-    # ======================================================================= #
-    # now the file is closed automatically by the context manager
-    return info
-
-
-if __name__ == "__main__":
-    # simple test
-    import sys
-
-    if len(sys.argv) >= 3:
-        info = read_tbl(sys.argv[1], sys.argv[2])
-        for key, value in info.items():
-            print(f"{key}: {value}")
+    @property
+    def hz_metadata(self):
+        hz_channel = Magnetic(component="hz")
+        if not self._has_metadata():
+            logger.warning(
+                "No TBL metadata loaded. Call read_tbl() first. Returning empty HZ channel."
+            )
+        else:
+            hz_channel.h_field_max = self.tbl_dict.get("HZAC", 0.0)
+            hz_channel.channel_number = self.tbl_dict.get("CHHZ", 3)
+            hz_channel.sensor.id = self.tbl_dict.get("HZSN", "Unknown_serial")
+        return hz_channel
