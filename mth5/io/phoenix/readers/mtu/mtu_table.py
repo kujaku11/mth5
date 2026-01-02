@@ -70,7 +70,7 @@ class MTUTable:
     EGN:  final E-channel gain
     EGNC: E-channel gain control: HGN = PA * 2^HGNC (note: PA =
         PreAmplifier gain)
-    HSMP: L3 and L4 time slot in second （MTU-5A) or minute (MTU-5P),
+    HSMP: L3 and L4 time slot in second (MTU-5A) or minute (MTU-5P),
         this means the instrument will record L3NS seconds for L3 and L4NS
         seconds for L4, for every HSMP time slot.
     L3NS: L3 sample time (in second)
@@ -102,17 +102,40 @@ class MTUTable:
     of them. However, not every thing is useful for the metadata, so I only
     extract a few of them, for now.
 
+    Original author:
     Hao
     2012.07.04
     Beijing
+
+    Translated to Python and enhanced by:
+    J. Peacock (2025-12-31)
+
+    Main changes:
+
+    - Encapsulated in MTUTable class
+    - Automatic type detection and decoding based on TBL_TAG_TYPES
+    - Added properties to extract metadata as mt_metadata objects
     =======================================================================
     """
 
-    def __init__(self, fpath, fname):
-        self.fpath = Path(fpath)
-        self.fname = fname
-        self.file = self.fpath / self.fname
-        self.tbl_dict = {}
+    def __init__(self, file_path: str | Path | None = None) -> None:
+        """
+        Initialize MTUTable reader.
+
+        Parameters
+        ----------
+        file_path : str or Path, optional
+            Path to the TBL file including the file name. If not provided, the object can be initialized without a file.
+
+        Examples
+        --------
+        >>> tbl = MTUTable('/data/phoenix/1690C16C.TBL')
+        >>> tbl.read_tbl()
+        >>> print(tbl.tbl_dict['SITE'])
+        '10441W10'
+        """
+        self.file_path = Path(file_path) if file_path else None
+        self.tbl_dict: dict[str, int | float | str | bytes] = {}
 
         # TBL tag data type mapping
         # Format: 'TAG': ('type', description)
@@ -161,6 +184,7 @@ class MTUTable:
             "TEMP": ("int", "Temperature"),
             "TERR": ("int", "Temperature error"),
             "V5SR": ("int", "MTU-5 serial number"),
+            "NSAT": ("int", "Number of GPS satellites"),
             # Additional tags that may appear in TBL files
             "DECL": ("double", "Declination"),
             "TSTV": ("double", "Test voltage"),
@@ -186,16 +210,34 @@ class MTUTable:
             "CHHZ": ("int", "HZ channel type"),
         }
 
-    def decode_tbl_value(self, value_bytes, data_type):
+        if self.file_path:
+            self.read_tbl()
+
+    def decode_tbl_value(
+        self, value_bytes: bytes, data_type: str
+    ) -> int | float | str | bytes:
         """
         Decode TBL value bytes based on the specified data type.
 
-        Parameters:
-            value_bytes: bytes (13 bytes from position 12-24 in the 25-byte block)
-            data_type: str - type of the data ('int', 'double', 'char', 'byte', 'time')
+        Parameters
+        ----------
+        value_bytes : bytes
+            13 bytes from position 12-24 in the 25-byte block containing the value.
+        data_type : str
+            Type of the data: 'int', 'double', 'char', 'byte', or 'time'.
 
-        Returns:
-            Decoded value in appropriate Python type
+        Returns
+        -------
+        int or float or str or bytes
+            Decoded value in appropriate Python type. Returns raw bytes if
+            decoding fails or data_type is unrecognized.
+
+        Examples
+        --------
+        >>> tbl = MTUTable('/data', 'file.TBL')
+        >>> value = tbl.decode_tbl_value(b'\x9a\x06\x00\x00...', 'int')
+        >>> print(value)
+        1690
         """
         if data_type == "int":
             return struct.unpack("<i", value_bytes[0:4])[0]
@@ -213,17 +255,40 @@ class MTUTable:
             # Return raw bytes for unknown types
             return value_bytes
 
-    def _get_dictionary_from_tbl(self, file_path, decode_values=True):
+    def _get_dictionary_from_tbl(
+        self, file_path: Path, decode_values: bool = True
+    ) -> dict[str, int | float | str | bytes]:
         """
         Read TBL file and return a dictionary of all tag-value pairs.
 
-        Parameters:
-            file_path: Path to the TBL file
-            decode_values: bool - If True, decode values according to TBL_TAG_TYPES.
-                        If False, return raw bytes.
+        Parameters
+        ----------
+        file_path : Path
+            Full path to the TBL file.
+        decode_values : bool, default True
+            If True, decode values according to TBL_TAG_TYPES mapping.
+            If False, return raw bytes for all values.
 
-        Returns:
-            dict: Dictionary with tag names as keys and decoded (or raw) values
+        Returns
+        -------
+        dict[str, int | float | str | bytes]
+            Dictionary with tag names as keys and decoded (or raw) values.
+            Duplicate keys are handled by appending numeric suffixes (e.g., 'EGN_1', 'EGN_2').
+
+        Notes
+        -----
+        This method reads the entire TBL file in 25-byte blocks, extracting
+        key-value pairs. Each block contains:
+
+        - Bytes 0-11: Tag name (null-terminated string)
+        - Bytes 12-24: Value (13 bytes in various formats)
+
+        Examples
+        --------
+        >>> tbl = MTUTable('/data', 'file.TBL')
+        >>> data = tbl._get_dictionary_from_tbl(Path('/data/file.TBL'))
+        >>> print(data['SNUM'])
+        1690
         """
         tbl_dict = {}
 
@@ -275,14 +340,78 @@ class MTUTable:
 
         return tbl_dict
 
-    def read_tbl(self):
-        self.tbl_dict = self._get_dictionary_from_tbl(self.file, decode_values=True)
+    def read_tbl(self) -> None:
+        """
+        Read and decode the TBL file, populating the tbl_dict attribute.
 
-    def _has_metadata(self):
+        This method reads the TBL file specified during initialization and
+        decodes all tag-value pairs according to their known types. The
+        results are stored in `self.tbl_dict`.
+
+        Returns
+        -------
+        None
+            Results are stored in the `tbl_dict` attribute.
+
+        Examples
+        --------
+        >>> tbl = MTUTable('/data/phoenix', '1690C16C.TBL')
+        >>> tbl.read_tbl()
+        >>> print(tbl.tbl_dict['SITE'])
+        '10441W10'
+        >>> print(tbl.tbl_dict['SNUM'])
+        1690
+        """
+        if self.file_path is None:
+            raise ValueError("file_path is not set. Cannot read TBL file.")
+        elif self.file_path.is_file() is False:
+            raise FileNotFoundError(f"TBL file not found: {self.file_path}")
+        elif self.file_path.suffix.upper() != ".TBL":
+            raise ValueError(f"Not a TBL file: {self.file_path}")
+        elif self.file_path.stat().st_size == 0:
+            raise ValueError(f"TBL file is empty: {self.file_path}")
+        elif self.file_path.stat().st_size < 25:
+            raise ValueError(f"TBL file is too small to be valid: {self.file_path}")
+        elif self.file_path.exists() is False:
+            raise FileNotFoundError(f"TBL file does not exist: {self.file_path}")
+
+        self.tbl_dict = self._get_dictionary_from_tbl(
+            self.file_path, decode_values=True
+        )
+
+    def _has_metadata(self) -> bool:
+        """
+        Check if TBL metadata has been loaded.
+
+        Returns
+        -------
+        bool
+            True if tbl_dict is populated, False otherwise.
+        """
         return bool(self.tbl_dict)
 
-    def _read_latitude(self, lat_str):
-        """Convert degree-minute string to decimal degrees."""
+    def _read_latitude(self, lat_str: str) -> float:
+        """
+        Convert latitude from degree-minute format to decimal degrees.
+
+        Parameters
+        ----------
+        lat_str : str
+            Latitude string in format 'DDMM.MMM,H' where H is hemisphere (N/S).
+            Example: '4100.388,N' represents 41° 00.388' North.
+
+        Returns
+        -------
+        float
+            Latitude in decimal degrees. Negative for Southern hemisphere.
+
+        Examples
+        --------
+        >>> tbl = MTUTable('/data', 'file.TBL')
+        >>> lat = tbl._read_latitude('4100.388,N')
+        >>> print(f"{lat:.6f}")
+        41.006467
+        """
         try:
             parts = lat_str.split(",", 1)
             value = float(parts[0]) / 100.0
@@ -297,8 +426,28 @@ class MTUTable:
             logger.warning(f"Failed to parse latitude '{lat_str}': {e}")
             return 0.0
 
-    def _read_longitude(self, lon_str):
-        """Convert degree-minute string to decimal degrees."""
+    def _read_longitude(self, lon_str: str) -> float:
+        """
+        Convert longitude from degree-minute format to decimal degrees.
+
+        Parameters
+        ----------
+        lon_str : str
+            Longitude string in format 'DDDMM.MMM,H' where H is hemisphere (E/W).
+            Example: '10400.536,E' represents 104° 00.536' East.
+
+        Returns
+        -------
+        float
+            Longitude in decimal degrees. Negative for Western hemisphere.
+
+        Examples
+        --------
+        >>> tbl = MTUTable('/data', 'file.TBL')
+        >>> lon = tbl._read_longitude('10400.536,E')
+        >>> print(f"{lon:.6f}")
+        104.008933
+        """
         try:
             parts = lon_str.split(",", 1)
             value = float(parts[0]) / 100.0
@@ -314,8 +463,30 @@ class MTUTable:
             return 0.0
 
     @property
-    def survey_metadata(self):
-        survey = Survey()
+    def survey_metadata(self) -> Survey:
+        """
+        Extract survey metadata from TBL file.
+
+        Returns
+        -------
+        Survey
+            mt_metadata Survey object populated with survey-level information
+            from the TBL file (survey ID, company/author).
+
+        Notes
+        -----
+        If TBL metadata has not been loaded (via `read_tbl()`), returns an
+        empty Survey object with a warning.
+
+        Examples
+        --------
+        >>> tbl = MTUTable('/data', 'file.TBL')
+        >>> tbl.read_tbl()
+        >>> survey = tbl.survey_metadata
+        >>> print(survey.id)
+        'MT_Survey_2024'
+        """
+        survey = Survey()  # type: ignore
         if not self._has_metadata():
             logger.warning(
                 "No TBL metadata loaded. Call read_tbl() first. Returning empty Survey."
@@ -328,8 +499,33 @@ class MTUTable:
         return survey
 
     @property
-    def station_metadata(self):
-        station = Station()
+    def station_metadata(self) -> Station:
+        """
+        Extract station metadata from TBL file.
+
+        Returns
+        -------
+        Station
+            mt_metadata Station object populated with station-level information
+            including location (latitude, longitude, elevation, declination)
+            and time period.
+
+        Notes
+        -----
+        If TBL metadata has not been loaded (via `read_tbl()`), returns an
+        empty Station object with a warning.
+
+        Examples
+        --------
+        >>> tbl = MTUTable('/data', 'file.TBL')
+        >>> tbl.read_tbl()
+        >>> station = tbl.station_metadata
+        >>> print(station.id)
+        '10441W10'
+        >>> print(f"{station.location.latitude:.6f}")
+        41.006467
+        """
+        station = Station()  # type: ignore
         if not self._has_metadata():
             logger.warning(
                 "No TBL metadata loaded. Call read_tbl() first. Returning empty Station."
@@ -356,8 +552,35 @@ class MTUTable:
         return station
 
     @property
-    def run_metadata(self):
-        run = Run()
+    def run_metadata(self) -> Run:
+        """
+        Extract run metadata from TBL file.
+
+        Returns
+        -------
+        Run
+            mt_metadata Run object populated with data logger information
+            and channel metadata.
+
+        Notes
+        -----
+        If TBL metadata has not been loaded (via `read_tbl()`), returns an
+        empty Run object with a warning.
+
+        The run includes all channel metadata (ex, ey, hx, hy, hz) obtained
+        from their respective property methods.
+
+        Examples
+        --------
+        >>> tbl = MTUTable('/data', 'file.TBL')
+        >>> tbl.read_tbl()
+        >>> run = tbl.run_metadata
+        >>> print(run.id)
+        'run_1690'
+        >>> print(run.data_logger.id)
+        'MTU_1690'
+        """
+        run = Run()  # type: ignore
         if not self._has_metadata():
             logger.warning(
                 "No TBL metadata loaded. Call read_tbl() first. Returning empty Run."
@@ -381,8 +604,30 @@ class MTUTable:
         return run
 
     @property
-    def ex_metadata(self):
-        ex_channel = Electric(component="ex")
+    def ex_metadata(self) -> Electric:
+        """
+        Extract Ex electric channel metadata from TBL file.
+
+        Returns
+        -------
+        Electric
+            mt_metadata Electric object for Ex component with dipole length,
+            azimuth, AC/DC start values, and channel number.
+
+        Notes
+        -----
+        If TBL metadata has not been loaded (via `read_tbl()`), returns an
+        empty Electric object with a warning.
+
+        Examples
+        --------
+        >>> tbl = MTUTable('/data', 'file.TBL')
+        >>> tbl.read_tbl()
+        >>> ex = tbl.ex_metadata
+        >>> print(ex.dipole_length)
+        100.0
+        """
+        ex_channel = Electric(component="ex")  # type: ignore
         if not self._has_metadata():
             logger.warning(
                 "No TBL metadata loaded. Call read_tbl() first. Returning empty EX channel."
@@ -396,8 +641,30 @@ class MTUTable:
         return ex_channel
 
     @property
-    def ey_metadata(self):
-        ey_channel = Electric(component="ey")
+    def ey_metadata(self) -> Electric:
+        """
+        Extract Ey electric channel metadata from TBL file.
+
+        Returns
+        -------
+        Electric
+            mt_metadata Electric object for Ey component with dipole length,
+            azimuth (Ex azimuth + 90°), AC/DC start values, and channel number.
+
+        Notes
+        -----
+        If TBL metadata has not been loaded (via `read_tbl()`), returns an
+        empty Electric object with a warning.
+
+        Examples
+        --------
+        >>> tbl = MTUTable('/data', 'file.TBL')
+        >>> tbl.read_tbl()
+        >>> ey = tbl.ey_metadata
+        >>> print(ey.dipole_length)
+        100.0
+        """
+        ey_channel = Electric(component="ey")  # type: ignore
         if not self._has_metadata():
             logger.warning(
                 "No TBL metadata loaded. Call read_tbl() first. Returning empty EY channel."
@@ -411,42 +678,258 @@ class MTUTable:
         return ey_channel
 
     @property
-    def hx_metadata(self):
-        hx_channel = Magnetic(component="hx")
+    def hx_metadata(self) -> Magnetic:
+        """
+        Extract Hx magnetic channel metadata from TBL file.
+
+        Returns
+        -------
+        Magnetic
+            mt_metadata Magnetic object for Hx component with maximum field,
+            channel number, azimuth, and sensor serial number.
+
+        Notes
+        -----
+        If TBL metadata has not been loaded (via `read_tbl()`), returns an
+        empty Magnetic object with a warning.
+
+        Examples
+        --------
+        >>> tbl = MTUTable('/data', 'file.TBL')
+        >>> tbl.read_tbl()
+        >>> hx = tbl.hx_metadata
+        >>> print(hx.sensor.id)
+        'coil1693'
+        """
+        hx_channel = Magnetic(component="hx")  # type: ignore
         if not self._has_metadata():
             logger.warning(
                 "No TBL metadata loaded. Call read_tbl() first. Returning empty HX channel."
             )
         else:
-            hx_channel.h_field_max = self.tbl_dict.get("HXAC", 0.0)
+            # Note: HXAC is a single value, but h_field_max expects StartEndRange
+            # Skipping assignment for now
             hx_channel.channel_number = self.tbl_dict.get("CHHX", 1)
             hx_channel.measurement_azimuth = self.tbl_dict.get("HAZM", 0.0)
             hx_channel.sensor.id = self.tbl_dict.get("HXSN", "Unknown_serial")
         return hx_channel
 
     @property
-    def hy_metadata(self):
-        hy_channel = Magnetic(component="hy")
+    def hy_metadata(self) -> Magnetic:
+        """
+        Extract Hy magnetic channel metadata from TBL file.
+
+        Returns
+        -------
+        Magnetic
+            mt_metadata Magnetic object for Hy component with maximum field,
+            channel number, azimuth (Hx azimuth + 90°), and sensor serial number.
+
+        Notes
+        -----
+        If TBL metadata has not been loaded (via `read_tbl()`), returns an
+        empty Magnetic object with a warning.
+
+        Examples
+        --------
+        >>> tbl = MTUTable('/data', 'file.TBL')
+        >>> tbl.read_tbl()
+        >>> hy = tbl.hy_metadata
+        >>> print(hy.sensor.id)
+        'coil1694'
+        """
+        hy_channel = Magnetic(component="hy")  # type: ignore
         if not self._has_metadata():
             logger.warning(
                 "No TBL metadata loaded. Call read_tbl() first. Returning empty HY channel."
             )
         else:
-            hy_channel.h_field_max = self.tbl_dict.get("HYAC", 0.0)
+            # Note: HYAC is a single value, but h_field_max expects StartEndRange
+            # Skipping assignment for now
             hy_channel.channel_number = self.tbl_dict.get("CHHY", 2)
             hy_channel.measurement_azimuth = self.tbl_dict.get("HAZM", 0.0) + 90.0
             hy_channel.sensor.id = self.tbl_dict.get("HYSN", "Unknown_serial")
         return hy_channel
 
     @property
-    def hz_metadata(self):
-        hz_channel = Magnetic(component="hz")
+    def hz_metadata(self) -> Magnetic:
+        """
+        Extract Hz magnetic channel metadata from TBL file.
+
+        Returns
+        -------
+        Magnetic
+            mt_metadata Magnetic object for Hz component with maximum field,
+            channel number, and sensor serial number.
+
+        Notes
+        -----
+        If TBL metadata has not been loaded (via `read_tbl()`), returns an
+        empty Magnetic object with a warning.
+
+        Examples
+        --------
+        >>> tbl = MTUTable('/data', 'file.TBL')
+        >>> tbl.read_tbl()
+        >>> hz = tbl.hz_metadata
+        >>> print(hz.sensor.id)
+        'coil1695'
+        """
+        hz_channel = Magnetic(component="hz")  # type: ignore
         if not self._has_metadata():
             logger.warning(
                 "No TBL metadata loaded. Call read_tbl() first. Returning empty HZ channel."
             )
         else:
-            hz_channel.h_field_max = self.tbl_dict.get("HZAC", 0.0)
+            # Note: HZAC is a single value, but h_field_max expects StartEndRange
+            # Skipping assignment for now
             hz_channel.channel_number = self.tbl_dict.get("CHHZ", 3)
             hz_channel.sensor.id = self.tbl_dict.get("HZSN", "Unknown_serial")
         return hz_channel
+
+    @property
+    def ex_calibration(self) -> float | None:
+        """
+        Calculate Ex channel calibration factor.
+
+        Returns
+        -------
+        float or None
+            Calibration factor to convert raw ADC values to mV/km.
+            Returns None if TBL metadata has not been loaded.
+
+        Notes
+        -----
+        The calibration factor is calculated as:
+
+        .. math::
+            \\text{cal} = \\frac{\\text{FSCV}}{2^{23}} \\times \\frac{1000}{\\text{EGN}} \\times \\frac{1000}{\\text{EXLN}}
+
+        where:
+
+        - FSCV: Full-scale converter voltage
+        - EGN: Electric channel gain
+        - EXLN: Ex dipole length in meters
+
+        Examples
+        --------
+        >>> tbl = MTUTable('/data', 'file.TBL')
+        >>> tbl.read_tbl()
+        >>> cal = tbl.ex_calibration
+        >>> print(f"{cal:.6f}")
+        0.000762
+        """
+
+        if not self._has_metadata():
+            logger.warning(
+                "No TBL metadata loaded. Call read_tbl() first. Returning None."
+            )
+            return None
+        # E field as mV/km
+        return (
+            float(self.tbl_dict["FSCV"])
+            / 2**23
+            * 1000
+            / float(self.tbl_dict["EGN"])
+            / float(self.tbl_dict["EXLN"])
+            * 1000
+        )
+
+    @property
+    def ey_calibration(self) -> float | None:
+        """
+        Calculate Ey channel calibration factor.
+
+        Returns
+        -------
+        float or None
+            Calibration factor to convert raw ADC values to mV/km.
+            Returns None if TBL metadata has not been loaded.
+
+        Notes
+        -----
+        The calibration factor is calculated as:
+
+        .. math::
+            \\text{cal} = \\frac{\\text{FSCV}}{2^{23}} \\times \\frac{1000}{\\text{EGN}} \\times \\frac{1000}{\\text{EYLN}}
+
+        where:
+
+        - FSCV: Full-scale converter voltage
+        - EGN: Electric channel gain
+        - EYLN: Ey dipole length in meters
+
+        Examples
+        --------
+        >>> tbl = MTUTable('/data', 'file.TBL')
+        >>> tbl.read_tbl()
+        >>> cal = tbl.ey_calibration
+        >>> print(f"{cal:.6f}")
+        0.000762
+        """
+
+        if not self._has_metadata():
+            logger.warning(
+                "No TBL metadata loaded. Call read_tbl() first. Returning None."
+            )
+            return None
+        # E field as mV/km
+        return (
+            float(self.tbl_dict["FSCV"])
+            / 2**23
+            * 1000
+            / float(self.tbl_dict["EGN"])
+            / float(self.tbl_dict["EYLN"])
+            * 1000
+        )
+
+    @property
+    def magnetic_calibration(self) -> float | None:
+        """
+        Calculate magnetic channel calibration factor.
+
+        Returns
+        -------
+        float or None
+            Calibration factor to convert raw ADC values to nT.
+            Returns None if TBL metadata has not been loaded.
+
+        Notes
+        -----
+        The calibration factor is calculated as:
+
+        .. math::
+            \\text{cal} = \\frac{\\text{FSCV}}{2^{23}} \\times \\frac{1000}{\\text{HGN} \\times \\text{HATT} \\times \\text{HNOM}}
+
+        where:
+
+        - FSCV: Full-scale converter voltage
+        - HGN: Magnetic channel gain
+        - HATT: Magnetic channel attenuation
+        - HNOM: Magnetic channel normalization (mA/nT)
+
+        This calibration applies to all magnetic channels (Hx, Hy, Hz).
+
+        Examples
+        --------
+        >>> tbl = MTUTable('/data', 'file.TBL')
+        >>> tbl.read_tbl()
+        >>> cal = tbl.magnetic_calibration
+        >>> print(f"{cal:.9f}")
+        0.000000229
+        """
+
+        if not self._has_metadata():
+            logger.warning(
+                "No TBL metadata loaded. Call read_tbl() first. Returning None."
+            )
+            return None
+        # H field as nT
+        return (
+            float(self.tbl_dict["FSCV"])
+            / 2**23
+            * 1000
+            / float(self.tbl_dict["HGN"])
+            / float(self.tbl_dict["HATT"])
+            / float(self.tbl_dict["HNOM"])
+        )
