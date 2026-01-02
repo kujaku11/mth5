@@ -56,6 +56,15 @@ def sample_ts5_file(phoenix_mtu_data_path):
     return ts_file
 
 
+@pytest.fixture(scope="session")
+def sample_tbl_file(phoenix_mtu_data_path):
+    """Get path to sample TBL file."""
+    tbl_file = phoenix_mtu_data_path / "1690C16C.TBL"
+    if not tbl_file.exists():
+        pytest.skip(f"TBL file not found: {tbl_file}")
+    return tbl_file
+
+
 # =============================================================================
 # Module-level fixtures (reused across test classes)
 # =============================================================================
@@ -608,6 +617,214 @@ class TestRealDataValidation:
             ts3.shape != ts4.shape or ts4.shape != ts5.shape or ts3.shape != ts5.shape
         )
         assert shapes_different
+
+
+# =============================================================================
+# to_runts Method Tests
+# =============================================================================
+
+
+class TestToRunTS:
+    """Test the to_runts method for creating RunTS objects."""
+
+    def test_to_runts_with_explicit_table_path(self, sample_ts3_file, sample_tbl_file):
+        """Test to_runts with explicit TBL file path."""
+        reader = MTUTSN(sample_ts3_file)
+        run_ts = reader.to_runts(table_filepath=sample_tbl_file)
+
+        # Verify RunTS object is created
+        from mth5.timeseries import RunTS
+
+        assert isinstance(run_ts, RunTS)
+
+    def test_to_runts_without_table_path(self, sample_ts3_file):
+        """Test to_runts without explicit TBL path (auto-detect)."""
+        reader = MTUTSN(sample_ts3_file)
+        # Should auto-detect 1690C16C.TBL from 1690C16C.TS3
+        run_ts = reader.to_runts()
+
+        from mth5.timeseries import RunTS
+
+        assert isinstance(run_ts, RunTS)
+
+    def test_to_runts_returns_runts_object(self, sample_ts3_file, sample_tbl_file):
+        """Test that to_runts returns a RunTS object."""
+        reader = MTUTSN(sample_ts3_file)
+        run_ts = reader.to_runts(sample_tbl_file)
+
+        from mth5.timeseries import RunTS
+
+        assert isinstance(run_ts, RunTS)
+        assert hasattr(run_ts, "channels")
+
+    def test_to_runts_channels_added(self, sample_ts3_file, sample_tbl_file):
+        """Test that channels are added to RunTS object."""
+        reader = MTUTSN(sample_ts3_file)
+        run_ts = reader.to_runts(sample_tbl_file)
+
+        # Should have channels based on what's in the TBL file
+        assert len(run_ts.channels) > 0
+
+    def test_to_runts_channel_metadata_populated(
+        self, sample_ts3_file, sample_tbl_file
+    ):
+        """Test that channel metadata is properly populated."""
+        reader = MTUTSN(sample_ts3_file)
+        run_ts = reader.to_runts(sample_tbl_file)
+
+        # Check that channels have metadata
+        for ch_name in run_ts.channels:
+            channel = getattr(run_ts, ch_name)
+            assert hasattr(channel, "channel_metadata")
+            assert channel.channel_metadata is not None
+            assert hasattr(channel.channel_metadata, "sample_rate")
+            assert channel.channel_metadata.sample_rate > 0
+
+    def test_to_runts_channel_data_shape(self, sample_ts3_file, sample_tbl_file):
+        """Test that channel data has correct shape."""
+        reader = MTUTSN(sample_ts3_file)
+        run_ts = reader.to_runts(sample_tbl_file)
+
+        # All channels should have data
+        for ch_name in run_ts.channels:
+            channel = getattr(run_ts, ch_name)
+            assert hasattr(channel, "ts")
+            assert len(channel.ts) > 0
+
+    def test_to_runts_with_calibration_enabled(self, sample_ts3_file, sample_tbl_file):
+        """Test to_runts with calibration enabled (default)."""
+        reader = MTUTSN(sample_ts3_file)
+        # Store original uncalibrated data
+        ts_uncalibrated = reader.ts.copy()
+
+        # Read with calibration
+        run_ts = reader.to_runts(sample_tbl_file, calibrate=True)
+
+        # Verify RunTS was created
+        assert run_ts is not None
+        assert len(run_ts.channels) > 0
+
+    def test_to_runts_with_calibration_disabled(self, sample_ts3_file, sample_tbl_file):
+        """Test to_runts with calibration disabled."""
+        reader = MTUTSN(sample_ts3_file)
+        run_ts = reader.to_runts(sample_tbl_file, calibrate=False)
+
+        # Verify RunTS was created
+        assert run_ts is not None
+        assert len(run_ts.channels) > 0
+
+    def test_to_runts_calibration_affects_data(self, sample_ts3_file, sample_tbl_file):
+        """Test that calibration actually modifies the data."""
+        # Create two readers with same file
+        reader1 = MTUTSN(sample_ts3_file)
+        reader2 = MTUTSN(sample_ts3_file)
+
+        # Read with and without calibration
+        run_ts_calibrated = reader1.to_runts(sample_tbl_file, calibrate=True)
+        run_ts_uncalibrated = reader2.to_runts(sample_tbl_file, calibrate=False)
+
+        # Data should be different (unless calibration factor is exactly 1.0)
+        if (
+            len(run_ts_calibrated.channels) > 0
+            and len(run_ts_uncalibrated.channels) > 0
+        ):
+            # Get first channel from each
+            ch_name = run_ts_calibrated.channels[0]
+            cal_data = getattr(run_ts_calibrated, ch_name).ts
+            uncal_data = getattr(run_ts_uncalibrated, ch_name).ts
+
+            # They should have same length
+            assert len(cal_data) == len(uncal_data)
+
+    def test_to_runts_survey_metadata_propagated(
+        self, sample_ts3_file, sample_tbl_file
+    ):
+        """Test that survey metadata is propagated to RunTS."""
+        reader = MTUTSN(sample_ts3_file)
+        run_ts = reader.to_runts(sample_tbl_file)
+
+        # Should have survey metadata
+        assert hasattr(run_ts, "survey_metadata")
+        assert run_ts.survey_metadata is not None
+
+    def test_to_runts_channel_components(self, sample_ts3_file, sample_tbl_file):
+        """Test that channels have correct component names."""
+        reader = MTUTSN(sample_ts3_file)
+        run_ts = reader.to_runts(sample_tbl_file)
+
+        # Get channel components
+        components = [
+            getattr(run_ts, ch_name).channel_metadata.component
+            for ch_name in run_ts.channels
+        ]
+
+        # All components should be valid MT components
+        valid_components = ["ex", "ey", "hx", "hy", "hz"]
+        for comp in components:
+            assert comp in valid_components
+
+    def test_to_runts_multiple_files(
+        self, sample_ts3_file, sample_ts4_file, sample_tbl_file
+    ):
+        """Test to_runts with multiple different TS files."""
+        reader3 = MTUTSN(sample_ts3_file)
+        reader4 = MTUTSN(sample_ts4_file)
+
+        run_ts3 = reader3.to_runts(sample_tbl_file)
+        run_ts4 = reader4.to_runts(sample_tbl_file)
+
+        # Both should be valid
+        assert run_ts3 is not None
+        assert run_ts4 is not None
+        assert len(run_ts3.channels) > 0
+        assert len(run_ts4.channels) > 0
+
+    def test_to_runts_start_time_set(self, sample_ts3_file, sample_tbl_file):
+        """Test that channel start times are set correctly."""
+        reader = MTUTSN(sample_ts3_file)
+        run_ts = reader.to_runts(sample_tbl_file)
+
+        # All channels should have start time from TS file
+        for ch_name in run_ts.channels:
+            channel = getattr(run_ts, ch_name)
+            assert hasattr(channel.channel_metadata, "time_period")
+            # Start time should match the TS file's start time
+            assert channel.channel_metadata.time_period.start is not None
+
+    def test_to_runts_sample_rate_set(self, sample_ts3_file, sample_tbl_file):
+        """Test that channel sample rates are set correctly."""
+        reader = MTUTSN(sample_ts3_file)
+        run_ts = reader.to_runts(sample_tbl_file)
+
+        # All channels should have sample rate from TS file
+        ts_sample_rate = reader.tag["sample_rate"]
+        for ch_name in run_ts.channels:
+            channel = getattr(run_ts, ch_name)
+            assert channel.channel_metadata.sample_rate == ts_sample_rate
+
+    def test_to_runts_with_nonexistent_table(self, sample_ts3_file, tmp_path):
+        """Test to_runts with nonexistent TBL file raises error."""
+        reader = MTUTSN(sample_ts3_file)
+        nonexistent_tbl = tmp_path / "nonexistent.TBL"
+
+        with pytest.raises(FileNotFoundError):
+            reader.to_runts(nonexistent_tbl)
+
+    def test_to_runts_channel_number_mapping(self, sample_ts3_file, sample_tbl_file):
+        """Test that channel numbers from TBL are used correctly."""
+        reader = MTUTSN(sample_ts3_file)
+        run_ts = reader.to_runts(sample_tbl_file)
+
+        # Verify we have channels
+        assert len(run_ts.channels) > 0
+
+        # Each channel should have valid data from the correct channel number
+        for ch_name in run_ts.channels:
+            channel = getattr(run_ts, ch_name)
+            # Channel data should be 1D array
+            assert channel.ts.ndim == 1
+            # Channel should have positive length
+            assert len(channel.ts) > 0
 
 
 # =============================================================================

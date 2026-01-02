@@ -58,7 +58,7 @@ import numpy as np
 from loguru import logger
 from mt_metadata.common import MTime
 
-from mth5.timeseries import RunTS
+from mth5.timeseries import ChannelTS, RunTS
 
 from .mtu_table import MTUTable
 
@@ -568,7 +568,9 @@ class MTUTSN:
 
         return ts, tag
 
-    def to_runts(self, table_filepath: str | Path) -> RunTS:
+    def to_runts(
+        self, table_filepath: str | Path | None = None, calibrate=True
+    ) -> RunTS:
         """
         Create an MTUTable object from the TSN file and associated TBL file.
 
@@ -589,5 +591,49 @@ class MTUTSN:
         >>> print(mtu_table.metadata)
         {...}
         """
+        ts, ts_metadata = self.read()
+
+        if table_filepath is None and self.file_path is not None:
+            table_filepath = self.file_path.with_suffix(".TBL")
+
         mtu_table = MTUTable(table_filepath)
-        return mtu_table
+        survey_metadata = mtu_table.survey_metadata  # to trigger warning if no data
+        run_metadata = mtu_table.run_metadata.copy()
+        run_metadata.sample_rate = ts_metadata["sample_rate"]
+        run_ts = RunTS(
+            survey_metadata=mtu_table.survey_metadata, run_metadata=run_metadata
+        )
+        for comp, channel_number in mtu_table.channel_keys.items():
+            channel_metadata = getattr(mtu_table, f"{comp}_metadata")
+            channel_metadata.sample_rate = ts_metadata["sample_rate"]
+            channel_metadata.start_time = ts_metadata["start"]
+
+            # Channel numbers in TBL are 1-indexed, convert to 0-indexed for numpy
+            channel_index = channel_number - 1
+
+            if calibrate:
+                if comp in ["ex", "ey"]:
+                    scale_factor = (
+                        mtu_table.ex_calibration
+                        if comp == "ex"
+                        else mtu_table.ey_calibration
+                    )
+                elif comp in ["hx", "hy", "hz"]:
+                    scale_factor = mtu_table.magnetic_calibration
+
+                logger.info(
+                    f"Applying scale factor of {scale_factor} to channel {comp}"
+                )
+                ts[channel_index, :] = ts[channel_index, :] * scale_factor
+
+            # Determine channel type
+            channel_type = "electric" if comp[0] in ["e"] else "magnetic"
+
+            ch_ts = ChannelTS(
+                channel_type=channel_type,
+                data=ts[channel_index, :],
+                channel_metadata=channel_metadata,
+            )
+            run_ts.add_channel(ch_ts)
+
+        return run_ts
