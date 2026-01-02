@@ -49,20 +49,69 @@ Beijing
 =======================================================================
 """
 
+from __future__ import annotations
+
 from pathlib import Path
+from typing import BinaryIO
 
 import numpy as np
 from loguru import logger
 from mt_metadata.common import MTime
 
+from mth5.timeseries import RunTS
+
+from .mtu_table import MTUTable
+
 
 class MTUTSN:
     """
-    A class to read the legacy Phoenix MTU-5A instrument time series binary files
-    (.TSN) format.
+    Reader for legacy Phoenix MTU-5A instrument time series binary files.
+
+    Reads time series data from Phoenix MTU-5A (.TS2, .TS3, .TS4, .TS5) and
+    V5-2000 system (.TSL, .TSH) binary files. The data consists of 24-bit
+    signed integers organized in data blocks with headers.
+
+    Parameters
+    ----------
+    file_path : str or Path or None, optional
+        Path to the TSN file to read. If None, the reader is created without
+        loading data. Default is None.
+
+    Attributes
+    ----------
+    file_path : Path or None
+        Path to the currently loaded TSN file.
+    ts : ndarray or None
+        Time series data array with shape (n_channels, n_samples).
+    tag : dict
+        Metadata dictionary containing file information.
+
+    Examples
+    --------
+    Read a TS3 file:
+
+    >>> from pathlib import Path
+    >>> reader = MTUTSN('data/1690C16C.TS3')
+    >>> print(reader.ts.shape)
+    (3, 86400)
+    >>> print(reader.tag['sample_rate'])
+    24
+
+    Create reader without loading data:
+
+    >>> reader = MTUTSN()
+    >>> reader.read('data/1690C16C.TS3')
+
+    Access metadata:
+
+    >>> reader = MTUTSN('data/1690C16C.TS4')
+    >>> print(f"Channels: {reader.tag['n_ch']}")
+    Channels: 4
+    >>> print(f"Blocks: {reader.tag['n_block']}")
+    Blocks: 48
     """
 
-    def __init__(self, file_path: str | Path | None = None):
+    def __init__(self, file_path: str | Path | None = None) -> None:
         self._p16 = 2**16
         self._p8 = 2**8
         self._accepted_extensions = ["TS2", "TS3", "TS4", "TS5", "TSL", "TSH"]
@@ -81,8 +130,30 @@ class MTUTSN:
         return self._file_path
 
     @file_path.setter
-    def file_path(self, value: str | Path | None):
-        """Set the TSN file path."""
+    def file_path(self, value: str | Path | None) -> None:
+        """
+        Set the TSN file path with validation.
+
+        Parameters
+        ----------
+        value : str or Path or None
+            Path to the TSN file. Must exist and have a valid extension
+            (.TS2, .TS3, .TS4, .TS5, .TSL, .TSH).
+
+        Raises
+        ------
+        FileNotFoundError
+            If the specified file does not exist.
+        ValueError
+            If the file extension is not recognized.
+
+        Examples
+        --------
+        >>> reader = MTUTSN()
+        >>> reader.file_path = 'data/1690C16C.TS3'
+        >>> print(reader.file_path.name)
+        1690C16C.TS3
+        """
         if value is not None:
             self._file_path = Path(value)
             if not self._file_path.exists():
@@ -102,28 +173,85 @@ class MTUTSN:
         else:
             self._file_path = None
 
-    def get_sign24(self, x):
+    def get_sign24(self, x: np.ndarray | list | int) -> np.ndarray:
         """
-        a simple function to calculate the sign for a 24 bit number
-        I should have made it in-line
+        Convert unsigned 24-bit integers to signed integers.
+
+        Converts unsigned 24-bit values (0 to 16777215) to their signed
+        equivalents (-8388608 to 8388607) by applying two's complement.
+
+        Parameters
+        ----------
+        x : ndarray or list or int
+            Unsigned 24-bit integer value(s) to convert.
+
+        Returns
+        -------
+        ndarray
+            Signed 24-bit integer value(s) as int32 array.
+
+        Examples
+        --------
+        Convert a single positive value:
+
+        >>> reader = MTUTSN()
+        >>> reader.get_sign24(100)
+        array([100], dtype=int32)
+
+        Convert a single negative value (unsigned representation):
+
+        >>> reader.get_sign24(16777215)  # -1 in 24-bit signed
+        array([-1], dtype=int32)
+
+        Convert an array:
+
+        >>> values = np.array([0, 8388607, 8388608, 16777215])
+        >>> reader.get_sign24(values)
+        array([       0,  8388607, -8388608,       -1], dtype=int32)
         """
         x = np.array(x, dtype=np.int32)
         x[x > 2**23 - 1] = x[x > 2**23 - 1] - 2**24
         return x
 
-    def _read_header(self, ts_fid) -> tuple[MTime, int, int, int, int, str, int]:
+    def _read_header(
+        self, ts_fid: BinaryIO
+    ) -> tuple[MTime, int, int, int, int, str, int]:
         """
-        Read the header information from the TSN file.
+        Read and parse the 32-byte header from a TSN file.
+
+        Extracts timestamp, instrument serial number, number of scans,
+        channel count, tag length, instrument type, and sample rate from
+        the binary file header.
 
         Parameters
         ----------
-        ts_fid : file object
-            Open file handle positioned at the start of the file.
+        ts_fid : BinaryIO
+            Open binary file handle positioned at the start of the header.
 
         Returns
         -------
-        tuple
-            (start_time, box_num, n_scan, n_ch, tag_length, ts_type, sample_rate)
+        start_time : MTime
+            UTC timestamp of the first scan in the file.
+        box_num : int
+            Instrument serial number (16-bit integer).
+        n_scan : int
+            Number of scans per data block (16-bit integer).
+        n_ch : int
+            Number of channels per scan (3, 4, 5, or 6).
+        tag_length : int
+            Length of the tag in bytes (32 for MTU-5, 16 for V5-2000).
+        ts_type : str
+            Instrument type: 'MTU-5' or 'V5-2000'.
+        sample_rate : int
+            Sampling frequency in Hz (0 for V5-2000 files).
+
+        Examples
+        --------
+        >>> with open('data/1690C16C.TS3', 'rb') as f:
+        ...     reader = MTUTSN()
+        ...     start, box, scan, ch, tag_len, ts_type, sr = reader._read_header(f)
+        ...     print(f"Type: {ts_type}, Rate: {sr} Hz, Channels: {ch}")
+        Type: MTU-5, Rate: 24 Hz, Channels: 3
         """
         # Starting time
         s = ts_fid.read(1)[0]  # Starting second
@@ -167,19 +295,41 @@ class MTUTSN:
         self, data: np.ndarray, byte_indices: list[int]
     ) -> np.ndarray:
         """
-        Extract a single channel's 24-bit signed data from the raw byte array.
+        Extract and convert 24-bit signed channel data from raw bytes.
+
+        Combines three consecutive bytes (low, middle, high) per sample to
+        reconstruct 24-bit signed integer values for a single channel.
 
         Parameters
         ----------
-        data : np.ndarray
-            Raw data array with shape (n_ch*3, n_scan).
-        byte_indices : list[int]
-            Three byte indices [low, mid, high] for the 24-bit value.
+        data : ndarray
+            Raw byte data array with shape (n_ch*3, n_scan), where each row
+            represents one byte position and each column is one time sample.
+        byte_indices : list of int
+            Three byte indices [low_byte, mid_byte, high_byte] indicating which
+            rows of the data array contain the 24-bit value components.
 
         Returns
         -------
-        np.ndarray
-            Signed 24-bit integer values for the channel.
+        ndarray
+            Signed 24-bit integer values for the channel with shape (n_scan,).
+
+        Examples
+        --------
+        Extract channel 0 from 3-channel data:
+
+        >>> data = np.random.randint(0, 256, size=(9, 1000), dtype=np.int32)
+        >>> reader = MTUTSN()
+        >>> ch0_data = reader._extract_channel_data(data, [0, 1, 2])
+        >>> print(ch0_data.shape)
+        (1000,)
+
+        Extract channel 1 from 4-channel data:
+
+        >>> data = np.random.randint(0, 256, size=(12, 500), dtype=np.int32)
+        >>> ch1_data = reader._extract_channel_data(data, [3, 4, 5])
+        >>> print(ch1_data.shape)
+        (500,)
         """
         return self.get_sign24(
             data[byte_indices[2], :] * self._p16
@@ -189,7 +339,7 @@ class MTUTSN:
 
     def _process_data_block(
         self,
-        ts_fid,
+        ts_fid: BinaryIO,
         n_ch: int,
         n_scan: int,
         ts: np.ndarray,
@@ -197,27 +347,46 @@ class MTUTSN:
         end_idx: int,
     ) -> bool:
         """
-        Process a single data block and populate the ts array.
+        Read and process a single data block from the TSN file.
+
+        Reads one data block consisting of a 32-byte header followed by
+        n_scan*n_ch*3 bytes of 24-bit channel data. Extracts and converts
+        the data for all channels and populates the specified slice of the
+        time series array.
 
         Parameters
         ----------
-        ts_fid : file object
-            Open file handle positioned at a data block.
+        ts_fid : BinaryIO
+            Open binary file handle positioned at the start of a data block.
         n_ch : int
-            Number of channels.
+            Number of channels (3, 4, 5, or 6).
         n_scan : int
-            Number of scans per block.
-        ts : np.ndarray
-            Time series array to populate.
+            Number of time samples in this block.
+        ts : ndarray
+            Pre-allocated time series array to populate with shape
+            (n_ch, total_samples).
         start_idx : int
-            Starting index in the ts array.
+            Starting index in the second dimension of ts for this block's data.
         end_idx : int
-            Ending index in the ts array.
+            Ending index (exclusive) in the second dimension of ts.
 
         Returns
         -------
         bool
-            True if data was read successfully, False if no data.
+            True if data was read and processed successfully, False if end of
+            file reached or unsupported channel count.
+
+        Examples
+        --------
+        Process blocks from a file:
+
+        >>> with open('data/1690C16C.TS3', 'rb') as f:
+        ...     reader = MTUTSN()
+        ...     # ... read header first ...
+        ...     ts = np.zeros((3, 3600))
+        ...     success = reader._process_data_block(f, 3, 1200, ts, 0, 1200)
+        ...     print(f"Block processed: {success}")
+        Block processed: True
         """
         ts_fid.seek(32, 1)  # skip the file tag
         data = np.frombuffer(ts_fid.read(n_ch * 3 * n_scan), dtype=np.uint8)
@@ -265,19 +434,78 @@ class MTUTSN:
 
     def read(
         self, file_path: str | Path | None = None
-    ) -> tuple[np.ndarray, dict[str, np.ndarray]]:
+    ) -> tuple[np.ndarray, dict[str, int | str | float | MTime]]:
         """
-        read_tsn - reads a (binary) TS file of the legacy Phoenix MTU-5A instrument
-        (TS2, TS3, TS4, TS5) and the even older V5-2000 system (TSL, TSH), and
-        output the "ts" array and "tag" metadata dictionary.
+        Read and parse a Phoenix MTU time series binary file.
 
-        Parameters:
-            fpath: path to the TS file
-            fname: name of the TS file (including extensions)
+        Reads complete time series data from legacy Phoenix MTU-5A instrument
+        files (.TS2, .TS3, .TS4, .TS5) or V5-2000 system files (.TSL, .TSH).
+        Each file contains multiple data blocks with 24-bit signed integer
+        samples organized by channel.
 
-        Returns:
-            ts:    output numpy array of the TS data
-            tag:   output dict of the TSn metadata
+        Parameters
+        ----------
+        file_path : str or Path or None, optional
+            Path to the TSN file to read. If None, uses the current file_path
+            attribute. Default is None.
+
+        Returns
+        -------
+        ts : ndarray
+            Time series data array with shape (n_channels, total_samples).
+            Data type is float64. Each row represents one channel, and each
+            column is a time sample.
+        tag : dict
+            Metadata dictionary containing file information with keys:
+
+            - 'box_number' (int): Instrument serial number
+            - 'ts_type' (str): Instrument type ('MTU-5' or 'V5-2000')
+            - 'sample_rate' (int): Sampling frequency in Hz
+            - 'n_ch' (int): Number of channels
+            - 'n_scan' (int): Number of scans per data block
+            - 'start' (MTime): UTC timestamp of first sample
+            - 'ts_length' (float): Duration of each block in seconds
+            - 'n_block' (int): Total number of data blocks in file
+
+        Raises
+        ------
+        EOFError
+            If the file is empty or cannot be read.
+        ValueError
+            If the file has an unsupported extension or channel count.
+        FileNotFoundError
+            If the specified file does not exist.
+
+        Examples
+        --------
+        Read a 3-channel TS3 file:
+
+        >>> reader = MTUTSN()
+        >>> ts, tag = reader.read('data/1690C16C.TS3')
+        >>> print(f"Shape: {ts.shape}")
+        Shape: (3, 86400)
+        >>> print(f"Sample rate: {tag['sample_rate']} Hz")
+        Sample rate: 24 Hz
+        >>> print(f"Duration: {ts.shape[1] / tag['sample_rate']:.1f} seconds")
+        Duration: 3600.0 seconds
+
+        Read a 4-channel TS4 file:
+
+        >>> reader = MTUTSN('data/1690C16C.TS4')
+        >>> print(f"Channels: {reader.tag['n_ch']}")
+        Channels: 4
+        >>> print(f"Start time: {reader.tag['start'].isoformat()}")
+        Start time: 2016-07-16T00:00:00+00:00
+
+        Read and process data:
+
+        >>> ts, tag = MTUTSN().read('data/station.TS5')
+        >>> # Calculate statistics for each channel
+        >>> for i in range(tag['n_ch']):
+        ...     print(f"Ch{i} mean: {ts[i].mean():.2f}, std: {ts[i].std():.2f}")
+        Ch0 mean: 123.45, std: 456.78
+        Ch1 mean: -234.56, std: 567.89
+        ...
         """
         # try opening the ts data file
         if file_path is not None:
@@ -339,3 +567,27 @@ class MTUTSN:
         }
 
         return ts, tag
+
+    def to_runts(self, table_filepath: str | Path) -> RunTS:
+        """
+        Create an MTUTable object from the TSN file and associated TBL file.
+
+        Parameters
+        ----------
+        table_filepath : str or Path
+            Path to the corresponding TBL file.
+
+        Returns
+        -------
+        MTUTable
+            An MTUTable object containing metadata from the TBL file.
+
+        Examples
+        --------
+        >>> reader = MTUTSN('data/1690C16C.TS3')
+        >>> mtu_table = reader.to_runts('data/1690C16C.TBL')
+        >>> print(mtu_table.metadata)
+        {...}
+        """
+        mtu_table = MTUTable(table_filepath)
+        return mtu_table
