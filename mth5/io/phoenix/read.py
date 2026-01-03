@@ -100,7 +100,7 @@ def open_phoenix(
     return READERS[extension](file_name, **kwargs)
 
 
-def read_phoenix(file_name: str | Path, **kwargs: Any) -> ChannelTS | RunTS:
+def read_phoenix(file_name: str | Path, **kwargs: Any) -> ChannelTS | RunTS | MTUTable:
     """
     Read a Phoenix Geophysics data file into a ChannelTS or RunTS object
     depending on the file type.  Newer files that end in .td_XX or .bin will be
@@ -132,6 +132,9 @@ def read_phoenix(file_name: str | Path, **kwargs: Any) -> ChannelTS | RunTS:
         Time series data object containing the MTU data from the Phoenix MTU
         files with calibration applied if specified.
 
+    mtu_table : MTUTable
+        Metadata table object containing the MTU table data.
+
     Raises
     ------
     KeyError
@@ -151,6 +154,9 @@ def read_phoenix(file_name: str | Path, **kwargs: Any) -> ChannelTS | RunTS:
         mtu_obj = open_phoenix(file_name, **kwargs)
         run_ts = mtu_obj.to_runts(table_filepath=tbl_file, calibrate=True)
         return run_ts
+    elif extension == "TBL":
+        mtu_table = open_phoenix(file_name, **kwargs)
+        return mtu_table
     else:
         raise KeyError(
             f"File extension '{extension}' is not supported by any Phoenix reader."
