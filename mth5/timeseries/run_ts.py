@@ -904,7 +904,7 @@ class RunTS:
         self.logger.warning(msg)
         return [x for x in array_list if x.n_samples != 1]
 
-    def from_obspy_stream(self, obspy_stream, run_metadata=None):
+    def from_obspy_stream(self, obspy_stream: Stream, run_metadata=None):
         """
         Get a run from an :class:`obspy.core.stream` which is a list of
         :class:`obspy.core.Trace` objects.
@@ -919,6 +919,7 @@ class RunTS:
             msg = f"Input must be obspy.core.Stream not {type(obspy_stream)}"
             self.logger.error(msg)
             raise TypeError(msg)
+        
         array_list = []
         station_list = []
         for obs_trace in obspy_stream:
