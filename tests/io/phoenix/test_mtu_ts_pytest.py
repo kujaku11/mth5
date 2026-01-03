@@ -73,19 +73,25 @@ def sample_tbl_file(phoenix_mtu_data_path):
 @pytest.fixture(scope="module")
 def loaded_ts3_reader(sample_ts3_file):
     """Create MTUTSN instance with TS3 file loaded."""
-    return MTUTSN(sample_ts3_file)
+    reader = MTUTSN(sample_ts3_file)
+    reader.read()
+    return reader
 
 
 @pytest.fixture(scope="module")
 def loaded_ts4_reader(sample_ts4_file):
     """Create MTUTSN instance with TS4 file loaded."""
-    return MTUTSN(sample_ts4_file)
+    reader = MTUTSN(sample_ts4_file)
+    reader.read()
+    return reader
 
 
 @pytest.fixture(scope="module")
 def loaded_ts5_reader(sample_ts5_file):
     """Create MTUTSN instance with TS5 file loaded."""
-    return MTUTSN(sample_ts5_file)
+    reader = MTUTSN(sample_ts5_file)
+    reader.read()
+    return reader
 
 
 # =============================================================================
@@ -119,14 +125,23 @@ class TestMTUTSNInitialization:
         """Test initialization with valid file path."""
         reader = MTUTSN(sample_ts3_file)
         assert reader.file_path == sample_ts3_file
+        assert reader.ts is None
+        assert reader.ts_metadata is None
+
+        # Now explicitly read the file
+        reader.read()
         assert reader.ts is not None
-        assert reader.tag is not None
+        assert reader.ts_metadata is not None
 
     def test_init_with_string_path(self, sample_ts3_file):
         """Test initialization with string path."""
         reader = MTUTSN(str(sample_ts3_file))
         assert reader.file_path == sample_ts3_file
         assert isinstance(reader.file_path, Path)
+
+        # Data should not be loaded until read() is called
+        assert reader.ts is None
+        assert reader.ts_metadata is None
 
     def test_init_without_file_path(self):
         """Test initialization without file path."""
@@ -263,30 +278,30 @@ class TestDataReading:
     def test_read_ts3_file(self, loaded_ts3_reader):
         """Test reading TS3 file produces valid data."""
         assert loaded_ts3_reader.ts is not None
-        assert loaded_ts3_reader.tag is not None
+        assert loaded_ts3_reader.ts_metadata is not None
         assert isinstance(loaded_ts3_reader.ts, np.ndarray)
-        assert isinstance(loaded_ts3_reader.tag, dict)
+        assert isinstance(loaded_ts3_reader.ts_metadata, dict)
 
     def test_read_ts4_file(self, loaded_ts4_reader):
         """Test reading TS4 file produces valid data."""
         assert loaded_ts4_reader.ts is not None
-        assert loaded_ts4_reader.tag is not None
+        assert loaded_ts4_reader.ts_metadata is not None
         assert isinstance(loaded_ts4_reader.ts, np.ndarray)
-        assert isinstance(loaded_ts4_reader.tag, dict)
+        assert isinstance(loaded_ts4_reader.ts_metadata, dict)
 
     def test_read_ts5_file(self, loaded_ts5_reader):
         """Test reading TS5 file produces valid data."""
         assert loaded_ts5_reader.ts is not None
-        assert loaded_ts5_reader.tag is not None
+        assert loaded_ts5_reader.ts_metadata is not None
         assert isinstance(loaded_ts5_reader.ts, np.ndarray)
-        assert isinstance(loaded_ts5_reader.tag, dict)
+        assert isinstance(loaded_ts5_reader.ts_metadata, dict)
 
     def test_ts_data_shape(self, loaded_ts3_reader):
         """Test that TS data has correct shape."""
         ts = loaded_ts3_reader.ts
-        tag = loaded_ts3_reader.tag
+        ts_metadata = loaded_ts3_reader.ts_metadata
         assert ts.ndim == 2
-        assert ts.shape[0] == tag["n_ch"]  # Number of channels
+        assert ts.shape[0] == ts_metadata["n_ch"]  # Number of channels
         assert ts.shape[1] > 0  # Has samples
 
     def test_ts_data_dtype(self, loaded_ts3_reader):
@@ -297,8 +312,9 @@ class TestDataReading:
         """Test that empty file raises EOFError."""
         empty_file = tmp_path / "empty.TS3"
         empty_file.touch()
+        reader = MTUTSN(empty_file)
         with pytest.raises(EOFError, match="empty or could not be read"):
-            MTUTSN(empty_file)
+            reader.read()
 
 
 # =============================================================================
@@ -324,49 +340,49 @@ class TestTagMetadata:
     )
     def test_tag_has_required_keys(self, loaded_ts3_reader, key):
         """Test that tag dictionary has all required keys."""
-        assert key in loaded_ts3_reader.tag
+        assert key in loaded_ts3_reader.ts_metadata
 
     def test_box_number_is_int(self, loaded_ts3_reader):
         """Test that box_number is an integer."""
-        assert isinstance(loaded_ts3_reader.tag["box_number"], int)
+        assert isinstance(loaded_ts3_reader.ts_metadata["box_number"], int)
 
     def test_ts_type_is_string(self, loaded_ts3_reader):
         """Test that ts_type is a string."""
-        assert isinstance(loaded_ts3_reader.tag["ts_type"], str)
-        assert loaded_ts3_reader.tag["ts_type"] in ["MTU-5", "V5-2000"]
+        assert isinstance(loaded_ts3_reader.ts_metadata["ts_type"], str)
+        assert loaded_ts3_reader.ts_metadata["ts_type"] in ["MTU-5", "V5-2000"]
 
     def test_sample_rate_is_numeric(self, loaded_ts3_reader):
         """Test that sample_rate is numeric."""
-        assert isinstance(loaded_ts3_reader.tag["sample_rate"], (int, float))
-        assert loaded_ts3_reader.tag["sample_rate"] >= 0
+        assert isinstance(loaded_ts3_reader.ts_metadata["sample_rate"], (int, float))
+        assert loaded_ts3_reader.ts_metadata["sample_rate"] >= 0
 
     def test_n_ch_is_positive(self, loaded_ts3_reader):
         """Test that n_ch is positive integer."""
-        assert isinstance(loaded_ts3_reader.tag["n_ch"], int)
-        assert loaded_ts3_reader.tag["n_ch"] > 0
+        assert isinstance(loaded_ts3_reader.ts_metadata["n_ch"], int)
+        assert loaded_ts3_reader.ts_metadata["n_ch"] > 0
 
     def test_n_scan_is_positive(self, loaded_ts3_reader):
         """Test that n_scan is positive integer."""
-        assert isinstance(loaded_ts3_reader.tag["n_scan"], int)
-        assert loaded_ts3_reader.tag["n_scan"] > 0
+        assert isinstance(loaded_ts3_reader.ts_metadata["n_scan"], int)
+        assert loaded_ts3_reader.ts_metadata["n_scan"] > 0
 
     def test_n_block_is_positive(self, loaded_ts3_reader):
         """Test that n_block is positive integer."""
-        assert isinstance(loaded_ts3_reader.tag["n_block"], int)
-        assert loaded_ts3_reader.tag["n_block"] > 0
+        assert isinstance(loaded_ts3_reader.ts_metadata["n_block"], int)
+        assert loaded_ts3_reader.ts_metadata["n_block"] > 0
 
     def test_ts_length_calculation(self, loaded_ts3_reader):
         """Test that ts_length is correctly calculated."""
-        tag = loaded_ts3_reader.tag
-        if tag["sample_rate"] > 0:
-            expected_length = tag["n_scan"] / tag["sample_rate"]
-            assert abs(tag["ts_length"] - expected_length) < 1e-6
+        ts_metadata = loaded_ts3_reader.ts_metadata
+        if ts_metadata["sample_rate"] > 0:
+            expected_length = ts_metadata["n_scan"] / ts_metadata["sample_rate"]
+            assert abs(ts_metadata["ts_length"] - expected_length) < 1e-6
 
     def test_start_time_is_mtime(self, loaded_ts3_reader):
         """Test that start time is MTime object."""
         from mt_metadata.common import MTime
 
-        assert isinstance(loaded_ts3_reader.tag["start"], MTime)
+        assert isinstance(loaded_ts3_reader.ts_metadata["start"], MTime)
 
 
 # =============================================================================
@@ -380,21 +396,21 @@ class TestChannelConfigurations:
     def test_ts3_channel_count(self, loaded_ts3_reader):
         """Test TS3 file channel count."""
         # TS3 typically has 3 channels
-        n_ch = loaded_ts3_reader.tag["n_ch"]
+        n_ch = loaded_ts3_reader.ts_metadata["n_ch"]
         assert n_ch in [3, 4, 5, 6]  # Valid channel counts
         assert loaded_ts3_reader.ts.shape[0] == n_ch
 
     def test_ts4_channel_count(self, loaded_ts4_reader):
         """Test TS4 file channel count."""
         # TS4 typically has 4 channels
-        n_ch = loaded_ts4_reader.tag["n_ch"]
+        n_ch = loaded_ts4_reader.ts_metadata["n_ch"]
         assert n_ch in [3, 4, 5, 6]
         assert loaded_ts4_reader.ts.shape[0] == n_ch
 
     def test_ts5_channel_count(self, loaded_ts5_reader):
         """Test TS5 file channel count."""
         # TS5 typically has 5 channels
-        n_ch = loaded_ts5_reader.tag["n_ch"]
+        n_ch = loaded_ts5_reader.ts_metadata["n_ch"]
         assert n_ch in [3, 4, 5, 6]
         assert loaded_ts5_reader.ts.shape[0] == n_ch
 
@@ -431,13 +447,13 @@ class TestDataIntegrity:
 
     def test_consistent_sample_count(self, loaded_ts3_reader):
         """Test that total samples match n_scan * n_block."""
-        tag = loaded_ts3_reader.tag
+        ts_metadata = loaded_ts3_reader.ts_metadata
         ts = loaded_ts3_reader.ts
         # Allow some tolerance for incomplete final block
-        expected_samples = tag["n_scan"] * tag["n_block"]
+        expected_samples = ts_metadata["n_scan"] * ts_metadata["n_block"]
         actual_samples = ts.shape[1]
         assert actual_samples <= expected_samples
-        assert actual_samples >= tag["n_scan"]  # At least one block
+        assert actual_samples >= ts_metadata["n_scan"]  # At least one block
 
 
 # =============================================================================
@@ -451,26 +467,27 @@ class TestReadMethod:
     def test_read_with_explicit_path(self, sample_ts3_file):
         """Test read method with explicit file path."""
         reader = MTUTSN(file_path=None)
-        ts, tag = reader.read(sample_ts3_file)
-        assert isinstance(ts, np.ndarray)
-        assert isinstance(tag, dict)
-        assert ts.shape[0] == tag["n_ch"]
+        reader.read(sample_ts3_file)
+        assert isinstance(reader.ts, np.ndarray)
+        assert isinstance(reader.ts_metadata, dict)
+        assert reader.ts.shape[0] == reader.ts_metadata["n_ch"]
 
     def test_read_uses_existing_path(self, sample_ts3_file):
         """Test read method uses existing file_path if not provided."""
         reader = MTUTSN(sample_ts3_file)
         # Read again without specifying path
-        ts, tag = reader.read()
-        assert isinstance(ts, np.ndarray)
-        assert isinstance(tag, dict)
+        reader.read()
+        assert isinstance(reader.ts, np.ndarray)
+        assert isinstance(reader.ts_metadata, dict)
 
     def test_read_updates_file_path(self, sample_ts3_file, sample_ts4_file):
         """Test that read updates file_path when new path provided."""
         reader = MTUTSN(sample_ts3_file)
+        reader.read()
         original_path = reader.file_path
 
         # Read different file
-        ts, tag = reader.read(sample_ts4_file)
+        reader.read(sample_ts4_file)
         assert reader.file_path == sample_ts4_file
         assert reader.file_path != original_path
 
@@ -486,13 +503,14 @@ class TestMultipleFileReading:
     def test_read_ts3_then_ts4(self, sample_ts3_file, sample_ts4_file):
         """Test reading TS3 file then TS4 file."""
         reader = MTUTSN(sample_ts3_file)
+        reader.read()
         ts3_shape = reader.ts.shape
 
         reader.file_path = sample_ts4_file
-        ts4, tag4 = reader.read()
+        reader.read()
 
         # Files may have different shapes
-        assert ts4.shape[0] == tag4["n_ch"]
+        assert reader.ts.shape[0] == reader.ts_metadata["n_ch"]
 
     def test_read_multiple_files_independent(
         self, sample_ts3_file, sample_ts4_file, sample_ts5_file
@@ -502,10 +520,15 @@ class TestMultipleFileReading:
         reader4 = MTUTSN(sample_ts4_file)
         reader5 = MTUTSN(sample_ts5_file)
 
+        # Read all files
+        reader3.read()
+        reader4.read()
+        reader5.read()
+
         # Each should have valid data
-        assert reader3.ts.shape[0] == reader3.tag["n_ch"]
-        assert reader4.ts.shape[0] == reader4.tag["n_ch"]
-        assert reader5.ts.shape[0] == reader5.tag["n_ch"]
+        assert reader3.ts.shape[0] == reader3.ts_metadata["n_ch"]
+        assert reader4.ts.shape[0] == reader4.ts_metadata["n_ch"]
+        assert reader5.ts.shape[0] == reader5.ts_metadata["n_ch"]
 
 
 # =============================================================================
@@ -520,6 +543,10 @@ class TestParallelSafety:
         """Test that multiple instances don't interfere with each other."""
         reader1 = MTUTSN(sample_ts3_file)
         reader2 = MTUTSN(sample_ts4_file)
+
+        # Read both files
+        reader1.read()
+        reader2.read()
 
         # Verify they loaded different data
         assert reader1.file_path != reader2.file_path
@@ -557,8 +584,9 @@ class TestEdgeCases:
             f.write(b"\x00" * 32)
 
         # Should handle gracefully
+        reader = MTUTSN(minimal_file)
         with pytest.raises((EOFError, Exception)):
-            MTUTSN(minimal_file)
+            reader.read()
 
     def test_constants_defined(self, empty_reader):
         """Test that power constants are defined."""
@@ -582,14 +610,14 @@ class TestRealDataValidation:
 
     def test_ts3_box_number(self, loaded_ts3_reader):
         """Test TS3 file has expected box number."""
-        box_num = loaded_ts3_reader.tag["box_number"]
+        box_num = loaded_ts3_reader.ts_metadata["box_number"]
         assert isinstance(box_num, int)
         # Phoenix serial numbers are typically positive
         assert box_num > 0
 
     def test_ts3_sample_rate_reasonable(self, loaded_ts3_reader):
         """Test TS3 sample rate is reasonable."""
-        sr = loaded_ts3_reader.tag["sample_rate"]
+        sr = loaded_ts3_reader.ts_metadata["sample_rate"]
         # Sample rates should be positive and typically < 100000
         assert 0 <= sr <= 100000
 
@@ -694,6 +722,7 @@ class TestToRunTS:
     def test_to_runts_with_calibration_enabled(self, sample_ts3_file, sample_tbl_file):
         """Test to_runts with calibration enabled (default)."""
         reader = MTUTSN(sample_ts3_file)
+        reader.read()
         # Store original uncalibrated data
         ts_uncalibrated = reader.ts.copy()
 
@@ -797,7 +826,7 @@ class TestToRunTS:
         run_ts = reader.to_runts(sample_tbl_file)
 
         # All channels should have sample rate from TS file
-        ts_sample_rate = reader.tag["sample_rate"]
+        ts_sample_rate = reader.ts_metadata["sample_rate"]
         for ch_name in run_ts.channels:
             channel = getattr(run_ts, ch_name)
             assert channel.channel_metadata.sample_rate == ts_sample_rate
@@ -840,23 +869,26 @@ class TestIntegration:
         # Initialize
         reader = MTUTSN(sample_ts3_file)
 
+        # Read data
+        reader.read()
+
         # Access data
         ts = reader.ts
-        tag = reader.tag
+        ts_metadata = reader.ts_metadata
 
         # Verify complete workflow
         assert reader.file_path.exists()
-        assert ts.shape[0] == tag["n_ch"]
-        assert ts.shape[1] == tag["n_scan"] * tag["n_block"]
-        assert tag["sample_rate"] >= 0
-        assert tag["n_block"] > 0
+        assert ts.shape[0] == ts_metadata["n_ch"]
+        assert ts.shape[1] == ts_metadata["n_scan"] * ts_metadata["n_block"]
+        assert ts_metadata["sample_rate"] >= 0
+        assert ts_metadata["n_block"] > 0
 
     def test_workflow_with_explicit_read(self, sample_ts3_file):
         """Test workflow using explicit read() call."""
         reader = MTUTSN(file_path=None)
-        ts, tag = reader.read(sample_ts3_file)
+        reader.read(sample_ts3_file)
 
         # Verify data
-        assert ts.shape[0] == tag["n_ch"]
-        assert tag["start"] is not None
-        assert tag["box_number"] > 0
+        assert reader.ts.shape[0] == reader.ts_metadata["n_ch"]
+        assert reader.ts_metadata["start"] is not None
+        assert reader.ts_metadata["box_number"] > 0

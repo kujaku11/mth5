@@ -562,7 +562,7 @@ class MTUTable:
                 self.tbl_dict.get("LATG", "0.0,N")
             )
             station.location.longitude = self._read_longitude(
-                self.tbl_dict.get("LONG", "0.0,E")
+                self.tbl_dict.get("LNGG", "0.0,E")
             )
             station.location.declination.value = self.tbl_dict.get("DECL", 0.0)
 
@@ -624,6 +624,7 @@ class MTUTable:
             run.add_channel(self.hx_metadata)
             run.add_channel(self.hy_metadata)
             run.add_channel(self.hz_metadata)
+            run.update_time_period()
 
         return run
 
@@ -662,6 +663,13 @@ class MTUTable:
             ex_channel.ac.start = self.tbl_dict.get("EXAC", 0.0)
             ex_channel.dc.start = self.tbl_dict.get("EXDC", 0.0)
             ex_channel.channel_number = self.tbl_dict.get("CHEX", 4)
+            ex_channel.time_period.start = self.tbl_dict.get(
+                "STIM", "1980-01-01T00:00:00"
+            )
+            ex_channel.time_period.end = self.tbl_dict.get(
+                "ETIM", "1980-01-01T00:00:00"
+            )
+            ex_channel.units = "digital counts"
         return ex_channel
 
     @property
@@ -699,6 +707,13 @@ class MTUTable:
             ey_channel.ac.start = self.tbl_dict.get("EYAC", 0.0)
             ey_channel.dc.start = self.tbl_dict.get("EYDC", 0.0)
             ey_channel.channel_number = self.tbl_dict.get("CHEY", 5)
+            ey_channel.time_period.start = self.tbl_dict.get(
+                "STIM", "1980-01-01T00:00:00"
+            )
+            ey_channel.time_period.end = self.tbl_dict.get(
+                "ETIM", "1980-01-01T00:00:00"
+            )
+            ey_channel.units = "digital counts"
         return ey_channel
 
     @property
@@ -736,6 +751,13 @@ class MTUTable:
             hx_channel.channel_number = self.tbl_dict.get("CHHX", 1)
             hx_channel.measurement_azimuth = self.tbl_dict.get("HAZM", 0.0)
             hx_channel.sensor.id = self.tbl_dict.get("HXSN", "Unknown_serial")
+            hx_channel.time_period.start = self.tbl_dict.get(
+                "STIM", "1980-01-01T00:00:00"
+            )
+            hx_channel.time_period.end = self.tbl_dict.get(
+                "ETIM", "1980-01-01T00:00:00"
+            )
+            hx_channel.units = "digital counts"
         return hx_channel
 
     @property
@@ -773,6 +795,13 @@ class MTUTable:
             hy_channel.channel_number = self.tbl_dict.get("CHHY", 2)
             hy_channel.measurement_azimuth = self.tbl_dict.get("HAZM", 0.0) + 90.0
             hy_channel.sensor.id = self.tbl_dict.get("HYSN", "Unknown_serial")
+            hy_channel.time_period.start = self.tbl_dict.get(
+                "STIM", "1980-01-01T00:00:00"
+            )
+            hy_channel.time_period.end = self.tbl_dict.get(
+                "ETIM", "1980-01-01T00:00:00"
+            )
+            hy_channel.units = "digital counts"
         return hy_channel
 
     @property
@@ -809,6 +838,13 @@ class MTUTable:
             # Skipping assignment for now
             hz_channel.channel_number = self.tbl_dict.get("CHHZ", 3)
             hz_channel.sensor.id = self.tbl_dict.get("HZSN", "Unknown_serial")
+            hz_channel.time_period.start = self.tbl_dict.get(
+                "STIM", "1980-01-01T00:00:00"
+            )
+            hz_channel.time_period.end = self.tbl_dict.get(
+                "ETIM", "1980-01-01T00:00:00"
+            )
+            hz_channel.units = "digital counts"
         return hz_channel
 
     @property

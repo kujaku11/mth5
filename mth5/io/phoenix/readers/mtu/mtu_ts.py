@@ -105,6 +105,7 @@ class MTUTSN:
     Access metadata:
 
     >>> reader = MTUTSN('data/1690C16C.TS4')
+    >>> reader.read()
     >>> print(f"Channels: {reader.tag['n_ch']}")
     Channels: 4
     >>> print(f"Blocks: {reader.tag['n_block']}")
@@ -118,11 +119,8 @@ class MTUTSN:
         self._file_path = None
 
         self.file_path = file_path
-
-        if self.file_path is not None:
-            self.ts, self.tag = self.read()
-        else:
-            self.ts, self.tag = None, {}
+        self.ts = None
+        self.ts_metadata = None
 
     @property
     def file_path(self) -> Path | None:
@@ -566,7 +564,8 @@ class MTUTSN:
             "n_block": n_block,
         }
 
-        return ts, tag
+        self.ts = ts
+        self.ts_metadata = tag
 
     def to_runts(
         self, table_filepath: str | Path | None = None, calibrate=True
@@ -591,7 +590,12 @@ class MTUTSN:
         >>> print(mtu_table.metadata)
         {...}
         """
-        ts, ts_metadata = self.read()
+        # Read data if not already loaded
+        if self.ts is None or self.ts_metadata is None:
+            self.read()
+
+        ts = self.ts
+        ts_metadata = self.ts_metadata
 
         if table_filepath is None and self.file_path is not None:
             table_filepath = self.file_path.with_suffix(".TBL")
@@ -601,7 +605,9 @@ class MTUTSN:
         run_metadata = mtu_table.run_metadata.copy()
         run_metadata.sample_rate = ts_metadata["sample_rate"]
         run_ts = RunTS(
-            survey_metadata=mtu_table.survey_metadata, run_metadata=run_metadata
+            survey_metadata=mtu_table.survey_metadata,
+            station_metadata=survey_metadata.stations[0],
+            run_metadata=run_metadata,
         )
         for comp, channel_number in mtu_table.channel_keys.items():
             channel_metadata = getattr(mtu_table, f"{comp}_metadata")
@@ -618,8 +624,11 @@ class MTUTSN:
                         if comp == "ex"
                         else mtu_table.ey_calibration
                     )
+                    channel_metadata.units = "mV/km"
+
                 elif comp in ["hx", "hy", "hz"]:
                     scale_factor = mtu_table.magnetic_calibration
+                    channel_metadata.units = "nT"
 
                 logger.info(
                     f"Applying scale factor of {scale_factor} to channel {comp}"

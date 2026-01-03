@@ -811,7 +811,7 @@ class KernelDataset:
     def get_metadata_from_df(self, df: pd.DataFrame) -> Survey:
         """
         Extract metadata from the dataframe.  The data frame should only include one
-        station.  So use self.local_df or self.remote_df.
+        station.  So use self.local_df or self.remote_df. (Run Summary)
 
         Parameters
         ----------
