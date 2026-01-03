@@ -189,7 +189,7 @@ class MTUTable:
             "DECL": ("double", "Declination"),
             "TSTV": ("double", "Test voltage"),
             "VER": ("char", "Version"),
-            "HW": ("char", "Hardware"),
+            "HW": ("16s", "Hardware"),
             "EXAC": ("double", "Ex AC"),
             "EXDC": ("double", "Ex DC"),
             "EYAC": ("double", "Ey AC"),
@@ -254,6 +254,16 @@ class MTUTable:
             # Time format: bytes are [sec, min, hour, day, month, year-2000]
             # Return formatted string: YYYY-MM-DD HH:MM:SS
             return f"20{value_bytes[5]:02}-{value_bytes[4]:02}-{value_bytes[3]:02}-T{value_bytes[2]:02}:{value_bytes[1]:02}:{value_bytes[0]:02}"
+        elif data_type == "16s":
+            # Pad to 16 bytes if needed (value_bytes is 13 bytes from TBL file)
+            value_padded = value_bytes[:16].ljust(16, b"\x00")
+            value_unpacked = struct.unpack("16s", value_padded)[0]  # Read as bytes
+            # Decode and truncate at first null byte
+            return (
+                value_unpacked.split(b"\x00", 1)[0]
+                .decode("ascii", errors="ignore")
+                .strip()
+            )
         else:
             # Return raw bytes for unknown types
             return value_bytes

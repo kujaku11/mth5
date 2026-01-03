@@ -142,7 +142,7 @@ class TestMTUTableInitialization:
         assert len(empty_tbl_table.TBL_TAG_TYPES) > 0
 
         # Check a few key tags
-        expected_tags = ["SNUM", "SITE", "EXLN", "HXSN", "SRL3", "FSCV"]
+        expected_tags = ["SNUM", "SITE", "EXLN", "HXSN", "SRL3", "FSCV", "HW"]
         for tag in expected_tags:
             assert tag in empty_tbl_table.TBL_TAG_TYPES
             assert len(empty_tbl_table.TBL_TAG_TYPES[tag]) == 2  # (type, description)
@@ -314,6 +314,18 @@ class TestMTUTableValueDecoding:
         assert result == value_bytes
         assert isinstance(result, bytes)
 
+    def test_decode_firmware_version_with_null_bytes(self, empty_tbl_table):
+        """Test decoding firmware version (16s type) with null-byte truncation."""
+        # Simulate HW tag value with null padding and garbage (13 bytes from TBL)
+        value_bytes = b"MTU52\x00\x003100\xecQ\xd2\x00"
+        result = empty_tbl_table.decode_tbl_value(value_bytes, "16s")
+
+        # Should be decoded and truncated at first null byte
+        assert isinstance(result, str)
+        assert result == "MTU52"
+        assert "\x00" not in result
+        assert "\xec" not in result  # No garbage characters
+
 
 # =============================================================================
 # Dictionary Reading Tests
@@ -422,6 +434,22 @@ class TestMTUTableMetadataExtraction:
         run = loaded_tbl_table.run_metadata
         # Run should have been populated with channels
         assert hasattr(run, "channels")
+
+    def test_run_metadata_firmware_version(self, loaded_tbl_table):
+        """Test that firmware version is properly decoded without null bytes."""
+        run = loaded_tbl_table.run_metadata
+        firmware_version = run.data_logger.firmware.version
+
+        # Should be properly decoded string without null bytes
+        assert isinstance(firmware_version, str)
+        assert (
+            "\x00" not in firmware_version
+        ), "Firmware version should not contain null bytes"
+
+        # Known value from test data
+        assert (
+            firmware_version == "MTU52"
+        ), f"Expected 'MTU52' but got '{firmware_version}'"
 
 
 # =============================================================================
@@ -796,6 +824,21 @@ class TestMTUTableRealDataValidation:
             assert loaded_tbl_table.tbl_dict["EXLN"] == pytest.approx(100.0)
             assert loaded_tbl_table.tbl_dict["EYLN"] == pytest.approx(100.0)
 
+    def test_sample_file_firmware_version(self, loaded_tbl_table):
+        """Test that sample file has properly decoded firmware version."""
+        if "HW" in loaded_tbl_table.tbl_dict:
+            hw_version = loaded_tbl_table.tbl_dict["HW"]
+            assert isinstance(hw_version, str)
+            assert "\x00" not in hw_version, "HW version should not contain null bytes"
+            assert hw_version == "MTU52", f"Expected 'MTU52' but got '{hw_version}'"
+
+        # Also verify through run metadata
+        run = loaded_tbl_table.run_metadata
+        firmware_version = run.data_logger.firmware.version
+        assert (
+            firmware_version == "MTU52"
+        ), f"Expected 'MTU52' but got '{firmware_version}'"
+
 
 # =============================================================================
 # Edge Cases and Error Handling Tests
@@ -940,6 +983,14 @@ class TestMTUTableIntegration:
         # Extract run
         run = tbl.run_metadata
         assert run.id is not None
+
+        # Verify firmware version is properly decoded
+        firmware_version = run.data_logger.firmware.version
+        assert isinstance(firmware_version, str)
+        assert "\x00" not in firmware_version, "Firmware should not contain null bytes"
+        assert (
+            firmware_version == "MTU52"
+        ), f"Expected firmware 'MTU52' but got '{firmware_version}'"
 
         # Extract channels
         ex = tbl.ex_metadata
