@@ -605,6 +605,7 @@ class MTUTSN:
         survey_metadata = mtu_table.survey_metadata  # to trigger warning if no data
         run_metadata = mtu_table.run_metadata.copy()
         run_metadata.sample_rate = ts_metadata["sample_rate"]
+        run_metadata.id = f"sr{ts_metadata['sample_rate']}_001"
         run_ts = RunTS(
             survey_metadata=mtu_table.survey_metadata,
             station_metadata=survey_metadata.stations[0],
