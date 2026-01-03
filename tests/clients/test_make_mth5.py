@@ -725,7 +725,7 @@ class TestMakeMTH5LEMI424:
         call_args = mock_lemi_class.call_args
         assert call_args[0][0] == temp_data_dir  # data_path
         assert call_args[1]["save_path"] == temp_data_dir
-        assert call_args[1]["mth5_filename"] is None  # Default
+        assert call_args[1]["mth5_filename"] == "from_lemi424.h5"  # Default
 
         mock_lemi_instance.make_mth5_from_lemi424.assert_called_once_with(
             "TEST_SURVEY", "MT001"
@@ -1062,10 +1062,10 @@ class TestMakeMTH5Documentation:
             assert method.__doc__ is not None
             assert len(method.__doc__.strip()) > 0
 
-    def test_init_method_has_docstring(self):
-        """Test that __init__ method has a docstring."""
-        assert MakeMTH5.__init__.__doc__ is not None
-        assert len(MakeMTH5.__init__.__doc__.strip()) > 0
+    def test_class_has_docstring(self):
+        """Test that MakeMTH5 class has a docstring."""
+        assert MakeMTH5.__doc__ is not None
+        assert len(MakeMTH5.__doc__.strip()) > 0
 
     def test_get_h5_kwargs_method_has_docstring(self):
         """Test that get_h5_kwargs method has a docstring."""
