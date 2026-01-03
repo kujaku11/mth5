@@ -243,6 +243,7 @@ class RunGroup(BaseGroup):
             # Only rebuild if there's actually a difference in the channel sets
             if current_group_names != existing_channel_names:
                 # Clear and rebuild the channels list
+                self._metadata._empty_channels_recorded()
                 self._metadata.channels = []
 
                 # List of known non-channel subgroups to skip
