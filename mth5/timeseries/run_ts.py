@@ -927,7 +927,7 @@ class RunTS:
             msg = f"Input must be obspy.core.Stream not {type(obspy_stream)}"
             self.logger.error(msg)
             raise TypeError(msg)
-        
+
         array_list = []
         station_list = []
         for obs_trace in obspy_stream:
@@ -935,8 +935,10 @@ class RunTS:
             channel_ts.from_obspy_trace(obs_trace)
 
             if channel_ts.channel_metadata.component in OBSPY_RENAMER.keys():
-                channel_ts.channel_metadata.component = OBSPY_RENAMER[channel_ts.channel_metadata.component]
-            
+                channel_ts.channel_metadata.component = OBSPY_RENAMER[
+                    channel_ts.channel_metadata.component
+                ]
+
             # TODO: describe clearly what is happening here with run metadata
             if run_metadata:
                 try:
@@ -948,7 +950,7 @@ class RunTS:
                     channel_ts.channel_metadata.update(ch)
                 except IndexError:
                     self.logger.warning(f"could not find {channel_ts.component}")
-            
+
             # workaround to reset channel's station.metadata -- deserves a better solution.
             old_list = channel_ts.station_metadata.channels_recorded
             new_list = []
