@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 """
-Phoenix file collection
+Phoenix file collection module for organizing and processing Phoenix MTU data files.
+
+This module provides the PhoenixCollection class for discovering, organizing,
+and managing Phoenix magnetotelluric receiver files within a directory structure.
 
 Created on Thu Aug  4 16:48:47 2022
 
 @author: jpeacock
 """
+from __future__ import annotations
 
 from collections import OrderedDict
-
-# =============================================================================
-# Imports
-# =============================================================================
 from pathlib import Path
 
 import numpy as np
@@ -26,11 +26,62 @@ from mth5.io.phoenix import open_phoenix, PhoenixReceiverMetadata
 
 class PhoenixCollection(Collection):
     """
-    A class to collect the various files in a Phoenix file system and try
-    to organize them into runs.
+    Collection manager for Phoenix MTU data files.
+
+    Organizes Phoenix magnetotelluric receiver files into runs based on
+    timing and sample rates. Handles multiple sample rates (30, 150, 2400,
+    24000, 96000 Hz) and manages receiver metadata.
+
+    Parameters
+    ----------
+    file_path : str | Path | None, optional
+        Path to the directory containing Phoenix data files. Can be the
+        station folder or a parent folder containing multiple stations.
+    **kwargs
+        Additional keyword arguments passed to parent Collection class.
+
+    Attributes
+    ----------
+    metadata_dict : dict[str, PhoenixReceiverMetadata]
+        Dictionary mapping station IDs to their receiver metadata.
+
+    Examples
+    --------
+    Create a collection from a station directory:
+
+    >>> from mth5.io.phoenix import PhoenixCollection
+    >>> collection = PhoenixCollection(r"/path/to/station")
+    >>> runs = collection.get_runs(sample_rates=[150, 24000])
+    >>> print(runs.keys())
+    dict_keys(['MT001'])
+
+    Process multiple sample rates:
+
+    >>> df = collection.to_dataframe(sample_rates=[150, 2400, 24000])
+    >>> print(df.columns)
+    Index(['survey', 'station', 'run', 'start', 'end', ...])
+
+    Notes
+    -----
+    The class automatically discovers station folders by locating
+    'recmeta.json' files and organizes time series files by sample rate.
+
+    File extensions are mapped as:
+
+    - 30 Hz: td_30
+    - 150 Hz: td_150
+    - 2400 Hz: td_2400
+    - 24000 Hz: td_24k
+    - 96000 Hz: td_96k
+
+    See Also
+    --------
+    mth5.io.Collection : Base collection class
+    mth5.io.phoenix.PhoenixReceiverMetadata : Receiver metadata handler
+
     """
 
-    def __init__(self, file_path=None, **kwargs):
+    def __init__(self, file_path: str | Path | None = None, **kwargs) -> None:
         self._file_extension_map = {
             30: "td_30",
             150: "td_150",
@@ -56,13 +107,32 @@ class PhoenixCollection(Collection):
 
         self._receiver_metadata_name = "recmeta.json"
 
-    def _read_receiver_metadata_json(self, rec_fn):
+    def _read_receiver_metadata_json(
+        self, rec_fn: str | Path
+    ) -> PhoenixReceiverMetadata | None:
         """
-        read in metadata information from receiver metadata file into
-        an `ReceiverMetadataJSON` object.
+        Read receiver metadata from JSON file.
 
-        :return: Receiver metadata
-        :rtype: :class:`ReceiverMetadataJSON`
+        Loads and parses the recmeta.json file containing station and
+        channel configuration information.
+
+        Parameters
+        ----------
+        rec_fn : str | Path
+            Path to the recmeta.json metadata file.
+
+        Returns
+        -------
+        PhoenixReceiverMetadata | None
+            Receiver metadata object if file exists, None otherwise.
+
+        Examples
+        --------
+        >>> metadata = collection._read_receiver_metadata_json(
+        ...     Path("/data/station/recmeta.json")
+        ... )
+        >>> print(metadata.station_metadata.id)
+        'MT001'
 
         """
 
@@ -74,14 +144,29 @@ class PhoenixCollection(Collection):
             )
             return None
 
-    def _locate_station_folders(self):
+    def _locate_station_folders(self) -> list[Path]:
         """
-        Locate the station folder, the one that has the recmeta.json in it
+        Locate all station folders containing recmeta.json files.
 
-        :param folder: DESCRIPTION
-        :type folder: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Recursively searches the collection path for directories containing
+        the receiver metadata file (recmeta.json), which identifies a valid
+        Phoenix station folder.
+
+        Returns
+        -------
+        list[Path]
+            List of Path objects pointing to station folders.
+
+        Examples
+        --------
+        >>> folders = collection._locate_station_folders()
+        >>> print([f.name for f in folders])
+        ['MT001', 'MT002', 'MT003']
+
+        Notes
+        -----
+        Each station folder must contain a recmeta.json file to be recognized.
+        The search is recursive, allowing for nested directory structures.
 
         """
         station_folders = []
@@ -94,20 +179,85 @@ class PhoenixCollection(Collection):
 
     def to_dataframe(
         self,
-        sample_rates=[150, 24000],
-        run_name_zeros=4,
-        calibration_path=None,
-    ):
+        sample_rates: list[int] | int = [150, 24000],
+        run_name_zeros: int = 4,
+        calibration_path: str | Path | None = None,
+    ) -> pd.DataFrame:
         """
-        Get a dataframe of all the files in a given directory with given
-        columns.  Loop over station folders.
+        Create a DataFrame cataloging all Phoenix files in the collection.
 
-        :param sample_rates: list of sample rates to read, defaults to [150, 24000]
-        :type sample_rates: list of integers, optional
-        :param run_name_zeros: Number of zeros in the run name, defaults to 4
-        :type run_name_zeros: integer, optional
-        :return: Dataframe with each row representing a single file
-        :rtype: :class:`pandas.DataFrame`
+        Scans all station folders for time series files at specified sample
+        rates and creates a comprehensive inventory with metadata for each file.
+
+        Parameters
+        ----------
+        sample_rates : list[int] | int, optional
+            Sample rate(s) to include in Hz. Valid values are 30, 150, 2400,
+            24000, 96000. Can be a single integer or list (default is [150, 24000]).
+        run_name_zeros : int, optional
+            Number of zeros for zero-padding run names (default is 4).
+            For example, 4 produces 'sr150_0001'.
+        calibration_path : str | Path | None, optional
+            Path to calibration files. Currently unused but reserved for
+            future functionality.
+
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with one row per file containing columns:
+
+            - survey: Survey ID from metadata
+            - station: Station ID from metadata
+            - run: Run ID (assigned by assign_run_names)
+            - start: File start time (ISO format)
+            - end: File end time (ISO format)
+            - channel_id: Numeric channel identifier
+            - component: Channel component name (e.g., 'Ex', 'Hy')
+            - fn: Full file path
+            - sample_rate: Sample rate in Hz
+            - file_size: File size in bytes
+            - n_samples: Number of samples in file
+            - sequence_number: File sequence number for continuous data
+            - instrument_id: Recording/receiver ID
+            - calibration_fn: Path to calibration file (currently None)
+
+        Examples
+        --------
+        Get DataFrame for standard sample rates:
+
+        >>> df = collection.to_dataframe(sample_rates=[150, 24000])
+        >>> print(df.shape)
+        (245, 14)
+        >>> print(df.station.unique())
+        ['MT001']
+
+        Process single sample rate:
+
+        >>> df_150 = collection.to_dataframe(sample_rates=150)
+        >>> print(df_150.sample_rate.unique())
+        [150.]
+
+        Check file coverage:
+
+        >>> for comp in df.component.unique():
+        ...     comp_df = df[df.component == comp]
+        ...     print(f"{comp}: {len(comp_df)} files")
+        Ex: 35 files
+        Ey: 35 files
+        Hx: 35 files
+
+        Notes
+        -----
+        - Calibration files (identified by 'calibration' in filename) are
+          automatically skipped
+        - Files that cannot be opened are logged and skipped
+        - The DataFrame is sorted by station, sample_rate, and start time
+        - Run names must be assigned separately using assign_run_names()
+
+        See Also
+        --------
+        assign_run_names : Assign run identifiers based on timing
+        get_runs : Get organized runs directly
 
         """
 
@@ -172,22 +322,70 @@ class PhoenixCollection(Collection):
 
         return df
 
-    def assign_run_names(self, df, zeros=4):
+    def assign_run_names(self, df: pd.DataFrame, zeros: int = 4) -> pd.DataFrame:
         """
-        Assign run names by looping through start times.
+        Assign run names based on temporal continuity.
 
-        For continous data a single run is assigned as long as the start and
-        end times of each file align.  If there is a break a new run name is
-        assigned.
+        Analyzes file timing to group files into runs. For continuous data
+        (< 1000 Hz), maintains a single run as long as files are contiguous.
+        For segmented data (≥ 1000 Hz), assigns a unique run to each segment.
 
-        For segmented data a new run name is assigned to each segment
+        Parameters
+        ----------
+        df : pd.DataFrame
+            DataFrame returned by `to_dataframe` method with file inventory.
+        zeros : int, optional
+            Number of zeros for zero-padding run names (default is 4).
 
-        :param df: Dataframe returned by `to_dataframe` method
-        :type df: :class:`pandas.DataFrame`
-        :param zeros: Number of zeros in the run name, defaults to 4
-        :type zeros: integer, optional
-        :return: Dataframe with run names
-        :rtype: :class:`pandas.DataFrame`
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with 'run' column populated. Run names follow the
+            format 'sr{rate}_{number:0{zeros}}', e.g., 'sr150_0001'.
+
+        Examples
+        --------
+        Assign run names to a DataFrame:
+
+        >>> df = collection.to_dataframe(sample_rates=[150, 24000])
+        >>> df_with_runs = collection.assign_run_names(df, zeros=4)
+        >>> print(df_with_runs.run.unique())
+        ['sr150_0001', 'sr24k_0001', 'sr24k_0002', ...]
+
+        Check for data gaps in continuous data:
+
+        >>> df_150 = df_with_runs[df_with_runs.sample_rate == 150]
+        >>> print(df_150.run.unique())
+        ['sr150_0001', 'sr150_0002']  # Gap detected between runs
+
+        Count segments in high-rate data:
+
+        >>> df_24k = df_with_runs[df_with_runs.sample_rate == 24000]
+        >>> n_segments = len(df_24k.run.unique())
+        >>> print(f"Found {n_segments} segments at 24 kHz")
+        Found 43 segments at 24 kHz
+
+        Notes
+        -----
+        **Continuous Data (< 1000 Hz):**
+
+        - Maintains single run ID while files are temporally contiguous
+        - Detects gaps by comparing end time of file N with start time of
+          file N+1
+        - Increments run counter when gap > 0 seconds detected
+
+        **Segmented Data (≥ 1000 Hz):**
+
+        - Each unique start time receives a new run ID
+        - Typically results in one run per segment/file
+
+        The run naming scheme uses the sample rate in the identifier:
+
+        - 30 Hz → 'sr30_NNNN'
+        - 150 Hz → 'sr150_NNNN'
+        - 2400 Hz → 'sr2400_NNNN'
+        - 24000 Hz → 'sr24k_NNNN'
+        - 96000 Hz → 'sr96k_NNNN'
 
         """
 
@@ -246,31 +444,108 @@ class PhoenixCollection(Collection):
 
     def get_runs(
         self,
-        sample_rates,
-        run_name_zeros=4,
-        calibration_path=None,
-    ):
+        sample_rates: list[int] | int,
+        run_name_zeros: int = 4,
+        calibration_path: str | Path | None = None,
+    ) -> OrderedDict[str, OrderedDict[str, pd.DataFrame]]:
         """
-        Get a list of runs contained within the given folder.  First the
-        dataframe will be developed from which the runs are extracted.
+        Organize Phoenix files into runs ready for reading.
 
-        For continous data all you need is the first file in the sequence. The
-        reader will read in the entire sequence.
+        Creates a nested dictionary structure organizing files by station and
+        run. For each run, returns only the first file(s) needed to initialize
+        reading, as continuous readers will automatically load sequences.
 
-        For segmented data it will only read in the given segment, which is
-        slightly different from the original reader.
+        Parameters
+        ----------
+        sample_rates : list[int] | int
+            Sample rate(s) to include in Hz. Valid values are 30, 150, 2400,
+            24000, 96000. Can be a single integer or list.
+        run_name_zeros : int, optional
+            Number of zeros for zero-padding run names (default is 4).
+        calibration_path : str | Path | None, optional
+            Path to calibration files. Currently unused but reserved for
+            future functionality.
 
-        :param sample_rates: list of sample rates to read, defaults to [150, 24000]
-        :param run_name_zeros: Number of zeros in the run name, defaults to 4
-        :type run_name_zeros: integer, optional
-        :return: List of run dataframes with only the first block of files
-        :rtype: OrderedDict
+        Returns
+        -------
+        OrderedDict[str, OrderedDict[str, pd.DataFrame]]
+            Nested OrderedDict with structure:
 
-        :Example:
+            - Keys: station IDs
+            - Values: OrderedDict of runs
 
-            >>> from mth5.io.phoenix import PhoenixCollection
-            >>> phx_collection = PhoenixCollection(r"/path/to/station")
-            >>> run_dict = phx_collection.get_runs(sample_rates=[150, 24000])
+              - Keys: run IDs (e.g., 'sr150_0001')
+              - Values: DataFrame with first file(s) for each channel
+
+        Examples
+        --------
+        Get runs for standard sample rates:
+
+        >>> from mth5.io.phoenix import PhoenixCollection
+        >>> collection = PhoenixCollection(r"/path/to/station")
+        >>> runs = collection.get_runs(sample_rates=[150, 24000])
+        >>> print(runs.keys())
+        odict_keys(['MT001'])
+
+        Access specific station's runs:
+
+        >>> station_runs = runs['MT001']
+        >>> print(list(station_runs.keys()))
+        ['sr150_0001', 'sr24k_0001', 'sr24k_0002', ...]
+
+        Get first file for a specific run:
+
+        >>> run_df = runs['MT001']['sr150_0001']
+        >>> print(run_df[['component', 'fn', 'start']])
+          component                           fn                 start
+        0        Ex  /path/to/8441_2020...td_150  2020-06-02T19:00:00
+        1        Ey  /path/to/8441_2020...td_150  2020-06-02T19:00:00
+
+        Iterate over all runs:
+
+        >>> for station_id, station_runs in runs.items():
+        ...     for run_id, run_df in station_runs.items():
+        ...         print(f"{station_id}/{run_id}: {len(run_df)} channels")
+        MT001/sr150_0001: 5 channels
+        MT001/sr24k_0001: 5 channels
+
+        Get single sample rate:
+
+        >>> runs_150 = collection.get_runs(sample_rates=150)
+        >>> run_ids = list(runs_150['MT001'].keys())
+        >>> print([r for r in run_ids if 'sr150' in r])
+        ['sr150_0001']
+
+        Notes
+        -----
+        **For Continuous Data (< 1000 Hz):**
+
+        Returns only the first file in each sequence per channel. The Phoenix
+        reader will automatically load the complete sequence when reading.
+
+        **For Segmented Data (≥ 1000 Hz):**
+
+        Returns the first file for each segment. Each segment must be read
+        separately.
+
+        **DataFrame Content:**
+
+        Each DataFrame contains one row per channel component with the earliest
+        file for that component in the run. This ensures all channels start from
+        the same time.
+
+        The method internally:
+
+        1. Calls to_dataframe() to inventory all files
+        2. Calls assign_run_names() to group files into runs
+        3. Selects first file(s) for each run and component
+        4. Returns organized structure for easy iteration
+
+        See Also
+        --------
+        to_dataframe : Create complete file inventory
+        assign_run_names : Group files into runs
+        mth5.io.phoenix.read_phoenix : Read Phoenix files
 
         """
 
