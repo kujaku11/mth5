@@ -112,7 +112,7 @@ class MTUTSN:
     Blocks: 48
     """
 
-    def __init__(self, file_path: str | Path | None = None) -> None:
+    def __init__(self, file_path: str | Path | None = None, **kwargs) -> None:
         self._p16 = 2**16
         self._p8 = 2**8
         self._accepted_extensions = ["TS2", "TS3", "TS4", "TS5", "TSL", "TSH"]
@@ -121,6 +121,9 @@ class MTUTSN:
         self.file_path = file_path
         self.ts = None
         self.ts_metadata = None
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     @property
     def file_path(self) -> Path | None:
@@ -430,9 +433,7 @@ class MTUTSN:
 
         return True
 
-    def read(
-        self, file_path: str | Path | None = None
-    ) -> tuple[np.ndarray, dict[str, int | str | float | MTime]]:
+    def read(self, file_path: str | Path | None = None) -> None:
         """
         Read and parse a Phoenix MTU time series binary file.
 

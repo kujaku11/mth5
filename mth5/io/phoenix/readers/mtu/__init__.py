@@ -16,6 +16,6 @@ Peacock, J.R. (2025-12-31)
 """
 
 from .mtu_table import MTUTable
+from .mtu_ts import MTUTSN
 
-__all__ = ["MTUTable"]
-# __version__ = "1.0.0"
+__all__ = ["MTUTable", "MTUTSN"]

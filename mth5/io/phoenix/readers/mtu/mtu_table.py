@@ -118,7 +118,7 @@ class MTUTable:
     =======================================================================
     """
 
-    def __init__(self, file_path: str | Path | None = None) -> None:
+    def __init__(self, file_path: str | Path | None = None, **kwargs) -> None:
         """
         Initialize MTUTable reader.
 
@@ -209,6 +209,9 @@ class MTUTable:
             "CHHY": ("int", "HY channel type"),
             "CHHZ": ("int", "HZ channel type"),
         }
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
         if self.file_path:
             self.read_tbl()
