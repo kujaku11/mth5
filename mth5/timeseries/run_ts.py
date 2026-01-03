@@ -944,6 +944,7 @@ class RunTS:
                     channel_ts.channel_metadata.update(ch)
                 except IndexError:
                     self.logger.warning(f"could not find {channel_ts.component}")
+
             # else:
             #     run_metadata = metadata.Run(id="001")
             station_list.append(channel_ts.station_metadata.fdsn.id)
@@ -951,6 +952,9 @@ class RunTS:
             array_list.append(channel_ts)
         ### need to merge metadata into something useful, station name is the only
         ### name that is preserved
+
+        ### TODO need to updata run metadata and station metadata to reflect the
+        ### renaming of the channels.
         try:
             station = list(set([ss for ss in station_list if ss is not None]))[0]
         except IndexError:
