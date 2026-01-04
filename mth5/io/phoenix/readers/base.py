@@ -525,7 +525,15 @@ class TSReaderBase(Header):
             dp_filter.units_in = "milliVolt"
             dp_filter.units_out = "milliVolt per kilometer"
 
-            for f_name in ch_metadata.filter_names:
+            # Support both newer mt_metadata API (filter_names) and older (filter.name)
+            if hasattr(ch_metadata, "filter_names"):
+                filter_names = ch_metadata.filter_names or []
+            elif hasattr(ch_metadata, "filter") and getattr(ch_metadata.filter, "name", None):
+                filter_names = [ch_metadata.filter.name]
+            else:
+                filter_names = []
+
+            for f_name in filter_names:
                 if "dipole" in f_name:
                     dp_filter.name = f_name
 
