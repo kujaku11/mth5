@@ -104,7 +104,7 @@ class PhoenixCalibration:
             if self._cal_fn.exists():
                 self.read()
             else:
-                raise IOError(f"Could not find file {cal_fn}.")
+                raise IOError(f"Could not find file {cal_fn}")
 
     @property
     def calibration_date(self) -> MTime | None:
