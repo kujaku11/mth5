@@ -30,6 +30,7 @@ from mt_metadata.common.list_dict import ListDict
 from mt_metadata.common.mttime import MTime
 from mt_metadata.timeseries.filters import ChannelResponse
 from obspy.core import Stream
+from typing import Union
 
 from .channel_ts import ChannelTS
 from .ts_helpers import get_decimation_sample_rates, make_dt_coordinates
@@ -214,35 +215,46 @@ class RunTS:
                 raise TypeError(msg)
         return run_metadata.copy()
 
-    def _validate_station_metadata(self, station_metadata):
+    def _validate_station_metadata(
+            self, 
+            station_metadata: Union[timeseries.Station, dict]
+            ):
         """
-        validate station metadata
-        TODO: reduce indentation level by returning early
-        """
+        Validates station metadata.  Verify type or load from dict.
 
-        if not isinstance(station_metadata, timeseries.Station):
-            if isinstance(station_metadata, dict):
-                if "station" not in [cc.lower() for cc in station_metadata.keys()]:
-                    station_metadata = {"Station": station_metadata}
-                st_metadata = timeseries.Station()
-                st_metadata.from_dict(station_metadata)
-                self.logger.debug("Loading from metadata dict")
-                return st_metadata
-            else:
-                msg = (
-                    f"input metadata must be type {type(self.station_metadata)} "
-                    "or dict, not {type(station_metadata)}"
-                )
-                self.logger.error(msg)
-                raise TypeError(msg)
-        return station_metadata.copy()
+        Development Notes: When a dict is passed, checking all the keys for 
+        "station" seems inefficient -- are there faster ways?  For example, 
+        can we check instead that there is only one key "station" in the dict instead?
+        
+        :param station_metadata: DESCRIPTION
+        :type station_metadata: Union[:class:`mt_metadata.timeseries.Station`, dict]
+        :return: DESCRIPTION"""
+        if isinstance(station_metadata, timeseries.Station):
+            return station_metadata.copy()
+        
+        if not isinstance(station_metadata, dict):
+            msg = (
+                f"input metadata must be type {type(self.station_metadata)} "
+                "or dict, not {type(station_metadata)}"
+            )
+            self.logger.error(msg)
+            raise TypeError(msg)
 
+        # station_metadata is dict here
+        self.logger.debug("Loading from metadata dict")
+        if "station" not in [cc.lower() for cc in station_metadata.keys()]:
+            station_metadata = {"Station": station_metadata}
+        st_metadata = timeseries.Station()
+        st_metadata.from_dict(station_metadata)
+
+        return st_metadata
+        
     def _validate_survey_metadata(self, survey_metadata):
         """
         validate station metadata
         TODO: reduce indentation level by returning early
         """
-
+        
         if not isinstance(survey_metadata, timeseries.Survey):
             if isinstance(survey_metadata, dict):
                 if "survey" not in [cc.lower() for cc in survey_metadata.keys()]:
