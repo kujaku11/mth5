@@ -938,7 +938,8 @@ class RunTS:
          - There is a baked in assumption here that the channel nomenclature
            in obspy is e1,e2,h1,h2,h3 and we want to convert to mth5 conventions
            ex,ey,hx,hy,hz.  This should be made more flexible in the future.
-         - There is also some unclear handling of leap seconds
+         - There is also some unclear handling of run_metadata here that
+           needs to be clarified.
 
 
         """
@@ -966,12 +967,14 @@ class RunTS:
                 channel_ts.channel_metadata.component = OBSPY_RENAMER[channel_ts.channel_metadata.component]
             
             # TODO: describe clearly what is happening here with run metadata
+            # This seems to be setting ch to the zeroth element of a list comprehension
+            # that filters run_metadata.channels for the channel with matching component
             if run_metadata:
                 try:
                     ch = [
-                        ch
-                        for ch in run_metadata.channels
-                        if ch.component == channel_ts.component
+                        x
+                        for x in run_metadata.channels
+                        if x.component == channel_ts.component
                     ][0]
                     channel_ts.channel_metadata.update(ch)
                 except IndexError:
