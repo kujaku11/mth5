@@ -966,9 +966,7 @@ class RunTS:
             if channel_ts.channel_metadata.component in OBSPY_RENAMER.keys():
                 channel_ts.channel_metadata.component = OBSPY_RENAMER[channel_ts.channel_metadata.component]
             
-            # TODO: describe clearly what is happening here with run metadata
-            # This seems to be setting ch to the zeroth element of a list comprehension
-            # that filters run_metadata.channels for the channel with matching component
+            # update channel_ts with run_metadata if provided
             if run_metadata:
                 if run_metadata.has_channel(channel_ts.component):
                     ch = run_metadata.get_channel(channel_ts.component)
