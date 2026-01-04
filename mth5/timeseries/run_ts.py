@@ -30,7 +30,7 @@ from mt_metadata.common.list_dict import ListDict
 from mt_metadata.common.mttime import MTime
 from mt_metadata.timeseries.filters import ChannelResponse
 from obspy.core import Stream
-from typing import Union
+from typing import Optional, Union
 
 from .channel_ts import ChannelTS
 from .ts_helpers import get_decimation_sample_rates, make_dt_coordinates
@@ -688,7 +688,7 @@ class RunTS:
                 )
                 self.logger.warning(msg)
             self.run_metadata.time_period.end = self.end.isoformat()
-            
+
         # check sample rate
         data_sr = self._compute_sample_rate()
         if self.sample_rate != data_sr:
@@ -926,7 +926,7 @@ class RunTS:
         self.logger.warning(msg)
         return [x for x in array_list if x.n_samples != 1]
 
-    def from_obspy_stream(self, obspy_stream: Stream, run_metadata=None):
+    def from_obspy_stream(self, obspy_stream: Stream, run_metadata: Optional[timeseries.Run]=None):
         """
         Get a run from an :class:`obspy.core.stream` which is a list of
         :class:`obspy.core.Trace` objects.
@@ -934,9 +934,15 @@ class RunTS:
         :param obspy_stream: Obspy Stream object
         :type obspy_stream: :class:`obspy.core.Stream`
 
+        Development Notes:
+         - There is a baked in assumption here that the channel nomenclature
+           in obspy is e1,e2,h1,h2,h3 and we want to convert to mth5 conventions
+           ex,ey,hx,hy,hz.  This should be made more flexible in the future.
+         - There is also some unclear handling of leap seconds
+
 
         """
-        # renaming from obspy to mth5 conventions
+        # mapping from obspy to mth5 conventions
         OBSPY_RENAMER = {
             "e1": "ex",
             "e2": "ey",
