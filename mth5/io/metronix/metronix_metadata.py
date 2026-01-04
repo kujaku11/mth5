@@ -447,8 +447,15 @@ class MetronixChannelJSON(MetronixFileNameMetadata):
 
         metadata_object.units = self.metadata.units
 
-        for count, f in enumerate(self.metadata.filter.split(","), start=1):
-            metadata_object.add_filter(AppliedFilter(name=f, applied=True, stage=count))
+        count = 0
+        for f in self.metadata.filter.split(","):
+            f = f.strip()
+            if not f:
+                continue
+            count += 1
+            metadata_object.add_filter(
+                AppliedFilter(name=f, applied=True, stage=count)
+            )
         if sensor_response_filter is not None:
             metadata_object.add_filter(
                 AppliedFilter(
