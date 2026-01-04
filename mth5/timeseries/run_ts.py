@@ -249,27 +249,31 @@ class RunTS:
 
         return st_metadata
         
-    def _validate_survey_metadata(self, survey_metadata):
+    def _validate_survey_metadata(
+            self, 
+            survey_metadata: Union[timeseries.Survey, dict]
+            ):
         """
-        validate station metadata
-        TODO: reduce indentation level by returning early
+        Validates survey metadata.  Verify type or load from dict.
+
         """
+        if isinstance(survey_metadata, timeseries.Survey):
+            return survey_metadata.copy()
         
-        if not isinstance(survey_metadata, timeseries.Survey):
-            if isinstance(survey_metadata, dict):
-                if "survey" not in [cc.lower() for cc in survey_metadata.keys()]:
-                    survey_metadata = {"Survey": survey_metadata}
-                sv_metadata = timeseries.Survey()
-                sv_metadata.from_dict(survey_metadata)
-                self.logger.debug("Loading from metadata dict")
-                return sv_metadata
-            else:
-                msg = (
-                    f"input metadata must be type {type(self.survey_metadata)} "
-                    "or dict, not {type(survey_metadata)}"
-                )
-                self.logger.error(msg)
-                raise TypeError(msg)
+        if isinstance(survey_metadata, dict):
+            if "survey" not in [cc.lower() for cc in survey_metadata.keys()]:
+                survey_metadata = {"Survey": survey_metadata}
+            sv_metadata = timeseries.Survey()
+            sv_metadata.from_dict(survey_metadata)
+            self.logger.debug("Loading from metadata dict")
+            return sv_metadata
+        else:
+            msg = (
+                f"input metadata must be type {type(self.survey_metadata)} "
+                "or dict, not {type(survey_metadata)}"
+            )
+            self.logger.error(msg)
+            raise TypeError(msg)
         return survey_metadata.copy()
 
     def _validate_array_list(self, array_list):
@@ -562,15 +566,16 @@ class RunTS:
         :type survey_metadata: :class:`mt_metadata.timeseries.Survey` or dict
 
         """
+        if survey_metadata is None:
+            return
 
-        if survey_metadata is not None:
-            survey_metadata = self._validate_survey_metadata(survey_metadata)
-            self._survey_metadata.update(survey_metadata)
-            for station in survey_metadata.stations:
-                if station.id not in self._survey_metadata.stations.keys():
-                    self._survey_metadata.add_station(
-                        self._validate_station_metadata(station), update=False
-                    )
+        survey_metadata = self._validate_survey_metadata(survey_metadata)
+        self._survey_metadata.update(survey_metadata)
+        for station in survey_metadata.stations:
+            if station.id not in self._survey_metadata.stations.keys():
+                self._survey_metadata.add_station(
+                    self._validate_station_metadata(station), update=False
+                )
 
     @property
     def station_metadata(self):
