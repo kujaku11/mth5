@@ -561,7 +561,7 @@ class RunTS:
     def survey_metadata(self, survey_metadata):
         """
         TODO: add typehints
-        TODO: reduce indentation level by returning early
+        
         :param survey_metadata: survey metadata object or dictionary
         :type survey_metadata: :class:`mt_metadata.timeseries.Survey` or dict
 
@@ -664,54 +664,56 @@ class RunTS:
         Check the start and end times, channels recorded
 
         """
+        if not self.has_data():
+            return
+        
+        # check start time
+        if self.start != self.run_metadata.time_period.start:
+            if self.run_metadata.time_period.start != "1980-01-01T00:00:00+00:00":
+                msg = (
+                    f"start time of dataset {self.start} does not "
+                    f"match metadata start {self.run_metadata.time_period.start} "
+                    f"updating metatdata value to {self.start}"
+                )
+                self.logger.warning(msg)
+            self.run_metadata.time_period.start = self.start.isoformat()
 
-        # check sampling rate
-        if self.has_data():
-            # check start time
-            if self.start != self.run_metadata.time_period.start:
-                if self.run_metadata.time_period.start != "1980-01-01T00:00:00+00:00":
-                    msg = (
-                        f"start time of dataset {self.start} does not "
-                        f"match metadata start {self.run_metadata.time_period.start} "
-                        f"updating metatdata value to {self.start}"
-                    )
-                    self.logger.warning(msg)
-                self.run_metadata.time_period.start = self.start.isoformat()
-            # check end time
-            if self.end != self.run_metadata.time_period.end:
-                if self.run_metadata.time_period.end != "1980-01-01T00:00:00+00:00":
-                    msg = (
-                        f"end time of dataset {self.end} does not "
-                        f"match metadata end {self.run_metadata.time_period.end} "
-                        f"updating metatdata value to {self.end}"
-                    )
-                    self.logger.warning(msg)
-                self.run_metadata.time_period.end = self.end.isoformat()
-            # check sample rate
-            data_sr = self._compute_sample_rate()
-            if self.sample_rate != data_sr:
-                if self.run_metadata.sample_rate not in [0.0, None]:
-                    msg = (
-                        f"sample rate of dataset {data_sr} does not "
-                        f"match metadata sample rate {self.sample_rate} "
-                        f"updating metatdata value to {data_sr}"
-                    )
-                    self.logger.critical(msg)
-                self._sample_rate = data_sr
-                self.run_metadata.sample_rate = data_sr
-
-            if self.sample_rate != self.run_metadata.sample_rate:
+        # check end time
+        if self.end != self.run_metadata.time_period.end:
+            if self.run_metadata.time_period.end != "1980-01-01T00:00:00+00:00":
+                msg = (
+                    f"end time of dataset {self.end} does not "
+                    f"match metadata end {self.run_metadata.time_period.end} "
+                    f"updating metatdata value to {self.end}"
+                )
+                self.logger.warning(msg)
+            self.run_metadata.time_period.end = self.end.isoformat()
+            
+        # check sample rate
+        data_sr = self._compute_sample_rate()
+        if self.sample_rate != data_sr:
+            if self.run_metadata.sample_rate not in [0.0, None]:
                 msg = (
                     f"sample rate of dataset {data_sr} does not "
                     f"match metadata sample rate {self.sample_rate} "
                     f"updating metatdata value to {data_sr}"
                 )
                 self.logger.critical(msg)
-                self.run_metadata.sample_rate = self._sample_rate
-            if self.run_metadata.id not in self.station_metadata.runs.keys():
-                self.station_metadata.runs[0].update(self.run_metadata)
-            self.station_metadata.update_time_period()
-            self.survey_metadata.update_time_period()
+            self._sample_rate = data_sr
+            self.run_metadata.sample_rate = data_sr
+
+        if self.sample_rate != self.run_metadata.sample_rate:
+            msg = (
+                f"sample rate of dataset {data_sr} does not "
+                f"match metadata sample rate {self.sample_rate} "
+                f"updating metatdata value to {data_sr}"
+            )
+            self.logger.critical(msg)
+            self.run_metadata.sample_rate = self._sample_rate
+        if self.run_metadata.id not in self.station_metadata.runs.keys():
+            self.station_metadata.runs[0].update(self.run_metadata)
+        self.station_metadata.update_time_period()
+        self.survey_metadata.update_time_period()
 
     def set_dataset(self, array_list, align_type="outer"):
         """
