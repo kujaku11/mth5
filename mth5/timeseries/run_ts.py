@@ -938,8 +938,9 @@ class RunTS:
          - There is a baked in assumption here that the channel nomenclature
            in obspy is e1,e2,h1,h2,h3 and we want to convert to mth5 conventions
            ex,ey,hx,hy,hz.  This should be made more flexible in the future.
-         - There is also some unclear handling of run_metadata here that
-           needs to be clarified.
+         - A bug was found that was creating channels e1, ex, ey in the same run
+           when reading from obspy -- this is fixed here by renaming the components and a workaround
+           to reset the station's channels_recorded list.
 
 
         """
@@ -974,15 +975,14 @@ class RunTS:
                 else:
                     self.logger.warning(f"could not find {channel_ts.component}")
 
-            # workaround to reset channel's station.metadata -- deserves a better solution.
-            old_list = channel_ts.station_metadata.channels_recorded
-            new_list = []
-            for ch in old_list:
+            # workaround to reset channel's station.metadata -- (handles obspy renaming).
+            channels_recorded = []
+            for ch in channel_ts.station_metadata.channels_recorded:
                 if ch in OBSPY_RENAMER.keys():
-                    new_list.append(OBSPY_RENAMER[ch])
+                    channels_recorded.append(OBSPY_RENAMER[ch])
                 else:
-                    new_list.append(ch)
-            channel_ts.station_metadata.channels_recorded = new_list
+                    channels_recorded.append(ch)
+            channel_ts.station_metadata.channels_recorded = channels_recorded
 
             station_list.append(channel_ts.station_metadata.fdsn.id)
             array_list.append(channel_ts)
