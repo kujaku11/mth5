@@ -117,7 +117,6 @@ html_static_path = ["_static"]
 html_logo = "source/images/mth5_logo.png"
 html_theme_options = {
     "logo_only": True,
-    "display_version": True,
 }
 
 intersphinx_mapping = {
