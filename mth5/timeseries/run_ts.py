@@ -27,8 +27,7 @@ import scipy
 import xarray as xr
 from loguru import logger
 from matplotlib import pyplot as plt
-from matplotlib.figure import Figure
-from mt_metadata import timeseries as metadata
+from mt_metadata import timeseries
 from mt_metadata.common.list_dict import ListDict
 from mt_metadata.common.mttime import MTime
 from mt_metadata.timeseries.filters import ChannelResponse
@@ -41,7 +40,7 @@ from .ts_helpers import get_decimation_sample_rates, make_dt_coordinates
 # =============================================================================
 # make a dictionary of available metadata classes
 # =============================================================================
-meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
+meta_classes = dict(inspect.getmembers(timeseries, inspect.isclass))
 
 
 # =============================================================================
@@ -307,9 +306,9 @@ class RunTS:
 
         """
 
-        survey_metadata = metadata.Survey(id="0")
-        survey_metadata.stations.append(metadata.Station(id="0"))
-        survey_metadata.stations[0].runs.append(metadata.Run(id="0"))
+        survey_metadata = timeseries.Survey(id="0")
+        survey_metadata.stations.append(timeseries.Station(id="0"))
+        survey_metadata.stations[0].runs.append(timeseries.Run(id="0"))
 
         return survey_metadata
 
@@ -334,11 +333,11 @@ class RunTS:
 
         """
 
-        if not isinstance(run_metadata, metadata.Run):
+        if not isinstance(run_metadata, timeseries.Run):
             if isinstance(run_metadata, dict):
                 if "run" not in [cc.lower() for cc in run_metadata.keys()]:
                     run_metadata = {"Run": run_metadata}
-                r_metadata = metadata.Run()
+                r_metadata = timeseries.Run()
                 r_metadata.from_dict(run_metadata)
                 self.logger.debug("Loading from metadata dict")
                 return r_metadata
@@ -411,22 +410,23 @@ class RunTS:
         TypeError
             If input is neither a Survey object nor a dictionary.
         """
+        if isinstance(survey_metadata, timeseries.Survey):
+            return survey_metadata.copy()
 
-        if not isinstance(survey_metadata, metadata.Survey):
-            if isinstance(survey_metadata, dict):
-                if "survey" not in [cc.lower() for cc in survey_metadata.keys()]:
-                    survey_metadata = {"Survey": survey_metadata}
-                sv_metadata = metadata.Survey()
-                sv_metadata.from_dict(survey_metadata)
-                self.logger.debug("Loading from metadata dict")
-                return sv_metadata
-            else:
-                msg = (
-                    f"input metadata must be type {type(self.survey_metadata)} "
-                    "or dict, not {type(survey_metadata)}"
-                )
-                self.logger.error(msg)
-                raise TypeError(msg)
+        if isinstance(survey_metadata, dict):
+            if "survey" not in [cc.lower() for cc in survey_metadata.keys()]:
+                survey_metadata = {"Survey": survey_metadata}
+            sv_metadata = timeseries.Survey()
+            sv_metadata.from_dict(survey_metadata)
+            self.logger.debug("Loading from metadata dict")
+            return sv_metadata
+        else:
+            msg = (
+                f"input metadata must be type {type(self.survey_metadata)} "
+                "or dict, not {type(survey_metadata)}"
+            )
+            self.logger.error(msg)
+            raise TypeError(msg)
         return survey_metadata.copy()
 
     def _validate_array_list(
@@ -466,8 +466,8 @@ class RunTS:
             self.logger.error(msg)
             raise TypeError(msg)
         valid_list = []
-        station_metadata = metadata.Station()
-        run_metadata = metadata.Run()
+        station_metadata = timeseries.Station()
+        run_metadata = timeseries.Run()
         channels = ListDict()
 
         for index, item in enumerate(array_list):
@@ -862,15 +862,16 @@ class RunTS:
             Survey metadata object or dictionary. If None, no action is taken.
 
         """
+        if survey_metadata is None:
+            return
 
-        if survey_metadata is not None:
-            survey_metadata = self._validate_survey_metadata(survey_metadata)
-            self._survey_metadata.update(survey_metadata)
-            for station in survey_metadata.stations:
-                if station.id not in self._survey_metadata.stations.keys():
-                    self._survey_metadata.add_station(
-                        self._validate_station_metadata(station), update=False
-                    )
+        survey_metadata = self._validate_survey_metadata(survey_metadata)
+        self._survey_metadata.update(survey_metadata)
+        for station in survey_metadata.stations:
+            if station.id not in self._survey_metadata.stations.keys():
+                self._survey_metadata.add_station(
+                    self._validate_station_metadata(station), update=False
+                )
 
     @property
     def station_metadata(self) -> metadata.Station:
@@ -911,10 +912,10 @@ class RunTS:
                 runs.append(self.run_metadata.copy())
             runs.extend(station_metadata.runs)
             if len(runs) == 0:
-                runs[0] = metadata.Run(id="0")
+                runs[0] = timeseries.Run(id="0")
             # be sure there is a level below
             if len(runs[0].channels) == 0:
-                ch_metadata = metadata.Auxiliary()
+                ch_metadata = timeseries.Auxiliary()
                 ch_metadata.type = "auxiliary"
                 runs[0].channels.append(ch_metadata)
             stations = ListDict()
@@ -1010,26 +1011,11 @@ class RunTS:
 
     def validate_metadata(self) -> None:
         """
-        Validate and synchronize metadata with dataset contents.
+        Check to make sure that the metadata matches what is in the data set.
 
-        Checks that metadata (start time, end time, sample rate, channels)
-        matches the actual data in the dataset. Updates metadata from data
-        if discrepancies are found.
+        updates metadata from the data.
 
-        Notes
-        -----
-        This method is automatically called when setting the dataset. It:
-
-        - Validates start and end times
-        - Validates sample rate
-        - Updates station and survey time periods
-        - Logs warnings for any discrepancies found
-
-        Examples
-        --------
-        >>> run.validate_metadata()
-        >>> print(run.run_metadata.time_period.start)
-        2020-01-01T00:00:00+00:00
+        Check the start and end times, channels recorded
 
         """
 
@@ -1068,18 +1054,18 @@ class RunTS:
                 self._sample_rate = data_sr
                 self.run_metadata.sample_rate = data_sr
 
-            if self.sample_rate != self.run_metadata.sample_rate:
-                msg = (
-                    f"sample rate of dataset {data_sr} does not "
-                    f"match metadata sample rate {self.sample_rate} "
-                    f"updating metatdata value to {data_sr}"
-                )
-                self.logger.critical(msg)
-                self.run_metadata.sample_rate = self._sample_rate
-            if self.run_metadata.id not in self.station_metadata.runs.keys():
-                self.station_metadata.runs[0].update(self.run_metadata)
-            self.station_metadata.update_time_period()
-            self.survey_metadata.update_time_period()
+        if self.sample_rate != self.run_metadata.sample_rate:
+            msg = (
+                f"sample rate of dataset {data_sr} does not "
+                f"match metadata sample rate {self.sample_rate} "
+                f"updating metatdata value to {data_sr}"
+            )
+            self.logger.critical(msg)
+            self.run_metadata.sample_rate = self._sample_rate
+        if self.run_metadata.id not in self.station_metadata.runs.keys():
+            self.station_metadata.runs[0].update(self.run_metadata)
+        self.station_metadata.update_time_period()
+        self.survey_metadata.update_time_period()
 
     def set_dataset(self, array_list, align_type="outer"):
         """
@@ -1480,9 +1466,17 @@ class RunTS:
         :param obspy_stream: Obspy Stream object
         :type obspy_stream: :class:`obspy.core.Stream`
 
+        Development Notes:
+         - There is a baked in assumption here that the channel nomenclature
+           in obspy is e1,e2,h1,h2,h3 and we want to convert to mth5 conventions
+           ex,ey,hx,hy,hz.  This should be made more flexible in the future.
+         - A bug was found that was creating channels e1, ex, ey in the same run
+           when reading from obspy -- this is fixed here by renaming the components and a workaround
+           to reset the station's channels_recorded list.
+
 
         """
-        # renaming from obspy to mth5 conventions
+        # mapping from obspy to mth5 conventions
         OBSPY_RENAMER = {
             "e1": "ex",
             "e2": "ey",
@@ -1509,25 +1503,20 @@ class RunTS:
 
             # TODO: describe clearly what is happening here with run metadata
             if run_metadata:
-                try:
-                    ch = [
-                        ch
-                        for ch in run_metadata.channels
-                        if ch.component == channel_ts.component
-                    ][0]
+                if run_metadata.has_channel(channel_ts.component):
+                    ch = run_metadata.get_channel(channel_ts.component)
                     channel_ts.channel_metadata.update(ch)
-                except IndexError:
+                else:
                     self.logger.warning(f"could not find {channel_ts.component}")
 
-            # workaround to reset channel's station.metadata -- deserves a better solution.
-            old_list = channel_ts.station_metadata.channels_recorded
-            new_list = []
-            for ch in old_list:
+            # workaround to reset channel's station.metadata -- (handles obspy renaming).
+            channels_recorded = []
+            for ch in channel_ts.station_metadata.channels_recorded:
                 if ch in OBSPY_RENAMER.keys():
-                    new_list.append(OBSPY_RENAMER[ch])
+                    channels_recorded.append(OBSPY_RENAMER[ch])
                 else:
-                    new_list.append(ch)
-            channel_ts.station_metadata.channels_recorded = new_list
+                    channels_recorded.append(ch)
+            channel_ts.station_metadata.channels_recorded = channels_recorded
 
             station_list.append(channel_ts.station_metadata.fdsn.id)
             array_list.append(channel_ts)
