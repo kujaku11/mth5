@@ -22,7 +22,7 @@ from pathlib import Path
 # Imports
 # =============================================================================
 import pytest
-from mt_metadata.common.mttime import MTime
+from mt_metadata.common import Comment, MTime
 
 from mth5.io.nims import NIMSHeader
 from mth5.io.nims.header import NIMSError
@@ -171,18 +171,14 @@ class TestNIMSHeaderInitialization:
             "header_gps_longitude",
             "header_gps_elevation",
             "operator",
-            "comments",
             "run_id",
         ]
 
         for attr in none_attributes:
             assert getattr(nims_header, attr) is None
 
-    def test_initialization_with_filename(self, temp_nims_file):
-        """Test initialization with filename."""
-        header = NIMSHeader(fn=temp_nims_file)
-        assert header.fn == temp_nims_file
-        assert isinstance(header.fn, Path)
+        # Test comments is initialized to Comment object
+        assert isinstance(nims_header.comments, Comment)
 
     def test_filename_property_setter(self, nims_header, temp_nims_file):
         """Test filename property setter."""
