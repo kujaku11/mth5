@@ -27,6 +27,7 @@ import scipy
 import xarray as xr
 from loguru import logger
 from matplotlib import pyplot as plt
+from matplotlib.figure import Figure
 from mt_metadata import timeseries
 from mt_metadata.common.list_dict import ListDict
 from mt_metadata.common.mttime import MTime
@@ -60,22 +61,22 @@ class RunTS:
         List of ChannelTS objects, xarray DataArrays, or an xarray Dataset
         containing the time series data. All channels will be aligned to a
         common time index.
-    run_metadata : metadata.Run | dict | None, optional
+    run_metadata : timeseries.Run | dict | None, optional
         Metadata for the run. Can be a Run object or dictionary.
-    station_metadata : metadata.Station | dict | None, optional
+    station_metadata : timeseries.Station | dict | None, optional
         Metadata for the station. Can be a Station object or dictionary.
-    survey_metadata : metadata.Survey | dict | None, optional
+    survey_metadata : timeseries.Survey | dict | None, optional
         Metadata for the survey. Can be a Survey object or dictionary.
 
     Attributes
     ----------
     dataset : xr.Dataset
         xarray Dataset containing all channel data with time coordinate
-    survey_metadata : metadata.Survey
+    survey_metadata : timeseries.Survey
         Survey-level metadata
-    station_metadata : metadata.Station
+    station_metadata : timeseries.Station
         Station-level metadata
-    run_metadata : metadata.Run
+    run_metadata : timeseries.Run
         Run-level metadata
     filters : dict[str, Filter]
         Dictionary of channel response filters keyed by filter name
@@ -123,9 +124,9 @@ class RunTS:
     def __init__(
         self,
         array_list: list[ChannelTS] | list[xr.DataArray] | xr.Dataset | None = None,
-        run_metadata: metadata.Run | dict | None = None,
-        station_metadata: metadata.Station | dict | None = None,
-        survey_metadata: metadata.Survey | dict | None = None,
+        run_metadata: timeseries.Run | dict | None = None,
+        station_metadata: timeseries.Station | dict | None = None,
+        survey_metadata: timeseries.Survey | dict | None = None,
     ) -> None:
         self.logger = logger
         self._survey_metadata = self._initialize_metadata()
@@ -291,7 +292,7 @@ class RunTS:
 
         return new_run
 
-    def _initialize_metadata(self) -> metadata.Survey:
+    def _initialize_metadata(self) -> timeseries.Survey:
         """
         Create a hierarchical metadata structure with default values.
 
@@ -301,7 +302,7 @@ class RunTS:
 
         Returns
         -------
-        metadata.Survey
+        timeseries.Survey
             Survey metadata object with nested station and run.
 
         """
@@ -312,18 +313,20 @@ class RunTS:
 
         return survey_metadata
 
-    def _validate_run_metadata(self, run_metadata: metadata.Run | dict) -> metadata.Run:
+    def _validate_run_metadata(
+        self, run_metadata: timeseries.Run | dict
+    ) -> timeseries.Run:
         """
         Validate and convert run metadata to proper format.
 
         Parameters
         ----------
-        run_metadata : metadata.Run | dict
+        run_metadata : timeseries.Run | dict
             Run metadata as a Run object or dictionary.
 
         Returns
         -------
-        metadata.Run
+        timeseries.Run
             Validated Run metadata object (copy of input).
 
         Raises
@@ -351,19 +354,19 @@ class RunTS:
         return run_metadata.copy()
 
     def _validate_station_metadata(
-        self, station_metadata: metadata.Station | dict
-    ) -> metadata.Station:
+        self, station_metadata: timeseries.Station | dict
+    ) -> timeseries.Station:
         """
         Validate and convert station metadata to proper format.
 
         Parameters
         ----------
-        station_metadata : metadata.Station | dict
+        station_metadata : timeseries.Station | dict
             Station metadata as a Station object or dictionary.
 
         Returns
         -------
-        metadata.Station
+        timeseries.Station
             Validated Station metadata object (copy of input).
 
         Raises
@@ -372,37 +375,38 @@ class RunTS:
             If input is neither a Station object nor a dictionary.
         """
 
-        if not isinstance(station_metadata, metadata.Station):
-            if isinstance(station_metadata, dict):
-                if "station" not in [cc.lower() for cc in station_metadata.keys()]:
-                    station_metadata = {"Station": station_metadata}
-                st_metadata = metadata.Station()
-                st_metadata.from_dict(station_metadata)
-                self.logger.debug("Loading from metadata dict")
-                return st_metadata
-            else:
-                msg = (
-                    f"input metadata must be type {type(self.station_metadata)} "
-                    "or dict, not {type(station_metadata)}"
-                )
-                self.logger.error(msg)
-                raise TypeError(msg)
-        return station_metadata.copy()
+        if isinstance(station_metadata, timeseries.Station):
+            return station_metadata.copy()
+
+        if isinstance(station_metadata, dict):
+            if "station" not in [cc.lower() for cc in station_metadata.keys()]:
+                station_metadata = {"Station": station_metadata}
+            st_metadata = timeseries.Station()  # type: ignore
+            st_metadata.from_dict(station_metadata)
+            self.logger.debug("Loading from metadata dict")
+            return st_metadata
+        else:
+            msg = (
+                f"input metadata must be type {type(self.station_metadata)} "
+                "or dict, not {type(station_metadata)}"
+            )
+            self.logger.error(msg)
+            raise TypeError(msg)
 
     def _validate_survey_metadata(
-        self, survey_metadata: metadata.Survey | dict
-    ) -> metadata.Survey:
+        self, survey_metadata: timeseries.Survey | dict
+    ) -> timeseries.Survey:
         """
         Validate and convert survey metadata to proper format.
 
         Parameters
         ----------
-        survey_metadata : metadata.Survey | dict
+        survey_metadata : timeseries.Survey | dict
             Survey metadata as a Survey object or dictionary.
 
         Returns
         -------
-        metadata.Survey
+        timeseries.Survey
             Validated Survey metadata object (copy of input).
 
         Raises
@@ -416,7 +420,7 @@ class RunTS:
         if isinstance(survey_metadata, dict):
             if "survey" not in [cc.lower() for cc in survey_metadata.keys()]:
                 survey_metadata = {"Survey": survey_metadata}
-            sv_metadata = timeseries.Survey()
+            sv_metadata = timeseries.Survey()  # type: ignore
             sv_metadata.from_dict(survey_metadata)
             self.logger.debug("Loading from metadata dict")
             return sv_metadata
@@ -427,7 +431,6 @@ class RunTS:
             )
             self.logger.error(msg)
             raise TypeError(msg)
-        return survey_metadata.copy()
 
     def _validate_array_list(
         self, array_list: list[ChannelTS] | list[xr.DataArray] | tuple
@@ -466,9 +469,9 @@ class RunTS:
             self.logger.error(msg)
             raise TypeError(msg)
         valid_list = []
-        station_metadata = timeseries.Station()
-        run_metadata = timeseries.Run()
-        channels = ListDict()
+        station_metadata = timeseries.Station()  # type: ignore
+        run_metadata = timeseries.Run()  # type: ignore
+        channels = ListDict()  # type: ignore
 
         for index, item in enumerate(array_list):
             if not isinstance(item, (ChannelTS, xr.DataArray)):
@@ -802,7 +805,7 @@ class RunTS:
         Parameters
         ----------
         data : bool, optional
-            If True, copy the data along with metadata. If False, only
+            If True, copy the data along with timeseries. If False, only
             copy the metadata (default is True).
 
         Returns
@@ -840,25 +843,25 @@ class RunTS:
 
     ### Properties ------------------------------------------------------------
     @property
-    def survey_metadata(self) -> metadata.Survey:
+    def survey_metadata(self) -> timeseries.Survey:
         """
-        Survey metadata.
+        Survey timeseries.
 
         Returns
         -------
-        metadata.Survey
+        timeseries.Survey
             Survey-level metadata object.
         """
         return self._survey_metadata
 
     @survey_metadata.setter
-    def survey_metadata(self, survey_metadata: metadata.Survey | dict | None) -> None:
+    def survey_metadata(self, survey_metadata: timeseries.Survey | dict | None) -> None:
         """
-        Set survey metadata.
+        Set survey timeseries.
 
         Parameters
         ----------
-        survey_metadata : metadata.Survey | dict | None
+        survey_metadata : timeseries.Survey | dict | None
             Survey metadata object or dictionary. If None, no action is taken.
 
         """
@@ -874,13 +877,13 @@ class RunTS:
                 )
 
     @property
-    def station_metadata(self) -> metadata.Station:
+    def station_metadata(self) -> timeseries.Station:
         """
-        Station metadata.
+        Station timeseries.
 
         Returns
         -------
-        metadata.Station
+        timeseries.Station
             Station-level metadata object (first station in survey).
         """
 
@@ -888,19 +891,19 @@ class RunTS:
 
     @station_metadata.setter
     def station_metadata(
-        self, station_metadata: metadata.Station | dict | None
+        self, station_metadata: timeseries.Station | dict | None
     ) -> None:
         """
-        Set station metadata.
+        Set station timeseries.
 
         Parameters
         ----------
-        station_metadata : metadata.Station | dict | None
+        station_metadata : timeseries.Station | dict | None
             Station metadata object or dictionary. If None, no action is taken.
 
         Notes
         -----
-        Preserves existing run metadata and merges with new station metadata.
+        Preserves existing run metadata and merges with new station timeseries.
 
         """
 
@@ -925,13 +928,13 @@ class RunTS:
             self.survey_metadata.stations = stations
 
     @property
-    def run_metadata(self) -> metadata.Run:
+    def run_metadata(self) -> timeseries.Run:
         """
-        Run metadata.
+        Run timeseries.
 
         Returns
         -------
-        metadata.Run
+        timeseries.Run
             Run-level metadata object (first run in first station).
         """
         run_metadata = self.survey_metadata.stations[0].runs[0]
@@ -939,13 +942,13 @@ class RunTS:
         return run_metadata
 
     @run_metadata.setter
-    def run_metadata(self, run_metadata: metadata.Run | dict | None) -> None:
+    def run_metadata(self, run_metadata: timeseries.Run | dict | None) -> None:
         """
-        Set run metadata.
+        Set run timeseries.
 
         Parameters
         ----------
-        run_metadata : metadata.Run | dict | None
+        run_metadata : timeseries.Run | dict | None
             Run metadata object or dictionary. If None, no action is taken.
 
         Notes
@@ -986,7 +989,7 @@ class RunTS:
     @property
     def summarize_metadata(self) -> dict[str, any]:
         """
-        Get a summary of all channel metadata.
+        Get a summary of all channel timeseries.
 
         Flattens the metadata from all channels into a single dictionary
         with keys in the format 'channel.attribute'.
@@ -1067,22 +1070,70 @@ class RunTS:
         self.station_metadata.update_time_period()
         self.survey_metadata.update_time_period()
 
-    def set_dataset(self, array_list, align_type="outer"):
+    def set_dataset(
+        self,
+        array_list: list[ChannelTS] | list[xr.DataArray] | xr.Dataset,
+        align_type: str = "outer",
+    ) -> None:
         """
+        Set the dataset from a list of channels or existing dataset.
 
-        :param array_list: list of xarrays
-        :type array_list: list of :class:`mth5.timeseries.ChannelTS` objects
-        :param align_type: how the different times will be aligned
-            * ’outer’: use the union of object indexes
-            * ’inner’: use the intersection of object indexes
-            * ’left’: use indexes from the first object with each dimension
-            * ’right’: use indexes from the last object with each dimension
-            * ’exact’: instead of aligning, raise ValueError when indexes to
-            be aligned are not equal
-            * ’override’: if indexes are of same size, rewrite indexes to
-            be those of the first object with that dimension. Indexes for
-            the same dimension must have the same size in all objects.
-        :type align_type: string
+        Creates an xarray Dataset from the input channels or dataset, validates
+        metadata consistency, and updates dataset attributes with run metadata.
+
+        Parameters
+        ----------
+        array_list : list[ChannelTS] | list[xr.DataArray] | xr.Dataset
+            Input data as a list of ChannelTS objects, list of xarray DataArrays,
+            or an existing xarray Dataset.
+        align_type : str, optional
+            Method for aligning channels with different time indexes:
+
+            * 'outer' - use union of all time indexes (default)
+            * 'inner' - use intersection of time indexes
+            * 'left' - use time index from first channel
+            * 'right' - use time index from last channel
+            * 'exact' - raise ValueError if indexes don't match exactly
+            * 'override' - rewrite indexes to match first channel (requires same size)
+
+        Notes
+        -----
+        This method performs the following operations:
+
+        1. Validates the input array_list
+        2. Converts ChannelTS objects to xarray format
+        3. Combines channels into a single Dataset
+        4. Validates metadata consistency
+        5. Updates dataset attributes with run metadata
+
+        When providing ChannelTS objects, their metadata and filters are
+        automatically extracted and merged into the run's metadata structure.
+
+        Examples
+        --------
+        Set dataset from ChannelTS objects:
+
+        >>> ex = ChannelTS('electric', data=ex_data,
+        ...                channel_metadata={'component': 'ex'})
+        >>> ey = ChannelTS('electric', data=ey_data,
+        ...                channel_metadata={'component': 'ey'})
+        >>> run.set_dataset([ex, ey])
+
+        Set dataset with custom alignment:
+
+        >>> run.set_dataset([ex, ey, hx], align_type='inner')
+
+        Set dataset from existing xarray Dataset:
+
+        >>> import xarray as xr
+        >>> ds = xr.Dataset({'ex': ex_da, 'ey': ey_da})
+        >>> run.set_dataset(ds)
+
+        See Also
+        --------
+        dataset : Property for setting dataset with default alignment
+        add_channel : Add a single channel to existing dataset
+        _validate_array_list : Validation and conversion of array list
 
         """
         if isinstance(array_list, (list, tuple)):
@@ -1291,7 +1342,7 @@ class RunTS:
         -------
         float
             Sample rate estimated from time differences if data exists,
-            otherwise from metadata.
+            otherwise from timeseries.
 
         Examples
         --------
@@ -1395,7 +1446,7 @@ class RunTS:
         ----------
         network_code : str | None, optional
             Two-letter network code provided by FDSN DMC. If None, uses
-            station metadata.
+            station timeseries.
         encoding : str | None, optional
             Data encoding format (e.g., 'STEIM2', 'FLOAT64'). If None, uses
             default encoding.
@@ -1457,7 +1508,7 @@ class RunTS:
         return [x for x in array_list if x.n_samples != 1]
 
     def from_obspy_stream(
-        self, obspy_stream: Stream, run_metadata: metadata.Run | None = None
+        self, obspy_stream: Stream, run_metadata: timeseries.Run | None = None
     ) -> None:
         """
         Get a run from an :class:`obspy.core.stream` which is a list of
@@ -1501,7 +1552,9 @@ class RunTS:
                     channel_ts.channel_metadata.component
                 ]
 
-            # TODO: describe clearly what is happening here with run metadata
+            # If run_metadata is provided then it will likely have channel metadata
+            # that we want to use to update the channel_ts metadata. Then use
+            # the provided channel_metadata to update the channel_ts metadata.
             if run_metadata:
                 if run_metadata.has_channel(channel_ts.component):
                     ch = run_metadata.get_channel(channel_ts.component)
@@ -1526,14 +1579,14 @@ class RunTS:
         except IndexError:
             station = None
             msg = "Could not find station name"
-            self.logger.warn(msg)
+            self.logger.warning(msg)
         self.station_metadata.fdsn.id = station
 
         if len(run_metadata.channels) != len(array_list):
             array_list = self.wrangle_leap_seconds_from_obspy(array_list)
         self.set_dataset(array_list)
 
-        # need to be sure update any input metadata.
+        # need to be sure update any input timeseries.
         if run_metadata is not None:
             self.station_metadata.runs = ListDict()
             self.station_metadata.add_run(run_metadata)
