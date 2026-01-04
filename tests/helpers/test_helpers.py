@@ -374,7 +374,8 @@ class TestToNumpyType:
     def test_type_object(self):
         """Test type object conversion"""
         result = to_numpy_type(int)
-        assert result == str(int)
+        assert isinstance(result, str)
+        assert result == "builtins.int"
 
     def test_object_array(self):
         """Test numpy object array conversion"""
