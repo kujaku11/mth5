@@ -270,6 +270,10 @@ def to_numpy_type(value: Any) -> Any:
 
     # Handle type objects and classes that might come from pydantic serialization
     if isinstance(value, type):
+        logger.warning(
+            f"Converting type object {value!r} to string for HDF5 metadata storage. "
+            "This may indicate that a type object was passed where a value was expected."
+        )
         return str(value)
 
     # Handle dictionaries and lists by converting to JSON
