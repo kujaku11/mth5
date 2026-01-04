@@ -25,7 +25,7 @@ import scipy
 import xarray as xr
 from loguru import logger
 from matplotlib import pyplot as plt
-from mt_metadata import timeseries as metadata
+from mt_metadata import timeseries
 from mt_metadata.common.list_dict import ListDict
 from mt_metadata.common.mttime import MTime
 from mt_metadata.timeseries.filters import ChannelResponse
@@ -38,7 +38,7 @@ from .ts_helpers import get_decimation_sample_rates, make_dt_coordinates
 # =============================================================================
 # make a dictionary of available metadata classes
 # =============================================================================
-meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
+meta_classes = dict(inspect.getmembers(timeseries, inspect.isclass))
 
 
 # =============================================================================
@@ -185,9 +185,9 @@ class RunTS:
 
         """
 
-        survey_metadata = metadata.Survey(id="0")
-        survey_metadata.stations.append(metadata.Station(id="0"))
-        survey_metadata.stations[0].runs.append(metadata.Run(id="0"))
+        survey_metadata = timeseries.Survey(id="0")
+        survey_metadata.stations.append(timeseries.Station(id="0"))
+        survey_metadata.stations[0].runs.append(timeseries.Run(id="0"))
 
         return survey_metadata
 
@@ -197,11 +197,11 @@ class RunTS:
 
         """
 
-        if not isinstance(run_metadata, metadata.Run):
+        if not isinstance(run_metadata, timeseries.Run):
             if isinstance(run_metadata, dict):
                 if "run" not in [cc.lower() for cc in run_metadata.keys()]:
                     run_metadata = {"Run": run_metadata}
-                r_metadata = metadata.Run()
+                r_metadata = timeseries.Run()
                 r_metadata.from_dict(run_metadata)
                 self.logger.debug("Loading from metadata dict")
                 return r_metadata
@@ -217,13 +217,14 @@ class RunTS:
     def _validate_station_metadata(self, station_metadata):
         """
         validate station metadata
+        TODO: reduce indentation level by returning early
         """
 
-        if not isinstance(station_metadata, metadata.Station):
+        if not isinstance(station_metadata, timeseries.Station):
             if isinstance(station_metadata, dict):
                 if "station" not in [cc.lower() for cc in station_metadata.keys()]:
                     station_metadata = {"Station": station_metadata}
-                st_metadata = metadata.Station()
+                st_metadata = timeseries.Station()
                 st_metadata.from_dict(station_metadata)
                 self.logger.debug("Loading from metadata dict")
                 return st_metadata
@@ -239,13 +240,14 @@ class RunTS:
     def _validate_survey_metadata(self, survey_metadata):
         """
         validate station metadata
+        TODO: reduce indentation level by returning early
         """
 
-        if not isinstance(survey_metadata, metadata.Survey):
+        if not isinstance(survey_metadata, timeseries.Survey):
             if isinstance(survey_metadata, dict):
                 if "survey" not in [cc.lower() for cc in survey_metadata.keys()]:
                     survey_metadata = {"Survey": survey_metadata}
-                sv_metadata = metadata.Survey()
+                sv_metadata = timeseries.Survey()
                 sv_metadata.from_dict(survey_metadata)
                 self.logger.debug("Loading from metadata dict")
                 return sv_metadata
@@ -266,8 +268,8 @@ class RunTS:
             self.logger.error(msg)
             raise TypeError(msg)
         valid_list = []
-        station_metadata = metadata.Station()
-        run_metadata = metadata.Run()
+        station_metadata = timeseries.Station()
+        run_metadata = timeseries.Run()
         channels = ListDict()
 
         for index, item in enumerate(array_list):
@@ -542,7 +544,8 @@ class RunTS:
     @survey_metadata.setter
     def survey_metadata(self, survey_metadata):
         """
-
+        TODO: add typehints
+        TODO: reduce indentation level by returning early
         :param survey_metadata: survey metadata object or dictionary
         :type survey_metadata: :class:`mt_metadata.timeseries.Survey` or dict
 
@@ -579,10 +582,10 @@ class RunTS:
                 runs.append(self.run_metadata.copy())
             runs.extend(station_metadata.runs)
             if len(runs) == 0:
-                runs[0] = metadata.Run(id="0")
+                runs[0] = timeseries.Run(id="0")
             # be sure there is a level below
             if len(runs[0].channels) == 0:
-                ch_metadata = metadata.Auxiliary()
+                ch_metadata = timeseries.Auxiliary()
                 ch_metadata.type = "auxiliary"
                 runs[0].channels.append(ch_metadata)
             stations = ListDict()
