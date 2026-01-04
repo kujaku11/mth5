@@ -970,16 +970,12 @@ class RunTS:
             # This seems to be setting ch to the zeroth element of a list comprehension
             # that filters run_metadata.channels for the channel with matching component
             if run_metadata:
-                try:
-                    ch = [
-                        x
-                        for x in run_metadata.channels
-                        if x.component == channel_ts.component
-                    ][0]
+                if run_metadata.has_channel(channel_ts.component):
+                    ch = run_metadata.get_channel(channel_ts.component)
                     channel_ts.channel_metadata.update(ch)
-                except IndexError:
+                else:
                     self.logger.warning(f"could not find {channel_ts.component}")
-            
+
             # workaround to reset channel's station.metadata -- deserves a better solution.
             old_list = channel_ts.station_metadata.channels_recorded
             new_list = []
