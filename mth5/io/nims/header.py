@@ -15,7 +15,7 @@ from typing import Optional, Union
 
 import dateutil
 from loguru import logger
-from mt_metadata.common.mttime import MTime
+from mt_metadata.common import Comment, MTime
 
 
 # =============================================================================
@@ -141,7 +141,7 @@ class NIMSHeader:
         self.header_gps_longitude = None
         self.header_gps_elevation = None
         self.operator = None
-        self.comments = None
+        self.comments = Comment()
         self.run_id = None
         self.data_start_seek = 0
 

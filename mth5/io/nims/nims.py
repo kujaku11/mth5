@@ -732,7 +732,7 @@ class NIMS(NIMSHeader):
                         "data_logger.id": self.box_id,
                         "data_logger.type": "long period",
                         "id": self.run_id,
-                        "data_type": "MTLP",
+                        "data_type": "LPMT",
                         "sample_rate": self.sample_rate,
                         "time_period.end": self.end_time.isoformat(),
                         "time_period.start": self.start_time.isoformat(),
