@@ -914,6 +914,14 @@ class RunTS:
 
 
         """
+        # renaming from obspy to mth5 conventions
+        OBSPY_RENAMER = {
+            "e1": "ex",
+            "e2": "ey",
+            "h1": "hx",
+            "h2": "hy",
+            "h3": "hz",
+        }
 
         if not isinstance(obspy_stream, Stream):
             msg = f"Input must be obspy.core.Stream not {type(obspy_stream)}"
@@ -925,16 +933,11 @@ class RunTS:
         for obs_trace in obspy_stream:
             channel_ts = ChannelTS()
             channel_ts.from_obspy_trace(obs_trace)
-            if channel_ts.channel_metadata.component == "e1":
-                channel_ts.channel_metadata.component = "ex"
-            if channel_ts.channel_metadata.component == "e2":
-                channel_ts.channel_metadata.component = "ey"
-            if channel_ts.channel_metadata.component == "h1":
-                channel_ts.channel_metadata.component = "hx"
-            if channel_ts.channel_metadata.component == "h2":
-                channel_ts.channel_metadata.component = "hy"
-            if channel_ts.channel_metadata.component == "h3":
-                channel_ts.channel_metadata.component = "hz"
+
+            if channel_ts.channel_metadata.component in OBSPY_RENAMER.keys():
+                channel_ts.channel_metadata.component = OBSPY_RENAMER[channel_ts.channel_metadata.component]
+            
+            # TODO: describe clearly what is happening here with run metadata
             if run_metadata:
                 try:
                     ch = [
@@ -945,13 +948,20 @@ class RunTS:
                     channel_ts.channel_metadata.update(ch)
                 except IndexError:
                     self.logger.warning(f"could not find {channel_ts.component}")
-            # else:
-            #     run_metadata = metadata.Run(id="001")
-            station_list.append(channel_ts.station_metadata.fdsn.id)
+            
+            # workaround to reset channel's station.metadata -- deserves a better solution.
+            old_list = channel_ts.station_metadata.channels_recorded
+            new_list = []
+            for ch in old_list:
+                if ch in OBSPY_RENAMER.keys():
+                    new_list.append(OBSPY_RENAMER[ch])
+                else:
+                    new_list.append(ch)
+            channel_ts.station_metadata.channels_recorded = new_list
 
+            station_list.append(channel_ts.station_metadata.fdsn.id)
             array_list.append(channel_ts)
-        ### need to merge metadata into something useful, station name is the only
-        ### name that is preserved
+
         try:
             station = list(set([ss for ss in station_list if ss is not None]))[0]
         except IndexError:
