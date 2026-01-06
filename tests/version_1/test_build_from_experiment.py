@@ -432,6 +432,208 @@ class TestMTH5Update:
         assert station.metadata.location.latitude == expected_lat
 
 
+class TestMTH5ToExperiment:
+    """Test MTH5 to_experiment functionality for round-trip consistency.
+
+    These tests verify that MTH5.to_experiment() correctly reconstructs the full
+    experiment hierarchy including surveys, stations, runs, and channels from the
+    HDF5 file structure.
+    """
+
+    def test_experiment_roundtrip(
+        self, mth5_with_experiment: MTH5, experiment_from_xml: Experiment
+    ):
+        """Test that to_experiment produces an equivalent Experiment object."""
+        regenerated_experiment = mth5_with_experiment.to_experiment()
+
+        # Test that we get an Experiment object
+        assert isinstance(regenerated_experiment, Experiment)
+
+        # Test survey count
+        assert len(regenerated_experiment.surveys) == len(experiment_from_xml.surveys)
+
+    def test_survey_roundtrip(
+        self, mth5_with_experiment: MTH5, experiment_from_xml: Experiment
+    ):
+        """Test survey metadata roundtrip consistency."""
+        regenerated_experiment = mth5_with_experiment.to_experiment()
+
+        original_survey = experiment_from_xml.surveys[0]
+        regenerated_survey = regenerated_experiment.surveys[0]
+
+        # Get cleaned metadata
+        original_data = clean_metadata_dict(original_survey.to_dict(single=True))
+        regenerated_data = clean_metadata_dict(regenerated_survey.to_dict(single=True))
+
+        assert original_data == regenerated_data
+
+    def test_station_roundtrip(
+        self, mth5_with_experiment: MTH5, experiment_from_xml: Experiment
+    ):
+        """Test station metadata roundtrip consistency."""
+        regenerated_experiment = mth5_with_experiment.to_experiment()
+
+        original_stations = experiment_from_xml.surveys[0].stations
+        regenerated_stations = regenerated_experiment.surveys[0].stations
+
+        # Test station count
+        assert len(regenerated_stations) == len(original_stations)
+
+        # Test each station
+        for orig_station in original_stations:
+            regen_station = next(
+                s for s in regenerated_stations if s.id == orig_station.id
+            )
+
+            original_data = clean_metadata_dict(orig_station.to_dict(single=True))
+            regenerated_data = clean_metadata_dict(regen_station.to_dict(single=True))
+
+            assert (
+                original_data == regenerated_data
+            ), f"Station {orig_station.id} roundtrip failed"
+
+    def test_run_roundtrip(
+        self, mth5_with_experiment: MTH5, experiment_from_xml: Experiment
+    ):
+        """Test run metadata roundtrip consistency."""
+        regenerated_experiment = mth5_with_experiment.to_experiment()
+
+        original_station = experiment_from_xml.surveys[0].stations[0]
+        regenerated_station = regenerated_experiment.surveys[0].stations[0]
+
+        # Test run count
+        assert len(regenerated_station.runs) == len(original_station.runs)
+
+        # Test each run
+        for orig_run in original_station.runs:
+            regen_run = next(r for r in regenerated_station.runs if r.id == orig_run.id)
+
+            original_data = clean_metadata_dict(orig_run.to_dict(single=True))
+            regenerated_data = clean_metadata_dict(regen_run.to_dict(single=True))
+
+            assert (
+                original_data == regenerated_data
+            ), f"Run {orig_run.id} roundtrip failed"
+
+    def test_channel_roundtrip(
+        self, mth5_with_experiment: MTH5, experiment_from_xml: Experiment
+    ):
+        """Test channel metadata roundtrip consistency."""
+        regenerated_experiment = mth5_with_experiment.to_experiment()
+
+        original_run = experiment_from_xml.surveys[0].stations[0].runs[0]
+        regenerated_run = regenerated_experiment.surveys[0].stations[0].runs[0]
+
+        # Test channel count
+        assert len(regenerated_run.channels) == len(original_run.channels)
+
+        # Test each channel
+        for orig_channel in original_run.channels:
+            regen_channel = next(
+                c
+                for c in regenerated_run.channels
+                if c.component == orig_channel.component
+            )
+
+            original_data = clean_metadata_dict(orig_channel.to_dict(single=True))
+            regenerated_data = clean_metadata_dict(regen_channel.to_dict(single=True))
+
+            assert (
+                original_data == regenerated_data
+            ), f"Channel {orig_channel.component} roundtrip failed"
+
+    def test_filter_roundtrip(
+        self, mth5_with_experiment: MTH5, experiment_from_xml: Experiment
+    ):
+        """Test filter metadata roundtrip consistency."""
+        regenerated_experiment = mth5_with_experiment.to_experiment()
+
+        original_filters = experiment_from_xml.surveys[0].filters
+        regenerated_filters = regenerated_experiment.surveys[0].filters
+
+        # Test filter count
+        assert len(regenerated_filters) == len(original_filters)
+
+        # Test each filter
+        for key, orig_filter in original_filters.items():
+            # Handle key transformation for stored filters
+            stored_key = key.replace("/", " per ")
+
+            # Find corresponding regenerated filter
+            regen_filter = None
+            for regen_key, regen_val in regenerated_filters.items():
+                if regen_key == key or regen_key == stored_key:
+                    regen_filter = regen_val
+                    break
+
+            assert (
+                regen_filter is not None
+            ), f"Filter {key} not found in regenerated experiment"
+
+            original_data = orig_filter.to_dict(single=True, required=False)
+            regenerated_data = regen_filter.to_dict(single=True, required=False)
+
+            for k in original_data.keys():
+                if k not in regenerated_data:
+                    continue
+
+                v1, v2 = original_data[k], regenerated_data[k]
+
+                if isinstance(v1, (float, int)):
+                    assert (
+                        abs(v1 - float(v2)) < 1e-5
+                    ), f"Filter {key}.{k} numerical mismatch"
+                elif isinstance(v1, np.ndarray):
+                    if v1.dtype != v2.dtype:
+                        v2_converted = v2.astype(v1.dtype)
+                        assert (
+                            v1 == v2_converted
+                        ).all(), f"Filter {key}.{k} array mismatch"
+                    else:
+                        assert (v1 == v2).all(), f"Filter {key}.{k} array mismatch"
+                elif v1 is None and v2 == "None":
+                    continue
+                else:
+                    assert v1 == v2, f"Filter {key}.{k} value mismatch"
+
+    def test_complete_roundtrip_workflow(
+        self, experiment_from_xml: Experiment, make_worker_safe_path
+    ):
+        """Test complete roundtrip: Experiment -> MTH5 -> Experiment."""
+        fn = make_worker_safe_path("test_complete_roundtrip.h5", Path(__file__).parent)
+
+        try:
+            # Step 1: Create MTH5 from experiment
+            mth5_obj = MTH5(file_version="0.1.0")
+            mth5_obj.open_mth5(fn, mode="w")
+            mth5_obj.from_experiment(experiment_from_xml)
+
+            # Step 2: Convert back to experiment
+            regenerated_experiment = mth5_obj.to_experiment()
+
+            # Step 3: Compare key attributes
+            assert (
+                regenerated_experiment.surveys[0].id
+                == experiment_from_xml.surveys[0].id
+            )
+            assert len(regenerated_experiment.surveys[0].stations) == len(
+                experiment_from_xml.surveys[0].stations
+            )
+
+            station_orig = experiment_from_xml.surveys[0].stations[0]
+            station_regen = regenerated_experiment.surveys[0].stations[0]
+
+            assert station_regen.id == station_orig.id
+            assert len(station_regen.runs) == len(station_orig.runs)
+            assert station_regen.location.latitude == station_orig.location.latitude
+            assert station_regen.location.longitude == station_orig.location.longitude
+
+        finally:
+            mth5_obj.close_mth5()
+            if fn.exists():
+                fn.unlink()
+
+
 # =============================================================================
 # Parametrized Tests for Multiple Items
 # =============================================================================
@@ -533,3 +735,84 @@ def test_individual_channel_metadata(
     h5_data = clean_metadata_dict(h5_channel.metadata.to_dict(single=True))
 
     assert h5_data == original_data
+
+
+def test_parametrized_station_roundtrip(
+    mth5_with_experiment: MTH5,
+    experiment_from_xml: Experiment,
+    station_id: str,
+):
+    """Test individual station roundtrip (parametrized)."""
+    regenerated_experiment = mth5_with_experiment.to_experiment()
+
+    original_station = next(
+        s for s in experiment_from_xml.surveys[0].stations if s.id == station_id
+    )
+    regenerated_station = next(
+        s for s in regenerated_experiment.surveys[0].stations if s.id == station_id
+    )
+
+    original_data = clean_metadata_dict(original_station.to_dict(single=True))
+    regenerated_data = clean_metadata_dict(regenerated_station.to_dict(single=True))
+
+    assert original_data == regenerated_data
+
+
+def test_parametrized_run_roundtrip(
+    mth5_with_experiment: MTH5,
+    experiment_from_xml: Experiment,
+    run_info: tuple[str, str],
+):
+    """Test individual run roundtrip (parametrized)."""
+    station_id, run_id = run_info
+    regenerated_experiment = mth5_with_experiment.to_experiment()
+
+    # Find original run
+    original_station = next(
+        s for s in experiment_from_xml.surveys[0].stations if s.id == station_id
+    )
+    original_run = next(r for r in original_station.runs if r.id == run_id)
+
+    # Find regenerated run
+    regenerated_station = next(
+        s for s in regenerated_experiment.surveys[0].stations if s.id == station_id
+    )
+    regenerated_run = next(r for r in regenerated_station.runs if r.id == run_id)
+
+    original_data = clean_metadata_dict(original_run.to_dict(single=True))
+    regenerated_data = clean_metadata_dict(regenerated_run.to_dict(single=True))
+
+    assert original_data == regenerated_data
+
+
+def test_parametrized_channel_roundtrip(
+    mth5_with_experiment: MTH5,
+    experiment_from_xml: Experiment,
+    channel_info: tuple[str, str, str],
+):
+    """Test individual channel roundtrip (parametrized)."""
+    station_id, run_id, component = channel_info
+    regenerated_experiment = mth5_with_experiment.to_experiment()
+
+    # Find original channel
+    original_station = next(
+        s for s in experiment_from_xml.surveys[0].stations if s.id == station_id
+    )
+    original_run = next(r for r in original_station.runs if r.id == run_id)
+    original_channel = next(
+        c for c in original_run.channels if c.component == component
+    )
+
+    # Find regenerated channel
+    regenerated_station = next(
+        s for s in regenerated_experiment.surveys[0].stations if s.id == station_id
+    )
+    regenerated_run = next(r for r in regenerated_station.runs if r.id == run_id)
+    regenerated_channel = next(
+        c for c in regenerated_run.channels if c.component == component
+    )
+
+    original_data = clean_metadata_dict(original_channel.to_dict(single=True))
+    regenerated_data = clean_metadata_dict(regenerated_channel.to_dict(single=True))
+
+    assert original_data == regenerated_data
