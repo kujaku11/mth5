@@ -105,6 +105,12 @@ def mth5_update_test(
         fn.unlink()
 
 
+@pytest.fixture(scope="session")
+def regenerated_experiment(mth5_with_experiment: MTH5) -> Experiment:
+    """Generate experiment from MTH5 once for all roundtrip tests (session-scoped for efficiency)."""
+    return mth5_with_experiment.to_experiment(has_data=False)
+
+
 # =============================================================================
 # Test Classes
 # =============================================================================
@@ -432,6 +438,9 @@ class TestMTH5Update:
         assert station.metadata.location.latitude == expected_lat
 
 
+# =============================================================================
+# Test MTH5 to_experiment Functionality
+# =============================================================================
 class TestMTH5ToExperiment:
     """Test MTH5 to_experiment functionality for round-trip consistency.
 
@@ -441,11 +450,9 @@ class TestMTH5ToExperiment:
     """
 
     def test_experiment_roundtrip(
-        self, mth5_with_experiment: MTH5, experiment_from_xml: Experiment
+        self, regenerated_experiment: Experiment, experiment_from_xml: Experiment
     ):
         """Test that to_experiment produces an equivalent Experiment object."""
-        regenerated_experiment = mth5_with_experiment.to_experiment()
-
         # Test that we get an Experiment object
         assert isinstance(regenerated_experiment, Experiment)
 
@@ -453,11 +460,9 @@ class TestMTH5ToExperiment:
         assert len(regenerated_experiment.surveys) == len(experiment_from_xml.surveys)
 
     def test_survey_roundtrip(
-        self, mth5_with_experiment: MTH5, experiment_from_xml: Experiment
+        self, regenerated_experiment: Experiment, experiment_from_xml: Experiment
     ):
         """Test survey metadata roundtrip consistency."""
-        regenerated_experiment = mth5_with_experiment.to_experiment()
-
         original_survey = experiment_from_xml.surveys[0]
         regenerated_survey = regenerated_experiment.surveys[0]
 
@@ -468,11 +473,9 @@ class TestMTH5ToExperiment:
         assert original_data == regenerated_data
 
     def test_station_roundtrip(
-        self, mth5_with_experiment: MTH5, experiment_from_xml: Experiment
+        self, regenerated_experiment: Experiment, experiment_from_xml: Experiment
     ):
         """Test station metadata roundtrip consistency."""
-        regenerated_experiment = mth5_with_experiment.to_experiment()
-
         original_stations = experiment_from_xml.surveys[0].stations
         regenerated_stations = regenerated_experiment.surveys[0].stations
 
@@ -493,11 +496,9 @@ class TestMTH5ToExperiment:
             ), f"Station {orig_station.id} roundtrip failed"
 
     def test_run_roundtrip(
-        self, mth5_with_experiment: MTH5, experiment_from_xml: Experiment
+        self, regenerated_experiment: Experiment, experiment_from_xml: Experiment
     ):
         """Test run metadata roundtrip consistency."""
-        regenerated_experiment = mth5_with_experiment.to_experiment()
-
         original_station = experiment_from_xml.surveys[0].stations[0]
         regenerated_station = regenerated_experiment.surveys[0].stations[0]
 
@@ -516,11 +517,9 @@ class TestMTH5ToExperiment:
             ), f"Run {orig_run.id} roundtrip failed"
 
     def test_channel_roundtrip(
-        self, mth5_with_experiment: MTH5, experiment_from_xml: Experiment
+        self, regenerated_experiment: Experiment, experiment_from_xml: Experiment
     ):
         """Test channel metadata roundtrip consistency."""
-        regenerated_experiment = mth5_with_experiment.to_experiment()
-
         original_run = experiment_from_xml.surveys[0].stations[0].runs[0]
         regenerated_run = regenerated_experiment.surveys[0].stations[0].runs[0]
 
@@ -543,11 +542,9 @@ class TestMTH5ToExperiment:
             ), f"Channel {orig_channel.component} roundtrip failed"
 
     def test_filter_roundtrip(
-        self, mth5_with_experiment: MTH5, experiment_from_xml: Experiment
+        self, regenerated_experiment: Experiment, experiment_from_xml: Experiment
     ):
         """Test filter metadata roundtrip consistency."""
-        regenerated_experiment = mth5_with_experiment.to_experiment()
-
         original_filters = experiment_from_xml.surveys[0].filters
         regenerated_filters = regenerated_experiment.surveys[0].filters
 
@@ -738,13 +735,11 @@ def test_individual_channel_metadata(
 
 
 def test_parametrized_station_roundtrip(
-    mth5_with_experiment: MTH5,
+    regenerated_experiment: Experiment,
     experiment_from_xml: Experiment,
     station_id: str,
 ):
     """Test individual station roundtrip (parametrized)."""
-    regenerated_experiment = mth5_with_experiment.to_experiment()
-
     original_station = next(
         s for s in experiment_from_xml.surveys[0].stations if s.id == station_id
     )
@@ -759,13 +754,12 @@ def test_parametrized_station_roundtrip(
 
 
 def test_parametrized_run_roundtrip(
-    mth5_with_experiment: MTH5,
+    regenerated_experiment: Experiment,
     experiment_from_xml: Experiment,
     run_info: tuple[str, str],
 ):
     """Test individual run roundtrip (parametrized)."""
     station_id, run_id = run_info
-    regenerated_experiment = mth5_with_experiment.to_experiment()
 
     # Find original run
     original_station = next(
@@ -786,13 +780,12 @@ def test_parametrized_run_roundtrip(
 
 
 def test_parametrized_channel_roundtrip(
-    mth5_with_experiment: MTH5,
+    regenerated_experiment: Experiment,
     experiment_from_xml: Experiment,
     channel_info: tuple[str, str, str],
 ):
     """Test individual channel roundtrip (parametrized)."""
     station_id, run_id, component = channel_info
-    regenerated_experiment = mth5_with_experiment.to_experiment()
 
     # Find original channel
     original_station = next(
