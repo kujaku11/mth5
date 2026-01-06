@@ -194,6 +194,7 @@ class RunGroup(BaseGroup):
     """
 
     def __init__(self, group, run_metadata=None, **kwargs):
+        self._non_channel_groups = ["Features"]
         super().__init__(group, group_metadata=run_metadata, **kwargs)
         # Channel metadata cache to share objects between add_channel and metadata property
         self._channel_metadata_cache = {}
@@ -224,6 +225,24 @@ class RunGroup(BaseGroup):
         survey_metadata.add_station(self.station_metadata)
         return survey_metadata
 
+    def _read_channel_metadata_from_hdf5(self, channel_name):
+        """Read channel metadata from HDF5 for a specific channel."""
+        meta_dict = dict(self.hdf5_group[channel_name].attrs)
+        for key, value in meta_dict.items():
+            meta_dict[key] = from_numpy_type(value)
+        ch_metadata = meta_classes[meta_dict["type"].capitalize()]()
+        ch_metadata.from_dict(meta_dict)
+        return ch_metadata
+
+    def recache_channel_metadata(self):
+        """Recache channel metadata from HDF5 to ensure cache is up to date."""
+        self._channel_metadata_cache = {}
+        for ch in self.groups_list:
+            if ch in self._non_channel_groups:
+                continue
+            ch_metadata = self._read_channel_metadata_from_hdf5(ch)
+            self._channel_metadata_cache[ch] = ch_metadata
+
     @BaseGroup.metadata.getter
     def metadata(self):
         """Overwrite get metadata to include channel information in the runs"""
@@ -231,6 +250,31 @@ class RunGroup(BaseGroup):
         if not self._has_read_metadata:
             self.read_metadata()
             self._has_read_metadata = True
+
+        if len(self._metadata.channels) > 0:
+            if (
+                self._metadata.time_period.start
+                != self._metadata.channels[0].time_period.start
+            ):
+                self.recache_channel_metadata()
+
+                # Clear and rebuild the channels list
+                self._metadata._empty_channels_recorded()
+                self._metadata.channels = []
+
+                for ch in self.groups_list:
+                    if ch in self._non_channel_groups:
+                        continue
+                    if ch in self._channel_metadata_cache:
+                        # Reuse cached metadata to prevent duplicate processing
+                        cached_metadata = self._channel_metadata_cache[ch]
+                        self._metadata.add_channel(cached_metadata)
+                    else:
+                        # Create new metadata if not cached
+                        ch_metadata = self._read_channel_metadata_from_hdf5(ch)
+                        # Cache the metadata for future use
+                        self._channel_metadata_cache[ch] = ch_metadata
+                        self._metadata.add_channel(ch_metadata)
 
         # Only rebuild channels if they haven't been built yet or if the group list has changed
         if not self._metadata.channels or len(self._metadata.channels) != len(
@@ -247,10 +291,9 @@ class RunGroup(BaseGroup):
                 self._metadata.channels = []
 
                 # List of known non-channel subgroups to skip
-                non_channel_groups = {"Features"}
                 for ch in self.groups_list:
                     # Skip non-channel groups
-                    if ch in non_channel_groups:
+                    if ch in self._non_channel_groups:
                         continue
                     if ch in self._channel_metadata_cache:
                         # Reuse cached metadata to prevent duplicate processing
@@ -258,11 +301,7 @@ class RunGroup(BaseGroup):
                         self._metadata.add_channel(cached_metadata)
                     else:
                         # Create new metadata if not cached
-                        meta_dict = dict(self.hdf5_group[ch].attrs)
-                        for key, value in meta_dict.items():
-                            meta_dict[key] = from_numpy_type(value)
-                        ch_metadata = meta_classes[meta_dict["type"].capitalize()]()
-                        ch_metadata.from_dict(meta_dict)
+                        ch_metadata = self._read_channel_metadata_from_hdf5(ch)
                         # Cache the metadata for future use
                         self._channel_metadata_cache[ch] = ch_metadata
                         self._metadata.add_channel(ch_metadata)
