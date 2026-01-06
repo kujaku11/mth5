@@ -606,7 +606,7 @@ class TestMTH5ToExperiment:
             mth5_obj.from_experiment(experiment_from_xml)
 
             # Step 2: Convert back to experiment
-            regenerated_experiment = mth5_obj.to_experiment()
+            regenerated_experiment = mth5_obj.to_experiment(has_data=False)
 
             # Step 3: Compare key attributes
             assert (
