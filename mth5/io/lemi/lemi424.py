@@ -762,10 +762,13 @@ class LEMI424:
         ):
             if comp[0] in ["h", "b"]:
                 ch = ChannelTS("magnetic")
+                ch.channel_metadata.units = "nT"
             elif comp[0] in ["e"]:
                 ch = ChannelTS("electric")
+                ch.channel_metadata.units = "mV/km"
             else:
                 ch = ChannelTS("auxiliary")
+                ch.channel_metadata.units = "C"
             ch.sample_rate = self.sample_rate
             ch.start = self.start
             ch.ts = self.data[comp].values
