@@ -27,7 +27,7 @@ class LEMI424Client(ClientBase):
             save_path=save_path,
             sample_rates=[1],
             mth5_filename=mth5_filename,
-            **kwargs
+            **kwargs,
         )
 
         self.collection = LEMICollection(self.data_path)
@@ -60,7 +60,10 @@ class LEMI424Client(ClientBase):
                 station_group = survey_group.stations_group.add_station(station_id)
                 for run_id, run_df in runs[station_id].items():
                     run_group = station_group.add_run(run_id)
-                    run_ts = read_file(run_df.fn.to_list())
+                    run_ts = read_file(
+                        run_df.fn.to_list(),
+                        calibration_dict=self.collection.calibration_dict,
+                    )
                     run_ts.run_metadata.id = run_id
                     run_group.from_runts(run_ts)
                 station_group.metadata.update(run_ts.station_metadata)

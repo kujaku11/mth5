@@ -71,6 +71,31 @@ def mock_lemi_collection():
     mock_collection = Mock(spec=LEMICollection)
     mock_collection.survey_id = "test_survey"
     mock_collection.station_id = "test_station"
+    mock_collection.calibration_dict = {}
+    mock_collection.get_runs.return_value = {
+        "test_station": {
+            "sr1_001": Mock(
+                fn=Mock(to_list=Mock(return_value=["file1.txt", "file2.txt"]))
+            )
+        }
+    }
+    return mock_collection
+
+
+@pytest.fixture
+def mock_lemi_collection_with_calibration(temp_data_dir):
+    """Create a mock LEMICollection with populated calibration_dict."""
+    mock_collection = Mock(spec=LEMICollection)
+    mock_collection.survey_id = "test_survey"
+    mock_collection.station_id = "test_station"
+
+    # Create calibration dict with magnetic channels only
+    mock_collection.calibration_dict = {
+        "bx": str(temp_data_dir / "lemi-bx.sr.json"),
+        "by": str(temp_data_dir / "lemi-by.sr.json"),
+        "bz": str(temp_data_dir / "lemi-bz.sr.json"),
+    }
+
     mock_collection.get_runs.return_value = {
         "test_station": {
             "sr1_001": Mock(
@@ -481,6 +506,101 @@ class TestLEMI424ClientMTH5Creation:
         # Verify collection was configured
         assert basic_lemi_client.collection.survey_id == "custom_survey"
         assert basic_lemi_client.collection.station_id == "custom_station"
+
+    @patch("mth5.clients.lemi424.read_file")
+    @patch("mth5.clients.lemi424.MTH5")
+    def test_make_mth5_with_calibration_dict(
+        self,
+        mock_mth5_class,
+        mock_read_file,
+        basic_lemi_client,
+        mock_lemi_collection_with_calibration,
+    ):
+        """Test MTH5 creation with populated calibration_dict."""
+        # Setup mocks
+        mock_mth5_instance = MagicMock()
+        mock_mth5_class.return_value.__enter__.return_value = mock_mth5_instance
+
+        mock_survey_group = MagicMock()
+        mock_mth5_instance.add_survey.return_value = mock_survey_group
+
+        mock_station_group = MagicMock()
+        mock_survey_group.stations_group.add_station.return_value = mock_station_group
+
+        mock_run_group = MagicMock()
+        mock_station_group.add_run.return_value = mock_run_group
+
+        mock_run_ts = MagicMock()
+        mock_run_ts.run_metadata.id = "sr1_001"
+        mock_run_ts.station_metadata = MagicMock()
+        mock_read_file.return_value = mock_run_ts
+
+        # Replace collection with mock that has calibration_dict
+        basic_lemi_client.collection = mock_lemi_collection_with_calibration
+
+        # Test method
+        result = basic_lemi_client.make_mth5_from_lemi424("test_survey", "test_station")
+
+        # Verify read_file was called with calibration_dict
+        mock_read_file.assert_called_once_with(
+            ["file1.txt", "file2.txt"],
+            calibration_dict=mock_lemi_collection_with_calibration.calibration_dict,
+        )
+
+        assert result == basic_lemi_client.save_path
+
+    @patch("mth5.clients.lemi424.read_file")
+    @patch("mth5.clients.lemi424.MTH5")
+    def test_make_mth5_calibration_dict_format(
+        self,
+        mock_mth5_class,
+        mock_read_file,
+        basic_lemi_client,
+        mock_lemi_collection_with_calibration,
+        temp_data_dir,
+    ):
+        """Test that calibration_dict has correct format for magnetic channels."""
+        # Setup mocks
+        mock_mth5_instance = MagicMock()
+        mock_mth5_class.return_value.__enter__.return_value = mock_mth5_instance
+
+        mock_survey_group = MagicMock()
+        mock_mth5_instance.add_survey.return_value = mock_survey_group
+
+        mock_station_group = MagicMock()
+        mock_survey_group.stations_group.add_station.return_value = mock_station_group
+
+        mock_run_group = MagicMock()
+        mock_station_group.add_run.return_value = mock_run_group
+
+        mock_run_ts = MagicMock()
+        mock_run_ts.run_metadata.id = "sr1_001"
+        mock_run_ts.station_metadata = MagicMock()
+        mock_read_file.return_value = mock_run_ts
+
+        # Replace collection with mock that has calibration_dict
+        basic_lemi_client.collection = mock_lemi_collection_with_calibration
+
+        # Verify calibration_dict structure
+        cal_dict = basic_lemi_client.collection.calibration_dict
+
+        # Should only have magnetic channels
+        assert set(cal_dict.keys()) == {"bx", "by", "bz"}
+
+        # Verify file format for each channel
+        for channel in ["bx", "by", "bz"]:
+            assert channel in cal_dict
+            assert cal_dict[channel].endswith(f"lemi-{channel}.sr.json")
+            # Verify it's a string path
+            assert isinstance(cal_dict[channel], str)
+
+        # Run method to ensure no errors with this format
+        basic_lemi_client.make_mth5_from_lemi424("test_survey", "test_station")
+
+        # Verify calibration_dict was passed to read_file
+        call_args = mock_read_file.call_args
+        assert "calibration_dict" in call_args.kwargs
+        assert call_args.kwargs["calibration_dict"] == cal_dict
 
 
 # =============================================================================

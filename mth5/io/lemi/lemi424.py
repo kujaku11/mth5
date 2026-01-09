@@ -8,6 +8,7 @@ Created on Tue May 11 15:31:31 2021
 :license: MIT
 
 """
+import json
 import warnings
 from io import StringIO
 
@@ -16,6 +17,8 @@ from io import StringIO
 # =============================================================================
 from pathlib import Path
 from typing import Any
+
+import numpy as np
 
 
 # supress the future warning from pandas about using datetime parser.
@@ -26,6 +29,7 @@ import pandas as pd
 from loguru import logger
 from mt_metadata.common.mttime import MTime
 from mt_metadata.timeseries import Auxiliary, Electric, Magnetic, Run, Station
+from mt_metadata.timeseries.filters import ChannelResponse, FrequencyResponseTableFilter
 
 from mth5.timeseries import ChannelTS, RunTS
 
@@ -735,8 +739,59 @@ class LEMI424:
             index_col="date",
         )
 
+    def read_calibration(self, fn: str | Path) -> FrequencyResponseTableFilter:
+        """
+        Read a LEMI424 calibration file.
+
+        Parameters
+        ----------
+        fn : str or pathlib.Path
+            Full path to calibration file.
+
+        Returns
+        -------
+        mt_metadata.timeseries.filters.FrequencyResponseTableFilter
+            Calibration filter object.
+
+        """
+
+        with open(fn, "r") as cf:
+            try:
+                cal_data = json.load(cf)["Calibration"]
+
+            except json.JSONDecodeError as e:
+                self.logger.error(f"Error reading calibration file {fn}: {e}")
+                raise
+            except KeyError as e:
+                self.logger.error(f"Calibration key not found in file {fn}: {e}")
+                raise
+
+        gain = cal_data.get("gain", 1.0)
+        frequencies = np.array(cal_data.get("Freq", []))
+        real = np.array(cal_data.get("Re", []))
+        imag = np.array(cal_data.get("Im", []))
+
+        if real.size > 0 and imag.size > 0:
+            amplitudes = np.sqrt(real**2 + imag**2)
+            phases = np.degrees(np.arctan2(imag, real))
+
+        cal_filter = FrequencyResponseTableFilter(
+            frequencies=frequencies,
+            amplitudes=amplitudes,
+            phases=phases,
+            gain=gain,
+            instrument_type="flux gate magnetometer",
+            units_in="nanoTesla",
+            units_out="nanoTesla",
+            sequence_number=1,
+        )
+        return cal_filter
+
     def to_run_ts(
-        self, fn: str | Path | None = None, e_channels: list[str] = ["e1", "e2"]
+        self,
+        fn: str | Path | None = None,
+        e_channels: list[str] = ["e1", "e2"],
+        calibration_dict: dict | None = None,
     ) -> RunTS:
         """
         Create a RunTS object from the data.
@@ -747,6 +802,9 @@ class LEMI424:
             Full path to file. Will use LEMI424.fn if None, by default None.
         e_channels : list of str, optional
             Column names for the electric channels to use, by default ["e1", "e2"].
+        calibration_dict : dict, optional
+            Calibration dictionary to apply to the data, by default {}.  Keys are
+            the channel names and values are the calibration file path.
 
         Returns
         -------
@@ -756,10 +814,20 @@ class LEMI424:
         """
 
         ch_list = []
+        if calibration_dict is None:
+            calibration_dict = {}
+        if not isinstance(calibration_dict, dict):
+            raise ValueError("calibration_dict must be a dictionary")
 
         for comp in (
             ["bx", "by", "bz"] + e_channels + ["temperature_e", "temperature_h"]
         ):
+            channel_response = None
+            if comp in calibration_dict.keys():
+                fap_filter = self.read_calibration(calibration_dict[comp])
+                fap_filter.name = f"lemi424_{comp}_calibration"
+                channel_response = ChannelResponse(filters_list=[fap_filter])
+
             if comp[0] in ["h", "b"]:
                 ch = ChannelTS("magnetic")
                 ch.channel_metadata.units = "nT"
@@ -773,6 +841,8 @@ class LEMI424:
             ch.start = self.start
             ch.ts = self.data[comp].values
             ch.component = comp
+            if channel_response is not None:
+                ch.channel_response = channel_response
 
             ch_list.append(ch)
         return RunTS(
@@ -789,6 +859,7 @@ def read_lemi424(
     fn: str | Path | list[str | Path],
     e_channels: list[str] = ["e1", "e2"],
     fast: bool = True,
+    calibration_dict: dict | None = None,
 ) -> RunTS:
     """
     Read a LEMI 424 TXT file.
@@ -801,6 +872,9 @@ def read_lemi424(
         A list of electric channels to read, by default ["e1", "e2"].
     fast : bool, optional
         Use fast reading method, by default True.
+    calibration_dict : dict, optional
+        Calibration dictionary to apply to the data, by default None.  Keys are
+        the channel names and values are the calibration file path.
 
     Returns
     -------
@@ -820,4 +894,4 @@ def read_lemi424(
             other = LEMI424(txt_file)
             other.read()
             txt_obj += other
-    return txt_obj.to_run_ts(e_channels=e_channels)
+    return txt_obj.to_run_ts(e_channels=e_channels, calibration_dict=calibration_dict)

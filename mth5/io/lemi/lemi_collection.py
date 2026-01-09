@@ -79,6 +79,38 @@ class LEMICollection(Collection):
 
         self.station_id = "mt001"
         self.survey_id = "mt"
+        self.calibration_dict = {}
+
+    def get_calibrations(self, calibration_path: str | Path) -> dict:
+        """
+        Get calibration dictionary for LEMI424 files.  This assumes that the
+        calibrations files are in JSON format and named as
+        'LEMI-424-<component>.json'
+
+        Parameters
+        ----------
+        calibration_path : str or pathlib.Path
+            Path to calibration files
+
+        Returns
+        -------
+        dict
+            Calibration dictionary for LEMI424 files
+
+        Examples
+        --------
+        >>> from mth5.io.lemi import LEMICollection
+        >>> lc = LEMICollection("/path/to/single/lemi/station")
+        >>> cal_dict = lc.get_calibrations(Path("/path/to/calibrations"))
+        """
+        calibration_path = Path(calibration_path)
+
+        calibration_dict = {}
+        for fn in calibration_path.rglob("*.json"):
+            comp = fn.stem.split("-")[-1].split(".", 1)[0]
+            calibration_dict[comp] = fn
+
+        return calibration_dict
 
     def to_dataframe(
         self,
@@ -115,6 +147,15 @@ class LEMICollection(Collection):
         """
         if sample_rates is None:
             sample_rates = [1]
+
+        if calibration_path is None:
+            calibration_path = Path(self.file_path)
+        self.calibration_dict = self.get_calibrations(calibration_path)
+        if not self.calibration_dict:
+            self.logger.warning(
+                f"No calibration files found in {calibration_path}, "
+                "proceeding without calibrations."
+            )
 
         entries = []
         for fn in self.get_files(self.file_ext):
