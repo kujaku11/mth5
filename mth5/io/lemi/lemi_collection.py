@@ -151,7 +151,7 @@ class LEMICollection(Collection):
         if calibration_path is None:
             calibration_path = Path(self.file_path)
         self.calibration_dict = self.get_calibrations(calibration_path)
-        if self.calibration_dict == {}:
+        if not self.calibration_dict:
             self.logger.warning(
                 f"No calibration files found in {calibration_path}, "
                 "proceeding without calibrations."
