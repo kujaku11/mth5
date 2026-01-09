@@ -756,7 +756,16 @@ class LEMI424:
         """
 
         with open(fn, "r") as cf:
-            cal_data = json.load(cf)["Calibration"]
+            try:
+                cal_data = json.load(cf)["Calibration"]
+
+            except json.JSONDecodeError as e:
+                self.logger.error(f"Error reading calibration file {fn}: {e}")
+                raise
+            except KeyError as e:
+                self.logger.error(f"Calibration key not found in file {fn}: {e}")
+                raise
+
         gain = cal_data.get("gain", 1.0)
         frequencies = np.array(cal_data.get("Freq", []))
         real = np.array(cal_data.get("Re", []))
