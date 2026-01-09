@@ -782,7 +782,7 @@ class LEMI424:
         self,
         fn: str | Path | None = None,
         e_channels: list[str] = ["e1", "e2"],
-        calibration_dict: dict = {},
+        calibration_dict: dict | None = None,
     ) -> RunTS:
         """
         Create a RunTS object from the data.
