@@ -510,7 +510,7 @@ class LegacyEMTFAsciiFile:
         """
 
         # read in data
-        df = pd.read_csv(self.file_path, names=channel_names, sep="\s+")
+        df = pd.read_csv(self.file_path, names=channel_names, sep=r"\s+")
 
         # Invert electric channels to fix phase swap due to modeling coordinates.
         # Column indices are used to avoid handling channel nomenclature here.

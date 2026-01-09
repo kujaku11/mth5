@@ -30,7 +30,7 @@ except ImportError:
     HAS_MTH5_TEST_DATA = False
 
 
-@pytest.mark.skipif(
+pytestmark = pytest.mark.skipif(
     HAS_MTH5_TEST_DATA, reason="Skipping mock tests - real data available"
 )
 # =============================================================================

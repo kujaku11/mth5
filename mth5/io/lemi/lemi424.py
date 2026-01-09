@@ -623,7 +623,7 @@ class LEMI424:
                 time_index = pd.date_range(
                     start=self.start.iso_no_tz,
                     end=self.end.iso_no_tz,
-                    freq="1000000000N",
+                    freq="1000000000ns",
                 )
                 if time_index.size != data.shape[0]:
                     raise ValueError("Missing a time stamp use read with fast=False")

@@ -1287,9 +1287,9 @@ class KernelDataset:
 
         self.add_columns_for_processing()
 
-        for i, row in self.df.iterrows():
+        for index, row in self.df.iterrows():
             run_obj = row.mth5_obj.get_run(row.station, row.run, survey=row.survey)
-            self.df["run_hdf5_reference"].at[i] = run_obj.hdf5_group.ref
+            self.df.at[index, "run_hdf5_reference"] = run_obj.hdf5_group.ref
 
             if row.fc:
                 msg = f"row {row} already has fcs prescribed by processing config"
@@ -1299,7 +1299,7 @@ class KernelDataset:
                 # continue
             # the line below is not lazy, See Note #2
             run_ts = run_obj.to_runts(start=row.start, end=row.end)
-            self.df["run_dataarray"].at[i] = run_ts.dataset.to_array("channel")
+            self.df.at[index, "run_dataarray"] = run_ts.dataset.to_array("channel")
 
             # self.update_survey_metadata(i, row, run_ts)
 
@@ -1324,13 +1324,13 @@ class KernelDataset:
             raise ValueError("mth5 objects have not been initialized yet.")
 
         if self._has_df():
-            self._df.loc[
-                self._df.station == self.local_station_id, "mth5_obj"
-            ] = self.local_mth5_obj
+            self._df.loc[self._df.station == self.local_station_id, "mth5_obj"] = (
+                self.local_mth5_obj
+            )
             if self.remote_station_id is not None:
-                self._df.loc[
-                    self._df.station == self.remote_station_id, "mth5_obj"
-                ] = self.remote_mth5_obj
+                self._df.loc[self._df.station == self.remote_station_id, "mth5_obj"] = (
+                    self.remote_mth5_obj
+                )
 
     def close_mth5s(self) -> None:
         """Loop over all unique mth5_objs in dataset df and make sure they are closed.+."""
