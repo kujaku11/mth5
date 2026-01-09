@@ -863,6 +863,9 @@ def read_lemi424(
         A list of electric channels to read, by default ["e1", "e2"].
     fast : bool, optional
         Use fast reading method, by default True.
+    calibration_dict : dict, optional
+        Calibration dictionary to apply to the data, by default None.  Keys are
+        the channel names and values are the calibration file path.
 
     Returns
     -------
