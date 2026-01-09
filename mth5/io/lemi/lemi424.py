@@ -771,8 +771,10 @@ class LEMI424:
             amplitudes=amplitudes,
             phases=phases,
             gain=gain,
-            input_units="nanoTesla",
-            output_units="nanoTesla",
+            instrument_type="flux gate magnetometer",
+            units_in="nanoTesla",
+            units_out="nanoTesla",
+            sequence_number=1,
         )
         return cal_filter
 
@@ -810,7 +812,7 @@ class LEMI424:
             channel_response = None
             if comp in calibration_dict.keys():
                 fap_filter = self.read_calibration(calibration_dict[comp])
-                fap_filter.name = f"LEMI424_{comp}_calibration"
+                fap_filter.name = f"lemi424_{comp}_calibration"
                 channel_response = ChannelResponse(filters_list=[fap_filter])
 
             if comp[0] in ["h", "b"]:
