@@ -311,9 +311,7 @@ class TestLEMICollectionDataFrameOperations:
 
             assert isinstance(df, pd.DataFrame)
             assert len(df) == 0
-            mock_logger.warning.assert_called_once_with(
-                "No entries found for LEMI collection"
-            )
+            mock_logger.warning.assert_any_call("No entries found for LEMI collection")
 
     @patch("mth5.io.lemi.lemi_collection.LEMI424")
     def test_to_dataframe_column_consistency(

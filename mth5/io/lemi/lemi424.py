@@ -805,6 +805,10 @@ class LEMI424:
         """
 
         ch_list = []
+        if calibration_dict is None:
+            calibration_dict = {}
+        if not isinstance(calibration_dict, dict):
+            raise ValueError("calibration_dict must be a dictionary")
 
         for comp in (
             ["bx", "by", "bz"] + e_channels + ["temperature_e", "temperature_h"]

@@ -71,6 +71,7 @@ def mock_lemi_collection():
     mock_collection = Mock(spec=LEMICollection)
     mock_collection.survey_id = "test_survey"
     mock_collection.station_id = "test_station"
+    mock_collection.calibration_dict = {}
     mock_collection.get_runs.return_value = {
         "test_station": {
             "sr1_001": Mock(
