@@ -445,7 +445,7 @@ def from_numpy_type(value: Any) -> Any:
         return value
 
     # Handle deprecated numpy.bool (numpy >=1.20 deprecates numpy.bool)
-    if hasattr(np, "bool") and isinstance(value, np.bool):
+    if isinstance(value, (bool, np.bool_)):
         return bool(value)
 
     # if isinstance(
