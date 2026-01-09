@@ -1299,7 +1299,7 @@ class KernelDataset:
                 # continue
             # the line below is not lazy, See Note #2
             run_ts = run_obj.to_runts(start=row.start, end=row.end)
-            self.df.at[index, "run_dataarray"] = run_ts.dataset.to_array("channel")
+            self.df.loc[index, "run_dataarray"] = run_ts.dataset.to_array("channel")
 
             # self.update_survey_metadata(i, row, run_ts)
 
