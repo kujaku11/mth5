@@ -743,6 +743,17 @@ class LEMI424:
         """
         Read a LEMI424 calibration file.
 
+        Calibration files are assumed to be JSON files with the following format:
+        {
+            "Calibration": {
+                "gain": float,
+                "Freq": [float],
+                "Re": [float],
+                "Im": [float]
+            }
+        }
+
+
         Parameters
         ----------
         fn : str or pathlib.Path
@@ -804,7 +815,8 @@ class LEMI424:
             Column names for the electric channels to use, by default ["e1", "e2"].
         calibration_dict : dict, optional
             Calibration dictionary to apply to the data, by default {}.  Keys are
-            the channel names and values are the calibration file path.
+            the channel names and values are the calibration file path. The file
+            path is assumed to be in the format `lemi-{component}.sr.json`.
 
         Returns
         -------
