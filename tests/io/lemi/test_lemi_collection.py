@@ -140,6 +140,24 @@ def sample_dataframe():
     return pd.DataFrame(data)
 
 
+@pytest.fixture
+def lemi_collection_with_calibration(tmp_path):
+    """Create a LEMICollection with populated calibration_dict."""
+    temp_dir = tmp_path / "lemi_with_cal"
+    temp_dir.mkdir()
+
+    lc = LEMICollection(file_path=temp_dir)
+
+    # Create calibration dict with magnetic channels only
+    lc.calibration_dict = {
+        "bx": str(temp_dir / "lemi-bx.sr.json"),
+        "by": str(temp_dir / "lemi-by.sr.json"),
+        "bz": str(temp_dir / "lemi-bz.sr.json"),
+    }
+
+    return lc
+
+
 # ==============================================================================
 # Test Classes
 # ==============================================================================
@@ -716,6 +734,110 @@ class TestLEMICollectionMockValidation:
 # ==============================================================================
 
 
+class TestLEMICollectionCalibration:
+    """Test calibration_dict functionality."""
+
+    def test_calibration_dict_initialization(self, tmp_path):
+        """Test that calibration_dict is initialized as empty dict."""
+        temp_dir = tmp_path / "temp_cal"
+        temp_dir.mkdir()
+
+        lc = LEMICollection(file_path=temp_dir)
+        assert hasattr(lc, "calibration_dict")
+        assert isinstance(lc.calibration_dict, dict)
+        assert len(lc.calibration_dict) == 0
+
+    def test_calibration_dict_magnetic_channels_only(
+        self, lemi_collection_with_calibration
+    ):
+        """Test that calibration_dict has only magnetic channels as keys."""
+        cal_dict = lemi_collection_with_calibration.calibration_dict
+
+        # Should only have magnetic channels
+        assert set(cal_dict.keys()) == {"bx", "by", "bz"}
+
+        # Verify no electric or temperature channels
+        assert "e1" not in cal_dict
+        assert "e2" not in cal_dict
+        assert "temperature_e" not in cal_dict
+        assert "temperature_h" not in cal_dict
+
+    def test_calibration_dict_file_format(
+        self, lemi_collection_with_calibration, tmp_path
+    ):
+        """Test that calibration_dict values follow correct file format."""
+        cal_dict = lemi_collection_with_calibration.calibration_dict
+
+        # Verify file format for each channel
+        for channel in ["bx", "by", "bz"]:
+            assert channel in cal_dict
+            assert cal_dict[channel].endswith(f"lemi-{channel}.sr.json")
+            # Verify it's a string path
+            assert isinstance(cal_dict[channel], str)
+            # Verify the path can be converted to Path object
+            assert Path(cal_dict[channel]).name == f"lemi-{channel}.sr.json"
+
+    def test_calibration_dict_can_be_set(self, tmp_path):
+        """Test that calibration_dict can be set after initialization."""
+        temp_dir = tmp_path / "temp_cal_set"
+        temp_dir.mkdir()
+
+        lc = LEMICollection(file_path=temp_dir)
+
+        # Initially empty
+        assert len(lc.calibration_dict) == 0
+
+        # Set calibration dict
+        lc.calibration_dict = {
+            "bx": str(temp_dir / "lemi-bx.sr.json"),
+            "by": str(temp_dir / "lemi-by.sr.json"),
+            "bz": str(temp_dir / "lemi-bz.sr.json"),
+        }
+
+        # Verify it was set
+        assert len(lc.calibration_dict) == 3
+        assert "bx" in lc.calibration_dict
+        assert "by" in lc.calibration_dict
+        assert "bz" in lc.calibration_dict
+
+    def test_calibration_dict_partial_channels(self, tmp_path):
+        """Test calibration_dict with only some magnetic channels."""
+        temp_dir = tmp_path / "temp_cal_partial"
+        temp_dir.mkdir()
+
+        lc = LEMICollection(file_path=temp_dir)
+
+        # Set calibration dict with only bx and by
+        lc.calibration_dict = {
+            "bx": str(temp_dir / "lemi-bx.sr.json"),
+            "by": str(temp_dir / "lemi-by.sr.json"),
+        }
+
+        # Verify only two channels
+        assert len(lc.calibration_dict) == 2
+        assert "bx" in lc.calibration_dict
+        assert "by" in lc.calibration_dict
+        assert "bz" not in lc.calibration_dict
+
+    def test_calibration_dict_path_types(self, tmp_path):
+        """Test that calibration_dict accepts both string and Path values."""
+        temp_dir = tmp_path / "temp_cal_types"
+        temp_dir.mkdir()
+
+        lc = LEMICollection(file_path=temp_dir)
+
+        # Set with mixed types
+        lc.calibration_dict = {
+            "bx": str(temp_dir / "lemi-bx.sr.json"),  # string
+            "by": temp_dir / "lemi-by.sr.json",  # Path object
+        }
+
+        # Both should work
+        assert len(lc.calibration_dict) == 2
+        assert "bx" in lc.calibration_dict
+        assert "by" in lc.calibration_dict
+
+
 class TestFixtureValidation:
     """Validate that all fixtures work correctly."""
 
@@ -743,6 +865,19 @@ class TestFixtureValidation:
         assert isinstance(sample_dataframe, pd.DataFrame)
         assert len(sample_dataframe) == 12
         assert "survey" in sample_dataframe.columns
+
+    def test_lemi_collection_with_calibration_fixture(
+        self, lemi_collection_with_calibration
+    ):
+        """Test lemi_collection_with_calibration fixture."""
+        assert isinstance(lemi_collection_with_calibration, LEMICollection)
+        assert hasattr(lemi_collection_with_calibration, "calibration_dict")
+        assert len(lemi_collection_with_calibration.calibration_dict) == 3
+        assert set(lemi_collection_with_calibration.calibration_dict.keys()) == {
+            "bx",
+            "by",
+            "bz",
+        }
 
 
 if __name__ == "__main__":

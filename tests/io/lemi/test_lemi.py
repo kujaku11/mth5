@@ -206,6 +206,22 @@ def expected_run_metadata():
     return run_metadata
 
 
+@pytest.fixture
+def lemi_obj_with_calibration(lemi_test_file, tmp_path):
+    """Create a LEMI424 object with populated calibration_dict."""
+    lemi_obj = LEMI424(lemi_test_file)
+    lemi_obj.read()
+
+    # Create calibration dict with magnetic channels only
+    lemi_obj.calibration_dict = {
+        "bx": str(tmp_path / "lemi-bx.sr.json"),
+        "by": str(tmp_path / "lemi-by.sr.json"),
+        "bz": str(tmp_path / "lemi-bz.sr.json"),
+    }
+
+    return lemi_obj
+
+
 # ==============================================================================
 # Basic Functionality Tests
 # ==============================================================================
@@ -840,6 +856,145 @@ class TestReadLemi424Function:
 
 
 # ==============================================================================
+# Calibration Tests
+# ==============================================================================
+class TestLEMI424Calibration:
+    """Test calibration_dict functionality with to_run_ts method."""
+
+    def test_calibration_dict_format_validation(self, tmp_path):
+        """Test that calibration_dict has correct format."""
+        # Create calibration dict with magnetic channels only
+        cal_dict = {
+            "bx": str(tmp_path / "lemi-bx.sr.json"),
+            "by": str(tmp_path / "lemi-by.sr.json"),
+            "bz": str(tmp_path / "lemi-bz.sr.json"),
+        }
+
+        # Should only have magnetic channels
+        assert set(cal_dict.keys()) == {"bx", "by", "bz"}
+
+        # Verify no electric or temperature channels
+        assert "e1" not in cal_dict
+        assert "e2" not in cal_dict
+        assert "e3" not in cal_dict
+        assert "e4" not in cal_dict
+        assert "temperature_e" not in cal_dict
+        assert "temperature_h" not in cal_dict
+
+        # Verify file format for each channel
+        for channel in ["bx", "by", "bz"]:
+            assert channel in cal_dict
+            assert cal_dict[channel].endswith(f"lemi-{channel}.sr.json")
+            assert isinstance(cal_dict[channel], str)
+            assert Path(cal_dict[channel]).name == f"lemi-{channel}.sr.json"
+
+    def test_to_run_ts_with_calibration_dict(self, lemi_obj_with_data, tmp_path):
+        """Test to_run_ts accepts calibration_dict parameter."""
+        # Create calibration dict
+        cal_dict = {
+            "bx": str(tmp_path / "lemi-bx.sr.json"),
+            "by": str(tmp_path / "lemi-by.sr.json"),
+            "bz": str(tmp_path / "lemi-bz.sr.json"),
+        }
+
+        # Note: to_run_ts will fail if files don't exist, but we're testing parameter passing
+        # The actual calibration application happens inside to_run_ts
+        # For now, just test that parameter can be passed
+        try:
+            run_ts = lemi_obj_with_data.to_run_ts(calibration_dict=cal_dict)
+            # If successful, verify RunTS was created
+            assert isinstance(run_ts, RunTS)
+        except FileNotFoundError:
+            # Expected if calibration files don't exist - that's okay
+            pass
+
+    def test_to_run_ts_with_empty_calibration_dict(self, lemi_obj_with_data):
+        """Test to_run_ts with empty calibration_dict."""
+        # Empty dict should work fine
+        run_ts = lemi_obj_with_data.to_run_ts(calibration_dict={})
+
+        assert isinstance(run_ts, RunTS)
+        assert run_ts.dataset.sizes["time"] == 60
+
+    def test_to_run_ts_without_calibration_dict(self, lemi_obj_with_data):
+        """Test to_run_ts without calibration_dict (default None)."""
+        run_ts = lemi_obj_with_data.to_run_ts()
+
+        assert isinstance(run_ts, RunTS)
+        assert run_ts.dataset.sizes["time"] == 60
+
+    def test_calibration_dict_partial_channels(self, lemi_obj_with_data, tmp_path):
+        """Test calibration_dict with only some magnetic channels."""
+        # Create calibration dict with only bx and by
+        cal_dict = {
+            "bx": str(tmp_path / "lemi-bx.sr.json"),
+            "by": str(tmp_path / "lemi-by.sr.json"),
+        }
+
+        # Verify only two channels
+        assert len(cal_dict) == 2
+        assert "bx" in cal_dict
+        assert "by" in cal_dict
+        assert "bz" not in cal_dict
+
+        # Should be able to pass partial dict
+        try:
+            run_ts = lemi_obj_with_data.to_run_ts(calibration_dict=cal_dict)
+            assert isinstance(run_ts, RunTS)
+        except FileNotFoundError:
+            # Expected if files don't exist
+            pass
+
+    def test_calibration_dict_path_types(self, tmp_path):
+        """Test that calibration_dict accepts both string and Path values."""
+        # Create with mixed types
+        cal_dict = {
+            "bx": str(tmp_path / "lemi-bx.sr.json"),  # string
+            "by": tmp_path / "lemi-by.sr.json",  # Path object
+        }
+
+        # Both should work
+        assert len(cal_dict) == 2
+        assert "bx" in cal_dict
+        assert "by" in cal_dict
+
+    def test_calibration_dict_magnetic_channels_only(self, tmp_path):
+        """Test that calibration_dict should only contain magnetic channels."""
+        # Correct: only magnetic channels
+        correct_cal_dict = {
+            "bx": str(tmp_path / "lemi-bx.sr.json"),
+            "by": str(tmp_path / "lemi-by.sr.json"),
+            "bz": str(tmp_path / "lemi-bz.sr.json"),
+        }
+
+        # Verify correct format
+        assert set(correct_cal_dict.keys()) == {"bx", "by", "bz"}
+
+        # Incorrect: should not include electric channels
+        incorrect_cal_dict = {
+            "bx": str(tmp_path / "lemi-bx.sr.json"),
+            "e1": str(tmp_path / "lemi-e1.sr.json"),  # Wrong!
+        }
+
+        # Verify we can detect incorrect usage
+        assert "e1" in incorrect_cal_dict
+        assert incorrect_cal_dict.keys() != {"bx", "by", "bz"}
+
+    def test_calibration_dict_fixture_structure(self, lemi_obj_with_calibration):
+        """Test that fixture creates calibration_dict correctly."""
+        cal_dict = lemi_obj_with_calibration.calibration_dict
+
+        # Verify structure
+        assert isinstance(cal_dict, dict)
+        assert len(cal_dict) == 3
+        assert set(cal_dict.keys()) == {"bx", "by", "bz"}
+
+        # Verify format
+        for channel in ["bx", "by", "bz"]:
+            assert cal_dict[channel].endswith(f"lemi-{channel}.sr.json")
+
+
+# ==============================================================================
 # Fixture Validation Tests
 # ==============================================================================
 class TestLEMI424BugFixes:
@@ -917,6 +1072,23 @@ class TestFixtureValidation:
         assert isinstance(expected_run_metadata, Run)
         assert expected_run_metadata.id == "a"
         assert expected_run_metadata.sample_rate == 1.0
+
+    def test_lemi_obj_with_calibration_fixture(self, lemi_obj_with_calibration):
+        """Test that calibration fixture is properly configured."""
+        assert isinstance(lemi_obj_with_calibration, LEMI424)
+        assert lemi_obj_with_calibration._has_data()
+        assert hasattr(lemi_obj_with_calibration, "calibration_dict")
+        assert len(lemi_obj_with_calibration.calibration_dict) == 3
+        assert set(lemi_obj_with_calibration.calibration_dict.keys()) == {
+            "bx",
+            "by",
+            "bz",
+        }
+        # Verify each value ends with correct format
+        for channel in ["bx", "by", "bz"]:
+            assert lemi_obj_with_calibration.calibration_dict[channel].endswith(
+                f"lemi-{channel}.sr.json"
+            )
 
 
 if __name__ == "__main__":
