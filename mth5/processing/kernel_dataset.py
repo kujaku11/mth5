@@ -1289,7 +1289,7 @@ class KernelDataset:
 
         for index, row in self.df.iterrows():
             run_obj = row.mth5_obj.get_run(row.station, row.run, survey=row.survey)
-            self.df.at[index, "run_hdf5_reference"] = run_obj.hdf5_group.ref
+            self.df.loc[index, "run_hdf5_reference"] = run_obj.hdf5_group.ref
 
             if row.fc:
                 msg = f"row {row} already has fcs prescribed by processing config"
