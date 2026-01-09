@@ -1291,7 +1291,7 @@ class KernelDataset:
             run_obj = row.mth5_obj.get_run(row.station, row.run, survey=row.survey)
             self.df.loc[index, "run_hdf5_reference"] = run_obj.hdf5_group.ref
 
-            if row.fc:
+            if pd.notna(row.fc) and row.fc:
                 msg = f"row {row} already has fcs prescribed by processing config"
                 msg += "-- skipping time series initialisation"
                 logger.info(msg)
@@ -1299,7 +1299,7 @@ class KernelDataset:
                 # continue
             # the line below is not lazy, See Note #2
             run_ts = run_obj.to_runts(start=row.start, end=row.end)
-            self.df.loc[index, "run_dataarray"] = run_ts.dataset.to_array("channel")
+            self.df.at[index, "run_dataarray"] = run_ts.dataset.to_array("channel")
 
             # self.update_survey_metadata(i, row, run_ts)
 

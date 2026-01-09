@@ -552,6 +552,38 @@ def test_large_dataset_performance(custom_run_summary_data):
     assert end - start < 10.0  # Should complete in under 10 seconds
     assert kd._has_df()
 
+# =============================================================================
+# Integration Test for initialize_dataframe_for_processing
+# =============================================================================
+
+def test_initialize_dataframe_for_processing(mth5_path):
+    """Test KernelDataset.initialize_dataframe_for_processing end-to-end."""
+    # Create run summary from the provided MTH5 file
+    run_summary = RunSummary()
+    run_summary.from_mth5s([mth5_path])
+
+    # Create KernelDataset and initialize from run summary
+    kd = KernelDataset()
+    # Use the first two stations as local and remote (if available)
+    stations = run_summary.df.station.unique()
+    if len(stations) < 2:
+        # Single station test
+        kd.from_run_summary(run_summary, stations[0])
+    else:
+        kd.from_run_summary(run_summary, stations[0], stations[1])
+
+    # Open MTH5 files for the dataset
+    kd.initialize_mth5s()
+
+    # Run the function under test
+    kd.initialize_dataframe_for_processing()
+
+    # Check that run_hdf5_reference and run_dataarray columns are populated (not all None)
+    assert "run_hdf5_reference" in kd.df.columns
+    assert "run_dataarray" in kd.df.columns
+    assert kd.df["run_hdf5_reference"].notnull().any(), "run_hdf5_reference should not be all None"
+    assert kd.df["run_dataarray"].notnull().any(), "run_dataarray should not be all None"
+
 
 if __name__ == "__main__":
     pytest.main([__file__])
