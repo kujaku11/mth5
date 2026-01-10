@@ -1045,26 +1045,32 @@ class RunTS:
                     self.logger.warning(msg)
                 self.run_metadata.time_period.end = self.end.isoformat()
             # check sample rate
+            # get the data sample rate and check against metadata
             data_sr = self._compute_sample_rate()
-            if self.sample_rate != data_sr:
-                if self.run_metadata.sample_rate not in [0.0, None]:
+            # if sample rate is not set, use data value
+            if self.sample_rate in [0.0, None]:
+                self._sample_rate = data_sr
+                if self.run_metadata.sample_rate != self._sample_rate:
                     msg = (
-                        f"sample rate of dataset {data_sr} does not "
-                        f"match metadata sample rate {self.sample_rate} "
+                        f"sample rate of dataset {data_sr} is different than "
+                        f"metadata sample rate {self.run_metadata.sample_rate} "
                         f"updating metatdata value to {data_sr}"
                     )
-                    self.logger.critical(msg)
+                    self.logger.warning(msg)
+                    self.run_metadata.sample_rate = data_sr
+
+            # if sample rates don't match, update to data value
+            elif self.sample_rate != data_sr:
+                msg = (
+                    f"sample rate of dataset {data_sr} does not "
+                    f"match metadata sample rate {self.sample_rate} "
+                    f"updating metatdata value to {data_sr}"
+                )
+                self.logger.critical(msg)
                 self._sample_rate = data_sr
                 self.run_metadata.sample_rate = data_sr
 
-        if self.sample_rate != self.run_metadata.sample_rate:
-            msg = (
-                f"sample rate of dataset {data_sr} does not "
-                f"match metadata sample rate {self.sample_rate} "
-                f"updating metatdata value to {data_sr}"
-            )
-            self.logger.critical(msg)
-            self.run_metadata.sample_rate = self._sample_rate
+        # update station and survey time periods
         if self.run_metadata.id not in self.station_metadata.runs.keys():
             self.station_metadata.runs[0].update(self.run_metadata)
         self.station_metadata.update_time_period()
@@ -1352,6 +1358,9 @@ class RunTS:
         if self.has_data():
             if self._sample_rate is None:
                 self._sample_rate = self._compute_sample_rate()
+        else:
+            if self._sample_rate is None:
+                self._sample_rate = self.run_metadata.sample_rate
 
         return self._sample_rate
 
@@ -1559,6 +1568,7 @@ class RunTS:
                 if run_metadata.has_channel(channel_ts.component):
                     ch = run_metadata.get_channel(channel_ts.component)
                     channel_ts.channel_metadata.update(ch)
+                    channel_ts.run_metadata.update(run_metadata)
                 else:
                     self.logger.warning(f"could not find {channel_ts.component}")
 
@@ -1582,6 +1592,7 @@ class RunTS:
             self.logger.warning(msg)
         self.station_metadata.fdsn.id = station
 
+        # handle leap second issue -- if number of channels in run metadata
         if len(run_metadata.channels) != len(array_list):
             array_list = self.wrangle_leap_seconds_from_obspy(array_list)
         self.set_dataset(array_list)

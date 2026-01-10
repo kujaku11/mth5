@@ -198,6 +198,7 @@ class FDSN:
         ignored_groups = [
             "Fourier_Coefficients",
             "Transfer_Functions",
+            "Features",
         ]
         run_list = m.get_station(station_id, survey_id).groups_list
         run_list = [x for x in run_list if x not in ignored_groups]
