@@ -327,19 +327,18 @@ class LEMI424:
             self._data = None
         elif isinstance(data, pd.DataFrame):
             if len(data.columns) == len(self.file_column_names):
-                if data.columns != self.file_column_names:
+                if not data.columns.equals(pd.Index(self.file_column_names)):
                     raise ValueError(
                         "Column names are not the same. "
                         "Check LEMI424.column_names for accepted names"
                     )
             elif len(data.columns) == len(self.data_column_names):
-                if not data.columns == self.data_column_names:
+                if not data.columns.equals(pd.Index(self.data_column_names)):
                     raise ValueError(
                         "Column names are not the same. "
                         "Check LEMI424.column_names for accepted names"
                     )
-            else:
-                self._data = data
+            self._data = data
 
     def _has_data(self) -> bool:
         """
@@ -582,9 +581,9 @@ class LEMI424:
         if fn is not None:
             self.fn = fn
         if not self.fn.exists():
-            msg = "Could not find file %s"
-            self.logger.error(msg, self.fn)
-            raise IOError(msg % self.fn)
+            msg = f"Could not find file {self.fn}"
+            self.logger.error(msg)
+            raise IOError(msg)
         if fast:
             try:
                 self.read_metadata()
@@ -638,33 +637,37 @@ class LEMI424:
         # compute time is used in the date time parsing.
         if self.n_samples > self.chunk_size:
             st = MTime(time_stamp=None).now()
-            dfs = list(
-                pd.read_csv(
-                    self.fn,
-                    delimiter=r"\s+",
-                    names=self.file_column_names,
-                    dtype=self.dtypes,
-                    parse_dates={
-                        "date": [
-                            "year",
-                            "month",
-                            "day",
-                            "hour",
-                            "minute",
-                            "second",
-                        ]
-                    },
-                    date_parser=lemi_date_parser,
-                    converters={
-                        "latitude": lemi_position_parser,
-                        "longitude": lemi_position_parser,
-                        "lat_hemisphere": lemi_hemisphere_parser,
-                        "lon_hemisphere": lemi_hemisphere_parser,
-                    },
-                    index_col="date",
-                    chunksize=self.chunk_size,
+            dfs = []
+            for chunk in pd.read_csv(
+                self.fn,
+                delimiter=r"\s+",
+                names=self.file_column_names,
+                dtype=self.dtypes,
+                converters={
+                    "latitude": lemi_position_parser,
+                    "longitude": lemi_position_parser,
+                    "lat_hemisphere": lemi_hemisphere_parser,
+                    "lon_hemisphere": lemi_hemisphere_parser,
+                },
+                chunksize=self.chunk_size,
+            ):
+                # Create date index for this chunk
+                chunk.index = lemi_date_parser(
+                    chunk["year"],
+                    chunk["month"],
+                    chunk["day"],
+                    chunk["hour"],
+                    chunk["minute"],
+                    chunk["second"],
                 )
-            )
+                chunk.index.name = "date"
+                chunk = chunk.drop(
+                    columns=["year", "month", "day", "hour", "minute", "second"]
+                )
+                dfs.append(chunk)
+
+            if not dfs:
+                raise ValueError("File is empty or contains no valid data")
 
             self.data = pd.concat(dfs)
             et = MTime(time_stamp=None).now()
@@ -676,25 +679,31 @@ class LEMI424:
                 delimiter=r"\s+",
                 names=self.file_column_names,
                 dtype=self.dtypes,
-                parse_dates={
-                    "date": [
-                        "year",
-                        "month",
-                        "day",
-                        "hour",
-                        "minute",
-                        "second",
-                    ]
-                },
-                date_parser=lemi_date_parser,
                 converters={
                     "latitude": lemi_position_parser,
                     "longitude": lemi_position_parser,
                     "lat_hemisphere": lemi_hemisphere_parser,
                     "lon_hemisphere": lemi_hemisphere_parser,
                 },
-                index_col="date",
             )
+
+            if self.data.empty:
+                raise ValueError("File is empty or contains no valid data")
+
+            # Create date index from individual date/time columns
+            self.data.index = lemi_date_parser(
+                self.data["year"],
+                self.data["month"],
+                self.data["day"],
+                self.data["hour"],
+                self.data["minute"],
+                self.data["second"],
+            )
+            self.data.index.name = "date"
+            self.data = self.data.drop(
+                columns=["year", "month", "day", "hour", "minute", "second"]
+            )
+
             et = MTime(time_stamp=None).now()
             self.logger.debug(f"Reading {self.fn.name} took {et - st:.2f} seconds")
 
@@ -712,6 +721,10 @@ class LEMI424:
             last_line = first_line  # Default to first line for single-line files
             for line in fid:
                 last_line = line  # Update for multi-line files
+
+        if not first_line.strip():
+            raise ValueError("File is empty or contains no valid data")
+
         lines = StringIO(f"{first_line}\n{last_line}")
 
         self.data = pd.read_csv(
@@ -719,24 +732,26 @@ class LEMI424:
             delimiter=r"\s+",
             names=self.file_column_names,
             dtype=self.dtypes,
-            parse_dates={
-                "date": [
-                    "year",
-                    "month",
-                    "day",
-                    "hour",
-                    "minute",
-                    "second",
-                ]
-            },
-            date_parser=lemi_date_parser,
             converters={
                 "latitude": lemi_position_parser,
                 "longitude": lemi_position_parser,
                 "lat_hemisphere": lemi_hemisphere_parser,
                 "lon_hemisphere": lemi_hemisphere_parser,
             },
-            index_col="date",
+        )
+
+        # Create date index from individual date/time columns
+        self.data.index = lemi_date_parser(
+            self.data["year"],
+            self.data["month"],
+            self.data["day"],
+            self.data["hour"],
+            self.data["minute"],
+            self.data["second"],
+        )
+        self.data.index.name = "date"
+        self.data = self.data.drop(
+            columns=["year", "month", "day", "hour", "minute", "second"]
         )
 
     def read_calibration(self, fn: str | Path) -> FrequencyResponseTableFilter:
