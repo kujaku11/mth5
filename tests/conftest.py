@@ -118,9 +118,21 @@ def _create_fdsn_miniseed_mth5(folder, version="0.1.0"):
     from mth5.clients.fdsn import FDSN
 
     # Get test data paths
-    miniseed_path = get_test_data_path("miniseed")
-    inventory_file = miniseed_path / "cas04_stationxml.xml"
-    streams_file = miniseed_path / "cas_04_streams.mseed"
+    try:
+        miniseed_path = get_test_data_path("miniseed")
+        inventory_file = miniseed_path / "cas04_stationxml.xml"
+        streams_file = miniseed_path / "cas_04_streams.mseed"
+
+        # Verify files exist
+        if not inventory_file.exists() or not streams_file.exists():
+            raise FileNotFoundError(
+                f"Miniseed test data files not found. Expected:\n"
+                f"  {inventory_file}\n"
+                f"  {streams_file}"
+            )
+    except (FileNotFoundError, KeyError) as e:
+        logger.warning(f"Cannot create FDSN miniseed cache: {e}")
+        raise
 
     # Load inventory and streams
     inventory = obspy.read_inventory(str(inventory_file))
@@ -542,8 +554,11 @@ def fdsn_miniseed_mth5_from_inventory(make_worker_safe_path):
     Returns:
         Path: Path to the created MTH5 file (v0.1.0)
     """
-    file_path = create_session_mth5_file("fdsn_miniseed_v010", with_fcs=False)
-    yield file_path
+    try:
+        file_path = create_session_mth5_file("fdsn_miniseed_v010", with_fcs=False)
+        yield file_path
+    except (FileNotFoundError, KeyError) as e:
+        pytest.skip(f"Miniseed test data not available: {e}")
     # Cleanup handled by atexit
 
 
@@ -554,8 +569,11 @@ def global_fdsn_miniseed_v010():
 
     Uses global cache that persists across test runs.
     """
-    file_path = create_session_mth5_file("fdsn_miniseed_v010", with_fcs=False)
-    yield file_path
+    try:
+        file_path = create_session_mth5_file("fdsn_miniseed_v010", with_fcs=False)
+        yield file_path
+    except (FileNotFoundError, KeyError) as e:
+        pytest.skip(f"Miniseed test data not available: {e}")
     # Cleanup handled by atexit
 
 
@@ -566,8 +584,11 @@ def global_fdsn_miniseed_v020():
 
     Uses global cache that persists across test runs.
     """
-    file_path = create_session_mth5_file("fdsn_miniseed_v020", with_fcs=False)
-    yield file_path
+    try:
+        file_path = create_session_mth5_file("fdsn_miniseed_v020", with_fcs=False)
+        yield file_path
+    except (FileNotFoundError, KeyError) as e:
+        pytest.skip(f"Miniseed test data not available: {e}")
     # Cleanup handled by atexit
 
 

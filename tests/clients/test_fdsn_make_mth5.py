@@ -13,6 +13,10 @@ stream objects using real miniseed test data. Tests are organized to cover:
 The tests use fixtures from conftest.py that provide parallel-safe MTH5 files
 created from the miniseed test data (CAS04 station).
 
+Requirements:
+- mth5_test_data package must be installed with miniseed data
+- Tests will be skipped if miniseed test data files are not available
+
 @author: GitHub Copilot
 """
 
