@@ -36,7 +36,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/mth5_global_test_cache
-        key: mth5-fixtures-${{ runner.os }}-${{ hashFiles('mth5/data/make_mth5_from_asc.py', 'tests/conftest.py') }}
+        key: mth5-fixtures-${{ runner.os }}-${{ hashFiles('mth5/data/make_mth5_from_asc.py', 'mth5/clients/fdsn.py', 'tests/conftest.py') }}
         restore-keys: |
           mth5-fixtures-${{ runner.os }}-
 

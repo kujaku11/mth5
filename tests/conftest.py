@@ -95,7 +95,44 @@ MTH5_TYPES = {
             target_folder=folder, file_version="0.1.0", force_make_mth5=True
         ),
     },
+    "fdsn_miniseed_v010": {
+        "cache_name": "fdsn_cas04_v010_global.h5",
+        "create_func": lambda folder: _create_fdsn_miniseed_mth5(
+            folder, version="0.1.0"
+        ),
+    },
+    "fdsn_miniseed_v020": {
+        "cache_name": "fdsn_cas04_v020_global.h5",
+        "create_func": lambda folder: _create_fdsn_miniseed_mth5(
+            folder, version="0.2.0"
+        ),
+    },
 }
+
+
+def _create_fdsn_miniseed_mth5(folder, version="0.1.0"):
+    """Helper function to create FDSN miniseed MTH5 file."""
+    import obspy
+    from mth5_test_data import get_test_data_path
+
+    from mth5.clients.fdsn import FDSN
+
+    # Get test data paths
+    miniseed_path = get_test_data_path("miniseed")
+    inventory_file = miniseed_path / "cas04_stationxml.xml"
+    streams_file = miniseed_path / "cas_04_streams.mseed"
+
+    # Load inventory and streams
+    inventory = obspy.read_inventory(str(inventory_file))
+    streams = obspy.read(str(streams_file))
+
+    # Create MTH5 from inventory and streams
+    fdsn_client = FDSN(mth5_version=version)
+    created_file = fdsn_client.make_mth5_from_inventory_and_streams(
+        inventory, streams, save_path=folder
+    )
+
+    return created_file
 
 
 def ensure_global_cache_exists(mth5_type):
@@ -487,6 +524,51 @@ def cleanup_test_files(request, test_dir_path):
     request.addfinalizer(_cleanup)
 
     return _register_file
+
+
+# =============================================================================
+# FDSN Test Data Fixtures
+# =============================================================================
+
+
+@pytest.fixture(scope="session")
+def fdsn_miniseed_mth5_from_inventory(make_worker_safe_path):
+    """
+    Session-scoped fixture that creates an MTH5 file from miniseed test data.
+
+    This fixture is parallel-safe and uses global caching to persist files across
+    test runs. First run creates the cache, subsequent runs reuse it for maximum speed.
+
+    Returns:
+        Path: Path to the created MTH5 file (v0.1.0)
+    """
+    file_path = create_session_mth5_file("fdsn_miniseed_v010", with_fcs=False)
+    yield file_path
+    # Cleanup handled by atexit
+
+
+@pytest.fixture(scope="session")
+def global_fdsn_miniseed_v010():
+    """
+    Session-scoped fixture providing a cached FDSN miniseed MTH5 file (v0.1.0).
+
+    Uses global cache that persists across test runs.
+    """
+    file_path = create_session_mth5_file("fdsn_miniseed_v010", with_fcs=False)
+    yield file_path
+    # Cleanup handled by atexit
+
+
+@pytest.fixture(scope="session")
+def global_fdsn_miniseed_v020():
+    """
+    Session-scoped fixture providing a cached FDSN miniseed MTH5 file (v0.2.0).
+
+    Uses global cache that persists across test runs.
+    """
+    file_path = create_session_mth5_file("fdsn_miniseed_v020", with_fcs=False)
+    yield file_path
+    # Cleanup handled by atexit
 
 
 # =============================================================================
