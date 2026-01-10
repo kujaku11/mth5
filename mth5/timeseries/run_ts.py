@@ -1050,14 +1050,6 @@ class RunTS:
             # if sample rate is not set, use data value
             if self.sample_rate in [0.0, None]:
                 self._sample_rate = data_sr
-                if self.run_metadata.sample_rate != self._sample_rate:
-                    msg = (
-                        f"sample rate of dataset {data_sr} is different than "
-                        f"metadata sample rate {self.run_metadata.sample_rate} "
-                        f"updating metatdata value to {data_sr}"
-                    )
-                    self.logger.warning(msg)
-                    self.run_metadata.sample_rate = data_sr
 
             # if sample rates don't match, update to data value
             elif self.sample_rate != data_sr:
@@ -1068,6 +1060,16 @@ class RunTS:
                 )
                 self.logger.critical(msg)
                 self._sample_rate = data_sr
+                self.run_metadata.sample_rate = data_sr
+            # need to check that the run metadata sample rate matches,
+            # data sample rate overules
+            if self.run_metadata.sample_rate != self._sample_rate:
+                msg = (
+                    f"sample rate of dataset {data_sr} is different than "
+                    f"metadata sample rate {self.run_metadata.sample_rate} "
+                    f"updating metatdata value to {data_sr}"
+                )
+                self.logger.warning(msg)
                 self.run_metadata.sample_rate = data_sr
 
         # update station and survey time periods
