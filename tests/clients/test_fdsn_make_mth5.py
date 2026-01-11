@@ -327,7 +327,7 @@ class TestChannelData:
             first_ch_ref = ch_df.iloc[0].hdf5_reference
             channel_ts = m.from_reference(first_ch_ref).to_channel_ts()
 
-            assert channel_ts.channel_response is not None
+            assert len(channel_ts.channel_response.filters_list) > 0
 
     def test_channel_data_timing_consistency(self, fdsn_miniseed_mth5_from_inventory):
         """Test that channel timing is consistent with metadata."""
@@ -378,6 +378,11 @@ class TestRunData:
 
             # Should have multiple channels
             assert len(channels) > 0
+
+            # check filters in channels
+            for ch_name in channels:
+                ch_metadata = run_group.metadata.channels[ch_name]
+                assert len(ch_metadata.filters) > 0
 
     def test_run_start_end_times_valid(self, fdsn_miniseed_mth5_from_inventory):
         """Test that run start and end times are valid and ordered."""
