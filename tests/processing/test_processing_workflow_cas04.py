@@ -384,6 +384,30 @@ class TestKernelDatasetProperties:
         assert survey_id is not None
         assert isinstance(survey_id, str)
 
+    def test_metadata_station(self, cas04_kernel_dataset_parameterized, subtests):
+        """Test metadata_station property."""
+        kd = cas04_kernel_dataset_parameterized
+
+        with subtests.test("Check metadata_station for CAS04"):
+            station = kd.metadata_station
+            assert station is not None
+            assert station.station_id == "CAS04"
+
+        with subtests.test("Check metadata_station has runs"):
+            assert len(station.runs) > 0
+
+        with subtests.test("Check runs have channels"):
+            for run in station.runs.values():
+                assert len(run.channels) > 0
+
+        with subtests.test("Check channel metadata"):
+            for run in station.runs.values():
+                for channel in run.channels.values():
+                    assert channel.component is not None
+                    assert channel.sample_rate > 0
+                    assert channel.start != "1980-01-01T00:00:00"
+                    assert channel.end != "1980-01-01T00:00:00"
+
 
 class TestKernelDatasetMethods:
     """Test KernelDataset methods and operations."""
