@@ -855,6 +855,10 @@ class KernelDataset:
         for run in tf_station.runs.keys():
             if run not in processing_runs:
                 tf_station.remove_run(run)
+            else:
+                tf_station.runs[run].update(
+                    survey_metadata.stations[self.local_station_id].runs[run]
+                )
 
         # add to survey metadata by removing the old one first
         survey_metadata.remove_station(self.local_station_id)
@@ -1324,13 +1328,13 @@ class KernelDataset:
             raise ValueError("mth5 objects have not been initialized yet.")
 
         if self._has_df():
-            self._df.loc[self._df.station == self.local_station_id, "mth5_obj"] = (
-                self.local_mth5_obj
-            )
+            self._df.loc[
+                self._df.station == self.local_station_id, "mth5_obj"
+            ] = self.local_mth5_obj
             if self.remote_station_id is not None:
-                self._df.loc[self._df.station == self.remote_station_id, "mth5_obj"] = (
-                    self.remote_mth5_obj
-                )
+                self._df.loc[
+                    self._df.station == self.remote_station_id, "mth5_obj"
+                ] = self.remote_mth5_obj
 
     def close_mth5s(self) -> None:
         """Loop over all unique mth5_objs in dataset df and make sure they are closed.+."""
