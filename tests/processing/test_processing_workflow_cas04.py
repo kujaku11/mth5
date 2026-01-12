@@ -387,26 +387,31 @@ class TestKernelDatasetProperties:
     def test_metadata_station(self, cas04_kernel_dataset_parameterized, subtests):
         """Test metadata_station property."""
         kd = cas04_kernel_dataset_parameterized
+        station = kd.survey_metadata.stations[kd.local_station_id]
 
         with subtests.test("Check metadata_station for CAS04"):
-            station = kd.metadata_station
             assert station is not None
-            assert station.station_id == "CAS04"
+            assert station.id == "CAS04"
+            assert station.time_period.start != "1980-01-01T00:00:00"
+            assert station.time_period.end != "1980-01-01T00:00:00"
 
         with subtests.test("Check metadata_station has runs"):
             assert len(station.runs) > 0
 
-        with subtests.test("Check runs have channels"):
+        with subtests.test("Check runs have channels and times"):
             for run in station.runs.values():
                 assert len(run.channels) > 0
+                assert run.time_period.start != "1980-01-01T00:00:00"
+                assert run.time_period.end != "1980-01-01T00:00:00"
+                assert run.sample_rate > 0
 
         with subtests.test("Check channel metadata"):
             for run in station.runs.values():
                 for channel in run.channels.values():
                     assert channel.component is not None
                     assert channel.sample_rate > 0
-                    assert channel.start != "1980-01-01T00:00:00"
-                    assert channel.end != "1980-01-01T00:00:00"
+                    assert channel.time_period.start != "1980-01-01T00:00:00"
+                    assert channel.time_period.end != "1980-01-01T00:00:00"
 
 
 class TestKernelDatasetMethods:
