@@ -1328,13 +1328,13 @@ class KernelDataset:
             raise ValueError("mth5 objects have not been initialized yet.")
 
         if self._has_df():
-            self._df.loc[
-                self._df.station == self.local_station_id, "mth5_obj"
-            ] = self.local_mth5_obj
+            self._df.loc[self._df.station == self.local_station_id, "mth5_obj"] = (
+                self.local_mth5_obj
+            )
             if self.remote_station_id is not None:
-                self._df.loc[
-                    self._df.station == self.remote_station_id, "mth5_obj"
-                ] = self.remote_mth5_obj
+                self._df.loc[self._df.station == self.remote_station_id, "mth5_obj"] = (
+                    self.remote_mth5_obj
+                )
 
     def close_mth5s(self) -> None:
         """Loop over all unique mth5_objs in dataset df and make sure they are closed.+."""
