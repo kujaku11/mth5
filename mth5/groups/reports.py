@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Dec 23 17:03:53 2020
+from __future__ import annotations
 
-:copyright:
-    Jared Peacock (jpeacock@usgs.gov)
 
-:license: MIT
+"""Reports group utilities for storing report and image artifacts in MTH5."""
 
-"""
+from pathlib import Path
+from typing import Any
 
 import h5py
 
@@ -15,6 +13,7 @@ import h5py
 # Imports
 # =============================================================================
 import numpy as np
+from PIL import Image
 
 from mth5.groups.base import BaseGroup
 
@@ -23,13 +22,21 @@ from mth5.groups.base import BaseGroup
 # Reports Group
 # =============================================================================
 class ReportsGroup(BaseGroup):
-    """
-    Not sure how to handle this yet
+    """Store report files (PDF/text) and images under ``/Survey/Reports``.
 
+    Files are embedded into HDF5 datasets with basic metadata preserved.
+
+    Examples
+    --------
+    >>> reports = survey.reports_group
+    >>> _ = reports.add_report("site_report", filename="/tmp/report.pdf")
+    >>> _ = reports.get_report("site_report")  # doctest: +SKIP
     """
 
-    def __init__(self, group, **kwargs):
+    def __init__(self, group: h5py.Group, **kwargs: Any) -> None:
         super().__init__(group, **kwargs)
+        self._accepted_reports: list[str] = ["pdf", "txt", "md"]
+        self._accepted_images: list[str] = ["png", "jpg", "jpeg", "tif", "tiff", "bmp"]
 
         # summary of reports
         self._defaults_summary_attrs = {
@@ -45,17 +52,114 @@ class ReportsGroup(BaseGroup):
             ),
         }
 
-    def add_report(self, report_name, report_metadata=None, report_data=None):
+    def add_report(
+        self,
+        report_name: str,
+        report_metadata: dict[str, Any] | None = None,
+        filename: str | Path | None = None,
+    ) -> None:
+        """Add a report or image file to the group.
+
+        Parameters
+        ----------
+        report_name : str
+            Dataset name to store the file under.
+        report_metadata : dict, optional
+            Additional attributes to attach to the dataset.
+        filename : str or Path, optional
+            Path to the file to embed; supported types: PDF/TXT/MD and common images.
+
+        Raises
+        ------
+        FileNotFoundError
+            If ``filename`` does not exist.
+
+        Examples
+        --------
+        >>> reports.add_report("manual", filename="docs/manual.pdf")  # doctest: +SKIP
         """
 
-        :param report_name: DESCRIPTION
-        :type report_name: TYPE
-        :param report_metadata: DESCRIPTION, defaults to None
-        :type report_metadata: TYPE, optional
-        :param report_data: DESCRIPTION, defaults to None
-        :type report_data: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
+        if filename is not None:
+            filename = Path(filename)
+            if not filename.exists():
+                raise FileNotFoundError(f"{filename} does not exist")
+            extension = filename.suffix.lower()[1:]
+            if extension in self._accepted_reports:
+                fn_bytes = filename.read_bytes()
 
+                # Save PDF bytes into HDF5
+                dataset = self.hdf5_group.create_dataset(report_name, data=fn_bytes)
+
+                # Add metadata if provided
+                if report_metadata is not None:
+                    for key, value in report_metadata.items():
+                        dataset.attrs[key] = value
+                else:
+                    dataset.attrs["description"] = f"{extension.upper()} report file"
+                    dataset.attrs["filename"] = filename.name
+                    dataset.attrs["file_type"] = extension
+            elif extension in self._accepted_images:
+                # Open image and convert to numpy array
+                img = Image.open(filename)
+                img_data = np.array(img)
+
+                # Save image data into HDF5
+                dataset = self.hdf5_group.create_dataset(report_name, data=img_data)
+
+                # Add metadata if provided
+                if report_metadata is not None:
+                    for key, value in report_metadata.items():
+                        dataset.attrs[key] = value
+                else:
+                    dataset.attrs["description"] = f"{extension.upper()} image file"
+                    dataset.attrs["filename"] = filename.name
+                    dataset.attrs["file_type"] = extension
+            else:
+                self.logger.error(
+                    f"Adding files of type {extension} is not implemented yet"
+                )
+
+    def get_report(self, report_name: str) -> Path:
+        """Extract a stored report or image to the current working directory.
+
+        Parameters
+        ----------
+        report_name : str
+            Name of the stored dataset.
+
+        Returns
+        -------
+        pathlib.Path
+            Path to the materialized file on disk.
+
+        Raises
+        ------
+        ValueError
+            If the stored file type is unsupported.
+
+        Examples
+        --------
+        >>> path = reports.get_report("site_report")  # doctest: +SKIP
+        >>> path.exists()
+        True
         """
-        self.logger.error("Not Implemented yet")
+
+        dataset = self.hdf5_group[report_name]
+        file_type = dataset.attrs["file_type"]
+
+        if file_type in self._accepted_reports:
+            report_data = bytes(dataset[()])
+            fn_path = Path().cwd().joinpath(dataset.attrs["filename"])
+            fn_path.write_bytes(report_data)
+            self.logger.info(f"Report written to {fn_path}")
+            return fn_path
+
+        if file_type in self._accepted_images:
+            img_data = np.array(dataset[()])
+            img = Image.fromarray(img_data)
+            fn_path = Path().cwd().joinpath(dataset.attrs["filename"])
+            img.save(fn_path)
+            self.logger.info(f"Image report written to {fn_path}")
+            return fn_path
+
+        raise ValueError(f"Unsupported file type '{file_type}' for {report_name}")

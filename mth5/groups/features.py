@@ -5,11 +5,14 @@ Created on Fri Dec 13 12:40:34 2024
 @author: jpeacock
 """
 
-import h5py
+from __future__ import annotations
 
 # =============================================================================
 # Imports
 # =============================================================================
+from typing import Optional
+
+import h5py
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -30,29 +33,67 @@ FREQUENCY_DOMAIN = ["fc", "frequency", "fourier", "fourier_domain"]
 
 class MasterFeaturesGroup(BaseGroup):
     """
-    Master group to hold various features associated with either Fourier
-    Coefficients or time series.
+    Master group container for features associated with Fourier Coefficients or time series.
 
+    This class manages the top-level organization of geophysical feature data,
+    organizing it into feature-specific groups. Features can include various
+    frequency or time-domain analyses.
+
+    Hierarchy
+    ---------
     MasterFeatureGroup -> FeatureGroup -> FeatureRunGroup ->
 
-       - FC: FeatureDecimationGroup -> FeatureChannelGroup
-       - Time Series: FeatureChannelGroup
+    - FC: FeatureDecimationGroup -> FeatureChannelDataset
+    - Time Series: FeatureChannelDataset
+
+    Parameters
+    ----------
+    group : h5py.Group
+        HDF5 group object for this MasterFeaturesGroup.
+    **kwargs
+        Additional keyword arguments passed to BaseGroup.
+
+    Examples
+    --------
+    >>> import h5py
+    >>> from mth5.groups.features import MasterFeaturesGroup
+    >>> with h5py.File('data.h5', 'r') as f:
+    ...     master = MasterFeaturesGroup(f['features'])
+    ...     feature_list = master.groups_list
     """
 
-    def __init__(self, group, **kwargs):
+    def __init__(self, group: h5py.Group, **kwargs) -> None:
         super().__init__(group, **kwargs)
 
-    def add_feature_group(self, feature_name: str, feature_metadata=None):
+    def add_feature_group(
+        self,
+        feature_name: str,
+        feature_metadata: Optional[FeatureDecimationChannel] = None,
+    ) -> FeatureGroup:
         """
-        Add a Fourier Coefficent group
+        Add a feature group to the master features container.
 
-        :param feature_name: DESCRIPTION
-        :type feature_name: TYPE
-        :param feature_metadata: DESCRIPTION, defaults to None
-        :type feature_metadata: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Creates a new FeatureGroup with the specified name and optional metadata.
+        Feature groups organize all runs and decimation levels for a particular feature.
 
+        Parameters
+        ----------
+        feature_name : str
+            Name for the feature group. Will be validated and formatted.
+        feature_metadata : FeatureDecimationChannel, optional
+            Metadata describing the feature. Default is None.
+
+        Returns
+        -------
+        FeatureGroup
+            Newly created feature group object.
+
+        Examples
+        --------
+        >>> master = MasterFeaturesGroup(h5_group)
+        >>> feature = master.add_feature_group('coherency')
+        >>> print(feature.name)
+        'coherency'
         """
 
         return self._add_group(
@@ -62,27 +103,56 @@ class MasterFeaturesGroup(BaseGroup):
             match="name",
         )
 
-    def get_feature_group(self, feature_name):
+    def get_feature_group(self, feature_name: str) -> FeatureGroup:
         """
-        Get Fourier Coefficient group
+        Retrieve a feature group by name.
 
-        :param feature_name: DESCRIPTION
-        :type feature_name: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Parameters
+        ----------
+        feature_name : str
+            Name of the feature group to retrieve.
 
+        Returns
+        -------
+        FeatureGroup
+            The requested feature group.
+
+        Raises
+        ------
+        MTH5Error
+            If the feature group does not exist.
+
+        Examples
+        --------
+        >>> master = MasterFeaturesGroup(h5_group)
+        >>> feature = master.get_feature_group('coherency')
+        >>> print(feature.name)
+        'coherency'
         """
         return self._get_group(feature_name, FeatureGroup)
 
-    def remove_feature_group(self, feature_name):
+    def remove_feature_group(self, feature_name: str) -> None:
         """
-        Remove an feature group
+        Remove a feature group from the master container.
 
-        :param feature_name: DESCRIPTION
-        :type feature_name: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Deletes the specified feature group and its associated data from the
+        HDF5 file. Note that this operation removes the reference but does not
+        reduce the file size; copy desired data to a new file for size reduction.
 
+        Parameters
+        ----------
+        feature_name : str
+            Name of the feature group to remove.
+
+        Raises
+        ------
+        MTH5Error
+            If the feature group does not exist.
+
+        Examples
+        --------
+        >>> master = MasterFeaturesGroup(h5_group)
+        >>> master.remove_feature_group('coherency')
         """
 
         self._remove_group(feature_name)
@@ -90,34 +160,89 @@ class MasterFeaturesGroup(BaseGroup):
 
 class FeatureGroup(BaseGroup):
     """
-    Holds a single feature set.  This includes all the runs and decimation
-    levels for a feature. This could also include time series features.
+    Container for a single feature set with all associated runs and decimation levels.
 
+    This class manages feature-specific data including all processing runs and
+    decimation levels. Features can include both Fourier Coefficient and time series data.
+
+    Hierarchy
+    ---------
     FeatureGroup -> FeatureRunGroup ->
 
-       - FC: FeatureDecimationLevel -> FeatureChannelDateset
-       - TS: FeatureChannelDataset
+    - FC: FeatureDecimationLevel -> FeatureChannelDataset
+    - TS: FeatureChannelDataset
 
-    Feature metadata should be specific to the feature. Should include a
-    description of the feature and any parameters used.
+    Parameters
+    ----------
+    group : h5py.Group
+        HDF5 group object for this FeatureGroup.
+    feature_metadata : optional
+        Metadata specific to this feature. Should include description and parameters.
+    **kwargs
+        Additional keyword arguments passed to BaseGroup.
+
+    Notes
+    -----
+    Feature metadata should be specific to the feature and include descriptions
+    of the feature and any parameters used in its computation.
+
+    Examples
+    --------
+    >>> feature = FeatureGroup(h5_group, feature_metadata=metadata)
+    >>> run_group = feature.add_feature_run_group('run_1', domain='fc')
     """
 
-    def __init__(self, group, feature_metadata=None, **kwargs):
+    def __init__(
+        self,
+        group: h5py.Group,
+        feature_metadata: Optional[object] = None,
+        **kwargs,
+    ) -> None:
         super().__init__(group, group_metadata=feature_metadata, **kwargs)
 
     def add_feature_run_group(
-        self, feature_name: str, feature_run_metadata=None, domain="fc"
-    ):
+        self,
+        feature_name: str,
+        feature_run_metadata: Optional[object] = None,
+        domain: str = "fc",
+    ) -> object:
         """
-        Feature group for a single feature like coherency or polarization
+        Add a feature run group for a single feature.
 
-        :param feature_name: DESCRIPTION
-        :type feature_name: TYPE
-        :param feature_metadata: DESCRIPTION, defaults to None
-        :type feature_metadata: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Creates either a Fourier Coefficient run group or a time series run group
+        based on the specified domain. The domain can be determined from the metadata
+        or explicitly provided.
 
+        Parameters
+        ----------
+        feature_name : str
+            Name for the feature run group.
+        feature_run_metadata : optional
+            Metadata for the feature run. If provided, domain is extracted from
+            metadata.domain attribute. Default is None.
+        domain : str, default='fc'
+            Domain type for the data. Must be one of:
+
+            - 'fc', 'frequency', 'fourier', 'fourier_domain': Fourier Coefficients
+            - 'ts', 'time', 'time series', 'time_series': Time series
+
+        Returns
+        -------
+        FeatureFCRunGroup or FeatureTSRunGroup
+            Newly created feature run group.
+
+        Raises
+        ------
+        ValueError
+            If domain is not recognized.
+        AttributeError
+            If metadata does not have a domain attribute when metadata is provided.
+
+        Examples
+        --------
+        >>> feature = FeatureGroup(h5_group)
+        >>> fc_run = feature.add_feature_run_group('processing_run_1', domain='fc')
+        >>> ts_run = feature.add_feature_run_group('ts_analysis', domain='ts')
         """
         if feature_run_metadata is not None:
             try:
@@ -147,15 +272,40 @@ class FeatureGroup(BaseGroup):
                 "for Fourier Coefficent or 'ts' for time series."
             )
 
-    def get_feature_run_group(self, feature_name, domain="frequency"):
+    def get_feature_run_group(
+        self,
+        feature_name: str,
+        domain: str = "frequency",
+    ) -> object:
         """
-        Get Fourier Coefficient group
+        Retrieve a feature run group by name and domain type.
 
-        :param feature_name: DESCRIPTION
-        :type feature_name: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Parameters
+        ----------
+        feature_name : str
+            Name of the feature run group to retrieve.
+        domain : str, default='frequency'
+            Domain type. Must be one of:
 
+            - 'fc', 'frequency', 'fourier', 'fourier_domain': Fourier Coefficients
+            - 'ts', 'time', 'time series', 'time_series': Time series
+
+        Returns
+        -------
+        FeatureFCRunGroup or FeatureTSRunGroup
+            The requested feature run group.
+
+        Raises
+        ------
+        ValueError
+            If domain is not recognized.
+        MTH5Error
+            If the feature run group does not exist.
+
+        Examples
+        --------
+        >>> feature = FeatureGroup(h5_group)
+        >>> fc_run = feature.get_feature_run_group('processing_run_1', domain='fc')
         """
         if domain in FREQUENCY_DOMAIN:
             return self._get_group(feature_name, FeatureFCRunGroup)
@@ -167,15 +317,27 @@ class FeatureGroup(BaseGroup):
                 "for Fourier Coefficent or 'ts' for time series."
             )
 
-    def remove_feature_run_group(self, feature_name):
+    def remove_feature_run_group(self, feature_name: str) -> None:
         """
-        Remove an feature group
+        Remove a feature run group.
 
-        :param feature_name: DESCRIPTION
-        :type feature_name: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Deletes the specified feature run group and all its associated data.
+        Note that deletion removes the reference but does not reduce HDF5 file size.
 
+        Parameters
+        ----------
+        feature_name : str
+            Name of the feature run group to remove.
+
+        Raises
+        ------
+        MTH5Error
+            If the feature run group does not exist.
+
+        Examples
+        --------
+        >>> feature = FeatureGroup(h5_group)
+        >>> feature.remove_feature_run_group('processing_run_1')
         """
 
         self._remove_group(feature_name)
@@ -183,12 +345,37 @@ class FeatureGroup(BaseGroup):
 
 class FeatureTSRunGroup(BaseGroup):
     """
-    containter for a feature of a time series run.
+    Container for time series features from a processing or analysis run.
 
-    FeatureRunMetadata should be the same as timeseries.Run
+    This class wraps a RunGroup to manage time series data features while
+    maintaining compatibility with the feature hierarchy structure.
+
+    Parameters
+    ----------
+    group : h5py.Group
+        HDF5 group object for this FeatureTSRunGroup.
+    feature_run_metadata : optional
+        Metadata for the feature run (same type as timeseries.Run).
+    **kwargs
+        Additional keyword arguments passed to BaseGroup.
+
+    Notes
+    -----
+    This class uses methods from RunGroup for channel management, which may
+    have performance implications due to multiple RunGroup instantiations.
+
+    Examples
+    --------
+    >>> ts_run = FeatureTSRunGroup(h5_group, feature_run_metadata=metadata)
+    >>> channel = ts_run.add_feature_channel('Ex', 'electric', data)
     """
 
-    def __init__(self, group, feature_run_metadata=None, **kwargs):
+    def __init__(
+        self,
+        group: h5py.Group,
+        feature_run_metadata: Optional[object] = None,
+        **kwargs,
+    ) -> None:
         super().__init__(group, group_metadata=feature_run_metadata, **kwargs)
 
         ### Use methods from RunGroup (might be slow cause initiating multiple
@@ -197,41 +384,53 @@ class FeatureTSRunGroup(BaseGroup):
 
     def add_feature_channel(
         self,
-        channel_name,
-        channel_type,
-        data,
-        channel_dtype="int32",
-        shape=None,
-        max_shape=(None,),
-        chunks=True,
-        channel_metadata=None,
+        channel_name: str,
+        channel_type: str,
+        data: Optional[np.ndarray] = None,
+        channel_dtype: str = "int32",
+        shape: Optional[tuple] = None,
+        max_shape: tuple = (None,),
+        chunks: bool = True,
+        channel_metadata: Optional[object] = None,
         **kwargs,
-    ):
+    ) -> object:
         """
+        Add a time series channel to the feature run group.
 
-        :param channel_name: DESCRIPTION
-        :type channel_name: TYPE
-        :param channel_type: DESCRIPTION
-        :type channel_type: TYPE
-        :param data: DESCRIPTION
-        :type data: TYPE
-        :param channel_dtype: DESCRIPTION, defaults to "int32"
-        :type channel_dtype: TYPE, optional
-        :param shape: DESCRIPTION, defaults to None
-        :type shape: TYPE, optional
-        :param max_shape: DESCRIPTION, defaults to (None,)
-        :type max_shape: TYPE, optional
-        :param chunks: DESCRIPTION, defaults to True
-        :type chunks: TYPE, optional
-        :param channel_metadata: DESCRIPTION, defaults to None
-        :type channel_metadata: TYPE, optional
-        :param **kwargs: DESCRIPTION
-        :type **kwargs: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Creates a new channel for time series data with the specified properties
+        and optional metadata. Channel metadata should be a timeseries.Channel object.
 
-        channel_metadata should be a class of timeseries.Channel
+        Parameters
+        ----------
+        channel_name : str
+            Name for the channel.
+        channel_type : str
+            Type of channel (e.g., 'electric', 'magnetic').
+        data : np.ndarray, optional
+            Initial data for the channel. Default is None.
+        channel_dtype : str, default='int32'
+            Data type for the channel.
+        shape : tuple, optional
+            Shape of the channel data. Default is None.
+        max_shape : tuple, default=(None,)
+            Maximum shape for expandable dimensions.
+        chunks : bool, default=True
+            Whether to use chunking for the dataset.
+        channel_metadata : optional
+            Metadata object (timeseries.Channel type). Default is None.
+        **kwargs
+            Additional keyword arguments for dataset creation.
 
+        Returns
+        -------
+        object
+            Channel object from RunGroup.
+
+        Examples
+        --------
+        >>> ts_run = FeatureTSRunGroup(h5_group)
+        >>> channel = ts_run.add_feature_channel(
+        ...     'Ex', 'electric', data=np.arange(1000))
         """
 
         return self._run_group.add_channel(
@@ -246,55 +445,101 @@ class FeatureTSRunGroup(BaseGroup):
             **kwargs,
         )
 
-    def get_feature_channel(self, channel_name):
+    def get_feature_channel(self, channel_name: str) -> object:
         """
+        Retrieve a feature channel by name.
 
-        :param channel_name: DESCRIPTION
-        :type channel_name: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Parameters
+        ----------
+        channel_name : str
+            Name of the channel to retrieve.
 
+        Returns
+        -------
+        object
+            Channel object from RunGroup.
+
+        Raises
+        ------
+        MTH5Error
+            If the channel does not exist.
+
+        Examples
+        --------
+        >>> ts_run = FeatureTSRunGroup(h5_group)
+        >>> channel = ts_run.get_feature_channel('Ex')
         """
 
         return self._run_group.get_channel(channel_name)
 
-    def remove_feature_channel(self, channel_name):
+    def remove_feature_channel(self, channel_name: str) -> None:
         """
+        Remove a feature channel from the run group.
 
-        :param channel_name: DESCRIPTION
-        :type channel_name: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Parameters
+        ----------
+        channel_name : str
+            Name of the channel to remove.
 
+        Raises
+        ------
+        MTH5Error
+            If the channel does not exist.
+
+        Examples
+        --------
+        >>> ts_run = FeatureTSRunGroup(h5_group)
+        >>> ts_run.remove_feature_channel('Ex')
         """
         self._run_group.remove_channel(channel_name)
 
 
 class FeatureFCRunGroup(BaseGroup):
     """
-    Holds a set of features for either a processing run or a time series run.
+    Container for Fourier Coefficient features from a processing run.
 
-    If the feature is for Fourier Coefficients then the heirarcy is
-     FeatureDecimationLevel -> FeatureChannelDataset
+    This class manages Fourier Coefficient data organized by decimation levels,
+    each containing multiple frequency channels with time-frequency data.
 
-    If the feature is for a time series run then the heirarchy is
-     FeatureChannelDataset
+    Hierarchy
+    ---------
+    FeatureFCRunGroup -> FeatureDecimationGroup -> FeatureChannelDataset
 
-    Metadata should include:
+    Attributes
+    ----------
+    metadata : Decimation
+        Metadata including:
 
         - list of decimation levels
         - start time (earliest)
         - end time (latest)
         - method (fft, wavelet, ...)
-        - list of channels used (all inclusive)
-        - list of acquistion runs (maybe)
+        - list of channels used
         - starting sample rate
-        - bands used (can be different from processing bands)
-        - type [ TS | FC ]
+        - bands used
+        - type (TS or FC)
 
+    Parameters
+    ----------
+    group : h5py.Group
+        HDF5 group object for this FeatureFCRunGroup.
+    feature_run_metadata : optional
+        Decimation metadata for the feature run. Default is None.
+    **kwargs
+        Additional keyword arguments passed to BaseGroup.
+
+    Examples
+    --------
+    >>> fc_run = FeatureFCRunGroup(h5_group, feature_run_metadata=metadata)
+    >>> decimation = fc_run.add_decimation_level('level_0', dec_metadata)
     """
 
-    def __init__(self, group, feature_run_metadata=None, **kwargs):
+    def __init__(
+        self,
+        group: h5py.Group,
+        feature_run_metadata: Optional[Decimation] = None,
+        **kwargs,
+    ) -> None:
         super().__init__(group, group_metadata=feature_run_metadata, **kwargs)
 
     @BaseGroup.metadata.getter
@@ -309,13 +554,32 @@ class FeatureFCRunGroup(BaseGroup):
         return self._metadata
 
     @property
-    def decimation_level_summary(self):
+    def decimation_level_summary(self) -> pd.DataFrame:
         """
+        Get a summary of all decimation levels in the run.
 
-         summary of channels in run
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Returns a pandas DataFrame with information about each decimation level
+        including decimation factor, time range, and HDF5 reference.
 
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with columns:
+
+            - name : str
+                Decimation level name
+            - start : datetime64[ns]
+                Start time of the decimation level
+            - end : datetime64[ns]
+                End time of the decimation level
+            - hdf5_reference : h5py.ref_dtype
+                HDF5 reference to the decimation level group
+
+        Examples
+        --------
+        >>> fc_run = FeatureFCRunGroup(h5_group)
+        >>> summary = fc_run.decimation_level_summary
+        >>> print(summary[['name', 'start', 'end']])
         """
 
         ch_list = []
@@ -348,18 +612,31 @@ class FeatureFCRunGroup(BaseGroup):
         return pd.DataFrame(ch_summary)
 
     def add_decimation_level(
-        self, decimation_level_name, feature_decimation_level_metadata=None
-    ):
+        self,
+        decimation_level_name: str,
+        feature_decimation_level_metadata: Optional[object] = None,
+    ) -> FeatureDecimationGroup:
         """
-        add a Decimation level
+        Add a decimation level group to the feature run.
 
-        :param decimation_level_name: DESCRIPTION
-        :type decimation_level_name: TYPE
-        :param decimation_level_metadata: DESCRIPTION, defaults to None
-        :type decimation_level_metadata: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Parameters
+        ----------
+        decimation_level_name : str
+            Name for the decimation level.
+        feature_decimation_level_metadata : optional
+            Metadata for the decimation level. Default is None.
 
+        Returns
+        -------
+        FeatureDecimationGroup
+            Newly created decimation level group.
+
+        Examples
+        --------
+        >>> fc_run = FeatureFCRunGroup(h5_group)
+        >>> decimation = fc_run.add_decimation_level('level_0', dec_metadata)
+        >>> print(decimation.name)
+        'level_0'
         """
 
         return self._add_group(
@@ -369,38 +646,67 @@ class FeatureFCRunGroup(BaseGroup):
             match="id",
         )
 
-    def get_decimation_level(self, decimation_level_name):
+    def get_decimation_level(
+        self, decimation_level_name: str
+    ) -> FeatureDecimationGroup:
         """
-        Get a Decimation Level
+        Retrieve a decimation level group by name.
 
-        :param decimation_level_name: DESCRIPTION
-        :type decimation_level_name: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Parameters
+        ----------
+        decimation_level_name : str
+            Name of the decimation level to retrieve.
 
+        Returns
+        -------
+        FeatureDecimationGroup
+            The requested decimation level group.
+
+        Raises
+        ------
+        MTH5Error
+            If the decimation level does not exist.
+
+        Examples
+        --------
+        >>> fc_run = FeatureFCRunGroup(h5_group)
+        >>> decimation = fc_run.get_decimation_level('level_0')
         """
         return self._get_group(decimation_level_name, FeatureDecimationGroup)
 
-    def remove_decimation_level(self, decimation_level_name):
+    def remove_decimation_level(self, decimation_level_name: str) -> None:
         """
-        Remove decimation level
+        Remove a decimation level from the feature run.
 
-        :param decimation_level_name: DESCRIPTION
-        :type decimation_level_name: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Parameters
+        ----------
+        decimation_level_name : str
+            Name of the decimation level to remove.
 
+        Raises
+        ------
+        MTH5Error
+            If the decimation level does not exist.
+
+        Examples
+        --------
+        >>> fc_run = FeatureFCRunGroup(h5_group)
+        >>> fc_run.remove_decimation_level('level_0')
         """
 
         self._remove_group(decimation_level_name)
 
-    def update_metadata(self):
+    def update_metadata(self) -> None:
         """
-        update metadata from channels
+        Update metadata from all decimation levels.
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Scans all decimation levels and updates the run-level metadata with
+        aggregated information including time ranges.
 
+        Examples
+        --------
+        >>> fc_run = FeatureFCRunGroup(h5_group)
+        >>> fc_run.update_metadata()
         """
         decimation_level_summary = self.decimation_level_summary.copy()
         if not decimation_level_summary.empty:
@@ -462,38 +768,69 @@ class FeatureFCRunGroup(BaseGroup):
 
 class FeatureDecimationGroup(BaseGroup):
     """
-    Holds a single decimation level
+    Container for a single decimation level with multiple Fourier Coefficient channels.
 
-    FCDecimationGroup assumes two conditions on the data array (spectrogram):
-        1. The data are uniformly sampled in frequency domain
-        2. The data are uniformly sampled in time.
-        (i.e. the FFT moving window has a uniform step size)
+    This class manages Fourier Coefficient data organized by frequency, time, and channel.
+    Data is assumed to be uniformly sampled in both frequency and time domains.
+
+    Hierarchy
+    ---------
+    FeatureDecimationGroup -> FeatureChannelDataset (multiple channels)
+
+    Data Assumptions
+    ----------------
+    1. Data are uniformly sampled in frequency domain
+    2. Data are uniformly sampled in time domain
+    3. FFT moving window has uniform step size
 
     Attributes
+    ----------
+    start time : datetime
+        Start time of the decimation level
+    end time : datetime
+        End time of the decimation level
+    channels : list
+        List of channel names in this decimation level
+    decimation_factor : int
+        Factor by which data was decimated
+    decimation_level : int
+        Level index in decimation hierarchy
+    decimation_sample_rate : float
+        Sample rate after decimation (Hz)
+    method : str
+        Method used (FFT, wavelet, etc.)
+    anti_alias_filter : optional
+        Anti-aliasing filter used
+    prewhitening_type : optional
+        Type of prewhitening applied
+    harmonics_kept : list or 'all'
+        Harmonic indices kept in the data
+    window : dict
+        Window parameters (length, overlap, type, sample rate)
+    bands : list
+        Frequency bands in the data
 
-        - start time
-        - end time
-        - channels (list)
-        - decimation factor
-        - decimation level
-        - decimation sample rate
-        - method (FFT, wavelet, ...)
-        - anti alias filter
-        - prewhitening type
-        - extra_pre_fft_detrend_type
-        - recoloring (True | False)
-        - harmonics_kept (index values of harmonics kept (list) | 'all')
-        - window parameters
-            - length
-            - overlap
-            - type
-            - type parameters
-            - window sample rate (method or property)
-        - bands
+    Parameters
+    ----------
+    group : h5py.Group
+        HDF5 group object for this FeatureDecimationGroup.
+    decimation_level_metadata : optional
+        Metadata for the decimation level. Default is None.
+    **kwargs
+        Additional keyword arguments passed to BaseGroup.
 
+    Examples
+    --------
+    >>> decimation = FeatureDecimationGroup(h5_group, metadata)
+    >>> channel = decimation.add_channel('Ex', fc_data=fc_array, fc_metadata=ch_metadata)
     """
 
-    def __init__(self, group, decimation_level_metadata=None, **kwargs):
+    def __init__(
+        self,
+        group: h5py.Group,
+        decimation_level_metadata: Optional[object] = None,
+        **kwargs,
+    ) -> None:
         super().__init__(group, group_metadata=decimation_level_metadata, **kwargs)
 
     @BaseGroup.metadata.getter
@@ -508,13 +845,42 @@ class FeatureDecimationGroup(BaseGroup):
         return self._metadata
 
     @property
-    def channel_summary(self):
+    def channel_summary(self) -> pd.DataFrame:
         """
+        Get a summary of all channels in this decimation level.
 
-         summary of channels in run
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Returns a pandas DataFrame with detailed information about each Fourier
+        Coefficient channel including time ranges, dimensions, and sampling rates.
 
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with columns:
+
+            - name : str
+                Channel name
+            - start : datetime64[ns]
+                Start time of the channel data
+            - end : datetime64[ns]
+                End time of the channel data
+            - n_frequency : int64
+                Number of frequency bins
+            - n_windows : int64
+                Number of time windows
+            - sample_rate_decimation_level : float64
+                Decimation level sample rate (Hz)
+            - sample_rate_window_step : float64
+                Sample rate of window stepping (Hz)
+            - units : str
+                Physical units of the data
+            - hdf5_reference : h5py.ref_dtype
+                HDF5 reference to the channel dataset
+
+        Examples
+        --------
+        >>> decimation = FeatureDecimationGroup(h5_group)
+        >>> summary = decimation.channel_summary
+        >>> print(summary[['name', 'n_frequency', 'n_windows']])
         """
 
         ch_list = []
@@ -557,22 +923,38 @@ class FeatureDecimationGroup(BaseGroup):
         return pd.DataFrame(ch_summary)
 
     def from_dataframe(
-        self, df, channel_key, time_key="time", frequency_key="frequency"
-    ):
+        self,
+        df: pd.DataFrame,
+        channel_key: str,
+        time_key: str = "time",
+        frequency_key: str = "frequency",
+    ) -> None:
         """
-        assumes channel_key is the coefficient values
+        Load Fourier Coefficient data from a pandas DataFrame.
 
-        :param df: DESCRIPTION
-        :type df: TYPE
-        :param channel_key: DESCRIPTION
-        :type channel_key: TYPE
-        :param time_key: DESCRIPTION, defaults to "time"
-        :type time_key: TYPE, optional
-        :param frequency_key: DESCRIPTION, defaults to "frequency"
-        :type frequency_key: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Assumes the channel_key column contains complex coefficient values
+        organized with time and frequency dimensions.
 
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Input DataFrame containing the coefficient data.
+        channel_key : str
+            Name of the column containing coefficient values.
+        time_key : str, default='time'
+            Name of the time coordinate column.
+        frequency_key : str, default='frequency'
+            Name of the frequency coordinate column.
+
+        Raises
+        ------
+        TypeError
+            If df is not a pandas DataFrame.
+
+        Examples
+        --------
+        >>> decimation = FeatureDecimationGroup(h5_group)
+        >>> decimation.from_dataframe(df, channel_key='Ex', time_key='time')
         """
 
         if not isinstance(df, pd.DataFrame):
@@ -584,15 +966,59 @@ class FeatureDecimationGroup(BaseGroup):
             xrds = df[col].to_xarray()
             self.add_channel(col, fc_data=xrds.to_numpy())
 
-    def from_xarray(self, data_array, sample_rate_decimation_level):
+    def from_xarray(
+        self,
+        data_array: xr.DataArray | xr.Dataset,
+        sample_rate_decimation_level: float,
+    ) -> None:
         """
-        can input a dataarray or dataset
+        Load Fourier Coefficient data from an xarray DataArray or Dataset.
 
-        :param data_array: DESCRIPTION
-        :type data_array: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Automatically extracts metadata (time, frequency, units) from the xarray
+        object and creates appropriate FeatureChannelDataset instances for each
+        variable or the single DataArray.
 
+        Parameters
+        ----------
+        data_array : xr.DataArray or xr.Dataset
+            Input xarray object with 'time' and 'frequency' coordinates and
+            dimensions ['time', 'frequency'] (or transposed variant).
+        sample_rate_decimation_level : float
+            Sample rate of the decimation level (Hz).
+
+        Raises
+        ------
+        TypeError
+            If data_array is not an xarray Dataset or DataArray.
+
+        Notes
+        -----
+        Automatically handles both (time, frequency) and (frequency, time) dimension ordering.
+        Units are extracted from xarray attributes if available.
+
+        Examples
+        --------
+        >>> import xarray as xr
+        >>> import numpy as np
+        >>> decimation = FeatureDecimationGroup(h5_group)
+
+        Create sample xarray data:
+
+        >>> times = np.arange('2023-01-01', '2023-01-02', dtype='datetime64[s]')
+        >>> freqs = np.linspace(0.01, 100, 256)
+        >>> data_array = np.random.randn(len(times), len(freqs)) + \\
+        ...              1j * np.random.randn(len(times), len(freqs))
+        >>> xr_data = xr.DataArray(
+        ...     data_array,
+        ...     dims=['time', 'frequency'],
+        ...     coords={'time': times, 'frequency': freqs},
+        ...     name='Ex',
+        ...     attrs={'units': 'mV/km'}
+        ... )
+
+        Load into decimation group:
+
+        >>> decimation.from_xarray(xr_data, sample_rate_decimation_level=0.5)
         """
 
         if not isinstance(data_array, (xr.Dataset, xr.DataArray)):
@@ -641,16 +1067,37 @@ class FeatureDecimationGroup(BaseGroup):
                     )
         return
 
-    def to_xarray(self, channels=None):
+    def to_xarray(self, channels: Optional[list] = None) -> xr.Dataset:
         """
-        create an xarray dataset from the desired channels. If none grabs all
-        channels in the decimation level.
+        Create an xarray Dataset from Fourier Coefficient channels.
 
-        :param channels: DESCRIPTION, defaults to None
-        :type channels: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
+        If no channels are specified, all channels in the decimation level
+        are included. Each channel becomes a data variable in the resulting Dataset.
 
+        Parameters
+        ----------
+        channels : list, optional
+            List of channel names to include. If None, all channels are used.
+            Default is None.
+
+        Returns
+        -------
+        xr.Dataset
+            xarray Dataset with channels as data variables and 'time' and
+            'frequency' as shared coordinates.
+
+        Examples
+        --------
+        >>> decimation = FeatureDecimationGroup(h5_group)
+        >>> xr_data = decimation.to_xarray()
+        >>> print(xr_data.data_vars)
+        Data variables:
+            Ex  (time, frequency) complex128
+            Ey  (time, frequency) complex128
+
+        Get specific channels:
+
+        >>> subset = decimation.to_xarray(channels=['Ex', 'Ey'])
         """
 
         if channels is None:
@@ -661,75 +1108,131 @@ class FeatureDecimationGroup(BaseGroup):
             ch_dict[ch] = ch_ds.to_xarray()
         return xr.Dataset(ch_dict)
 
-    def from_numpy_array(self, nd_array, ch_name):
+    def from_numpy_array(
+        self,
+        nd_array: np.ndarray,
+        ch_name: str | list,
+    ) -> None:
         """
-        assumes shape of (n_frequencies, n_windows) or
-        (n_channels, n_frequencies, n_windows)
+        Load Fourier Coefficient data from a numpy array.
 
-        :param nd_array: DESCRIPTION
-        :type nd_array: TYPE
-        :param ch_name: name of channel(s)
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Assumes array shape is either (n_frequencies, n_windows) for a single
+        channel or (n_channels, n_frequencies, n_windows) for multiple channels.
 
+        Parameters
+        ----------
+        nd_array : np.ndarray
+            Input numpy array containing coefficient data.
+        ch_name : str or list
+            Channel name (for 2D array) or list of channel names
+            (for 3D array).
+
+        Raises
+        ------
+        TypeError
+            If nd_array is not a numpy ndarray.
+        ValueError
+            If array shape is not (n_frequencies, n_windows) or
+            (n_channels, n_frequencies, n_windows).
+
+        Examples
+        --------
+        >>> decimation = FeatureDecimationGroup(h5_group)
+
+        Load single channel:
+
+        >>> data_2d = np.random.randn(256, 100) + 1j * np.random.randn(256, 100)
+        >>> decimation.from_numpy_array(data_2d, ch_name='Ex')
+
+        Load multiple channels:
+
+        >>> data_3d = np.random.randn(2, 256, 100) + 1j * np.random.randn(2, 256, 100)
+        >>> decimation.from_numpy_array(data_3d, ch_name=['Ex', 'Ey'])
         """
 
-        if not isinstance(nd_array, (np.nd_array)):
+        if not isinstance(nd_array, np.ndarray):
             msg = f"Must input a numpy ndarray not {type(nd_array)}"
             self.logger.error(msg)
             raise TypeError(msg)
-        if len(nd_array.shape[0]) == 3:
+        if len(nd_array.shape) == 3:
             for index, ch in zip(nd_array.shape[0], ch_name):
                 self.add_channel(ch, fc_data=nd_array[index])
         elif len(nd_array.shape) == 2:
             self.add_channel(ch_name, fc_data=nd_array)
         else:
-            raise ValueError("input array must be shaped (n_frequencies, n_windows)")
+            raise ValueError(
+                "input array must be shaped (n_frequencies, n_windows) or "
+                "(n_channels, n_frequencies, n_windows)"
+            )
 
     def add_channel(
         self,
-        fc_name,
-        fc_data=None,
-        fc_metadata=None,
-        max_shape=(None, None),
-        chunks=True,
-        dtype=complex,
+        fc_name: str,
+        fc_data: Optional[np.ndarray | xr.DataArray | xr.Dataset | pd.DataFrame] = None,
+        fc_metadata: Optional[FeatureDecimationChannel] = None,
+        max_shape: tuple = (None, None),
+        chunks: bool = True,
+        dtype: type = complex,
         **kwargs,
-    ):
+    ) -> FeatureChannelDataset:
         """
+        Add a Fourier Coefficient channel to the decimation level.
 
-        Add a set of Fourier coefficients for a single channel at a single
-        decimation level for a processing run.
+        Creates a new FeatureChannelDataset for a single channel at a single
+        decimation level. Input data can be provided as numpy array, xarray,
+        DataFrame, or created empty.
 
-        - time
-        - frequency [ integer as harmonic index or float ]
-        - fc (complex)
+        Parameters
+        ----------
+        fc_name : str
+            Name for the Fourier Coefficient channel.
+        fc_data : np.ndarray, xr.DataArray, xr.Dataset, pd.DataFrame, optional
+            Input data. Can be numpy array (time, frequency) or xarray/DataFrame
+            format. Default is None (creates empty dataset).
+        fc_metadata : FeatureDecimationChannel, optional
+            Metadata for the channel. Default is None.
+        max_shape : tuple, default=(None, None)
+            Maximum shape for HDF5 dataset dimensions (expandable if None).
+        chunks : bool, default=True
+            Whether to use HDF5 chunking.
+        dtype : type, default=complex
+            Data type for the dataset (e.g., complex, float, int).
+        **kwargs
+            Additional keyword arguments for HDF5 dataset creation.
 
-        The input can be
+        Returns
+        -------
+        FeatureChannelDataset
+            Newly created FeatureChannelDataset object.
 
-        * a numpy array where the index values for the time, frequency, and
-         coefficients are supplied in channel_key, frequency_key, channel_key
-         as integer values.
-        * a numpy structured array, dataframe, or xarray dataset or dataarray
-         where the channel_key if not supplied is assumed to the same as the
-         fc_name.
+        Raises
+        ------
+        TypeError
+            If fc_data type is not supported or metadata type mismatch.
+        RuntimeError or OSError
+            If channel already exists (will return existing channel).
 
-        haven't fully tested dataframe or xarray yet.
+        Notes
+        -----
+        Data layout assumes (time, frequency) organization:
 
-        Weights should be a separate data set as a 1D array along with matching
-        index as fcs.
+        - time index: window start times
+        - frequency index: harmonic indices or float values
+        - data: complex Fourier coefficients
 
-        - weight_channel (maybe)
-        - weight_band (maybe)
-        - weight_time (maybe)
+        Examples
+        --------
+        >>> decimation = FeatureDecimationGroup(h5_group)
+        >>> metadata = FeatureDecimationChannel(name='Ex')
 
-        :param fc_datastet_name: DESCRIPTION
-        :type fc_datastet_name: TYPE
-        :param fc_dataset_metadata: DESCRIPTION, defaults to None
-        :type fc_dataset_metadata: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Create from numpy array:
 
+        >>> fc_data = np.random.randn(100, 256) + 1j * np.random.randn(100, 256)
+        >>> channel = decimation.add_channel('Ex', fc_data=fc_data, fc_metadata=metadata)
+
+        Create empty channel (expandable):
+
+        >>> channel = decimation.add_channel('Ex', fc_metadata=metadata)
         """
 
         fc_name = validate_name(fc_name)
@@ -770,15 +1273,30 @@ class FeatureDecimationGroup(BaseGroup):
             fc_dataset = self.get_channel(fc_metadata.name)
         return fc_dataset
 
-    def get_channel(self, fc_name):
+    def get_channel(self, fc_name: str) -> FeatureChannelDataset:
         """
-        get an fc dataset
+        Retrieve a Fourier Coefficient channel by name.
 
-        :param fc_dataset_name: DESCRIPTION
-        :type fc_dataset_name: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Parameters
+        ----------
+        fc_name : str
+            Name of the channel to retrieve.
 
+        Returns
+        -------
+        FeatureChannelDataset
+            The requested FeatureChannelDataset object.
+
+        Raises
+        ------
+        MTH5Error
+            If the channel does not exist.
+
+        Examples
+        --------
+        >>> decimation = FeatureDecimationGroup(h5_group)
+        >>> channel = decimation.get_channel('Ex')
+        >>> data = channel.to_numpy()
         """
         fc_name = validate_name(fc_name)
 
@@ -794,15 +1312,31 @@ class FeatureDecimationGroup(BaseGroup):
             self.logger.error(error)
             raise MTH5Error(error)
 
-    def remove_channel(self, fc_name):
+    def remove_channel(self, fc_name: str) -> None:
         """
-        remove an fc dataset
+        Remove a Fourier Coefficient channel from the decimation level.
 
-        :param fc_dataset_name: DESCRIPTION
-        :type fc_dataset_name: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Deletes the channel from the HDF5 file. Note that this removes the
+        reference but does not reduce file size.
 
+        Parameters
+        ----------
+        fc_name : str
+            Name of the channel to remove.
+
+        Raises
+        ------
+        MTH5Error
+            If the channel does not exist.
+
+        Notes
+        -----
+        To reduce HDF5 file size, copy desired data to a new file.
+
+        Examples
+        --------
+        >>> decimation = FeatureDecimationGroup(h5_group)
+        >>> decimation.remove_channel('Ex')
         """
         fc_name = validate_name(fc_name.lower())
 
@@ -819,13 +1353,17 @@ class FeatureDecimationGroup(BaseGroup):
             self.logger.error(msg)
             raise MTH5Error(msg)
 
-    def update_metadata(self):
+    def update_metadata(self) -> None:
         """
-        update metadata from channels
+        Update metadata from all channels in the decimation level.
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Scans all channels and updates the decimation-level metadata with
+        aggregated information including time ranges and sampling rates.
 
+        Examples
+        --------
+        >>> decimation = FeatureDecimationGroup(h5_group)
+        >>> decimation.update_metadata()
         """
         channel_summary = self.channel_summary.copy()
 
@@ -842,11 +1380,46 @@ class FeatureDecimationGroup(BaseGroup):
 
     def add_weights(
         self,
-        weight_name,
-        weight_data=None,
-        weight_metadata=None,
-        max_shape=(None, None, None),
-        chunks=True,
+        weight_name: str,
+        weight_data: Optional[np.ndarray] = None,
+        weight_metadata: Optional[object] = None,
+        max_shape: tuple = (None, None, None),
+        chunks: bool = True,
         **kwargs,
-    ):
-        pass
+    ) -> None:
+        """
+        Add weight or masking data for Fourier Coefficients.
+
+        Creates a dataset to store weights or masks for quality control,
+        frequency band selection, or time window filtering.
+
+        Parameters
+        ----------
+        weight_name : str
+            Name for the weight dataset.
+        weight_data : np.ndarray, optional
+            Weight values. Default is None.
+        weight_metadata : optional
+            Metadata for the weight dataset. Default is None.
+        max_shape : tuple, default=(None, None, None)
+            Maximum shape for expandable dimensions.
+        chunks : bool, default=True
+            Whether to use HDF5 chunking.
+        **kwargs
+            Additional keyword arguments for HDF5 dataset creation.
+
+        Notes
+        -----
+        Weight datasets can track:
+
+        - weight_channel: Per-channel weights
+        - weight_band: Per-frequency-band weights
+        - weight_time: Per-time-window weights
+
+        This method is a placeholder for future implementation.
+
+        Examples
+        --------
+        >>> decimation = FeatureDecimationGroup(h5_group)
+        >>> decimation.add_weights('coherency_weights', weight_data=weights)
+        """

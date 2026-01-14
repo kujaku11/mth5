@@ -1,12 +1,21 @@
 # -*- coding: utf-8 -*-
 """
-    This module tabulates the fourier coefficients stored in an mth5.
+Tabulate Fourier coefficients stored in an MTH5 file.
 
-    A basic test for this module is in mth5/tests/version_1/test_fcs.py.
+This module provides a small utility for summarizing Fourier-coefficient
+datasets (e.g., `FCChannel`) into a structured table and exporting
+to a convenient `pandas.DataFrame` for querying and analysis.
+
+Notes
+-----
+- A basic test for this module exists under
+    ``mth5/tests/version_1/test_fcs.py``.
+- The table is populated by traversing the HDF5 hierarchy and collecting
+    entries for datasets labeled with the attribute ``mth5_type='FCChannel'``.
 
 """
 
-from typing import Optional
+from __future__ import annotations
 
 import h5py
 import numpy as np
@@ -25,23 +34,52 @@ from mth5.tables import MTH5Table
 
 class FCSummaryTable(MTH5Table):
     """
-    Object to hold the channel summary and provide some convenience functions
-    like fill, to_dataframe ...
+    Summary table for Fourier coefficients.
+
+    This class wraps an HDF5 dataset that stores a summary of Fourier
+    coefficient datasets and provides convenience functions such as
+    `summarize()` (to populate the table) and `to_dataframe()` (to export
+    entries).
+
+    Examples
+    --------
+    Populate and export a summary from an existing MTH5 file::
+
+        >>> import h5py
+        >>> from mth5.tables.fc_table import FCSummaryTable
+        >>> f = h5py.File('example.mth5', 'r')
+        >>> # Assume the summary dataset already exists at this path
+        >>> table_ds = f['Exchange']['FC_Summary']
+        >>> fc_table = FCSummaryTable(table_ds)
+        >>> fc_table.summarize()  # walk the file and fill entries
+        >>> df = fc_table.to_dataframe()
+        >>> df.head()
 
     """
 
-    def __init__(self, hdf5_dataset):
+    def __init__(self, hdf5_dataset: h5py.Dataset) -> None:
         super().__init__(hdf5_dataset, FC_DTYPE)
 
-    def to_dataframe(self):
+    def to_dataframe(self) -> pd.DataFrame:
         """
-        Create a pandas DataFrame from the table for easier querying.
+        Convert the table to a `pandas.DataFrame` for easier querying.
 
-        :return: Channel Summary
-        :rtype: :class:`pandas.DataFrame`
+        Returns
+        -------
+        pandas.DataFrame
+            A dataframe with decoded string columns and parsed start/end
+            timestamps.
 
+        Examples
+        --------
+        Export to a dataframe and filter by component::
+
+            >>> df = fc_table.to_dataframe()
+            >>> df[df.component == 'ex']
         """
 
+        if self.array is None:
+            raise ValueError("Summary table dataset is not initialized.")
         df = pd.DataFrame(self.array[()])
         for key in [
             "survey",
@@ -61,22 +99,40 @@ class FCSummaryTable(MTH5Table):
 
         return df
 
-    def summarize(self):
+    def summarize(self) -> None:
+        """
+        Populate the summary table by traversing the HDF5 hierarchy.
+
+        The traversal searches for datasets with attribute
+        ``mth5_type == 'FCChannel'`` and adds a corresponding summary row
+        for each.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        - If the table contains rows from a different OS/encoding,
+          row insertion can raise a `ValueError`. A warning is logged and
+          processing continues for subsequent rows.
+
+        Examples
+        --------
+        Refresh the table entries::
+
+            >>> fc_table.clear_table()
+            >>> fc_table.summarize()
         """
 
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        def recursive_get_fc_entry(group):
-            """
-            a function to get channel entry
-            """
-            if isinstance(group, (h5py._hl.group.Group, h5py._hl.files.File)):
+        def recursive_get_fc_entry(
+            group: h5py.Group | h5py.File | h5py.Dataset,
+        ) -> None:
+            """Recursively collect FC summary entries from the hierarchy."""
+            if isinstance(group, (h5py.Group, h5py.File)):
                 for key, node in group.items():
                     recursive_get_fc_entry(node)
-            elif isinstance(group, h5py._hl.dataset.Dataset):
+            elif isinstance(group, h5py.Dataset):
                 try:
                     ch_type = group.attrs["mth5_type"]
                     if ch_type in [
@@ -96,7 +152,17 @@ class FCSummaryTable(MTH5Table):
 
         self.clear_table()
         # self.fc_entries = []
-        recursive_get_fc_entry(self.array.parent)
+        if self.array is None or getattr(self.array, "parent", None) is None:
+            raise ValueError("Summary table dataset parent is not available.")
+        parent = self.array.parent
+        # Allow Mock objects and dictionaries for testing, in addition to h5py types
+        if not (
+            isinstance(parent, (h5py.Group, h5py.File, h5py.Dataset))
+            or hasattr(parent, "items")
+            or isinstance(parent, dict)
+        ):
+            raise TypeError("Unexpected parent type for summary dataset.")
+        recursive_get_fc_entry(parent)
         # for row in self.fc_entries:
         #     try:
         #         self.add_row(row)
@@ -107,27 +173,54 @@ class FCSummaryTable(MTH5Table):
 
 
 def _get_fc_entry(
-    group: h5py._hl.dataset.Dataset, dtype: Optional[np.dtype] = FC_DTYPE
+    group: h5py.Dataset,
+    dtype: np.dtype | None = FC_DTYPE,
 ) -> np.ndarray:
     """
-    Create a fc_summary table entry in np.array format
+    Build a single FC summary table row.
 
-    :type group: h5py._hl.dataset.Dataset
-    :param group: h5 dataset with Fourier coeffifients
-    :type dtype: np.dtype
-    :param dtype: The dytpes for each of the table entries
-    :rtype: np.ndarray
-    :return: fc_summary table entry
+    Parameters
+    ----------
+    group : h5py._hl.dataset.Dataset
+        The HDF5 dataset representing a Fourier-coefficient channel
+        (i.e., with attribute ``mth5_type='FCChannel'``).
+    dtype : numpy.dtype, optional
+        The dtype describing the summary table schema. Defaults to
+        :data:`mth5.FC_DTYPE`.
 
+    Returns
+    -------
+    numpy.ndarray
+        A 1-row structured array matching the summary table schema.
+
+    Examples
+    --------
+    Create a row for an existing FC dataset::
+
+        >>> fc_ds = f['Survey']['station']['run']['FC']['ex']
+        >>> row = _get_fc_entry(fc_ds)
+        >>> row.dtype == FC_DTYPE
+        True
     """
+
+    def _as_bytes(value: object) -> bytes:
+        try:
+            if isinstance(value, np.ndarray):
+                value = value.item() if value.shape == () else value[0]
+        except Exception:
+            pass
+        if isinstance(value, bytes):
+            return value
+        return str(value).encode("utf-8")
+
     fc_entry = np.array(
         [
             (
-                group.parent.parent.parent.parent.parent.parent.attrs["id"].encode(
-                    "utf-8"
+                _as_bytes(
+                    group.parent.parent.parent.parent.parent.parent.attrs["id"]
                 ),  # get survey from FCChannel
-                group.parent.parent.parent.parent.attrs["id"].encode(
-                    "utf-8"
+                _as_bytes(
+                    group.parent.parent.parent.parent.attrs["id"]
                 ),  # get station from FCChannel
                 group.parent.parent.attrs["id"],  # get run from FCChannel
                 group.parent.attrs[

@@ -6,8 +6,17 @@ MTH5
 
 MTH5 deals with reading and writing an MTH5 file, which are HDF5 files
 developed for magnetotelluric (MT) data.  The code is based on h5py and
-therefor numpy.  This is the simplest and we are not really dealing with
-large tables of data to warrant using pytables.
+numpy. The main purpose is to provide an object-oriented interface for
+managing MT data in the HDF5 format.
+
+This module implements the MTH5 class which provides a container for the
+hierarchical structure of MT data collection:
+
+- Version 0.1.0: Survey → Stations → Runs → Channels
+- Version 0.2.0: Experiment → Surveys → Stations → Runs → Channels
+
+All timeseries data are stored as individual channels with appropriate
+metadata for electric, magnetic, and auxiliary data.
 
 Created on Sun Dec  9 20:50:41 2018
 
@@ -15,8 +24,28 @@ Created on Sun Dec  9 20:50:41 2018
 
 :license: MIT
 
+Notes
+-----
+For detailed information about the MTH5 format and metadata standards,
+see https://github.com/kujaku11/MTarchive/
+
+Examples
+--------
+Create a new MTH5 file and add a station:
+
+>>> from mth5 import mth5
+>>> mth5_obj = mth5.MTH5(file_version='0.2.0')
+>>> mth5_obj.open_mth5('test.mth5', 'w')
+>>> survey = mth5_obj.add_survey('survey_001')
+>>> station = mth5_obj.add_station('MT001', survey='survey_001')
+
+See Also
+--------
+h5py : HDF5 library used for file I/O
+mt_metadata : Metadata standards for MT data
 """
 
+from __future__ import annotations
 
 # =============================================================================
 # Imports
@@ -280,24 +309,47 @@ class MTH5:
 
         self._set_default_groups()
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Return tree structure of the HDF5 file."""
         if self.h5_is_read():
             return helpers.get_tree(self.__hdf5_obj)
         return "HDF5 file is closed and cannot be accessed."
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """Return repr of MTH5 object."""
         return self.__str__()
 
-    def __enter__(self):
+    def __enter__(self) -> MTH5:
+        """Enter context manager."""
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb,
+    ) -> bool:
+        """Exit context manager and close file."""
         self.close_mth5()
         return False
 
     @property
-    def dataset_options(self):
-        """summary of dataset options"""
+    def dataset_options(self) -> dict[str, str | int | bool]:
+        """
+        Get HDF5 dataset compression and storage options.
+
+        Returns
+        -------
+        dict[str, str | int | bool]
+            Dictionary containing compression, compression_opts, shuffle, and fletcher32.
+
+        Examples
+        --------
+        >>> mth5_obj = MTH5()
+        >>> opts = mth5_obj.dataset_options
+        >>> print(opts['compression'])
+        'gzip'
+        """
         return {
             "compression": self.__compression,
             "compression_opts": self.__compression_opts,
@@ -580,26 +632,60 @@ class MTH5:
                 station_list += sg.stations_group.groups_list
             return station_list
 
-    def open_mth5(self, filename=None, mode="a", **kwargs):
+    def open_mth5(
+        self,
+        filename: str | Path | None = None,
+        mode: str = "a",
+        **kwargs,
+    ) -> MTH5:
         """
-        open an mth5 file
+        Open an MTH5 file.
 
-        :return: Survey Group
-        :type: groups.SurveyGroup
+        Opens an existing MTH5 file or creates a new one. Validates file structure
+        and initializes summary datasets if needed.
 
-        :Example:
+        Parameters
+        ----------
+        filename : str | Path, optional
+            Path to MTH5 file. If None, uses stored filename.
+        mode : str, default 'a'
+            File opening mode:
 
-        >>> from mth5 import mth5
-        >>> mth5_object = mth5.MTH5(file_version='0.1.0')
-        >>> survey_object = mth5_object.open_mth5('Test.mth5', 'w')
+            * 'r' : Read-only
+            * 'a' : Read/write, create if doesn't exist
+            * 'w' : Write, overwrite if exists
+            * 'x' : Write, fail if exists
+            * 'w-' : Write, fail if exists (same as 'x')
+            * 'r+' : Read/write, file must exist
 
-        >>> from mth5 import mth5
-        >>> mth5_object = mth5.MTH5()
-        >>> survey_object = mth5_object.open_mth5('Test.mth5', 'w')
-        >>> mth5_object.file_version
-        '0.2.0'
+        **kwargs
+            Additional arguments passed to h5py.File()
 
+        Returns
+        -------
+        MTH5
+            Returns self for method chaining.
 
+        Raises
+        ------
+        MTH5Error
+            If file is invalid or mode is not understood.
+
+        Examples
+        --------
+        Open an existing file for reading:
+
+        >>> mth5_obj = MTH5()
+        >>> mth5_obj.open_mth5('data.mth5', 'r')
+
+        Create a new file:
+
+        >>> mth5_obj = MTH5(file_version='0.2.0')
+        >>> mth5_obj.open_mth5('new_file.mth5', 'w')
+
+        See Also
+        --------
+        close_mth5 : Close the MTH5 file
         """
         if filename is not None:
             self.__filename = filename
@@ -645,13 +731,22 @@ class MTH5:
             self._initialize_summary()
         return self
 
-    def _initialize_file(self, mode="w", **kwargs):
+    def _initialize_file(self, mode: str = "w", **kwargs) -> None:
         """
-        Initialize the default groups for the file
+        Initialize default groups and metadata for a new MTH5 file.
 
-        :return: Survey Group
-        :rtype: groups.SurveyGroup
+        Parameters
+        ----------
+        mode : str, default 'w'
+            File opening mode for h5py.
+        **kwargs
+            Additional arguments passed to h5py.File()
 
+        Notes
+        -----
+        Creates the default group structure based on file version:
+        - v0.1.0: Survey, Filters, Reports, Standards, Stations
+        - v0.2.0: Experiment, Surveys, Reports, Standards
         """
         # open an hdf5 file
         self.__hdf5_obj = h5py.File(self.__filename, mode, **kwargs)
@@ -679,7 +774,13 @@ class MTH5:
             f"Initialized MTH5 {self.file_version} file {self.filename} in mode {mode}"
         )
 
-    def _initialize_summary(self):
+    def _initialize_summary(self) -> None:
+        """
+        Initialize summary datasets for channels, Fourier coefficients, and transfer functions.
+
+        Creates HDF5 datasets for tracking channel, FC, and TF metadata.
+        Handles cases where datasets already exist.
+        """
         try:
             # initiate channel and tf summary datasets
             self.__hdf5_obj[self._default_root_name].create_dataset(
@@ -712,17 +813,24 @@ class MTH5:
         except ValueError:
             pass
 
-    def validate_file(self):
+    def validate_file(self) -> bool:
         """
-        Validate an open mth5 file
+        Validate an open MTH5 file.
 
-        will test the attribute values and group names
+        Checks file attributes, version, data level, and group structure
+        for compliance with MTH5 format specifications.
 
-        :return: Boolean [ True = valid, False = not valid]
-        :rtype: Boolean
+        Returns
+        -------
+        bool
+            True if file is valid, False otherwise.
 
+        Examples
+        --------
+        >>> mth5_obj = MTH5()
+        >>> mth5_obj.open_mth5('test.mth5', 'r')
+        >>> is_valid = mth5_obj.validate_file()
         """
-
         if self.h5_is_read():
             if self.file_type not in ACCEPTABLE_FILE_TYPES:
                 msg = f"Unacceptable file type {self.file_type}"
@@ -756,13 +864,29 @@ class MTH5:
         self.logger.warning("HDF5 file is not open")
         return False
 
-    def close_mth5(self):
+    def close_mth5(self) -> None:
         """
-        close mth5 file to make sure everything is flushed to the file
-        """
+        Close MTH5 file.
 
+        Flushes all data to disk, updates summary tables, and closes the file.
+        Safe to call on already-closed files.
+
+        Examples
+        --------
+        >>> mth5_obj = MTH5()
+        >>> mth5_obj.open_mth5('test.mth5', 'w')
+        >>> mth5_obj.close_mth5()
+
+        Notes
+        -----
+        Can be called automatically using context manager:
+
+        >>> with MTH5().open_mth5('test.mth5', 'w') as m:
+        ...     # do work
+        ...     pass  # file closed automatically
+        """
         try:
-            # update summay tables
+            # update summary tables
             if self.h5_is_write():
                 self.channel_summary.summarize()
                 self.tf_summary.summarize()
@@ -775,9 +899,21 @@ class MTH5:
             self.logger.error(f"Error in close_mth5: {e}")
             helpers.close_open_files()
 
-    def h5_is_write(self):
+    def h5_is_write(self) -> bool:
         """
-        check to see if the hdf5 file is open and writeable
+        Check if HDF5 file is open in write mode.
+
+        Returns
+        -------
+        bool
+            True if file is open and writable, False otherwise.
+
+        Examples
+        --------
+        >>> mth5_obj = MTH5()
+        >>> mth5_obj.open_mth5('test.mth5', 'w')
+        >>> mth5_obj.h5_is_write()
+        True
         """
         if isinstance(self.__hdf5_obj, h5py.File):
             try:
@@ -788,15 +924,22 @@ class MTH5:
                 return False
         return False
 
-    def h5_is_read(self):
+    def h5_is_read(self) -> bool:
         """
-        check to see if the hdf5 file is open and readable
+        Check if HDF5 file is open and readable.
 
-        :return: True if readable, False if not
-        :rtype: Boolean
+        Returns
+        -------
+        bool
+            True if file is open and readable, False otherwise.
 
+        Examples
+        --------
+        >>> mth5_obj = MTH5()
+        >>> mth5_obj.open_mth5('test.mth5', 'r')
+        >>> mth5_obj.h5_is_read()
+        True
         """
-
         if isinstance(self.__hdf5_obj, h5py.File):
             try:
                 if self.__hdf5_obj.mode in ["r", "r+", "a", "w", "w-", "x"]:
@@ -993,22 +1136,47 @@ class MTH5:
                         sg.filters_group.add_filter(v)
 
     @property
-    def channel_summary(self):
-        """return a dataframe of channels"""
+    def channel_summary(self) -> ChannelSummaryTable:
+        """
+        Get channel summary table.
 
+        Returns
+        -------
+        ChannelSummaryTable
+            Summary of all channels in the file with metadata.
+
+        Examples
+        --------
+        >>> mth5_obj = MTH5()
+        >>> mth5_obj.open_mth5('test.mth5', 'r')
+        >>> summary = mth5_obj.channel_summary
+        """
         return ChannelSummaryTable(
             self.__hdf5_obj[f"{self._root_path}/channel_summary"]
         )
 
     @property
-    def fc_summary(self):
-        """return a dataframe of fcs"""
+    def fc_summary(self) -> FCSummaryTable:
+        """
+        Get Fourier coefficient summary table.
 
+        Returns
+        -------
+        FCSummaryTable
+            Summary of all Fourier coefficients in the file.
+        """
         return FCSummaryTable(self.__hdf5_obj[f"{self._root_path}/fc_summary"])
 
     @property
     def run_summary(self):
-        """return a dataframe of channels"""
+        """
+        Get run summary with MTH5 file path.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Summary of runs with mth5_path column added.
+        """
         # need to add mth5 file path for future processing classes.
         run_summary_df = self.channel_summary.to_run_summary()
         run_summary_df["mth5_path"] = self.filename.as_posix()
@@ -1016,9 +1184,15 @@ class MTH5:
         return run_summary_df
 
     @property
-    def tf_summary(self):
-        """return a dataframe of tfs"""
+    def tf_summary(self) -> TFSummaryTable:
+        """
+        Get transfer function summary table.
 
+        Returns
+        -------
+        TFSummaryTable
+            Summary of all transfer functions in the file.
+        """
         return TFSummaryTable(self.__hdf5_obj[f"{self._root_path}/tf_summary"])
 
     def add_survey(self, survey_name, survey_metadata=None):
@@ -1132,37 +1306,50 @@ class MTH5:
             self.logger.warning(msg)
             raise MTH5Error(msg)
 
-    def add_station(self, station_name, station_metadata=None, survey=None):
+    def add_station(
+        self,
+        station_name: str,
+        station_metadata=None,
+        survey: str | None = None,
+    ) -> groups.StationGroup:
         """
-        Convenience function to add a station using
-        ``mth5.stations_group.add_station``
+        Convenience function to add a station.
 
+        Adds a new station with optional metadata. For v0.2.0 files, a survey
+        must be specified.
 
-        Add a station with metadata if given with the path [v0.1.0]:
-            ``/Survey/Stations/station_name``
+        Parameters
+        ----------
+        station_name : str
+            Name of the station (should match metadata.archive_id).
+        station_metadata : mt_metadata.timeseries.Station, optional
+            Station metadata container. Default is None.
+        survey : str, optional
+            Survey ID. Required for file version 0.2.0. Default is None.
 
-        Add a station with metadata if given with the path [v0.2.0]:
-            ``Experiment/Surveys/survey/Stations/station_name``
+        Returns
+        -------
+        groups.StationGroup
+            The added or existing station group object.
 
-        If the station already exists, will return that station and nothing
-        is added.
+        Raises
+        ------
+        ValueError
+            If survey is required (v0.2.0) but not provided.
 
-        :param station_name: Name of the station, should be the same as
-                             metadata.archive_id
-        :type station_name: string
-        :param station_metadata: Station metadata container, defaults to None
-        :type station_metadata: :class:`mth5.metadata.Station`, optional
-        :param survey: existing survey name, needed for file version >= 0.2.0
-        :type survey: string
-        :return: A convenience class for the added station
-        :rtype: :class:`mth5_groups.StationGroup`
+        Examples
+        --------
+        Add a station to v0.2.0 file:
 
-        :Example:
+        >>> mth5_obj = MTH5(file_version='0.2.0')
+        >>> mth5_obj.open_mth5('test.mth5', 'w')
+        >>> station = mth5_obj.add_station('MT001', survey='survey_001')
 
-        >>> new_staiton = mth5_obj.add_station('MT001')
-
+        See Also
+        --------
+        get_station : Retrieve existing station
+        remove_station : Delete a station
         """
-
         if self.file_version in ["0.1.0"]:
             return self.stations_group.add_station(
                 station_name, station_metadata=station_metadata
@@ -1177,27 +1364,44 @@ class MTH5:
                 station_name, station_metadata=station_metadata
             )
 
-    def get_station(self, station_name, survey=None):
+    def get_station(
+        self,
+        station_name: str,
+        survey: str | None = None,
+    ) -> groups.StationGroup:
         """
-        Convenience function to get a station using
+        Get an existing station from the MTH5 file.
 
-        Get a station with the same name as station_name
+        Parameters
+        ----------
+        station_name : str
+            Name of the station to retrieve.
+        survey : str, optional
+            Survey ID. Required for file version 0.2.0. Default is None.
 
-        :param station_name: existing station name
-        :type station_name: string
-        :param survey: existing survey name, needed for file version >= 0.2.0
-        :type survey: string
-        :return: convenience station class
-        :rtype: :class:`mth5.mth5_groups.StationGroup`
-        :raises MTH5Error:  if the station name is not found.
+        Returns
+        -------
+        groups.StationGroup
+            The requested station group object.
 
-        :Example:
+        Raises
+        ------
+        MTH5Error
+            If the station cannot be found.
 
-        >>> existing_staiton = mth5_obj.get_station('MT001')
-        MTH5Error: MT001 does not exist, check station_list for existing names
+        Examples
+        --------
+        Get a station:
 
+        >>> mth5_obj = MTH5()
+        >>> mth5_obj.open_mth5('test.mth5', 'r')
+        >>> station = mth5_obj.get_station('MT001', survey='survey_001')
+
+        See Also
+        --------
+        add_station : Create a new station
+        remove_station : Delete a station
         """
-
         station_path = self._make_h5_path(survey=survey, station=station_name)
         try:
             group = groups.StationGroup(
@@ -1241,31 +1445,45 @@ class MTH5:
             sg = self.get_survey(survey)
             return sg.stations_group.remove_station(station_name)
 
-    def add_run(self, station_name, run_name, run_metadata=None, survey=None):
+    def add_run(
+        self,
+        station_name: str,
+        run_name: str,
+        run_metadata=None,
+        survey: str | None = None,
+    ) -> groups.RunGroup:
         """
-        Convenience function to add a run using
-
         Add a run to a given station.
 
-        :param run_name: run name, should be archive_id{a-z}
-        :type run_name: string
-        :param survey: existing survey name, needed for file version >= 0.2.0
-        :type survey: string
-        :param metadata: metadata container, defaults to None
-        :type metadata: :class:`mth5.metadata.Station`, optional
+        Parameters
+        ----------
+        station_name : str
+            Existing station name.
+        run_name : str
+            Name of the run (typically archive_id followed by a-z).
+        run_metadata : mt_metadata.timeseries.Run, optional
+            Run metadata container. Default is None.
+        survey : str, optional
+            Survey ID. Required for file version 0.2.0. Default is None.
 
-        :example:
+        Returns
+        -------
+        groups.RunGroup
+            The added or existing run group object.
 
-        >>> new_run = mth5_obj.add_run('MT001', 'MT001a')
+        Examples
+        --------
+        Add a run to a station:
 
+        >>> mth5_obj = MTH5()
+        >>> mth5_obj.open_mth5('test.mth5', 'w')
+        >>> run = mth5_obj.add_run('MT001', 'MT001a', survey='survey_001')
 
-        .. todo:: auto fill run name if none is given.
-
-        .. todo:: add ability to add a run with data.
-
-
+        See Also
+        --------
+        get_run : Retrieve existing run
+        remove_run : Delete a run
         """
-
         return self.get_station(station_name, survey=survey).add_run(
             run_name, run_metadata=run_metadata
         )
@@ -1326,62 +1544,69 @@ class MTH5:
 
     def add_channel(
         self,
-        station_name,
-        run_name,
-        channel_name,
-        channel_type,
+        station_name: str,
+        run_name: str,
+        channel_name: str,
+        channel_type: str,
         data,
-        channel_dtype="int32",
-        max_shape=(None,),
-        chunks=True,
+        channel_dtype: str = "int32",
+        max_shape: tuple[int | None, ...] = (None,),
+        chunks: bool = True,
         channel_metadata=None,
-        survey=None,
-    ):
+        survey: str | None = None,
+    ) -> groups.ElectricDataset | groups.MagneticDataset | groups.AuxiliaryDataset:
         """
-        Convenience function to add a channel using
-        ``mth5.stations_group.get_station().get_run().add_channel()``
+        Add a channel to a given run and station.
 
-        add a channel to a given run for a given station
+        Parameters
+        ----------
+        station_name : str
+            Existing station name.
+        run_name : str
+            Existing run name.
+        channel_name : str
+            Name of the channel (component, e.g., 'Ex', 'Hy').
+        channel_type : str
+            Type of channel: 'electric', 'magnetic', or 'auxiliary'.
+        data : ndarray
+            Channel data array.
+        channel_dtype : str, default 'int32'
+            NumPy data type for storage.
+        max_shape : tuple[int | None, ...], default (None,)
+            Maximum shape (allows resizing). None allows unlimited growth.
+        chunks : bool, default True
+            Enable HDF5 chunking for better performance.
+        channel_metadata : mt_metadata.timeseries.Electric | Magnetic | Auxiliary, optional
+            Channel metadata container. Default is None.
+        survey : str, optional
+            Survey ID. Required for file version 0.2.0. Default is None.
 
-        :param station_name: existing station name
-        :type station_name: string
-        :param run_name: existing run name
-        :type run_name: string
-        :param channel_name: name of the channel
-        :type channel_name: string
-        :param channel_type: [ electric | magnetic | auxiliary ]
-        :type channel_type: string
-        :raises MTH5Error: If channel type is not correct
+        Returns
+        -------
+        groups.ElectricDataset | groups.MagneticDataset | groups.AuxiliaryDataset
+            The added channel dataset object.
 
-        :param channel_metadata: metadata container, defaults to None
-        :type channel_metadata: [ :class:`mth5.metadata.Electric` |
-                                 :class:`mth5.metadata.Magnetic` |
-                                 :class:`mth5.metadata.Auxiliary` ], optional
-        :param survey: existing survey name, needed for file version >= 0.2.0
-        :type survey: string
-        :return: Channel container
-        :rtype: [ :class:`mth5.mth5_groups.ElectricDatset` |
-                 :class:`mth5.mth5_groups.MagneticDatset` |
-                 :class:`mth5.mth5_groups.AuxiliaryDatset` ]
+        Raises
+        ------
+        MTH5Error
+            If channel type is not valid.
 
-        :Example:
+        Examples
+        --------
+        Add an electric field channel:
 
-        >>> new_channel = mth5_obj.add_channel('MT001', 'MT001a''Ex',
-        >>> ...                                'electric', None)
-        >>> new_channel
-        Channel Electric:
-        -------------------
-                        component:        None
-                data type:        electric
-                data format:      float32
-                data shape:       (1,)
-                start:            1980-01-01T00:00:00+00:00
-                end:              1980-01-01T00:00:00+00:00
-                sample rate:      None
+        >>> import numpy as np
+        >>> mth5_obj = MTH5()
+        >>> mth5_obj.open_mth5('test.mth5', 'w')
+        >>> data = np.random.random(1000)
+        >>> ch = mth5_obj.add_channel('MT001', 'MT001a', 'Ex', 'electric',
+        ...                            data, survey='survey_001')
 
-
+        See Also
+        --------
+        get_channel : Retrieve existing channel
+        remove_channel : Delete a channel
         """
-
         return self.get_run(station_name, run_name, survey=survey).add_channel(
             channel_name,
             channel_type,
@@ -1668,8 +1893,20 @@ class MTH5:
         station_group.transfer_functions_group.remove_transfer_function(tf_id)
 
 
-def _default_table_names() -> list:
+def _default_table_names() -> list[str]:
     """
-    track a global list of mth5 table names
+    Get the default MTH5 summary table names.
+
+    Returns
+    -------
+    list[str]
+        List of default MTH5 summary table names:
+        ['channel_summary', 'fc_summary', 'tf_summary']
+
+    Examples
+    --------
+    >>> names = _default_table_names()
+    >>> print(names)
+    ['channel_summary', 'fc_summary', 'tf_summary']
     """
     return ["channel_summary", "fc_summary", "tf_summary"]
