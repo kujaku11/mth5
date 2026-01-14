@@ -52,6 +52,15 @@ extensions = [
 # nbsphinx_allow_errors = True
 nbsphinx_execute = "never"
 
+# Configuration for sphinx-apidoc
+apidoc_modules = [
+    {
+        "path": "../mth5",
+        "destination": "source/",
+    }
+]
+
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
