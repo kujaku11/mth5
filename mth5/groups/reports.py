@@ -9,6 +9,8 @@ Created on Wed Dec 23 17:03:53 2020
 
 """
 
+from pathlib import Path
+
 import h5py
 
 # =============================================================================
@@ -45,7 +47,7 @@ class ReportsGroup(BaseGroup):
             ),
         }
 
-    def add_report(self, report_name, report_metadata=None, report_data=None):
+    def add_report(self, report_name, report_metadata=None, report_filename=None):
         """
 
         :param report_name: DESCRIPTION
@@ -58,4 +60,49 @@ class ReportsGroup(BaseGroup):
         :rtype: TYPE
 
         """
-        self.logger.error("Not Implemented yet")
+
+        if report_filename is not None:
+            report_filename = Path(report_filename)
+            if not report_filename.exists():
+                raise FileNotFoundError(f"{report_filename} does not exist")
+            extension = report_filename.suffix.lower()
+            if extension == ".pdf":
+                # Read PDF as binary
+                with open(report_filename, "rb") as f:
+                    pdf_bytes = f.read()
+
+                # Save PDF bytes into HDF5
+                dataset = self.hdf5_group.create_dataset(
+                    "pdf_file", data=np.void(pdf_bytes)
+                )
+                # Add metadata if provided
+                if report_metadata is not None:
+                    for key, value in report_metadata.items():
+                        dataset.attrs[key] = value
+                else:
+                    dataset.attrs["description"] = "PDF report file"
+                    dataset.attrs["filename"] = report_filename.name
+                    dataset.attrs["file_type"] = "pdf"
+            else:
+                self.logger.error(
+                    f"Adding files of type {extension} is not implemented yet"
+                )
+
+    def get_report(self, report_name):
+        """
+
+        :param report_name: DESCRIPTION
+        :type report_name: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+
+        dataset = self.hdf5_group[report_name]
+        if dataset.attrs["file_type"] == "pdf":
+            pdf_data = bytes(dataset[()])
+            fn_path = Path().cwd().joinpath(dataset.attrs["filename"])
+            with open(fn_path, "wb") as f:
+                f.write(pdf_data)
+            self.logger.info(f"PDF report written to {fn_path}")
+            return fn_path

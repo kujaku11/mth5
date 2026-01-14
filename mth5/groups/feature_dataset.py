@@ -9,7 +9,7 @@ Created on Thu Mar 10 09:02:16 2022
 # Imports
 # =============================================================================
 import weakref
-from typing import Optional, Union
+from typing import Optional
 
 import h5py
 import numpy as np
@@ -27,54 +27,87 @@ from mth5.utils.exceptions import MTH5Error
 
 class FeatureChannelDataset:
     """
-    This will hold multi-dimensional set of Fourier Coefficients
+    Container for multi-dimensional Fourier Coefficients organized by time and frequency.
 
-    Similar to FCDataset, but we need to keep track of bands instead of a
-    simple spectrogram.
+    This class manages Fourier Coefficient data with frequency band organization,
+    similar to FCDataset but with enhanced band tracking capabilities. The data array
+    is organized with the following assumptions:
 
-    FCDataset assumes two conditions on the data array (spectrogram):
-        1. The data are grouped into frequency bands
-        2. The data are uniformly sampled in time.
-        (i.e. the FFT moving window has a uniform step size)
+    1. Data are grouped into frequency bands
+    2. Data are uniformly sampled in time (uniform FFT moving window step size)
 
+    The dataset tracks temporal evolution of frequency content across multiple windows,
+    making it suitable for time-frequency analysis of geophysical signals.
 
-    Columns
+    Parameters
+    ----------
+    dataset : h5py.Dataset
+        HDF5 dataset containing the Fourier coefficient data.
+    dataset_metadata : FeatureDecimationChannel, optional
+        Metadata for the dataset. See :class:`mt_metadata.features.FeatureDecimationChannel`.
+        If provided, must be of the same type as the internal metadata class.
+        Default is None.
+    **kwargs
+        Additional keyword arguments for future extensibility.
 
-        - time
-        - frequency_band [ integer as harmonic index or float ]
-        - fc (complex)
+    Attributes
+    ----------
+    hdf5_dataset : h5py.Dataset
+        Reference to the HDF5 dataset.
+    metadata : FeatureDecimationChannel
+        Metadata container with the following attributes:
 
-    Attributes:
+        - name : str
+            Dataset name
+        - time_period.start : datetime
+            Start time of the data acquisition
+        - time_period.end : datetime
+            End time of the data acquisition
+        - sample_rate_window_step : float
+            Sample rate of the time window stepping (Hz)
+        - frequency_min : float
+            Minimum frequency in the band (Hz)
+        - frequency_max : float
+            Maximum frequency in the band (Hz)
+        - units : str
+            Physical units of the coefficient data
+        - component : str
+            Component identifier (e.g., 'Ex', 'Hy')
+        - sample_rate_decimation_level : int
+            Decimation level applied to acquire this data
 
-        - name
-        - start time
-        - end time
-        - acquistion_sample_rate
-        - decimated_sample rate
-        - window_sample_rate (delta_t within the window)
-        - units
-        - [optional] weights or masking
-        - frequency method (integer * window length / delta_t of window)
+    Raises
+    ------
+    MTH5Error
+        If dataset_metadata type does not match the expected FeatureDecimationChannel type.
 
-    :param dataset: hdf5 dataset
-    :type dataset: h5py.Dataset
-    :param dataset_metadata: data set metadata see
-    :class:`mt_metadata.transfer_functions.tf.StatisticalEstimate`,
-     defaults to None
-    :type dataset_metadata: :class:`mt_metadata.transfer_functions.tf.StatisticalEstimate`, optional
-    :param **kwargs: DESCRIPTION
-    :type **kwargs: TYPE
-    :raises MTH5Error: When an estimate is not present, or metadata name
-     does not match the given name
+    Examples
+    --------
+    >>> import h5py
+    >>> from mt_metadata.features import FeatureDecimationChannel
+    >>> from mth5.groups.feature_dataset import FeatureChannelDataset
 
+    Create a feature dataset from an HDF5 group:
+
+    >>> with h5py.File('data.h5', 'r') as f:
+    ...     h5_dataset = f['feature_group']['Ex']
+    ...     feature = FeatureChannelDataset(h5_dataset)
+    ...     print(f"Time windows: {feature.n_windows}")
+    ...     print(f"Frequencies: {feature.n_frequencies}")
+
+    Access time and frequency arrays:
+
+    >>> time_array = feature.time
+    >>> freq_array = feature.frequency
+    >>> data_array = feature.to_numpy()
     """
 
     def __init__(
         self,
         dataset: h5py.Dataset,
-        dataset_metadata: Optional[Union[FeatureDecimationChannel, None]] = None,
+        dataset_metadata: Optional[FeatureDecimationChannel] = None,
         **kwargs,
-    ):
+    ) -> None:
         if dataset is not None and isinstance(dataset, (h5py.Dataset)):
             self.hdf5_dataset = weakref.ref(dataset)()
         self.logger = logger
@@ -119,30 +152,68 @@ class FeatureChannelDataset:
         if not "mth5_type" in list(self.hdf5_dataset.attrs.keys()):
             self.write_metadata()
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """
+        String representation of the FeatureChannelDataset.
+
+        Returns
+        -------
+        str
+            JSON representation of the metadata.
+        """
         return self.metadata.to_json()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """
+        Official string representation of the FeatureChannelDataset.
+
+        Returns
+        -------
+        str
+            JSON representation of the metadata.
+        """
         return self.__str__()
 
     @property
-    def _class_name(self):
+    def _class_name(self) -> str:
+        """
+        Extract the class name prefix by removing 'Dataset' suffix.
+
+        Returns
+        -------
+        str
+            Class name without the 'Dataset' suffix.
+        """
         return self.__class__.__name__.split("Dataset")[0]
 
-    def read_metadata(self):
+    def read_metadata(self) -> None:
         """
-        Read metadata from the HDF5 file into the metadata container, that
-        way it can be validated.
+        Read metadata from the HDF5 file into the metadata container.
 
+        This method loads all attributes from the HDF5 dataset into the
+        metadata container, enabling validation and type checking.
+
+        Examples
+        --------
+        >>> feature.read_metadata()
+        >>> print(feature.metadata.component)
+        'Ex'
         """
 
         self.metadata.from_dict({self._class_name: dict(self.hdf5_dataset.attrs)})
 
-    def write_metadata(self):
+    def write_metadata(self) -> None:
         """
-        Write metadata from the metadata container to the HDF5 attrs
-        dictionary.
+        Write metadata from the metadata container to the HDF5 attributes.
 
+        This method serializes the metadata container and writes all metadata
+        as attributes to the HDF5 dataset. Raises exceptions are caught for
+        read-only files.
+
+        Examples
+        --------
+        >>> feature.metadata.component = 'Ey'
+        >>> feature.write_metadata()
         """
         meta_dict = self.metadata.to_dict()[self.metadata._class_name.lower()]
         for key, value in meta_dict.items():
@@ -150,18 +221,39 @@ class FeatureChannelDataset:
             self.hdf5_dataset.attrs.create(key, value)
 
     @property
-    def n_windows(self):
-        """number of time windows"""
+    def n_windows(self) -> int:
+        """
+        Get the number of time windows in the dataset.
+
+        Returns
+        -------
+        int
+            Number of time windows (first dimension of the dataset).
+        """
         return self.hdf5_dataset.shape[0]
 
     @property
-    def time(self):
+    def time(self) -> np.ndarray:
         """
-        Time array that includes the start of each time window
+        Get the time array for each window.
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Returns an array of datetime64 values representing the start time
+        of each time window. The time spacing is determined by the sample
+        rate of the window stepping.
 
+        Returns
+        -------
+        np.ndarray
+            Array of datetime64 values with shape (n_windows,) representing
+            the start time of each window.
+
+        Examples
+        --------
+        >>> time_array = feature.time
+        >>> print(time_array.shape)
+        (100,)
+        >>> print(time_array[0])
+        numpy.datetime64('2023-01-01T00:00:00')
         """
 
         return make_dt_coordinates(
@@ -172,18 +264,37 @@ class FeatureChannelDataset:
         )
 
     @property
-    def n_frequencies(self):
-        """number of frequencies (window size)"""
+    def n_frequencies(self) -> int:
+        """
+        Get the number of frequency bins in the dataset.
+
+        Returns
+        -------
+        int
+            Number of frequency bins (second dimension of the dataset).
+        """
         return self.hdf5_dataset.shape[1]
 
     @property
-    def frequency(self):
+    def frequency(self) -> np.ndarray:
         """
-        frequency array dictated by window size and sample rate
+        Get the frequency array for the dataset.
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Returns a linearly-spaced frequency array from frequency_min to
+        frequency_max with n_frequencies points.
 
+        Returns
+        -------
+        np.ndarray
+            Array of float64 frequencies in Hz with shape (n_frequencies,).
+
+        Examples
+        --------
+        >>> freq_array = feature.frequency
+        >>> print(freq_array.shape)
+        (256,)
+        >>> print(f"Frequency range: {freq_array[0]:.2f} - {freq_array[-1]:.2f} Hz")
+        Frequency range: 0.01 - 100.00 Hz
         """
         return np.linspace(
             self.metadata.frequency_min,
@@ -191,13 +302,29 @@ class FeatureChannelDataset:
             self.n_frequencies,
         )
 
-    def replace_dataset(self, new_data_array):
+    def replace_dataset(self, new_data_array: np.ndarray) -> None:
         """
-        replace the entire dataset with a new one, nothing left behind
+        Replace the entire HDF5 dataset with new data.
 
-        :param new_data_array: new data array
-        :type new_data_array: :class:`numpy.ndarray`
+        This method resizes the HDF5 dataset as needed and replaces all data.
+        The input array must have the same dtype as the existing dataset.
 
+        Parameters
+        ----------
+        new_data_array : np.ndarray
+            New data array to replace the existing dataset. Will be converted
+            to numpy array if necessary.
+
+        Raises
+        ------
+        TypeError
+            If input cannot be converted to a numpy array or has incompatible shape.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> new_data = np.random.randn(100, 256)
+        >>> feature.replace_dataset(new_data)
         """
         if not isinstance(new_data_array, np.ndarray):
             try:
@@ -210,15 +337,33 @@ class FeatureChannelDataset:
             self.hdf5_dataset.resize(new_data_array.shape)
         self.hdf5_dataset[...] = new_data_array
 
-    def to_xarray(self):
+    def to_xarray(self) -> xr.DataArray:
         """
-        :return: an xarray DataArray with appropriate metadata and the
-         appropriate coordinates.
-        :rtype: :class:`xarray.DataArray`
+        Convert the feature dataset to an xarray DataArray.
 
-        .. note:: that metadta will not be validated if changed in an xarray.
+        Returns an xarray DataArray with proper time and frequency coordinates,
+        metadata attributes, and component naming. The entire dataset is loaded
+        into memory.
 
-        loads from memory
+        Returns
+        -------
+        xr.DataArray
+            DataArray with dimensions ['time', 'frequency'] and coordinates
+            matching the dataset's time and frequency arrays.
+
+        Notes
+        -----
+        Metadata stored in xarray attributes will not be validated if modified.
+        The full dataset is loaded into memory; use with caution for large datasets.
+
+        Examples
+        --------
+        >>> xr_data = feature.to_xarray()
+        >>> print(xr_data.dims)
+        ('time', 'frequency')
+        >>> print(xr_data.name)
+        'Ex'
+        >>> subset = xr_data.sel(time=slice('2023-01-01', '2023-01-02'))
         """
 
         return xr.DataArray(
@@ -232,26 +377,62 @@ class FeatureChannelDataset:
             attrs=self.metadata.to_dict(single=True),
         )
 
-    def to_numpy(self):
+    def to_numpy(self) -> np.ndarray:
         """
-        :return: a numpy structured array with
-        :rtype: :class:`numpy.ndarray`
+        Convert the feature dataset to a numpy array.
 
-        loads into RAM
+        Returns the dataset as a numpy array by loading it from the HDF5 file
+        into memory. The array shape is (n_windows, n_frequencies).
 
+        Returns
+        -------
+        np.ndarray
+            Numpy array containing all feature data with shape
+            (n_windows, n_frequencies).
+
+        Examples
+        --------
+        >>> data = feature.to_numpy()
+        >>> print(data.shape)
+        (100, 256)
+        >>> print(data.dtype)
+        complex128
+        >>> mean_amplitude = np.abs(data).mean()
         """
 
         return self.hdf5_dataset[()]
 
-    def from_numpy(self, new_estimate):
+    def from_numpy(self, new_estimate: np.ndarray) -> None:
         """
-        :return: a numpy structured array
-        :rtype: :class:`numpy.ndarray`
+        Load data from a numpy array into the HDF5 dataset.
 
-        .. note:: data is a builtin to numpy and cannot be used as a name
+        This method updates the HDF5 dataset with new data from a numpy array.
+        The input array must match the dataset's dtype. The HDF5 dataset will
+        be resized if necessary to accommodate the new data.
 
-        loads into RAM
+        Parameters
+        ----------
+        new_estimate : np.ndarray
+            Numpy array to write to the HDF5 dataset. Must have compatible
+            dtype with the existing dataset.
 
+        Raises
+        ------
+        TypeError
+            If input array dtype does not match the HDF5 dataset dtype or
+            if input cannot be converted to numpy array.
+
+        Notes
+        -----
+        The variable 'data' is a builtin in numpy and cannot be used as a parameter name.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> new_data = np.random.randn(100, 256) + 1j * np.random.randn(100, 256)
+        >>> feature.from_numpy(new_data)
+        >>> loaded_data = feature.to_numpy()
+        >>> assert loaded_data.shape == new_data.shape
         """
 
         if not isinstance(new_estimate, np.ndarray):
@@ -274,19 +455,54 @@ class FeatureChannelDataset:
 
     def from_xarray(
         self,
-        data,
-        sample_rate_decimation_level,
-    ):
+        data: xr.DataArray,
+        sample_rate_decimation_level: int,
+    ) -> None:
         """
+        Load data and metadata from an xarray DataArray.
 
+        This method updates both the HDF5 dataset and metadata from an xarray
+        DataArray. It extracts time coordinates, frequency range, and component
+        information from the DataArray and its attributes.
 
-        :return: an xarray DataArray with appropriate metadata and the
-         appropriate coordinates base on the metadata.
-        :rtype: :class:`xarray.DataArray`
+        Parameters
+        ----------
+        data : xr.DataArray
+            Input xarray DataArray with 'time' and 'frequency' coordinates.
+            Expected dimensions are ['time', 'frequency'].
+        sample_rate_decimation_level : int
+            Decimation level applied to the original data to produce this
+            feature dataset (integer ≥ 1).
 
-        .. note:: that metadta will not be validated if changed in an xarray.
+        Notes
+        -----
+        Metadata stored in xarray attributes will be extracted and written to
+        the HDF5 file. The full dataset is loaded into memory during this process.
 
-        loads from memory
+        Examples
+        --------
+        >>> import xarray as xr
+        >>> import numpy as np
+
+        Create sample xarray data:
+
+        >>> times = np.arange('2023-01-01', '2023-01-02', dtype='datetime64[s]')
+        >>> freqs = np.linspace(0.01, 100, 256)
+        >>> data_array = np.random.randn(len(times), len(freqs)) + \\
+        ...              1j * np.random.randn(len(times), len(freqs))
+        >>> xr_data = xr.DataArray(
+        ...     data_array,
+        ...     dims=['time', 'frequency'],
+        ...     coords={'time': times, 'frequency': freqs},
+        ...     name='Ex',
+        ...     attrs={'units': 'mV/km'}
+        ... )
+
+        Load into feature dataset:
+
+        >>> feature.from_xarray(xr_data, sample_rate_decimation_level=2)
+        >>> print(feature.metadata.component)
+        'Ex'
         """
         self.metadata.time_period.start = data.time[0].values
         self.metadata.time_period.end = data.time[-1].values

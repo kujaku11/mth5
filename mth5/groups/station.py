@@ -1,21 +1,14 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Dec 23 17:18:29 2020
+from __future__ import annotations
 
-.. note:: Need to keep these groups together, if you split them into files you
- get a circular import.
 
-:copyright:
-    Jared Peacock (jpeacock@usgs.gov)
-
-:license: MIT
-
-"""
+"""Station-level HDF5 helpers for MTH5."""
 
 # =============================================================================
 # Imports
 # =============================================================================
 import inspect
+from typing import Any
 
 import h5py
 import numpy as np
@@ -41,151 +34,46 @@ meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
 
 
 class MasterStationGroup(BaseGroup):
-    """
-    Utility class to holds information about the stations within a survey and
-    accompanying metadata.  This class is next level down from Survey for
-    stations ``/Survey/Stations``.  This class provides methods to add and
-    get stations.  A summary table of all existing stations is also provided
-    as a convenience look up table to make searching easier.
+    """Collection helper for all stations in a survey.
 
-    To access MasterStationGroup from an open MTH5 file:
+    The group lives at ``/Survey/Stations`` and offers convenience accessors
+    to add, fetch, or remove stations along with a summary table.
 
+    Examples
+    --------
     >>> from mth5 import mth5
     >>> mth5_obj = mth5.MTH5()
-    >>> mth5_obj.open_mth5(r"/test.mth5", mode='a')
+    >>> _ = mth5_obj.open_mth5("/tmp/example.mth5", mode="a")
     >>> stations = mth5_obj.stations_group
-
-    To check what stations exist
-
-    >>> stations.groups_list
-    ['summary', 'MT001', 'MT002', 'MT003']
-
-    To access the hdf5 group directly use `SurveyGroup.hdf5_group`.
-
-    >>> stations.hdf5_group.ref
-    <HDF5 Group Reference>
-
-    .. note:: All attributes should be input into the metadata object, that
-             way all input will be validated against the metadata standards.
-             If you change attributes in metadata object, you should run the
-             `SurveyGroup.write_metadata()` method.  This is a temporary
-             solution, working on an automatic updater if metadata is changed.
-
-    >>> stations.metadata.existing_attribute = 'update_existing_attribute'
-    >>> stations.write_metadata()
-
-    If you want to add a new attribute this should be done using the
-    `metadata.add_base_attribute` method.
-
-    >>> stations.metadata.add_base_attribute('new_attribute',
-    >>> ...                                'new_attribute_value',
-    >>> ...                                {'type':str,
-    >>> ...                                 'required':True,
-    >>> ...                                 'style':'free form',
-    >>> ...                                 'description': 'new attribute desc.',
-    >>> ...                                 'units':None,
-    >>> ...                                 'options':[],
-    >>> ...                                 'alias':[],
-    >>> ...                                 'example':'new attribute
-
-    To add a station:
-
-        >>> new_station = stations.add_station('new_station')
-        >>> stations
-        /Survey/Stations:
-        ====================
-            --> Dataset: summary
-            ......................
-            |- Group: new_station
-            ---------------------
-                --> Dataset: summary
-                ......................
-
-    Add a station with metadata:
-
-        >>> from mth5.metadata import Station
-        >>> station_metadata = Station()
-        >>> station_metadata.id = 'MT004'
-        >>> station_metadata.time_period.start = '2020-01-01T12:30:00'
-        >>> station_metadata.location.latitude = 40.000
-        >>> station_metadata.location.longitude = -120.000
-        >>> new_station = stations.add_station('Test_01', station_metadata)
-        >>> # to look at the metadata
-        >>> new_station.metadata
-        {
-            "station": {
-                "acquired_by.author": null,
-                "acquired_by.comments": null,
-                "id": "MT004",
-                ...
-                }
-        }
-
-
-    .. seealso:: `mth5.metadata` for details on how to add metadata from
-                 various files and python objects.
-
-    To remove a station:
-
-    >>> stations.remove_station('new_station')
-    >>> stations
-    /Survey/Stations:
-    ====================
-        --> Dataset: summary
-        ......................
-
-    .. note:: Deleting a station is not as simple as del(station).  In HDF5
-              this does not free up memory, it simply removes the reference
-              to that station.  The common way to get around this is to
-              copy what you want into a new file, or overwrite the station.
-
-    To get a station:
-
-    >>> existing_station = stations.get_station('existing_station_name')
-    >>> existing_station
-    /Survey/Stations/existing_station_name:
-    =======================================
-        --> Dataset: summary
-        ......................
-        |- Group: run_01
-        ----------------
-            --> Dataset: summary
-            ......................
-            --> Dataset: Ex
-            ......................
-            --> Dataset: Ey
-            ......................
-            --> Dataset: Hx
-            ......................
-            --> Dataset: Hy
-            ......................
-            --> Dataset: Hz
-            ......................
-
-    A summary table is provided to make searching easier.  The table
-    summarized all stations within a survey. To see what names are in the
-    summary table:
-
-    >>> stations.station_summary
-
+    >>> _ = stations.add_station("MT001")
+    >>> stations.station_summary.head()  # doctest: +SKIP
     """
 
-    def __init__(self, group, **kwargs):
+    def __init__(self, group: h5py.Group, **kwargs: Any) -> None:
         super().__init__(group, **kwargs)
 
     @property
-    def station_summary(self):
+    def station_summary(self) -> pd.DataFrame:
+        """Return a summary DataFrame of all stations in the file.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Columns include ``station``, ``start``, ``end``, ``latitude``,
+            and ``longitude``. Empty if no stations are present.
+
+        Notes
+        -----
+        Timestamps are parsed to pandas ``datetime64[ns]`` when possible.
+
+        Examples
+        --------
+        >>> summary = stations.station_summary
+        >>> list(summary.columns)
+        ['station', 'start', 'end', 'latitude', 'longitude']
         """
-        Summary of stations in the file
 
-        TODO: consider returning None instead of empty df
-
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
-        def _get_entry(group):
+        def _get_entry(group: h5py.Group) -> dict[str, Any]:
             return {
                 "station": group.attrs["id"],
                 "start": group.attrs["time_period.start"],
@@ -194,10 +82,14 @@ class MasterStationGroup(BaseGroup):
                 "longitude": group.attrs["location.longitude"],
             }
 
-        def _recursive_get_station_entry(group, entry_list=[]):
-            """
-            method to get station entry
-            """
+        def _recursive_get_station_entry(
+            group: h5py.Group,
+            entry_list: list[dict[str, Any]] | None = None,
+        ) -> list[dict[str, Any]]:
+            """Collect station entries recursively from nested groups."""
+
+            if entry_list is None:
+                entry_list = []
 
             if isinstance(group, h5py._hl.group.Group):
                 try:
@@ -205,14 +97,13 @@ class MasterStationGroup(BaseGroup):
                     if group_type in ["station"]:
                         entry_list.append(_get_entry(group))
                     elif group_type in ["masterstation"]:
-                        for key, node in group.items():
+                        for node in group.values():
                             entry_list = _recursive_get_station_entry(node, entry_list)
-
                 except KeyError:
                     pass
             return entry_list
 
-        st_list = []
+        st_list: list[dict[str, Any]] = []
         st_list = _recursive_get_station_entry(self.hdf5_group, st_list)
         df = pd.DataFrame(st_list)
         if len(df):
@@ -225,90 +116,81 @@ class MasterStationGroup(BaseGroup):
 
         return df
 
-    def add_station(self, station_name, station_metadata=None):
+    def add_station(
+        self, station_name: str, station_metadata: metadata.Station | None = None
+    ) -> "StationGroup":
+        """Add or fetch a station group at ``/Survey/Stations/<name>``.
+
+        Parameters
+        ----------
+        station_name : str
+            Station identifier, typically matches ``metadata.id``.
+        station_metadata : mt_metadata.timeseries.Station, optional
+            Metadata container to seed the station attributes.
+
+        Returns
+        -------
+        StationGroup
+            Convenience wrapper for the created or existing station.
+
+        Raises
+        ------
+        ValueError
+            If ``station_name`` is empty.
+
+        Examples
+        --------
+        >>> station = stations.add_station("MT001")
+        >>> station.metadata.id
+        'MT001'
         """
-        Add a station with metadata if given with the path:
-            ``/Survey/Stations/station_name``
-
-        If the station already exists, will return that station and nothing
-        is added.
-
-        :param station_name: Name of the station, should be the same as
-                             metadata.id
-        :type station_name: string
-        :param station_metadata: Station metadata container, defaults to None
-        :type station_metadata: :class:`mth5.metadata.Station`, optional
-        :return: A convenience class for the added station
-        :rtype: :class:`mth5_groups.StationGroup`
-
-        :Example: ::
-
-            >>> from mth5 import mth5
-            >>> mth5_obj = mth5.MTH5()
-            >>> mth5_obj.open_mth5(r"/test.mth5", mode='a')
-            >>> # one option
-            >>> stations = mth5_obj.stations_group
-            >>> new_station = stations.add_station('MT001')
-            >>> # another option
-            >>> new_staiton = mth5_obj.stations_group.add_station('MT001')
-
-        .. todo:: allow dictionaries, json string, xml elements as metadata
-                  input.
-
-        """
-        if station_name is None:
-            raise Exception("station name is None, do not know what to name it")
+        if not station_name:
+            raise ValueError("station name is None, do not know what to name it")
 
         return self._add_group(station_name, StationGroup, station_metadata, match="id")
 
-    def get_station(self, station_name):
-        """
-        Get a station with the same name as station_name
+    def get_station(self, station_name: str) -> "StationGroup":
+        """Return an existing station by name.
 
-        :param station_name: existing station name
-        :type station_name: string
-        :return: convenience station class
-        :rtype: :class:`mth5.mth5_groups.StationGroup`
-        :raises MTH5Error:  if the station name is not found.
+        Parameters
+        ----------
+        station_name : str
+            Name of the station to retrieve.
 
-        :Example:
+        Returns
+        -------
+        StationGroup
+            Wrapper for the requested station.
 
-        >>> from mth5 import mth5
-        >>> mth5_obj = mth5.MTH5()
-        >>> mth5_obj.open_mth5(r"/test.mth5", mode='a')
-        >>> # one option
-        >>> stations = mth5_obj.stations_group
-        >>> existing_station = stations.get_station('MT001')
-        >>> # another option
-        >>> existing_staiton = mth5_obj.stations_group.get_station('MT001')
-        MTH5Error: MT001 does not exist, check station_list for existing names
+        Raises
+        ------
+        MTH5Error
+            If the station does not exist.
 
+        Examples
+        --------
+        >>> existing = stations.get_station("MT001")
+        >>> existing.name
+        'MT001'
         """
         return self._get_group(station_name, StationGroup)
 
-    def remove_station(self, station_name):
-        """
-        Remove a station from the file.
+    def remove_station(self, station_name: str) -> None:
+        """Delete a station group reference from the file.
 
-        .. note:: Deleting a station is not as simple as del(station).  In HDF5
-              this does not free up memory, it simply removes the reference
-              to that station.  The common way to get around this is to
-              copy what you want into a new file, or overwrite the station.
+        Parameters
+        ----------
+        station_name : str
+            Existing station name.
 
-        :param station_name: existing station name
-        :type station_name: string
+        Notes
+        -----
+        HDF5 deletion removes the reference only; underlying storage is not
+        reclaimed.
 
-        :Example: ::
-
-            >>> from mth5 import mth5
-            >>> mth5_obj = mth5.MTH5()
-            >>> mth5_obj.open_mth5(r"/test.mth5", mode='a')
-            >>> # one option
-            >>> stations = mth5_obj.stations_group
-            >>> stations.remove_station('MT001')
-            >>> # another option
-            >>> mth5_obj.stations_group.remove_station('MT001')
-
+        Examples
+        --------
+        >>> stations.remove_station("MT001")
         """
 
         self._remove_group(station_name)
@@ -318,159 +200,28 @@ class MasterStationGroup(BaseGroup):
 # Station Group
 # =============================================================================
 class StationGroup(BaseGroup):
-    """
-    StationGroup is a utility class to hold information about a single station
-    and accompanying metadata.  This class is the next level down from
-    Stations --> ``/Survey/Stations/station_name``.
+    """Utility wrapper for a single station at ``/Survey/Stations/<id>``.
 
-    This class provides methods to add and get runs.  A summary table of all
-    existing runs in the station is also provided as a convenience look up
-    table to make searching easier.
+    Station groups manage run collections, metadata propagation, and provide
+    summary utilities for quick inspection.
 
-    :param group: HDF5 group for a station, should have a path
-                  ``/Survey/Stations/station_name``
-    :type group: :class:`h5py.Group`
-    :param station_metadata: metadata container, defaults to None
-    :type station_metadata: :class:`mth5.metadata.Station`, optional
-
-    :Usage:
-
-    :Access StationGroup from an open MTH5 file:
-
+    Examples
+    --------
     >>> from mth5 import mth5
-    >>> mth5_obj = mth5.MTH5()
-    >>> mth5_obj.open_mth5(r"/test.mth5", mode='a')
-    >>> station = mth5_obj.stations_group.get_station('MT001')
-
-    :Check what runs exist:
-
-    >>> station.groups_list
-    ['MT001a', 'MT001b', 'MT001c', 'MT001d']
-
-    To access the hdf5 group directly use `StationGroup.hdf5_group`.
-
-    >>> station.hdf5_group.ref
-    <HDF5 Group Reference>
-
-    .. note:: All attributes should be input into the metadata object, that
-             way all input will be validated against the metadata standards.
-             If you change attributes in metadata object, you should run the
-             `SurveyGroup.write_metadata()` method.  This is a temporary
-             solution, working on an automatic updater if metadata is changed.
-
-    >>> station.metadata.existing_attribute = 'update_existing_attribute'
-    >>> station.write_metadata()
-
-    If you want to add a new attribute this should be done using the
-    `metadata.add_base_attribute` method.
-
-    >>> station.metadata.add_base_attribute('new_attribute',
-    >>> ...                                 'new_attribute_value',
-    >>> ...                                 {'type':str,
-    >>> ...                                  'required':True,
-    >>> ...                                  'style':'free form',
-    >>> ...                                  'description': 'new attribute desc.',
-    >>> ...                                  'units':None,
-    >>> ...                                  'options':[],
-    >>> ...                                  'alias':[],
-    >>> ...                                  'example':'new attribute
-
-    :To add a run:
-
-    >>> new_run = stations.add_run('MT001e')
-    >>> new_run
-    /Survey/Stations/Test_01:
-    =========================
-        |- Group: MT001e
-        -----------------
-            --> Dataset: summary
-            ......................
-        --> Dataset: summary
-        ......................
-
-    :Add a run with metadata:
-
-    >>> from mth5.metadata import Run
-    >>> run_metadata = Run()
-    >>> run_metadata.time_period.start = '2020-01-01T12:30:00'
-    >>> run_metadata.time_period.end = '2020-01-03T16:30:00'
-    >>> run_metadata.location.latitude = 40.000
-    >>> run_metadata.location.longitude = -120.000
-    >>> new_run = runs.add_run('Test_01', run_metadata)
-    >>> # to look at the metadata
-    >>> new_run.metadata
-    {
-        "run": {
-            "acquired_by.author": "new_user",
-            "acquired_by.comments": "First time",
-            "channels_recorded_auxiliary": ['T'],
-            ...
-            }
-    }
-
-
-    .. seealso:: `mth5.metadata` for details on how to add metadata from
-                 various files and python objects.
-
-    :Remove a run:
-
-    >>> station.remove_run('new_run')
-    >>> station
-    /Survey/Stations/Test_01:
-    =========================
-        --> Dataset: summary
-        ......................
-
-    .. note:: Deleting a station is not as simple as del(station).  In HDF5
-              this does not free up memory, it simply removes the reference
-              to that station.  The common way to get around this is to
-              copy what you want into a new file, or overwrite the station.
-
-    :Get a run:
-
-    >>> existing_run = stations.get_station('existing_run')
-    >>> existing_run
-    /Survey/Stations/MT001/MT001a:
-    =======================================
-        --> Dataset: summary
-        ......................
-        --> Dataset: Ex
-        ......................
-        --> Dataset: Ey
-        ......................
-        --> Dataset: Hx
-        ......................
-        --> Dataset: Hy
-        ......................
-        --> Dataset: Hz
-        ......................
-
-    :summary Table:
-
-    A summary table is provided to make searching easier.  The table
-    summarized all stations within a survey. To see what names are in the
-    summary table:
-
-    >>> new_run.summary_table.dtype.descr
-    [('id', ('|S20', {'h5py_encoding': 'ascii'})),
-     ('start', ('|S32', {'h5py_encoding': 'ascii'})),
-     ('end', ('|S32', {'h5py_encoding': 'ascii'})),
-     ('components', ('|S100', {'h5py_encoding': 'ascii'})),
-     ('measurement_type', ('|S12', {'h5py_encoding': 'ascii'})),
-     ('sample_rate', '<f8'),
-     ('hdf5_reference', ('|O', {'ref': h5py.h5r.Reference}))]
-
-    .. note:: When a run is added an entry is added to the summary table,
-              where the information is pulled from the metadata.
-
-    >>> station.summary_table
-    index | id | start | end | components | measurement_type | sample_rate |
-    hdf5_reference
-    --------------------------------------------------------------------------
-    -------------
+    >>> m5 = mth5.MTH5()
+    >>> _ = m5.open_mth5("/tmp/example.mth5", mode="a")
+    >>> station = m5.stations_group.add_station("MT001")
+    >>> _ = station.add_run("MT001a")
+    >>> station.run_summary.shape[0] >= 1
+    True
     """
 
-    def __init__(self, group, station_metadata=None, **kwargs):
+    def __init__(
+        self,
+        group: h5py.Group,
+        station_metadata: metadata.Station | None = None,
+        **kwargs: Any,
+    ) -> None:
         self._default_subgroup_names = [
             "Transfer_Functions",
             "Fourier_Coefficients",
@@ -478,10 +229,17 @@ class StationGroup(BaseGroup):
         ]
         super().__init__(group, group_metadata=station_metadata, **kwargs)
 
-    def initialize_group(self, **kwargs):
-        """
-        Initialize group by making a summary table and writing metadata
+    def initialize_group(self, **kwargs: Any) -> None:
+        """Create default subgroups and write metadata.
 
+        Parameters
+        ----------
+        **kwargs
+            Additional attributes to set on the instance before initialization.
+
+        Examples
+        --------
+        >>> station.initialize_group()
         """
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -499,32 +257,32 @@ class StationGroup(BaseGroup):
                     raise ValueError(value_error)
 
     @property
-    def master_station_group(self):
-        """shortcut to master station group"""
+    def master_station_group(self) -> MasterStationGroup:
+        """Shortcut to the containing master station group."""
         return MasterStationGroup(self.hdf5_group.parent)
 
     @property
-    def transfer_functions_group(self):
-        """Convinience method for /Station/Transfer_Functions"""
+    def transfer_functions_group(self) -> TransferFunctionsGroup:
+        """Convenience accessor for ``/Station/Transfer_Functions``."""
         return TransferFunctionsGroup(
             self.hdf5_group["Transfer_Functions"], **self.dataset_options
         )
 
     @property
-    def fourier_coefficients_group(self):
-        """Convinience method for /Station/Fourier_Coefficients"""
+    def fourier_coefficients_group(self) -> MasterFCGroup:
+        """Convenience accessor for ``/Station/Fourier_Coefficients``."""
         return MasterFCGroup(
             self.hdf5_group["Fourier_Coefficients"], **self.dataset_options
         )
 
     @property
-    def features_group(self):
-        """Convinience method for /Station/Features"""
+    def features_group(self) -> MasterFeaturesGroup:
+        """Convenience accessor for ``/Station/Features``."""
         return MasterFeaturesGroup(self.hdf5_group["Features"], **self.dataset_options)
 
     @property
-    def survey_metadata(self):
-        """survey metadata"""
+    def survey_metadata(self) -> metadata.Survey:
+        """Return survey metadata with this station appended."""
 
         meta_dict = dict(self.hdf5_group.parent.parent.attrs)
         for key, value in meta_dict.items():
@@ -535,8 +293,8 @@ class StationGroup(BaseGroup):
         return survey_metadata
 
     @BaseGroup.metadata.getter
-    def metadata(self):
-        """Overwrite get metadata to include run information in the station"""
+    def metadata(self) -> metadata.Station:
+        """Station metadata enriched with run information."""
 
         if not self._has_read_metadata:
             self.read_metadata()
@@ -554,21 +312,31 @@ class StationGroup(BaseGroup):
         return self._metadata
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.metadata.id
 
     @name.setter
-    def name(self, name):
+    def name(self, name: str) -> None:
         self.metadata.id = name
 
     @property
-    def run_summary(self):
-        """
-        Summary of runs in the station
+    def run_summary(self) -> pd.DataFrame:
+        """Return a summary of runs belonging to the station.
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Returns
+        -------
+        pandas.DataFrame
+            Columns include ``id``, ``start``, ``end``, ``components``,
+            ``measurement_type``, ``sample_rate``, and ``hdf5_reference``.
 
+        Notes
+        -----
+        Channel lists stored as byte arrays or JSON strings are normalized
+        before summarization.
+
+        Examples
+        --------
+        >>> station.run_summary.head()  # doctest: +SKIP
         """
 
         run_list = []
@@ -643,18 +411,25 @@ class StationGroup(BaseGroup):
 
         return pd.DataFrame(run_summary)
 
-    def make_run_name(self, alphabet=False):
-        """
-        Make a run name that will be the next alphabet letter extracted from
-        the run list.  Expects that all runs are labled as id{a-z}.
+    def make_run_name(self, alphabet: bool = False) -> str | None:
+        """Generate the next run name using an alphabetic or numeric suffix.
 
-        :return: metadata.id + next letter
-        :rtype: string
+        Parameters
+        ----------
+        alphabet : bool, default False
+            If ``True`` use letters (``a``, ``b``, ...); otherwise use
+            numeric suffixes (``001``).
 
-        >>> station.metadata.id = 'MT001'
+        Returns
+        -------
+        str or None
+            Proposed run name or ``None`` if generation fails.
+
+        Examples
+        --------
+        >>> station.metadata.id = "MT001"
         >>> station.make_run_name()
         'MT001a'
-
         """
 
         run_list = sorted(
@@ -677,17 +452,24 @@ class StationGroup(BaseGroup):
                     self.logger.info("Could not create a new run name")
         return next_letter
 
-    def locate_run(self, sample_rate, start):
-        """
-        Locate a run based on sample rate and start time from the summary table
+    def locate_run(self, sample_rate: float, start: str | MTime) -> pd.DataFrame | None:
+        """Locate runs matching a sample rate and start time.
 
-        :param sample_rate: sample rate in samples/seconds
-        :type sample_rate: float
-        :param start: start time
-        :type start: string or :class:`mth5.utils.mttime.MTime`
-        :return: appropriate run name, None if not found
-        :rtype: string or None
+        Parameters
+        ----------
+        sample_rate : float
+            Sample rate in samples per second.
+        start : str or MTime
+            Start time string or ``MTime`` instance.
 
+        Returns
+        -------
+        pandas.DataFrame or None
+            Matching rows from ``run_summary`` or ``None`` when no match exists.
+
+        Examples
+        --------
+        >>> station.locate_run(256.0, "2020-01-01T00:00:00")  # doctest: +SKIP
         """
 
         if not isinstance(start, MTime):
@@ -703,88 +485,112 @@ class StationGroup(BaseGroup):
             return None
         return sr_find
 
-    def add_run(self, run_name, run_metadata=None):
-        """
-        Add a run to a station.
+    def add_run(
+        self, run_name: str, run_metadata: metadata.Run | None = None
+    ) -> RunGroup:
+        """Add a run under this station.
 
-        :param run_name: run name, should be id{a-z}
-        :type run_name: string
-        :param metadata: metadata container, defaults to None
-        :type metadata: :class:`mth5.metadata.Station`, optional
+        Parameters
+        ----------
+        run_name : str
+            Run identifier (for example ``id`` + suffix).
+        run_metadata : mt_metadata.timeseries.Run, optional
+            Metadata container to seed the run attributes.
 
-        need to be able to fill an entry in the summary table.
+        Returns
+        -------
+        RunGroup
+            Wrapper for the created or existing run.
 
-        .. todo:: auto fill run name if none is given.
-
-        .. todo:: add ability to add a run with data.
-
+        Examples
+        --------
+        >>> run = station.add_run("MT001a")
+        >>> run.metadata.id
+        'MT001a'
         """
 
         return self._add_group(
             run_name, RunGroup, group_metadata=run_metadata, match="id"
         )
 
-    def get_run(self, run_name):
-        """
-        get a run from run name
+    def get_run(self, run_name: str) -> RunGroup:
+        """Return a run by name.
 
-        :param run_name: existing run name
-        :type run_name: string
-        :return: Run object
-        :rtype: :class:`mth5.mth5_groups.RunGroup`
+        Parameters
+        ----------
+        run_name : str
+            Existing run name.
 
-        >>> existing_run = station.get_run('MT001')
+        Returns
+        -------
+        RunGroup
+            Wrapper for the requested run.
 
+        Raises
+        ------
+        MTH5Error
+            If the run does not exist.
+
+        Examples
+        --------
+        >>> existing_run = station.get_run("MT001a")
+        >>> existing_run.name
+        'MT001a'
         """
 
         return self._get_group(run_name, RunGroup)
 
-    def remove_run(self, run_name):
-        """
-        Remove a run from the station.
+    def remove_run(self, run_name: str) -> None:
+        """Remove a run from this station.
 
-        .. note:: Deleting a station is not as simple as del(station).  In HDF5
-              this does not free up memory, it simply removes the reference
-              to that station.  The common way to get around this is to
-              copy what you want into a new file, or overwrite the station.
+        Parameters
+        ----------
+        run_name : str
+            Existing run name.
 
-        :param station_name: existing station name
-        :type station_name: string
+        Notes
+        -----
+        Deleting removes the reference only; storage is not reclaimed.
 
-        :Example: ::
-
-            >>> from mth5 import mth5
-            >>> mth5_obj = mth5.MTH5()
-            >>> mth5_obj.open_mth5(r"/test.mth5", mode='a')
-            >>> # one option
-            >>> stations = mth5_obj.stations_group
-            >>> stations.remove_station('MT001')
-            >>> # another option
-            >>> mth5_obj.stations_group.remove_station('MT001')
-
+        Examples
+        --------
+        >>> station.remove_run("MT001a")
         """
 
         self._remove_group(run_name)
 
-    def update_station_metadata(self):
-        """
-        Check metadata from the runs and make sure it matches the station metadata
+    def update_station_metadata(self) -> None:
+        """Deprecated alias for :py:meth:`update_metadata`.
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Raises
+        ------
+        DeprecationWarning
+            Always raised to direct callers to ``update_metadata``.
 
+        Examples
+        --------
+        >>> station.update_station_metadata()  # doctest: +ELLIPSIS
+        Traceback (most recent call last):
+        ...
+        DeprecationWarning: 'update_station_metadata' has been deprecated use 'update_metadata()'
         """
         raise DeprecationWarning(
             "'update_station_metadata' has been deprecated use 'update_metadata()'"
         )
 
-    def update_metadata(self):
-        """
-        Check metadata from the runs and make sure it matches the station metadata
+    def update_metadata(self) -> None:
+        """Synchronize station metadata from contained runs.
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Notes
+        -----
+        The station ``time_period`` is set to the min/max of all runs, and
+        ``channels_recorded`` combines all recorded components.
 
+        Examples
+        --------
+        >>> _ = station.update_metadata()
+        >>> station.metadata.time_period.start  # doctest: +SKIP
+        '2020-01-01T00:00:00'
         """
 
         run_summary = self.run_summary.copy()

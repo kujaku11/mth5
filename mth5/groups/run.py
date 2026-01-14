@@ -8,8 +8,10 @@ Created on Sat May 27 09:59:03 2023
 # =============================================================================
 # Imports
 # =============================================================================
+from __future__ import annotations
+
 import inspect
-from typing import Any
+from typing import Any, Optional
 
 import h5py
 import numpy as np
@@ -38,9 +40,74 @@ meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
 # =============================================================================
 class RunGroup(BaseGroup):
     """
-    RunGroup is a utility class to hold information about a single run
-    and accompanying metadata.  This class is the next level down from
-    Stations --> ``/Survey/Stations/station/station{a-z}``.
+    Container for a single MT measurement run with multiple channels.
+
+    Manages time series data and metadata for one measurement run within a station.
+    A run can contain multiple channels of electric, magnetic, and auxiliary data.
+    This class provides methods to add, retrieve, and manage individual channels,
+    along with convenient access to station and survey metadata.
+
+    The run group is located at ``/Survey/Stations/{station_name}/{run_name}`` in
+    the HDF5 file hierarchy.
+
+    Attributes
+    ----------
+    metadata : mt_metadata.timeseries.Run
+        Run metadata including sample rate, time period, and channel information.
+    channel_summary : pd.DataFrame
+        Summary table of all channels in the run.
+    groups_list : list[str]
+        List of channel names in the run.
+
+    Parameters
+    ----------
+    group : h5py.Group
+        HDF5 group for the run, should have path like
+        ``/Survey/Stations/{station_name}/{run_name}``
+    run_metadata : mt_metadata.timeseries.Run, optional
+        Metadata container for the run. Default is None.
+    **kwargs : Any
+        Additional keyword arguments passed to BaseGroup.
+
+    Notes
+    -----
+    Key behaviors:
+
+    - Channels can be of type: electric, magnetic, or auxiliary
+    - All metadata updates should use the metadata object for validation
+    - Call write_metadata() after modifying metadata to persist changes
+    - Channel metadata is cached for performance during repeated access
+    - Deleting a channel removes the reference but doesn't reduce file size
+
+    Examples
+    --------
+    Access run from an open MTH5 file:
+
+    >>> from mth5 import mth5
+    >>> mth5_obj = mth5.MTH5()
+    >>> mth5_obj.open_mth5(r"/test.mth5", mode='a')
+    >>> run = mth5_obj.stations_group.get_station('MT001').get_run('MT001a')
+
+    Check available channels:
+
+    >>> run.groups_list
+    ['Ex', 'Ey', 'Hx', 'Hy']
+
+    Access HDF5 group directly:
+
+    >>> run.hdf5_group.ref
+    <HDF5 Group Reference>
+
+    Update metadata and persist to file:
+
+    >>> run.metadata.sample_rate = 512.0
+    >>> run.write_metadata()
+
+    Add a channel:
+
+    >>> import numpy as np
+    >>> data = np.random.rand(4096)
+    >>> ex = run.add_channel('Ex', 'electric', data=data)
 
     This class provides methods to add and get channels.  A summary table of
     all existing channels in the run is also provided as a convenience look up
@@ -195,8 +262,23 @@ class RunGroup(BaseGroup):
     """
 
     def __init__(
-        self, group: h5py.Group, run_metadata: metadata.Run | None = None, **kwargs: Any
+        self,
+        group: h5py.Group,
+        run_metadata: Optional[metadata.Run] = None,
+        **kwargs: Any,
     ) -> None:
+        """
+        Initialize RunGroup.
+
+        Parameters
+        ----------
+        group : h5py.Group
+            HDF5 group for the run.
+        run_metadata : mt_metadata.timeseries.Run, optional
+            Metadata container for the run. Default is None.
+        **kwargs : Any
+            Additional keyword arguments passed to BaseGroup.
+        """
         self._non_channel_groups = ["Features"]
         super().__init__(group, group_metadata=run_metadata, **kwargs)
         # Channel metadata cache to share objects between add_channel and metadata property
@@ -819,11 +901,28 @@ class RunGroup(BaseGroup):
 
     def has_data(self) -> bool:
         """
-        make sure there is data in the run, values are non-zero or not empty
+        Check if the run contains any non-empty, non-zero data.
 
-        :return: True if has data, False if empty or all zeros
-        :rtype: bool
+        Verifies that all channels in the run have valid data (non-zero and
+        non-empty arrays). Returns False if any channel lacks data.
 
+        Returns
+        -------
+        bool
+            True if all channels have data, False if any channel is empty
+            or all zeros.
+
+        Notes
+        -----
+        A channel is considered to have data if its has_data() method
+        returns True, meaning it contains non-zero values.
+
+        Examples
+        --------
+        >>> run = mth5_obj.get_run("MT001", "MT001a")
+        >>> if run.has_data():
+        ...     print("Run contains valid data")
+        ...     runts = run.to_runts()
         """
         has_data_list = []
         has_data = True
@@ -841,17 +940,54 @@ class RunGroup(BaseGroup):
 
     def to_runts(
         self,
-        start: str | None = None,
-        end: str | None = None,
-        n_samples: int | None = None,
+        start: Optional[str] = None,
+        end: Optional[str] = None,
+        n_samples: Optional[int] = None,
     ) -> RunTS:
         """
-        create a :class:`mth5.timeseries.RunTS` object from channels of the
-        run
+        Convert run to a RunTS timeseries object.
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Combines all channels in the run into a RunTS object which handles
+        multi-channel time series data with associated metadata.
 
+        Parameters
+        ----------
+        start : str, optional
+            Start time for time slice in ISO format (e.g., '2023-01-01T12:00:00').
+            If None, uses entire channel data. Default is None.
+        end : str, optional
+            End time for time slice in ISO format. Only used if start is specified.
+            Default is None.
+        n_samples : int, optional
+            Number of samples to extract from start. If both end and n_samples
+            are specified, end takes precedence. Default is None.
+
+        Returns
+        -------
+        RunTS
+            RunTS object containing all channels with full run and station metadata.
+
+        Notes
+        -----
+        - Includes run, station, and survey metadata in the output
+        - Skips the 'summary' group which is not a channel
+        - If start is specified, performs time slicing; otherwise returns full data
+
+        Examples
+        --------
+        Convert entire run to RunTS:
+
+        >>> run = mth5_obj.get_run("MT001", "MT001a")
+        >>> runts = run.to_runts()
+        >>> print(runts.channels)
+        ['ex', 'ey', 'hx', 'hy']
+
+        Time slice the run:
+
+        >>> runts = run.to_runts(start='2023-01-01T12:00:00',
+        ...                       end='2023-01-01T13:00:00')
+        >>> print(runts.ex.ts.shape)
+        (1024,)
         """
         ch_list = []
         for channel in self.groups_list:
@@ -875,13 +1011,43 @@ class RunGroup(BaseGroup):
         self, run_ts_obj: RunTS, **kwargs: Any
     ) -> list[ElectricDataset | MagneticDataset | AuxiliaryDataset]:
         """
-        create channel datasets from a :class:`mth5.timeseries.RunTS` object
-        and update metadata.
+        Create channel datasets from a RunTS timeseries object.
 
-        :parameter :class:`mth5.timeseries.RunTS` run_ts_obj: Run object with all
-        the appropriate channels and metadata.
+        Converts a RunTS object with multiple channels and metadata into
+        HDF5 channel datasets and updates run metadata accordingly.
 
-        Will create a run group and appropriate channel datasets.
+        Parameters
+        ----------
+        run_ts_obj : RunTS
+            RunTS object containing multiple channels and metadata.
+        **kwargs : Any
+            Additional keyword arguments.
+
+        Returns
+        -------
+        list[ElectricDataset | MagneticDataset | AuxiliaryDataset]
+            List of created channel dataset objects.
+
+        Raises
+        ------
+        MTH5Error
+            If input is not a RunTS object.
+
+        Notes
+        -----
+        - Updates run metadata from input object
+        - Validates station and run IDs match current context
+        - Creates appropriate channel type based on channel metadata
+        - Automatically registers recorded channels in run metadata
+
+        Examples
+        --------
+        >>> from mth5.timeseries import RunTS
+        >>> run = mth5_obj.get_run("MT001", "MT001a")
+        >>> runts = RunTS.from_file("timeseries_data.txt")
+        >>> channels = run.from_runts(runts)
+        >>> print(f"Created {len(channels)} channels")
+        Created 4 channels
         """
 
         if not isinstance(run_ts_obj, RunTS):
@@ -922,14 +1088,42 @@ class RunGroup(BaseGroup):
         self, channel_ts_obj: ChannelTS
     ) -> ElectricDataset | MagneticDataset | AuxiliaryDataset:
         """
-        create a channel data set from a :class:`mth5.timeseries.ChannelTS` object and
-        update metadata.
+        Create a channel dataset from a ChannelTS timeseries object.
 
-        :param channel_ts_obj: a single time series object
-        :type channel_ts_obj: :class:`mth5.timeseries.ChannelTS`
-        :return: new channel dataset
-        :rtype: :class:`mth5.groups.ChannelDataset
+        Converts a single ChannelTS object with time series data and metadata
+        into an HDF5 channel dataset. Handles filter registration and updates
+        run metadata with channel information.
 
+        Parameters
+        ----------
+        channel_ts_obj : ChannelTS
+            ChannelTS object containing time series data and metadata.
+
+        Returns
+        -------
+        ElectricDataset | MagneticDataset | AuxiliaryDataset
+            Created channel dataset object.
+
+        Raises
+        ------
+        MTH5Error
+            If input is not a ChannelTS object.
+
+        Notes
+        -----
+        - Registers filters from channel response if present
+        - Validates and corrects station/run ID mismatches
+        - Updates run metadata recorded channel lists
+        - Automatically determines channel type from metadata
+
+        Examples
+        --------
+        >>> from mth5.timeseries import ChannelTS
+        >>> run = mth5_obj.get_run("MT001", "MT001a")
+        >>> channel = ChannelTS.from_file("ex_timeseries.txt")
+        >>> ex = run.from_channel_ts(channel)
+        >>> print(ex.metadata.component)
+        ex
         """
 
         if not isinstance(channel_ts_obj, ChannelTS):
@@ -983,11 +1177,13 @@ class RunGroup(BaseGroup):
 
     def update_run_metadata(self) -> None:
         """
-        Update metadata and table entries to ensure consistency
-
-        :return: DESCRIPTION
-        :rtype: TYPE
-
+        Update metadata and table entries (Deprecated).
+        .. deprecated::
+            Use update_metadata() instead.
+        Raises
+        ------
+        DeprecationWarning
+            Always raised to indicate this method should not be used.
         """
 
         raise DeprecationWarning(
@@ -996,11 +1192,33 @@ class RunGroup(BaseGroup):
 
     def update_metadata(self) -> None:
         """
-        Update metadata and table entries to ensure consistency
+        Update run metadata from all channels and persist to HDF5.
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Aggregates metadata from all channels including time period and
+        sample rate, then writes updated metadata to HDF5 attributes.
 
+        Raises
+        ------
+        Exception
+            May raise exceptions if no channels exist (logs warning).
+
+        Notes
+        -----
+        Updates:
+
+        - Time period start from minimum of all channels
+        - Time period end from maximum of all channels
+        - Sample rate from first channel (assumes uniform across channels)
+
+        Should be called after adding or removing channels to maintain
+        consistency between channel and run metadata.
+
+        Examples
+        --------
+        >>> run = mth5_obj.get_run("MT001", "MT001a")
+        >>> run.add_channel('ex', 'electric', data=ex_data)
+        >>> run.add_channel('ey', 'electric', data=ey_data)
+        >>> run.update_metadata()  # Updates time period and sample rate
         """
         channel_summary = self.channel_summary.copy()
 
@@ -1016,12 +1234,51 @@ class RunGroup(BaseGroup):
 
     def plot(
         self,
-        start: str | None = None,
-        end: str | None = None,
-        n_samples: int | None = None,
+        start: Optional[str] = None,
+        end: Optional[str] = None,
+        n_samples: Optional[int] = None,
     ) -> Any:
         """
-        Produce a simple matplotlib plot using runts
+        Create a matplotlib plot of all channels in the run.
+
+        Generates a multi-panel plot showing all channels in the run using
+        the RunTS plotting functionality.
+
+        Parameters
+        ----------
+        start : str, optional
+            Start time for time slice in ISO format. If None, plots entire
+            channel data. Default is None.
+        end : str, optional
+            End time for time slice in ISO format. Only used if start is
+            specified. Default is None.
+        n_samples : int, optional
+            Number of samples to extract from start. If both end and n_samples
+            are specified, end takes precedence. Default is None.
+
+        Returns
+        -------
+        Any
+            Matplotlib figure or axes object (depends on RunTS.plot() implementation).
+
+        Notes
+        -----
+        - Creates separate subplots for each channel type (electric, magnetic, auxiliary)
+        - Time slice parameters work the same as to_runts()
+        - Requires matplotlib to be installed
+
+        Examples
+        --------
+        Plot entire run:
+
+        >>> run = mth5_obj.get_run("MT001", "MT001a")
+        >>> fig = run.plot()
+        >>> fig.show()
+
+        Plot time slice:
+
+        >>> fig = run.plot(start='2023-01-01T12:00:00',
+        ...                end='2023-01-01T13:00:00')
         """
         runts = self.to_runts(start=start, end=end, n_samples=n_samples)
 
