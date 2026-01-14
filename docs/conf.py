@@ -47,19 +47,22 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.todo",
     "nbsphinx",
+    "autoapi.extension",
+]
+
+# AutoAPI configuration
+autoapi_dirs = ["../mth5"]
+autoapi_type = "python"
+autoapi_options = [
+    "members",
+    "undoc-members",
+    "show-inheritance",
+    "show-module-summary",
+    "imported-members",
 ]
 
 # nbsphinx_allow_errors = True
 nbsphinx_execute = "never"
-
-# Configuration for sphinx-apidoc
-apidoc_modules = [
-    {
-        "path": "../mth5",
-        "destination": "source/",
-    }
-]
-
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
