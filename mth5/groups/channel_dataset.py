@@ -8,8 +8,11 @@ Created on Sat May 27 10:03:23 2023
 # =============================================================================
 # Imports
 # =============================================================================
+from __future__ import annotations
+
 import inspect
 import weakref
+from typing import Any
 
 import h5py
 import numpy as np
@@ -40,51 +43,82 @@ meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
 # =============================================================================
 class ChannelDataset:
     """
-    Holds a channel dataset.  This is a simple container for the data to make
-    sure that the user has the flexibility to turn the channel into an object
-    they want to deal with.
+    A container for channel time series data stored in HDF5 format.
 
-    For now all the numpy type slicing can be used on `hdf5_dataset`
+    This class provides a flexible interface to work with magnetotelluric channel data,
+    allowing conversion to various formats (xarray, pandas, numpy) while maintaining
+    metadata integrity.
 
-    :param dataset: dataset object for the channel
-    :type dataset: :class:`h5py.Dataset`
-    :param dataset_metadata: metadata container, defaults to None
-    :type dataset_metadata: [ :class:`mth5.metadata.Electric` |
-                              :class:`mth5.metadata.Magnetic` |
-                              :class:`mth5.metadata.Auxiliary` ], optional
-    :raises MTH5Error: If the dataset is not of the correct type
+    Parameters
+    ----------
+    dataset : h5py.Dataset or None
+        HDF5 dataset object containing the channel time series data.
+    dataset_metadata : MetadataBase, optional
+        Metadata container for Electric, Magnetic, or Auxiliary channel types.
+        Default is None.
+    write_metadata : bool, optional
+        Whether to write metadata to the HDF5 dataset on initialization.
+        Default is True.
+    **kwargs : dict
+        Additional keyword arguments to set as instance attributes.
 
-    Utilities will be written to create some common objects like:
+    Attributes
+    ----------
+    hdf5_dataset : h5py.Dataset
+        Weak reference to the underlying HDF5 dataset.
+    metadata : MetadataBase
+        Channel metadata object with validation.
+    logger : loguru.Logger
+        Logger instance for tracking operations.
 
-        * xarray.DataArray
-        * pandas.DataFrame
-        * zarr
-        * dask.Array
+    Raises
+    ------
+    MTH5Error
+        If the dataset is not of the correct type or metadata validation fails.
 
-    The benefit of these other objects is that they can be indexed by time,
-    and they have much more buit-in funcionality.
+    See Also
+    --------
+    ElectricDataset : Specialized container for electric field channels.
+    MagneticDataset : Specialized container for magnetic field channels.
+    AuxiliaryDataset : Specialized container for auxiliary channels.
 
-    .. code-block:: python
+    Examples
+    --------
+    >>> from mth5 import mth5
+    >>> mth5_obj = mth5.MTH5()
+    >>> mth5_obj.open_mth5(r"/test.mth5", mode='a')
+    >>> run = mth5_obj.stations_group.get_station('MT001').get_run('MT001a')
+    >>> channel = run.get_channel('Ex')
+    >>> channel
+    Channel Electric:
+    -------------------
+      component:        Ex
+      data type:        electric
+      data format:      float32
+      data shape:       (4096,)
+      start:            1980-01-01T00:00:00+00:00
+      end:              1980-01-01T00:00:01+00:00
+      sample rate:      4096
 
-     >>> from mth5 import mth5
-     >>> mth5_obj = mth5.MTH5()
-     >>> mth5_obj.open_mth5(r"/test.mth5", mode='a')
-     >>> run = mth5_obj.stations_group.get_station('MT001').get_run('MT001a')
-     >>> channel = run.get_channel('Ex')
-     >>> channel
-      Channel Electric:
-      -------------------
-        component:        Ey
-        data type:        electric
-        data format:      float32
-        data shape:       (4096,)
-        start:            1980-01-01T00:00:00+00:00
-        end:              1980-01-01T00:00:01+00:00
-        sample rate:      4096
+    Access time series data
+
+    >>> ts_data = channel.to_channel_ts()
+    >>> print(f"Mean: {ts_data.ts.mean():.2f}, Std: {ts_data.ts.std():.2f}")
+
+    Convert to xarray for time-based indexing
+
+    >>> xr_data = channel.to_xarray()
+    >>> subset = xr_data.sel(time=slice('1980-01-01T00:00:00', '1980-01-01T00:00:10'))
 
     """
 
-    def __init__(self, dataset, dataset_metadata=None, write_metadata=True, **kwargs):
+    def __init__(
+        self,
+        dataset: h5py.Dataset | None,
+        dataset_metadata: MetadataBase | None = None,
+        write_metadata: bool = True,
+        **kwargs: Any,
+    ) -> None:
         for key, value in kwargs.items():
             setattr(self, key, value)
         if dataset is not None and isinstance(dataset, (h5py.Dataset)):
@@ -141,7 +175,28 @@ class ChannelDataset:
             self.hdf5_dataset.attrs["mth5_type"] = self._class_name
             self.write_metadata()
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """
+        Generate a human-readable string representation of the channel.
+
+        Returns
+        -------
+        str
+            Formatted string with channel metadata and data information.
+
+        Examples
+        --------
+        >>> print(channel)
+        Channel Electric:
+        -------------------
+          component:        Ex
+          data type:        electric
+          data format:      float32
+          data shape:       (4096,)
+          start:            1980-01-01T00:00:00+00:00
+          end:              1980-01-01T00:00:01+00:00
+          sample rate:      4096
+        """
         try:
             lines = ["Channel {0}:".format(self._class_name)]
             lines.append("-" * (len(lines[0]) + 2))
@@ -157,17 +212,47 @@ class ChannelDataset:
         except ValueError:
             return "MTH5 file is closed and cannot be accessed."
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """
+        Return the string representation of the channel.
+
+        Returns
+        -------
+        str
+            String representation identical to __str__.
+        """
         return self.__str__()
 
     @property
-    def _class_name(self):
+    def _class_name(self) -> str:
+        """
+        Extract the base class name without 'Dataset' suffix.
+
+        Returns
+        -------
+        str
+            Base class name (e.g., 'Electric', 'Magnetic', 'Auxiliary').
+        """
         return self.__class__.__name__.split("Dataset")[0]
 
     @property
-    def run_metadata(self):
-        """run metadata"""
+    def run_metadata(self) -> metadata.Run:
+        """
+        Get the run-level metadata containing this channel.
 
+        Returns
+        -------
+        metadata.Run
+            Run metadata object with channel information included.
+
+        Examples
+        --------
+        >>> run_meta = channel.run_metadata
+        >>> print(run_meta.id)
+        'MT001a'
+        >>> print(run_meta.channels_recorded_electric)
+        ['Ex', 'Ey']
+        """
         meta_dict = dict(self.hdf5_dataset.parent.attrs)
         for key, value in meta_dict.items():
             meta_dict[key] = from_numpy_type(value)
@@ -177,9 +262,21 @@ class ChannelDataset:
         return run_metadata
 
     @property
-    def station_metadata(self):
-        """station metadata"""
+    def station_metadata(self) -> metadata.Station:
+        """
+        Get the station-level metadata containing this channel.
 
+        Returns
+        -------
+        metadata.Station
+            Station metadata object with run and channel information.
+
+        Examples
+        --------
+        >>> station_meta = channel.station_metadata
+        >>> print(f"{station_meta.id}: {station_meta.location.latitude}, {station_meta.location.longitude}")
+        'MT001: 40.5, -112.3'
+        """
         meta_dict = dict(self.hdf5_dataset.parent.parent.attrs)
         for key, value in meta_dict.items():
             meta_dict[key] = from_numpy_type(value)
@@ -189,9 +286,23 @@ class ChannelDataset:
         return station_metadata
 
     @property
-    def survey_metadata(self):
-        """survey metadata"""
+    def survey_metadata(self) -> metadata.Survey:
+        """
+        Get the survey-level metadata containing this channel.
 
+        Returns
+        -------
+        metadata.Survey
+            Complete survey metadata hierarchy including this channel.
+
+        Examples
+        --------
+        >>> survey_meta = channel.survey_metadata
+        >>> print(survey_meta.id)
+        'MT Survey 2023'
+        >>> print(f"Stations: {len(survey_meta.stations)}")
+        Stations: 15
+        """
         meta_dict = dict(self.hdf5_dataset.parent.parent.parent.parent.attrs)
         for key, value in meta_dict.items():
             meta_dict[key] = from_numpy_type(value)
@@ -201,13 +312,52 @@ class ChannelDataset:
         return survey_metadata
 
     @property
-    def survey_id(self):
-        """shortcut to survey group"""
+    def survey_id(self) -> str:
+        """
+        Get the survey identifier.
 
+        Returns
+        -------
+        str
+            Survey ID string.
+
+        Examples
+        --------
+        >>> print(channel.survey_id)
+        'MT_Survey_2023'
+        """
         return self.hdf5_dataset.parent.parent.parent.parent.attrs["id"]
 
     @property
-    def channel_response(self):
+    def channel_response(self) -> ChannelResponse:
+        """
+        Get the complete channel response from applied filters.
+
+        Constructs a ChannelResponse object by retrieving all filters referenced
+        in the channel metadata from the survey's Filters group.
+
+        Returns
+        -------
+        ChannelResponse
+            Channel response object containing all applied filters in sequence.
+
+        Notes
+        -----
+        Filters are applied in the order specified by their sequence_number.
+        Filter names are normalized by replacing '/' with ' per ' and converting
+        to lowercase.
+
+        Examples
+        --------
+        >>> response = channel.channel_response
+        >>> print(f"Number of filters: {len(response.filters_list)}")
+        Number of filters: 3
+        >>> for filt in response.filters_list:
+        ...     print(f"{filt.name}: {filt.type}")
+        zpk: zpk
+        coefficient: coefficient
+        time delay: time_delay
+        """
         # get the filters to make a channel response
         filters_group = FiltersGroup(
             self.hdf5_dataset.parent.parent.parent.parent["Filters"]
@@ -239,64 +389,188 @@ class ChannelDataset:
         return ChannelResponse(filters_list=f_list)
 
     @property
-    def start(self):
+    def start(self) -> MTime:
+        """
+        Get the start time of the channel data.
+
+        Returns
+        -------
+        MTime
+            Start time from metadata.time_period.start.
+
+        Examples
+        --------
+        >>> print(channel.start)
+        1980-01-01T00:00:00+00:00
+        >>> print(channel.start.iso_str)
+        '1980-01-01T00:00:00.000000+00:00'
+        """
         return self.metadata.time_period.start
 
     @start.setter
-    def start(self, value):
-        """set start time and validate through metadata validator"""
+    def start(self, value: str | MTime) -> None:
+        """
+        Set the start time with validation.
+
+        Parameters
+        ----------
+        value : str or MTime
+            New start time in ISO format string or MTime object.
+
+        Examples
+        --------
+        >>> channel.start = '1980-01-01T12:00:00'
+        >>> channel.start = MTime('1980-01-01T12:00:00')
+        """
         if isinstance(value, MTime):
             self.metadata.time_period.start = value.isoformat()
         else:
             self.metadata.time_period.start = value
 
     @property
-    def end(self):
-        """return end time based on the data"""
+    def end(self) -> MTime:
+        """
+        Calculate the end time based on start time, sample rate, and number of samples.
+
+        Returns
+        -------
+        MTime
+            Calculated end time of the data.
+
+        Notes
+        -----
+        End time is calculated as: start + (n_samples - 1) / sample_rate
+        The -1 ensures the last sample falls exactly at the end time.
+
+        Examples
+        --------
+        >>> print(f"Duration: {channel.end - channel.start} seconds")
+        Duration: 3600.0 seconds
+        >>> print(channel.end.iso_str)
+        '1980-01-01T01:00:00.000000+00:00'
+        """
         return self.start + ((self.n_samples - 1) / self.sample_rate)
 
     @property
-    def sample_rate(self):
+    def sample_rate(self) -> float:
+        """
+        Get the sample rate in samples per second.
+
+        Returns
+        -------
+        float
+            Sample rate in Hz.
+
+        Examples
+        --------
+        >>> print(f"Sample rate: {channel.sample_rate} Hz")
+        Sample rate: 256.0 Hz
+        """
         return self.metadata.sample_rate
 
     @sample_rate.setter
-    def sample_rate(self, value):
-        """set sample rate through metadata validator"""
+    def sample_rate(self, value: float) -> None:
+        """
+        Set the sample rate with validation through metadata.
+
+        Parameters
+        ----------
+        value : float
+            New sample rate in Hz.
+
+        Examples
+        --------
+        >>> channel.sample_rate = 256.0
+        """
         self.metadata.sample_rate = value
 
     @property
-    def n_samples(self):
+    def n_samples(self) -> int:
+        """
+        Get the total number of samples in the dataset.
+
+        Returns
+        -------
+        int
+            Number of data points in the time series.
+
+        Examples
+        --------
+        >>> print(f"Total samples: {channel.n_samples:,}")
+        Total samples: 921,600
+        >>> duration = channel.n_samples / channel.sample_rate
+        >>> print(f"Duration: {duration/3600:.1f} hours")
+        Duration: 1.0 hours
+        """
         return self.hdf5_dataset.size
 
     @property
-    def time_index(self):
+    def time_index(self) -> pd.DatetimeIndex:
         """
-        Create a time index based on the metadata.  This can help when asking
-        for time windows from the data
+        Create a time index for the dataset based on metadata.
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Returns
+        -------
+        pd.DatetimeIndex
+            Pandas datetime index spanning the entire dataset.
 
+        Notes
+        -----
+        The time index is useful for time-based queries and slicing operations.
+        It is generated dynamically from start time, sample rate, and number of samples.
+
+        Examples
+        --------
+        >>> time_idx = channel.time_index
+        >>> print(time_idx[0], time_idx[-1])
+        1980-01-01 00:00:00 1980-01-01 00:59:59.996093750
+        >>> print(f"Index length: {len(time_idx)}")
+        Index length: 921600
         """
-
         return make_dt_coordinates(self.start, self.sample_rate, self.n_samples)
 
-    def read_metadata(self):
+    def read_metadata(self) -> None:
         """
-        Read metadata from the HDF5 file into the metadata container, that
-        way it can be validated.
+        Read metadata from HDF5 attributes into the metadata container.
 
+        Loads all HDF5 attributes from the dataset and converts them to the
+        appropriate Python types before populating the metadata object.
+
+        Notes
+        -----
+        This method automatically validates metadata through the metadata
+        container's validators.
+
+        Examples
+        --------
+        >>> channel.read_metadata()
+        >>> print(channel.metadata.component)
+        'Ex'
+        >>> print(channel.metadata.sample_rate)
+        256.0
         """
         meta_dict = dict(self.hdf5_dataset.attrs)
         for key, value in meta_dict.items():
             meta_dict[key] = from_numpy_type(value)
         self.metadata.from_dict({self._class_name: meta_dict})
 
-    def write_metadata(self):
+    def write_metadata(self) -> None:
         """
-        Write metadata from the metadata container to the HDF5 attrs
-        dictionary.
+        Write metadata from the container to HDF5 dataset attributes.
 
+        Converts all metadata values to numpy-compatible types before writing
+        to HDF5 attributes. Falls back to string conversion if direct conversion fails.
+
+        Notes
+        -----
+        This method is automatically called during initialization and when
+        metadata is updated.
+
+        Examples
+        --------
+        >>> channel.metadata.component = 'Ey'
+        >>> channel.metadata.measurement_azimuth = 90.0
+        >>> channel.write_metadata()
         """
         meta_dict = self.metadata.to_dict()[self.metadata._class_name.lower()]
         for key, value in meta_dict.items():
@@ -307,13 +581,40 @@ class ChannelDataset:
                 # Convert problematic values to string as fallback
                 self.hdf5_dataset.attrs.create(key, str(value))
 
-    def replace_dataset(self, new_data_array):
+    def replace_dataset(self, new_data_array: np.ndarray) -> None:
         """
-        replace the entire dataset with a new one, nothing left behind
+        Replace the entire dataset with new data.
 
-        :param new_data_array: new data array shape (npts, )
-        :type new_data_array: :class:`numpy.ndarray`
+        Parameters
+        ----------
+        new_data_array : np.ndarray
+            New data array with shape (npts,). Must be 1-dimensional.
 
+        Raises
+        ------
+        TypeError
+            If new_data_array cannot be converted to numpy array.
+
+        Notes
+        -----
+        The HDF5 dataset will be resized if the new array has a different shape.
+        All existing data will be overwritten.
+
+        Examples
+        --------
+        Replace with synthetic data
+
+        >>> import numpy as np
+        >>> new_data = np.sin(2 * np.pi * 1.0 * np.linspace(0, 10, 2560))
+        >>> channel.replace_dataset(new_data)
+        >>> print(f"New shape: {channel.hdf5_dataset.shape}")
+        New shape: (2560,)
+
+        Replace with processed data
+
+        >>> original = channel.hdf5_dataset[:]
+        >>> filtered = np.convolve(original, np.ones(5)/5, mode='same')
+        >>> channel.replace_dataset(filtered)
         """
         if not isinstance(new_data_array, np.ndarray):
             try:
@@ -328,76 +629,85 @@ class ChannelDataset:
 
     def extend_dataset(
         self,
-        new_data_array,
-        start_time,
-        sample_rate,
-        fill=None,
-        max_gap_seconds=1,
-        fill_window=10,
-    ):
+        new_data_array: np.ndarray,
+        start_time: str | MTime,
+        sample_rate: float,
+        fill: str | float | int | None = None,
+        max_gap_seconds: float | int = 1,
+        fill_window: int = 10,
+    ) -> None:
         """
-        Append data according to how the start time aligns with existing
-        data.  If the start time is before existing start time the data is
-        prepended, similarly if the start time is near the end data will be
-        appended.
+        Extend or prepend data to the existing dataset with gap handling.
 
-        If the start time is within the existing time range, existing data
-        will be replace with the new data.
+        Intelligently adds new data before, after, or within the existing time series.
+        Handles time alignment, overlaps, and gaps with configurable fill strategies.
 
-        If there is a gap between start or end time of the new data with
-        the existing data you can either fill the data with a constant value
-        or an error will be raise depending on the value of fill.
+        Parameters
+        ----------
+        new_data_array : np.ndarray
+            New data array with shape (npts,).
+        start_time : str or MTime
+            Start time of the new data array in UTC.
+        sample_rate : float
+            Sample rate of the new data array in Hz. Must match existing sample rate.
+        fill : str, float, int, or None, optional
+            Strategy for filling data gaps:
 
-        :param new_data_array: new data array with shape (npts, )
-        :type new_data_array: :class:`numpy.ndarray`
-        :param start_time: start time of the new data array in UTC
-        :type start_time: string or :class:`mth5.utils.mttime.MTime`
-        :param sample_rate: Sample rate of the new data array, must match
-                            existing sample rate
-        :type sample_rate: float
-        :param fill: If there is a data gap how do you want to fill the gap
-            * None: will raise an  :class:`mth5.utils.exceptions.MTH5Error`
-            * 'mean': will fill with the mean of each data set within
-            the fill window
-            * 'median': will fill with the median of each data set
-            within the fill window
-            * value: can be an integer or float to fill the gap
-            * 'nan': will fill the gap with NaN
-        :type fill: string, None, float, integer
-        :param max_gap_seconds: sets a maximum number of seconds the gap can
-                                be.  Anything over this number will raise
-                                a :class:`mth5.utils.exceptions.MTH5Error`.
-        :type max_gap_seconds: float or integer
-        :param fill_window: number of points from the end of each data set
-                            to estimate fill value from.
-        :type fill_window: integer
+            - None : Raise MTH5Error if gap exists (default)
+            - 'mean' : Fill with mean of both datasets within fill_window
+            - 'median' : Fill with median of both datasets within fill_window
+            - 'nan' : Fill with NaN values
+            - numeric value : Fill with specified constant
 
-        :raises: :class:`mth5.utils.excptions.MTH5Error` if sample rate is
-                 not the same, or fill value is not understood,
+        max_gap_seconds : float or int, optional
+            Maximum allowed gap in seconds. Exceeding this raises MTH5Error.
+            Default is 1 second.
+        fill_window : int, optional
+            Number of points from each dataset edge to estimate fill values.
+            Default is 10 points.
 
-        :Append Example:
+        Raises
+        ------
+        MTH5Error
+            If sample rates don't match, gap exceeds max_gap_seconds, or
+            fill strategy is invalid.
+        TypeError
+            If new_data_array cannot be converted to numpy array.
+
+        Notes
+        -----
+        - **Prepend**: New data start < existing start
+        - **Append**: New data start > existing end
+        - **Overwrite**: New data overlaps existing data
+
+        The dataset is automatically resized to accommodate new data.
+
+        Examples
+        --------
+        Append data with a small gap
 
         >>> ex = mth5_obj.get_channel('MT001', 'MT001a', 'Ex')
-        >>> ex.n_samples
-        4096
-        >>> ex.end
-        2015-01-08T19:32:09.500000+00:00
-        >>> t = timeseries.ChannelTS('electric',
-        ...                     data=2*np.cos(4 * np.pi * .05 * \
-        ...                                   np.linspace(0,4096l num=4096) *
-        ...                                   .01),
-        ...                     channel_metadata={'electric':{
-        ...                        'component': 'ex',
-        ...                        'sample_rate': 8,
-        ...                        'time_period.start':(ex.end+(1)).isoformat()}}})
-        >>> ex.extend_dataset(t.ts, t.start, t.sample_rate, fill='median',
-        ...                   max_gap_seconds=2)
-        2020-07-02T18:02:47 - mth5.groups.Electric.extend_dataset - INFO -
-        filling data gap with 1.0385180759767025
-        >>> ex.n_samples
-        8200
-        >>> ex.end
-        2015-01-08T19:40:42.500000+00:00
+        >>> print(f"Original: {ex.n_samples} samples, ends {ex.end}")
+        Original: 4096 samples, ends 2015-01-08T19:32:09.500000+00:00
+        >>> new_data = np.random.randn(4096)
+        >>> new_start = (ex.end + 0.5).isoformat()  # 0.5s gap
+        >>> ex.extend_dataset(new_data, new_start, ex.sample_rate,
+        ...                   fill='median', max_gap_seconds=2)
+        >>> print(f"Extended: {ex.n_samples} samples, ends {ex.end}")
+        Extended: 8200 samples, ends 2015-01-08T19:40:42.500000+00:00
+
+        Prepend data seamlessly
+
+        >>> prepend_data = np.random.randn(2048)
+        >>> prepend_start = (ex.start - 2048/ex.sample_rate).isoformat()
+        >>> ex.extend_dataset(prepend_data, prepend_start, ex.sample_rate)
+        >>> print(f"New start: {ex.start}")
+
+        Overwrite section of existing data
+
+        >>> replacement_data = np.zeros(1024)
+        >>> replace_start = (ex.start + 1.0).isoformat()  # 1s after start
+        >>> ex.extend_dataset(replacement_data, replace_start, ex.sample_rate)
 
         """
         fw = fill_window
@@ -640,15 +950,26 @@ class ChannelDataset:
                         self.get_index_from_time(start_time) :
                     ] = new_data_array
 
-    def has_data(self):
+    def has_data(self) -> bool:
         """
-        check to see if the channel has data, meaning values are non-zero
+        Check if the channel contains non-zero data.
 
-        :return: True if has data, False if all zeros or empty
-        :rtype: bool
+        Returns
+        -------
+        bool
+            True if dataset has non-zero values, False if all zeros or empty.
 
+        Examples
+        --------
+        >>> if channel.has_data():
+        ...     print("Channel has valid data")
+        ... else:
+        ...     print("Channel is empty or all zeros")
+        Channel has valid data
+
+        >>> empty_channel.has_data()
+        False
         """
-
         if len(self.hdf5_dataset) > 0:
             if len(np.nonzero(self.hdf5_dataset)[0]) > 0:
                 return True
@@ -656,13 +977,33 @@ class ChannelDataset:
                 return False
         return False
 
-    def to_channel_ts(self):
+    def to_channel_ts(self) -> ChannelTS:
         """
-        :return: a Timeseries with the appropriate time index and metadata
-        :rtype: :class:`mth5.timeseries.ChannelTS`
+        Convert the dataset to a ChannelTS object with full metadata.
 
-        loads from memory (nearly half the size of xarray alone, not sure why)
+        Returns
+        -------
+        ChannelTS
+            Time series object with data, metadata, and channel response.
 
+        Notes
+        -----
+        Data is loaded into memory. The resulting ChannelTS object is independent
+        of the HDF5 file and can be modified without affecting the original dataset.
+
+        Examples
+        --------
+        >>> ts = channel.to_channel_ts()
+        >>> print(f"Type: {type(ts)}")
+        Type: <class 'mth5.timeseries.channel_ts.ChannelTS'>
+        >>> print(f"Shape: {ts.ts.shape}, Mean: {ts.ts.mean():.2f}")
+        Shape: (4096,), Mean: 0.15
+
+        Process the time series
+
+        >>> filtered_ts = ts.low_pass_filter(cutoff=10.0)
+        >>> detrended_ts = ts.detrend('linear')
+        >>> ts.plot()
         """
         # Now that copy() method is robust, we can use direct copying
         return ChannelTS(
@@ -675,51 +1016,118 @@ class ChannelDataset:
             channel_response=self.channel_response,
         )
 
-    def to_xarray(self):
+    def to_xarray(self) -> xr.DataArray:
         """
-        :return: an xarray DataArray with appropriate metadata and the
-                 appropriate time index.
-        :rtype: :class:`xarray.DataArray`
+        Convert the dataset to an xarray DataArray with time coordinates.
 
-        .. note:: that metadta will not be validated if changed in an xarray.
+        Returns
+        -------
+        xr.DataArray
+            DataArray with time index and metadata as attributes.
 
-        loads from memory
+        Notes
+        -----
+        Data is loaded into memory. Metadata is stored in the attrs dictionary
+        and will not be validated if modified.
+
+        Examples
+        --------
+        >>> xr_data = channel.to_xarray()
+        >>> print(xr_data)
+        <xarray.DataArray (time: 4096)>
+        array([0.931, 0.142, ..., 0.882])
+        Coordinates:
+          * time     (time) datetime64[ns] 1980-01-01 ... 1980-01-01T00:00:15.996
+        Attributes:
+            component:    Ex
+            sample_rate:  256.0
+            ...
+
+        Use xarray's powerful selection
+
+        >>> morning = xr_data.sel(time=slice('1980-01-01T06:00', '1980-01-01T12:00'))
+        >>> daily_mean = xr_data.resample(time='1D').mean()
+        >>> xr_data.plot()
         """
-
         return xr.DataArray(
             self.hdf5_dataset[()],
             coords=[("time", self.time_index)],
             attrs=self.metadata.to_dict(single=True),
         )
 
-    def to_dataframe(self):
+    def to_dataframe(self) -> pd.DataFrame:
         """
+        Convert the dataset to a pandas DataFrame with time index.
 
-        :return: a dataframe where data is stored in the 'data' column and
-                 attributes are stored in the experimental attrs attribute
-        :rtype: :class:`pandas.DataFrame`
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with 'data' column and time index. Metadata stored in attrs.
 
-        .. note:: that metadta will not be validated if changed in an xarray.
+        Notes
+        -----
+        Data is loaded into memory. Metadata is stored in the experimental
+        attrs attribute and will not be validated if modified.
 
-        loads into RAM
+        Examples
+        --------
+        >>> df = channel.to_dataframe()
+        >>> print(df.head())
+                             data
+        time
+        1980-01-01 00:00:00  0.931
+        1980-01-01 00:00:00  0.142
+        ...
+
+        Use pandas operations
+
+        >>> df['data'].describe()
+        >>> df.resample('1H').mean()
+        >>> df.plot(y='data', figsize=(12, 4))
+
+        Access metadata
+
+        >>> print(df.attrs['component'])
+        'Ex'
+        >>> print(df.attrs['sample_rate'])
+        256.0
         """
-
         df = pd.DataFrame({"data": self.hdf5_dataset[()]}, index=self.time_index)
         df.attrs.update(self.metadata.to_dict(single=True))
 
         return df
 
-    def to_numpy(self):
+    def to_numpy(self) -> np.recarray:
         """
-        :return: a numpy structured array with 2 columns (time, channel_data)
-        :rtype: :class:`numpy.core.records`
+        Convert the dataset to a numpy structured array with time and data columns.
 
-        .. note:: data is a builtin to numpy and cannot be used as a name
+        Returns
+        -------
+        np.recarray
+            Record array with 'time' and 'channel_data' fields.
 
-        loads into RAM
+        Notes
+        -----
+        Data is loaded into memory. The 'data' name is avoided as it's a
+        builtin to numpy.
 
+        Examples
+        --------
+        >>> arr = channel.to_numpy()
+        >>> print(arr.dtype.names)
+        ('time', 'channel_data')
+        >>> print(arr['time'][0])
+        1980-01-01T00:00:00.000000000
+        >>> print(arr['channel_data'].mean())
+        0.152
+
+        Access fields
+
+        >>> times = arr['time']
+        >>> data = arr['channel_data']
+        >>> import matplotlib.pyplot as plt
+        >>> plt.plot(times, data)
         """
-
         return np.core.records.fromarrays(
             [self.time_index.to_numpy(), self.hdf5_dataset[()]],
             names="time,channel_data",
@@ -727,49 +1135,79 @@ class ChannelDataset:
 
     def from_channel_ts(
         self,
-        channel_ts_obj,
-        how="replace",
-        fill=None,
-        max_gap_seconds=1,
-        fill_window=10,
-    ):
+        channel_ts_obj: ChannelTS,
+        how: str = "replace",
+        fill: str | float | int | None = None,
+        max_gap_seconds: float | int = 1,
+        fill_window: int = 10,
+    ) -> None:
         """
-        fill data set from a :class:`mth5.timeseries.ChannelTS` object.
+        Populate the dataset from a ChannelTS object.
 
-        Will check for time alignement, and metadata.
+        Parameters
+        ----------
+        channel_ts_obj : ChannelTS
+            Time series object containing data and metadata.
+        how : {'replace', 'extend'}, optional
+            Method for adding data:
 
-        :param channel_ts_obj: time series object
-        :type channel_ts_obj: :class:`mth5.timeseries.ChannelTS`
-        :param how: how the new array will be input to the existing dataset:
+            - 'replace' : Replace entire dataset (default)
+            - 'extend' : Append/prepend to existing data with gap handling
 
-            - 'replace' -> replace the entire dataset nothing is left over.
-            - 'extend' -> add onto the existing dataset, any  overlapping
-              values will be rewritten, if there are gaps between data sets
-              those will be handled depending on the value of fill.
+        fill : str, float, int, or None, optional
+            Gap filling strategy (only used with how='extend'):
 
-         :param fill: If there is a data gap how do you want to fill the gap:
+            - None : Raise error on gaps (default)
+            - 'mean' : Fill with mean of both datasets
+            - 'median' : Fill with median of both datasets
+            - 'nan' : Fill with NaN
+            - numeric : Fill with constant value
 
-            - None -> will raise an :class:`mth5.utils.exceptions.MTH5Error`
-            - 'mean'-> will fill with the mean of each data set within
-              the fill window
-            - 'median' -> will fill with the median of each data set
-              within the fill window
-            - value -> can be an integer or float to fill the gap
-            - 'nan' -> will fill the gap with NaN
+        max_gap_seconds : float or int, optional
+            Maximum allowed gap in seconds. Default is 1.
+        fill_window : int, optional
+            Points to use for estimating fill values. Default is 10.
 
-        :type fill: string, None, float, integer
-        :param max_gap_seconds: sets a maximum number of seconds the gap can
-                                be.  Anything over this number will raise
-                                a :class:`mth5.utils.exceptions.MTH5Error`.
+        Raises
+        ------
+        TypeError
+            If channel_ts_obj is not a ChannelTS instance.
+        MTH5Error
+            If time alignment or metadata validation fails.
 
-        :type max_gap_seconds: float or integer
-        :param fill_window: number of points from the end of each data set
-                            to estimate fill value from.
+        Examples
+        --------
+        Replace entire dataset
 
-        :type fill_window: integer
+        >>> from mth5.timeseries import ChannelTS
+        >>> import numpy as np
+        >>> ts = ChannelTS(
+        ...     channel_type='electric',
+        ...     data=np.random.randn(1000),
+        ...     channel_metadata={'electric': {
+        ...         'component': 'ex',
+        ...         'sample_rate': 256.0
+        ...     }}
+        ... )
+        >>> channel.from_channel_ts(ts, how='replace')
+        >>> print(channel.n_samples)
+        1000
 
+        Extend existing dataset
+
+        >>> new_ts = ChannelTS(
+        ...     channel_type='electric',
+        ...     data=np.random.randn(500),
+        ...     channel_metadata={'electric': {
+        ...         'component': 'ex',
+        ...         'sample_rate': 256.0,
+        ...         'time_period.start': channel.end.isoformat()
+        ...     }}
+        ... )
+        >>> channel.from_channel_ts(new_ts, how='extend', fill='median')
+        >>> print(channel.n_samples)
+        1500
         """
-
         if not isinstance(channel_ts_obj, ChannelTS):
             msg = f"Input must be a ChannelTS object not {type(channel_ts_obj)}"
             self.logger.error(msg)
@@ -807,49 +1245,69 @@ class ChannelDataset:
 
     def from_xarray(
         self,
-        data_array,
-        how="replace",
-        fill=None,
-        max_gap_seconds=1,
-        fill_window=10,
-    ):
+        data_array: xr.DataArray,
+        how: str = "replace",
+        fill: str | float | int | None = None,
+        max_gap_seconds: float | int = 1,
+        fill_window: int = 10,
+    ) -> None:
         """
-        fill data set from a :class:`xarray.DataArray` object.
+        Populate the dataset from an xarray DataArray.
 
-        Will check for time alignement, and metadata.
+        Parameters
+        ----------
+        data_array : xr.DataArray
+            DataArray with time coordinate and metadata in attrs.
+        how : {'replace', 'extend'}, optional
+            Method for adding data:
 
-        :param data_array_obj: Xarray data array
-        :type channel_ts_obj: :class:`xarray.DataArray`
-        :param how: how the new array will be input to the existing dataset:
+            - 'replace' : Replace entire dataset (default)
+            - 'extend' : Append/prepend to existing data with gap handling
 
-            - 'replace' -> replace the entire dataset nothing is left over.
-            - 'extend' -> add onto the existing dataset, any  overlapping
-             values will be rewritten, if there are gaps between data sets
-             those will be handled depending on the value of fill.
+        fill : str, float, int, or None, optional
+            Gap filling strategy (only used with how='extend'):
 
-         :param fill: If there is a data gap how do you want to fill the gap:
+            - None : Raise error on gaps (default)
+            - 'mean' : Fill with mean of both datasets
+            - 'median' : Fill with median of both datasets
+            - 'nan' : Fill with NaN
+            - numeric : Fill with constant value
 
-            - None -> will raise an :class:`mth5.utils.exceptions.MTH5Error`
-            - 'mean'-> will fill with the mean of each data set within
-               the fill window
-            - 'median' -> will fill with the median of each data set
-               within the fill window
-            - value -> can be an integer or float to fill the gap
-            - 'nan' -> will fill the gap with NaN
+        max_gap_seconds : float or int, optional
+            Maximum allowed gap in seconds. Default is 1.
+        fill_window : int, optional
+            Points to use for estimating fill values. Default is 10.
 
-        :type fill: string, None, float, integer
-        :param max_gap_seconds: sets a maximum number of seconds the gap can
-         be.  Anything over this number will raise a
-         :class:`mth5.utils.exceptions.MTH5Error`.
+        Raises
+        ------
+        TypeError
+            If data_array is not an xarray.DataArray.
+        MTH5Error
+            If time alignment fails.
 
-        :type max_gap_seconds: float or integer
-        :param fill_window: number of points from the end of each data set
-         to estimate fill value from.
+        Examples
+        --------
+        Replace from xarray
 
-        :type fill_window: integer
+        >>> import xarray as xr
+        >>> import numpy as np
+        >>> import pandas as pd
+        >>> time = pd.date_range('2020-01-01', periods=1000, freq='0.004S')
+        >>> data = xr.DataArray(
+        ...     np.random.randn(1000),
+        ...     coords=[('time', time)],
+        ...     attrs={'component': 'ex', 'sample_rate': 256.0}
+        ... )
+        >>> channel.from_xarray(data, how='replace')
+        >>> print(channel.n_samples)
+        1000
 
+        Extend from xarray with gap
+
+        >>> time2 = pd.date_range('2020-01-01T00:00:05', periods=500, freq='0.004S')
+        >>> data2 = xr.DataArray(np.random.randn(500), coords=[('time', time2)])
+        >>> channel.from_xarray(data2, how='extend', fill='mean')
         """
-
         if not isinstance(data_array, xr.DataArray):
             msg = f"Input must be a xarray.DataArray object not {type(data_array)}"
             self.logger.error(msg)
@@ -867,22 +1325,26 @@ class ChannelDataset:
             )
         # TODO need to check on metadata.
 
-    def _get_diff_new_array_start(self, start_time):
+    def _get_diff_new_array_start(self, start_time: str | MTime) -> float:
         """
-        Make sure the new array has the same start time if not return the
-        time difference
+        Calculate time difference between new array start and existing start.
 
-        :param start_time: start time of the new array
-        :type start_time: string, int or :class:`mth5.utils.MTime`
-        :return: time difference in seconds as new start time minus old.
+        Parameters
+        ----------
+        start_time : str or MTime
+            Start time of the new array.
 
-            *  A positive number means new start time is later than old
-               start time.
-            * A negative number means the new start time is earlier than
-              the old start time.
+        Returns
+        -------
+        float
+            Time difference in seconds (new_start - existing_start).
+            Positive means new starts later, negative means new starts earlier.
 
-        :rtype: float
-
+        Examples
+        --------
+        >>> diff = channel._get_diff_new_array_start('1980-01-01T00:05:00')
+        >>> print(f"New data starts {diff} seconds after existing")
+        New data starts 300.0 seconds after existing
         """
         if not isinstance(start_time, MTime):
             start_time = MTime(time_stamp=start_time)
@@ -891,22 +1353,26 @@ class ChannelDataset:
             t_diff = start_time - self.start
         return t_diff
 
-    def _get_diff_new_array_end(self, end_time):
+    def _get_diff_new_array_end(self, end_time: str | MTime) -> float:
         """
-        Make sure the new array has the same end time if not return the
-        time difference
+        Calculate time difference between new array end and existing end.
 
-        :param end_time: end time of the new array
-        :type end_time: string, int or :class:`mth5.utils.MTime`
-        :return: time difference in seconds as new end time minus old.
+        Parameters
+        ----------
+        end_time : str or MTime
+            End time of the new array.
 
-            * A positive number means new end time is later than old
-               end time.
-            * A negative number means the new end time is earlier than
-              the old end time.
+        Returns
+        -------
+        float
+            Time difference in seconds (new_end - existing_end).
+            Positive means new ends later, negative means new ends earlier.
 
-        :rtype: float
-
+        Examples
+        --------
+        >>> diff = channel._get_diff_new_array_end('1980-01-01T00:05:00')
+        >>> print(f"Difference: {diff} seconds")
+        Difference: -3300.0 seconds
         """
         if not isinstance(end_time, MTime):
             end_time = MTime(time_stamp=end_time)
@@ -916,10 +1382,30 @@ class ChannelDataset:
         return t_diff
 
     @property
-    def channel_entry(self):
+    def channel_entry(self) -> np.ndarray:
         """
-        channel entry that will go into a full channel summary of the entire survey
+        Create a structured array entry for channel summary tables.
 
+        Returns
+        -------
+        np.ndarray
+            Structured array with dtype=CHANNEL_DTYPE containing channel metadata
+            and HDF5 references for survey-wide summaries.
+
+        Notes
+        -----
+        This entry includes survey ID, station ID, run ID, location, component,
+        time period, sample rate, and HDF5 references for navigation.
+
+        Examples
+        --------
+        >>> entry = channel.channel_entry
+        >>> print(entry['component'][0])
+        'Ex'
+        >>> print(entry['sample_rate'][0])
+        256.0
+        >>> print(entry['station'][0])
+        'MT001'
         """
         return np.array(
             [
@@ -949,65 +1435,82 @@ class ChannelDataset:
 
     def time_slice(
         self,
-        start,
-        end=None,
-        n_samples=None,
-        return_type="channel_ts",
-    ):
+        start: str | MTime,
+        end: str | MTime | None = None,
+        n_samples: int | None = None,
+        return_type: str = "channel_ts",
+    ) -> ChannelTS | xr.DataArray | pd.DataFrame | np.ndarray:
         """
-        Get a time slice from the channel and return the appropriate type
+        Extract a time slice from the channel dataset.
 
-            * numpy array with metadata
-            * pandas.Dataframe with metadata
-            * xarray.DataFrame with metadata
-            * :class:`mth5.timeseries.ChannelTS` 'default'
-            * dask.DataFrame with metadata 'not yet'
+        Parameters
+        ----------
+        start : str or MTime
+            Start time of the slice in UTC.
+        end : str or MTime, optional
+            End time of the slice. Mutually exclusive with n_samples.
+        n_samples : int, optional
+            Number of samples to extract. Mutually exclusive with end.
+        return_type : {'channel_ts', 'xarray', 'pandas', 'numpy'}, optional
+            Format for returned data. Default is 'channel_ts'.
 
-        :param start: start time of the slice
-        :type start: string or :class:`mth5.utils.mttime.MTime`
-        :param end: end time of the slice
-        :type end: string or :class:`mth5.utils.mttime.MTime`, optional
-        :param n_samples: number of samples to read in
-        :type n_samples: integer, optional
-        :return: the correct container for the time series.
-        :rtype: [ :class:`xarray.DataArray` | :class:`pandas.DataFrame` |
-                 :class:`mth5.timeseries.ChannelTS` | :class:`numpy.ndarray` ]
-        :raises: ValueError if both end_time and n_samples are None or given.
+        Returns
+        -------
+        ChannelTS or xr.DataArray or pd.DataFrame or np.ndarray
+            Time slice in the requested format with appropriate metadata.
 
-        :Example with number of samples:
+        Raises
+        ------
+        ValueError
+            If both end and n_samples are provided or neither is provided.
 
-        .. code-block::
+        Notes
+        -----
+        - If the requested slice extends beyond available data, it will be
+          automatically truncated with a warning.
+        - Regional HDF5 references are used when possible for efficiency.
 
-            >>> ex = mth5_obj.get_channel('FL001', 'FL001a', 'Ex')
-            >>> ex_slice = ex.time_slice("2015-01-08T19:49:15", n_samples=4096)
-            >>> ex_slice
-            <xarray.DataArray (time: 4096)>
-            array([0.93115046, 0.14233688, 0.87917119, ..., 0.26073634, 0.7137319 ,
-                   0.88154395])
-            Coordinates:
-              * time     (time) datetime64[ns] 2015-01-08T19:49:15 ... 2015-01-08T19:57:46.875000
-            Attributes:
-                ac.end:                      None
-                ac.start:                    None
-                ...
+        Examples
+        --------
+        Extract by number of samples
 
-            >>> type(ex_slice)
-            mth5.timeseries.ChannelTS
+        >>> ex = mth5_obj.get_channel('FL001', 'FL001a', 'Ex')
+        >>> ex_slice = ex.time_slice(\"2015-01-08T19:49:15\", n_samples=4096)
+        >>> print(type(ex_slice))
+        <class 'mth5.timeseries.channel_ts.ChannelTS'>
+        >>> print(f\"Slice shape: {ex_slice.ts.shape}\")\n        Slice shape: (4096,)
+        >>> ex_slice.plot()
 
-            # plot the time series
-            >>> ex_slice.ts.plot()
+        Extract by time range
 
-        :Example with start and end time:
+        >>> ex_slice = ex.time_slice(\n        ...     \"2015-01-08T19:49:15\",
+        ...     end=\"2015-01-08T20:49:15\"\n        ... )
+        >>> print(f\"Duration: {ex_slice.end - ex_slice.start} seconds\")
+        Duration: 3600.0 seconds
 
-        >>> ex_slice = ex.time_slice("2015-01-08T19:49:15",
-        ...                          end_time="2015-01-09T19:49:15")
+        Return as xarray for analysis
 
-        :Raises Example:
+        >>> xr_slice = ex.time_slice(\n        ...     \"2015-01-08T19:49:15\",
+        ...     n_samples=1000,
+        ...     return_type='xarray'\n        ... )
+        >>> print(xr_slice.mean().values)
+        0.152
+        >>> xr_slice.plot()
 
-        >>> ex_slice = ex.time_slice("2015-01-08T19:49:15",
-        ...                          end_time="2015-01-09T19:49:15",
-        ...                          n_samples=4096)
-        ValueError: Must input either end_time or n_samples, not both.
+        Return as pandas for tabular ops
+
+        >>> df_slice = ex.time_slice(\n        ...     \"2015-01-08T19:49:15\",
+        ...     n_samples=500,
+        ...     return_type='pandas'\n        ... )
+        >>> df_slice['data'].describe()
+        >>> df_slice.resample('10S').mean()
+
+        Return as numpy for computation
+
+        >>> np_slice = ex.time_slice(\n        ...     \"2015-01-08T19:49:15\",
+        ...     n_samples=100,
+        ...     return_type='numpy'\n        ... )
+        >>> np.fft.fft(np_slice)
 
         """
 
@@ -1080,17 +1583,36 @@ class ChannelDataset:
             raise ValueError(msg)
         return data
 
-    def get_index_from_time(self, given_time):
+    def get_index_from_time(self, given_time: str | MTime) -> int:
         """
-        get the appropriate index for a given time.
+        Calculate the array index for a given time.
 
-        :param given_time: time string
-        :type given_time: string or MTime
-        :return: index value
-        :rtype: int
+        Parameters
+        ----------
+        given_time : str or MTime
+            Time to convert to index.
 
+        Returns
+        -------
+        int
+            Array index corresponding to the given time.
+
+        Notes
+        -----
+        Index is calculated as: (time - start_time) * sample_rate
+        and rounded to nearest integer.
+
+        Examples
+        --------
+        >>> idx = channel.get_index_from_time('1980-01-01T00:00:10')
+        >>> print(f"Index for 10 seconds: {idx}")
+        Index for 10 seconds: 2560
+        >>> # With 256 Hz sample rate: 10 * 256 = 2560
+
+        >>> start_idx = channel.get_index_from_time(channel.start)
+        >>> print(start_idx)
+        0
         """
-
         if not isinstance(given_time, MTime):
             given_time = MTime(time_stamp=given_time)
         index = (
@@ -1099,32 +1621,76 @@ class ChannelDataset:
 
         return int(round(index))
 
-    def get_index_from_end_time(self, given_time):
+    def get_index_from_end_time(self, given_time: str | MTime) -> int:
         """
-        get the end index value.  Add one to be inclusive of the found index.
+        Get the end index value (inclusive) for a given time.
 
-        :param given_time: DESCRIPTION
-        :type given_time: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Parameters
+        ----------
+        given_time : str or MTime
+            Time to convert to end index.
 
+        Returns
+        -------
+        int
+            Array index + 1 for inclusive slicing.
+
+        Notes
+        -----
+        Adds 1 to the calculated index to make it suitable for
+        inclusive end slicing (e.g., array[start:end]).
+
+        Examples
+        --------
+        >>> end_idx = channel.get_index_from_end_time('1980-01-01T00:00:10')
+        >>> data_slice = channel.hdf5_dataset[0:end_idx]
+        >>> # Includes sample at exactly 10 seconds
         """
-
         return self.get_index_from_time(given_time) + 1
 
-    def _get_slice_index_values(self, start, end=None, n_samples=None):
+    def _get_slice_index_values(
+        self,
+        start: str | MTime,
+        end: str | MTime | None = None,
+        n_samples: int | None = None,
+    ) -> tuple[int, int, int]:
         """
-        Get the slice index values given (start, end) or (start, n_samples)
+        Calculate start index, end index, and number of points for a time slice.
 
-        :param start: DESCRIPTION
-        :type start: TYPE
-        :param end: DESCRIPTION, defaults to None
-        :type end: TYPE, optional
-        :param n_samples: DESCRIPTION, defaults to None
-        :type n_samples: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Parameters
+        ----------
+        start : str or MTime
+            Start time of the slice.
+        end : str or MTime, optional
+            End time of the slice. Mutually exclusive with n_samples.
+        n_samples : int, optional
+            Number of samples. Mutually exclusive with end.
 
+        Returns
+        -------
+        tuple of (int, int, int)
+            (start_index, end_index, n_points) for array slicing.
+
+        Raises
+        ------
+        ValueError
+            If both end and n_samples are provided or neither is provided.
+
+        Examples
+        --------
+        >>> start_idx, end_idx, npts = channel._get_slice_index_values(
+        ...     '1980-01-01T00:00:05',
+        ...     n_samples=1000
+        ... )
+        >>> print(f"Indices: {start_idx} to {end_idx}, {npts} points")
+        Indices: 1280 to 2280, 1000 points
+
+        >>> start_idx, end_idx, npts = channel._get_slice_index_values(
+        ...     '1980-01-01T00:00:00',
+        ...     end='1980-01-01T00:00:10'
+        ... )
+        >>> print(f"10 second slice: {npts} points")
+        10 second slice: 2560 points
         """
         start = MTime(time_stamp=start)
         if end is not None:
@@ -1159,17 +1725,89 @@ class ChannelDataset:
 
 @inherit_doc_string
 class ElectricDataset(ChannelDataset):
-    def __init__(self, group, **kwargs):
+    """
+    Specialized container for electric field channel data.
+
+    Inherits all functionality from ChannelDataset with electric field
+    specific metadata handling.
+
+    Parameters
+    ----------
+    group : h5py.Dataset
+        HDF5 dataset containing electric field data.
+    **kwargs : dict
+        Additional keyword arguments passed to ChannelDataset.
+
+    Examples
+    --------
+    >>> ex_dataset = run_group.get_channel('Ex')
+    >>> print(type(ex_dataset))
+    <class 'mth5.groups.channel_dataset.ElectricDataset'>
+    >>> print(ex_dataset.metadata.type)
+    'electric'
+    >>> print(ex_dataset.metadata.units)
+    'mV/km'
+    """
+
+    def __init__(self, group: h5py.Dataset, **kwargs: Any) -> None:
         super().__init__(group, **kwargs)
 
 
 @inherit_doc_string
 class MagneticDataset(ChannelDataset):
-    def __init__(self, group, **kwargs):
+    """
+    Specialized container for magnetic field channel data.
+
+    Inherits all functionality from ChannelDataset with magnetic field
+    specific metadata handling.
+
+    Parameters
+    ----------
+    group : h5py.Dataset
+        HDF5 dataset containing magnetic field data.
+    **kwargs : dict
+        Additional keyword arguments passed to ChannelDataset.
+
+    Examples
+    --------
+    >>> hx_dataset = run_group.get_channel('Hx')
+    >>> print(type(hx_dataset))
+    <class 'mth5.groups.channel_dataset.MagneticDataset'>
+    >>> print(hx_dataset.metadata.type)
+    'magnetic'
+    >>> print(hx_dataset.metadata.units)
+    'nT'
+    """
+
+    def __init__(self, group: h5py.Dataset, **kwargs: Any) -> None:
         super().__init__(group, **kwargs)
 
 
 @inherit_doc_string
 class AuxiliaryDataset(ChannelDataset):
-    def __init__(self, group, **kwargs):
+    """
+    Specialized container for auxiliary channel data.
+
+    Inherits all functionality from ChannelDataset with auxiliary channel
+    specific metadata handling. Used for temperature, battery voltage, etc.
+
+    Parameters
+    ----------
+    group : h5py.Dataset
+        HDF5 dataset containing auxiliary data.
+    **kwargs : dict
+        Additional keyword arguments passed to ChannelDataset.
+
+    Examples
+    --------
+    >>> temp_dataset = run_group.get_channel('Temperature')
+    >>> print(type(temp_dataset))
+    <class 'mth5.groups.channel_dataset.AuxiliaryDataset'>
+    >>> print(temp_dataset.metadata.type)
+    'auxiliary'
+    >>> print(temp_dataset.metadata.units)
+    'celsius'
+    """
+
+    def __init__(self, group: h5py.Dataset, **kwargs: Any) -> None:
         super().__init__(group, **kwargs)

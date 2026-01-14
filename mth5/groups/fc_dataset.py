@@ -8,8 +8,10 @@ Created on Thu Mar 10 09:02:16 2022
 # =============================================================================
 # Imports
 # =============================================================================
+from __future__ import annotations
+
 import weakref
-from typing import Optional, Union
+from typing import Any
 
 import h5py
 import numpy as np
@@ -17,7 +19,7 @@ import xarray as xr
 from loguru import logger
 from mt_metadata.processing.fourier_coefficients import FCChannel
 
-from mth5.helpers import to_numpy_type
+from mth5.helpers import add_attributes_to_metadata_class_pydantic, to_numpy_type
 from mth5.timeseries.ts_helpers import make_dt_coordinates
 from mth5.utils.exceptions import MTH5Error
 
@@ -27,54 +29,128 @@ from mth5.utils.exceptions import MTH5Error
 
 class FCChannelDataset:
     """
-    This will hold multi-dimensional set of Fourier Coefficients
+    Container for Fourier coefficients (FC) from windowed FFT analysis.
 
-    FCDataset assumes two conditions on the data array (spectrogram):
-        1. The data are uniformly sampled in frequency domain
-        2. The data are uniformly sampled in time.
-        (i.e. the FFT moving window has a uniform step size)
+    Holds multi-dimensional Fourier coefficient data representing time-frequency
+    analysis results. Data is uniformly sampled in both frequency (via harmonic
+    index) and time (via uniform FFT window step size).
 
+    Parameters
+    ----------
+    dataset : h5py.Dataset
+        HDF5 dataset containing the Fourier coefficient data.
+    dataset_metadata : FCChannel | None, optional
+        Metadata object containing FC channel properties like start time,
+        end time, sample rates, units, and frequency method. If provided,
+        metadata will be written to HDF5 attributes. Defaults to None.
+    **kwargs : Any
+        Additional keyword arguments (reserved for future use).
 
-    Columns
+    Attributes
+    ----------
+    hdf5_dataset : h5py.Dataset
+        Weak reference to the HDF5 dataset.
+    metadata : FCChannel
+        Metadata container for the Fourier coefficients.
+    logger : loguru.logger
+        Logger instance for reporting messages.
 
-        - time
-        - frequency [ integer as harmonic index or float ]
-        - fc (complex)
-        - weight_channel (maybe)
-        - weight_band (maybe)
-        - weight_time (maybe)
+    Raises
+    ------
+    MTH5Error
+        If dataset_metadata is provided but is not of type FCChannel.
+    TypeError
+        If input data cannot be converted to numpy array or has
+        incompatible dtype/shape.
 
-    Attributes:
+    Notes
+    -----
+    The data array has shape (n_windows, n_frequencies) where:
+    - n_windows: Number of time windows in the FFT moving window analysis
+    - n_frequencies: Number of frequency bins determined by window size
 
-        - name
-        - start time
-        - end time
-        - acquistion_sample_rate
-        - decimated_sample rate
-        - window_sample_rate (delta_t within the window)
-        - units
-        - [optional] weights or masking
-        - frequency method (integer * window length / delta_t of window)
+    Data is typically complex-valued representing Fourier coefficients.
+    Time windows are uniformly spaced with interval 1/sample_rate_window_step.
+    Frequencies are uniformly spaced from frequency_min to frequency_max.
 
-    :param dataset: hdf5 dataset
-    :type dataset: h5py.Dataset
-    :param dataset_metadata: data set metadata see
-    :class:`mt_metadata.transfer_functions.tf.StatisticalEstimate`,
-     defaults to None
-    :type dataset_metadata: :class:`mt_metadata.transfer_functions.tf.StatisticalEstimate`, optional
-    :param **kwargs: DESCRIPTION
-    :type **kwargs: TYPE
-    :raises MTH5Error: When an estimate is not present, or metadata name
-     does not match the given name
+    Metadata includes:
+    - Time period (start and end)
+    - Acquisition and decimated sample rates
+    - Window sample rate (delta_t within window)
+    - Units
+    - Frequency method (integer harmonic index calculation)
+    - Component name (channel designation)
+
+    Examples
+    --------
+    Create an FC dataset from HDF5 group:
+
+    >>> import h5py
+    >>> import numpy as np
+    >>> from mt_metadata.processing.fourier_coefficients import FCChannel
+    >>> with h5py.File('fc.h5', 'w') as f:
+    ...     # Create 2D array: 50 time windows, 256 frequencies
+    ...     data = np.random.rand(50, 256) + 1j * np.random.rand(50, 256)
+    ...     dset = f.create_dataset('Ex', data=data, dtype=np.complex128)
+    ...     # Create FCChannelDataset
+    ...     fc = FCChannelDataset(dset, write_metadata=True)
+
+    Convert to xarray and access time-frequency data:
+
+    >>> xr_data = fc.to_xarray()
+    >>> print(xr_data.dims)  # ('time', 'frequency')
+    >>> # Access data at specific time and frequency
+    >>> subset = xr_data.sel(time='2023-01-01T12:00:00', method='nearest')
+
+    Inspect properties:
+
+    >>> print(f"Windows: {fc.n_windows}, Frequencies: {fc.n_frequencies}")
+    >>> print(f"Frequency range: {fc.frequency.min():.2f}-{fc.frequency.max():.2f} Hz")
 
     """
 
     def __init__(
         self,
         dataset: h5py.Dataset,
-        dataset_metadata: Optional[Union[FCChannel, None]] = None,
-        **kwargs,
-    ):
+        dataset_metadata: FCChannel | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """
+        Initialize an FCChannelDataset.
+
+        Parameters
+        ----------
+        dataset : h5py.Dataset
+            HDF5 dataset for storing Fourier coefficient data.
+        dataset_metadata : FCChannel | None, optional
+            Metadata object. If provided, updates internal metadata and
+            writes to HDF5 (unless file is read-only). Defaults to None.
+        **kwargs : Any
+            Additional keyword arguments (reserved for future use).
+
+        Raises
+        ------
+        MTH5Error
+            If dataset_metadata type doesn't match FCChannel.
+
+        Notes
+        -----
+        Metadata is automatically read from HDF5 attributes if 'mth5_type'
+        attribute exists. Write operations are wrapped in try-except to
+        gracefully handle read-only files.
+
+        Examples
+        --------
+        Create and initialize an FC dataset:
+
+        >>> import h5py
+        >>> import numpy as np
+        >>> with h5py.File('fc.h5', 'w') as f:
+        ...     data = np.random.rand(20, 128) + 1j * np.random.rand(20, 128)
+        ...     dset = f.create_dataset('Ex', data=data)
+        ...     fc = FCChannelDataset(dset)  # Auto-initialize metadata
+
+        """
         if dataset is not None and isinstance(dataset, (h5py.Dataset)):
             self.hdf5_dataset = weakref.ref(dataset)()
         self.logger = logger
@@ -83,9 +159,9 @@ class FCChannelDataset:
         # Base object so should be skipped. If the class name is not
         # defined yet set to Base class.
         self.metadata = FCChannel()
+        add_attributes_to_metadata_class_pydantic(self.metadata)
 
         if not hasattr(self.metadata, "mth5_type"):
-            self._add_base_attributes()
             self.metadata.hdf5_reference = self.hdf5_dataset.ref
             self.metadata.mth5_type = self._class_name
         # if the input data set already has filled attributes, namely if the
@@ -120,54 +196,114 @@ class FCChannelDataset:
         if not "mth5_type" in list(self.hdf5_dataset.attrs.keys()):
             self.write_metadata()
 
-    def _add_base_attributes(self):
-        # add 2 attributes that will help with querying
-        # 1) the metadata class name
-        # Note: add_base_attribute is deprecated, but temporarily skipping
-        # this functionality to focus on pytest conversion
-        pass  # TODO: Update to use add_new_field when method signature is clarified
+    def __str__(self) -> str:
+        """
+        Return string representation of the FC dataset as JSON.
 
-        # 2) the HDF5 reference that can be used instead of paths
-        # TODO: Temporarily commenting out deprecated add_base_attribute method call
-        # self.metadata.add_base_attribute(
-        #     "hdf5_reference",
-        #     self.hdf5_dataset.ref,
-        #     {
-        #         "type": "h5py_reference",
-        #         "required": True,
-        #         "style": "free form",
-        #         "description": "hdf5 internal reference",
-        #         "units": None,
-        #         "options": [],
-        #         "alias": [],
-        #         "example": "<HDF5 Group Reference>",
-        #         "default": None,
-        #     },
-        # )
+        Returns
+        -------
+        str
+            JSON representation of the FC metadata.
 
-    def __str__(self):
+        Examples
+        --------
+        >>> fc_str = str(fc)
+        >>> print(fc_str[:50])  # Print first 50 characters
+        {"fcchannel": {"component": "Ex", ...
+
+        """
         return self.metadata.to_json()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """
+        Return official string representation of the FC dataset.
+
+        Returns
+        -------
+        str
+            JSON representation of the FC metadata.
+
+        Examples
+        --------
+        >>> repr(fc) == str(fc)
+        True
+
+        """
         return self.__str__()
 
     @property
-    def _class_name(self):
+    def _class_name(self) -> str:
+        """
+        Extract the class name without 'Dataset' suffix.
+
+        Returns
+        -------
+        str
+            Class name with 'Dataset' suffix removed.
+
+        Examples
+        --------
+        >>> fc._class_name
+        'FCChannel'
+
+        """
         return self.__class__.__name__.split("Dataset")[0]
 
-    def read_metadata(self):
+    def read_metadata(self) -> None:
         """
-        Read metadata from the HDF5 file into the metadata container, that
-        way it can be validated.
+        Read metadata from HDF5 attributes into metadata container.
+
+        Reads all attributes from the HDF5 dataset and loads them into
+        the internal metadata object for validation and access.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        This is automatically called during initialization if 'mth5_type'
+        attribute exists in the HDF5 dataset.
+
+        Examples
+        --------
+        Reload metadata from HDF5 after external modification:
+
+        >>> # Metadata was modified in HDF5
+        >>> fc.read_metadata()  # Reload changes
+        >>> print(fc.metadata.component)  # Access updated component
 
         """
-
         self.metadata.from_dict({self._class_name: dict(self.hdf5_dataset.attrs)})
 
-    def write_metadata(self):
+    def write_metadata(self) -> None:
         """
-        Write metadata from the metadata container to the HDF5 attrs
-        dictionary.
+        Write metadata from container to HDF5 dataset attributes.
+
+        Converts the pydantic metadata model to a dictionary and writes
+        each field as an HDF5 attribute. Values are converted to appropriate
+        numpy types for compatibility. Always ensures 'mth5_type' attribute
+        is set to 'FCChannel'.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        All existing attributes with the same names will be overwritten.
+        This is called automatically during initialization and after
+        metadata updates. Read-only files will silently skip writes.
+
+        Examples
+        --------
+        Save updated metadata to HDF5:
+
+        >>> fc.metadata.component = "Ey"
+        >>> fc.write_metadata()  # Persist to file
+        >>> # Verify write
+        >>> print(fc.hdf5_dataset.attrs['component'])
+        b'Ey'
 
         """
         meta_dict = self.metadata.to_dict()[self.metadata._class_name.lower()]
@@ -180,20 +316,59 @@ class FCChannelDataset:
             self.hdf5_dataset.attrs.create("mth5_type", "FCChannel")
 
     @property
-    def n_windows(self):
-        """number of time windows"""
+    def n_windows(self) -> int:
+        """
+        Number of time windows in the FFT analysis.
+
+        Returns
+        -------
+        int
+            Number of time windows (first dimension of data array).
+
+        Notes
+        -----
+        This corresponds to the number of rows in the 2D spectrogram data.
+        Each window represents a uniform time interval determined by the
+        window step size (1/sample_rate_window_step).
+
+        Examples
+        --------
+        >>> print(f"Time windows: {fc.n_windows}")
+        Time windows: 50
+
+        """
         return self.hdf5_dataset.shape[0]
 
     @property
-    def time(self):
+    def time(self) -> np.ndarray:
         """
-        Time array that includes the start of each time window
+        Time array including the start of each time window.
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Generates uniformly spaced time coordinates based on the start time,
+        window step rate, and number of windows. Uses metadata time period
+        to determine bounds.
+
+        Returns
+        -------
+        np.ndarray
+            Array of datetime64 values for each window start time.
+
+        Notes
+        -----
+        Time coordinates are generated using make_dt_coordinates, which
+        ensures consistency between specified start/end times and the
+        number of windows.
+
+        Examples
+        --------
+        Access time array for time-based indexing:
+
+        >>> time_array = fc.time
+        >>> print(time_array.shape)  # (n_windows,)
+        >>> print(time_array[0])  # First window time
+        2023-01-01T00:00:00.000000
 
         """
-
         return make_dt_coordinates(
             self.metadata.time_period.start,
             1.0 / self.metadata.sample_rate_window_step,
@@ -202,17 +377,57 @@ class FCChannelDataset:
         )
 
     @property
-    def n_frequencies(self):
-        """number of frequencies (window size)"""
+    def n_frequencies(self) -> int:
+        """
+        Number of frequency bins in the Fourier analysis.
+
+        Returns
+        -------
+        int
+            Number of frequency bins (second dimension of data array).
+
+        Notes
+        -----
+        This corresponds to the number of columns in the 2D spectrogram data.
+        Determined by the FFT window size and relates to the frequency
+        resolution of the analysis.
+
+        Examples
+        --------
+        >>> print(f"Frequency bins: {fc.n_frequencies}")
+        Frequency bins: 256
+
+        """
         return self.hdf5_dataset.shape[1]
 
     @property
-    def frequency(self):
+    def frequency(self) -> np.ndarray:
         """
-        frequency array dictated by window size and sample rate
+        Frequency array from metadata frequency bounds.
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Generates uniformly spaced frequency coordinates based on the
+        metadata frequency range and number of frequency bins.
+
+        Returns
+        -------
+        np.ndarray
+            Array of frequency values, linearly spaced from frequency_min
+            to frequency_max.
+
+        Notes
+        -----
+        Frequencies represent harmonic indices or actual frequency values
+        depending on the frequency method specified in metadata.
+        Spacing is determined by n_frequencies bins over the range.
+
+        Examples
+        --------
+        Access frequency array for frequency-based indexing:
+
+        >>> freq_array = fc.frequency
+        >>> print(freq_array.shape)  # (n_frequencies,)
+        >>> print(f"Frequency range: {freq_array.min():.2f} to {freq_array.max():.2f} Hz")
+        Frequency range: 0.00 to 64.00 Hz
 
         """
         return np.linspace(
@@ -221,12 +436,49 @@ class FCChannelDataset:
             self.n_frequencies,
         )
 
-    def replace_dataset(self, new_data_array):
+    def replace_dataset(self, new_data_array: np.ndarray) -> None:
         """
-        replace the entire dataset with a new one, nothing left behind
+        Replace entire dataset with new data.
 
-        :param new_data_array: new data array
-        :type new_data_array: :class:`numpy.ndarray`
+        Resizes the HDF5 dataset if necessary and replaces all data.
+        Converts input to numpy array if needed.
+
+        Parameters
+        ----------
+        new_data_array : np.ndarray
+            New FC data to store. Should have shape (n_windows, n_frequencies)
+            and typically complex-valued.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        TypeError
+            If input cannot be converted to numpy array.
+
+        Notes
+        -----
+        If new data has different shape, HDF5 dataset will be resized.
+        This is generally safe but may fragment the HDF5 file.
+
+        Examples
+        --------
+        Replace FC data with new analysis results:
+
+        >>> import numpy as np
+        >>> new_fc = np.random.rand(30, 256) + 1j * np.random.rand(30, 256)
+        >>> fc.replace_dataset(new_fc)
+        >>> print(fc.to_numpy().shape)
+        (30, 256)
+
+        Replace with data from list (auto-converted to array):
+
+        >>> data_list = [[[1+1j, 2+2j]], [[3+3j, 4+4j]]] * 15
+        >>> fc.replace_dataset(data_list)
+        >>> fc.to_numpy().shape
+        (30, 2)
 
         """
         if not isinstance(new_data_array, np.ndarray):
@@ -240,17 +492,44 @@ class FCChannelDataset:
             self.hdf5_dataset.resize(new_data_array.shape)
         self.hdf5_dataset[...] = new_data_array
 
-    def to_xarray(self):
+    def to_xarray(self) -> xr.DataArray:
         """
-        :return: an xarray DataArray with appropriate metadata and the
-         appropriate coordinates.
-        :rtype: :class:`xarray.DataArray`
+        Convert FC data to xarray DataArray.
 
-        .. note:: that metadta will not be validated if changed in an xarray.
+        Creates an xarray DataArray with proper coordinates for time and
+        frequency. Includes metadata as attributes.
 
-        loads from memory
+        Returns
+        -------
+        xr.DataArray
+            DataArray with dimensions (time, frequency) and coordinates
+            from metadata and computed properties.
+
+        Notes
+        -----
+        Metadata changes in xarray are not validated and will not be
+        synchronized back to HDF5 without explicit call to from_xarray().
+        Data is loaded entirely into memory.
+
+        Examples
+        --------
+        Convert to xarray with automatic coordinates:
+
+        >>> xr_data = fc.to_xarray()
+        >>> print(xr_data.dims)
+        ('time', 'frequency')
+        >>> print(xr_data.shape)
+        (50, 256)
+
+        Select data by time and frequency range:
+
+        >>> subset = xr_data.sel(
+        ...     time=slice('2023-01-01T00:00:00', '2023-01-01T12:00:00'),
+        ...     frequency=slice(0, 10)
+        ... )
+        >>> print(subset.shape)  # Subset shape
+
         """
-
         return xr.DataArray(
             data=self.hdf5_dataset[()],
             dims=["time", "frequency"],
@@ -262,28 +541,91 @@ class FCChannelDataset:
             attrs=self.metadata.to_dict(single=True),
         )
 
-    def to_numpy(self):
+    def to_numpy(self) -> np.ndarray:
         """
-        :return: a numpy structured array with
-        :rtype: :class:`numpy.ndarray`
+        Convert FC data to numpy array.
 
-        loads into RAM
+        Returns the HDF5 dataset as a numpy array. Data is loaded
+        entirely into memory.
+
+        Returns
+        -------
+        np.ndarray
+            2D complex array with shape (n_windows, n_frequencies).
+
+        Notes
+        -----
+        For large spectrograms, this loads all data into RAM. Consider using
+        HDF5 slicing for memory-efficient access to subsets.
+
+        Examples
+        --------
+        Get full FC data as numpy array:
+
+        >>> data = fc.to_numpy()
+        >>> print(data.shape)
+        (50, 256)
+        >>> print(data.dtype)
+        complex128
+
+        Access specific time window and frequency:
+
+        >>> data = fc.to_numpy()
+        >>> # Get first 10 windows, frequency bin 100
+        >>> subset = data[:10, 100]
+        >>> print(subset.shape)
+        (10,)
 
         """
-
         return self.hdf5_dataset[()]
 
-    def from_numpy(self, new_estimate):
+    def from_numpy(self, new_estimate: np.ndarray) -> None:
         """
-        :return: a numpy structured array
-        :rtype: :class:`numpy.ndarray`
+        Load FC data from numpy array.
 
-        .. note:: data is a builtin to numpy and cannot be used as a name
+        Validates dtype and shape compatibility, resizes dataset if needed,
+        and stores the data.
 
-        loads into RAM
+        Parameters
+        ----------
+        new_estimate : np.ndarray
+            FC data to load. Should have shape (n_windows, n_frequencies).
+            Typically complex-valued array.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        TypeError
+            If dtype doesn't match existing dataset or input cannot
+            be converted to numpy array.
+
+        Notes
+        -----
+        'data' is a built-in Python function and cannot be used as parameter name.
+        The dataset will be resized if shape doesn't match.
+        Dtype compatibility is strictly enforced.
+
+        Examples
+        --------
+        Load FC data from numpy array:
+
+        >>> import numpy as np
+        >>> new_data = np.random.rand(25, 128) + 1j * np.random.rand(25, 128)
+        >>> fc.from_numpy(new_data)
+        >>> print(fc.to_numpy().shape)
+        (25, 128)
+
+        Load with magnitude and phase separation:
+
+        >>> magnitude = np.random.rand(20, 256)
+        >>> phase = np.random.rand(20, 256) * 2 * np.pi
+        >>> fc_data = magnitude * np.exp(1j * phase)
+        >>> fc.from_numpy(fc_data)
 
         """
-
         if not isinstance(new_estimate, np.ndarray):
             try:
                 new_estimate = np.array(new_estimate)
@@ -304,19 +646,63 @@ class FCChannelDataset:
 
     def from_xarray(
         self,
-        data,
-        sample_rate_decimation_level,
-    ):
+        data: xr.DataArray,
+        sample_rate_decimation_level: int | float,
+    ) -> None:
         """
+        Load FC data from xarray DataArray.
 
+        Updates metadata from xarray coordinates and attributes, then
+        stores the data. Computes frequency and time parameters from
+        the provided xarray object.
 
-        :return: an xarray DataArray with appropriate metadata and the
-         appropriate coordinates base on the metadata.
-        :rtype: :class:`xarray.DataArray`
+        Parameters
+        ----------
+        data : xr.DataArray
+            DataArray containing FC data. Expected dimensions:
+            (time, frequency).
+        sample_rate_decimation_level : int | float
+            Decimation level applied to original sample rate.
+            Used to track processing history.
 
-        .. note:: that metadta will not be validated if changed in an xarray.
+        Returns
+        -------
+        None
 
-        loads from memory
+        Notes
+        -----
+        This will update time_period (start/end), frequency bounds,
+        window step rate, decimation level, component name, and units
+        from the xarray object. All changes are persisted to HDF5.
+
+        Examples
+        --------
+        Load FC data from modified xarray:
+
+        >>> xr_data = fc.to_xarray()
+        >>> # Modify data (e.g., apply filter)
+        >>> modified = xr_data * np.hamming(256)  # Apply frequency window
+        >>> fc.from_xarray(modified, sample_rate_decimation_level=4)
+        >>> print(fc.metadata.sample_rate_decimation_level)
+        4
+
+        Load with updated metadata from another analysis:
+
+        >>> import xarray as xr
+        >>> import pandas as pd
+        >>> time_coords = pd.date_range('2023-01-01', periods=30, freq='1H')
+        >>> freq_coords = np.arange(0, 128)
+        >>> new_fc = xr.DataArray(
+        ...     data=np.random.rand(30, 128) + 1j * np.random.rand(30, 128),
+        ...     coords={'time': time_coords, 'frequency': freq_coords},
+        ...     dims=['time', 'frequency'],
+        ...     name='Ey',
+        ...     attrs={'units': 'mV/km'}
+        ... )
+        >>> fc.from_xarray(new_fc, sample_rate_decimation_level=1)
+        >>> print(fc.metadata.component)
+        Ey
+
         """
         self.metadata.time_period.start = data.time[0].values
         self.metadata.time_period.end = data.time[-1].values
