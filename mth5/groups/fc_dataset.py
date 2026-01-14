@@ -158,12 +158,11 @@ class FCChannelDataset:
         # set metadata to the appropriate class.  Standards is not a
         # Base object so should be skipped. If the class name is not
         # defined yet set to Base class.
-        self.metadata = FCChannel()
-        add_attributes_to_metadata_class_pydantic(self.metadata)
+        metadata_obj = FCChannel
+        self.metadata = add_attributes_to_metadata_class_pydantic(metadata_obj)
+        self.metadata.hdf5_reference = self.hdf5_dataset.ref
+        self.metadata.mth5_type = self._class_name
 
-        if not hasattr(self.metadata, "mth5_type"):
-            self.metadata.hdf5_reference = self.hdf5_dataset.ref
-            self.metadata.mth5_type = self._class_name
         # if the input data set already has filled attributes, namely if the
         # channel data already exists then read them in with our writing back
         if "mth5_type" in list(self.hdf5_dataset.attrs.keys()):
