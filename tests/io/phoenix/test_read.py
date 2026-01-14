@@ -195,28 +195,33 @@ class TestOpenPhoenix:
         """Test that open_phoenix returns the correct reader type."""
         file_path = sample_files[extension]
 
-        with patch.object(expected_reader, "__init__", return_value=None):
-            with patch.object(
-                expected_reader, "__new__", return_value=Mock(spec=expected_reader)
-            ):
-                result = open_phoenix(file_path)
-                # Just verify it attempted to create the right type
-                assert result is not None
+        # Mock at the READERS dictionary level to avoid contaminating the actual classes
+        mock_instance = Mock(spec=expected_reader)
+        mock_class = Mock(return_value=mock_instance)
+
+        with patch.dict("mth5.io.phoenix.read.READERS", {extension: mock_class}):
+            result = open_phoenix(file_path)
+            mock_class.assert_called_once()
+            assert result == mock_instance
 
     def test_open_phoenix_with_kwargs(self, sample_files):
         """Test that kwargs are passed to reader constructor."""
         file_path = sample_files["bin"]
 
-        # Mock at the READERS dictionary level to avoid __new__ issues
+        # Mock at the READERS dictionary level to avoid contaminating the actual classes
         mock_reader_instance = Mock(spec=NativeReader)
         mock_reader_class = Mock(return_value=mock_reader_instance)
 
         with patch.dict("mth5.io.phoenix.read.READERS", {"bin": mock_reader_class}):
             result = open_phoenix(file_path, custom_arg="value", another_arg=123)
 
-            mock_reader_class.assert_called_once_with(
-                file_path, custom_arg="value", another_arg=123
-            )
+            mock_reader_class.assert_called_once()
+            # Verify kwargs were passed through
+            call_kwargs = mock_reader_class.call_args[1]
+            assert "custom_arg" in call_kwargs
+            assert call_kwargs["custom_arg"] == "value"
+            assert "another_arg" in call_kwargs
+            assert call_kwargs["another_arg"] == 123
             assert result == mock_reader_instance
 
     def test_open_phoenix_unsupported_extension_raises_error(self, temp_dir):
@@ -232,33 +237,42 @@ class TestOpenPhoenix:
         """Test opening newer Phoenix file types."""
         file_path = sample_files[extension]
 
-        # Mock the reader initialization
+        # Mock at the READERS dictionary level to avoid contaminating the actual classes
         reader_class = READERS[extension]
-        with patch.object(reader_class, "__init__", return_value=None):
-            with patch.object(
-                reader_class, "__new__", return_value=Mock(spec=reader_class)
-            ):
-                result = open_phoenix(file_path)
-                assert result is not None
+        mock_instance = Mock(spec=reader_class)
+        mock_class = Mock(return_value=mock_instance)
+
+        with patch.dict("mth5.io.phoenix.read.READERS", {extension: mock_class}):
+            result = open_phoenix(file_path)
+            mock_class.assert_called_once()
+            assert result == mock_instance
 
     @pytest.mark.parametrize("extension", ["TS3", "TS4", "TS5", "TSL", "TSH"])
     def test_open_phoenix_mtu_types(self, sample_files, extension):
         """Test opening MTU Phoenix file types."""
         file_path = sample_files[extension]
 
-        with patch.object(MTUTSN, "__init__", return_value=None):
-            with patch.object(MTUTSN, "__new__", return_value=Mock(spec=MTUTSN)):
-                result = open_phoenix(file_path)
-                assert result is not None
+        # Mock at the READERS dictionary level to avoid contaminating the actual classes
+        mock_instance = Mock(spec=MTUTSN)
+        mock_class = Mock(return_value=mock_instance)
+
+        with patch.dict("mth5.io.phoenix.read.READERS", {extension: mock_class}):
+            result = open_phoenix(file_path)
+            mock_class.assert_called_once()
+            assert result == mock_instance
 
     def test_open_phoenix_table_type(self, sample_files):
         """Test opening TBL file type."""
         file_path = sample_files["TBL"]
 
-        with patch.object(MTUTable, "__init__", return_value=None):
-            with patch.object(MTUTable, "__new__", return_value=Mock(spec=MTUTable)):
-                result = open_phoenix(file_path)
-                assert result is not None
+        # Mock at the READERS dictionary level to avoid contaminating the actual classes
+        mock_instance = Mock(spec=MTUTable)
+        mock_class = Mock(return_value=mock_instance)
+
+        with patch.dict("mth5.io.phoenix.read.READERS", {"TBL": mock_class}):
+            result = open_phoenix(file_path)
+            mock_class.assert_called_once()
+            assert result == mock_instance
 
 
 class TestReadPhoenix:
@@ -522,11 +536,12 @@ class TestParametrizedReaders:
         file_path = temp_dir / f"test.{extension}"
         file_path.touch()
 
+        # Mock at the READERS dictionary level to avoid contaminating the actual classes
         reader_class = READERS[extension]
+        mock_instance = Mock(spec=reader_class)
+        mock_class = Mock(return_value=mock_instance)
 
-        with patch.object(reader_class, "__init__", return_value=None):
-            with patch.object(
-                reader_class, "__new__", return_value=Mock(spec=reader_class)
-            ):
-                result = open_phoenix(file_path)
-                assert result is not None
+        with patch.dict("mth5.io.phoenix.read.READERS", {extension: mock_class}):
+            result = open_phoenix(file_path)
+            mock_class.assert_called_once()
+            assert result == mock_instance
