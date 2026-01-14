@@ -254,14 +254,15 @@ def add_filters(
     """
     if m.file_version == "0.1.0":  # type: ignore
         fg = m.filters_group  # type: ignore
+        assert fg is not None
     else:
         # m.file_version == "0.2.0":
         survey = m.get_survey(survey_id)  # type: ignore
         fg = survey.filters_group
 
     for filt3r in filters_list:
-        if filt3r.name not in fg.filter_dict.keys():
-            fg.add_filter(filt3r)
+        if filt3r.name not in fg.filter_dict.keys():  # type: ignore
+            fg.add_filter(filt3r)  # type: ignore
     return
 
 
@@ -489,22 +490,61 @@ def get_compare_dict(input_dict: dict[str, Any]) -> dict[str, Any]:
 
 @path_or_mth5_object
 def station_in_mth5(
-    m: Union[str, pathlib.Path, MTH5], station_id: str, survey_id: str = None
-):
+    m: str | pathlib.Path | MTH5,
+    station_id: str,
+    survey_id: str | None = None,
+) -> bool:
     """
-    Use groups list to check for station
-    Another way to do this is with channel_summary_df = m.channel_summary.to_dataframe()
+    Check if a station exists in MTH5 file.
 
-    :param m: mth5 object
-    :type m: Union[str, pathlib.Path, mth5.mth5.MTH5]
-    :param survey_id: the survey id
-    :type survey_id: str
-    :param station_id: the station id
-    :type station_id: str
+    Determines whether a station with the given ID is present
+    in the MTH5 file using the groups list.
 
-    :return station_exists: True or False if station is in h5
-    :rtype station_exists: bool
+    Parameters
+    ----------
+    m : str | pathlib.Path | MTH5
+        Path to MTH5 file or MTH5 object.
+    station_id : str
+        Station identifier (e.g., 'PKD', 'MT001').
+    survey_id : str, optional
+        Survey identifier. Required for file version 0.2.0,
+        ignored for version 0.1.0.
 
+    Returns
+    -------
+    bool
+        True if station exists, False otherwise.
+
+    Raises
+    ------
+    NotImplementedError
+        If file version is not 0.1.0 or 0.2.0.
+
+    Notes
+    -----
+    File version 0.1.0 has global stations group.
+    File version 0.2.0 has per-survey stations groups.
+
+    Alternative method: Use channel_summary DataFrame::
+
+        df = m.channel_summary.to_dataframe()
+        station_exists = station_id in df['Station'].unique()
+
+    Examples
+    --------
+    Check if station exists (file version 0.1.0)::
+
+        >>> exists = station_in_mth5('/path/to/file.mth5', 'PKD')
+        >>> print(exists)
+        True
+
+    Check in version 0.2.0 with survey ID::
+
+        >>> exists = station_in_mth5(
+        ...     '/path/to/file.mth5',
+        ...     'MT001',
+        ...     survey_id='survey_01'
+        ... )
     """
     file_version = m.file_version  # type: ignore # decorated by path_or_mth5_object
     if file_version == "0.1.0":
@@ -520,26 +560,63 @@ def station_in_mth5(
 
 
 @path_or_mth5_object
-def survey_in_mth5(m: Union[str, pathlib.Path, MTH5], survey_id: str = None):
+def survey_in_mth5(m: str | pathlib.Path | MTH5, survey_id: str | None = None) -> bool:
     """
-    Use groups list to check for survey
-    Another way to do this is with channel_summary_df = m.channel_summary.to_dataframe()
+    Check if a survey exists in MTH5 file.
 
-    :param m: mth5 object
-    :type m: Union[str, pathlib.Path, mth5.mth5.MTH5]
-    :param survey_id: the survey id
-    :type survey_id: str
+    Determines whether a survey with the given ID exists in the MTH5 file.
+    Behavior varies by file version: 0.1.0 has a single survey, while
+    0.2.0 supports multiple surveys.
 
-    :return survey_exists: True or False if station is in h5
-    :rtype survey_exists: bool
+    Parameters
+    ----------
+    m : str | pathlib.Path | MTH5
+        Path to MTH5 file or MTH5 object.
+    survey_id : str, optional
+        Survey identifier. For file version 0.1.0, compared against the
+        global survey ID. For version 0.2.0, checked in surveys group.
 
+    Returns
+    -------
+    bool
+        True if survey exists, False otherwise.
+
+    Raises
+    ------
+    NotImplementedError
+        If file version is not 0.1.0 or 0.2.0.
+
+    Notes
+    -----
+    File version 0.1.0 has a single survey with fixed ID.
+    File version 0.2.0 supports multiple named surveys.
+
+    Alternative method: Use channel_summary DataFrame::
+
+        df = m.channel_summary.to_dataframe()
+        surveys = df['Survey'].unique()
+        survey_exists = survey_id in surveys
+
+    Examples
+    --------
+    Check if survey exists (file version 0.1.0)::
+
+        >>> exists = survey_in_mth5('/path/to/file.mth5', 'survey_01')
+        >>> print(exists)
+        True
+
+    Check in version 0.2.0::
+
+        >>> exists = survey_in_mth5('/path/to/file.mth5', survey_id='MT')
+        >>> if exists:
+        ...     print(f"Survey MT found in file")
     """
     file_version = m.file_version  # type: ignore # decorated by path_or_mth5_object
     if file_version == "0.1.0":
-        survey_metadata = m.survey_group.metadata
-        survey_exists = survey_metadata.id == survey_id
+        survey_metadata = m.survey_group.metadata  # type: ignore
+        survey_exists = survey_metadata.id == survey_id  # type: ignore
     elif file_version == "0.2.0":
-        survey_exists = survey_id in m.surveys_group.groups_list
+        survey_exists = survey_id in m.surveys_group.groups_list  # type: ignore
     else:
         msg = f"MTH5 file_version {file_version} not understood"
         logger.error(msg)
