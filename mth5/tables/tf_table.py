@@ -1,9 +1,19 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Mar 23 14:09:38 2022
+Transfer function summary table utilities.
 
-@author: jpeacock
+Summarize `TransferFunction` groups stored in an MTH5 file into a structured
+table and provide a convenient `pandas.DataFrame` view for querying.
+
+Notes
+-----
+- Traversal searches for groups with attribute ``mth5_type='transferfunction'``
+    and collects basic availability flags (impedance, tipper, covariance) along
+    with period range and references.
+
 """
+
+from __future__ import annotations
 
 import h5py
 import numpy as np
@@ -23,21 +33,43 @@ from mth5.tables import MTH5Table
 
 class TFSummaryTable(MTH5Table):
     """
-    Object to hold the channel summary and provide some convenience functions
-    like fill, to_dataframe ...
+    Summary table for `TransferFunction` groups.
 
+    Provides convenience functions to populate the table (`summarize`) and
+    export to `pandas.DataFrame` (`to_dataframe`).
+
+    Examples
+    --------
+    Build and export a TF summary::
+
+        >>> import h5py
+        >>> from mth5.tables.tf_table import TFSummaryTable
+        >>> f = h5py.File('example.mth5', 'r')
+        >>> tf_summary_ds = f['Exchange']['TF_Summary']
+        >>> tf_table = TFSummaryTable(tf_summary_ds)
+        >>> tf_table.summarize()
+        >>> df = tf_table.to_dataframe()
+        >>> df.head()
     """
 
-    def __init__(self, hdf5_dataset):
+    def __init__(self, hdf5_dataset: h5py.Dataset) -> None:
         super().__init__(hdf5_dataset, TF_DTYPE)
 
-    def to_dataframe(self):
+    def to_dataframe(self) -> pd.DataFrame:
         """
-        Create a pandas DataFrame from the table for easier querying.
+        Convert the table to a `pandas.DataFrame` for easier querying.
 
-        :return: Channel Summary
-        :rtype: :class:`pandas.DataFrame`
+        Returns
+        -------
+        pandas.DataFrame
+            A dataframe with decoded string columns.
 
+        Examples
+        --------
+        Filter transfer functions that include tipper::
+
+            >>> df = tf_table.to_dataframe()
+            >>> df[df.has_tipper]
         """
 
         df = pd.DataFrame(self.array[()])
@@ -50,22 +82,32 @@ class TFSummaryTable(MTH5Table):
             setattr(df, key, getattr(df, key).str.decode("utf-8"))
         return df
 
-    def summarize(self):
+    def summarize(self) -> None:
         """
+        Populate the summary table by traversing the HDF5 hierarchy.
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Searches for groups where ``mth5_type`` equals ``'transferfunction'``
+        and adds a row indicating available datasets (impedance, tipper,
+        covariance), period min/max, and relevant references.
 
+        Returns
+        -------
+        None
+
+        Examples
+        --------
+        Refresh the TF summary::
+
+            >>> tf_table.clear_table()
+            >>> tf_table.summarize()
         """
         self.clear_table()
 
-        def recursive_get_tf_entry(group):
-            """
-            a function to get tf entry, hopefully this is faster than looping
-            and getting the correct group object.
-
-            """
-            if isinstance(group, (h5py._hl.group.Group, h5py._hl.files.File)):
+        def recursive_get_tf_entry(
+            group: h5py.Group | h5py.File | h5py.Dataset,
+        ) -> None:
+            """Recursively collect TF summary entries from the hierarchy."""
+            if isinstance(group, (h5py.Group, h5py.File)):
                 for key, node in group.items():
                     try:
                         group_type = node.attrs["mth5_type"].lower()
@@ -129,7 +171,10 @@ class TFSummaryTable(MTH5Table):
                             recursive_get_tf_entry(node)
                     except KeyError:
                         recursive_get_tf_entry(node)
-            elif isinstance(group, h5py._hl.dataset.Dataset):
+            elif isinstance(group, h5py.Dataset):
                 pass
 
-        recursive_get_tf_entry(self.array.parent)
+        parent = self.array.parent
+        if not isinstance(parent, (h5py.Group, h5py.File)):
+            raise TypeError("Unexpected parent type for summary dataset.")
+        recursive_get_tf_entry(parent)
