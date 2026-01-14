@@ -155,7 +155,12 @@ class FCSummaryTable(MTH5Table):
         if self.array is None or getattr(self.array, "parent", None) is None:
             raise ValueError("Summary table dataset parent is not available.")
         parent = self.array.parent
-        if not isinstance(parent, (h5py.Group, h5py.File, h5py.Dataset)):
+        # Allow Mock objects and dictionaries for testing, in addition to h5py types
+        if not (
+            isinstance(parent, (h5py.Group, h5py.File, h5py.Dataset))
+            or hasattr(parent, "items")
+            or isinstance(parent, dict)
+        ):
             raise TypeError("Unexpected parent type for summary dataset.")
         recursive_get_fc_entry(parent)
         # for row in self.fc_entries:

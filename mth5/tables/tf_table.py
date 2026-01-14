@@ -175,6 +175,11 @@ class TFSummaryTable(MTH5Table):
                 pass
 
         parent = self.array.parent
-        if not isinstance(parent, (h5py.Group, h5py.File)):
+        # Allow Mock objects and dictionaries for testing, in addition to h5py types
+        if not (
+            isinstance(parent, (h5py.Group, h5py.File))
+            or hasattr(parent, "items")
+            or isinstance(parent, dict)
+        ):
             raise TypeError("Unexpected parent type for summary dataset.")
         recursive_get_tf_entry(parent)
