@@ -1,9 +1,11 @@
 # =============================================================================
 # Imports
 # =============================================================================
+from __future__ import annotations
+
 import functools
 import pathlib
-from typing import Union
+from typing import Any, Callable, TypeVar
 
 from loguru import logger
 
@@ -12,27 +14,87 @@ from mth5.mth5 import MTH5
 
 
 # =============================================================================
+# Module Documentation
+# =============================================================================
+"""
+MTH5 Utility Helper Functions.
+
+Provides decorators and utility functions for working with MTH5 objects,
+including path/object conversion, file operations, and data validation.
+
+Notes
+-----
+Many functions use the `path_or_mth5_object` decorator to transparently
+handle both file paths and MTH5 objects as input.
+
+Examples
+--------
+Initialize and open an MTH5 file::
+
+    >>> m = initialize_mth5('/path/to/file.mth5', mode='a')
+    >>> m.close_mth5()
+"""
+
+T = TypeVar("T")
 
 
-def path_or_mth5_object(func):
+# =============================================================================
+
+
+def path_or_mth5_object(func: Callable[..., T]) -> Callable[..., T]:
     """
-    Decorator to allow functions to be written as if an mth5_object was passed as first argument.
+    Decorator allowing functions to accept MTH5 file paths or MTH5 objects.
 
-    TODO: add support for file_version in kwargs
+    Transparently converts file paths to MTH5 objects, opens the file,
+    and passes the MTH5 object to the decorated function.
 
     Parameters
     ----------
-    func: function
-        A function that takes as first argument an mth5.mth5.MTH5 object
+    func : Callable
+        A function that takes an MTH5 object as its first argument.
+        Signature: func(mth5_obj: MTH5, *args, **kwargs) -> T
 
     Returns
     -------
+    Callable
+        Wrapped function accepting str/Path or MTH5 as first argument.
 
+    Raises
+    ------
+    TypeError
+        If first argument is not a string, pathlib.Path, or MTH5 object.
+
+    Notes
+    -----
+    The decorated function can be called with either:
+    - A file path string or pathlib.Path
+    - An MTH5 object
+
+    When given a file path, the decorator automatically opens the file
+    in 'append' mode by default, unless overridden in kwargs.
+
+    TODO: add support for file_version in kwargs
+
+    Examples
+    --------
+    Decorate a function to work with both paths and objects::
+
+        @path_or_mth5_object
+        def get_metadata(m: MTH5) -> dict:
+            return m.survey_group.metadata.to_dict()
+
+        # Call with file path
+        metadata = get_metadata('/path/to/file.mth5')
+
+        # Call with MTH5 object
+        with MTH5() as m:
+            m.open_mth5('/path/to/file.mth5', mode='r')
+            metadata = get_metadata(m)
     """
 
     @functools.wraps(func)
-    def wrapper_decorator(*args, **kwargs):
-        def call_function(func, *args, **kwargs):
+    def wrapper_decorator(*args: Any, **kwargs: Any) -> T:
+        def call_function(func: Callable[..., T], *args: Any, **kwargs: Any) -> T:
             if isinstance(func, staticmethod):
                 callable_func = func.__get__(None, object)
                 result = callable_func(*args, **kwargs)
@@ -60,50 +122,141 @@ def path_or_mth5_object(func):
 
         return result
 
-    return wrapper_decorator
+    return wrapper_decorator  # type: ignore
 
 
 @path_or_mth5_object
-def get_version(m):
-    return m.file_version
+def get_version(m: str | pathlib.Path | MTH5) -> str:
+    """
+    Get the file version from an MTH5 file.
+
+    Parameters
+    ----------
+    m : str | pathlib.Path | MTH5
+        Path to MTH5 file or MTH5 object.
+
+    Returns
+    -------
+    str
+        File version string (e.g., '0.1.0', '0.2.0').
+
+    Examples
+    --------
+    Get version from file path::
+
+        >>> version = get_version('/path/to/file.mth5')
+        >>> print(version)
+        '0.2.0'
+
+    Get version from MTH5 object::
+
+        >>> with MTH5() as m:
+        ...     m.open_mth5('/path/to/file.mth5')
+        ...     version = get_version(m)
+    """
+    return m.file_version  # type: ignore
 
 
 @path_or_mth5_object
-def get_channel_summary(m, show=True):
+def get_channel_summary(m: str | pathlib.Path | MTH5, show: bool = True) -> Any:
     """
-    :param mth5_path:
-    :return:
+    Get channel summary from MTH5 file as pandas DataFrame.
+
+    Retrieves the channel summary table and converts to DataFrame.
+    Automatically re-summarizes if the summary appears incomplete.
+
+    Parameters
+    ----------
+    m : str | pathlib.Path | MTH5
+        Path to MTH5 file or MTH5 object.
+    show : bool, default True
+        Whether to log the summary DataFrame to console.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Channel summary with station, run, and channel information.
+
+    Warnings
+    --------
+    If the summary appears incomplete, the channel summary table is
+    re-summarized which may take time for large files.
+
+    Examples
+    --------
+    Get channel summary from file path::
+
+        >>> df = get_channel_summary('/path/to/file.mth5')
+        >>> print(df.shape)
+        (42, 8)
+
+    Get summary without logging::
+
+        >>> df = get_channel_summary('/path/to/file.mth5', show=False)
     """
-    logger.info(f"{m.filename} channel summary")
-    df = m.channel_summary.to_dataframe()
+    logger.info(f"{m.filename} channel summary")  # type: ignore
+    df = m.channel_summary.to_dataframe()  # type: ignore
     if len(df) <= 1:
         logger.warning("channel summary smaller than expected -- re-summarizing")
-        m.channel_summary.summarize()
-        df = m.channel_summary.to_dataframe()
+        m.channel_summary.summarize()  # type: ignore
+        df = m.channel_summary.to_dataframe()  # type: ignore
     if show:
         logger.info(f"{df}")
     return df
 
 
 @path_or_mth5_object
-def add_filters(m, filters_list, survey_id=""):
+def add_filters(
+    m: str | pathlib.Path | MTH5,
+    filters_list: list[Any],
+    survey_id: str = "",
+) -> None:
     """
+    Add filter objects to MTH5 file.
+
+    Adds a list of filter objects to the MTH5 file's filter group.
+    Automatically selects the appropriate filters group based on file version.
 
     Parameters
     ----------
-    active_filters: list of filters
-    m: mth5.mth5.MTH5
-    survey_id: string
+    m : str | pathlib.Path | MTH5
+        Path to MTH5 file or MTH5 object.
+    filters_list : list
+        List of filter objects to add. Each filter should have a 'name'
+        attribute and be compatible with the filters group.
+    survey_id : str, default ''
+        Survey ID for file version 0.2.0. Required for version 0.2.0,
+        ignored for version 0.1.0.
 
-    Returns
-    -------
+    Raises
+    ------
+    AttributeError
+        If filter objects lack required attributes.
+    ValueError
+        If survey_id is not found in version 0.2.0 files.
 
+    Notes
+    -----
+    File version 0.1.0 stores filters globally.
+    File version 0.2.0 stores filters per survey.
+
+    Examples
+    --------
+    Add filters to MTH5 file::
+
+        >>> from mth5.timeseries import Filter
+        >>> filters = [Filter(name='test_filter')]
+        >>> add_filters('/path/to/file.mth5', filters)
+
+    Add survey-specific filters (version 0.2.0)::
+
+        >>> add_filters('/path/to/file.mth5', filters, survey_id='MT01')
     """
-    if m.file_version == "0.1.0":
-        fg = m.filters_group
+    if m.file_version == "0.1.0":  # type: ignore
+        fg = m.filters_group  # type: ignore
     else:
         # m.file_version == "0.2.0":
-        survey = m.get_survey(survey_id)
+        survey = m.get_survey(survey_id)  # type: ignore
         fg = survey.filters_group
 
     for filt3r in filters_list:
@@ -112,24 +265,57 @@ def add_filters(m, filters_list, survey_id=""):
     return
 
 
-def initialize_mth5(h5_path, mode="a", file_version="0.1.0"):
+def initialize_mth5(
+    h5_path: str | pathlib.Path,
+    mode: str = "a",
+    file_version: str = "0.1.0",
+) -> MTH5:
     """
-    mth5 initializer for the case of writting files.
+    Initialize and open an MTH5 file for reading or writing.
 
+    Creates or opens an MTH5 file with specified file version.
+    Optionally removes existing files before write operations.
 
-    :param h5_path: path to file
-    :type h5_path: string or pathlib.Path
-    :param mode: how to open the file, options are
+    Parameters
+    ----------
+    h5_path : str | pathlib.Path
+        Path to MTH5 file. Created if it doesn't exist.
+    mode : {'r', 'w', 'a'}, default 'a'
+        File access mode:
+        - 'r': read-only
+        - 'w': write (overwrites existing file)
+        - 'a': append/read-write
+    file_version : {'0.1.0', '0.2.0'}, default '0.1.0'
+        MTH5 file format version.
 
-        - "r": read
-        - "w": write
-        - "a": append
+    Returns
+    -------
+    MTH5
+        Initialized and opened MTH5 object.
 
-    :type mode: string
-    :return: mth5 object
-    :rtype: :class:`mth5.MTH5`
+    Warnings
+    --------
+    When mode='w' and file exists, all open h5 files are closed before
+    removal. This may affect other processes using HDF5 files.
 
+    Examples
+    --------
+    Create a new MTH5 file::
 
+        >>> m = initialize_mth5('/path/to/file.mth5', mode='w')
+        >>> m.file_version
+        '0.1.0'
+        >>> m.close_mth5()
+
+    Open existing file for appending::
+
+        >>> m = initialize_mth5('/path/to/file.mth5', mode='a')
+        >>> m.add_station('MT001')
+        >>> m.close_mth5()
+
+    Open file with version 0.2.0 schema::
+
+        >>> m = initialize_mth5('/path/to/file.mth5', file_version='0.2.0')
     """
     h5_path = pathlib.Path(h5_path)
     if mode == "w":
@@ -146,39 +332,88 @@ def initialize_mth5(h5_path, mode="a", file_version="0.1.0"):
 
 
 def read_back_data(
-    mth5_path,
-    station_id,
-    run_id,
-    survey=None,
-    close_mth5=True,
-    return_objects=[],
-):
+    mth5_path: str | pathlib.Path,
+    station_id: str,
+    run_id: str,
+    survey: str | None = None,
+    close_mth5: bool = True,
+    return_objects: list[str] | None = None,
+) -> dict[str, Any]:
     """
-    TODO: add path_or_mth5_decorater to this function
-    Testing helper function, used to confirm that the h5 file can be accessed
-    and that the data size is as expected.
+    Read station/run data from MTH5 file for testing and validation.
 
-    :param mth5_path: the full path the the mth5 that this method is going to
-     try to read
-    :type mth5_path: pathlib.Path or string
-    :param station_id: the label for the station, e.g. "PKD"
-    :type station_id: string
-    :param run_id: The label for the run to read.  e.g. "001"
-    :type run_id: string
-    :param survey: The label for the survey associated with the run to read.
-    :type survey: string
-    :param close_mth5: Whether or not to close the mth5 object after reading
-    :type close_mth5: bool
-    :param return_objects: List of strings.  Specifies what, if anything to return.
-    Allowed values: ["run", "run_ts"]
-    :type return_objects: List of strings.
-    :return: run object
-    :rtype: :class:`mth5.groups.RunGroup`
-    :return: run time series
-    :rtype: :class:`mth5.timeseries.RunTS`
+    Helper function to confirm MTH5 file accessibility and validate
+    that data dimensions match expectations.
 
+    Parameters
+    ----------
+    mth5_path : str | pathlib.Path
+        Full path to MTH5 file to read.
+    station_id : str
+        Station identifier (e.g., 'PKD', 'MT001').
+    run_id : str
+        Run identifier (e.g., '001', '1').
+    survey : str, optional
+        Survey identifier. Required for file version 0.2.0.
+    close_mth5 : bool, default True
+        Whether to close MTH5 object after reading.
+        Set to False if you need to access the object later.
+    return_objects : list of str, optional
+        Specifies what objects to return. Options:
+        - 'run': RunGroup object
+        - 'run_ts': RunTS time series object
+        If None, returns empty dict with only mth5_obj if close_mth5=False.
+
+    Returns
+    -------
+    dict
+        Dictionary containing requested objects:
+        - 'run': RunGroup (if 'run' in return_objects)
+        - 'run_ts': RunTS (if 'run_ts' in return_objects)
+        - 'mth5_obj': MTH5 (if close_mth5=False)
+
+    Warnings
+    --------
+    If close_mth5=False, the MTH5 object must be manually closed
+    to avoid resource leaks.
+
+    Notes
+    -----
+    This is primarily a testing utility. Data shape is logged to console.
+
+    Examples
+    --------
+    Read run data and close immediately::
+
+        >>> result = read_back_data(
+        ...     '/path/to/file.mth5',
+        ...     'PKD',
+        ...     '001',
+        ...     return_objects=['run_ts']
+        ... )
+        >>> ts = result['run_ts']
+        >>> print(ts.dataset.shape)
+
+    Read data and keep MTH5 object open::
+
+        >>> result = read_back_data(
+        ...     '/path/to/file.mth5',
+        ...     'MT001',
+        ...     '1',
+        ...     survey='survey_01',
+        ...     close_mth5=False,
+        ...     return_objects=['run', 'run_ts']
+        ... )
+        >>> run = result['run']
+        >>> m = result['mth5_obj']
+        >>> # ... use objects ...
+        >>> m.close_mth5()
+
+    TODO: add path_or_mth5_decorator to this function
     """
-    processing_config = {}
+    if return_objects is None:
+        return_objects = []
+    processing_config: dict[str, Any] = {}
     processing_config["mth5_path"] = str(mth5_path)
     processing_config["local_station_id"] = station_id
     config = processing_config
@@ -188,7 +423,7 @@ def read_back_data(
     data_array = local_run_ts.dataset.to_array()
     logger.info(f"data shape = {data_array.shape}")
 
-    return_dict = {}
+    return_dict: dict[str, Any] = {}
     if "run" in return_objects:
         return_dict["run"] = local_run_obj
     if "run_ts" in return_objects:
@@ -200,18 +435,48 @@ def read_back_data(
     return return_dict
 
 
-def get_compare_dict(input_dict):
+def get_compare_dict(input_dict: dict[str, Any]) -> dict[str, Any]:
     """
-    Helper function for removing 2 added attributes to metadata
+    Remove MTH5-specific metadata attributes for comparison.
 
-     - hdf5_reference
-     - mth5_type
+    Removes internal attributes added by MTH5 that may interfere
+    with dictionary comparisons between metadata objects.
 
-    :param input_dict: DESCRIPTION
-    :type input_dict: TYPE
-    :return: DESCRIPTION
-    :rtype: TYPE
+    Parameters
+    ----------
+    input_dict : dict
+        Dictionary to clean, typically metadata dictionary.
 
+    Returns
+    -------
+    dict
+        Dictionary with MTH5 internal attributes removed.
+        Original dict is modified in-place.
+
+    Notes
+    -----
+    Removed attributes:
+    - hdf5_reference: HDF5 object reference (internal)
+    - mth5_type: MTH5 data type marker (internal)
+
+    Examples
+    --------
+    Clean metadata dictionary before comparison::
+
+        >>> metadata = {
+        ...     'id': 'station_001',
+        ...     'latitude': 45.5,
+        ...     'hdf5_reference': <h5py reference>,
+        ...     'mth5_type': 'Station'
+        ... }
+        >>> clean = get_compare_dict(metadata)
+        >>> print(clean)
+        {'id': 'station_001', 'latitude': 45.5}
+
+    Safe to call with incomplete dicts::
+
+        >>> metadata = {'id': 'station_001'}
+        >>> clean = get_compare_dict(metadata)  # No error if keys absent
     """
     for key in ["hdf5_reference", "mth5_type"]:
         try:
