@@ -183,12 +183,21 @@ class NIMSCollection(Collection):
         if "channel_id" not in df.columns:
             df["channel_id"] = 1
         else:
-            df.loc[:, "channel_id"] = df.loc[:, "channel_id"].fillna(1)
+            # Explicitly coerce to numeric before filling to avoid future downcast warnings
+            df.loc[:, "channel_id"] = (
+                pd.to_numeric(df.loc[:, "channel_id"], errors="coerce")
+                .fillna(1)
+                .astype("int64")
+            )
 
         if "sequence_number" not in df.columns:
             df["sequence_number"] = 0
         else:
-            df.loc[:, "sequence_number"] = df.loc[:, "sequence_number"].fillna(0)
+            df.loc[:, "sequence_number"] = (
+                pd.to_numeric(df.loc[:, "sequence_number"], errors="coerce")
+                .fillna(0)
+                .astype("int64")
+            )
 
         if "component" not in df.columns:
             df["component"] = ",".join(["hx", "hy", "hz", "ex", "ey", "temperature"])

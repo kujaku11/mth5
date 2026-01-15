@@ -6,10 +6,11 @@
 # =============================================================================
 from pathlib import Path
 
-from mth5.mth5 import MTH5
 from mth5 import read_file
 from mth5.clients.base import ClientBase
 from mth5.io.nims import NIMSCollection
+from mth5.mth5 import MTH5
+
 
 # =============================================================================
 
@@ -18,13 +19,12 @@ class NIMSClient(ClientBase):
     def __init__(
         self,
         data_path,
-        sample_rates=[4096, 1024, 256],
+        sample_rates=[1, 8],
         save_path=None,
         calibration_path=None,
         mth5_filename="from_nims.h5",
         **kwargs,
     ):
-
         super().__init__(
             data_path,
             save_path=save_path,
@@ -40,7 +40,7 @@ class NIMSClient(ClientBase):
     def calibration_path(self):
         """Path to calibration data"""
         return self._calibration_path
-        
+
     @calibration_path.setter
     def calibration_path(self, value):
         """
@@ -87,8 +87,8 @@ class NIMSClient(ClientBase):
 
         return list(
             set([station_dict[k].survey.unique()[0] for k in station_dict.keys()])
-        )[0]    
-        
+        )[0]
+
     def make_mth5_from_nims(self, survey_id="default_survey", combine=True, **kwargs):
         """
         Make an MTH5 from Phoenix files.  Split into runs, account for filters
@@ -120,12 +120,11 @@ class NIMSClient(ClientBase):
             survey_group = m.add_survey(self.collection.survey_id)
 
             for station_id in runs.keys():
-                station_group = survey_group.stations_group.add_station(
-                    station_id
-                )
+                station_group = survey_group.stations_group.add_station(station_id)
                 for run_id, run_df in runs[station_id].items():
                     run_group = station_group.add_run(run_id)
-                    run_ts = read_file(run_df.fn[0])
+                    # use iloc to avoid KeyError if the DataFrame index does not start at 0
+                    run_ts = read_file(run_df["fn"].iloc[0])
                     run_ts.run_metadata.id = run_id
                     run_group.from_runts(run_ts)
                 station_group.metadata.update(run_ts.station_metadata)
