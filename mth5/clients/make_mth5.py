@@ -30,6 +30,7 @@ from . import PhoenixClient
 from . import ZenClient
 from . import LEMI424Client
 from . import MetronixClient
+from . import NIMSClient
 
 # =============================================================================
 
@@ -442,3 +443,59 @@ class MakeMTH5:
         )
 
         return metronix_client.make_mth5_from_metronix(run_name_zeros=run_name_zeros)
+
+    @classmethod
+    def from_nims(
+        cls,
+        data_path,
+        sample_rates=[4096, 1024, 256],
+        save_path=None,
+        calibration_path=None,
+        survey_id=None,
+        combine=True,
+        **kwargs,
+    ):
+        """
+        Create an MTH5 from nims data.
+
+        Any H5 file parameters like compression, shuffle, etc need to have a
+        prefix of 'h5'. For example h5_compression='gzip'.
+
+        >>> MakeMTH5.from_nims(
+            data_path, **{'h5_compression_opts': 1}
+            )
+
+        :param data_path: directory to where data are stored
+        :type data_path: Path, str
+        :param sample_rates: sample rates to include,
+         defaults to [4096, 1024, 256]
+        :type sample_rates: list, optional
+        :param save_path: path to save H5 file to, defaults to None which will
+         place the file in `data_path`
+        :type save_path: str or Path, optional
+        :param calibration_path: path to calibration file amtant.cal,
+         defaults to None
+        :type calibration_path: str or Path, optional
+        :param survey_id: survey ID to apply to all station found under
+         `data_path`, defaults to None
+        :type survey_id: string
+        :param combine: if True combine the runs into a single run sampled at 1s,
+         defaults to True
+        :type combine: bool
+        :return: MTH5 file name
+        :rtype: Path
+
+        """
+
+        maker = cls(**kwargs)
+        kw_dict = maker.get_h5_kwargs()
+
+        nc = NIMSClient(
+            data_path,
+            sample_rates=sample_rates,
+            save_path=save_path,
+            calibration_path=calibration_path,
+            **kw_dict,
+        )
+
+        return nc.make_mth5_from_nims(survey_id=survey_id, combine=combine, **kwargs)
