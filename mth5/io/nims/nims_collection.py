@@ -133,14 +133,12 @@ class NIMSCollection(Collection):
         >>> df = nc.to_dataframe(run_name_zeros=3)
         >>> print(df[['station', 'run', 'start', 'sample_rate']])
         """
-
         entries = []
         for fn in self.get_files(
             [self.file_ext, self.file_ext.lower(), self.file_ext.upper()]
         ):
             nims_obj = NIMS(fn)
             nims_obj.read_header()
-
             entry = self.get_empty_entry_dict()
             entry["survey"] = self.survey_id
             entry["station"] = nims_obj.station
