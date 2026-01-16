@@ -1595,8 +1595,9 @@ class RunTS:
         self.station_metadata.fdsn.id = station
 
         # handle leap second issue -- if number of channels in run metadata
-        if len(run_metadata.channels) != len(array_list):
-            array_list = self.wrangle_leap_seconds_from_obspy(array_list)
+        if run_metadata is not None:
+            if len(run_metadata.channels) != len(array_list):
+                array_list = self.wrangle_leap_seconds_from_obspy(array_list)
         self.set_dataset(array_list)
 
         # need to be sure update any input timeseries.
