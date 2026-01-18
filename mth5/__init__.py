@@ -12,8 +12,8 @@ from loguru import logger
 from mth5.io.reader import read_file
 import mth5.timeseries.scipy_filters
 
-# Register xarray accessors
-import mth5.timeseries.channel_dataset_accessor
+# # Register xarray accessors
+# import mth5.timeseries.channel_dataset_accessor
 
 # =============================================================================
 # Package Variables
