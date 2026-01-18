@@ -993,6 +993,19 @@ class MTH5:
                     h5_path += f"/{channel}"
         return h5_path
 
+    def get_reference_path(self, h5_reference):
+        """
+        Get the HDF5 path from a reference
+
+        :param h5_reference: DESCRIPTION
+        :type h5_reference: TYPE
+        :return: DESCRIPTION
+        :rtype: TYPE
+
+        """
+        referenced = self.__hdf5_obj[h5_reference]
+        return referenced.name
+
     def from_reference(self, h5_reference):
         """
         Get an HDF5 group, dataset, etc from a reference
