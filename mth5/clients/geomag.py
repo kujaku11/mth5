@@ -480,6 +480,7 @@ class USGSGeomag:
         self.h5_shuffle = True
         self.h5_fletcher32 = True
         self.h5_data_level = 1
+        self.mth5_file_mode = "w"
         self.mth5_version = "0.2.0"
         self._ch_map = {"x": "hx", "y": "hy", "z": "hz"}
 
@@ -627,7 +628,7 @@ class USGSGeomag:
         fn = self._make_filename(self.save_path, request_df)
 
         with MTH5(**self.h5_kwargs) as m:
-            m.open_mth5(fn)
+            m.open_mth5(fn, self.mth5_file_mode)
 
             if self.mth5_version in ["0.1.0"]:
                 survey_group = m.survey_group
@@ -663,7 +664,7 @@ class USGSGeomag:
             survey_group.update_metadata()
 
         if self.interact:
-            m.open_mth5(m.filename)
+            m.open_mth5(m.filename, self.mth5_file_mode)
             return m
         else:
             return m.filename

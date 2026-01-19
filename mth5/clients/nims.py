@@ -116,7 +116,7 @@ class NIMSClient(ClientBase):
         runs = self.get_run_dict()
 
         with MTH5(**self.h5_kwargs) as m:
-            m.open_mth5(self.save_path, "w")
+            m.open_mth5(self.save_path, self.mth5_file_mode)
             survey_group = m.add_survey(self.collection.survey_id)
 
             for station_id in runs.keys():

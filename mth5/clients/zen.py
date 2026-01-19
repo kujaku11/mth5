@@ -129,7 +129,7 @@ class ZenClient(ClientBase):
         runs = self.get_run_dict()
 
         with MTH5(**self.h5_kwargs) as m:
-            m.open_mth5(self.save_path, "w")
+            m.open_mth5(self.save_path, self.mth5_file_mode)
 
             for station_id, station_dict in runs.items():
                 if survey_id is None:

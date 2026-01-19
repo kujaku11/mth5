@@ -57,6 +57,7 @@ class FDSN:
         self.h5_fletcher32 = True
         self.h5_data_level = 1
         self.mth5_version = mth5_version
+        self.mth5_file_mode = "w"
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -509,7 +510,7 @@ class FDSN:
 
         # initiate MTH5 file
         with MTH5(**self.h5_kwargs) as m:
-            m.open_mth5(file_name, "w")
+            m.open_mth5(file_name, self.mth5_file_mode)
 
             m.from_experiment(experiment)
             self._process_list(experiment, retrieved_unique_list, m)

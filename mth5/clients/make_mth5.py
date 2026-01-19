@@ -112,6 +112,7 @@ class MakeMTH5:
         self.h5_shuffle = True
         self.h5_fletcher32 = True
         self.h5_data_level = 1
+        self.mth5_file_mode = "a"
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -153,6 +154,7 @@ class MakeMTH5:
             h5_shuffle=self.h5_shuffle,
             h5_fletcher32=self.h5_fletcher32,
             h5_data_level=self.h5_data_level,
+            mth5_file_mode=self.mth5_file_mode,
         )
 
         for key, value in self.__dict__.items():
@@ -242,6 +244,7 @@ class MakeMTH5:
         """
         maker = cls(**kwargs)
         kw_dict = maker.get_h5_kwargs()
+        kw_dict["mth5_file_mode"] = maker.mth5_file_mode
 
         fdsn_client = FDSN(client=client, **kw_dict)
 

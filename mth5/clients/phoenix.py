@@ -128,7 +128,7 @@ class PhoenixClient(ClientBase):
         run_dict = self.get_run_dict()
 
         with MTH5(**self.h5_kwargs) as m:
-            m.open_mth5(self.save_path, "w")
+            m.open_mth5(self.save_path, self.mth5_file_mode)
 
             for station_id, station_dict in run_dict.items():
                 collection_metadata = self.collection.metadata_dict[station_id]

@@ -60,6 +60,7 @@ class ClientBase:
         self.h5_shuffle = True
         self.h5_fletcher32 = True
         self.h5_data_level = 1
+        self.mth5_file_mode = "w"
 
         self.collection = None
 

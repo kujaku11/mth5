@@ -105,7 +105,7 @@ class MetronixClient(ClientBase):
         runs = self.get_run_dict(run_name_zeros=run_name_zeros)
 
         with MTH5(**self.h5_kwargs) as m:
-            m.open_mth5(self.save_path, "w")
+            m.open_mth5(self.save_path, self.mth5_file_mode)
 
             for station_id, station_dict in runs.items():
                 survey_id = self.get_survey_id(station_dict)
