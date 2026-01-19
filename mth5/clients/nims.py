@@ -18,11 +18,11 @@ from mth5.mth5 import MTH5
 class NIMSClient(ClientBase):
     def __init__(
         self,
-        data_path,
-        sample_rates=[1, 8],
-        save_path=None,
-        calibration_path=None,
-        mth5_filename="from_nims.h5",
+        data_path: str | Path,
+        sample_rates: list[int] = [1, 8],
+        save_path: str | Path | None = None,
+        calibration_path: str | Path | None = None,
+        mth5_filename: str = "from_nims.h5",
         **kwargs,
     ):
         super().__init__(
@@ -37,73 +37,128 @@ class NIMSClient(ClientBase):
         self.collection = NIMSCollection(self.data_path)
 
     @property
-    def calibration_path(self):
-        """Path to calibration data"""
+    def calibration_path(self) -> Path | None:
+        """
+        Path to calibration data.
+
+        Returns
+        -------
+        Path or None
+            Path to calibration file, or None if not set.
+
+        Examples
+        --------
+        >>> client = NIMSClient('data_dir')
+        >>> client.calibration_path = 'calib.dat'
+        >>> print(client.calibration_path)
+        PosixPath('calib.dat')
+        """
         return self._calibration_path
 
     @calibration_path.setter
-    def calibration_path(self, value):
+    def calibration_path(self, value: str | Path | None) -> None:
         """
+        Set the calibration path.
 
-        :param value: DESCRIPTION
-        :type value: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Parameters
+        ----------
+        value : str or Path or None
+            Path to calibration file, or None.
 
+        Raises
+        ------
+        IOError
+            If the path does not exist.
+
+        Examples
+        --------
+        >>> client = NIMSClient('data_dir')
+        >>> client.calibration_path = 'calib.dat'
         """
-
         if value is not None:
             self._calibration_path = Path(value)
             if not self._calibration_path.exists():
                 raise IOError(f"Could not find {self._calibration_path}")
-
         else:
             self._calibration_path = None
-            # raise ValueError("calibration_path cannot be None")
 
-    def get_run_dict(self):
+    def get_run_dict(self) -> dict:
         """
-        Get Run information
+        Get run information from the NIMS collection.
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Returns
+        -------
+        dict
+            Dictionary of run information.
 
+        Examples
+        --------
+        >>> client = NIMSClient('data_dir')
+        >>> runs = client.get_run_dict()
+        >>> print(list(runs.keys()))
+        ['station1', 'station2']
         """
-
         return self.collection.get_runs(
             sample_rates=self.sample_rates,
             calibration_path=self.calibration_path,
         )
 
-    def get_survey(self, station_dict):
+    def get_survey(self, station_dict: dict) -> str:
         """
-        get survey name from a dictionary of a single station of runs
-        :param station_dict: DESCRIPTION
-        :type station_dict: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Get survey name from a dictionary of a single station of runs.
 
+        Parameters
+        ----------
+        station_dict : dict
+            Dictionary of runs for a station.
+
+        Returns
+        -------
+        str
+            Survey name.
+
+        Examples
+        --------
+        >>> client = NIMSClient('data_dir')
+        >>> runs = client.get_run_dict()
+        >>> survey = client.get_survey(runs['station1'])
+        >>> print(survey)
+        'survey_name'
         """
-
         return list(
             set([station_dict[k].survey.unique()[0] for k in station_dict.keys()])
         )[0]
 
-    def make_mth5_from_nims(self, survey_id="default_survey", combine=True, **kwargs):
+    def make_mth5_from_nims(
+        self,
+        survey_id: str = "default_survey",
+        combine: bool = True,
+        **kwargs,
+    ) -> str | Path:
         """
-        Make an MTH5 from Phoenix files.  Split into runs, account for filters
+        Make an MTH5 file from Phoenix NIMS files. Splits into runs, accounts for filters.
 
-        :param data_path: DESCRIPTION, defaults to None
-        :type data_path: TYPE, optional
-        :param sample_rates: DESCRIPTION, defaults to None
-        :type sample_rates: TYPE, optional
-        :param save_path: DESCRIPTION, defaults to None
-        :type save_path: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Parameters
+        ----------
+        survey_id : str, optional
+            Survey identifier. Default is "default_survey".
+        combine : bool, optional
+            Whether to combine runs. Default is True.
+        **kwargs
+            Additional keyword arguments to set as attributes.
 
+        Returns
+        -------
+        str or Path
+            Path to the saved MTH5 file.
+
+        Examples
+        --------
+        >>> client = NIMSClient('data_dir')
+        >>> mth5_path = client.make_mth5_from_nims(survey_id='survey1')
+        >>> print(mth5_path)
+        'output_dir/from_nims.h5'
         """
-
         for key, value in kwargs.items():
             if value is not None:
                 setattr(self, key, value)
