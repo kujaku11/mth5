@@ -58,6 +58,7 @@ class FDSN:
         self.h5_data_level = 1
         self.mth5_version = mth5_version
         self.mth5_file_mode = "w"
+        self.file_name = None
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -774,6 +775,9 @@ class FDSN:
         :rtype: string
 
         """
+
+        if self.file_name is not None:
+            return self.file_name
 
         unique_list = self.get_unique_networks_and_stations(df)
 
