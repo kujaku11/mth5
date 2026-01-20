@@ -118,6 +118,10 @@ def create_run_ts_from_synthetic_run(
             if col == channel_nomenclature.ey:
                 chts.channel_metadata.measurement_azimuth = 90.0
 
+        elif col in channel_nomenclature.hx_hy_hz:
+            if col == channel_nomenclature.hy:
+                chts.channel_metadata.measurement_azimuth = 90.0
+
         # Set filters
         for stage_num, filter_name in enumerate(run.filters[col], start=1):
             applied_filter = AppliedFilter(
