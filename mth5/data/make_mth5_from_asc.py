@@ -297,6 +297,8 @@ def create_mth5_synthetic_file(
         active_filters = make_filters(as_list=True)
         add_filters(m, active_filters, survey_id)
 
+    logger.info(f"Created synthetic mth5 file: {mth5_path}")
+
     return mth5_path
 
 
