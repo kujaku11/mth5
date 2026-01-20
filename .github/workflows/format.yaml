@@ -1,12 +1,8 @@
 name: Format Python code
 
 on:
-  push:
-    branches: [ master ]
-    paths:
-      - '**.py'
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
     paths:
       - '**.py'
 
@@ -15,12 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-      with:
+      with: 
+        ref: ${{ github.head_ref }}
         fetch-depth: 0
 
     - name: Set up Python
       uses: actions/setup-python@v4
-      with:
+      with: 
         python-version: '3.11'
 
     - name: Install dependencies
@@ -38,8 +35,8 @@ jobs:
         echo "$PYTHON_FILES" | xargs isort --profile black --skip __init__.py --force-alphabetical-sort-within-sections --order-by-type --lines-after-imports=2
         echo "$PYTHON_FILES" | xargs black
 
-    - name: Commit changes
+    - name:  Commit changes
       uses: stefanzweifel/git-auto-commit-action@v4
       with:
-        commit_message: "Auto-format code with black and isort"
+        commit_message:  "Auto-format code with black and isort"
         file_pattern: "*.py"
