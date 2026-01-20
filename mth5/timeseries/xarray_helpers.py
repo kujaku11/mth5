@@ -1,16 +1,18 @@
 """
 Module containing helper functions for working with xarray objects.
 """
+
+from typing import Optional, Union
+
 import numpy as np
 import xarray as xr
-from typing import Optional, Union
 
 
 def covariance_xr(
     X: xr.DataArray,
     aweights: Optional[Union[np.ndarray, None]] = None,
     bias: Optional[bool] = False,
-    rowvar: Optional[bool] = False
+    rowvar: Optional[bool] = False,
 ) -> xr.DataArray:
     """
     Compute the covariance matrix with numpy.cov.
@@ -50,8 +52,14 @@ def covariance_xr(
 
     channels = list(X.coords["variable"].values)
 
+    cov_result = np.cov(X.values, rowvar=rowvar, aweights=aweights, bias=bias)
+
+    # Handle scalar result for single variable
+    if cov_result.ndim == 0:
+        cov_result = np.array([[cov_result]])
+
     S = xr.DataArray(
-        np.cov(X.values, rowvar=rowvar, aweights=aweights, bias=bias),
+        cov_result,
         dims=["channel_1", "channel_2"],
         coords={"channel_1": channels, "channel_2": channels},
     )
@@ -137,20 +145,13 @@ def initialize_xrds_2d(
         else:
             data = value * np.ones(shape, dtype=dtype)
 
-        xrds[var] = xr.DataArray(
-            data,
-            dims=dims,
-            coords=coords
-        )
+        xrds[var] = xr.DataArray(data, dims=dims, coords=coords)
 
     return xrds
 
 
 def initialize_xrda_2d(
-    variables: list,
-    coords: dict,
-    dtype: type = complex,
-    value: Union[int, float] = 0.0
+    variables: list, coords: dict, dtype: type = complex, value: Union[int, float] = 0.0
 ) -> xr.Dataset:
     """Initialize a 3D xarray DataArray with dimensions from coords plus 'variable'.
 
@@ -175,7 +176,7 @@ def initialize_xrda_2d(
 
     # Convert to DataArray with original dimension order plus 'variable'
     dims = list(coords.keys())
-    da = ds.to_array(dim='variable').transpose(*dims, 'variable')
+    da = ds.to_array(dim="variable").transpose(*dims, "variable")
 
     return da
 

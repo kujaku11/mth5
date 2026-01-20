@@ -27,9 +27,11 @@ The following file types are supported:
 	USGS ASCII      usgs_ascii [.asc, .gzip] RunTS
 	Zonge Z3D       zen        [.z3d]        ChannelTS
 	Phoenix         phoenix    [.td_*, .bin] ChannelTS
+	Phoenix MTU     mtu        [.tbl, .tsn]  RunTS
+	Metronix        metronix   [.atss]       ChannelTS
 	=============== ========== ============= =============
 
-As you can see, NIMS, USGS ASCII, LEMI424 will return a :class:`mth5.timeseries.RunTS` object and Zonge Z3D and Phoenix returns a :class:`mth5.timeseries.ChannelTS` object.  The return type depends on the structure of the file.  Long period instruments usually record each channel in a single block of data, so all channels are in a single file.  Whereas, broadband instruments record each channel as a single file.  It might make sense in to return the same data type, but for now this is the way it is.  Also returned are any extra metadata that might not belong to a channel or run.  Specifically, most files have information about location and some other metadata about the station that could be helpful in filling out metadata for the station. 
+As you can see, NIMS, USGS ASCII, LEMI424, and MTUTSN will return a :class:`mth5.timeseries.RunTS` object and Zonge Z3D and Phoenix returns a :class:`mth5.timeseries.ChannelTS` object.  The return type depends on the structure of the file.  Long period instruments usually record each channel in a single block of data, so all channels are in a single file.  Whereas, broadband instruments record each channel as a single file.  It might make sense in to return the same data type, but for now this is the way it is.  Also returned are any extra metadata that might not belong to a channel or run.  Specifically, most files have information about location and some other metadata about the station that could be helpful in filling out metadata for the station. 
 
 Collection
 ------------
@@ -39,7 +41,7 @@ To further make intake easier, collections classes have been developed for each 
 Examples of Reading in Data
 ---------------------------------------
 
-.. note:: In these examples the data are stored locally and will not run if you don't have the data.  We are working on setting up a repository to store data.  But if you have data you can easily swap out the directory path.
+.. note:: In these examples the data are stored locally and will not run if you don't have the data.  We are working on setting up a repository to store data.  But if you have data you can easily swap out the directory path.  There is a repository of example data at `mth5_test_data <https://github.com/kujaku11/mth5_test_data>`__.
 
 .. toctree::
     :maxdepth: 1
@@ -47,7 +49,9 @@ Examples of Reading in Data
     ../examples/notebooks/make_mth5_from_lemi.ipynb
     ../examples/notebooks/make_mth5_from_nims.ipynb
     ../examples/notebooks/make_mth5_from_phoenix_real.ipynb
+    ../examples/notebooks/make_mth5_from_phoenix_legacy_mtu.ipynb
     ../examples/notebooks/make_mth5_from_z3d.ipynb
+    ../examples/notebooks/make_mth5_from_metronix.ipynb
 
 
 Adding Plugins

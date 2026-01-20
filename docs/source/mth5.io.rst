@@ -8,6 +8,7 @@ Subpackages
    :maxdepth: 4
 
    mth5.io.lemi
+   mth5.io.metronix
    mth5.io.miniseed
    mth5.io.nims
    mth5.io.phoenix
@@ -22,6 +23,14 @@ mth5.io.collection module
 -------------------------
 
 .. automodule:: mth5.io.collection
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+mth5.io.conversion module
+-------------------------
+
+.. automodule:: mth5.io.conversion
    :members:
    :undoc-members:
    :show-inheritance:

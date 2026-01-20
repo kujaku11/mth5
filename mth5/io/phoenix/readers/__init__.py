@@ -6,6 +6,7 @@ from .segmented import DecimatedSegmentedReader
 from .contiguous import DecimatedContinuousReader
 from .config import PhoenixConfig
 from .receiver_metadata import PhoenixReceiverMetadata
+from .mtu import MTUTable, MTUTSN
 
 __all__ = [
     "Header",
@@ -16,4 +17,6 @@ __all__ = [
     "DecimatedContinuousReader",
     "PhoenixConfig",
     "PhoenixReceiverMetadata",
+    "MTUTable",
+    "MTUTSN",
 ]

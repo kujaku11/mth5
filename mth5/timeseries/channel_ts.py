@@ -1,43 +1,43 @@
 # -*- coding: utf-8 -*-
 """
-.. module:: timeseries
-   :synopsis: Deal with MT time series
+Channel time series module for MT data.
 
-.. todo:: Check the conversion to netcdf.  There are some weird serializations of
-lists and arrays that goes on, seems easiest to convert all lists to strings and then
-convert them back if read in.
+This module provides the `ChannelTS` class for handling magnetotelluric (MT)
+time series data with comprehensive metadata management, calibration,
+and signal processing capabilities.
 
+Notes
+-----
+- Time series are stored in `xarray.DataArray` for efficient operations.
+- Metadata follows the mt_metadata standard with Survey/Station/Run/Channel hierarchy.
+- Supports instrument response removal, resampling, merging, and Obspy integration.
 
-:copyright:
-    Jared Peacock (jpeacock@usgs.gov)
-
-:license:
-    MIT
 """
+
+from __future__ import annotations
 
 # ==============================================================================
 # Imports
 # ==============================================================================
 import inspect
-
-import numpy as np
-import pandas as pd
-import xarray as xr
-from loguru import logger
-import scipy
-from scipy import signal
+from typing import Any
 
 import mt_metadata.timeseries as metadata
+import numpy as np
+import pandas as pd
+import scipy
+import xarray as xr
+from loguru import logger
+from mt_metadata.common.list_dict import ListDict
+from mt_metadata.common.mttime import MTime
+from mt_metadata.common.units import get_unit_object
 from mt_metadata.timeseries.filters import ChannelResponse
-from mt_metadata.utils.mttime import MTime
-from mt_metadata.utils.list_dict import ListDict
-from mth5.utils import fdsn_tools
-from mth5.timeseries.ts_filters import RemoveInstrumentResponse
-from mth5.timeseries.ts_helpers import (
-    make_dt_coordinates,
-    get_decimation_sample_rates,
-)
 from obspy.core import Trace
+from scipy import signal
+
+from mth5.timeseries.ts_filters import RemoveInstrumentResponse
+from mth5.timeseries.ts_helpers import get_decimation_sample_rates, make_dt_coordinates
+from mth5.utils import fdsn_tools
 
 
 # =============================================================================
@@ -51,75 +51,95 @@ meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
 # ==============================================================================
 class ChannelTS:
     """
+    Time series container for a single MT channel with full metadata.
 
-    .. note:: Assumes equally spaced samples from the start time.
+    Stores equally-spaced time series data in an `xarray.DataArray` with
+    a time coordinate index. Integrates comprehensive metadata from
+    Survey/Station/Run/Channel hierarchy and supports calibration,
+    resampling, merging, and format conversions.
 
-    The time series is stored in an :class:`xarray.Dataset` that has
-    coordinates of time and is a 1-D array labeled 'data'.
-    The :class:`xarray.Dataset` can be accessed and set from the `ts`.
-    The data is stored in 'ts.data' and the time index is a coordinate of `ts`.
+    Parameters
+    ----------
+    channel_type : {'electric', 'magnetic', 'auxiliary'}, default 'auxiliary'
+        Type of the channel.
+    data : array-like, optional
+        Time series data (numpy array, pandas DataFrame/Series, xarray.DataArray).
+    channel_metadata : mt_metadata.timeseries.Electric | Magnetic | Auxiliary | dict, optional
+        Channel-specific metadata.
+    station_metadata : mt_metadata.timeseries.Station | dict, optional
+        Station metadata.
+    run_metadata : mt_metadata.timeseries.Run | dict, optional
+        Run metadata.
+    survey_metadata : mt_metadata.timeseries.Survey | dict, optional
+        Survey metadata.
+    **kwargs
+        Additional attributes to set on the object.
 
-    The time coordinate is made from the start time, sample rate and
-    number of samples.  Currently, End time is a derived property and
-    cannot be set.
+    Attributes
+    ----------
+    ts : numpy.ndarray
+        The time series data array.
+    sample_rate : float
+        Sample rate in samples per second.
+    start : MTime
+        Start time (UTC).
+    end : MTime
+        End time (UTC), derived from start + duration.
+    n_samples : int
+        Number of samples.
+    component : str
+        Component name (e.g., 'ex', 'hy', 'temperature').
+    channel_response : ChannelResponse
+        Full instrument response filter chain.
 
-    Channel time series object is based on xarray and :class:`mth5.metadata` therefore
-    any type of interpolation, resampling, groupby, etc can be done using xarray
-    methods.
+    Notes
+    -----
+    - End time is a derived property and cannot be set directly.
+    - Leverages xarray for efficient interpolation, resampling, and groupby operations.
+    - Metadata follows mt_metadata standards with automatic time period updates.
 
-    There are 3 metadata classes that hold important metadata
-
-        * :class:`mth5.metadata.Station` holds information about the station
-        * :class:`mth5.metadata.Run` holds information about the run the channel
-        belongs to.
-        * :class`mth5.metadata.Channel` holds information specific to the channel.
-
-    This way a single channel will hold all information needed to represent the
-    channel.
-
-    :rubric:
+    Examples
+    --------
+    Create an auxiliary channel with synthetic data::
 
         >>> from mth5.timeseries import ChannelTS
+        >>> import numpy as np
         >>> ts_obj = ChannelTS('auxiliary')
         >>> ts_obj.sample_rate = 8
         >>> ts_obj.start = '2020-01-01T12:00:00+00:00'
-        >>> ts_obj.ts = range(4096)
+        >>> ts_obj.ts = np.random.randn(4096)
         >>> ts_obj.station_metadata.id = 'MT001'
         >>> ts_obj.run_metadata.id = 'MT001a'
         >>> ts_obj.component = 'temperature'
         >>> print(ts_obj)
-                Station      = MT001
-                Run          = MT001a
-                Channel Type = auxiliary
-            Component    = temperature
-                Sample Rate  = 8.0
-                Start        = 2020-01-01T12:00:00+00:00
-                End          = 2020-01-01T12:08:31.875000+00:00
-                N Samples    = 4096
-        >>> p = ts_obj.ts.plot()
 
+    Calibrate and remove instrument response::
 
-
+        >>> calibrated = ts_obj.remove_instrument_response()
+        >>> calibrated.channel_metadata.units
     """
 
     def __init__(
         self,
-        channel_type="auxiliary",
-        data=None,
-        channel_metadata=None,
-        station_metadata=None,
-        run_metadata=None,
-        survey_metadata=None,
-        **kwargs,
-    ):
-
+        channel_type: str = "auxiliary",
+        data: (
+            np.ndarray | pd.DataFrame | pd.Series | xr.DataArray | list | tuple | None
+        ) = None,
+        channel_metadata: (
+            metadata.Electric | metadata.Magnetic | metadata.Auxiliary | dict | None
+        ) = None,
+        station_metadata: metadata.Station | dict | None = None,
+        run_metadata: metadata.Run | dict | None = None,
+        survey_metadata: metadata.Survey | dict | None = None,
+        **kwargs: Any,
+    ) -> None:
         self.logger = logger
 
         self._channel_type = self._validate_channel_type(channel_type)
         self._survey_metadata = self._initialize_metadata()
 
         self.data_array = xr.DataArray([1], coords=[("time", [1])], name="ts")
-        self._channel_response = ChannelResponse()
+        self._channel_response = ChannelResponse()  # type: ignore
 
         self.survey_metadata = survey_metadata
         self.station_metadata = station_metadata
@@ -135,20 +155,28 @@ class ChannelTS:
         for key in list(kwargs.keys()):
             setattr(self, key, kwargs[key])
 
-    def get_sample_rate_supplied_at_init(self, channel_metadata):
+    def get_sample_rate_supplied_at_init(
+        self,
+        channel_metadata: (
+            metadata.Electric | metadata.Magnetic | metadata.Auxiliary | dict | None
+        ),
+    ) -> float | None:
         """
-        Interrogate the channel_metadata argument supplied at init
-        to see if sample_rate is specified.
+        Extract sample_rate from channel_metadata if available.
 
-        channel_metadata can be one of 5 types:
-        None,
-        dict
-        mt_metadata.timeseries.Electric,
-        mt_metadata.timeseries.Magnetic,
-        mt_metadata.timeseries.Auxiliary
-        In case it is a dict, we want to allow the sample_rate to
-        be at the top layer, adn one layer down, to support, for exmaple
-        {"electric":{"sample_rate":8.0,}}
+        Parameters
+        ----------
+        channel_metadata : mt_metadata.timeseries.Electric | Magnetic | Auxiliary | dict | None
+            Metadata that may contain a sample_rate field.
+
+        Returns
+        -------
+        float | None
+            Sample rate if found, otherwise None.
+
+        Notes
+        -----
+        Supports nested dict structures like ``{"electric": {"sample_rate": 8.0}}``.
 
 
         """
@@ -172,7 +200,16 @@ class ChannelTS:
                 sr = None
         return sr
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """
+        Return a summary string representation of the channel.
+
+        Returns
+        -------
+        str
+            Multi-line summary including survey, station, run, component,
+            sample rate, time range, and sample count.
+        """
         lines = [
             f"Survey:       {self.survey_metadata.id}",
             f"Station:      {self.station_metadata.id}",
@@ -187,11 +224,28 @@ class ChannelTS:
 
         return "\n\t".join(["Channel Summary:"] + lines)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
+        """
+        Test equality with another ChannelTS.
 
+        Parameters
+        ----------
+        other : object
+            Object to compare with.
+
+        Returns
+        -------
+        bool
+            True if metadata and data arrays are equal.
+
+        Raises
+        ------
+        TypeError
+            If `other` is not a ChannelTS instance.
+        """
         if not isinstance(other, ChannelTS):
             raise TypeError(f"Cannot compare ChannelTS with {type(other)}.")
         if not other.channel_metadata == self.channel_metadata:
@@ -202,10 +256,28 @@ class ChannelTS:
             return False
         return True
 
-    def __ne__(self, other):
+    def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
 
-    def __lt__(self, other):
+    def __lt__(self, other: ChannelTS) -> bool:
+        """
+        Compare start times of two channels.
+
+        Parameters
+        ----------
+        other : ChannelTS
+            Channel to compare with.
+
+        Returns
+        -------
+        bool
+            True if self.start < other.start and sample rates match.
+
+        Raises
+        ------
+        TypeError
+            If `other` is not a ChannelTS instance.
+        """
         if not isinstance(other, ChannelTS):
             raise TypeError(f"Cannot compare ChannelTS with {type(other)}")
         self.logger.info("Only testing start time")
@@ -213,26 +285,38 @@ class ChannelTS:
             return True
         return False
 
-    def __gt__(self, other):
+    def __gt__(self, other: ChannelTS) -> bool:
         return not self.__lt__(other)
 
-    def __add__(self, other):
+    def __add__(self, other: ChannelTS) -> ChannelTS:
         """
-        Add two channels together in the following steps
+        Combine two channels with the same component.
 
-        1. xr.combine_by_coords([original, other])
-        2. compute monotonic time index
-        3. reindex(new_time_index, method='nearest')
+        Combines using `xr.combine_by_coords`, computes a monotonic time index,
+        and reindexes with linear interpolation.
 
-        If you want a different method or more control use merge
+        Parameters
+        ----------
+        other : ChannelTS
+            Channel to combine with this one.
 
-        :param other: Another channel
-        :type other: :class:`mth5.timeseries.ChannelTS`
-        :raises TypeError: If input is not a ChannelTS
-        :raises ValueError: if the components are different
-        :return: Combined channel with monotonic time index and same metadata
-        :rtype: :class:`mth5.timeseries.ChannelTS`
+        Returns
+        -------
+        ChannelTS
+            Combined channel with monotonic time index.
 
+        Raises
+        ------
+        TypeError
+            If `other` is not a ChannelTS.
+        ValueError
+            If components differ.
+
+        Examples
+        --------
+        Merge two sequential segments::
+
+            >>> combined = ch1 + ch2
         """
         if not isinstance(other, ChannelTS):
             raise TypeError(f"Cannot combine {type(other)} with ChannelTS.")
@@ -284,31 +368,55 @@ class ChannelTS:
 
         return new_channel
 
-    def _initialize_metadata(self):
+    def _initialize_metadata(self) -> metadata.Survey:
         """
-        Create a single `Survey` object to store all metadata
+        Create a Survey metadata hierarchy with default Station/Run/Channel.
 
-        :param channel_type: DESCRIPTION
-        :type channel_type: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
+        Returns
+        -------
+        mt_metadata.timeseries.Survey
+            Initialized survey metadata with default IDs.
         """
 
         survey_metadata = metadata.Survey(id="0")
         survey_metadata.stations.append(metadata.Station(id="0"))
         survey_metadata.stations[0].runs.append(metadata.Run(id="0"))
 
-        ch_metadata = meta_classes[self.channel_type]()
+        # Create temporary channel metadata with valid default components
+        channel_type_lower = self.channel_type.lower()
+        if channel_type_lower == "electric":
+            ch_metadata = meta_classes[self.channel_type](component="ex")
+        elif channel_type_lower == "magnetic":
+            ch_metadata = meta_classes[self.channel_type](component="hx")
+        elif channel_type_lower == "auxiliary":
+            ch_metadata = meta_classes[self.channel_type](component="temperature")
+        else:
+            # Fallback for unknown types - try with a generic component
+            ch_metadata = meta_classes[self.channel_type](component="temp")
+
         ch_metadata.type = self.channel_type.lower()
         survey_metadata.stations[0].runs[0].channels.append(ch_metadata)
 
         return survey_metadata
 
-    def _validate_channel_type(self, channel_type):
+    def _validate_channel_type(self, channel_type: str | None) -> str:
         """
-        Validate channel type should be [ electric | magnetic | auxiliary ]
+        Validate and normalize channel type.
 
+        Parameters
+        ----------
+        channel_type : str | None
+            Channel type string.
+
+        Returns
+        -------
+        str
+            Capitalized valid channel type: 'Electric', 'Magnetic', or 'Auxiliary'.
+
+        Raises
+        ------
+        ValueError
+            If channel type is not recognized.
         """
 
         if channel_type is None:
@@ -324,12 +432,29 @@ class ChannelTS:
             raise ValueError(msg)
         return channel_type.capitalize()
 
-    def _validate_channel_metadata(self, channel_metadata):
+    def _validate_channel_metadata(
+        self,
+        channel_metadata: (
+            metadata.Electric | metadata.Magnetic | metadata.Auxiliary | dict
+        ),
+    ) -> metadata.Electric | metadata.Magnetic | metadata.Auxiliary:
         """
-        validate input channel metadata
-        If input is not an object of type: [metadata.Electric, metadata.Magnetic, metadata.Auxiliary],
-        then input must be dict. Try to figure out which (Electric, Magnetic, Auxiliary) it should be,
-        cast to object and return.
+        Validate and normalize channel metadata input.
+
+        Parameters
+        ----------
+        channel_metadata : mt_metadata.timeseries.Electric | Magnetic | Auxiliary | dict
+            Metadata to validate.
+
+        Returns
+        -------
+        mt_metadata.timeseries.Electric | Magnetic | Auxiliary
+            Validated metadata object.
+
+        Raises
+        ------
+        TypeError
+            If input is not an expected type.
         """
         expected_types = (
             metadata.Electric,
@@ -355,16 +480,38 @@ class ChannelTS:
                 pass
             channel_metadata = {self.channel_type: channel_metadata}
         self.channel_type = list(channel_metadata.keys())[0]
-        ch_metadata = meta_classes[self.channel_type]()
+        # Create channel metadata with proper default component
+        channel_type_lower = self.channel_type.lower()
+        if channel_type_lower == "electric":
+            ch_metadata = meta_classes[self.channel_type]()
+        elif channel_type_lower == "magnetic":
+            ch_metadata = meta_classes[self.channel_type]()
+        elif channel_type_lower == "auxiliary":
+            ch_metadata = meta_classes[self.channel_type]()
+        else:
+            ch_metadata = meta_classes[self.channel_type]()
         self.logger.debug("Loading from metadata dict")
         ch_metadata.from_dict(channel_metadata)
-        channel_metadata = ch_metadata.copy()
-        return channel_metadata
+        return ch_metadata
 
-    def _validate_run_metadata(self, run_metadata):
+    def _validate_run_metadata(self, run_metadata: metadata.Run | dict) -> metadata.Run:
         """
-        validate run metadata
+        Validate and normalize run metadata input.
 
+        Parameters
+        ----------
+        run_metadata : mt_metadata.timeseries.Run | dict
+            Run metadata to validate.
+
+        Returns
+        -------
+        mt_metadata.timeseries.Run
+            Validated run metadata object.
+
+        Raises
+        ------
+        TypeError
+            If input is not a Run object or dict.
         """
 
         if not isinstance(run_metadata, metadata.Run):
@@ -384,11 +531,27 @@ class ChannelTS:
                 raise TypeError(msg)
         return run_metadata.copy()
 
-    def _validate_station_metadata(self, station_metadata):
+    def _validate_station_metadata(
+        self, station_metadata: metadata.Station | dict
+    ) -> metadata.Station:
         """
-        validate station metadata
-        """
+        Validate and normalize station metadata input.
 
+        Parameters
+        ----------
+        station_metadata : mt_metadata.timeseries.Station | dict
+            Station metadata to validate.
+
+        Returns
+        -------
+        mt_metadata.timeseries.Station
+            Validated station metadata object.
+
+        Raises
+        ------
+        TypeError
+            If input is not a Station object or dict.
+        """
         if not isinstance(station_metadata, metadata.Station):
             if isinstance(station_metadata, dict):
                 if "station" not in [cc.lower() for cc in station_metadata.keys()]:
@@ -406,11 +569,27 @@ class ChannelTS:
                 raise TypeError(msg)
         return station_metadata.copy()
 
-    def _validate_survey_metadata(self, survey_metadata):
+    def _validate_survey_metadata(
+        self, survey_metadata: metadata.Survey | dict
+    ) -> metadata.Survey:
         """
-        validate station metadata
-        """
+        Validate and normalize survey metadata input.
 
+        Parameters
+        ----------
+        survey_metadata : mt_metadata.timeseries.Survey | dict
+            Survey metadata to validate.
+
+        Returns
+        -------
+        mt_metadata.timeseries.Survey
+            Validated survey metadata object.
+
+        Raises
+        ------
+        TypeError
+            If input is not a Survey object or dict.
+        """
         if not isinstance(survey_metadata, metadata.Survey):
             if isinstance(survey_metadata, dict):
                 if "survey" not in [cc.lower() for cc in survey_metadata.keys()]:
@@ -428,15 +607,25 @@ class ChannelTS:
                 raise TypeError(msg)
         return survey_metadata.copy()
 
-    def copy(self, data=True):
+    def copy(self, data: bool = True) -> ChannelTS:
         """
-        Make a copy of the ChannelTS object with or without data.
+        Create a copy of the ChannelTS object.
 
-        :param data: include data in the copy (True) or not (False)
-        :type data: boolean
-        :return: Copy of the channel
-        :rtype: :class:`mth5.timeseries.ChannelTS
+        Parameters
+        ----------
+        data : bool, default True
+            Include data in the copy (True) or only metadata (False).
 
+        Returns
+        -------
+        ChannelTS
+            Copy of the channel.
+
+        Examples
+        --------
+        Copy metadata structure without data::
+
+            >>> ch_copy = ts_obj.copy(data=False)
         """
 
         if not data:
@@ -461,19 +650,28 @@ class ChannelTS:
 
     ### Properties ------------------------------------------------------------
     @property
-    def survey_metadata(self):
+    def survey_metadata(self) -> metadata.Survey:
         """
-        survey metadata
+        Survey metadata.
+
+        Returns
+        -------
+        mt_metadata.timeseries.Survey
+            Survey metadata with updated keys.
         """
+        self._survey_metadata.stations[0].runs.update_keys()
+        self._survey_metadata.stations.update_keys()
         return self._survey_metadata
 
     @survey_metadata.setter
-    def survey_metadata(self, survey_metadata):
+    def survey_metadata(self, survey_metadata: metadata.Survey | dict | None) -> None:
         """
+        Set survey metadata.
 
-        :param survey_metadata: survey metadata object or dictionary
-        :type survey_metadata: :class:`mt_metadata.timeseries.Survey` or dict
-
+        Parameters
+        ----------
+        survey_metadata : mt_metadata.timeseries.Survey | dict | None
+            Survey metadata object or dictionary.
         """
 
         if survey_metadata is not None:
@@ -481,17 +679,29 @@ class ChannelTS:
             self._survey_metadata.update(survey_metadata)
 
     @property
-    def station_metadata(self):
+    def station_metadata(self) -> metadata.Station:
         """
-        station metadata
-        """
+        Station metadata.
 
+        Returns
+        -------
+        mt_metadata.timeseries.Station
+            Station metadata from the first station in the survey.
+        """
+        self._survey_metadata.stations.update_keys()
         return self.survey_metadata.stations[0]
 
     @station_metadata.setter
-    def station_metadata(self, station_metadata):
+    def station_metadata(
+        self, station_metadata: metadata.Station | dict | None
+    ) -> None:
         """
-        set station metadata from a valid input
+        Set station metadata.
+
+        Parameters
+        ----------
+        station_metadata : mt_metadata.timeseries.Station | dict | None
+            Station metadata to set.
         """
 
         if station_metadata is not None:
@@ -505,7 +715,18 @@ class ChannelTS:
                 runs[0] = metadata.Run(id="0")
             # be sure there is a level below
             if len(runs[0].channels) == 0:
-                ch_metadata = meta_classes[self.channel_type]()
+                # Create channel metadata with proper default component
+                channel_type_lower = self.channel_type.lower()
+                if channel_type_lower == "electric":
+                    ch_metadata = meta_classes[self.channel_type](component="ex")
+                elif channel_type_lower == "magnetic":
+                    ch_metadata = meta_classes[self.channel_type](component="hx")
+                elif channel_type_lower == "auxiliary":
+                    ch_metadata = meta_classes[self.channel_type](
+                        component="temperature"
+                    )
+                else:
+                    ch_metadata = meta_classes[self.channel_type]()
                 ch_metadata.type = self.channel_type.lower()
                 runs[0].channels.append(ch_metadata)
             stations = ListDict()
@@ -515,17 +736,29 @@ class ChannelTS:
             self.survey_metadata.stations = stations
 
     @property
-    def run_metadata(self):
+    def run_metadata(self) -> metadata.Run:
         """
-        station metadata
+        Run metadata.
+
+        Returns
+        -------
+        mt_metadata.timeseries.Run
+            Run metadata from the first run in the station.
         """
 
+        self._survey_metadata.stations[0].runs.update_keys()
+        self._survey_metadata.stations[0].runs[0].channels.update_keys()
         return self.survey_metadata.stations[0].runs[0]
 
     @run_metadata.setter
-    def run_metadata(self, run_metadata):
+    def run_metadata(self, run_metadata: metadata.Run | dict | None) -> None:
         """
-        set run metadata from a valid input
+        Set run metadata.
+
+        Parameters
+        ----------
+        run_metadata : mt_metadata.timeseries.Run | dict | None
+            Run metadata to set.
         """
 
         # need to make sure the first index is the desired channel
@@ -550,9 +783,16 @@ class ChannelTS:
             self._survey_metadata.stations[0].runs = runs
 
     @property
-    def channel_metadata(self):
+    def channel_metadata(
+        self,
+    ) -> metadata.Electric | metadata.Magnetic | metadata.Auxiliary:
         """
-        station metadata
+        Channel metadata.
+
+        Returns
+        -------
+        mt_metadata.timeseries.Electric | Magnetic | Auxiliary
+            Channel metadata from the first channel in the run.
         """
         ch_metadata = self._survey_metadata.stations[0].runs[0].channels[0]
         if self.has_data():
@@ -560,9 +800,24 @@ class ChannelTS:
         return ch_metadata
 
     @channel_metadata.setter
-    def channel_metadata(self, channel_metadata):
+    def channel_metadata(
+        self,
+        channel_metadata: (
+            metadata.Electric | metadata.Magnetic | metadata.Auxiliary | dict | None
+        ),
+    ) -> None:
         """
-        set run metadata from a valid input
+        Set channel metadata.
+
+        Parameters
+        ----------
+        channel_metadata : mt_metadata.timeseries.Electric | Magnetic | Auxiliary | dict | None
+            Channel metadata to set.
+
+        Raises
+        ------
+        ValueError
+            If the channel component is None.
         """
 
         if channel_metadata is not None:
@@ -586,24 +841,45 @@ class ChannelTS:
             else:
                 raise ValueError("Channel 'component' cannot be None")
 
-    def _check_pd_index(self, ts_arr):
+    def _check_pd_index(self, ts_arr: pd.DataFrame | pd.Series) -> pd.DatetimeIndex:
         """
-        check pd index of dataframe or series is time and not index values
+        Check and return the time index from a pandas DataFrame or Series.
 
-        :param ts_arr: DESCRIPTION
-        :type ts_arr: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Parameters
+        ----------
+        ts_arr : pandas.DataFrame | pandas.Series
+            Time series data.
 
+        Returns
+        -------
+        pandas.DatetimeIndex
+            Time index (existing or reconstructed from start/sample_rate).
         """
         if isinstance(ts_arr.index[0], pd._libs.tslibs.timestamps.Timestamp):
             return ts_arr.index
         else:
             return make_dt_coordinates(self.start, self.sample_rate, ts_arr.shape[0])
 
-    def _validate_dataframe_input(self, ts_arr):
+    def _validate_dataframe_input(
+        self, ts_arr: pd.DataFrame
+    ) -> tuple[pd.DataFrame, pd.DatetimeIndex]:
         """
-        Validate pd.DataFrame and pd.Seried objects
+        Validate pandas DataFrame input.
+
+        Parameters
+        ----------
+        ts_arr : pandas.DataFrame
+            DataFrame containing a 'data' column.
+
+        Returns
+        -------
+        tuple[pandas.DataFrame, pandas.DatetimeIndex]
+            Validated DataFrame and time index.
+
+        Raises
+        ------
+        ValueError
+            If 'data' column is missing or has object dtype that can't convert.
         """
         if "data" not in ts_arr.columns:
             msg = (
@@ -624,9 +900,26 @@ class ChannelTS:
         dt = self._check_pd_index(ts_arr)
         return ts_arr, dt
 
-    def _validate_series_input(self, ts_arr):
+    def _validate_series_input(
+        self, ts_arr: pd.Series
+    ) -> tuple[pd.Series, pd.DatetimeIndex]:
         """
-        Validate pd.DataFrame and pd.Seried objects
+        Validate pandas Series input.
+
+        Parameters
+        ----------
+        ts_arr : pandas.Series
+            Series containing time series data.
+
+        Returns
+        -------
+        tuple[pandas.Series, pandas.DatetimeIndex]
+            Validated Series and time index.
+
+        Raises
+        ------
+        ValueError
+            If Series has object dtype that can't convert to float.
         """
 
         if isinstance(type(ts_arr.dtype), type(np.object_)):
@@ -642,20 +935,39 @@ class ChannelTS:
         return ts_arr, dt
 
     @property
-    def ts(self):
-        """Time series as a numpy array"""
+    def ts(self) -> np.ndarray:
+        """
+        Time series data as a numpy array.
+
+        Returns
+        -------
+        numpy.ndarray
+            The time series data.
+        """
         return self.data_array.data
 
     @ts.setter
-    def ts(self, ts_arr):
+    def ts(
+        self,
+        ts_arr: np.ndarray | list | tuple | pd.DataFrame | pd.Series | xr.DataArray,
+    ) -> None:
         """
+        Set the time series data.
 
-        :param ts_arr: time series array or data array
-        :type ts_arr: numpy.ndarray, pandas.DataFrame, xarray.DataArray
+        Parameters
+        ----------
+        ts_arr : numpy.ndarray | list | tuple | pandas.DataFrame | pandas.Series | xarray.DataArray
+            Time series data. DataFrames must have a 'data' column.
 
-        .. note:: If setting ts with a pandas dataframe, make sure the data
-         is in a column name 'data'.
+        Raises
+        ------
+        TypeError
+            If data type is not supported.
 
+        Notes
+        -----
+        - For pandas DataFrames/Series, time index is extracted or reconstructed.
+        - For xarray.DataArray, metadata is extracted from attrs.
         """
 
         if isinstance(ts_arr, (np.ndarray, list, tuple)):
@@ -705,7 +1017,16 @@ class ChannelTS:
             for key in [k for k in meta_dict.keys() if "run." in k]:
                 run_dict[key.split("run.")[-1]] = meta_dict.pop(key)
             self.channel_type = meta_dict["type"]
-            ch_metadata = meta_classes[self.channel_type]()
+            # Create channel metadata with proper default component
+            channel_type_lower = self.channel_type.lower()
+            if channel_type_lower == "electric":
+                ch_metadata = meta_classes[self.channel_type](component="ex")
+            elif channel_type_lower == "magnetic":
+                ch_metadata = meta_classes[self.channel_type](component="hx")
+            elif channel_type_lower == "auxiliary":
+                ch_metadata = meta_classes[self.channel_type](component="temperature")
+            else:
+                ch_metadata = meta_classes[self.channel_type]()
             ch_metadata.from_dict({self.channel_type: meta_dict})
 
             self.survey_metadata.from_dict({"survey": survey_dict})
@@ -723,13 +1044,14 @@ class ChannelTS:
             raise TypeError(msg)
 
     @property
-    def time_index(self):
+    def time_index(self) -> np.ndarray:
         """
-        time index as a numpy array dtype np.datetime[ns]
+        Time index as a numpy array.
 
-        :return: array of the time index
-        :rtype: np.ndarray(dtype=np.datetime[ns])
-
+        Returns
+        -------
+        numpy.ndarray
+            Array of datetime64[ns] timestamps.
         """
 
         try:
@@ -738,12 +1060,19 @@ class ChannelTS:
             return self.data_array.time.values
 
     @property
-    def channel_type(self):
-        """Channel Type"""
+    def channel_type(self) -> str:
+        """
+        Channel type.
+
+        Returns
+        -------
+        str
+            Channel type: 'Electric', 'Magnetic', or 'Auxiliary'.
+        """
         return self._channel_type
 
     @channel_type.setter
-    def channel_type(self, value):
+    def channel_type(self, value: str) -> None:
         """change channel type means changing the metadata type"""
 
         value = self._validate_channel_type(value)
@@ -754,31 +1083,39 @@ class ChannelTS:
                 f"Changing metadata from {self.channel_type} to {value}, "
                 "will translate any similar attributes."
             )
-            channel_metadata = meta_classes[value]()
+            # Create channel metadata with proper default component
+            if value.lower() == "electric":
+                channel_metadata = meta_classes[value](component="ex")
+            elif value.lower() == "magnetic":
+                channel_metadata = meta_classes[value](component="hx")
+            elif value.lower() == "auxiliary":
+                channel_metadata = meta_classes[value](component="temperature")
+            else:
+                channel_metadata = meta_classes[value]()
             self.logger.debug(msg)
             for key in channel_metadata.to_dict(single=True).keys():
                 # need to skip type otherwise it keeps the same type
                 if key in ["type"]:
                     continue
+                # Skip component when changing channel types to avoid validation conflicts
+                # The new metadata already has appropriate default component for the type
+                if key in ["component"] and self._channel_type != value:
+                    continue
                 try:
-                    channel_metadata.set_attr_from_name(key, m_dict[key])
+                    channel_metadata.update_attribute(key, m_dict[key])
                 except KeyError:
                     pass
             self._channel_type = value
             self.run_metadata.channels[0] = channel_metadata
 
-    def _update_xarray_metadata(self):
+    def _update_xarray_metadata(self) -> None:
         """
-        Update xarray attrs dictionary with metadata.  Here we are assuming that
-        self.channel_metadata is the parent and attrs in xarray are children because all
-        metadata will be validated by :class:`mth5.metadata` class objects.
+        Update xarray attrs with current metadata.
 
-        Eventually there should be a way that this is automatic, but I'm not that
-        clever yet.
-
-        This should be mainly used internally but gives the user a way to update
-        metadata.
-
+        Notes
+        -----
+        Synchronizes channel_metadata fields into data_array.attrs and adds
+        station/run IDs for convenient access.
         """
         self.logger.debug("Updating xarray attributes")
 
@@ -971,13 +1308,15 @@ class ChannelTS:
     def start(self):
         """MTime object"""
         if self.has_data():
-            return MTime(self.data_array.coords.indexes["time"][0].isoformat())
+            return MTime(
+                time_stamp=self.data_array.coords.indexes["time"][0].isoformat()
+            )
         else:
             self.logger.debug(
                 "Data not set yet, pulling start time from "
                 "metadata.time_period.start"
             )
-            return MTime(self.channel_metadata.time_period.start)
+            return MTime(time_stamp=self.channel_metadata.time_period.start)
 
     @start.setter
     def start(self, start_time):
@@ -996,11 +1335,11 @@ class ChannelTS:
         """
 
         if not isinstance(start_time, MTime):
-            start_time = MTime(start_time)
-        self.channel_metadata.time_period.start = start_time.iso_str
+            start_time = MTime(time_stamp=start_time)
+        self.channel_metadata.time_period.start = start_time.isoformat()
         if self.has_data():
             if start_time == MTime(
-                self.data_array.coords.indexes["time"][0].isoformat()
+                time_stamp=self.data_array.coords.indexes["time"][0].isoformat()
             ):
                 return
             else:
@@ -1021,12 +1360,14 @@ class ChannelTS:
     def end(self):
         """MTime object"""
         if self.has_data():
-            return MTime(self.data_array.coords.indexes["time"][-1].isoformat())
+            return MTime(
+                time_stamp=self.data_array.coords.indexes["time"][-1].isoformat()
+            )
         else:
             self.logger.debug(
                 "Data not set yet, pulling end time from metadata.time_period.end"
             )
-            return MTime(self.channel_metadata.time_period.end)
+            return MTime(time_stamp=self.channel_metadata.time_period.end)
 
     @end.setter
     def end(self, end_time):
@@ -1078,26 +1419,26 @@ class ChannelTS:
         self._channel_response = value
 
         # update channel metadata
-        if self.channel_metadata.filter.name != value.names:
-            self.channel_metadata.filter.name = []
-            self.channel_metadata.filter.applied = []
-
-            for f_name in self._channel_response.names:
-                self.channel_metadata.filter.name.append(f_name)
-            self.channel_metadata.filter.applied = [True] * len(
-                self.channel_metadata.filter.name
-            )
+        if self.channel_metadata.filter_names != value.names:
+            for ch_filter in self._channel_response.filters_list:
+                if ch_filter.name in self.channel_metadata.filter_names:
+                    # update existing filter info
+                    existing_filter = self.channel_metadata.get_filter(ch_filter.name)
+                    existing_filter.applied = False
+                    existing_filter.stage = ch_filter.sequence_number
+                    existing_filter.comments = ch_filter.comments
+                else:
+                    self.channel_metadata.add_filter(
+                        name=ch_filter.name,
+                        applied=False,
+                        stage=ch_filter.sequence_number,
+                        comments=ch_filter.comments,
+                    )
 
     def get_calibration_operation(self):
-        if (
-            self.channel_response.units_out
-            == self.channel_metadata.unit_object.abbreviation
-        ):
+        if self.channel_response.units_out == self.channel_metadata.unit_object.name:
             calibration_operation = "divide"
-        elif (
-            self.channel_response.units_in
-            == self.channel_metadata.unit_object.abbreviation
-        ):
+        elif self.channel_response.units_in == self.channel_metadata.unit_object.name:
             calibration_operation = "multiply"
             self.logger.warning(
                 "Unexpected Inverse Filter is being corrected -- something maybe wrong here "
@@ -1127,12 +1468,8 @@ class ChannelTS:
         :return: tuple, calibration_operation, either "mulitply" or divide", and a string for calibrated units
         :rtype: tuple (of two strings_
         """
-        from mt_metadata.utils.units import get_unit_object
 
-        if (
-            self.channel_response.units_out
-            == self.channel_metadata.unit_object.abbreviation
-        ):
+        if self.channel_response.units_out == self.channel_metadata.unit_object.name:
             calibrated_units = self.channel_response.units_in
         elif (
             self.channel_response.units_in == None
@@ -1204,7 +1541,11 @@ class ChannelTS:
         def bool_flip(x):
             return bool(int(x) - 1)
 
-        if self.channel_metadata.filter.name is []:
+        if hasattr(self.channel_metadata, "filter"):
+            if self.channel_metadata.filter.applied is []:
+                self.logger.warning("No filters to apply to calibrate time series data")
+                return self.copy()
+        elif self.channel_metadata.filters is []:
             self.logger.warning("No filters to apply to calibrate time series data")
             return self.copy()
 
@@ -1235,10 +1576,16 @@ class ChannelTS:
         )
 
         # update "applied" booleans
-        applied_filters = calibrated_ts.channel_metadata.filter.applied
-        for idx in indices_to_flip:
-            applied_filters[idx] = bool_flip(applied_filters[idx])
-        calibrated_ts.channel_metadata.filter.applied = applied_filters
+        if hasattr(calibrated_ts.channel_metadata, "filter"):
+            applied_filters = calibrated_ts.channel_metadata.filter.applied
+            for idx in indices_to_flip:
+                applied_filters[idx] = bool_flip(applied_filters[idx])
+            calibrated_ts.channel_metadata.filter.applied = applied_filters
+        else:
+            for idx in indices_to_flip:
+                calibrated_ts.channel_metadata.filters[idx].applied = bool_flip(
+                    calibrated_ts.channel_metadata.filters[idx].applied
+                )
 
         # update units
         calibrated_units = self.get_calibrated_units()
@@ -1276,13 +1623,13 @@ class ChannelTS:
             self.logger.error(msg)
             raise ValueError(msg)
         if not isinstance(start, MTime):
-            start = MTime(start)
+            start = MTime(time_stamp=start)
         if n_samples is not None:
             n_samples = int(n_samples)
             end = start + ((n_samples - 1) / self.sample_rate)
         if end is not None:
             if not isinstance(end, MTime):
-                end = MTime(end)
+                end = MTime(time_stamp=end)
         chunk = self.data_array.indexes["time"].slice_indexer(
             start=np.datetime64(start.iso_no_tz),
             end=np.datetime64(end.iso_no_tz),
@@ -1531,7 +1878,7 @@ class ChannelTS:
 
         # add metadata
         obspy_trace.stats.channel = fdsn_tools.make_channel_code(self.channel_metadata)
-        obspy_trace.stats.starttime = self.start.iso_str
+        obspy_trace.stats.starttime = self.start.isoformat()
         obspy_trace.stats.sampling_rate = self.sample_rate
         if self.station_metadata.fdsn.id is None:
             self.station_metadata.fdsn.id = self.station_metadata.id
@@ -1575,7 +1922,12 @@ class ChannelTS:
         self.sample_rate = obspy_trace.stats.sampling_rate
         self.start = obspy_trace.stats.starttime.isoformat()
         self.station_metadata.fdsn.id = obspy_trace.stats.station
-        self.station_metadata.fdsn.network = obspy_trace.stats.network
+        # Handle None network values
+        if (
+            obspy_trace.stats.network is not None
+            and obspy_trace.stats.network != "None"
+        ):
+            self.station_metadata.fdsn.network = obspy_trace.stats.network
         self.station_metadata.id = obspy_trace.stats.station
         self.channel_metadata.units = "counts"
         self.ts = obspy_trace.data

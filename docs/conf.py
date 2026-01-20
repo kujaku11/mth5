@@ -20,10 +20,12 @@
 import os
 import sys
 
+
 sys.path.insert(0, os.path.abspath("."))
 sys.path.insert(0, os.path.abspath("../"))
 
 import mth5
+
 
 # -- General configuration ---------------------------------------------
 
@@ -45,6 +47,18 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.todo",
     "nbsphinx",
+    "autoapi.extension",
+]
+
+# AutoAPI configuration
+autoapi_dirs = ["../mth5"]
+autoapi_type = "python"
+autoapi_options = [
+    "members",
+    "undoc-members",
+    "show-inheritance",
+    "show-module-summary",
+    "imported-members",
 ]
 
 # nbsphinx_allow_errors = True
@@ -115,7 +129,6 @@ html_static_path = ["_static"]
 html_logo = "source/images/mth5_logo.png"
 html_theme_options = {
     "logo_only": True,
-    "display_version": True,
 }
 
 intersphinx_mapping = {

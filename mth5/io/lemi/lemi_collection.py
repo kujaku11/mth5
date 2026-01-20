@@ -10,15 +10,18 @@ Created on Wed Aug 31 10:32:44 2022
 @author: jpeacock
 """
 
+import pathlib
+from pathlib import Path
+from typing import List
+
 # =============================================================================
 # Imports
 # =============================================================================
 import pandas as pd
-import pathlib
 
 from mth5.io.collection import Collection
 from mth5.io.lemi import LEMI424
-from typing import Optional
+
 
 # =============================================================================
 
@@ -26,89 +29,146 @@ from typing import Optional
 class LEMICollection(Collection):
     """
     Collection of LEMI 424 files into runs based on start and end times.
+
     Will assign the run name as 'sr1_{index:0{zeros}}' --> 'sr1_0001' for
     `zeros` = 4.
 
-    :param file_path: full path to single station LEMI424 directory
-    :type file_path: string or :class`pathlib.Path`
-    :param file_ext: extension of LEMI424 files, default is 'txt'
-    :type file_ext: string
-    :param station_id: station id
-    :type station_id: string
-    :param survey_id: survey id
-    :type survey_id: string
+    Notes
+    -----
+    This class assumes that the given file path contains a single
+    LEMI station. If you want to do multiple stations merge the returned
+    data frames.
 
-    .. note:: This class assumes that the given file path contains a single
-     LEMI station.  If you want to do multiple stations merge the returned
-     data frames.
+    LEMI data comes with little metadata about the station or survey,
+    therefore you should assign `station_id` and `survey_id`.
 
-    .. note:: LEMI data comes with little metadata about the station or survey,
-     therefore you should assign `station_id` and `survey_id`.
+    Parameters
+    ----------
+    file_path : str or pathlib.Path, optional
+        Full path to single station LEMI424 directory, by default None
+    file_ext : list of str, optional
+        Extension of LEMI424 files, by default ["txt", "TXT"]
+    **kwargs
+        Additional keyword arguments passed to parent Collection class
 
-    .. code-block:: python
+    Attributes
+    ----------
+    station_id : str
+        Station identification string, defaults to "mt001"
+    survey_id : str
+        Survey identification string, defaults to "mt"
 
-        >>> from mth5.io.lemi import LEMICollection
-        >>> lc = LEMICollection(r"/path/to/single/lemi/station")
-        >>> lc.station_id = "mt001"
-        >>> lc.survey_id = "test_survey"
-        >>> run_dict = lc.get_runs(1)
-
-
+    Examples
+    --------
+    >>> from mth5.io.lemi import LEMICollection
+    >>> lc = LEMICollection(r"/path/to/single/lemi/station")
+    >>> lc.station_id = "mt001"
+    >>> lc.survey_id = "test_survey"
+    >>> run_dict = lc.get_runs(1)
     """
 
     def __init__(
         self,
-        file_path: Optional[pathlib.Path] = None,
-        file_ext: Optional[list] = ["txt", "TXT"],
+        file_path: str | pathlib.Path | None = None,
+        file_ext: List[str] | None = None,
         **kwargs,
-    ):
+    ) -> None:
+        if file_ext is None:
+            file_ext = ["txt", "TXT"]
         super().__init__(file_path=file_path, file_ext=file_ext, **kwargs)
 
         self.station_id = "mt001"
         self.survey_id = "mt"
+        self.calibration_dict = {}
+
+    def get_calibrations(self, calibration_path: str | Path) -> dict:
+        """
+        Get calibration dictionary for LEMI424 files.  This assumes that the
+        calibrations files are in JSON format and named as
+        'LEMI-424-<component>.json'
+
+        Parameters
+        ----------
+        calibration_path : str or pathlib.Path
+            Path to calibration files
+
+        Returns
+        -------
+        dict
+            Calibration dictionary for LEMI424 files
+
+        Examples
+        --------
+        >>> from mth5.io.lemi import LEMICollection
+        >>> lc = LEMICollection("/path/to/single/lemi/station")
+        >>> cal_dict = lc.get_calibrations(Path("/path/to/calibrations"))
+        """
+        calibration_path = Path(calibration_path)
+
+        calibration_dict = {}
+        for fn in calibration_path.rglob("*.json"):
+            comp = fn.stem.split("-")[-1].split(".", 1)[0]
+            calibration_dict[comp] = fn
+
+        return calibration_dict
 
     def to_dataframe(
-        self, sample_rates=[1], run_name_zeros=4, calibration_path=None
-    ):
+        self,
+        sample_rates: int | List[int] | None = None,
+        run_name_zeros: int = 4,
+        calibration_path: str | Path | None = None,
+    ) -> pd.DataFrame:
         """
         Create a data frame of each TXT file in a given directory.
 
-        .. note:: This assumes the given directory contains a single station
+        Notes
+        -----
+        This assumes the given directory contains a single station
 
-        :param sample_rates: sample rate to get, will always be 1 for LEMI data
-         defaults to [1]
-        :type sample_rates: int or list, optional
-        :param run_name_zeros: number of zeros to assing to the run name,
-         defaults to 4
-        :type run_name_zeros: int, optional
-        :param calibration_path: path to calibration files, defaults to None
-        :type calibration_path: string or Path, optional
-        :return: Dataframe with information of each TXT file in the given
-         directory.
-        :rtype: :class:`pandas.DataFrame`
+        Parameters
+        ----------
+        sample_rates : int or list of int, optional
+            Sample rate to get, will always be 1 for LEMI data, by default [1]
+        run_name_zeros : int, optional
+            Number of zeros to assign to the run name, by default 4
+        calibration_path : str or pathlib.Path, optional
+            Path to calibration files, by default None
 
-        :Example:
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with information of each TXT file in the given directory
 
-            >>> from mth5.io.lemi import LEMICollection
-            >>> lc = LEMICollection("/path/to/single/lemi/station")
-            >>> lemi_df = lc.to_dataframe()
-
+        Examples
+        --------
+        >>> from mth5.io.lemi import LEMICollection
+        >>> lc = LEMICollection("/path/to/single/lemi/station")
+        >>> lemi_df = lc.to_dataframe()
         """
+        if sample_rates is None:
+            sample_rates = [1]
+
+        if calibration_path is None:
+            calibration_path = Path(self.file_path)
+        self.calibration_dict = self.get_calibrations(calibration_path)
+        if not self.calibration_dict:
+            self.logger.warning(
+                f"No calibration files found in {calibration_path}, "
+                "proceeding without calibrations."
+            )
 
         entries = []
         for fn in self.get_files(self.file_ext):
             lemi_obj = LEMI424(fn)
-            n_samples = int(lemi_obj.n_samples)
+            n_samples = int(lemi_obj.n_samples or 0)
             lemi_obj.read_metadata()
 
             entry = self.get_empty_entry_dict()
             entry["survey"] = self.survey_id
             entry["station"] = self.station_id
-            entry["start"] = lemi_obj.start.isoformat()
-            entry["end"] = lemi_obj.end.isoformat()
-            entry["component"] = ",".join(
-                lemi_obj.run_metadata.channels_recorded_all
-            )
+            entry["start"] = lemi_obj.start.isoformat() if lemi_obj.start else ""
+            entry["end"] = lemi_obj.end.isoformat() if lemi_obj.end else ""
+            entry["component"] = ",".join(lemi_obj.run_metadata.channels_recorded_all)
             entry["fn"] = fn
             entry["sample_rate"] = lemi_obj.sample_rate
             entry["file_size"] = lemi_obj.file_size
@@ -130,20 +190,24 @@ class LEMICollection(Collection):
 
         return df
 
-    def assign_run_names(self, df, zeros=4):
+    def assign_run_names(self, df: pd.DataFrame, zeros: int = 4) -> pd.DataFrame:
         """
-        Assign run names based on start and end times, checks if a file has
-        the same start time as the last end time.
+        Assign run names based on start and end times.
 
+        Checks if a file has the same start time as the last end time.
         Run names are assigned as sr{sample_rate}_{run_number:0{zeros}}.
 
-        :param df: Dataframe with the appropriate columns
-        :type df: :class:`pandas.DataFrame`
-        :param zeros: number of zeros in run name, defaults to 4
-        :type zeros: int, optional
-        :return: Dataframe with run names
-        :rtype: :class:`pandas.DataFrame`
+        Parameters
+        ----------
+        df : pd.DataFrame
+            DataFrame with the appropriate columns
+        zeros : int, optional
+            Number of zeros in run name, by default 4
 
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with run names assigned
         """
         count = 1
         for row in df.itertuples():

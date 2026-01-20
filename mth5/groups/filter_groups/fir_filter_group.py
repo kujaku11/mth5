@@ -2,7 +2,7 @@
 """
 Created on Wed Jun  9 08:55:16 2021
 
-:copyright: 
+:copyright:
     Jared Peacock (jpeacock@usgs.gov)
 
 :license: MIT
@@ -17,6 +17,7 @@ Created on Wed Jun  9 08:55:16 2021
 from mt_metadata.timeseries.filters import FIRFilter
 
 from mth5.groups.base import BaseGroup
+
 
 # =============================================================================
 # fir Group
