@@ -1,21 +1,23 @@
 """
-    Module contains a class that represents a spectrogram.
-    i.e. A 2D time series of Fourier coefficients with axes time and the other frequency.
-    The datasets are xarray/dataframe and are fundmentally multivariate.
+Module contains a class that represents a spectrogram.
+i.e. A 2D time series of Fourier coefficients with axes time and the other frequency.
+The datasets are xarray/dataframe and are fundmentally multivariate.
 
 """
-# Standard library imports
-from loguru import logger
+
 from typing import List, Literal, Optional, Tuple, Union
 
 # Third-party imports
-import numpy as np
 import pandas as pd
 import xarray as xr
 
+# Standard library imports
+from loguru import logger
+
 # Local imports
-from mt_metadata.transfer_functions.processing.aurora.band import Band
-from mt_metadata.transfer_functions.processing.aurora.frequency_bands import FrequencyBands
+from mt_metadata.common.band import Band
+from mt_metadata.processing.aurora.frequency_bands import FrequencyBands
+
 from mth5.timeseries.xarray_helpers import covariance_xr, initialize_xrda_2d
 
 
@@ -49,10 +51,7 @@ class Spectrogram(object):
 
     """
 
-    def __init__(
-        self,
-        dataset: Optional[xr.Dataset] = None
-    ):
+    def __init__(self, dataset: Optional[xr.Dataset] = None):
         """
         Constructor.
 
@@ -118,11 +117,11 @@ class Spectrogram(object):
 
     @property
     def frequency_band(self) -> Band:
-        """ returns a frequency band object representing the spectrograms band (assumes continuous)"""
+        """returns a frequency band object representing the spectrograms band (assumes continuous)"""
         if self._frequency_band is None:
             band = Band(
-            frequency_min=self.frequency_axis.min().item(),
-            frequency_max=self.frequency_axis.max().item()
+                frequency_min=self.frequency_axis.min().item(),
+                frequency_max=self.frequency_axis.max().item(),
             )
             self._frequency_band = band
         return self._frequency_band
@@ -136,7 +135,9 @@ class Spectrogram(object):
         if self._frequency_increment is None:
             frequency_axis = self.dataset.frequency
             try:
-                self._frequency_increment = frequency_axis.data[1] - frequency_axis.data[0]
+                self._frequency_increment = (
+                    frequency_axis.data[1] - frequency_axis.data[0]
+                )
             except IndexError:
                 msg = "frequency increment for spectrogram with frequency axis of length 1 is not defined"
                 logger.debug(msg)
@@ -167,7 +168,7 @@ class Spectrogram(object):
         self,
         frequency_band: Band,
         channels: Optional[list] = None,
-        epsilon: Optional[float] = None
+        epsilon: Optional[float] = None,
     ):
         """
         Returns another instance of Spectrogram, with the frequency axis reduced to the input band.
@@ -189,10 +190,7 @@ class Spectrogram(object):
             epsilon = self.frequency_increment / 2.0
 
         extracted_band_dataset = extract_band(
-            frequency_band,
-            self.dataset,
-            channels=channels,
-            epsilon=epsilon
+            frequency_band, self.dataset, channels=channels, epsilon=epsilon
         )
         # Drop NaN values along the frequency dimension
         # extracted_band_dataset = extracted_band_dataset.dropna(dim='frequency', how='any')
@@ -200,7 +198,7 @@ class Spectrogram(object):
         return spectrogram
 
     def cross_power_label(self, ch1: str, ch2: str, join_char: str = "_"):
-        """ joins channel names with join_char"""
+        """joins channel names with join_char"""
         return f"{ch1}{join_char}{ch2}"
 
     def _validate_frequency_bands(
@@ -218,16 +216,22 @@ class Spectrogram(object):
         :return:
         """
         if strict:
-            valid_bands = [x for x in frequency_bands.bands() if self.frequency_band.contains(x)]
+            valid_bands = [
+                x for x in frequency_bands.bands() if self.frequency_band.contains(x)
+            ]
         else:
-            valid_bands = [x for x in frequency_bands.bands() if self.frequency_band.overlaps(x)]
+            valid_bands = [
+                x for x in frequency_bands.bands() if self.frequency_band.overlaps(x)
+            ]
         lower_bounds = [x.lower_bound for x in valid_bands]
         upper_bounds = [x.upper_bound for x in valid_bands]
         valid_frequency_bands = FrequencyBands(
-            pd.DataFrame(data={
-                "lower_bound": lower_bounds,
-                "upper_bound": upper_bounds,
-            })
+            pd.DataFrame(
+                data={
+                    "lower_bound": lower_bounds,
+                    "upper_bound": upper_bounds,
+                }
+            )
         )
 
         # TODO: If strict, only take bands that are contained
@@ -236,7 +240,7 @@ class Spectrogram(object):
     def cross_powers(
         self,
         frequency_bands: FrequencyBands,
-        channel_pairs: Optional[List[Tuple[str, str]]] = None
+        channel_pairs: Optional[List[Tuple[str, str]]] = None,
     ):
         """
         Compute cross powers between channel pairs for given frequency bands.
@@ -277,9 +281,11 @@ class Spectrogram(object):
         # Initialize a single multi-channel 2D xarray
         xpower_array = initialize_xrda_2d(
             var_names,
-            coords={'frequency': frequency_bands.band_centers(),
-                   'time': self.dataset.time.values},
-            dtype=complex
+            coords={
+                "frequency": frequency_bands.band_centers(),
+                "time": self.dataset.time.values,
+            },
+            dtype=complex,
         )
 
         # Compute cross powers for each band and channel pair
@@ -291,17 +297,21 @@ class Spectrogram(object):
             for ch1, ch2 in channel_pairs:
                 label = self.cross_power_label(ch1, ch2)
                 # Always compute as ch1 * conj(ch2)
-                xpower = (band_data[ch1] * band_data[ch2].conj()).mean(dim='frequency')
+                xpower = (band_data[ch1] * band_data[ch2].conj()).mean(dim="frequency")
 
                 # Store the cross power
-                xpower_array.loc[dict(frequency=band.center_frequency, variable=label, time=slice(None))] = xpower
+                xpower_array.loc[
+                    dict(
+                        frequency=band.center_frequency,
+                        variable=label,
+                        time=slice(None),
+                    )
+                ] = xpower
 
         return xpower_array
 
     def covariance_matrix(
-        self,
-        band_data: Optional['Spectrogram'] = None,
-        method: str = "numpy_cov"
+        self, band_data: Optional["Spectrogram"] = None, method: str = "numpy_cov"
     ) -> xr.DataArray:
         """
         TODO: Add tests for this WIP Work-in-progress method
@@ -341,7 +351,7 @@ class Spectrogram(object):
         channels = list(self.dataset.data_vars.keys())
         pairs = []
         for i, ch1 in enumerate(channels[:-1]):
-            for ch2 in channels[i+1:]:
+            for ch2 in channels[i + 1 :]:
                 pairs.append((ch1, ch2))
         return pairs
 
@@ -388,37 +398,37 @@ def extract_band(
     frequency_band: Band,
     fft_obj: Union[xr.Dataset, xr.DataArray],
     channels: Optional[list] = None,
-    epsilon: float = 1e-7
+    epsilon: float = 1e-7,
 ) -> Union[xr.Dataset, xr.DataArray]:
     """
-        Extracts a frequency band from xr.DataArray representing a spectrogram.
+    Extracts a frequency band from xr.DataArray representing a spectrogram.
 
-        TODO: Update variable names.
+    TODO: Update variable names.
 
-        Development Notes:
-            Base dataset object should be a xr.DataArray (not xr.Dataset)
-            - drop=True does not play nice with h5py and Dataset, results in a type error.
-            File "stringsource", line 2, in h5py.h5r.Reference.__reduce_cython__
-            TypeError: no default __reduce__ due to non-trivial __cinit__
-            However, it works OK with DataArray.
+    Development Notes:
+        Base dataset object should be a xr.DataArray (not xr.Dataset)
+        - drop=True does not play nice with h5py and Dataset, results in a type error.
+        File "stringsource", line 2, in h5py.h5r.Reference.__reduce_cython__
+        TypeError: no default __reduce__ due to non-trivial __cinit__
+        However, it works OK with DataArray.
 
-        Parameters
-        ----------
-        frequency_band: mt_metadata.transfer_functions.processing.aurora.band.Band
-            Specifies interval corresponding to a frequency band
-        fft_obj: xarray.core.dataset.Dataset
-            Short-time-Fourier-transformed datat.  Can be multichannel.
-        channels: list
-            Channel names to extract.
-        epsilon: float
-            Use this when you are worried about missing a frequency due to
-            round off error.  This is in general not needed if we use a df/2 pad
-            around true harmonics.
+    Parameters
+    ----------
+    frequency_band: mt_metadata.common.band.Band
+        Specifies interval corresponding to a frequency band
+    fft_obj: xarray.core.dataset.Dataset
+        Short-time-Fourier-transformed datat.  Can be multichannel.
+    channels: list
+        Channel names to extract.
+    epsilon: float
+        Use this when you are worried about missing a frequency due to
+        round off error.  This is in general not needed if we use a df/2 pad
+        around true harmonics.
 
-        Returns
-        -------
-        extracted_band: xr.DataArray
-            The frequencies within the band passed into this function
+    Returns
+    -------
+    extracted_band: xr.DataArray
+        The frequencies within the band passed into this function
     """
     cond1 = fft_obj.frequency >= frequency_band.lower_bound - epsilon
     cond2 = fft_obj.frequency <= frequency_band.upper_bound + epsilon
@@ -430,4 +440,12 @@ def extract_band(
         extracted_band = extracted_band.to_dataset("variable")
     if channels:
         extracted_band = extracted_band[channels]
+
+    if len(extracted_band.frequency) == 0:
+        msg = (
+            f"Frequency band {frequency_band} does not overlap with the frequencies "
+            f"of the input dataset.  Frequencies in dataset are: {fft_obj.frequency.values}. "
+            "Skipping band extraction. Consider reforming the bands."
+        )
+        logger.warning(msg)
     return extracted_band

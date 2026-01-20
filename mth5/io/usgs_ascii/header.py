@@ -8,19 +8,20 @@ Created on Thu Aug 27 16:54:09 2020
 
 """
 
+import json
+from collections import OrderedDict
+
 # =============================================================================
 # Imports
 # =============================================================================
 from pathlib import Path
-from urllib.request import Request, urlopen
 from urllib.error import HTTPError
-import json
-from collections import OrderedDict
+from urllib.request import Request, urlopen
 
 import numpy as np
 from loguru import logger
+from mt_metadata.timeseries import Electric, Magnetic, Run, Station, Survey
 
-from mt_metadata.timeseries import Magnetic, Electric, Run, Station, Survey
 
 # =============================================================================
 #  Metadata for usgs ascii file
@@ -67,21 +68,48 @@ class AsciiMetadata:
     """
 
     def __init__(self, fn=None, **kwargs):
-
         self.logger = logger
 
         self.fn = fn
-        self.missing_data_flag = np.NaN
+        self.missing_data_flag = np.nan
         self.coordinate_system = None
         self._metadata_len = 30
+        from mt_metadata.common import DataTypeEnum, TimePeriodDate
+
+        # Survey, Station, Run: instantiate and set required fields directly
         self._survey_metadata = Survey()
+        self._survey_metadata.id = ""
+        self._survey_metadata.datum = "WGS 84"
+        self._survey_metadata.geographic_name = ""
+        self._survey_metadata.name = ""
+        self._survey_metadata.project = ""
+        self._survey_metadata.summary = ""
+        self._survey_metadata.time_period = TimePeriodDate(
+            start_date="1970-01-01", end_date="1970-01-02"
+        )
+
         self._station_metadata = Station()
+        self._station_metadata.id = ""
+        self._station_metadata.channels_recorded = []
+        self._station_metadata.geographic_name = ""
+        self._station_metadata.run_list = []
+        self._station_metadata.data_type = DataTypeEnum.BBMT
+
         self._run_metadata = Run()
-        self.ex_metadata = Electric(component="ex")
-        self.ey_metadata = Electric(component="ey")
-        self.hx_metadata = Magnetic(component="hx")
-        self.hy_metadata = Magnetic(component="hy")
-        self.hz_metadata = Magnetic(component="hz")
+        self._run_metadata.id = ""
+        self._run_metadata.sample_rate = 0.0
+        self._run_metadata.channels_recorded_auxiliary = []
+        self._run_metadata.channels_recorded_electric = []
+        self._run_metadata.channels_recorded_magnetic = []
+        self._run_metadata.data_type = DataTypeEnum.BBMT
+
+        # Electric required fields (all base fields)
+        self.ex_metadata = Electric(component="ex")  # type: ignore
+        self.ey_metadata = Electric(component="ey")  # type: ignore
+
+        self.hx_metadata = Magnetic(component="hx")  # type: ignore
+        self.hy_metadata = Magnetic(component="hy")  # type: ignore
+        self.hz_metadata = Magnetic(component="hz")  # type: ignore
 
         self.channel_order = ["hx", "ex", "hy", "ey", "hz"]
 
@@ -205,15 +233,31 @@ class AsciiMetadata:
             self.logger.error("could not connect to get elevation from national map.")
             self.logger.debug(nm_url.format(self.longitude, self.latitude))
             return self.station_metadata.location.elevation
-        # read the xml response and convert to a float
-        info = json.loads(response.read().decode())
+        # read the json response and convert to a float.  Be defensive:
+        # network requests may return non-json or empty responses in CI
+        # environments. If parsing fails, fall back to stored station value.
         try:
-            nm_elev = round(float(info["value"]), 1)
-        except ValueError:
+            body = response.read().decode()
+            info = json.loads(body)
+            try:
+                nm_elev = round(float(info.get("value", 0)), 1)
+            except (ValueError, TypeError):
+                self.logger.warning(
+                    "could not read elevation from national map url. Setting to 0"
+                )
+                nm_elev = 0
+        except json.JSONDecodeError:
             self.logger.warning(
-                "could not read elevation from national map url. Setting to 0"
+                "national map returned non-json response; using stored elevation"
             )
-            nm_elev = 0
+            nm_elev = self.station_metadata.location.elevation
+        except Exception:
+            # Any other issue should fall back to stored elevation
+            self.logger.debug(
+                "unexpected error parsing national map response; using stored elevation"
+            )
+            nm_elev = self.station_metadata.location.elevation
+
         return nm_elev
 
     @elevation.setter
@@ -226,7 +270,15 @@ class AsciiMetadata:
 
     @start.setter
     def start(self, time_string):
-        self.station_metadata.time_period.start = time_string
+        # Always convert to UTC ISO string
+        import pandas as pd
+
+        ts = pd.Timestamp(time_string)
+        if ts.tz is None:
+            ts = ts.tz_localize("UTC")
+        else:
+            ts = ts.tz_convert("UTC")
+        self.station_metadata.time_period.start = ts.isoformat()
 
     @property
     def end(self):
@@ -234,7 +286,15 @@ class AsciiMetadata:
 
     @end.setter
     def end(self, time_string):
-        self._station_metadata.time_period.end = time_string
+        # Always convert to UTC ISO string
+        import pandas as pd
+
+        ts = pd.Timestamp(time_string)
+        if ts.tz is None:
+            ts = ts.tz_localize("UTC")
+        else:
+            ts = ts.tz_convert("UTC")
+        self._station_metadata.time_period.end = ts.isoformat()
 
     @property
     def n_channels(self):

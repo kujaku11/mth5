@@ -9,11 +9,12 @@ Created on Fri Sep  2 13:50:51 2022
 # Imports
 # =============================================================================
 from mt_metadata.timeseries.filters import (
+    ChannelResponse,
+    CoefficientFilter,
     PoleZeroFilter,
     TimeDelayFilter,
-    CoefficientFilter,
-    ChannelResponse,
 )
+
 
 # =============================================================================
 
@@ -81,8 +82,8 @@ class Response(object):
                 complex(-6.283185, -10.882477),
                 complex(-12.566371, 0),
             ],
-            units_out="volts",
-            units_in="nanotesla",
+            units_out="Volt",
+            units_in="nanoTesla",
             normalization_factor=2002.26936395594,
         )
 
@@ -98,8 +99,8 @@ class Response(object):
         return CoefficientFilter(
             name="h_analog_to_digital",
             gain=self.h_conversion_factor,
-            units_in="volts",
-            units_out="digital counts",
+            units_in="Volt",
+            units_out="count",
         )
 
     @property
@@ -120,8 +121,8 @@ class Response(object):
                 complex(-10.1662, -7.38651),
                 complex(-12.5664, 0.0),
             ],
-            units_in="volts",
-            units_out="volts",
+            units_in="Volt",
+            units_out="Volt",
             normalization_factor=313383.493219835,
         )
 
@@ -138,8 +139,8 @@ class Response(object):
             zeros=[complex(0.0, 0.0)],
             poles=[complex(-3.333333e-05, 0.0)],
             normalization_factor=1,
-            units_in="volts",
-            units_out="volts",
+            units_in="Volt",
+            units_out="Volt",
         )
 
     @property
@@ -155,14 +156,14 @@ class Response(object):
             zeros=[complex(0.0, 0.0)],
             poles=[complex(-1.66667e-04, 0.0)],
             normalization_factor=1,
-            units_in="volts",
-            units_out="volts",
+            units_in="Volt",
+            units_out="Volt",
         )
 
     @property
     def electric_conversion(self):
         """
-        electric channel conversion from counts to volts
+        electric channel conversion from counts to Volts
         :return: DESCRIPTION
         :rtype: TYPE
 
@@ -170,8 +171,8 @@ class Response(object):
         return CoefficientFilter(
             name="e_analog_to_digital",
             gain=self.e_conversion_factor,
-            units_in="volts",
-            units_out="digital counts",
+            units_in="Volt",
+            units_out="count",
         )
 
     @property
@@ -185,8 +186,8 @@ class Response(object):
         return CoefficientFilter(
             name="to_mt_units",
             gain=1e-6,
-            units_in="millivolts per kilometer",
-            units_out="volts per meter",
+            units_in="milliVolt per kilometer",
+            units_out="Volt per meter",
         )
 
     def get_electric_high_pass(self, hardware="pc"):
@@ -209,8 +210,8 @@ class Response(object):
         dt_filter = TimeDelayFilter(
             name=f"{channel}_time_offset",
             delay=self.time_delays_dict[sample_rate][channel],
-            units_in="digital counts",
-            units_out="digital counts",
+            units_in="count",
+            units_out="count",
         )
         return dt_filter
 
@@ -228,8 +229,8 @@ class Response(object):
         return CoefficientFilter(
             name=f"dipole_{length:.2f}",
             gain=length,
-            units_in="volts per meter",
-            units_out="volts",
+            units_in="Volt per meter",
+            units_out="Volt",
         )
 
     def _get_magnetic_filter(self, channel):
@@ -278,9 +279,7 @@ class Response(object):
             )
 
         elif channel[0] in ["b", "h"]:
-            return ChannelResponse(
-                filters_list=self._get_magnetic_filter(channel)
-            )
+            return ChannelResponse(filters_list=self._get_magnetic_filter(channel))
 
         else:
             raise ValueError(f"Channel {channel} not supported.")

@@ -1,36 +1,133 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Sep  1 11:43:56 2022
+NIMS GPS data parser for magnetotelluric surveys.
 
-@author: jpeacock
+This module provides functionality to parse GPS stamps from NIMS (North Island
+Magnetotelluric Survey) data files. It handles both GPRMC and GPGGA GPS message
+formats, extracting location, time, and other GPS-related information.
+
+Classes
+-------
+GPSError : Exception
+    Custom exception for GPS parsing errors.
+GPS : object
+    Main class for parsing and validating GPS stamp data.
+
+Notes
+-----
+The GPS parser handles two main GPS message types:
+- GPRMC: Provides full date/time information and magnetic declination
+- GPGGA: Provides elevation data and fix quality information
+
+Binary data contamination is automatically cleaned during parsing.
+
+Examples
+--------
+>>> from mth5.io.nims.gps import GPS
+>>> gps_string = "GPRMC,183511,A,3443.6098,N,11544.1007,W,000.0,000.0,260919,013.1,E*"
+>>> gps = GPS(gps_string)
+>>> print(f"Latitude: {gps.latitude}, Longitude: {gps.longitude}")
+
+Author
+------
+jpeacock
+
+Created
+-------
+Thu Sep  1 11:43:56 2022
 """
 # =============================================================================
 # Imports
 # =============================================================================
+from __future__ import annotations
+
+import datetime
+
 import dateutil
 from loguru import logger
 
 
 # =============================================================================
 class GPSError(Exception):
-    pass
-
-
-class GPS(object):
     """
-    class to parse GPS stamp from the NIMS
+    Custom exception for GPS parsing and validation errors.
 
-    Depending on the type of Stamp different attributes will be filled.
-
-    GPRMC has full date and time information and declination
-    GPGGA has elevation data
-
-    .. note:: GPGGA date is set to 1980-01-01 so that the time can be estimated.
-              Should use GPRMC for accurate date/time information.
+    Raised when GPS string parsing fails or when GPS data validation
+    encounters invalid values.
     """
 
-    def __init__(self, gps_string, index=0):
 
+class GPS:
+    """
+    Parser for GPS stamps from NIMS magnetotelluric data.
+
+    Handles parsing and validation of GPS strings from NIMS data files.
+    Supports both GPRMC and GPGGA message formats, automatically detecting
+    the type and extracting relevant geographic and temporal information.
+
+    Parameters
+    ----------
+    gps_string : str or bytes
+        Raw GPS string to be parsed. Can contain binary contamination
+        which will be automatically cleaned.
+    index : int, default 0
+        Index or sequence number for this GPS record.
+
+    Attributes
+    ----------
+    gps_string : str
+        The original GPS string provided for parsing.
+    index : int
+        Index or sequence number for this GPS record.
+    valid : bool
+        Whether the GPS string was successfully parsed and validated.
+    elevation_units : str
+        Units for elevation measurements, typically "meters".
+    logger : loguru.Logger
+        Logger instance for debugging and error reporting.
+
+    Notes
+    -----
+    GPS message format differences:
+
+    **GPRMC (Recommended Minimum Course)**
+        Contains: date, time, coordinates, speed, course, magnetic declination
+        Date: Full date information (year, month, day)
+
+    **GPGGA (Global Positioning System Fix Data)**
+        Contains: time, coordinates, fix quality, elevation
+        Date: Defaults to 1980-01-01 for time estimation only
+
+    The parser automatically handles:
+    - Binary contamination in GPS strings
+    - Missing comma delimiters
+    - GPS type auto-detection and correction
+    - Coordinate conversion from degrees-minutes to decimal degrees
+
+    Examples
+    --------
+    Parse a GPRMC string:
+
+    >>> gps_string = "GPRMC,183511,A,3443.6098,N,11544.1007,W,000.0,000.0,260919,013.1,E*"
+    >>> gps = GPS(gps_string)
+    >>> print(f"Position: {gps.latitude:.5f}, {gps.longitude:.5f}")
+    Position: 34.72683, -115.73501
+
+    Parse a GPGGA string:
+
+    >>> gps_string = "GPGGA,183511,3443.6098,N,11544.1007,W,1,04,2.6,937.2,M,-28.1,M,*"
+    >>> gps = GPS(gps_string)
+    >>> print(f"Elevation: {gps.elevation} {gps.elevation_units}")
+    Elevation: 937.2 meters
+
+    Handle invalid GPS data:
+
+    >>> gps = GPS("invalid_string")
+    >>> print(f"Valid: {gps.valid}")
+    Valid: False
+    """
+
+    def __init__(self, gps_string: str | bytes, index: int = 0) -> None:
         self.logger = logger
 
         self.gps_string = gps_string
@@ -104,8 +201,29 @@ class GPS(object):
         }
         self.parse_gps_string(self.gps_string)
 
-    def __str__(self):
-        """string representation"""
+    def __str__(self) -> str:
+        """
+        String representation of GPS object.
+
+        Returns
+        -------
+        str
+            Formatted string containing GPS type, coordinates, elevation,
+            declination, and other key properties.
+
+        Examples
+        --------
+        >>> gps = GPS("GPRMC,183511,A,3443.6098,N,11544.1007,W,000.0,000.0,260919,013.1,E*")
+        >>> print(gps)
+        type = GPRMC
+        index = 0
+        fix = A
+        time_stamp =  2019-09-26T18:35:11
+        latitude = 34.72683
+        longitude = -115.73501166666667
+        elevation = 0.0
+        declination = 13.1
+        """
         msg = [
             f"type = {self.gps_type}",
             f"index = {self.index}",
@@ -119,17 +237,58 @@ class GPS(object):
 
         return "\n".join(msg)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """Return string representation of GPS object."""
         return self.__str__()
 
-    def validate_gps_string(self, gps_string):
+    def validate_gps_string(self, gps_string: str | bytes) -> str | None:
         """
-        make sure the string is valid, remove any binary numbers and find
-        the end of the string as '*'
+        Validate and clean GPS string.
 
-        :param string gps_string: raw GPS string to be validated
-        :returns: validated string or None if there is something wrong
+        Removes binary contamination, finds string terminator, and validates
+        format. Handles both string and bytes input.
 
+        Parameters
+        ----------
+        gps_string : str or bytes
+            Raw GPS string to validate. May contain binary contamination
+            that will be automatically removed.
+
+        Returns
+        -------
+        str or None
+            Cleaned GPS string with terminator removed, or None if validation
+            fails due to missing terminator or decode errors.
+
+        Raises
+        ------
+        TypeError
+            If input is not string or bytes.
+
+        Notes
+        -----
+        Binary contamination bytes that are automatically removed:
+        - ``\\xd9``, ``\\xc7``, ``\\xcc``
+        - ``\\x00`` (null byte, replaced with '*' terminator)
+
+        The GPS string must end with '*' character to be considered valid.
+
+        Examples
+        --------
+        Clean a contaminated binary GPS string:
+
+        >>> gps = GPS("")
+        >>> contaminated = b"GPRMC,183511,A\\xd9,3443.6098,N*"
+        >>> clean = gps.validate_gps_string(contaminated)
+        >>> print(clean)
+        GPRMC,183511,A,3443.6098,N
+
+        Handle missing terminator:
+
+        >>> invalid = "GPRMC,183511,A,3443.6098,N"  # No '*'
+        >>> result = gps.validate_gps_string(invalid)
+        >>> print(result)
+        None
         """
 
         if isinstance(gps_string, bytes):
@@ -158,21 +317,77 @@ class GPS(object):
                 f"input must be a string or bytes object, not {type(gps_string)}"
             )
 
-    def _split_gps_string(self, gps_string, delimiter=","):
-        """Split a GPS string by ',' and validate it"""
+    def _split_gps_string(
+        self, gps_string: str | bytes, delimiter: str = ","
+    ) -> list[str]:
+        """
+        Split GPS string into components after validation.
 
+        Parameters
+        ----------
+        gps_string : str or bytes
+            GPS string to split.
+        delimiter : str, default ","
+            Character to split on (typically comma).
+
+        Returns
+        -------
+        list of str
+            GPS string components, or empty list if validation fails.
+
+        Notes
+        -----
+        The delimiter parameter is provided for flexibility but validation
+        always occurs first, which may affect the final splitting behavior.
+        """
         gps_string = self.validate_gps_string(gps_string)
         if gps_string is None:
             self.valid = False
             return []
         return gps_string.strip().split(",")
 
-    def parse_gps_string(self, gps_string):
+    def parse_gps_string(self, gps_string: str | bytes) -> None:
         """
-        Parse a raw gps string from the NIMS and set appropriate attributes.
-        GPS string will first be validated, then parsed.
+        Parse GPS string and populate object attributes.
 
-        :param string gps_string: raw GPS string to be parsed
+        Main parsing method that validates the GPS string, identifies the
+        message type (GPRMC/GPGGA), and extracts all relevant information
+        into object attributes.
+
+        Parameters
+        ----------
+        gps_string : str or bytes
+            Raw GPS string from NIMS data file.
+
+        Notes
+        -----
+        This method performs the following operations:
+        1. Splits and validates the GPS string
+        2. Handles missing comma delimiter between time and coordinates
+        3. Validates each GPS field according to message type
+        4. Sets object attributes based on parsed values
+        5. Sets ``valid`` flag based on parsing success
+
+        If any validation errors occur, they are logged but parsing continues
+        with ``None`` values for invalid fields.
+
+        The method automatically detects GPS message type and applies
+        appropriate field validation rules.
+
+        Examples
+        --------
+        Parse a valid GPS string:
+
+        >>> gps = GPS("")
+        >>> gps.parse_gps_string("GPRMC,183511,A,3443.6098,N,11544.1007,W,000.0,000.0,260919,013.1,E*")
+        >>> print(f"Valid: {gps.valid}, Type: {gps.gps_type}")
+        Valid: True, Type: GPRMC
+
+        Handle invalid GPS string:
+
+        >>> gps.parse_gps_string("invalid_gps_data")
+        >>> print(f"Valid: {gps.valid}")
+        Valid: False
         """
 
         gps_list = self._split_gps_string(gps_string)
@@ -202,14 +417,58 @@ class GPS(object):
             self.valid = True
             self.gps_string = gps_string
 
-    def validate_gps_list(self, gps_list):
+    def validate_gps_list(
+        self, gps_list: list[str]
+    ) -> tuple[list[str] | None, list[str]]:
         """
-        check to make sure the gps stamp is the correct format, checks each element
-        for the proper format
+        Validate GPS field list and check format compliance.
 
-        :param gps_list: a parsed gps string from a NIMS
-        :type gps_list: list
-        :raises: :class:`mth5.io.nims.GPSError` if anything is wrong.
+        Performs comprehensive validation of GPS message components including
+        type checking, length validation, and field-specific validation.
+
+        Parameters
+        ----------
+        gps_list : list of str
+            GPS message components split by delimiter.
+
+        Returns
+        -------
+        gps_list : list of str or None
+            Validated GPS list with corrected values, or None if
+            critical validation fails.
+        error_list : list of str
+            List of validation error messages encountered during processing.
+
+        Notes
+        -----
+        Validation steps performed:
+        1. GPS message type validation and correction
+        2. Message length validation based on type
+        3. Time format validation (6 digits)
+        4. Coordinate validation (latitude/longitude + hemisphere)
+        5. Date validation for GPRMC messages
+        6. Elevation validation for GPGGA messages
+
+        Non-critical validation errors are collected but don't halt processing.
+        Critical errors (type or length) return None and stop validation.
+
+        Examples
+        --------
+        Validate a correct GPS list:
+
+        >>> gps = GPS("")
+        >>> gps_data = ["GPRMC", "183511", "A", "3443.6098", "N", "11544.1007", "W",
+        ...             "000.0", "000.0", "260919", "013.1", "E"]
+        >>> validated, errors = gps.validate_gps_list(gps_data)
+        >>> print(f"Errors: {len(errors)}")
+        Errors: 0
+
+        Handle validation errors:
+
+        >>> bad_data = ["INVALID", "time", "fix"]
+        >>> validated, errors = gps.validate_gps_list(bad_data)
+        >>> print(f"Result: {validated}, Errors: {len(errors)}")
+        Result: None, Errors: 1
         """
         error_list = []
         try:
@@ -270,8 +529,33 @@ class GPS(object):
                 gps_list[self.type_dict["gpgga"]["elevation"]] = None
         return gps_list, error_list
 
-    def _validate_gps_type(self, gps_list):
-        """Validate gps type should be gpgga or gprmc"""
+    def _validate_gps_type(self, gps_list: list[str]) -> list[str]:
+        """
+        Validate and auto-correct GPS message type.
+
+        Parameters
+        ----------
+        gps_list : list of str
+            GPS message components with type as first element.
+
+        Returns
+        -------
+        list of str
+            GPS list with corrected type and possibly extracted time data.
+
+        Raises
+        ------
+        GPSError
+            If GPS type cannot be identified as GPGGA or GPRMC variant.
+
+        Notes
+        -----
+        Auto-correction rules:
+        - "GPG*" patterns → "GPGGA"
+        - "GPR*" patterns → "GPRMC"
+        - Handles concatenated type+time strings
+        - Validates final type is "gpgga" or "gprmc"
+        """
         gps_type = gps_list[0].lower()
         if "gpg" in gps_type:
             if len(gps_type) > 5:
@@ -291,9 +575,26 @@ class GPS(object):
             )
         return gps_list
 
-    def _validate_list_length(self, gps_list):
-        """validate gps list length based on type of string"""
+    def _validate_list_length(self, gps_list: list[str]) -> None:
+        """
+        Validate GPS message length based on message type.
 
+        Parameters
+        ----------
+        gps_list : list of str
+            GPS message components.
+
+        Raises
+        ------
+        GPSError
+            If message length doesn't match expected length for the GPS type.
+
+        Notes
+        -----
+        Expected lengths:
+        - GPRMC: 12 components
+        - GPGGA: 14 or 15 components
+        """
         gps_list_type = gps_list[0].lower()
         expected_len = self.type_dict[gps_list_type]["length"]
         if len(gps_list) not in expected_len:
@@ -303,8 +604,31 @@ class GPS(object):
                 f"{','.join(gps_list)}"
             )
 
-    def _validate_time(self, time_str):
-        """validate time string, should be 6 characters long and an int"""
+    def _validate_time(self, time_str: str) -> str:
+        """
+        Validate GPS time string format.
+
+        Parameters
+        ----------
+        time_str : str
+            Time string in HHMMSS format.
+
+        Returns
+        -------
+        str
+            Validated time string.
+
+        Raises
+        ------
+        GPSError
+            If time string is not 6 characters or not numeric.
+
+        Examples
+        --------
+        >>> gps = GPS("")
+        >>> gps._validate_time("183511")
+        '183511'
+        """
         if len(time_str) != 6:
             raise GPSError(
                 f"Length of time string {time_str} not correct.  "
@@ -316,8 +640,31 @@ class GPS(object):
             raise GPSError(f"Could not convert time string {time_str}")
         return time_str
 
-    def _validate_date(self, date_str):
-        """validate date string, should be 6 characters long and an int"""
+    def _validate_date(self, date_str: str) -> str:
+        """
+        Validate GPS date string format.
+
+        Parameters
+        ----------
+        date_str : str
+            Date string in DDMMYY format.
+
+        Returns
+        -------
+        str
+            Validated date string.
+
+        Raises
+        ------
+        GPSError
+            If date string is not 6 characters or not numeric.
+
+        Examples
+        --------
+        >>> gps = GPS("")
+        >>> gps._validate_date("260919")
+        '260919'
+        """
         if len(date_str) != 6:
             raise GPSError(
                 f"Length of date string not correct {date_str}.  "
@@ -329,9 +676,40 @@ class GPS(object):
             raise GPSError(f"Could not convert date string {date_str}")
         return date_str
 
-    def _validate_latitude(self, latitude_str, hemisphere_str):
-        """validate latitude, should have hemisphere string with it"""
+    def _validate_latitude(self, latitude_str: str, hemisphere_str: str) -> str:
+        """
+        Validate latitude coordinate and hemisphere.
 
+        Parameters
+        ----------
+        latitude_str : str
+            Latitude in DDMM.MMMM format (degrees and decimal minutes).
+        hemisphere_str : str
+            Hemisphere indicator, must be 'N' or 'S'.
+
+        Returns
+        -------
+        str
+            Validated latitude string.
+
+        Raises
+        ------
+        GPSError
+            If latitude format is invalid, hemisphere is wrong length/value,
+            or coordinate cannot be converted to float.
+
+        Notes
+        -----
+        Latitude format: DDMM.MMMM where DD=degrees, MM.MMMM=minutes
+        Valid hemispheres: 'N' (North), 'S' (South)
+        Minimum expected length: 8 characters
+
+        Examples
+        --------
+        >>> gps = GPS("")
+        >>> gps._validate_latitude("3443.6098", "N")
+        '3443.6098'
+        """
         if len(latitude_str) < 8:
             raise GPSError(
                 f"Latitude string should be larger than 7 characters.  "
@@ -352,9 +730,40 @@ class GPS(object):
             raise GPSError(f"Could not convert latitude string {latitude_str}")
         return latitude_str
 
-    def _validate_longitude(self, longitude_str, hemisphere_str):
-        """validate longitude, should have hemisphere string with it"""
+    def _validate_longitude(self, longitude_str: str, hemisphere_str: str) -> str:
+        """
+        Validate longitude coordinate and hemisphere.
 
+        Parameters
+        ----------
+        longitude_str : str
+            Longitude in DDDMM.MMMM format (degrees and decimal minutes).
+        hemisphere_str : str
+            Hemisphere indicator, must be 'E' or 'W'.
+
+        Returns
+        -------
+        str
+            Validated longitude string.
+
+        Raises
+        ------
+        GPSError
+            If longitude format is invalid, hemisphere is wrong length/value,
+            or coordinate cannot be converted to float.
+
+        Notes
+        -----
+        Longitude format: DDDMM.MMMM where DDD=degrees, MM.MMMM=minutes
+        Valid hemispheres: 'E' (East), 'W' (West)
+        Minimum expected length: 8 characters
+
+        Examples
+        --------
+        >>> gps = GPS("")
+        >>> gps._validate_longitude("11544.1007", "W")
+        '11544.1007'
+        """
         if len(longitude_str) < 8:
             raise GPSError(
                 "Longitude string should be larger than 7 characters.  "
@@ -375,8 +784,41 @@ class GPS(object):
             raise GPSError(f"Could not convert longitude string {longitude_str}")
         return longitude_str
 
-    def _validate_elevation(self, elevation_str):
-        """validate elevation, check for converstion to float"""
+    def _validate_elevation(self, elevation_str: str) -> str:
+        """
+        Validate elevation value and convert to standard format.
+
+        Parameters
+        ----------
+        elevation_str : str
+            Elevation string, may include 'M' or 'm' unit suffix.
+
+        Returns
+        -------
+        str
+            Validated elevation as string representation of float.
+
+        Raises
+        ------
+        GPSError
+            If elevation cannot be converted to float.
+
+        Notes
+        -----
+        - Automatically removes 'M' or 'm' unit suffixes
+        - Empty string is converted to "0.0"
+        - Result is always a string representation of a float
+
+        Examples
+        --------
+        >>> gps = GPS("")
+        >>> gps._validate_elevation("937.2")
+        '937.2'
+        >>> gps._validate_elevation("937.2M")
+        '937.2'
+        >>> gps._validate_elevation("")
+        '0.0'
+        """
         elevation_str = elevation_str.lower().replace("m", "")
         if elevation_str == "":
             elevation_str = "0"
@@ -387,9 +829,28 @@ class GPS(object):
         return elevation_str
 
     @property
-    def latitude(self):
+    def latitude(self) -> float:
         """
-        Latitude in decimal degrees, WGS84
+        Latitude in decimal degrees (WGS84).
+
+        Returns
+        -------
+        float
+            Latitude in decimal degrees. Negative values indicate
+            Southern hemisphere. Returns 0.0 if coordinate data is invalid.
+
+        Notes
+        -----
+        Converts from GPS format (DDMM.MMMM) to decimal degrees:
+        decimal_degrees = degrees + minutes/60
+
+        Southern hemisphere coordinates are automatically converted to negative values.
+
+        Examples
+        --------
+        >>> gps = GPS("GPRMC,183511,A,3443.6098,N,11544.1007,W,000.0,000.0,260919,013.1,E*")
+        >>> gps.latitude
+        34.72683
         """
         if self._latitude is not None and self._latitude_hemisphere is not None:
             index = len(self._latitude) - 7
@@ -400,9 +861,28 @@ class GPS(object):
         return 0.0
 
     @property
-    def longitude(self):
+    def longitude(self) -> float:
         """
-        Latitude in decimal degrees, WGS84
+        Longitude in decimal degrees (WGS84).
+
+        Returns
+        -------
+        float
+            Longitude in decimal degrees. Negative values indicate
+            Western hemisphere. Returns 0.0 if coordinate data is invalid.
+
+        Notes
+        -----
+        Converts from GPS format (DDDMM.MMMM) to decimal degrees:
+        decimal_degrees = degrees + minutes/60
+
+        Western hemisphere coordinates are automatically converted to negative values.
+
+        Examples
+        --------
+        >>> gps = GPS("GPRMC,183511,A,3443.6098,N,11544.1007,W,000.0,000.0,260919,013.1,E*")
+        >>> gps.longitude
+        -115.73501166666667
         """
         if self._longitude is not None and self._longitude_hemisphere is not None:
             index = len(self._longitude) - 7
@@ -413,9 +893,28 @@ class GPS(object):
         return 0.0
 
     @property
-    def elevation(self):
+    def elevation(self) -> float:
         """
-        elevation in meters
+        Elevation above sea level in meters.
+
+        Returns
+        -------
+        float
+            Elevation in meters. Returns 0.0 if elevation data is not
+            available or cannot be converted.
+
+        Notes
+        -----
+        Elevation is typically only available in GPGGA messages.
+        GPRMC messages will return 0.0 as they don't contain elevation data.
+
+        Conversion errors are logged but don't raise exceptions.
+
+        Examples
+        --------
+        >>> gps = GPS("GPGGA,183511,3443.6098,N,11544.1007,W,1,04,2.6,937.2,M,-28.1,M,*")
+        >>> gps.elevation
+        937.2
         """
         if self._elevation is not None:
             try:
@@ -428,9 +927,30 @@ class GPS(object):
         return 0.0
 
     @property
-    def time_stamp(self):
+    def time_stamp(self) -> datetime.datetime | None:
         """
-        return a datetime object of the time stamp
+        GPS timestamp as datetime object.
+
+        Returns
+        -------
+        datetime.datetime or None
+            Timestamp parsed from GPS data, or None if time data is invalid.
+
+        Notes
+        -----
+        For GPRMC messages: Uses full date and time information
+        For GPGGA messages: Uses time with default date of 1980-01-01
+
+        Time format: HHMMSS (hours, minutes, seconds)
+        Date format: DDMMYY (day, month, 2-digit year)
+
+        Invalid date strings are logged but return None rather than raising exceptions.
+
+        Examples
+        --------
+        >>> gps = GPS("GPRMC,183511,A,3443.6098,N,11544.1007,W,000.0,000.0,260919,013.1,E*")
+        >>> gps.time_stamp
+        datetime.datetime(2019, 9, 26, 18, 35, 11)
         """
         if self._time is None:
             return None
@@ -445,9 +965,29 @@ class GPS(object):
             return None
 
     @property
-    def declination(self):
+    def declination(self) -> float | None:
         """
-        geomagnetic declination in degrees from north
+        Magnetic declination in degrees from true north.
+
+        Returns
+        -------
+        float or None
+            Magnetic declination in degrees. Positive values indicate
+            eastward declination, negative values indicate westward
+            declination. Returns None if declination data is not available.
+
+        Notes
+        -----
+        Magnetic declination is only available in GPRMC messages.
+        GPGGA messages will return None as they don't contain declination data.
+
+        Western declination values are automatically converted to negative.
+
+        Examples
+        --------
+        >>> gps = GPS("GPRMC,183511,A,3443.6098,N,11544.1007,W,000.0,000.0,260919,013.1,E*")
+        >>> gps.declination
+        13.1
         """
         if self._declination is None or self._declination_hemisphere is None:
             return None
@@ -457,14 +997,48 @@ class GPS(object):
         return dec
 
     @property
-    def gps_type(self):
-        """GPRMC or GPGGA"""
+    def gps_type(self) -> str | None:
+        """
+        GPS message type.
+
+        Returns
+        -------
+        str or None
+            GPS message type: "GPRMC" or "GPGGA", or None if not set.
+
+        Examples
+        --------
+        >>> gps = GPS("GPRMC,183511,A,3443.6098,N,11544.1007,W,000.0,000.0,260919,013.1,E*")
+        >>> gps.gps_type
+        'GPRMC'
+        """
         return self._type
 
     @property
-    def fix(self):
+    def fix(self) -> str | None:
         """
-        GPS fixed
+        GPS fix status.
+
+        Returns
+        -------
+        str or None
+            GPS fix status (typically "A" for valid fix), or None
+            if fix information is not available or not applicable for
+            the message type.
+
+        Notes
+        -----
+        Fix status is typically available in GPRMC messages:
+        - "A": Valid fix
+        - "V": Invalid fix
+
+        GPGGA messages use different fix quality indicators.
+
+        Examples
+        --------
+        >>> gps = GPS("GPRMC,183511,A,3443.6098,N,11544.1007,W,000.0,000.0,260919,013.1,E*")
+        >>> gps.fix
+        'A'
         """
         if hasattr(self, "_fix"):
             return self._fix

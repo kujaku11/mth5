@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 """
-Read an amtant.cal file provided by Zonge.  
+Read an amtant.cal file provided by Zonge.
 
 
 Apparently, the file includes the 6th and 8th harmonic of the given frequency, which
-is a fancy way of saying f x 6 and f x 8. 
+is a fancy way of saying f x 6 and f x 8.
 
- 
+
 """
 # =============================================================================
 # Imports
 # =============================================================================
 from pathlib import Path
+
 import numpy as np
 from loguru import logger
-
+from mt_metadata.common.mttime import MTime
 from mt_metadata.timeseries.filters import FrequencyResponseTableFilter
-from mt_metadata.utils.mttime import MTime
 
 
 # =============================================================================
@@ -24,7 +24,6 @@ from mt_metadata.utils.mttime import MTime
 # =============================================================================
 class CoilResponse:
     def __init__(self, calibration_file=None, angular_frequency=False):
-
         self.logger = logger
         self.coil_calibrations = {}
         self._n_frequencies = 48
@@ -137,12 +136,12 @@ class CoilResponse:
             fap.frequencies = cal["frequency"]
             fap.amplitudes = cal["amplitude"]
             fap.phases = cal["phase"]
-            fap.units_out = "millivolts"
-            fap.units_in = "nanotesla"
+            fap.units_out = "milliVolt"
+            fap.units_in = "nanoTesla"
             fap.name = f"ant4_{coil_number}_response"
             fap.instrument_type = "ANT4 induction coil"
             fap.calibration_date = MTime(
-                self.calibration_file.stat().st_mtime
+                time_stamp=self.calibration_file.stat().st_mtime
             ).isoformat()
 
             if extrapolate:

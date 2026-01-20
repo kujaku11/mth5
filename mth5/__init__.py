@@ -12,13 +12,16 @@ from loguru import logger
 from mth5.io.reader import read_file
 import mth5.timeseries.scipy_filters
 
+# # Register xarray accessors
+# import mth5.timeseries.channel_dataset_accessor
+
 # =============================================================================
 # Package Variables
 # =============================================================================
 
 __author__ = """Jared Peacock"""
 __email__ = "jpeacock@usgs.gov"
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 
 # =============================================================================
@@ -30,7 +33,7 @@ config = {
             "sink": sys.stdout,
             "level": "INFO",
             "colorize": True,
-            "format": "<level>{time} | {level: <3} | {name} | {function} | {message}</level>",
+            "format": "<level>{time} | {level: <3} | {name} | {function} | line: {line} | {message}</level>",
         },
     ],
     "extra": {"user": "someone"},
@@ -121,7 +124,7 @@ FC_DTYPE_LIST = [
 FC_DTYPE = np.dtype(FC_DTYPE_LIST)
 ### Run summary table dtype
 
-RUN_SUMMARY_DTYPE = [
+RUN_SUMMARY_LIST = [
     ("channel_scale_factors", float),
     ("duration", float),
     ("end", str),
@@ -139,7 +142,9 @@ RUN_SUMMARY_DTYPE = [
     ("station_hdf5_reference", object),
 ]
 
-RUN_SUMMARY_COLUMNS = [entry[0] for entry in RUN_SUMMARY_DTYPE]
+RUN_SUMMARY_DTYPE = np.dtype(RUN_SUMMARY_LIST)
+
+RUN_SUMMARY_COLUMNS = [entry[0] for entry in RUN_SUMMARY_LIST]
 
 ### Standards dtype
 STANDARDS_DTYPE_LIST = [

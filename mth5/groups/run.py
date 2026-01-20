@@ -8,30 +8,28 @@ Created on Sat May 27 09:59:03 2023
 # =============================================================================
 # Imports
 # =============================================================================
+from __future__ import annotations
+
 import inspect
+from typing import Any, Optional
 
 import h5py
 import numpy as np
 import pandas as pd
-
 from mt_metadata import timeseries as metadata
 
 from mth5 import CHUNK_SIZE
 from mth5.groups import (
+    AuxiliaryDataset,
     BaseGroup,
     ChannelDataset,
     ElectricDataset,
     MagneticDataset,
-    AuxiliaryDataset,
 )
-from mth5.utils.exceptions import MTH5Error
-from mth5.helpers import (
-    to_numpy_type,
-    from_numpy_type,
-    validate_name,
-)
-
+from mth5.helpers import from_numpy_type, to_numpy_type, validate_name
 from mth5.timeseries import ChannelTS, RunTS
+from mth5.utils.exceptions import MTH5Error
+
 
 meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
 # =============================================================================
@@ -42,9 +40,74 @@ meta_classes = dict(inspect.getmembers(metadata, inspect.isclass))
 # =============================================================================
 class RunGroup(BaseGroup):
     """
-    RunGroup is a utility class to hold information about a single run
-    and accompanying metadata.  This class is the next level down from
-    Stations --> ``/Survey/Stations/station/station{a-z}``.
+    Container for a single MT measurement run with multiple channels.
+
+    Manages time series data and metadata for one measurement run within a station.
+    A run can contain multiple channels of electric, magnetic, and auxiliary data.
+    This class provides methods to add, retrieve, and manage individual channels,
+    along with convenient access to station and survey metadata.
+
+    The run group is located at ``/Survey/Stations/{station_name}/{run_name}`` in
+    the HDF5 file hierarchy.
+
+    Attributes
+    ----------
+    metadata : mt_metadata.timeseries.Run
+        Run metadata including sample rate, time period, and channel information.
+    channel_summary : pd.DataFrame
+        Summary table of all channels in the run.
+    groups_list : list[str]
+        List of channel names in the run.
+
+    Parameters
+    ----------
+    group : h5py.Group
+        HDF5 group for the run, should have path like
+        ``/Survey/Stations/{station_name}/{run_name}``
+    run_metadata : mt_metadata.timeseries.Run, optional
+        Metadata container for the run. Default is None.
+    **kwargs : Any
+        Additional keyword arguments passed to BaseGroup.
+
+    Notes
+    -----
+    Key behaviors:
+
+    - Channels can be of type: electric, magnetic, or auxiliary
+    - All metadata updates should use the metadata object for validation
+    - Call write_metadata() after modifying metadata to persist changes
+    - Channel metadata is cached for performance during repeated access
+    - Deleting a channel removes the reference but doesn't reduce file size
+
+    Examples
+    --------
+    Access run from an open MTH5 file:
+
+    >>> from mth5 import mth5
+    >>> mth5_obj = mth5.MTH5()
+    >>> mth5_obj.open_mth5(r"/test.mth5", mode='a')
+    >>> run = mth5_obj.stations_group.get_station('MT001').get_run('MT001a')
+
+    Check available channels:
+
+    >>> run.groups_list
+    ['Ex', 'Ey', 'Hx', 'Hy']
+
+    Access HDF5 group directly:
+
+    >>> run.hdf5_group.ref
+    <HDF5 Group Reference>
+
+    Update metadata and persist to file:
+
+    >>> run.metadata.sample_rate = 512.0
+    >>> run.write_metadata()
+
+    Add a channel:
+
+    >>> import numpy as np
+    >>> data = np.random.rand(4096)
+    >>> ex = run.add_channel('Ex', 'electric', data=data)
 
     This class provides methods to add and get channels.  A summary table of
     all existing channels in the run is also provided as a convenience look up
@@ -198,13 +261,51 @@ class RunGroup(BaseGroup):
     -------------
     """
 
-    def __init__(self, group, run_metadata=None, **kwargs):
+    def __init__(
+        self,
+        group: h5py.Group,
+        run_metadata: Optional[metadata.Run] = None,
+        **kwargs: Any,
+    ) -> None:
+        """
+        Initialize RunGroup.
+
+        Parameters
+        ----------
+        group : h5py.Group
+            HDF5 group for the run.
+        run_metadata : mt_metadata.timeseries.Run, optional
+            Metadata container for the run. Default is None.
+        **kwargs : Any
+            Additional keyword arguments passed to BaseGroup.
+        """
+        self._non_channel_groups = ["Features"]
         super().__init__(group, group_metadata=run_metadata, **kwargs)
+        # Channel metadata cache to share objects between add_channel and metadata property
+        self._channel_metadata_cache: dict[
+            str, metadata.Electric | metadata.Magnetic | metadata.Auxiliary
+        ] = {}
 
     @property
-    def station_metadata(self):
-        """station metadata"""
+    def station_metadata(self) -> metadata.Station:
+        """
+        Get station metadata with current run included.
 
+        Returns
+        -------
+        metadata.Station
+            Station metadata object containing this run's information.
+
+        Examples
+        --------
+        >>> from mth5 import mth5
+        >>> mth5_obj = mth5.MTH5()
+        >>> mth5_obj.open_mth5("example.h5", mode='r')
+        >>> run = mth5_obj.get_run("MT001", "MT001a")
+        >>> station_meta = run.station_metadata
+        >>> print(station_meta.id)
+        MT001
+        """
         meta_dict = dict(self.hdf5_group.parent.attrs)
         meta_dict["run_list"] = [self.metadata.id]
         for key, value in meta_dict.items():
@@ -216,9 +317,25 @@ class RunGroup(BaseGroup):
         return station_metadata
 
     @property
-    def survey_metadata(self):
-        """survey metadata"""
+    def survey_metadata(self) -> metadata.Survey:
+        """
+        Get survey metadata with current station and run included.
 
+        Returns
+        -------
+        metadata.Survey
+            Survey metadata object containing the full hierarchy.
+
+        Examples
+        --------
+        >>> from mth5 import mth5
+        >>> mth5_obj = mth5.MTH5()
+        >>> mth5_obj.open_mth5("example.h5", mode='r')
+        >>> run = mth5_obj.get_run("MT001", "MT001a")
+        >>> survey_meta = run.survey_metadata
+        >>> print(survey_meta.id)
+        CONUS_South
+        """
         meta_dict = dict(self.hdf5_group.parent.parent.parent.attrs)
         for key, value in meta_dict.items():
             meta_dict[key] = from_numpy_type(value)
@@ -227,35 +344,166 @@ class RunGroup(BaseGroup):
         survey_metadata.add_station(self.station_metadata)
         return survey_metadata
 
-    @BaseGroup.metadata.getter
-    def metadata(self):
-        """Overwrite get metadata to include channel information in the runs"""
+    def _read_channel_metadata_from_hdf5(
+        self, channel_name: str
+    ) -> metadata.Electric | metadata.Magnetic | metadata.Auxiliary:
+        """
+        Read channel metadata from HDF5 and return metadata object.
 
+        Parameters
+        ----------
+        channel_name : str
+            Name of the channel to read metadata for.
+
+        Returns
+        -------
+        metadata.Electric | metadata.Magnetic | metadata.Auxiliary
+            Channel metadata object of appropriate type.
+
+        Examples
+        --------
+        >>> run = mth5_obj.get_run("MT001", "MT001a")
+        >>> ex_meta = run._read_channel_metadata_from_hdf5("ex")
+        >>> print(ex_meta.type)
+        electric
+        """
+        meta_dict = dict(self.hdf5_group[channel_name].attrs)
+        for key, value in meta_dict.items():
+            meta_dict[key] = from_numpy_type(value)
+        ch_metadata = meta_classes[meta_dict["type"].capitalize()]()
+        ch_metadata.from_dict(meta_dict)
+        return ch_metadata
+
+    def recache_channel_metadata(self) -> None:
+        """
+        Clear and rebuild the channel metadata cache from current HDF5 data.
+
+        This method reads all channel metadata from HDF5 storage and updates
+        the internal cache. Useful when channel metadata has been modified
+        externally or needs to be synchronized.
+
+        Examples
+        --------
+        >>> run = mth5_obj.get_run("MT001", "MT001a")
+        >>> run.recache_channel_metadata()
+        >>> # Cache is now synchronized with HDF5 storage
+        """
+        self._channel_metadata_cache = {}
+        for ch in self.groups_list:
+            if ch in self._non_channel_groups:
+                continue
+            ch_metadata = self._read_channel_metadata_from_hdf5(ch)
+            self._channel_metadata_cache[ch] = ch_metadata
+
+    @BaseGroup.metadata.getter
+    def metadata(self) -> metadata.Run:
+        """
+        Get run metadata including all channel information.
+
+        This property dynamically reads and caches channel metadata from HDF5,
+        ensuring the run metadata always reflects the current state of channels.
+
+        Returns
+        -------
+        metadata.Run
+            Run metadata object with all channels included.
+
+        Examples
+        --------
+        >>> run = mth5_obj.get_run("MT001", "MT001a")
+        >>> run_meta = run.metadata
+        >>> print(run_meta.channels_recorded_electric)
+        ['ex', 'ey']
+        >>> print(run_meta.sample_rate)
+        256.0
+        """
         if not self._has_read_metadata:
             self.read_metadata()
             self._has_read_metadata = True
-        self._metadata.channels = []
-        for ch in self.groups_list:
-            meta_dict = dict(self.hdf5_group[ch].attrs)
-            for key, value in meta_dict.items():
-                meta_dict[key] = from_numpy_type(value)
-            ch_metadata = meta_classes[meta_dict["type"].capitalize()]()
-            ch_metadata.from_dict(meta_dict)
 
-            self._metadata.add_channel(ch_metadata)
+        if len(self._metadata.channels) > 0:
+            if (
+                self._metadata.time_period.start
+                != self._metadata.channels[0].time_period.start
+            ) or (
+                self._metadata.time_period.end
+                != self._metadata.channels[0].time_period.end
+            ):
+                self.recache_channel_metadata()
+
+                # Clear and rebuild the channels list
+                self._metadata._empty_channels_recorded()
+                self._metadata.channels = []
+
+                for ch in self.groups_list:
+                    if ch in self._non_channel_groups:
+                        continue
+                    if ch in self._channel_metadata_cache:
+                        # Reuse cached metadata to prevent duplicate processing
+                        cached_metadata = self._channel_metadata_cache[ch]
+                        self._metadata.add_channel(cached_metadata)
+                    else:
+                        # Create new metadata if not cached
+                        ch_metadata = self._read_channel_metadata_from_hdf5(ch)
+                        # Cache the metadata for future use
+                        self._channel_metadata_cache[ch] = ch_metadata
+                        self._metadata.add_channel(ch_metadata)
+
+        # Only rebuild channels if they haven't been built yet or if the group list has changed
+        if not self._metadata.channels or len(self._metadata.channels) != len(
+            self.groups_list
+        ):
+            # Get current channel names from the groups and existing channels
+            current_group_names = set(self.groups_list)
+            existing_channel_names = set(ch.component for ch in self._metadata.channels)
+
+            # Only rebuild if there's actually a difference in the channel sets
+            if current_group_names != existing_channel_names:
+                # Clear and rebuild the channels list
+                self._metadata._empty_channels_recorded()
+                self._metadata.channels = []
+
+                # List of known non-channel subgroups to skip
+                for ch in self.groups_list:
+                    # Skip non-channel groups
+                    if ch in self._non_channel_groups:
+                        continue
+                    if ch in self._channel_metadata_cache:
+                        # Reuse cached metadata to prevent duplicate processing
+                        cached_metadata = self._channel_metadata_cache[ch]
+                        self._metadata.add_channel(cached_metadata)
+                    else:
+                        # Create new metadata if not cached
+                        ch_metadata = self._read_channel_metadata_from_hdf5(ch)
+                        # Cache the metadata for future use
+                        self._channel_metadata_cache[ch] = ch_metadata
+                        self._metadata.add_channel(ch_metadata)
+            # If channel sets are identical, skip rebuilding to prevent duplicates
         self._metadata.hdf5_reference = self.hdf5_group.ref
         return self._metadata
 
     @property
-    def channel_summary(self):
+    def channel_summary(self) -> pd.DataFrame:
         """
+        Get summary of all channels in the run as a DataFrame.
 
-         summary of channels in run
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Returns
+        -------
+        pandas.DataFrame
+            DataFrame with columns: component, start, end, n_samples,
+            sample_rate, measurement_type, units, hdf5_reference.
 
+        Examples
+        --------
+        >>> run = mth5_obj.get_run("MT001", "MT001a")
+        >>> summary = run.channel_summary
+        >>> print(summary[['component', 'sample_rate', 'n_samples']])
+          component  sample_rate  n_samples
+        0        ex        256.0      65536
+        1        ey        256.0      65536
+        2        hx        256.0      65536
+        3        hy        256.0      65536
         """
-
         ch_list = []
         for key, group in self.hdf5_group.items():
             try:
@@ -293,13 +541,20 @@ class RunGroup(BaseGroup):
 
         return pd.DataFrame(ch_summary)
 
-    def write_metadata(self):
+    def write_metadata(self) -> None:
         """
-        Overwrite Base.write_metadata to include updating table entry
-        Write HDF5 metadata from metadata object.
+        Write run metadata to HDF5 attributes.
 
+        Converts metadata object to dictionary and writes all attributes
+        to the HDF5 group.
+
+        Examples
+        --------
+        >>> run = mth5_obj.get_run("MT001", "MT001a")
+        >>> run.metadata.sample_rate = 512.0
+        >>> run.write_metadata()
+        >>> # Metadata is now persisted to HDF5 file
         """
-
         for key, value in self.metadata.to_dict(single=True).items():
             value = to_numpy_type(value)
             self.hdf5_group.attrs.create(key, value)
@@ -317,55 +572,74 @@ class RunGroup(BaseGroup):
         **kwargs,
     ):
         """
-        add a channel to the run
+        Add a channel to the run.
 
-        :param channel_name: name of the channel
-        :type channel_name: string
-        :param channel_type: [ electric | magnetic | auxiliary ]
-        :type channel_type: string
-        :param shape: Set the shape of the array, uses the data if input. Can
-         be useful if you are setting up the file. This will set the size of
-         the dataset, whereas `max_shape` sets the max shape which ends up in
-         different memory size. If you are not sure about the size of the array
-         suggest using `max_shape`, but if you already know and want to start
-         with an array of 0's use `shape`, defaults to None
-        :type shape: tuple, optional
-        :param max_shape: Absolute max shape of the data to be stored, this
-         means the data can be extended up to the given shape. If None is
-         given then the data can be extended infinitely (or until memory runs
-         out), defaults to (None,)
-        :type max_shape: tuple, optional
-        :param chunks: Use chunked storage, defaults to True
-        :type chunks: bool, optional
-        :param channel_metadata: metadata container, defaults to None
-        :type channel_metadata: [ :class:`mth5.metadata.Electric` |
-                                 :class:`mth5.metadata.Magnetic` |
-                                 :class:`mth5.metadata.Auxiliary` ], optional
-        :param **kwargs: Key word arguments
-        :type **kwargs: dictionary
-        :raises MTH5Error: If channel type is not correct
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Parameters
+        ----------
+        channel_name : str
+            Name of the channel (e.g., 'ex', 'ey', 'hx', 'hy', 'hz').
+        channel_type : str
+            Type of channel: 'electric', 'magnetic', or 'auxiliary'.
+        data : numpy.ndarray or None
+            Time series data for the channel. If None, an empty resizable
+            dataset will be created.
+        channel_dtype : str, optional
+            Data type for the channel if data is None, by default "int32".
+        shape : tuple of int, optional
+            Initial shape of the dataset. If None and data is None, shape
+            is estimated from metadata or set to (1,), by default None.
+        max_shape : tuple of int or None, optional
+            Maximum shape the dataset can be resized to. Use None for
+            unlimited growth in that dimension, by default (None,).
+        chunks : bool or int, optional
+            Enable chunked storage. If True, uses automatic chunking.
+            If int, uses that chunk size, by default True.
+        channel_metadata : mt_metadata.timeseries.Electric, Magnetic, or Auxiliary, optional
+            Metadata object for the channel, by default None.
+        **kwargs : dict
+            Additional keyword arguments.
 
+        Returns
+        -------
+        ElectricDataset or MagneticDataset or AuxiliaryDataset
+            The created channel dataset object.
 
-        :return: Channel container
-        :rtype: [ :class:`mth5.mth5_groups.ElectricDatset` |
-                 :class:`mth5.mth5_groups.MagneticDatset` |
-                 :class:`mth5.mth5_groups.AuxiliaryDatset` ]
+        Raises
+        ------
+        MTH5Error
+            If channel_type is not one of: electric, magnetic, auxiliary.
 
-        >>> new_channel = run.add_channel('Ex', 'electric', None)
-        >>> new_channel
-        Channel Electric:
-        -------------------
-                        component:        None
-                data type:        electric
-                data format:      float32
-                data shape:       (1,)
-                start:            1980-01-01T00:00:00+00:00
-                end:              1980-01-01T00:00:00+00:00
-                sample rate:      None
+        Examples
+        --------
+        Add a channel with data:
 
+        >>> import numpy as np
+        >>> from mth5 import mth5
+        >>> mth5_obj = mth5.MTH5()
+        >>> mth5_obj.open_mth5("example.h5", mode='a')
+        >>> run = mth5_obj.get_run("MT001", "MT001a")
+        >>> data = np.random.rand(4096)
+        >>> ex = run.add_channel('ex', 'electric', data)
+        >>> print(ex.metadata.component)
+        ex
 
+        Add a channel with metadata:
+
+        >>> from mt_metadata.timeseries import Electric
+        >>> ex_meta = Electric()
+        >>> ex_meta.time_period.start = '2020-01-01T12:30:00'
+        >>> ex_meta.sample_rate = 256.0
+        >>> ex = run.add_channel('ex', 'electric', None,
+        ...                      channel_metadata=ex_meta)
+        >>> print(ex.metadata.sample_rate)
+        256.0
+
+        Add a channel with custom shape:
+
+        >>> ex = run.add_channel('ex', 'electric', None,
+        ...                      shape=(8192,), channel_dtype='float32')
+        >>> print(ex.hdf5_dataset.shape)
+        (8192,)
         """
         channel_name = validate_name(channel_name.lower())
         estimate_size = (1,)
@@ -401,8 +675,8 @@ class RunGroup(BaseGroup):
                                 estimate_size = (
                                     int(
                                         (
-                                            channel_metadata.time_period._end_dt
-                                            - channel_metadata.time_period._start_dt
+                                            channel_metadata.time_period.end
+                                            - channel_metadata.time_period.start
                                         )
                                         * channel_metadata.sample_rate
                                     ),
@@ -430,8 +704,14 @@ class RunGroup(BaseGroup):
                     chunks=chunks,
                     **self.dataset_options,
                 )
-            if channel_metadata and channel_metadata.component is None:
-                channel_metadata.component = channel_name
+            if channel_metadata:
+                if channel_metadata.component != channel_name:
+                    self.logger.warning(
+                        f"Channel name {channel_name} != "
+                        f"channel_metadata.component "
+                        f"{channel_metadata.component}, setting to {channel_name}"
+                    )
+                    channel_metadata.component = channel_name
             if channel_type.lower() in ["magnetic"]:
                 channel_obj = MagneticDataset(
                     channel_group, dataset_metadata=channel_metadata
@@ -465,46 +745,69 @@ class RunGroup(BaseGroup):
                 channel_obj.write_metadata()
                 self.logger.debug(f"Done with {channel_name}")
         # need to make sure the channel name is passed.
-        if channel_obj.metadata.component is None:
+        if channel_obj.metadata.component != channel_name:
             channel_obj.metadata.component = channel_name
             channel_obj.write_metadata()
+
+        # Cache the processed channel metadata to prevent duplicate processing in metadata property
+        # Use the channel object's metadata which has already been processed through from_dict
+        self._channel_metadata_cache[channel_name] = channel_obj.metadata
+
         return channel_obj
 
-    def get_channel(self, channel_name):
+    def get_channel(
+        self, channel_name: str
+    ) -> ElectricDataset | MagneticDataset | AuxiliaryDataset | ChannelDataset:
         """
+        Get a channel from an existing name.
 
-        Get a channel from an existing name.  Returns the appropriate
-        container.
+        Returns the appropriate channel dataset container based on the
+        channel type (electric, magnetic, or auxiliary).
 
-        :param channel_name: name of the channel
-        :type channel_name: string
-        :return: Channel container
-        :rtype: [ :class:`mth5.mth5_groups.ElectricDatset` |
-                  :class:`mth5.mth5_groups.MagneticDatset` |
-                  :class:`mth5.mth5_groups.AuxiliaryDatset` ]
-        :raises MTH5Error:  If no channel is found
+        Parameters
+        ----------
+        channel_name : str
+            Name of the channel to retrieve (e.g., 'ex', 'ey', 'hx').
 
-        :Example:
+        Returns
+        -------
+        ElectricDataset or MagneticDataset or AuxiliaryDataset or ChannelDataset
+            Channel dataset object containing the channel data and metadata.
 
-        >>> existing_channel = run.get_channel('Ex')
-        MTH5Error: Ex does not exist, check groups_list for existing names'
+        Raises
+        ------
+        MTH5Error
+            If the channel does not exist in the run.
+
+        Examples
+        --------
+        Attempting to get a non-existent channel:
+
+        >>> from mth5 import mth5
+        >>> mth5_obj = mth5.MTH5()
+        >>> mth5_obj.open_mth5("example.h5", mode='r')
+        >>> run = mth5_obj.get_run("MT001", "MT001a")
+        >>> ex = run.get_channel('ex')
+        MTH5Error: ex does not exist, check groups_list for existing names
+
+        Check available channels first:
 
         >>> run.groups_list
-        ['Ey', 'Hx', 'Hz']
+        ['ey', 'hx', 'hz']
 
-        >>> existing_channel = run.get_channel('Ey')
-        >>> existing_channel
+        Get an existing channel:
+
+        >>> ey = run.get_channel('ey')
+        >>> print(ey)
         Channel Electric:
         -------------------
-                        component:        Ey
+                component:        ey
                 data type:        electric
                 data format:      float32
                 data shape:       (4096,)
                 start:            1980-01-01T00:00:00+00:00
                 end:              1980-01-01T00:00:01+00:00
                 sample rate:      4096
-
-
         """
 
         channel_name = validate_name(channel_name.lower())
@@ -519,7 +822,7 @@ class RunGroup(BaseGroup):
             raise MTH5Error(msg)
         if ch_dataset.attrs["mth5_type"].lower() in ["electric"]:
             ch_metadata = meta_classes["Electric"]()
-            ch_metadata.from_dict({"Electric": ch_dataset.attrs})
+            ch_metadata.from_dict({"Electric": dict(ch_dataset.attrs)})
             channel = ElectricDataset(
                 ch_dataset,
                 dataset_metadata=ch_metadata,
@@ -527,7 +830,7 @@ class RunGroup(BaseGroup):
             )
         elif ch_dataset.attrs["mth5_type"].lower() in ["magnetic"]:
             ch_metadata = meta_classes["Magnetic"]()
-            ch_metadata.from_dict({"Magnetic": ch_dataset.attrs})
+            ch_metadata.from_dict({"Magnetic": dict(ch_dataset.attrs)})
             channel = MagneticDataset(
                 ch_dataset,
                 dataset_metadata=ch_metadata,
@@ -535,7 +838,7 @@ class RunGroup(BaseGroup):
             )
         elif ch_dataset.attrs["mth5_type"].lower() in ["auxiliary"]:
             ch_metadata = meta_classes["Auxiliary"]()
-            ch_metadata.from_dict({"Auxiliary": ch_dataset.attrs})
+            ch_metadata.from_dict({"Auxiliary": dict(ch_dataset.attrs)})
             channel = AuxiliaryDataset(
                 ch_dataset,
                 dataset_metadata=ch_metadata,
@@ -547,34 +850,44 @@ class RunGroup(BaseGroup):
 
         return channel
 
-    def remove_channel(self, channel_name):
+    def remove_channel(self, channel_name: str) -> None:
         """
-        Remove a run from the station.
+        Remove a channel from the run.
 
-        .. note:: Deleting a channel is not as simple as del(channel).  In HDF5
-              this does not free up memory, it simply removes the reference
-              to that channel.  The common way to get around this is to
-              copy what you want into a new file, or overwrite the channel.
+        Deleting a channel is not as simple as del(channel). In HDF5,
+        this does not free up memory; it simply removes the reference
+        to that channel. The common way to get around this is to
+        copy what you want into a new file, or overwrite the channel.
 
-        :param station_name: existing station name
-        :type station_name: string
+        Parameters
+        ----------
+        channel_name : str
+            Name of the existing channel to remove.
 
-        :Example:
+        Notes
+        -----
+        Deleting a channel does not reduce the HDF5 file size. It simply
+        removes the reference. If file size reduction is your goal, copy
+        what you want into another file.
 
+        Todo: Need to remove summary table entry as well.
+
+        Examples
+        --------
         >>> from mth5 import mth5
         >>> mth5_obj = mth5.MTH5()
         >>> mth5_obj.open_mth5(r"/test.mth5", mode='a')
         >>> run = mth5_obj.stations_group.get_station('MT001').get_run('MT001a')
-        >>> run.remove_channel('Ex')
-
-        .. todo:: Need to remove summary table entry as well.
-
+        >>> run.remove_channel('ex')
         """
 
         channel_name = validate_name(channel_name.lower())
 
         try:
             del self.hdf5_group[channel_name]
+            # Remove from metadata cache if present
+            if channel_name in self._channel_metadata_cache:
+                del self._channel_metadata_cache[channel_name]
             self.logger.info(
                 "Deleting a channel does not reduce the HDF5"
                 "file size it simply remove the reference. If "
@@ -589,13 +902,30 @@ class RunGroup(BaseGroup):
             self.logger.debug("Error: " + msg)
             raise MTH5Error(msg)
 
-    def has_data(self):
+    def has_data(self) -> bool:
         """
-        make sure there is data in the run, values are non-zero or not empty
+        Check if the run contains any non-empty, non-zero data.
 
-        :return: True if has data, False if empty or all zeros
-        :rtype: bool
+        Verifies that all channels in the run have valid data (non-zero and
+        non-empty arrays). Returns False if any channel lacks data.
 
+        Returns
+        -------
+        bool
+            True if all channels have data, False if any channel is empty
+            or all zeros.
+
+        Notes
+        -----
+        A channel is considered to have data if its has_data() method
+        returns True, meaning it contains non-zero values.
+
+        Examples
+        --------
+        >>> run = mth5_obj.get_run("MT001", "MT001a")
+        >>> if run.has_data():
+        ...     print("Run contains valid data")
+        ...     runts = run.to_runts()
         """
         has_data_list = []
         has_data = True
@@ -603,9 +933,7 @@ class RunGroup(BaseGroup):
             if channel in ["summary"]:
                 continue
             ch_obj = self.get_channel(channel)
-            has_data_list.append(
-                f"{ch_obj.metadata.component}: {ch_obj.has_data()}"
-            )
+            has_data_list.append(f"{ch_obj.metadata.component}: {ch_obj.has_data()}")
             if not ch_obj.has_data():
                 has_data = False
 
@@ -613,14 +941,56 @@ class RunGroup(BaseGroup):
             self.logger.info(", ".join(has_data_list))
         return has_data
 
-    def to_runts(self, start=None, end=None, n_samples=None):
+    def to_runts(
+        self,
+        start: Optional[str] = None,
+        end: Optional[str] = None,
+        n_samples: Optional[int] = None,
+    ) -> RunTS:
         """
-        create a :class:`mth5.timeseries.RunTS` object from channels of the
-        run
+        Convert run to a RunTS timeseries object.
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Combines all channels in the run into a RunTS object which handles
+        multi-channel time series data with associated metadata.
 
+        Parameters
+        ----------
+        start : str, optional
+            Start time for time slice in ISO format (e.g., '2023-01-01T12:00:00').
+            If None, uses entire channel data. Default is None.
+        end : str, optional
+            End time for time slice in ISO format. Only used if start is specified.
+            Default is None.
+        n_samples : int, optional
+            Number of samples to extract from start. If both end and n_samples
+            are specified, end takes precedence. Default is None.
+
+        Returns
+        -------
+        RunTS
+            RunTS object containing all channels with full run and station metadata.
+
+        Notes
+        -----
+        - Includes run, station, and survey metadata in the output
+        - Skips the 'summary' group which is not a channel
+        - If start is specified, performs time slicing; otherwise returns full data
+
+        Examples
+        --------
+        Convert entire run to RunTS:
+
+        >>> run = mth5_obj.get_run("MT001", "MT001a")
+        >>> runts = run.to_runts()
+        >>> print(runts.channels)
+        ['ex', 'ey', 'hx', 'hy']
+
+        Time slice the run:
+
+        >>> runts = run.to_runts(start='2023-01-01T12:00:00',
+        ...                       end='2023-01-01T13:00:00')
+        >>> print(runts.ex.ts.shape)
+        (1024,)
         """
         ch_list = []
         for channel in self.groups_list:
@@ -640,15 +1010,47 @@ class RunGroup(BaseGroup):
             survey_metadata=self.survey_metadata,
         )
 
-    def from_runts(self, run_ts_obj, **kwargs):
+    def from_runts(
+        self, run_ts_obj: RunTS, **kwargs: Any
+    ) -> list[ElectricDataset | MagneticDataset | AuxiliaryDataset]:
         """
-        create channel datasets from a :class:`mth5.timeseries.RunTS` object
-        and update metadata.
+        Create channel datasets from a RunTS timeseries object.
 
-        :parameter :class:`mth5.timeseries.RunTS` run_ts_obj: Run object with all
-        the appropriate channels and metadata.
+        Converts a RunTS object with multiple channels and metadata into
+        HDF5 channel datasets and updates run metadata accordingly.
 
-        Will create a run group and appropriate channel datasets.
+        Parameters
+        ----------
+        run_ts_obj : RunTS
+            RunTS object containing multiple channels and metadata.
+        **kwargs : Any
+            Additional keyword arguments.
+
+        Returns
+        -------
+        list[ElectricDataset | MagneticDataset | AuxiliaryDataset]
+            List of created channel dataset objects.
+
+        Raises
+        ------
+        MTH5Error
+            If input is not a RunTS object.
+
+        Notes
+        -----
+        - Updates run metadata from input object
+        - Validates station and run IDs match current context
+        - Creates appropriate channel type based on channel metadata
+        - Automatically registers recorded channels in run metadata
+
+        Examples
+        --------
+        >>> from mth5.timeseries import RunTS
+        >>> run = mth5_obj.get_run("MT001", "MT001a")
+        >>> runts = RunTS.from_file("timeseries_data.txt")
+        >>> channels = run.from_runts(runts)
+        >>> print(f"Created {len(channels)} channels")
+        Created 4 channels
         """
 
         if not isinstance(run_ts_obj, RunTS):
@@ -685,16 +1087,46 @@ class RunGroup(BaseGroup):
         self.update_metadata()
         return channels
 
-    def from_channel_ts(self, channel_ts_obj):
+    def from_channel_ts(
+        self, channel_ts_obj: ChannelTS
+    ) -> ElectricDataset | MagneticDataset | AuxiliaryDataset:
         """
-        create a channel data set from a :class:`mth5.timeseries.ChannelTS` object and
-        update metadata.
+        Create a channel dataset from a ChannelTS timeseries object.
 
-        :param channel_ts_obj: a single time series object
-        :type channel_ts_obj: :class:`mth5.timeseries.ChannelTS`
-        :return: new channel dataset
-        :rtype: :class:`mth5.groups.ChannelDataset
+        Converts a single ChannelTS object with time series data and metadata
+        into an HDF5 channel dataset. Handles filter registration and updates
+        run metadata with channel information.
 
+        Parameters
+        ----------
+        channel_ts_obj : ChannelTS
+            ChannelTS object containing time series data and metadata.
+
+        Returns
+        -------
+        ElectricDataset | MagneticDataset | AuxiliaryDataset
+            Created channel dataset object.
+
+        Raises
+        ------
+        MTH5Error
+            If input is not a ChannelTS object.
+
+        Notes
+        -----
+        - Registers filters from channel response if present
+        - Validates and corrects station/run ID mismatches
+        - Updates run metadata recorded channel lists
+        - Automatically determines channel type from metadata
+
+        Examples
+        --------
+        >>> from mth5.timeseries import ChannelTS
+        >>> run = mth5_obj.get_run("MT001", "MT001a")
+        >>> channel = ChannelTS.from_file("ex_timeseries.txt")
+        >>> ex = run.from_channel_ts(channel)
+        >>> print(ex.metadata.component)
+        ex
         """
 
         if not isinstance(channel_ts_obj, ChannelTS):
@@ -718,33 +1150,25 @@ class RunGroup(BaseGroup):
         # need to update the channels recorded
         if channel_ts_obj.channel_metadata.type == "electric":
             if self.metadata.channels_recorded_electric is None:
-                self.metadata.channels_recorded_electric = [
-                    channel_ts_obj.component
-                ]
+                self.metadata.channels_recorded_electric = [channel_ts_obj.component]
             elif (
-                channel_ts_obj.component
-                not in self.metadata.channels_recorded_electric
+                channel_ts_obj.component not in self.metadata.channels_recorded_electric
             ):
                 self.metadata.channels_recorded_electric.append(
                     channel_ts_obj.component
                 )
         elif channel_ts_obj.channel_metadata.type == "magnetic":
             if self.metadata.channels_recorded_magnetic is None:
-                self.metadata.channels_recorded_magnetic = [
-                    channel_ts_obj.component
-                ]
+                self.metadata.channels_recorded_magnetic = [channel_ts_obj.component]
             elif (
-                channel_ts_obj.component
-                not in self.metadata.channels_recorded_magnetic
+                channel_ts_obj.component not in self.metadata.channels_recorded_magnetic
             ):
                 self.metadata.channels_recorded_magnetic.append(
                     channel_ts_obj.component
                 )
         elif channel_ts_obj.channel_metadata.type == "auxiliary":
             if self.metadata.channels_recorded_auxiliary is None:
-                self.metadata.channels_recorded_auxiliary = [
-                    channel_ts_obj.component
-                ]
+                self.metadata.channels_recorded_auxiliary = [channel_ts_obj.component]
             elif (
                 channel_ts_obj.component
                 not in self.metadata.channels_recorded_auxiliary
@@ -754,32 +1178,54 @@ class RunGroup(BaseGroup):
                 )
         return ch_obj
 
-    def update_run_metadata(self):
+    def update_run_metadata(self) -> None:
         """
-        Update metadata and table entries to ensure consistency
-
-        :return: DESCRIPTION
-        :rtype: TYPE
-
+        Update metadata and table entries (Deprecated).
+        .. deprecated::
+            Use update_metadata() instead.
+        Raises
+        ------
+        DeprecationWarning
+            Always raised to indicate this method should not be used.
         """
 
         raise DeprecationWarning(
             "'update_run_metadata' has been deprecated use 'update_metadata()'"
         )
 
-    def update_metadata(self):
+    def update_metadata(self) -> None:
         """
-        Update metadata and table entries to ensure consistency
+        Update run metadata from all channels and persist to HDF5.
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Aggregates metadata from all channels including time period and
+        sample rate, then writes updated metadata to HDF5 attributes.
 
+        Raises
+        ------
+        Exception
+            May raise exceptions if no channels exist (logs warning).
+
+        Notes
+        -----
+        Updates:
+
+        - Time period start from minimum of all channels
+        - Time period end from maximum of all channels
+        - Sample rate from first channel (assumes uniform across channels)
+
+        Should be called after adding or removing channels to maintain
+        consistency between channel and run metadata.
+
+        Examples
+        --------
+        >>> run = mth5_obj.get_run("MT001", "MT001a")
+        >>> run.add_channel('ex', 'electric', data=ex_data)
+        >>> run.add_channel('ey', 'electric', data=ey_data)
+        >>> run.update_metadata()  # Updates time period and sample rate
         """
         channel_summary = self.channel_summary.copy()
 
-        self._metadata.time_period.start = (
-            channel_summary.start.min().isoformat()
-        )
+        self._metadata.time_period.start = channel_summary.start.min().isoformat()
         self._metadata.time_period.end = channel_summary.end.max().isoformat()
         try:
             self._metadata.sample_rate = channel_summary.sample_rate.unique()[0]
@@ -789,11 +1235,54 @@ class RunGroup(BaseGroup):
             self._metadata.sample_rate = 0
         self.write_metadata()
 
-    def plot(self, start=None, end=None, n_samples=None):
+    def plot(
+        self,
+        start: Optional[str] = None,
+        end: Optional[str] = None,
+        n_samples: Optional[int] = None,
+    ) -> Any:
         """
-        Produce a simple matplotlib plot using runts
-        """
+        Create a matplotlib plot of all channels in the run.
 
+        Generates a multi-panel plot showing all channels in the run using
+        the RunTS plotting functionality.
+
+        Parameters
+        ----------
+        start : str, optional
+            Start time for time slice in ISO format. If None, plots entire
+            channel data. Default is None.
+        end : str, optional
+            End time for time slice in ISO format. Only used if start is
+            specified. Default is None.
+        n_samples : int, optional
+            Number of samples to extract from start. If both end and n_samples
+            are specified, end takes precedence. Default is None.
+
+        Returns
+        -------
+        Any
+            Matplotlib figure or axes object (depends on RunTS.plot() implementation).
+
+        Notes
+        -----
+        - Creates separate subplots for each channel type (electric, magnetic, auxiliary)
+        - Time slice parameters work the same as to_runts()
+        - Requires matplotlib to be installed
+
+        Examples
+        --------
+        Plot entire run:
+
+        >>> run = mth5_obj.get_run("MT001", "MT001a")
+        >>> fig = run.plot()
+        >>> fig.show()
+
+        Plot time slice:
+
+        >>> fig = run.plot(start='2023-01-01T12:00:00',
+        ...                end='2023-01-01T13:00:00')
+        """
         runts = self.to_runts(start=start, end=end, n_samples=n_samples)
 
         return runts.plot()

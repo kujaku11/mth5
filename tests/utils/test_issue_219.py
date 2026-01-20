@@ -1,82 +1,79 @@
 """
 Proof of concept for issue #219
-
 """
-from loguru import logger
-from mt_metadata.timeseries import Survey
-from mth5.data.paths import SyntheticTestPaths
-from mth5.data.make_mth5_from_asc import _add_survey
-from mth5.data.make_mth5_from_asc import create_test3_h5
-from mth5.mth5 import MTH5
-from mth5.timeseries import ChannelTS
-from mth5.timeseries import RunTS
-from mth5.utils.helpers import add_filters
-from mth5.utils.helpers import get_channel_summary
-from mth5.utils.helpers import station_in_mth5
-from mth5.utils.helpers import survey_in_mth5
+
+import tempfile
+import uuid
+from pathlib import Path
+
+import pytest
+
 from mth5.utils.extract_subset_mth5 import extract_subset
+from mth5.utils.helpers import get_channel_summary
 
-import pathlib
 
-synthetic_test_paths = SyntheticTestPaths()
-MTH5_PATH = synthetic_test_paths.mth5_path
-FILE_VERSION = "0.1.0"
+@pytest.fixture
+def test3_mth5_path(global_test3_mth5):
+    """Create unique test3 MTH5 file for each test from global cache."""
+    import shutil
 
-def _select_source_file():
-    """
+    # Create unique temporary file
+    temp_dir = tempfile.mkdtemp()
+    unique_id = str(uuid.uuid4())[:8]
+    target_file = Path(temp_dir) / f"test3_{unique_id}.h5"
 
-    Returns
-    -------
+    # Copy from global cache
+    shutil.copy2(global_test3_mth5, target_file)
 
-    """
-    # Get a list of mth5 files available
+    yield target_file
 
-    # If this list is empty, you may need to run `make_mth5_from_asc.py`
-    synthetic_test_paths = SyntheticTestPaths()
-    MTH5_PATH = synthetic_test_paths.mth5_path
-    logger.info(f"MTH5_PATH = {MTH5_PATH}")
-    assert MTH5_PATH.exists()
-    mth5_files = list(MTH5_PATH.glob("*h5"))
-    logger.info(f"mth5_files: {mth5_files}")
-    source_file = MTH5_PATH.joinpath("test3.h5")
+    # Cleanup
+    if target_file.exists():
+        try:
+            target_file.unlink()
+        except (OSError, PermissionError):
+            pass
     try:
-        assert source_file.exists()
-    except AssertionError:
-        create_test3_h5(file_version=FILE_VERSION)
-
-    return source_file
-
-def _select_target_file():
-    synthetic_test_paths = SyntheticTestPaths()
-    MTH5_PATH = synthetic_test_paths.mth5_path
-    target_file = MTH5_PATH.joinpath("subset.h5")
-    return target_file
+        shutil.rmtree(temp_dir, ignore_errors=True)
+    except (OSError, PermissionError):
+        pass
 
 
-def _select_data_subset():
-    source_file = _select_source_file()
-    df = get_channel_summary(source_file)
+@pytest.fixture
+def target_file_path():
+    """Create temporary target file path for subset extraction."""
+    temp_dir = tempfile.mkdtemp()
+    unique_id = str(uuid.uuid4())[:8]
+    target_file = Path(temp_dir) / f"subset_{unique_id}.h5"
+
+    yield target_file
+
+    # Cleanup
+    if target_file.exists():
+        try:
+            target_file.unlink()
+        except (OSError, PermissionError):
+            pass
+    try:
+        import shutil
+
+        shutil.rmtree(temp_dir, ignore_errors=True)
+    except (OSError, PermissionError):
+        pass
+
+
+def test_extract_subset(test3_mth5_path, target_file_path):
+    """Test extraction of subset from MTH5 file."""
+    # Get channel summary from source file
+    df = get_channel_summary(test3_mth5_path)
     selected_df = df[df.run.isin(["002", "004"])]
-    selected_df
-    return selected_df
 
+    # Extract subset
+    extract_subset(test3_mth5_path, target_file_path, selected_df)
 
-
-
-def test_extract_subset():
-    source_file = _select_source_file()
-    target_file = _select_target_file()
-    subset_df = _select_data_subset()
-    extract_subset(source_file, target_file, subset_df)
-    df2 = get_channel_summary(target_file)
+    # Verify extraction
+    df2 = get_channel_summary(target_file_path)
     compare_columns = [x for x in df2.columns if "hdf5_reference" not in x]
-    subset_df.reset_index(inplace=True, drop=True)  # allow comparison
-    assert (df2[compare_columns] == subset_df[compare_columns]).all().all()
+    selected_df.reset_index(inplace=True, drop=True)  # allow comparison
+    assert (df2[compare_columns] == selected_df[compare_columns]).all().all()
     print(df2)
-
-def main():
-    test_extract_subset()
-
-
-if __name__ == "__main__":
-    main()

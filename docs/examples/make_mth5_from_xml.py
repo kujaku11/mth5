@@ -9,18 +9,21 @@ Created on Mon Jun 22 12:20:59 2020
 This script interrogates a directory containing a collection of XML files and
 reads them into an MTH5 object.
 """
+from xml.etree import cElementTree as et
+
 # =============================================================================
 # imports
 # =============================================================================
 import numpy as np
-from xml.etree import cElementTree as et
 
 from mth5 import mth5
 from mth5.utils.pathing import ensure_is_path
 
+
 # =============================================================================
 # functions
 # =============================================================================
+
 
 # <XML HELPERS>
 def is_a_station_xml(fn):
@@ -152,4 +155,3 @@ with mth5.MTH5() as mth5_obj:
     for station in ["FL001", "FL002"]:
         # add station
         new_station = add_station(station, xml_root, mth5_obj)
-

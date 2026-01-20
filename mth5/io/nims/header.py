@@ -5,25 +5,89 @@ Created on Thu Sep  1 12:57:32 2022
 @author: jpeacock
 """
 
+from __future__ import annotations
+
 # =============================================================================
 # Imports
 # =============================================================================
 from pathlib import Path
+from typing import Optional, Union
+
 import dateutil
 from loguru import logger
+from mt_metadata.common import Comment, MTime
 
-from mt_metadata.utils.mttime import MTime
 
 # =============================================================================
 class NIMSError(Exception):
     pass
 
 
-class NIMSHeader(object):
+class NIMSHeader:
     """
-    class to hold the NIMS header information.
+    Class to hold NIMS header information.
 
-    A typical header looks like
+    This class parses and stores header information from NIMS DATA.BIN files.
+    The header contains metadata about the measurement site, equipment setup,
+    GPS coordinates, electrode configuration, and other survey parameters.
+
+    Parameters
+    ----------
+    fn : str or Path, optional
+        Path to the NIMS file to read, by default None
+
+    Attributes
+    ----------
+    fn : Path or None
+        Path to the NIMS file
+    site_name : str or None
+        Name of the measurement site
+    state_province : str or None
+        State or province of the measurement location
+    country : str or None
+        Country of the measurement location
+    box_id : str or None
+        System box identifier
+    mag_id : str or None
+        Magnetometer head identifier
+    ex_length : float or None
+        North-South electric field wire length in meters
+    ex_azimuth : float or None
+        North-South electric field wire heading in degrees
+    ey_length : float or None
+        East-West electric field wire length in meters
+    ey_azimuth : float or None
+        East-West electric field wire heading in degrees
+    n_electrode_id : str or None
+        North electrode identifier
+    s_electrode_id : str or None
+        South electrode identifier
+    e_electrode_id : str or None
+        East electrode identifier
+    w_electrode_id : str or None
+        West electrode identifier
+    ground_electrode_info : str or None
+        Ground electrode information
+    header_gps_stamp : MTime or None
+        GPS timestamp from header
+    header_gps_latitude : float or None
+        GPS latitude from header in decimal degrees
+    header_gps_longitude : float or None
+        GPS longitude from header in decimal degrees
+    header_gps_elevation : float or None
+        GPS elevation from header in meters
+    operator : str or None
+        Operator name
+    comments : str or None
+        Survey comments
+    run_id : str or None
+        Run identifier
+    data_start_seek : int
+        Byte position where data begins in file
+
+    Examples
+    --------
+    A typical header looks like:
 
     .. code-block::
 
@@ -45,16 +109,15 @@ class NIMSHeader(object):
         2         <-- S ELECTRODE ID
         4         <-- W ELECTRODE ID
         Cu        <-- GROUND ELECTRODE INFO
-        GPS INFO: 01/10/19 16:16:42 1616.7000 3443.6088 115.7350 W 946.6
+        GPS INFO: 26/09/19 18:29:29 34.7268 N 115.7350 W 939.8
         OPERATOR: KP
         COMMENT: N/S CRS: .95/.96 DCV: 3.5 ACV:1
         E/W CRS: .85/.86 DCV: 1.5 ACV: 1
         Redeployed site for run b b/c possible animal disturbance
         '''
-
     """
 
-    def __init__(self, fn=None):
+    def __init__(self, fn: Optional[Union[str, Path]] = None) -> None:
         self.logger = logger
         self.fn = fn
         self._max_header_length = 1000
@@ -74,46 +137,94 @@ class NIMSHeader(object):
         self.w_electrode_id = None
         self.ground_electrode_info = None
         self.header_gps_stamp = None
-        self.header_gps_longitude = None
+        self.header_gps_latitude = None
         self.header_gps_longitude = None
         self.header_gps_elevation = None
         self.operator = None
-        self.comments = None
+        self.comments = Comment()
         self.run_id = None
         self.data_start_seek = 0
 
     @property
-    def fn(self):
-        """Full path to NIMS file"""
+    def fn(self) -> Optional[Path]:
+        """
+        Full path to NIMS file.
+
+        Returns
+        -------
+        Path or None
+            Path object representing the NIMS file location,
+            or None if no file is set
+        """
         return self._fn
 
     @fn.setter
-    def fn(self, value):
+    def fn(self, value: Optional[Union[str, Path]]) -> None:
         if value is not None:
             self._fn = Path(value)
         else:
             self._fn = None
 
     @property
-    def station(self):
-        """Station ID"""
+    def station(self) -> Optional[str]:
+        """
+        Station ID derived from run ID.
+
+        Returns
+        -------
+        str or None
+            Station identifier (run ID without the last character),
+            or None if run_id is not set
+
+        Notes
+        -----
+        The station ID is typically the run ID with the last character
+        (run letter) removed.
+        """
         if self.run_id is not None:
             return self.run_id[0:-1]
 
     @property
-    def file_size(self):
-        """Size of the file"""
+    def file_size(self) -> Optional[int]:
+        """
+        Size of the NIMS file in bytes.
+
+        Returns
+        -------
+        int or None
+            File size in bytes, or None if no file is set
+
+        Raises
+        ------
+        FileNotFoundError
+            If the file does not exist
+        """
         if self.fn is not None:
             return self.fn.stat().st_size
 
-    def read_header(self, fn=None):
+    def read_header(self, fn: Optional[Union[str, Path]] = None) -> None:
         """
-        read header information
+        Read header information from a NIMS file.
 
-        :param fn: full path to file to read
-        :type fn: string or :class:`pathlib.Path`
-        :raises: :class:`mth5.io.nims.NIMSError` if something is not right.
+        This method reads and parses the header section of a NIMS DATA.BIN file,
+        extracting metadata about the survey setup, GPS coordinates, electrode
+        configuration, and other parameters.
 
+        Parameters
+        ----------
+        fn : str or Path, optional
+            Full path to NIMS file to read. Uses self.fn if not provided.
+
+        Raises
+        ------
+        NIMSError
+            If the file does not exist or cannot be read
+
+        Notes
+        -----
+        The method reads up to _max_header_length bytes from the beginning
+        of the file, parses the header information, and stores the results
+        in the header_dict attribute and individual properties.
         """
         if fn is not None:
             self.fn = fn
@@ -159,9 +270,27 @@ class NIMSHeader(object):
 
         self.parse_header_dict()
 
-    def parse_header_dict(self, header_dict=None):
+    def parse_header_dict(self, header_dict: Optional[dict[str, str]] = None) -> None:
         """
-        parse the header dictionary into something useful
+        Parse the header dictionary into individual attributes.
+
+        This method takes the raw header dictionary and extracts specific
+        information into class attributes for easy access.
+
+        Parameters
+        ----------
+        header_dict : dict of str, optional
+            Dictionary containing header key-value pairs. Uses self.header_dict
+            if not provided.
+
+        Notes
+        -----
+        Parses various header fields including:
+        - Wire lengths and azimuths for electric field measurements
+        - System box and magnetometer IDs
+        - GPS coordinates and timestamp
+        - Run identifier
+        - Other metadata fields
         """
         if header_dict is not None:
             self.header_dict = header_dict
@@ -181,29 +310,44 @@ class NIMSHeader(object):
             elif "gps" in key:
                 gps_list = value.split()
                 self.header_gps_stamp = MTime(
-                    dateutil.parser.parse(" ".join(gps_list[0:2]), dayfirst=True)
+                    time_stamp=dateutil.parser.parse(
+                        " ".join(gps_list[0:2]), dayfirst=True
+                    ).isoformat()
                 )
                 self.header_gps_latitude = self._get_latitude(gps_list[2], gps_list[3])
                 self.header_gps_longitude = self._get_longitude(
                     gps_list[4], gps_list[5]
                 )
-                self.header_gps_elevation = float(gps_list[6])
+                if gps_list[6] == "M":
+                    self.header_gps_elevation = 0.0
+                else:
+                    self.header_gps_elevation = float(gps_list[6])
             elif "run" in key:
                 self.run_id = value.replace('"', "")
             else:
                 setattr(self, key.replace(" ", "_").replace("/", "_"), value)
 
-    def _get_latitude(self, latitude, hemisphere):
+    def _get_latitude(self, latitude: Union[str, float], hemisphere: str) -> float:
         """
-        Get latitude as decimal degrees
+        Get latitude as decimal degrees with proper sign.
 
-        :param latitude: latitude
-        :type latitude: float
-        :param hemisphere: hemisphere id [ 'N' | 'S' ]
-        :type hemisphere: string
-        :return: latitude in decimal degrees with proper sign
-        :rtype: float
+        Parameters
+        ----------
+        latitude : str or float
+            Latitude value in decimal degrees
+        hemisphere : str
+            Hemisphere identifier ('N' for North, 'S' for South)
 
+        Returns
+        -------
+        float
+            Latitude in decimal degrees with proper sign
+            (positive for North, negative for South)
+
+        Notes
+        -----
+        Converts latitude to proper sign convention where North is positive
+        and South is negative.
         """
         if not isinstance(latitude, float):
             latitude = float(latitude)
@@ -212,16 +356,27 @@ class NIMSHeader(object):
         if hemisphere.lower() == "s":
             return -1 * latitude
 
-    def _get_longitude(self, longitude, hemisphere):
+    def _get_longitude(self, longitude: Union[str, float], hemisphere: str) -> float:
         """
-        Get longitude as decimal degrees
+        Get longitude as decimal degrees with proper sign.
 
-        :param longitude: longitude
-        :type longitude: float
-        :param hemisphere: hemisphere id [ 'N' | 'S' ]
-        :type hemisphere: string
-        :return: latitude in decimal degrees with proper sign
-        :rtype: float
+        Parameters
+        ----------
+        longitude : str or float
+            Longitude value in decimal degrees
+        hemisphere : str
+            Hemisphere identifier ('E' for East, 'W' for West)
+
+        Returns
+        -------
+        float
+            Longitude in decimal degrees with proper sign
+            (positive for East, negative for West)
+
+        Notes
+        -----
+        Converts longitude to proper sign convention where East is positive
+        and West is negative.
         """
         if not isinstance(longitude, float):
             longitude = float(longitude)

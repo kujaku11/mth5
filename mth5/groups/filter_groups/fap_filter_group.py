@@ -2,7 +2,7 @@
 """
 Created on Wed Jun  9 08:55:16 2021
 
-:copyright: 
+:copyright:
     Jared Peacock (jpeacock@usgs.gov)
 
 :license: MIT
@@ -13,10 +13,10 @@ Created on Wed Jun  9 08:55:16 2021
 # Imports
 # =============================================================================
 import numpy as np
-
 from mt_metadata.timeseries.filters import FrequencyResponseTableFilter
 
 from mth5.groups.base import BaseGroup
+
 
 # =============================================================================
 # fap Group
@@ -54,7 +54,7 @@ class FAPGroup(BaseGroup):
         """
 
         create an HDF5 group/dataset from information given.
-        
+
         :param name: name of the filter
         :type name: string
         :param frequency: frequency array in samples per second
@@ -131,7 +131,9 @@ class FAPGroup(BaseGroup):
         """
 
         if not isinstance(fap_object, FrequencyResponseTableFilter):
-            msg = f"Filter must be a FrequencyResponseTableFilter not {type(fap_object)}"
+            msg = (
+                f"Filter must be a FrequencyResponseTableFilter not {type(fap_object)}"
+            )
             self.logger.error(msg)
             raise TypeError(msg)
 

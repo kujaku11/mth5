@@ -5,44 +5,48 @@ NIMS
 ===============
 
     * deals with reading in NIMS DATA.BIN files
-    
+
     This is a translation from Matlab codes written and edited by:
         * Anna Kelbert
         * Paul Bedrosian
         * Esteban Bowles-Martinez
         * Possibly others.
-        
+
     I've tested it against a version, and it matches.  The data/GPS  gaps I
-    still don't understand so for now the time series is just 
-    made continuous and the number of missing seconds is clipped from the 
+    still don't understand so for now the time series is just
+    made continuous and the number of missing seconds is clipped from the
     end of the time series.
-    
+
     .. note:: this only works for 8Hz data for now
-    
-    
+
+
 :copyright:
     Jared Peacock (jpeacock@usgs.gov)
-    
-:license: 
+
+:license:
     MIT
 """
+
+from __future__ import annotations
+
+import datetime
+import struct
+from pathlib import Path
+from typing import Any, Optional, Union
 
 # =============================================================================
 # Imports
 # =============================================================================
-import struct
-import datetime
-
 import numpy as np
 import pandas as pd
+from mt_metadata.common.mttime import MTime
+from mt_metadata.timeseries import Auxiliary, Electric, Magnetic, Run, Station
 
+from mth5 import timeseries
 from mth5.io.nims.gps import GPS
 from mth5.io.nims.header import NIMSHeader
 from mth5.io.nims.response_filters import Response
-from mth5 import timeseries
 
-from mt_metadata.utils.mttime import MTime
-from mt_metadata.timeseries import Station, Run, Electric, Magnetic, Auxiliary
 
 # =============================================================================
 # Exceptions
@@ -51,31 +55,70 @@ from mt_metadata.timeseries import Station, Run, Electric, Magnetic, Auxiliary
 
 class NIMS(NIMSHeader):
     """
-    NIMS Class will read in a NIMS DATA.BIN file.
+    NIMS Class for reading NIMS DATA.BIN files.
 
     A fast way to read the binary files are to first read in the GPS strings,
     the third byte in each block as a character and parse that into valid
     GPS stamps.
 
     Then read in the entire data set as unsigned 8 bit integers and reshape
-    the data to be n seconds x block size.  Then parse that array into the
+    the data to be n seconds x block size. Then parse that array into the
     status information and data.
 
-    I only have a limited amount of .BIN files to test so this will likely
-    break if there are issues such as data gaps.  This has been tested against the
-    matlab program loadNIMS by Anna Kelbert and the match for all the .bin files
-    I have.  If something looks weird check it against that program.
+    Parameters
+    ----------
+    fn : str or Path, optional
+        Path to the NIMS DATA.BIN file to read, by default None
 
-    .. todo:: deal with timing issues, right now a warning is sent to the user
+    Attributes
+    ----------
+    block_size : int
+        Size of data blocks (default 131 for 8 Hz data)
+    block_sequence : list of int
+        Sequence pattern to locate [1, 131]
+    sample_rate : int
+        Sample rate in samples/second (default 8)
+    e_conversion_factor : float
+        Electric field conversion factor
+    h_conversion_factor : float
+        Magnetic field conversion factor
+    t_conversion_factor : float
+        Temperature conversion factor
+    t_offset : int
+        Temperature offset value
+    info_array : ndarray or None
+        Structured array of block information
+    stamps : list or None
+        List of valid GPS stamps
+    ts_data : DataFrame or None
+        Time series data as pandas DataFrame
+    gaps : list or None
+        List of timing gaps found in data
+    duplicate_list : list or None
+        List of duplicate blocks found
+
+    Notes
+    -----
+    I only have a limited amount of .BIN files to test so this will likely
+    break if there are issues such as data gaps. This has been tested against the
+    matlab program loadNIMS by Anna Kelbert and the match for all the .bin files
+    I have. If something looks weird check it against that program.
+
+    .. todo:: Deal with timing issues, right now a warning is sent to the user
               need to figure out a way to find where the gap is and adjust
               accordingly.
 
     .. warning::
         Currently Only 8 Hz data is supported
 
+    Examples
+    --------
+    >>> from mth5.io.nims import nims
+    >>> n = nims.NIMS(r"/home/mt_data/nims/mt001.bin")
+    >>> n.read_nims()
     """
 
-    def __init__(self, fn=None):
+    def __init__(self, fn: Optional[Union[str, Path]] = None) -> None:
         super().__init__(fn)
 
         # change thes if the sample rate is different
@@ -109,7 +152,15 @@ class NIMS(NIMSHeader):
 
         self.indices = self._make_index_values()
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """
+        Return string representation of NIMS object.
+
+        Returns
+        -------
+        str
+            Formatted string with NIMS station information and data summary
+        """
         lines = [f"NIMS Station: {self.site_name}", "-" * 20]
         lines.append(f"NIMS ID:         {self.box_id}")
         lines.append(f"magnetometer ID: {self.mag_id}")
@@ -131,28 +182,61 @@ class NIMS(NIMSHeader):
             lines.append(f"Found {len(self.stamps)} GPS stamps")
         return "\n".join(lines)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """
+        Return string representation for debugging.
+
+        Returns
+        -------
+        str
+            String representation of the NIMS object
+        """
         return self.__str__()
 
-    def has_data(self):
+    def has_data(self) -> bool:
+        """
+        Check if the NIMS object contains time series data.
+
+        Returns
+        -------
+        bool
+            True if ts_data is not None, False otherwise
+        """
         if self.ts_data is not None:
             return True
         return False
 
     @property
-    def n_samples(self):
+    def n_samples(self) -> Optional[int]:
+        """
+        Number of samples in the time series.
+
+        Returns
+        -------
+        int or None
+            Number of samples if data is loaded, estimated from file size
+            if file exists, None otherwise
+        """
         if self.has_data():
             return self.ts_data.shape[0]
         elif self.fn is not None:
             return int(self.file_size / 16.375)
 
     @property
-    def latitude(self):
+    def latitude(self) -> Optional[float]:
         """
-        median latitude value from all the GPS stamps in decimal degrees
-        WGS84
+        Median latitude value from all GPS stamps.
 
-        Only get from the GPRMC stamp as they should be duplicates
+        Returns
+        -------
+        float or None
+            Median latitude in decimal degrees (WGS84) from GPRMC stamps,
+            or header GPS latitude if no stamps available
+
+        Notes
+        -----
+        Only uses GPRMC stamps as they should be duplicates of GPGGA stamps
+        but include additional validation.
         """
         if self.stamps is not None:
             latitude = np.zeros(len(self.stamps))
@@ -162,12 +246,19 @@ class NIMS(NIMSHeader):
         return self.header_gps_latitude
 
     @property
-    def longitude(self):
+    def longitude(self) -> Optional[float]:
         """
-        median longitude value from all the GPS stamps in decimal degrees
-        WGS84
+        Median longitude value from all GPS stamps.
 
-        Only get from the first stamp within the sets
+        Returns
+        -------
+        float or None
+            Median longitude in decimal degrees (WGS84) from GPS stamps,
+            or header GPS longitude if no stamps available
+
+        Notes
+        -----
+        Uses the first stamp within each GPS stamp set.
         """
         if self.stamps is not None:
             longitude = np.zeros(len(self.stamps))
@@ -177,12 +268,20 @@ class NIMS(NIMSHeader):
         return self.header_gps_longitude
 
     @property
-    def elevation(self):
+    def elevation(self) -> Optional[float]:
         """
-        median elevation value from all the GPS stamps in decimal degrees
-        WGS84
+        Median elevation value from all GPS stamps.
 
-        Only get from the first stamp within the sets
+        Returns
+        -------
+        float or None
+            Median elevation in meters (WGS84) from GPS stamps,
+            or header GPS elevation if no stamps available
+
+        Notes
+        -----
+        Uses the first stamp within each GPS stamp set. For paired stamps
+        (GPRMC/GPGGA), uses the GPGGA elevation if available.
         """
         if self.stamps is not None:
             elevation = np.zeros(len(self.stamps))
@@ -198,12 +297,19 @@ class NIMS(NIMSHeader):
         return self.header_gps_elevation
 
     @property
-    def declination(self):
+    def declination(self) -> Optional[float]:
         """
-        median elevation value from all the GPS stamps in decimal degrees
-        WGS84
+        Median magnetic declination value from all GPS stamps.
 
-        Only get from the first stamp within the sets
+        Returns
+        -------
+        float or None
+            Median magnetic declination in decimal degrees from GPRMC stamps,
+            or None if no declination data available
+
+        Notes
+        -----
+        Only uses GPRMC stamps as they contain declination information.
         """
         if self.stamps is not None:
             declination = np.zeros(len(self.stamps))
@@ -217,29 +323,63 @@ class NIMS(NIMSHeader):
         return None
 
     @property
-    def start_time(self):
+    def start_time(self) -> MTime:
         """
-        start time is the first good GPS time stamp minus the seconds to the
-        beginning of the time series.
+        Start time of the time series data.
+
+        Returns
+        -------
+        MTime
+            Start time derived from the first GPS time stamp index,
+            or header GPS stamp if no time series data available
+
+        Notes
+        -----
+        The start time is calculated from the first good GPS time stamp
+        minus the seconds to the beginning of the time series.
         """
         if self.stamps is not None:
-            return MTime(self.ts_data.index[0])
+            return MTime(time_stamp=self.ts_data.index[0])
         return self.header_gps_stamp
 
     @property
-    def end_time(self):
+    def end_time(self) -> MTime:
         """
-        start time is the first good GPS time stamp minus the seconds to the
-        beginning of the time series.
+        End time of the time series data.
+
+        Returns
+        -------
+        MTime
+            End time derived from the last time series index,
+            or estimated from start time and number of samples
+
+        Notes
+        -----
+        If time series data is available, uses the last timestamp.
+        Otherwise estimates end time from start time plus duration
+        calculated from number of samples and sample rate.
         """
         if self.stamps is not None:
-            return MTime(self.ts_data.index[-1])
+            return MTime(time_stamp=self.ts_data.index[-1])
         self.logger.warning("Estimating end time from n_samples")
         return self.start_time + int(self.n_samples / self.sample_rate)
 
     @property
-    def box_temperature(self):
-        """data logger temperature, sampled at 1 second"""
+    def box_temperature(self) -> Optional[timeseries.ChannelTS]:
+        """
+        Data logger temperature channel.
+
+        Returns
+        -------
+        ChannelTS or None
+            Temperature channel sampled at 1 second, interpolated to match
+            the time series sample rate, or None if no time series data
+
+        Notes
+        -----
+        Temperature is measured in Celsius and interpolated onto the same
+        time grid as the magnetic and electric field channels.
+        """
 
         if self.ts_data is not None:
             auxiliary_metadata = Auxiliary()
@@ -272,24 +412,43 @@ class NIMS(NIMSHeader):
             return temp
         return None
 
-    def get_channel_response(self, channel, dipole_length=1):
+    def get_channel_response(self, channel: str, dipole_length: float = 1) -> Any:
         """
-        Get the channel response for a given channel
+        Get the channel response for a given channel.
 
-        :param channel: DESCRIPTION
-        :type channel: TYPE
-        :param dipole_length: DESCRIPTION, defaults to 1
-        :type dipole_length: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Parameters
+        ----------
+        channel : str
+            Channel identifier (e.g., 'hx', 'hy', 'hz', 'ex', 'ey')
+        dipole_length : float, optional
+            Dipole length for electric field channels, by default 1
 
+        Returns
+        -------
+        Any
+            Channel response object from the NIMS response filters
+
+        Notes
+        -----
+        Uses the NIMS response filters to generate appropriate response
+        functions for magnetic and electric field channels at the current
+        sample rate.
         """
 
         nims_filters = Response(sample_rate=self.sample_rate)
         return nims_filters.get_channel_response(channel, dipole_length=dipole_length)
 
     @property
-    def hx_metadata(self):
+    def hx_metadata(self) -> Optional[Magnetic]:
+        """
+        Metadata for the HX magnetic field channel.
+
+        Returns
+        -------
+        Magnetic or None
+            Magnetic field metadata object for the HX channel,
+            or None if no time series data is loaded
+        """
         if self.ts_data is not None:
             hx_metadata = Magnetic()
             hx_metadata.from_dict(
@@ -311,10 +470,17 @@ class NIMS(NIMSHeader):
             return hx_metadata
 
     @property
-    def hx(self):
-        """HX"""
-        if self.ts_data is not None:
+    def hx(self) -> Optional[timeseries.ChannelTS]:
+        """
+        HX magnetic field channel time series.
 
+        Returns
+        -------
+        ChannelTS or None
+            Time series data for the HX magnetic field component,
+            or None if no time series data is loaded
+        """
+        if self.ts_data is not None:
             return timeseries.ChannelTS(
                 channel_type="magnetic",
                 data=self.ts_data.hx.to_numpy(),
@@ -326,7 +492,16 @@ class NIMS(NIMSHeader):
         return None
 
     @property
-    def hy_metadata(self):
+    def hy_metadata(self) -> Optional[Magnetic]:
+        """
+        Metadata for the HY magnetic field channel.
+
+        Returns
+        -------
+        Magnetic or None
+            Magnetic field metadata object for the HY channel,
+            or None if no time series data is loaded
+        """
         if self.ts_data is not None:
             hy_metadata = Magnetic()
             hy_metadata.from_dict(
@@ -348,8 +523,16 @@ class NIMS(NIMSHeader):
             return hy_metadata
 
     @property
-    def hy(self):
-        """HY"""
+    def hy(self) -> Optional[timeseries.ChannelTS]:
+        """
+        HY magnetic field channel time series.
+
+        Returns
+        -------
+        ChannelTS or None
+            Time series data for the HY magnetic field component,
+            or None if no time series data is loaded
+        """
         if self.ts_data is not None:
             return timeseries.ChannelTS(
                 channel_type="magnetic",
@@ -362,7 +545,16 @@ class NIMS(NIMSHeader):
         return None
 
     @property
-    def hz_metadata(self):
+    def hz_metadata(self) -> Optional[Magnetic]:
+        """
+        Metadata for the HZ magnetic field channel.
+
+        Returns
+        -------
+        Magnetic or None
+            Magnetic field metadata object for the HZ channel,
+            or None if no time series data is loaded
+        """
         if self.ts_data is not None:
             hz_metadata = Magnetic()
             hz_metadata.from_dict(
@@ -384,10 +576,18 @@ class NIMS(NIMSHeader):
             return hz_metadata
 
     @property
-    def hz(self):
+    def hz(self) -> Optional[timeseries.ChannelTS]:
+        """
+        HZ magnetic field channel time series.
+
+        Returns
+        -------
+        ChannelTS or None
+            Time series data for the HZ magnetic field component,
+            or None if no time series data is loaded
+        """
         """HZ"""
         if self.ts_data is not None:
-
             return timeseries.ChannelTS(
                 channel_type="magnetic",
                 data=self.ts_data.hz.to_numpy(),
@@ -399,7 +599,16 @@ class NIMS(NIMSHeader):
         return None
 
     @property
-    def ex_metadata(self):
+    def ex_metadata(self) -> Optional[Electric]:
+        """
+        Metadata for the EX electric field channel.
+
+        Returns
+        -------
+        Electric or None
+            Electric field metadata object for the EX channel,
+            or None if no time series data is loaded
+        """
         if self.ts_data is not None:
             ex_metadata = Electric()
             ex_metadata.from_dict(
@@ -422,10 +631,17 @@ class NIMS(NIMSHeader):
             return ex_metadata
 
     @property
-    def ex(self):
-        """EX"""
-        if self.ts_data is not None:
+    def ex(self) -> Optional[timeseries.ChannelTS]:
+        """
+        EX electric field channel time series.
 
+        Returns
+        -------
+        ChannelTS or None
+            Time series data for the EX electric field component,
+            or None if no time series data is loaded
+        """
+        if self.ts_data is not None:
             return timeseries.ChannelTS(
                 channel_type="electric",
                 data=self.ts_data.ex.to_numpy(),
@@ -437,7 +653,16 @@ class NIMS(NIMSHeader):
         return None
 
     @property
-    def ey_metadata(self):
+    def ey_metadata(self) -> Optional[Electric]:
+        """
+        Metadata for the EY electric field channel.
+
+        Returns
+        -------
+        Electric or None
+            Electric field metadata object for the EY channel,
+            or None if no time series data is loaded
+        """
         if self.ts_data is not None:
             ey_metadata = Electric()
             ey_metadata.from_dict(
@@ -460,10 +685,17 @@ class NIMS(NIMSHeader):
             return ey_metadata
 
     @property
-    def ey(self):
-        """EY"""
-        if self.ts_data is not None:
+    def ey(self) -> Optional[timeseries.ChannelTS]:
+        """
+        EY electric field channel time series.
 
+        Returns
+        -------
+        ChannelTS or None
+            Time series data for the EY electric field component,
+            or None if no time series data is loaded
+        """
+        if self.ts_data is not None:
             return timeseries.ChannelTS(
                 channel_type="electric",
                 data=self.ts_data.ey.to_numpy(),
@@ -475,8 +707,16 @@ class NIMS(NIMSHeader):
         return None
 
     @property
-    def run_metadata(self):
-        """Run metadata"""
+    def run_metadata(self) -> Optional[Run]:
+        """
+        Run metadata for the NIMS data collection.
+
+        Returns
+        -------
+        Run or None
+            MT run metadata including data logger information, timing,
+            and channel metadata, or None if no time series data is loaded
+        """
 
         if self.ts_data is not None:
             run_metadata = Run()
@@ -492,7 +732,7 @@ class NIMS(NIMSHeader):
                         "data_logger.id": self.box_id,
                         "data_logger.type": "long period",
                         "id": self.run_id,
-                        "data_type": "MTLP",
+                        "data_type": "LPMT",
                         "sample_rate": self.sample_rate,
                         "time_period.end": self.end_time.isoformat(),
                         "time_period.start": self.start_time.isoformat(),
@@ -505,10 +745,20 @@ class NIMS(NIMSHeader):
         return None
 
     @property
-    def station_metadata(self):
-        """Station metadata from nims file"""
+    def station_metadata(self) -> Optional[Station]:
+        """
+        Station metadata from NIMS file.
+
+        Returns
+        -------
+        Station or None
+            MT station metadata including geographic information and location data,
+            or None if no time series data is loaded
+        """
         if self.ts_data is not None:
             station_metadata = Station()
+            if self.run_id is None:
+                self.run_id = f"001"
             station_metadata.from_dict(
                 {
                     "Station": {
@@ -526,8 +776,26 @@ class NIMS(NIMSHeader):
             return station_metadata
         return None
 
-    def to_runts(self, calibrate=False):
-        """Get xarray for run"""
+    def to_runts(self, calibrate: bool = False) -> Optional[timeseries.RunTS]:
+        """
+        Get xarray RunTS object for the NIMS data.
+
+        Parameters
+        ----------
+        calibrate : bool, optional
+            Whether to apply calibration to the data, by default False
+
+        Returns
+        -------
+        RunTS or None
+            Time series run object containing all channels and metadata,
+            or None if no time series data is loaded
+
+        Notes
+        -----
+        Includes all magnetic field channels (hx, hy, hz), electric field
+        channels (ex, ey), and box temperature data.
+        """
 
         if self.ts_data is not None:
             run = timeseries.RunTS(
@@ -548,9 +816,23 @@ class NIMS(NIMSHeader):
                 return run
         return None
 
-    def _make_index_values(self):
+    def _make_index_values(self) -> np.ndarray:
         """
-        Index values for the channels recorded
+        Create index values for the recorded channels.
+
+        Returns
+        -------
+        ndarray
+            Array of shape (8, 5) containing byte indices for extracting
+            magnetic (first 3 columns) and electric (last 2 columns)
+            channel data from each 8-sample block
+
+        Notes
+        -----
+        Creates an array of index values for magnetics and electrics.
+        Each row corresponds to one sample within an 8-sample block.
+        Columns 0-2 are for magnetic channels (hx, hy, hz).
+        Columns 3-4 are for electric channels (ex, ey).
         """
         ### make an array of index values for magnetics and electrics
         indices = np.zeros((8, 5), dtype=int)
@@ -563,21 +845,32 @@ class NIMS(NIMSHeader):
                 indices[kk, 3 + ii] = 82 + (kk) * 6 + (ii) * 3
         return indices
 
-    def _get_gps_string_list(self, nims_string):
+    def _get_gps_string_list(
+        self, nims_string: bytes
+    ) -> tuple[list[float], list[bytes]]:
         """
-        get the gps strings from the raw string output by the NIMS.  This will
-        take the 3rd value in each block, concatenate into a long string and
-        then make a list by splitting by '$'.  The index values of where the
-        '$' are found are also calculated.
+        Extract GPS strings from raw NIMS binary data.
 
-        :param str nims_string: raw binary string output by NIMS
+        This method takes the 3rd byte in each block, concatenates into a long
+        string and creates a list by splitting by '$'. The index values of
+        where the '$' characters are found are also calculated.
 
-        :returns: list of index values associated with the location of the '$'
+        Parameters
+        ----------
+        nims_string : bytes
+            Raw binary string output by NIMS
 
-        :returns: list of possible raw GPS strings
+        Returns
+        -------
+        list of float
+            List of index values associated with the location of the '$' characters
+        list of bytes
+            List of possible raw GPS strings split by '$'
 
-        .. note:: This assumes that there are an even amount of data blocks.
-                  Might be a bad assumption
+        Notes
+        -----
+        This assumes that there are an even amount of data blocks.
+        This might be a bad assumption in some cases.
         """
         ### get index values of $ and gps_strings
         index_values = []
@@ -591,12 +884,25 @@ class NIMS(NIMSHeader):
         gps_raw_stamp_list = b"".join(gps_str_list).split(b"$")
         return index_values, gps_raw_stamp_list
 
-    def get_stamps(self, nims_string):
+    def get_stamps(self, nims_string: bytes) -> list[tuple[Any, list[GPS]]]:
         """
-        get a list of valid GPS strings and match synchronous GPRMC with GPGGA
-        stamps if possible.
+        Extract and parse valid GPS strings, matching GPRMC with GPGGA stamps.
 
-        :param str nims_string: raw GPS string output by NIMS
+        Parameters
+        ----------
+        nims_string : bytes
+            Raw GPS binary string output by NIMS
+
+        Returns
+        -------
+        list of tuple
+            List of matched GPS stamps where each element is a tuple containing
+            index and list of GPS objects [GPRMC, GPGGA] (or just [GPRMC])
+
+        Notes
+        -----
+        Skips the first entry as it tends to be incomplete. Attempts to match
+        synchronous GPRMC with GPGGA stamps when possible.
         """
         ### read in GPS strings into a list to be parsed later
         index_list, gps_raw_stamp_list = self._get_gps_string_list(nims_string)
@@ -717,19 +1023,29 @@ class NIMS(NIMSHeader):
                 self.logger.debug(f"GPS Error: No good GPS stamp at {index} seconds")
         return gps_stamps
 
-    def find_sequence(self, data_array, block_sequence=None):
+    def find_sequence(
+        self, data_array: np.ndarray, block_sequence: Optional[list[int]] = None
+    ) -> np.ndarray:
         """
-        find a sequence in a given array
+        Find a sequence pattern in the data array.
 
-        :param array data_array: array of the data with shape [n, m]
-                                 where n is the number of seconds recorded
-                                 m is the block length for a given sampling
-                                 rate.
-        :param list block_sequence: sequence pattern to locate
-                                    *default* is [1, 131] the start of a
-                                    data block.
+        Parameters
+        ----------
+        data_array : ndarray
+            Array of the data with shape [n, m] where n is the number of
+            seconds recorded and m is the block length for a given sampling rate
+        block_sequence : list of int, optional
+            Sequence pattern to locate, by default [1, 131] (start of data block)
 
-        :returns: array of index locations where the sequence is found.
+        Returns
+        -------
+        ndarray
+            Array of index locations where the sequence is found
+
+        Notes
+        -----
+        Uses numpy rolling and comparison to find all occurrences of the
+        specified sequence pattern in the data array.
         """
         if block_sequence is not None:
             self.block_sequence = block_sequence
@@ -742,14 +1058,26 @@ class NIMS(NIMSHeader):
         ).T
         return np.where(np.all(t == self.block_sequence, axis=1))[0]
 
-    def unwrap_sequence(self, sequence):
+    def unwrap_sequence(self, sequence: np.ndarray) -> np.ndarray:
         """
-        unwrap the sequence to be sequential numbers instead of modulated by
-        256.  sets the first number to 0
+        Unwrap sequence to sequential numbers instead of modulo 256.
 
-        :param list sequence: sequence of bytes numbers
-        :return: unwrapped number of counts
+        Parameters
+        ----------
+        sequence : ndarray
+            Sequence of byte numbers (0-255) to unwrap
 
+        Returns
+        -------
+        ndarray
+            Unwrapped sequence with first number set to 0 and subsequent
+            values forming a continuous count
+
+        Notes
+        -----
+        Handles the fact that sequence numbers are stored as single bytes
+        (0-255) but represent a continuous count. When a value of 255 is
+        encountered, the next rollover is anticipated.
         """
         count = 0
         unwrapped = np.zeros_like(sequence)
@@ -832,13 +1160,18 @@ class NIMS(NIMSHeader):
                 info_array[d["sequence_index"] + 1],
             ):
                 duplicate_list.append(d)
+
+        if len(duplicate_list) == 0:
+            self.logger.info(f"Duplicate block count is zero")
+            return info_array, data_array, None
         self.logger.debug(f"Deleting {len(duplicate_list)} duplicate blocks")
         ### get the index of the blocks to be removed, namely the 1st duplicate
         ### block
         remove_sequence_index = [d["sequence_index"] for d in duplicate_list]
-        remove_data_index = np.array(
-            [np.arange(d["ts_index_0"], d["ts_index_1"], 1) for d in duplicate_list]
-        ).flatten()
+        remove_data_index = np.concatenate(
+            [np.arange(d["ts_index_0"], d["ts_index_1"]) for d in duplicate_list]
+        ).astype(int)
+
         ### remove the data
         return_info_array = np.delete(info_array, remove_sequence_index)
         return_data_array = np.delete(data_array, remove_data_index)
@@ -848,48 +1181,37 @@ class NIMS(NIMSHeader):
 
         return return_info_array, return_data_array, duplicate_list
 
-    def read_nims(self, fn=None):
+    def read_nims(self, fn: Optional[Union[str, Path]] = None) -> None:
         """
-        Read NIMS DATA.BIN file.
+        Read NIMS DATA.BIN file and parse all data.
 
-        1. Read in the header information and stores those as attributes
-           with the same names as in the header file.
+        This method performs the complete data reading and processing workflow:
 
-        2. Locate the beginning of the data blocks by looking for the
-           first [1, 131, ...] combo.  Anything before that is cut out.
+        1. Read header information and store as attributes
+        2. Locate data block beginning by finding first [1, 131, ...] sequence
+        3. Ensure data is multiple of block length, trim excess bits
+        4. Extract GPS data (3rd byte of each block) and parse GPS stamps
+        5. Read data as unsigned 8-bit integers, reshape to [N, block_length]
+        6. Remove duplicate blocks (first of each duplicate pair)
+        7. Match GPS status locks with valid GPS stamps
+        8. Verify timing between first/last GPS stamps, trim excess seconds
 
-        3. Make sure the data is a multiple of the block length, if the
-           data is longer the extra bits are cut off.
+        Parameters
+        ----------
+        fn : str or Path, optional
+            Path to NIMS DATA.BIN file. Uses self.fn if not provided.
 
-        4. Read in the GPS data (3rd byte of each block) as characters.
-           Parses those into valid GPS stamps with appropriate index locations
-           of where the '$' was found.
+        Notes
+        -----
+        The data and information arrays returned have duplicates removed
+        and sequence reset to be monotonic. Extra seconds due to timing
+        gaps are trimmed from the end of the time series.
 
-        5. Read in the data as unsigned 8-bit integers and reshape the array
-           into [N, data_block_length].  Parse this array into the status
-           information and the data.
-
-        6. Remove duplicate blocks, by removing the first of the duplicates
-           as suggested by Anna and Paul.
-
-        7. Match the GPS locks from the status with valid GPS stamps.
-
-        8. Check to make sure that there is the correct number of seconds
-           between the first and last GPS stamp.  The extra seconds are cut
-           off from the end of the time series.  Not sure if this is the
-           best way to accommodate gaps in the data.
-
-        .. note:: The data and information array returned have the duplicates
-                  removed and the sequence reset to be monotonic.
-
-        :param str fn: full path to DATA.BIN file
-
-        :Example:
-
+        Examples
+        --------
         >>> from mth5.io import nims
         >>> n = nims.NIMS(r"/home/mt_data/nims/mt001.bin")
-
-
+        >>> n.read_nims()
         """
 
         if fn is not None:
@@ -907,7 +1229,7 @@ class NIMS(NIMSHeader):
         data = np.frombuffer(self._raw_string, dtype=np.uint8)
 
         ### need to make sure that the data starts with a full block
-        find_first = self.find_sequence(data[0 : self.block_size * 5])[0]
+        find_first = self.find_sequence(data[0 : self.block_size * 10])[0]
         data = data[find_first:]
 
         ### get GPS stamps from the binary string first
@@ -943,8 +1265,10 @@ class NIMS(NIMSHeader):
 
         for key, index in self._block_dict.items():
             if "temp" in key:
-                # compute temperature
-                t_value = data[:, index[0]] * 256 + data[:, index[1]]
+                # compute temperature - cast to int32 to avoid uint8 overflow
+                t_value = data[:, index[0]].astype(np.int32) * 256 + data[
+                    :, index[1]
+                ].astype(np.int32)
 
                 # something to do with the bits where you have to subtract
                 t_value[np.where(t_value > 32768)] -= 65536
@@ -972,9 +1296,11 @@ class NIMS(NIMSHeader):
             channel_arr = np.zeros((data.shape[0], 8), dtype=float)
             for kk in range(self.sample_rate):
                 index = self.indices[kk, cc]
-                value = (data[:, index] * 256 + data[:, index + 1]) * np.array(
-                    [256]
-                ) + data[:, index + 2]
+                # Cast to int32 to avoid uint8 overflow
+                value = (
+                    data[:, index].astype(np.int32) * 256
+                    + data[:, index + 1].astype(np.int32)
+                ) * np.array([256]) + data[:, index + 2].astype(np.int32)
                 value[np.where(value > self._int_max)] -= self._int_factor
                 channel_arr[:, kk] = value
             data_array[comp][:] = channel_arr.flatten()
@@ -1100,15 +1426,6 @@ class NIMS(NIMSHeader):
         ### check timing first to make sure there is no drift
         timing_valid, self.gaps, time_difference = self.check_timing(stamps)
 
-        ### need to trim off the excess number of points that are present because of
-        ### data gaps.  This will be the time difference times the sample rate
-        if time_difference > 0:
-            remove_points = int(time_difference * self.sample_rate)
-            data_array = data_array[0:-remove_points]
-            self.logger.info(
-                f"Trimmed {remove_points} points off the end of the time "
-                "series because of timing gaps"
-            )
         ### first GPS stamp within the data is at a given index that is
         ### assumed to be the number of seconds from the start of the run.
         ### therefore make the start time the first GPS stamp time minus
@@ -1128,24 +1445,45 @@ class NIMS(NIMSHeader):
 
         return pd.DataFrame(data_array, index=dt_index)
 
-    def make_dt_index(self, start_time, sample_rate, stop_time=None, n_samples=None):
+    def make_dt_index(
+        self,
+        start_time: str,
+        sample_rate: float,
+        stop_time: Optional[str] = None,
+        n_samples: Optional[int] = None,
+    ) -> pd.DatetimeIndex:
         """
-        make time index array
+        Create datetime index array for time series data.
 
-        .. note:: date-time format should be YYYY-M-DDThh:mm:ss.ms UTC
+        Parameters
+        ----------
+        start_time : str
+            Start time in format YYYY-MM-DDThh:mm:ss.ms UTC
+        sample_rate : float
+            Sample rate in samples/second
+        stop_time : str, optional
+            End time in same format as start_time
+        n_samples : int, optional
+            Number of samples to generate
 
-        :param start_time: start time
-        :type start_time: string
+        Returns
+        -------
+        DatetimeIndex
+            Pandas datetime index with UTC timezone
 
-        :param end_time: end time
-        :type end_time: string
+        Notes
+        -----
+        Either stop_time or n_samples must be provided. The datetime format
+        should be YYYY-MM-DDThh:mm:ss.ms UTC.
 
-        :param sample_rate: sample_rate in samples/second
-        :type sample_rate: float
+        Raises
+        ------
+        ValueError
+            If neither stop_time nor n_samples is provided
         """
 
         # set the index to be UTC time
-        dt_freq = "{0:.0f}N".format(1.0 / (sample_rate) * 1e9)
+        dt_freq = "{0:.0f}ns".format(1.0 / (sample_rate) * 1e9)
         if stop_time is not None:
             dt_index = pd.date_range(
                 start=start_time,
@@ -1166,14 +1504,25 @@ class NIMS(NIMSHeader):
 # =============================================================================
 # convenience read
 # =============================================================================
-def read_nims(fn):
+def read_nims(fn: Union[str, Path]) -> Optional[timeseries.RunTS]:
     """
+    Convenience function to read a NIMS DATA.BIN file.
 
-    :param fn: DESCRIPTION
-    :type fn: TYPE
-    :return: DESCRIPTION
-    :rtype: TYPE
+    Parameters
+    ----------
+    fn : str or Path
+        Path to the NIMS DATA.BIN file
 
+    Returns
+    -------
+    RunTS or None
+        Time series run object containing all channels and metadata,
+        or None if reading fails
+
+    Examples
+    --------
+    >>> from mth5.io.nims import nims
+    >>> run_ts = nims.read_nims("/path/to/data.bin")
     """
 
     nims_obj = NIMS(fn)
