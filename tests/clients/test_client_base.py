@@ -794,7 +794,7 @@ class TestClientBaseCollectionAndRunDict:
 
     def test_get_run_dict_with_none_collection(self, client_base):
         """Test get_run_dict raises error when collection is None."""
-        with pytest.raises(AttributeError):
+        with pytest.raises(ValueError):
             client_base.get_run_dict()
 
     def test_get_run_dict_with_mock_collection(self, client_base):

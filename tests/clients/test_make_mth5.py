@@ -182,7 +182,7 @@ class TestMakeMTH5Initialization:
         """Test that string save_path is properly handled."""
         maker = MakeMTH5(save_path=str(temp_data_dir))
         # The implementation should handle string paths
-        assert maker.save_path == str(temp_data_dir)
+        assert maker.save_path == Path(temp_data_dir)
 
 
 # =============================================================================
