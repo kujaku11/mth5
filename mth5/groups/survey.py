@@ -1,147 +1,68 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Dec 23 16:59:45 2020
+from __future__ import annotations
 
-:copyright:
-    Jared Peacock (jpeacock@usgs.gov)
 
-:license:
-    MIT
+"""Survey-level HDF5 helpers for MTH5."""
 
-"""
+from typing import Any
+
+import h5py
 
 # =============================================================================
 # Imports
 # =============================================================================
 import numpy as np
 import pandas as pd
-import h5py
+from mt_metadata.timeseries import Survey
 
 from mth5.groups import (
     BaseGroup,
-    MasterStationGroup,
     FiltersGroup,
+    MasterStationGroup,
     ReportsGroup,
     StandardsGroup,
 )
+from mth5.helpers import to_numpy_type, validate_name
 from mth5.utils.exceptions import MTH5Error
-from mth5.helpers import validate_name, to_numpy_type
-
-from mt_metadata.timeseries import Survey
 
 
 # =============================================================================
 # Survey Group
 # =============================================================================
 class MasterSurveyGroup(BaseGroup):
-    """
-    Utility class to hold information about the surveys within an experiment and
-    accompanying metadata.  This class is next level down from Experiment for
-    stations ``Experiment/Surveys``.  This class provides methods to add and
-    get surveys.
+    """Collection helper for surveys under ``Experiment/Surveys``.
 
-    To access MasterSurveyGroup from an open MTH5 file:
+    Provides helpers to add, fetch, or remove surveys and to summarize all
+    channels in the experiment.
 
+    Examples
+    --------
     >>> from mth5 import mth5
-    >>> mth5_obj = mth5.MTH5()
-    >>> mth5_obj.open_mth5(r"/test.mth5", mode='a')
-    >>> surveys = mth5_obj.surveys_group
-
-    To check what stations exist
-
-    >>> surveys.groups_list
-    ['survey_01', 'survey_02']
-
-    To access the hdf5 group directly use `SurveyGroup.hdf5_group`.
-
-    >>> stations.hdf5_group.ref
-    <HDF5 Group Reference>
-
-    .. note:: All attributes should be input into the metadata object, that
-             way all input will be validated against the metadata standards.
-             If you change attributes in metadata object, you should run the
-             `SurveyGroup.write_metadata()` method.  This is a temporary
-             solution, working on an automatic updater if metadata is changed.
-
-    If you want to add a new attribute this should be done using the
-    `metadata.add_base_attribute` method.
-
-    >>> stations.metadata.add_base_attribute('new_attribute',
-    >>> ...                                'new_attribute_value',
-    >>> ...                                {'type':str,
-    >>> ...                                 'required':True,
-    >>> ...                                 'style':'free form',
-    >>> ...                                 'description': 'new attribute desc.',
-    >>> ...                                 'units':None,
-    >>> ...                                 'options':[],
-    >>> ...                                 'alias':[],
-    >>> ...                                 'example':'new attribute
-
-    To add a survey:
-
-        >>> new_survey = surveys.add_survey('new_survey')
-        >>> surveys
-        Experiment/Surveys:
-        ====================
-            |- Group: new_survey
-            ---------------------
-                |- Group: Filters
-                ------------------
-                |- Group: Reports
-                -----------------
-                |- Group: Standards
-                -------------------
-                |- Group: Stations
-                ------------------
-
-
-    Add a survey with metadata:
-
-        >>> from mth5.metadata import Survey
-        >>> survey_metadata = Survey()
-        >>> survey_metadata.id = 'MT004'
-        >>> survey_metadata.time_period.start = '2020-01-01T12:30:00'
-        >>> new_survey = surveys.add_survey('Test_01', survey_metadata)
-        >>> # to look at the metadata
-        >>> new_survey.metadata
-        {
-            "survey": {
-                "acquired_by.author": null,
-                "acquired_by.comments": null,
-                "id": "MT004",
-                ...
-                }
-        }
-
-
-    .. seealso:: `mth5.metadata` for details on how to add metadata from
-                 various files and python objects.
-
-    To remove a survey:
-
-    >>> surveys.remove_survey('new_survey')
-    >>> surveys
-    /Survey/Stations:
-    ====================
-
-    .. note:: Deleting a survey is not as simple as del(survey).  In HDF5
-              this does not free up memory, it simply removes the reference
-              to that survey.  The common way to get around this is to
-              copy what you want into a new file, or overwrite the survey.
-
-    To get a survey:
-
-    >>> existing_survey = surveys.get_survey('existing_survey_name')
-
+    >>> m5 = mth5.MTH5()
+    >>> _ = m5.open_mth5("/tmp/example.mth5", mode="a")
+    >>> surveys = m5.surveys_group
+    >>> _ = surveys.add_survey("survey_01")
+    >>> surveys.channel_summary.head()  # doctest: +SKIP
     """
 
-    def __init__(self, group, **kwargs):
+    def __init__(self, group: h5py.Group, **kwargs: Any) -> None:
         super().__init__(group, **kwargs)
 
     @property
-    def channel_summary(self):
-        """
-        Summary of all channels in the file.
+    def channel_summary(self) -> pd.DataFrame:
+        """Return a DataFrame summarizing all channels across surveys.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Columns include survey, station, run, location, component,
+            start/end, sample info, orientation, units, and HDF5 reference.
+
+        Examples
+        --------
+        >>> summary = surveys.channel_summary
+        >>> set(summary.columns) >= {"survey", "station", "run", "component"}
+        True
         """
         ch_list = []
         for survey in self.groups_list:
@@ -198,63 +119,38 @@ class MasterSurveyGroup(BaseGroup):
         ch_list = np.array(ch_list)
         return pd.DataFrame(ch_list.flatten())
 
-    def add_survey(self, survey_name, survey_metadata=None):
+    def add_survey(
+        self, survey_name: str, survey_metadata: Survey | None = None
+    ) -> "SurveyGroup":
+        """Add or fetch a survey at ``/Experiment/Surveys/<name>``.
+
+        Parameters
+        ----------
+        survey_name : str
+            Survey identifier; validated with ``validate_name``.
+        survey_metadata : Survey, optional
+            Metadata container used to seed the survey attributes.
+
+        Returns
+        -------
+        SurveyGroup
+            Wrapper for the created or existing survey.
+
+        Raises
+        ------
+        ValueError
+            If ``survey_name`` is empty.
+        MTH5Error
+            If the provided metadata id conflicts with the group name.
+
+        Examples
+        --------
+        >>> survey = surveys.add_survey("survey_01")
+        >>> survey.metadata.id
+        'survey_01'
         """
-        Add a survey with metadata if given with the path:
-            ``/Survey/surveys/survey_name``
-
-        If the survey already exists, will return that survey and nothing
-        is added.
-
-        :param survey_name: Name of the survey, should be the same as
-                             metadata.id
-        :type survey_name: string
-        :param survey_metadata: Station metadata container, defaults to None
-        :type survey_metadata: :class:`mth5.metadata.Station`, optional
-        :return: A convenience class for the added survey
-        :rtype: :class:`mth5_groups.StationGroup`
-
-        :To add a survey:
-
-        >>> new_survey = surveys.add_survey('new_survey')
-        >>> surveys
-        Experiment/Surveys:
-        ====================
-            |- Group: new_survey
-            ---------------------
-                |- Group: Filters
-                ------------------
-                |- Group: Reports
-                -----------------
-                |- Group: Standards
-                -------------------
-                |- Group: Stations
-                ------------------
-
-
-        :Add a survey with metadata:
-
-        >>> from mth5.metadata import Survey
-        >>> survey_metadata = Survey()
-        >>> survey_metadata.id = 'MT004'
-        >>> survey_metadata.time_period.start = '2020-01-01T12:30:00'
-        >>> new_survey = surveys.add_survey('Test_01', survey_metadata)
-        >>> # to look at the metadata
-        >>> new_survey.metadata
-        {
-            "survey": {
-                "acquired_by.author": null,
-                "acquired_by.comments": null,
-                "id": "MT004",
-                ...
-                }
-        }
-
-        .. seealso:: `mth5.metadata` for details on how to add metadata from
-                     various files and python objects.
-        """
-        if survey_name is None:
-            raise Exception("survey name is None, do not know what to name it")
+        if not survey_name:
+            raise ValueError("survey name is None, do not know what to name it")
         survey_name = validate_name(survey_name)
         try:
             survey_group = self.hdf5_group.create_group(survey_name)
@@ -282,27 +178,29 @@ class MasterSurveyGroup(BaseGroup):
             survey_obj = self.get_survey(survey_name)
         return survey_obj
 
-    def get_survey(self, survey_name):
-        """
-        Get a survey with the same name as survey_name
+    def get_survey(self, survey_name: str) -> "SurveyGroup":
+        """Return an existing survey by name.
 
-        :param survey_name: existing survey name
-        :type survey_name: string
-        :return: convenience survey class
-        :rtype: :class:`mth5.mth5_groups.surveyGroup`
-        :raises MTH5Error:  if the survey name is not found.
+        Parameters
+        ----------
+        survey_name : str
+            Existing survey name.
 
-        :Example:
+        Returns
+        -------
+        SurveyGroup
+            Wrapper for the requested survey.
 
-        >>> from mth5 import mth5
-        >>> mth5_obj = mth5.MTH5()
-        >>> mth5_obj.open_mth5(r"/test.mth5", mode='a')
-        >>> # one option
-        >>> existing_survey = mth5_obj.get_survey('MT001')
-        >>> # another option
-        >>> existing_survey = mth5_obj.experiment_group.surveys_group.get_survey('MT001')
-        MTH5Error: MT001 does not exist, check survey_list for existing names
+        Raises
+        ------
+        MTH5Error
+            If the survey does not exist.
 
+        Examples
+        --------
+        >>> existing = surveys.get_survey("survey_01")
+        >>> existing.metadata.id
+        'survey_01'
         """
 
         survey_name = validate_name(survey_name)
@@ -317,28 +215,21 @@ class MasterSurveyGroup(BaseGroup):
             self.logger.exception(msg)
             raise MTH5Error(msg)
 
-    def remove_survey(self, survey_name):
-        """
-        Remove a survey from the file.
+    def remove_survey(self, survey_name: str) -> None:
+        """Delete a survey reference from the file.
 
-        .. note:: Deleting a survey is not as simple as del(survey).  In HDF5
-              this does not free up memory, it simply removes the reference
-              to that survey.  The common way to get around this is to
-              copy what you want into a new file, or overwrite the survey.
+        Parameters
+        ----------
+        survey_name : str
+            Existing survey name.
 
-        :param survey_name: existing survey name
-        :type survey_name: string
+        Notes
+        -----
+        HDF5 deletion removes the reference only; storage is not reclaimed.
 
-        :Example: ::
-
-            >>> from mth5 import mth5
-            >>> mth5_obj = mth5.MTH5()
-            >>> mth5_obj.open_mth5(r"/test.mth5", mode='a')
-            >>> # one option
-            >>> mth5_obj.remove_survey('MT001')
-            >>> # another option
-            >>> mth5_obj.surveys_group.remove_survey('MT001')
-
+        Examples
+        --------
+        >>> surveys.remove_survey("survey_01")
         """
 
         survey_name = validate_name(survey_name)
@@ -358,68 +249,24 @@ class MasterSurveyGroup(BaseGroup):
 
 
 class SurveyGroup(BaseGroup):
-    """
-    Utility class to holds general information about the survey and
-    accompanying metadata for an MT survey.
+    """Wrapper for a single survey at ``Experiment/Surveys/<id>``.
 
-    To access the hdf5 group directly use `SurveyGroup.hdf5_group`.
+    Handles survey-level metadata, child groups (stations, reports, filters,
+    standards), and synchronization utilities.
 
-    >>> survey = SurveyGroup(hdf5_group)
-    >>> survey.hdf5_group.ref
-    <HDF5 Group Reference>
-
-    .. note:: All attributes should be input into the metadata object, that
-             way all input will be validated against the metadata standards.
-             If you change attributes in metadata object, you should run the
-             `SurveyGroup.write_metadata()` method.  This is a temporary
-             solution, working on an automatic updater if metadata is changed.
-
-    >>> survey.metadata.existing_attribute = 'update_existing_attribute'
-    >>> survey.write_metadata()
-
-    If you want to add a new attribute this should be done using the
-    `metadata.add_base_attribute` method.
-
-    >>> survey.metadata.add_base_attribute('new_attribute',
-    >>> ...                                'new_attribute_value',
-    >>> ...                                {'type':str,
-    >>> ...                                 'required':True,
-    >>> ...                                 'style':'free form',
-    >>> ...                                 'description': 'new attribute desc.',
-    >>> ...                                 'units':None,
-    >>> ...                                 'options':[],
-    >>> ...                                 'alias':[],
-    >>> ...                                 'example':'new attribute
-
-    .. tip:: If you want ot add surveys, reports, etc to the survey this
-              should be done from the MTH5 object.  This is to avoid
-              duplication, at least for now.
-
-    To look at what the structure of ``/Survey`` looks like:
-
-        >>> survey
-        /Survey:
-        ====================
-            |- Group: Filters
-            -----------------
-                --> Dataset: summary
-            -----------------
-            |- Group: Reports
-            -----------------
-                --> Dataset: summary
-                -----------------
-            |- Group: Standards
-            -------------------
-                --> Dataset: summary
-                -----------------
-            |- Group: Stations
-            ------------------
-                --> Dataset: summary
-                -----------------
-
+    Examples
+    --------
+    >>> survey = surveys.add_survey("survey_01")
+    >>> survey.metadata.id
+    'survey_01'
     """
 
-    def __init__(self, group, survey_metadata=None, **kwargs):
+    def __init__(
+        self,
+        group: h5py.Group,
+        survey_metadata: Survey | None = None,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(group, group_metadata=survey_metadata, **kwargs)
 
         self._default_subgroup_names = [
@@ -429,10 +276,17 @@ class SurveyGroup(BaseGroup):
             "Standards",
         ]
 
-    def initialize_group(self, **kwargs):
-        """
-        Initialize group by making a summary table and writing metadata
+    def initialize_group(self, **kwargs: Any) -> None:
+        """Create default subgroups and write survey metadata.
 
+        Parameters
+        ----------
+        **kwargs
+            Additional attributes to set on the instance before initialization.
+
+        Examples
+        --------
+        >>> survey.initialize_group()
         """
         # need to make groups first because metadata pulls from them.
         for group_name in self._default_subgroup_names:
@@ -445,8 +299,8 @@ class SurveyGroup(BaseGroup):
         self.write_metadata()
 
     @BaseGroup.metadata.getter
-    def metadata(self):
-        """Overwrite get metadata to include station information in the survey"""
+    def metadata(self) -> Survey:
+        """Survey metadata enriched with station and filter information."""
 
         if not self._has_read_metadata:
             self.read_metadata()
@@ -460,7 +314,7 @@ class SurveyGroup(BaseGroup):
                         if key_group.metadata.id in self._metadata.stations.keys():
                             continue
                         # skip non-station groups like Features, FCs, TransferFunction
-                        elif key_group.metadata.mth5_type not in ["Station"]:
+                        elif key_group.metadata.mth5_type.lower() not in ["station"]:
                             continue
                         self._metadata.add_station(key_group.metadata)
                     except MTH5Error:
@@ -490,11 +344,8 @@ class SurveyGroup(BaseGroup):
             )
         return self._metadata
 
-    def write_metadata(self):
-        """
-        Write HDF5 metadata from metadata object.
-
-        """
+    def write_metadata(self) -> None:
+        """Write HDF5 attributes from the survey metadata object."""
 
         try:
             for key, value in self._metadata.to_dict(single=True).items():
@@ -514,38 +365,62 @@ class SurveyGroup(BaseGroup):
                 raise ValueError(value_error)
 
     @property
-    def stations_group(self):
+    def stations_group(self) -> MasterStationGroup:
         return MasterStationGroup(self.hdf5_group["Stations"])
 
     @property
-    def filters_group(self):
-        """Convenience property for /Survey/Filters group"""
+    def filters_group(self) -> FiltersGroup:
+        """Convenience accessor for ``/Survey/Filters`` group."""
         return FiltersGroup(self.hdf5_group["Filters"], **self.dataset_options)
 
     @property
-    def reports_group(self):
-        """Convenience property for /Survey/Reports group"""
+    def reports_group(self) -> ReportsGroup:
+        """Convenience accessor for ``/Survey/Reports`` group."""
         return ReportsGroup(self.hdf5_group["Reports"], **self.dataset_options)
 
     @property
-    def standards_group(self):
-        """Convenience property for /Survey/Standards group"""
+    def standards_group(self) -> StandardsGroup:
+        """Convenience accessor for ``/Survey/Standards`` group."""
         return StandardsGroup(self.hdf5_group["Standards"], **self.dataset_options)
 
-    def update_survey_metadata(self, survey_dict=None):
-        """
-        update start end dates and location corners from stations_group.summary_table
+    def update_survey_metadata(self, survey_dict: dict[str, Any] | None = None) -> None:
+        """Deprecated alias for :py:meth:`update_metadata`.
 
+        Raises
+        ------
+        DeprecationWarning
+            Always raised to direct callers to ``update_metadata``.
+
+        Examples
+        --------
+        >>> survey.update_survey_metadata()  # doctest: +ELLIPSIS
+        Traceback (most recent call last):
+        ...
+        DeprecationWarning: 'update_survey_metadata' has been deprecated use 'update_metadata()'
         """
 
         raise DeprecationWarning(
-            "'update_survey_metadata' has been deprecated use 'update_metadata()"
+            "'update_survey_metadata' has been deprecated use 'update_metadata()'"
         )
 
-    def update_metadata(self, survey_dict=None):
-        """
-        update start end dates and location corners from stations_group.summary_table
+    def update_metadata(self, survey_dict: dict[str, Any] | None = None) -> None:
+        """Synchronize survey metadata from station summaries.
 
+        Parameters
+        ----------
+        survey_dict : dict, optional
+            Additional metadata values to merge before synchronization.
+
+        Notes
+        -----
+        Updates survey start/end dates and bounding box from station summaries,
+        then writes metadata to HDF5.
+
+        Examples
+        --------
+        >>> _ = survey.update_metadata()
+        >>> survey.metadata.time_period.start_date  # doctest: +SKIP
+        '2020-01-01'
         """
 
         station_summary = self.stations_group.station_summary.copy()

@@ -30,20 +30,21 @@ Run level: 'sample_rate', 1.0
 
 
 """
-import pathlib
-import scipy.signal as ssig
-from typing import Dict, List, Optional, Union
 
-import mt_metadata.timeseries
+import pathlib
+from typing import List, Optional, Union
+
 import pandas as pd
+import scipy.signal as ssig
 from loguru import logger
+from mt_metadata.processing.aurora import ChannelNomenclature
+from mt_metadata.processing.aurora.channel_nomenclature import SupportedNomenclatureEnum
+from mt_metadata.timeseries import Run, Station
 from mt_metadata.timeseries.filters.helper_functions import make_coefficient_filter
-from mt_metadata.timeseries import Run
-from mt_metadata.timeseries import Station
-from mt_metadata.transfer_functions.processing.aurora import ChannelNomenclature
-from mt_metadata.transfer_functions.processing.aurora.channel_nomenclature import SupportedNomenclature
+
 
 ASCII_DATA_PATH = pathlib.Path(__file__).parent.resolve()
+
 
 def make_filters(as_list: Optional[bool] = False) -> Union[dict, list]:
     """
@@ -91,7 +92,7 @@ class SyntheticRun(object):
         filters: Optional[dict] = None,
         start: Optional[str] = None,
         timeseries_dataframe: Optional[pd.DataFrame] = None,
-        data_source: str = "legacy emtf ascii"
+        data_source: str = "legacy emtf ascii",
     ) -> None:
         """
         Constructor.
@@ -124,7 +125,9 @@ class SyntheticRun(object):
         run_metadata.sample_rate = sample_rate
         run_metadata.time_period.start = start
 
-        self._timeseries_dataframe = timeseries_dataframe  # normally None for legacy EMTF data
+        self._timeseries_dataframe = (
+            timeseries_dataframe  # normally None for legacy EMTF data
+        )
         if isinstance(self._timeseries_dataframe, pd.DataFrame):
             self.data_source = "dataframe"
         else:
@@ -143,11 +146,15 @@ class SyntheticRun(object):
 
         # Set indices for adding nan to individual channels
         if nan_indices is None:
-            self.nan_indices = {}  # TODO: make this consistent with noise_scalars, None or empty dict.
+            self.nan_indices = (
+                {}
+            )  # TODO: make this consistent with noise_scalars, None or empty dict.
 
         # Set filters individual channels
         if filters is None:
-            self.filters = {}  # TODO: make this consistent with noise_scalars, None or empty dict.
+            self.filters = (
+                {}
+            )  # TODO: make this consistent with noise_scalars, None or empty dict.
 
         # run_metadata.add_base_attribute("")
         self.run_metadata = run_metadata
@@ -175,8 +182,7 @@ class SyntheticRun(object):
         elif self.data_source == "legacy emtf ascii":
             ascii_file = LegacyEMTFAsciiFile(file_path=self.raw_data_path)
             df = ascii_file.load_dataframe(
-                channel_names=self.channels,
-                sample_rate=self.run_metadata.sample_rate
+                channel_names=self.channels, sample_rate=self.run_metadata.sample_rate
             )
 
             return df
@@ -199,7 +205,7 @@ class SyntheticStation(object):
         self,
         station_metadata: Station,
         mth5_name: Optional[Union[str, pathlib.Path]] = None,
-        channel_nomenclature_keyword: SupportedNomenclature = "default",  # TODO: rename to channel_nomenclature_keyword
+        channel_nomenclature_keyword: SupportedNomenclatureEnum = SupportedNomenclatureEnum.default,  # TODO: rename to channel_nomenclature_keyword
     ) -> None:
         """
         Constructor.
@@ -230,11 +236,13 @@ class SyntheticStation(object):
         return self._channel_nomenclature
 
 
-def make_station_01(channel_nomenclature: SupportedNomenclature = "default") -> SyntheticStation:
+def make_station_01(
+    channel_nomenclature: SupportedNomenclatureEnum = SupportedNomenclatureEnum.default,
+) -> SyntheticStation:
     """
         This method prepares the metadata needed to generate an mth5 with syntheric data.
 
-    :param channel_nomenclature: Must be one of the nomenclatures defined in SupportedNomenclature
+    :param channel_nomenclature: Must be one of the nomenclatures defined in SupportedNomenclatureEnum
     :type channel_nomenclature: str
 
     :return: Object with all info needed to generate MTH5 file from synthetic data.
@@ -243,12 +251,14 @@ def make_station_01(channel_nomenclature: SupportedNomenclature = "default") -> 
     """
     station_metadata = Station()
     station_metadata.id = "test1"
-    station_metadata.location.latitude = 17.996  # TODO: Add more metadata here as an example
+    station_metadata.location.latitude = (
+        17.996  # TODO: Add more metadata here as an example
+    )
 
     # initialize SyntheticStation
     station = SyntheticStation(
         station_metadata=station_metadata,
-        channel_nomenclature_keyword=channel_nomenclature  # Needed to assign channel types in RunTS
+        channel_nomenclature_keyword=channel_nomenclature,  # Needed to assign channel types in RunTS
     )
 
     station.mth5_name = f"{station_metadata.id}.h5"
@@ -256,9 +266,9 @@ def make_station_01(channel_nomenclature: SupportedNomenclature = "default") -> 
     run_001 = SyntheticRun(
         id="001",
         sample_rate=1.0,
-        channels = station.channel_nomenclature.channels,
+        channels=station.channel_nomenclature.channels,
         raw_data_path=ASCII_DATA_PATH.joinpath("test1.asc"),
-        start=None,
+        start="1980-01-01T00:00:00+00:00",
     )
 
     # assign indices to set to Nan (not used 2024-06-06)
@@ -280,10 +290,7 @@ def make_station_01(channel_nomenclature: SupportedNomenclature = "default") -> 
                 FILTERS["1x"].name,
             ]
         elif ch in station.channel_nomenclature.hx_hy_hz:
-            filters[ch] = [
-                FILTERS["10x"].name,
-                FILTERS["0.1x"].name
-            ]
+            filters[ch] = [FILTERS["10x"].name, FILTERS["0.1x"].name]
     run_001.filters = filters
 
     station.runs = [
@@ -293,12 +300,14 @@ def make_station_01(channel_nomenclature: SupportedNomenclature = "default") -> 
     return station
 
 
-def make_station_02(channel_nomenclature: SupportedNomenclature = "default") -> SyntheticStation:
+def make_station_02(
+    channel_nomenclature: SupportedNomenclatureEnum = SupportedNomenclatureEnum.default,
+) -> SyntheticStation:
     """
     Just like station 1, but the data are different
 
-    :param channel_nomenclature: Must be one of the nomenclatures defined in SupportedNomenclature
-    :type channel_nomenclature: SupportedNomenclature
+    :param channel_nomenclature: Must be one of the nomenclatures defined in SupportedNomenclatureEnum
+    :type channel_nomenclature: SupportedNomenclatureEnum
     :return: Object with all info needed to generate MTH5 file from synthetic data.
     :rtype: SyntheticStation
 
@@ -316,13 +325,15 @@ def make_station_02(channel_nomenclature: SupportedNomenclature = "default") -> 
     return test2
 
 
-def make_station_03(channel_nomenclature: SupportedNomenclature = "default") -> SyntheticStation:
+def make_station_03(
+    channel_nomenclature: SupportedNomenclatureEnum = SupportedNomenclatureEnum.default,
+) -> SyntheticStation:
     """
     Create a synthetic station with multiple runs.  Rather than generate fresh
     synthetic data, we just reuse test1.asc for each run.
 
     :param channel_nomenclature: Literal, Must be one of the nomenclatures defined in "channel_nomenclatures.json"
-    :type channel_nomenclature: SupportedNomenclature
+    :type channel_nomenclature: SupportedNomenclatureEnum
     :rtype: SyntheticStation
     :return: Object with all info needed to generate MTH5 file from synthetic data.
 
@@ -332,7 +343,7 @@ def make_station_03(channel_nomenclature: SupportedNomenclature = "default") -> 
     station_metadata.id = "test3"
     station = SyntheticStation(
         station_metadata=station_metadata,
-        channel_nomenclature_keyword=channel_nomenclature
+        channel_nomenclature_keyword=channel_nomenclature,
     )
     station.mth5_name = "test3.h5"
 
@@ -411,12 +422,14 @@ def make_station_03(channel_nomenclature: SupportedNomenclature = "default") -> 
     return station
 
 
-def make_station_04(channel_nomenclature: SupportedNomenclature = "default") -> SyntheticStation:
+def make_station_04(
+    channel_nomenclature: SupportedNomenclatureEnum = SupportedNomenclatureEnum.default,
+) -> SyntheticStation:
     """
     Just like station 01, but data are resampled to 8Hz
 
     :param channel_nomenclature: Literal, Must be one of the nomenclatures defined in "channel_nomenclatures.json"
-    :type channel_nomenclature: SupportedNomenclature
+    :type channel_nomenclature: SupportedNomenclatureEnum
     :rtype: SyntheticStation
     :return: Object with all info needed to generate MTH5 file from synthetic data.
     """
@@ -426,7 +439,7 @@ def make_station_04(channel_nomenclature: SupportedNomenclature = "default") -> 
 
     station = SyntheticStation(
         station_metadata=station_metadata,
-        channel_nomenclature_keyword=channel_nomenclature
+        channel_nomenclature_keyword=channel_nomenclature,
     )
     station.mth5_name = "test_04_8Hz.h5"
 
@@ -453,29 +466,27 @@ def make_station_04(channel_nomenclature: SupportedNomenclature = "default") -> 
         run_001,
     ]
     station_metadata.run_list = [
-        run_001,
+        run_001.run_metadata.id,
     ]
     station.station_metadata = station_metadata
     return station
 
 
-class LegacyEMTFAsciiFile():
+class LegacyEMTFAsciiFile:
     """
-        This class can be used to interact with the legacy synthetic data files
-        that were originally in EMTF.
+    This class can be used to interact with the legacy synthetic data files
+    that were originally in EMTF.
 
-        Development Notes:
-         As of 2025-02-03 the only LegacyEMTFAsciiFile date sources are sampled at 1Hz.
-         One-off upsampling can be handled in this class if the requested sample rate differs.
+    Development Notes:
+     As of 2025-02-03 the only LegacyEMTFAsciiFile date sources are sampled at 1Hz.
+     One-off upsampling can be handled in this class if the requested sample rate differs.
 
     """
+
     IMPLICIT_SAMPLE_RATE = 1.0  # Hz
 
-    def __init__(
-        self,
-        file_path: pathlib.Path
-    ):
-        self.file_path  = file_path
+    def __init__(self, file_path: pathlib.Path):
+        self.file_path = file_path
 
     def load_dataframe(
         self,
@@ -483,23 +494,23 @@ class LegacyEMTFAsciiFile():
         sample_rate: float,
     ) -> pd.DataFrame:
         """
-            Loads an EMTF legacy ASCII time series into a dataframe.
+        Loads an EMTF legacy ASCII time series into a dataframe.
 
-            These files have an awkward whitespace separator, and also need to have the
-             electric field channels inverted to fix a phase swap.
+        These files have an awkward whitespace separator, and also need to have the
+         electric field channels inverted to fix a phase swap.
 
-            :param channel_names: The names of the channels in the legacy EMTF file, in order.
-            :type channel_names: list
-            :param sample_rate: The sample rate of the output time series in Hz.
-            :type sample_rate: float
+        :param channel_names: The names of the channels in the legacy EMTF file, in order.
+        :type channel_names: list
+        :param sample_rate: The sample rate of the output time series in Hz.
+        :type sample_rate: float
 
-            :return df: The labelled time series from the legacy EMTF file.
-            :rtype df: pd.DataFrame
+        :return df: The labelled time series from the legacy EMTF file.
+        :rtype df: pd.DataFrame
 
         """
 
         # read in data
-        df = pd.read_csv(self.file_path, names=channel_names, sep="\s+")
+        df = pd.read_csv(self.file_path, names=channel_names, sep=r"\s+")
 
         # Invert electric channels to fix phase swap due to modeling coordinates.
         # Column indices are used to avoid handling channel nomenclature here.
@@ -513,9 +524,7 @@ class LegacyEMTFAsciiFile():
             new_data_dict = {}
             for ch in df.columns:
                 data = df_orig[ch].to_numpy()
-                new_data_dict[ch] = ssig.resample(
-                    data, int(sample_rate) * len(df_orig)
-                )
+                new_data_dict[ch] = ssig.resample(data, int(sample_rate) * len(df_orig))
             df = pd.DataFrame(data=new_data_dict)
 
         return df

@@ -2,125 +2,179 @@
 """
 Created on Wed Mar 10 13:05:54 2021
 
-:copyright: 
+Pytest version of StationXML tests with fixtures and subtests
+
+:copyright:
     Jared Peacock (jpeacock@usgs.gov)
 
 :license: MIT
 
 """
+
 # =============================================================================
 #  Imports
 # =============================================================================
-import unittest
 from pathlib import Path
-from mth5.mth5 import MTH5
-from mt_metadata.timeseries import stationxml
+
+import pytest
 from mt_metadata import STATIONXML_01
+from mt_metadata.timeseries import stationxml
 
-fn_path = Path(__file__).parent
-# =============================================================================
+from mth5.mth5 import MTH5
 
 
-class TestFromStationXML01(unittest.TestCase):
-    """
-    test from a stationxml
-    """
+@pytest.fixture(scope="session")
+def experiment():
+    """Create experiment from StationXML - session scoped for efficiency."""
+    translator = stationxml.XMLInventoryMTExperiment()
+    return translator.xml_to_mt(stationxml_fn=STATIONXML_01)
 
-    @classmethod
-    def setUpClass(self):
-        self.translator = stationxml.XMLInventoryMTExperiment()
-        self.experiment = self.translator.xml_to_mt(
-            stationxml_fn=STATIONXML_01
+
+@pytest.fixture(scope="session")
+def mth5_file(experiment, make_worker_safe_path):
+    """Create MTH5 file from experiment - session scoped for efficiency."""
+    fn = make_worker_safe_path("from_stationxml_pytest.h5", Path(__file__).parent)
+
+    # Clean up any existing file
+    if fn.exists():
+        fn.unlink()
+
+    m = MTH5(file_version="0.1.0")
+    m.open_mth5(fn)
+    m.from_experiment(experiment, 0)
+
+    yield m
+
+    # Cleanup
+    m.close_mth5()
+    if fn.exists():
+        fn.unlink()
+
+
+@pytest.fixture
+def station_cas04(mth5_file):
+    """Get CAS04 station for tests that need it."""
+    return mth5_file.get_station("CAS04")
+
+
+@pytest.fixture
+def run_001(mth5_file):
+    """Get run 001 for tests that need it."""
+    return mth5_file.get_run("CAS04", "001")
+
+
+@pytest.fixture
+def ey_channel(mth5_file):
+    """Get ey channel for tests that need it."""
+    return mth5_file.get_channel("CAS04", "001", "ey")
+
+
+@pytest.fixture
+def hy_channel(mth5_file):
+    """Get hy channel for tests that need it."""
+    return mth5_file.get_channel("CAS04", "001", "hy")
+
+
+class TestStationXMLStructure:
+    """Test MTH5 file structure and group existence."""
+
+    @pytest.mark.parametrize(
+        "group_path,expected",
+        [
+            ("Survey", True),
+            ("Survey/Stations", True),
+            ("Survey/Stations/CAS04", True),
+            ("Survey/Stations/CAS04/001", True),
+            ("Survey/Stations/CAS04/001/ey", True),
+            ("Survey/Stations/CAS04/001/hy", True),
+        ],
+    )
+    def test_has_groups(self, mth5_file, group_path, expected):
+        """Test that expected groups exist in the MTH5 file."""
+        assert mth5_file.has_group(group_path) == expected
+
+
+class TestSurveyMetadata:
+    """Test survey-level metadata."""
+
+    def test_survey_fdsn_network(self, mth5_file):
+        """Test survey FDSN network."""
+        assert mth5_file.survey_group.metadata.fdsn.network == "ZU"
+
+    def test_survey_time_period(self, mth5_file):
+        """Test survey time period."""
+        metadata = mth5_file.survey_group.metadata
+        assert metadata.time_period.start_date == "2020-06-02"
+        assert metadata.time_period.end_date == "2020-07-13"
+
+    def test_survey_summary(self, mth5_file):
+        """Test survey summary."""
+        expected_summary = (
+            "USMTArray South Magnetotelluric Time Series (USMTArray CONUS South-USGS)"
+        )
+        assert mth5_file.survey_group.metadata.summary == expected_summary
+
+    def test_survey_doi(self, mth5_file):
+        """Test survey DOI."""
+        expected_doi = "https://doi.org/10.7914/SN/ZU_2020"
+        assert (
+            mth5_file.survey_group.metadata.citation_dataset.doi.unicode_string()
+            == expected_doi
         )
 
-        self.fn = fn_path.joinpath("from_stationxml.h5")
-        if self.fn.exists():
-            self.fn.unlink()
-        self.m = MTH5(file_version="0.1.0")
-        self.m.open_mth5(self.fn)
-        self.m.from_experiment(self.experiment, 0)
 
-    def test_groups(self):
+class TestStationMetadata:
+    """Test station-level metadata."""
 
-        with self.subTest("has Survey"):
-            self.assertEqual(self.m.has_group("Survey"), True)
-        with self.subTest("has SStations"):
-            self.assertEqual(self.m.has_group("Survey/Stations"), True)
-        with self.subTest("has CAS04"):
-            self.assertEqual(self.m.has_group("Survey/Stations/CAS04"), True)
-        with self.subTest("has run 001"):
-            self.assertEqual(
-                self.m.has_group("Survey/Stations/CAS04/001"), True
-            )
-        with self.subTest("has channel ey"):
-            self.assertEqual(
-                self.m.has_group("Survey/Stations/CAS04/001/ey"), True
-            )
-        with self.subTest("has channel hy"):
-            self.assertEqual(
-                self.m.has_group("Survey/Stations/CAS04/001/hy"), True
-            )
-
-    def test_survey_metadata(self):
-        with self.subTest("has network ZU"):
-            self.assertEqual(self.m.survey_group.metadata.fdsn.network, "ZU")
-        with self.subTest("test start"):
-            self.assertEqual(
-                self.m.survey_group.metadata.time_period.start_date,
-                "2020-06-02",
-            )
-        with self.subTest("test end"):
-            self.assertEqual(
-                self.m.survey_group.metadata.time_period.end_date, "2020-07-13"
-            )
-        with self.subTest("survey summary"):
-
-            self.assertEqual(
-                self.m.survey_group.metadata.summary,
-                "USMTArray South Magnetotelluric Time Series (USMTArray CONUS South-USGS)",
-            )
-        with self.subTest("doi"):
-            self.assertEqual(
-                self.m.survey_group.metadata.citation_dataset.doi,
-                "10.7914/SN/ZU_2020",
-            )
-
-    def test_station_metadata(self):
-        station_dict = {
-            "acquired_by.author": None,
+    @pytest.fixture
+    def station_metadata_dict(self):
+        """Expected station metadata dictionary."""
+        return {
+            "acquired_by.author": "",
             "channels_recorded": ["ey", "hy"],
             "data_type": "BBMT",
             "fdsn.id": "CAS04",
             "geographic_name": "Corral Hollow, CA, USA",
             "hdf5_reference": "<HDF5 object reference>",
             "id": "CAS04",
-            "location.declination.model": "WMM",
+            "location.declination.model": "IGRF",
             "location.declination.value": 0.0,
             "location.elevation": 329.3875,
             "location.latitude": 37.633351,
             "location.longitude": -121.468382,
             "mth5_type": "Station",
-            "orientation.method": None,
+            "orientation.method": "compass",
             "orientation.reference_frame": "geographic",
-            "provenance.software.author": None,
-            "provenance.software.name": None,
-            "provenance.software.version": None,
-            "provenance.submitter.author": None,
+            "provenance.software.author": "",
+            "provenance.software.name": "",
+            "provenance.software.version": "",
+            "provenance.submitter.author": "",
             "provenance.submitter.email": None,
             "provenance.submitter.organization": None,
-            "release_license": "CC0-1.0",
+            "release_license": None,
             "run_list": ["001"],
             "time_period.end": "2020-07-13T21:46:12+00:00",
             "time_period.start": "2020-06-02T18:41:43+00:00",
         }
 
-        m_station = self.m.get_station(station_dict["id"]).metadata
-        for key, true_value in station_dict.items():
-            with self.subTest(key):
-                self.assertEqual(true_value, m_station.get_attr_from_name(key))
+    def test_station_metadata_attributes(self, station_cas04, station_metadata_dict):
+        """Test station metadata attributes match expected values."""
+        m_station = station_cas04.metadata
 
-    def test_run_metadata(self):
-        run_dict = {
+        for key, expected_value in station_metadata_dict.items():
+            actual_value = m_station.get_attr_from_name(key)
+            assert (
+                actual_value == expected_value
+            ), f"Station metadata '{key}': expected {expected_value}, got {actual_value}"
+
+
+class TestRunMetadata:
+    """Test run-level metadata."""
+
+    @pytest.fixture
+    def run_metadata_dict(self):
+        """Expected run metadata dictionary."""
+        return {
             "id": "001",
             "channels_recorded_electric": ["ey"],
             "channels_recorded_magnetic": ["hy"],
@@ -128,13 +182,24 @@ class TestFromStationXML01(unittest.TestCase):
             "time_period.start": "2020-06-02T18:41:43+00:00",
         }
 
-        m_run = self.m.get_run("CAS04", run_dict["id"]).metadata
-        for key, true_value in run_dict.items():
-            with self.subTest(key):
-                self.assertEqual(true_value, m_run.get_attr_from_name(key))
+    def test_run_metadata_attributes(self, run_001, run_metadata_dict):
+        """Test run metadata attributes match expected values."""
+        m_run = run_001.metadata
 
-    def test_ey_metadata(self):
-        ch_dict = {
+        for key, expected_value in run_metadata_dict.items():
+            actual_value = m_run.get_attr_from_name(key)
+            assert (
+                actual_value == expected_value
+            ), f"Run metadata '{key}': expected {expected_value}, got {actual_value}"
+
+
+class TestElectricChannelMetadata:
+    """Test electric channel (ey) metadata."""
+
+    @pytest.fixture
+    def ey_metadata_dict(self):
+        """Expected ey channel metadata dictionary."""
+        return {
             "component": "ey",
             "positive.id": "200402F",
             "positive.manufacturer": "Oregon State University",
@@ -152,13 +217,24 @@ class TestFromStationXML01(unittest.TestCase):
             "time_period.start": "2020-06-02T18:41:43+00:00",
         }
 
-        m_ch = self.m.get_channel("CAS04", "001", "ey").metadata
-        for key, true_value in ch_dict.items():
-            with self.subTest(key):
-                self.assertEqual(true_value, m_ch.get_attr_from_name(key))
+    def test_ey_metadata_attributes(self, ey_channel, ey_metadata_dict):
+        """Test ey channel metadata attributes match expected values."""
+        m_ch = ey_channel.metadata
 
-    def test_hy_metadata(self):
-        ch_dict = {
+        for key, expected_value in ey_metadata_dict.items():
+            actual_value = m_ch.get_attr_from_name(key)
+            assert (
+                actual_value == expected_value
+            ), f"EY channel metadata '{key}': expected {expected_value}, got {actual_value}"
+
+
+class TestMagneticChannelMetadata:
+    """Test magnetic channel (hy) metadata."""
+
+    @pytest.fixture
+    def hy_metadata_dict(self):
+        """Expected hy channel metadata dictionary."""
+        return {
             "component": "hy",
             "measurement_azimuth": 103.2,
             "type": "magnetic",
@@ -170,23 +246,55 @@ class TestFromStationXML01(unittest.TestCase):
             "time_period.start": "2020-06-02T18:41:43+00:00",
         }
 
-        m_ch = self.m.get_channel("CAS04", "001", "hy").metadata
-        for key, true_value in ch_dict.items():
-            with self.subTest(msg=key):
-                self.assertEqual(true_value, m_ch.get_attr_from_name(key))
+    def test_hy_metadata_attributes(self, hy_channel, hy_metadata_dict):
+        """Test hy channel metadata attributes match expected values."""
+        m_ch = hy_channel.metadata
 
-    def test_filters(self):
+        for key, expected_value in hy_metadata_dict.items():
+            actual_value = m_ch.get_attr_from_name(key)
+            assert (
+                actual_value == expected_value
+            ), f"HY channel metadata '{key}': expected {expected_value}, got {actual_value}"
 
-        for f_name in self.experiment.surveys[0].filters.keys():
-            with self.subTest(f_name):
-                exp_filter = self.experiment.surveys[0].filters[f_name]
-                h5_filter = self.m.survey_group.filters_group.to_filter_object(
-                    f_name
-                )
 
-                self.assertTrue(exp_filter, h5_filter)
+class TestFilters:
+    """Test filter functionality and data integrity."""
 
-    @classmethod
-    def tearDownClass(self):
-        self.m.close_mth5()
-        self.fn.unlink()
+    def test_all_filters(self, mth5_file, experiment):
+        """Test that all experiment filters are properly transferred to MTH5."""
+        experiment_filters = experiment.surveys[0].filters
+
+        for filter_name in experiment_filters.keys():
+            # Get the filter from both sources
+            exp_filter = experiment_filters[filter_name]
+            h5_filter = mth5_file.survey_group.filters_group.to_filter_object(
+                filter_name
+            )
+
+            # Test that both exist and are truthy
+            assert (
+                exp_filter
+            ), f"Experiment filter '{filter_name}' should exist and be truthy"
+            assert h5_filter, f"MTH5 filter '{filter_name}' should exist and be truthy"
+
+            # Additional validation could be added here for specific filter properties
+            # if needed, such as comparing filter types, parameters, etc.
+
+
+# Performance optimizations implemented:
+# 1. Session-scoped fixtures for expensive operations (file creation, experiment loading)
+# 2. Parametrized tests to reduce code duplication for similar test cases
+# 3. Strategic fixture scoping to minimize resource creation
+# 4. Clear test organization with descriptive class names
+# 5. Meaningful assertion messages for better debugging
+# 6. Automatic cleanup with yield fixtures
+# 7. Separated concerns into logical test classes
+# 8. Focused fixture creation - only create objects when needed
+# 9. Efficient metadata testing through dictionary-driven approaches
+#
+# Performance improvements over unittest version:
+# - Single file creation per test session (vs per test class)
+# - Shared fixtures reduce redundant object creation
+# - Parametrized tests run efficiently with clear test names
+# - Better resource management with automatic cleanup
+# - More granular test organization for easier maintenance

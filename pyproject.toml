@@ -1,0 +1,118 @@
+[build-system]
+requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mth5"
+version = "0.5.0"
+description = "Archivable and exchangeable format for magnetotelluric data"
+authors = [
+    {name = "Jared Peacock", email = "jpeacock@usgs.gov"},
+    {name = "Karl Kappler"},
+    {name = "MTH5 Team"}
+]
+readme = "README.md"
+license = {text = "MIT"}
+keywords = ["mth5", "magnetotellurics", "hdf5", "data format"]
+classifiers = [
+    "Development Status :: Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "h5py",
+    "pyyaml",
+    "scipy",
+    "mt_metadata",
+]
+
+[project.urls]
+Homepage = "https://github.com/kujaku11/mth5"
+Repository = "https://github.com/kujaku11/mth5"
+Documentation = "https://mth5.readthedocs.io/"
+"Bug Tracker" = "https://github.com/kujaku11/mth5/issues"
+
+[project.optional-dependencies]
+test = [
+    "pytest>=3",
+    "pytest-xdist",
+    "pytest-subtests",
+    "pytest-benchmark",
+]
+dev = [
+    "pytest>=3",
+    "pytest-xdist",
+    "pytest-subtests",
+    "pytest-runner",
+    "pytest-benchmark",
+    "black",
+    "flake8",
+    "isort",
+    "pre-commit",
+]
+
+[tool.setuptools]
+zip-safe = false
+include-package-data = true
+license-files = ["LICENSE"]
+
+[tool.setuptools.packages.find]
+include = ["mth5*"]
+
+[tool.setuptools.package-data]
+mth5 = [
+    "data/*.asc",
+    "utils/*.yaml",
+]
+
+# Additional files to include in source distributions
+# (corresponds to MANIFEST.in)
+# Note: README.md is already included via project.readme
+# License files are automatically included by setuptools
+# For complete manifest control, MANIFEST.in is still used
+# This includes: AUTHORS.rst, CONTRIBUTING.rst, HISTORY.rst,
+# tests/*, docs/*, and examples/notebooks/*.TXT
+
+[tool.pytest.ini_options]
+markers = [
+    "performance: mark test as performance test",
+    "integration: mark test as integration test"
+]
+addopts = "--ignore=setup.py"
+testpaths = ["tests"]
+
+[tool.flake8]
+exclude = ["docs"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true

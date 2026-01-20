@@ -6,6 +6,7 @@ from .phoenix import PhoenixClient
 from .zen import ZenClient
 from .lemi424 import LEMI424Client
 from .metronix import MetronixClient
+from .nims import NIMSClient
 from .make_mth5 import MakeMTH5
 
 __all__ = [
@@ -15,5 +16,6 @@ __all__ = [
     "ZenClient",
     "LEMI424Client",
     "MetronixClient",
+    "NIMSClient",
     "MakeMTH5",
 ]

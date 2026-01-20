@@ -13,14 +13,8 @@ Created on Fri Feb  4 15:53:21 2022
 # Imports
 # =============================================================================
 import copy
-import numpy as np
-from obspy.clients.fdsn import Client as FDSNClient
-import pandas as pd
 import time
-
 from gzip import BadGzipFile
-from loguru import logger
-import obspy
 
 # from obspy.clients import fdsn
 # from obspy import UTCDateTime
@@ -29,9 +23,16 @@ import obspy
 # from obspy.core.inventory import Inventory
 from pathlib import Path
 
+import numpy as np
+import obspy
+import pandas as pd
+from loguru import logger
 from mt_metadata.timeseries.stationxml import XMLInventoryMTExperiment
+from obspy.clients.fdsn import Client as FDSNClient
+
 from mth5.mth5 import MTH5
 from mth5.timeseries import RunTS
+
 
 # =============================================================================
 
@@ -56,6 +57,8 @@ class FDSN:
         self.h5_fletcher32 = True
         self.h5_data_level = 1
         self.mth5_version = mth5_version
+        self.mth5_file_mode = "w"
+        self.mth5_filename = None
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -197,6 +200,7 @@ class FDSN:
         ignored_groups = [
             "Fourier_Coefficients",
             "Transfer_Functions",
+            "Features",
         ]
         run_list = m.get_station(station_id, survey_id).groups_list
         run_list = [x for x in run_list if x not in ignored_groups]
@@ -284,6 +288,13 @@ class FDSN:
         streams_and_run_timings_match = False
         run_start = run_group.metadata.time_period.start
         run_end = run_group.metadata.time_period.end
+
+        # Handle MTime objects by converting to string first
+        if hasattr(run_start, "isoformat"):
+            run_start = run_start.isoformat()
+        if hasattr(run_end, "isoformat"):
+            run_end = run_end.isoformat()
+
         cond1 = stream_start >= obspy.UTCDateTime(run_start)
         cond2 = stream_end <= obspy.UTCDateTime(run_end)
         if cond1 and cond2:  # paired up
@@ -500,7 +511,7 @@ class FDSN:
 
         # initiate MTH5 file
         with MTH5(**self.h5_kwargs) as m:
-            m.open_mth5(file_name, "w")
+            m.open_mth5(file_name, self.mth5_file_mode)
 
             m.from_experiment(experiment)
             self._process_list(experiment, retrieved_unique_list, m)
@@ -585,9 +596,9 @@ class FDSN:
                         max_tries=10,
                     )
 
-                    stations_dict[network_id][start_time][station_row.station] = (
-                        sta_inv.networks[0].stations[0]
-                    )
+                    stations_dict[network_id][start_time][
+                        station_row.station
+                    ] = sta_inv.networks[0].stations[0]
         return stations_dict
 
     def get_waveforms_from_request_row(self, client, row):
@@ -764,6 +775,10 @@ class FDSN:
         :rtype: string
 
         """
+
+        if self.mth5_filename is not None:
+            print(f"Using user defined mth5 file name {self.mth5_filename}")
+            return self.mth5_filename
 
         unique_list = self.get_unique_networks_and_stations(df)
 

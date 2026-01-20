@@ -4,27 +4,27 @@ Created on Tue Apr 18 15:40:28 2023
 
 @author: jpeacock
 """
+import datetime
+import shutil
+import string
+import time
+
 # =============================================================================
 # Imports
 # =============================================================================
 from pathlib import Path
-import time
-import datetime
-import dateutil.parser
-import string
-import shutil
-import numpy as np
 
+import dateutil.parser
+import numpy as np
 from loguru import logger
+
 from mth5.io.zen import Z3D
+
 
 try:
     import win32api
 except ImportError:
-    print(
-        "WARNING: Cannot find win32api, will not be able to detect"
-        " drive names"
-    )
+    print("WARNING: Cannot find win32api, will not be able to detect" " drive names")
 # =============================================================================
 
 
@@ -182,7 +182,9 @@ def copy_from_sd(
                         channel = zt.metadata.ch_cmp.upper()
                         st = zt.schedule.Time.replace(":", "")
                         sd = zt.schedule.Date.replace("-", "")
-                        sv_fn = f"{station}_{sd}_{st}_{int(zt.sample_rate)}_{channel}.Z3D"
+                        sv_fn = (
+                            f"{station}_{sd}_{st}_{int(zt.sample_rate)}_{channel}.Z3D"
+                        )
 
                         new_fn = save_path.joinpath(sv_fn)
                         fn_list.append(new_fn)
@@ -192,9 +194,7 @@ def copy_from_sd(
                         logger.info(f"Copied {fn} to {new_fn}")
                         logger.info(f"File size is {file_size}")
                 else:
-                    logger.warning(
-                        f"Skipped {fn} because file to small {file_size}"
-                    )
+                    logger.warning(f"Skipped {fn} because file to small {file_size}")
             except WindowsError:
                 logger.warning(f"Faulty file at {fn}")
     et_test = time.ctime()
@@ -276,7 +276,6 @@ def delete_files_from_sd(
                         delete_fn_list.append(fn)
                         logger.info(f"Moved {fn} to {delete_path}")
                 else:
-
                     if delete_type == "before":
                         if zt_date <= delete_date:
                             if delete_folder is None:
@@ -355,7 +354,6 @@ class ZenSchedule(object):
     """
 
     def __init__(self):
-
         self.verbose = True
         self.sr_dict = {
             "256": "0",
@@ -522,7 +520,6 @@ class ZenSchedule(object):
         schedule_fn="zen_schedule.MTsch",
         version=4,
     ):
-
         """
         write a zen schedule file
         **Note**: for the older boxes use 'Zeus3Ini.cfg' for the savename
@@ -563,9 +560,7 @@ class ZenSchedule(object):
             self.df_list, self.df_time_list, repeat=repeat * 3
         )
         # estimate the first off set time
-        t_offset_dict = self.get_schedule_offset(
-            zen_start, self.master_schedule
-        )
+        t_offset_dict = self.get_schedule_offset(zen_start, self.master_schedule)
 
         # make the schedule with the offset of the first schedule action
         self.sa_list = self.make_schedule(
@@ -589,9 +584,7 @@ class ZenSchedule(object):
             duration = t1 - t0 - self._resync_pause
             sr = int(self.sr_dict[str(ss["df"])])
             if version >= 4:
-                zacq_list.append(
-                    f"$schline{ii+1} = {duration:.0f},{sr:.0f},1,0,0"
-                )
+                zacq_list.append(f"$schline{ii+1} = {duration:.0f},{sr:.0f},1,0,0")
             elif version < 4:
                 zacq_list.append(f"$schline{ii+1} = {duration:.0f},{sr:.0f},1")
         if version >= 4:
