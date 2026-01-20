@@ -309,7 +309,7 @@ class TestChannelTSComparison:
         ts2.start = "1970-01-01T12:00:00"
 
         with subtests.test(name="earlier_start"):
-            assert ts1 < ts2
+            assert ts1 > ts2
 
     def test_less_than_with_data(self, subtests):
         """Test less than comparison with data arrays"""
@@ -337,7 +337,7 @@ class TestChannelTSComparison:
         ts2 = timeseries.ChannelTS(channel_type="electric")
         ts2.start = "2020-01-01T12:00:00"
 
-        assert ts1 > ts2
+        assert ts1 < ts2
 
 
 # =============================================================================
