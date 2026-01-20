@@ -15,7 +15,7 @@ readme = "README.md"
 license = {text = "MIT"}
 keywords = ["mth5", "magnetotellurics", "hdf5", "data format"]
 classifiers = [
-    "Development Status :: Production/Stable",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Natural Language :: English",
