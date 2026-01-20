@@ -425,6 +425,9 @@ class RunGroup(BaseGroup):
             if (
                 self._metadata.time_period.start
                 != self._metadata.channels[0].time_period.start
+            ) or (
+                self._metadata.time_period.end
+                != self._metadata.channels[0].time_period.end
             ):
                 self.recache_channel_metadata()
 
