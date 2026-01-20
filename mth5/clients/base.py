@@ -9,6 +9,7 @@ Created on Fri Oct 11 11:36:26 2024
 # Imports
 # =============================================================================
 from pathlib import Path
+from typing import Any, Optional, Sequence, Union
 
 from loguru import logger
 
@@ -19,31 +20,35 @@ from loguru import logger
 class ClientBase:
     def __init__(
         self,
-        data_path,
-        sample_rates=[1],
-        save_path=None,
-        mth5_filename="from_client.h5",
-        **kwargs,
-    ):
+        data_path: Union[str, Path],
+        sample_rates: Sequence[float] = [1],
+        save_path: Optional[Union[str, Path]] = None,
+        mth5_filename: str = "from_client.h5",
+        **kwargs: Any,
+    ) -> None:
         """
+        Initialize the ClientBase.
 
-        any h5 parameters should be in kwargs as `h5_parameter_name`
+        Any h5 parameters should be in kwargs as `h5_parameter_name`.
 
-        :param data_path: DESCRIPTION
-        :type data_path: TYPE
-        :param sample_rate: DESCRIPTION, defaults to [1]
-        :type sample_rate: TYPE, optional
-        :param save_path: DESCRIPTION, defaults to None
-        :type save_path: TYPE, optional
-        :param mth5_filename: DESCRIPTION, defaults to "from_client.h5"
-        :type mth5_filename: TYPE, optional
-        :param **kwargs: DESCRIPTION
-        :type **kwargs: TYPE
-        :param : DESCRIPTION
-        :type : TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Parameters
+        ----------
+        data_path : str or Path
+            Directory where data files are located.
+        sample_rates : Sequence[float], optional
+            List of sample rates to look for. Default is [1].
+        save_path : str or Path, optional
+            Directory to save the mth5 file. If None, uses data_path.
+        mth5_filename : str, optional
+            Name of the mth5 file to create. Default is 'from_client.h5'.
+        **kwargs : Any
+            Additional keyword arguments for h5 parameters.
 
+        Examples
+        --------
+        >>> client = ClientBase(data_path="./data", sample_rates=[1, 8, 256])
+        >>> client.save_path
+        PosixPath('data/from_client.h5')
         """
         self.logger = logger
 
@@ -62,14 +67,28 @@ class ClientBase:
         self.h5_data_level = 1
         self.mth5_file_mode = "w"
 
-        self.collection = None
+        self.collection: Optional[Any] = None
 
         for key, value in kwargs.items():
             if value is not None:
                 setattr(self, key, value)
 
     @property
-    def h5_kwargs(self):
+    def h5_kwargs(self) -> dict[str, Any]:
+        """
+        Dictionary of HDF5 keyword arguments for file creation.
+
+        Returns
+        -------
+        dict
+            Dictionary of HDF5 file creation parameters.
+
+        Examples
+        --------
+        >>> client = ClientBase(data_path="./data")
+        >>> client.h5_kwargs["compression"]
+        'gzip'
+        """
         h5_params = dict(
             file_version=self.mth5_version,
             compression=self.h5_compression,
@@ -86,70 +105,135 @@ class ClientBase:
         return h5_params
 
     @property
-    def data_path(self):
-        """Path to data"""
+    def data_path(self) -> Path:
+        """
+        Path to data directory.
+
+        Returns
+        -------
+        Path
+            Path to the data directory.
+
+        Examples
+        --------
+        >>> client = ClientBase(data_path="./data")
+        >>> client.data_path
+        PosixPath('data')
+        """
         return self._data_path
 
     @data_path.setter
-    def data_path(self, value):
+    def data_path(self, value: Union[str, Path]) -> None:
         """
+        Set the data path.
 
-        :param value: data path, directory to where files are
-        :type value: str or Path
+        Parameters
+        ----------
+        value : str or Path
+            Directory where files are located.
 
+        Raises
+        ------
+        IOError
+            If the path does not exist.
+        ValueError
+            If value is None.
+
+        Examples
+        --------
+        >>> client = ClientBase(data_path="./data")
+        >>> client.data_path
+        PosixPath('data')
         """
-
         if value is not None:
             self._data_path = Path(value)
             if not self._data_path.exists():
                 raise IOError(f"Could not find {self._data_path}")
-
         else:
             raise ValueError("data_path cannot be None")
 
     @property
-    def sample_rates(self):
-        """sample rates to look for"""
+    def sample_rates(self) -> list[float]:
+        """
+        List of sample rates to look for.
+
+        Returns
+        -------
+        list of float
+            Sample rates.
+
+        Examples
+        --------
+        >>> client = ClientBase(data_path="./data", sample_rates=[1, 8, 256])
+        >>> client.sample_rates
+        [1.0, 8.0, 256.0]
+        """
         return self._sample_rates
 
     @sample_rates.setter
-    def sample_rates(self, value):
+    def sample_rates(self, value: Union[int, float, str, Sequence[float]]) -> None:
         """
-        sample rates set to a list
+        Set the sample rates as a list of floats.
 
-        :param value: DESCRIPTION
-        :type value: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Parameters
+        ----------
+        value : int, float, str, or Sequence[float]
+            Sample rates to set. If str, should be comma-separated.
 
+        Raises
+        ------
+        TypeError
+            If value cannot be parsed.
+
+        Examples
+        --------
+        >>> client = ClientBase(data_path="./data", sample_rates="1,8,256")
+        >>> client.sample_rates
+        [1.0, 8.0, 256.0]
         """
-
         if isinstance(value, (int, float)):
-            self._sample_rates = [value]
+            self._sample_rates = [float(value)]
         elif isinstance(value, str):
             self._sample_rates = [float(v) for v in value.split(",")]
-
         elif isinstance(value, (tuple, list)):
             self._sample_rates = [float(v) for v in value]
         else:
             raise TypeError(f"Cannot parse {type(value)}")
 
     @property
-    def save_path(self):
-        """Path to save mth5"""
+    def save_path(self) -> Path:
+        """
+        Path to save the mth5 file.
+
+        Returns
+        -------
+        Path
+            Full path to the mth5 file.
+
+        Examples
+        --------
+        >>> client = ClientBase(data_path="./data", save_path="./output", mth5_filename="test.h5")
+        >>> client.save_path
+        PosixPath('output/test.h5')
+        """
         return self._save_path.joinpath(self.mth5_filename)
 
     @save_path.setter
-    def save_path(self, value):
+    def save_path(self, value: Optional[Union[str, Path]]) -> None:
         """
+        Set the path to save the mth5 file.
 
-        :param value: DESCRIPTION
-        :type value: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Parameters
+        ----------
+        value : str or Path, optional
+            Directory or file path to save the mth5 file. If None, uses data_path.
 
+        Examples
+        --------
+        >>> client = ClientBase(data_path="./data", save_path="./output/test.h5")
+        >>> client.save_path
+        PosixPath('output/test.h5')
         """
-
         if value is not None:
             value = Path(value)
             if value.exists():
@@ -168,13 +252,23 @@ class ClientBase:
         else:
             self._save_path = self.data_path
 
-    def get_run_dict(self):
+    def get_run_dict(self) -> Any:
         """
-        Get Run information
+        Get run information from the collection.
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Returns
+        -------
+        Any
+            Run information as returned by the collection's get_runs method.
 
+        Examples
+        --------
+        >>> client = ClientBase(data_path="./data")
+        >>> client.collection = ...  # assign a collection with get_runs method
+        >>> client.get_run_dict()
+        ...
         """
 
+        if self.collection is None:
+            raise ValueError("Collection is not set.")
         return self.collection.get_runs(sample_rates=self.sample_rates)

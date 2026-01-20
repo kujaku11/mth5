@@ -58,7 +58,7 @@ class FDSN:
         self.h5_data_level = 1
         self.mth5_version = mth5_version
         self.mth5_file_mode = "w"
-        self.file_name = None
+        self.mth5_filename = None
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -776,8 +776,9 @@ class FDSN:
 
         """
 
-        if self.file_name is not None:
-            return self.file_name
+        if self.mth5_filename is not None:
+            print(f"Using user defined mth5 file name {self.mth5_filename}")
+            return self.mth5_filename
 
         unique_list = self.get_unique_networks_and_stations(df)
 

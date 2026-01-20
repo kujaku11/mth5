@@ -113,6 +113,7 @@ class MakeMTH5:
         self.h5_fletcher32 = True
         self.h5_data_level = 1
         self.mth5_file_mode = "w"
+        self.mth5_filename = "make_mth5.h5"
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -129,6 +130,25 @@ class MakeMTH5:
 
     def __repr__(self):
         return self.__str__()
+
+    @property
+    def save_path(self) -> Path:
+        """Get the save path as a Path object."""
+        return Path(self._save_path)
+
+    @save_path.setter
+    def save_path(self, value: str | Path | None):
+        """Set the save path, converting to Path if necessary."""
+        if value is None:
+            self._save_path = Path().cwd()
+        else:
+            self._save_path = Path(value)
+            if "." in self._save_path.name:
+                self.mth5_filename = self._save_path.name
+                self._save_path = self._save_path.parent
+            else:
+                if not self._save_path.exists():
+                    self._save_path.mkdir(parents=True, exist_ok=True)
 
     def get_h5_kwargs(self) -> dict:
         """
@@ -244,7 +264,7 @@ class MakeMTH5:
         """
         maker = cls(**kwargs)
         kw_dict = maker.get_h5_kwargs()
-        kw_dict["mth5_file_mode"] = maker.mth5_file_mode
+        kw_dict["mth5_filename"] = maker.mth5_filename
 
         fdsn_client = FDSN(client=client, **kw_dict)
 
@@ -336,6 +356,7 @@ class MakeMTH5:
         """
         maker = cls(**kwargs)
         kw_dict = maker.get_h5_kwargs()
+        kw_dict["mth5_filename"] = maker.mth5_filename
 
         fdsn_client = FDSN(**kw_dict)
 
@@ -757,6 +778,8 @@ class MakeMTH5:
         """
         maker = cls(**kwargs)
         kw_dict = maker.get_h5_kwargs()
+        kw_dict.pop("mth5_filename", None)
+        kw_dict.pop("save_path", None)
 
         lemi_client = LEMI424Client(
             data_path,
