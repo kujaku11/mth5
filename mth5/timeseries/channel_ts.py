@@ -281,7 +281,7 @@ class ChannelTS:
         if not isinstance(other, ChannelTS):
             raise TypeError(f"Cannot compare ChannelTS with {type(other)}")
         self.logger.info("Only testing start time")
-        if other.start < self.start and other.sample_rate == self.sample_rate:
+        if other.start > self.start and other.sample_rate == self.sample_rate:
             return True
         return False
 
