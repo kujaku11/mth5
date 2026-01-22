@@ -177,8 +177,18 @@ class TestUSGSasciiCollectionDataFrame:
         [
             ("start", "datetime", pd.api.types.is_datetime64_any_dtype),
             ("end", "datetime", pd.api.types.is_datetime64_any_dtype),
-            ("instrument_id", "object", pd.api.types.is_object_dtype),
-            ("calibration_fn", "object", pd.api.types.is_object_dtype),
+            (
+                "instrument_id",
+                "object",
+                lambda x: pd.api.types.is_string_dtype(x)
+                or pd.api.types.is_object_dtype(x),
+            ),
+            (
+                "calibration_fn",
+                "object",
+                lambda x: pd.api.types.is_string_dtype(x)
+                or pd.api.types.is_object_dtype(x),
+            ),
         ],
     )
     def test_df_types_after_conversion(
@@ -422,9 +432,13 @@ class TestUSGSasciiCollectionIntegration:
         assert pd.api.types.is_datetime64_any_dtype(df_converted["start"])
         assert pd.api.types.is_datetime64_any_dtype(df_converted["end"])
 
-        # Verify object types for string columns
-        assert pd.api.types.is_object_dtype(df_converted["instrument_id"])
-        assert pd.api.types.is_object_dtype(df_converted["calibration_fn"])
+        # Verify object/string types for string columns (pandas 2.x uses StringDtype)
+        assert pd.api.types.is_string_dtype(
+            df_converted["instrument_id"]
+        ) or pd.api.types.is_object_dtype(df_converted["instrument_id"])
+        assert pd.api.types.is_string_dtype(
+            df_converted["calibration_fn"]
+        ) or pd.api.types.is_object_dtype(df_converted["calibration_fn"])
 
 
 @pytest.mark.skipif(not HAS_TEST_DATA, reason="local test files not available")

@@ -334,11 +334,19 @@ class ChannelTS:
             [self.data_array, other.data_array], combine_attrs="override"
         )
 
-        n_samples = (
-            self.sample_rate
-            * float(combined_ds.time.max().values - combined_ds.time.min().values)
-            / 1e9
-        ) + 1
+        # Handle datetime.timedelta for Python 3.12+ compatibility
+        duration = combined_ds.time.max().values - combined_ds.time.min().values
+        if hasattr(duration, "total_seconds"):
+            # Python datetime.timedelta
+            duration_ns = duration.total_seconds() * 1e9
+        elif hasattr(duration, "view"):
+            # numpy timedelta64
+            duration_ns = float(duration.view("int64"))
+        else:
+            # Already numeric
+            duration_ns = float(duration)
+
+        n_samples = (self.sample_rate * duration_ns / 1e9) + 1
 
         new_dt_index = make_dt_coordinates(
             combined_ds.time.min().values, self.sample_rate, n_samples

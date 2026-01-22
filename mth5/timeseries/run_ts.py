@@ -723,8 +723,19 @@ class RunTS:
         np.ndarray
             Array of datetime64 timestamps.
         """
+        # Handle datetime.timedelta for Python 3.12+ compatibility
+        duration = end - start
+        if hasattr(duration, "total_seconds"):
+            # Python datetime.timedelta
+            duration_ns = duration.total_seconds() * 1e9
+        elif hasattr(duration, "view"):
+            # numpy timedelta64
+            duration_ns = float(duration.view("int64"))
+        else:
+            # Already numeric
+            duration_ns = float(duration)
 
-        n_samples = int(sample_rate * float(end - start) / 1e9) + 1
+        n_samples = int(sample_rate * duration_ns / 1e9) + 1
 
         return make_dt_coordinates(start, sample_rate, n_samples)
 
