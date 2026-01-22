@@ -205,8 +205,19 @@ def get_sampling_step(
         t_scale = 1e3
     else:
         t_scale = 1
-    dt_avg = (float(coord[-1] - coord[0]) / (len(coord) - 1)) / t_scale  # N-1 segments
-    dt_first = float(coord[1] - coord[0]) / t_scale
+
+    # FIX: Convert timedelta to numeric value before float() for Python 3.11+ compatibility
+    # When subtracting datetime64 values, result is timedelta64 which must be converted
+    dt_avg_raw = coord[-1] - coord[0]
+    dt_first_raw = coord[1] - coord[0]
+
+    # Convert to float using . values if it's a numpy timedelta, otherwise direct conversion
+    if hasattr(dt_avg_raw, "values"):
+        dt_avg = (float(dt_avg_raw.values) / (len(coord) - 1)) / t_scale
+        dt_first = float(dt_first_raw.values) / t_scale
+    else:
+        dt_avg = (float(dt_avg_raw) / (len(coord) - 1)) / t_scale
+        dt_first = float(dt_first_raw) / t_scale
 
     if abs(dt_avg - dt_first) > rtol * min(dt_first, dt_avg):
         # show warning at caller level to see which signal it is related to
