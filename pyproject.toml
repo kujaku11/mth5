@@ -61,7 +61,7 @@ dev = [
 [tool.setuptools]
 zip-safe = false
 include-package-data = true
-license-files = ["LICENSE"]
+license-files = ["LICENSE.md"]
 
 [tool.setuptools.packages.find]
 include = ["mth5*"]
