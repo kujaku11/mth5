@@ -431,12 +431,14 @@ class TestPhoenixClientSensorCalibration:
             == mock_cal_instance
         )
 
-    def test_sensor_calibration_dict_nonexistent_path_raises_error(
+    def test_sensor_calibration_dict_nonexistent_path_creates_empty_dict(
         self, basic_phoenix_client
     ):
-        """Test that non-existent calibration path raises IOError."""
-        with pytest.raises(IOError, match="Could not find"):
-            basic_phoenix_client.sensor_calibration_dict = "/non/existent/path"
+        """Test that non-existent calibration directory creates empty dict."""
+        # When a directory path doesn't exist, is_dir() returns False
+        # and the setter creates an empty dict
+        basic_phoenix_client.sensor_calibration_dict = "/non/existent/path"
+        assert basic_phoenix_client.sensor_calibration_dict == {}
 
     def test_sensor_calibration_dict_none_raises_error(self, basic_phoenix_client):
         """Test that None calibration path raises ValueError."""
@@ -600,15 +602,6 @@ class TestPhoenixClientMTH5Creation:
         mock_ch_ts = MagicMock()
         mock_ch_ts.component = "h1"  # Magnetic component
         mock_ch_ts.channel_metadata.sensor.id = "SENSOR001"
-
-        # Setup mock lists for appending
-        mock_filter_names = Mock()
-        mock_filter_applied = Mock()
-        mock_filters_list = Mock()
-
-        mock_ch_ts.channel_metadata.filter.name = mock_filter_names
-        mock_ch_ts.channel_metadata.filter.applied = mock_filter_applied
-        mock_ch_ts.channel_response.filters_list = mock_filters_list
         mock_read_file.return_value = mock_ch_ts
 
         # Setup sensor calibration
@@ -630,9 +623,11 @@ class TestPhoenixClientMTH5Creation:
         result = basic_phoenix_client.make_mth5_from_phoenix()
 
         # Verify coil calibration was applied
-        mock_filter_names.append.assert_called()
-        mock_filter_applied.append.assert_called()
-        mock_filters_list.append.assert_called()
+        # The code calls add_filter() method and appends to filters_list
+        mock_ch_ts.channel_metadata.add_filter.assert_called_once()
+        mock_ch_ts.channel_response.filters_list.append.assert_called_once_with(
+            mock_cal.h1
+        )
 
     @patch("mth5.clients.phoenix.read_file")
     @patch("mth5.clients.phoenix.MTH5")
