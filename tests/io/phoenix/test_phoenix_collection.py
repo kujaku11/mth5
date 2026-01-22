@@ -11,7 +11,6 @@ from collections import OrderedDict
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import numpy as np
 import pandas as pd
 
 # =============================================================================
@@ -364,7 +363,9 @@ class TestPhoenixCollectionDataFrameOperations:
         assert pd.api.types.is_string_dtype(
             df.instrument_id
         ) or pd.api.types.is_object_dtype(df.instrument_id)
-        assert df.calibration_fn.dtype.type == np.object_
+        assert pd.api.types.is_string_dtype(
+            df.calibration_fn
+        ) or pd.api.types.is_object_dtype(df.calibration_fn)
 
     def test_survey_id_consistency(
         self, phoenix_collection_real_data, phoenix_dataframe

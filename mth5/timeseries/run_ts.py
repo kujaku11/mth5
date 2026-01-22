@@ -266,11 +266,19 @@ class RunTS:
             [self.dataset, other.dataset], combine_attrs="override"
         )
 
-        n_samples = (
-            self.sample_rate
-            * float(combined_ds.time.max().values - combined_ds.time.min().values)
-            / 1e9
-        ) + 1
+        # Handle datetime.timedelta for Python 3.12+ compatibility
+        duration = combined_ds.time.max().values - combined_ds.time.min().values
+        if hasattr(duration, "total_seconds"):
+            # Python datetime.timedelta
+            duration_ns = duration.total_seconds() * 1e9
+        elif hasattr(duration, "view"):
+            # numpy timedelta64
+            duration_ns = float(duration.view("int64"))
+        else:
+            # Already numeric
+            duration_ns = float(duration)
+
+        n_samples = (self.sample_rate * duration_ns / 1e9) + 1
 
         new_dt_index = make_dt_coordinates(
             combined_ds.time.min().values, self.sample_rate, n_samples
@@ -583,7 +591,7 @@ class RunTS:
             new_time_index = self._get_common_time_index(
                 earliest_start, latest_end, sample_rate
             )
-            tolerance = f"{(1e9 / sample_rate):.0f}N"
+            tolerance = f"{(1e9 / sample_rate):.0f}ns"
             aligned_list = []
             for ch in valid_list:
                 aligned_list.append(

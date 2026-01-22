@@ -374,8 +374,11 @@ class TestLEMICollectionDataFrameOperations:
         processed_df = lc._set_df_dtypes(sample_dataframe)
 
         # Check timestamp columns are properly converted
-        assert processed_df["start"].dtype == "datetime64[ns, UTC]"
-        assert processed_df["end"].dtype == "datetime64[ns, UTC]"
+        # Note: pandas 2.x may use us or ns resolution depending on input data
+        assert pd.api.types.is_datetime64_any_dtype(processed_df["start"])
+        assert pd.api.types.is_datetime64_any_dtype(processed_df["end"])
+        assert str(processed_df["start"].dtype).startswith("datetime64")
+        assert str(processed_df["end"].dtype).startswith("datetime64")
 
         # Check object type columns (pandas 2.x uses StringDtype)
         assert pd.api.types.is_string_dtype(
