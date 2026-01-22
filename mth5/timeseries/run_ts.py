@@ -272,8 +272,8 @@ class RunTS:
             # Python datetime.timedelta
             duration_ns = duration.total_seconds() * 1e9
         elif hasattr(duration, "view"):
-            # numpy timedelta64
-            duration_ns = float(duration.view("int64"))
+            # numpy timedelta64 - convert to nanoseconds
+            duration_ns = float(duration / np.timedelta64(1, "ns"))
         else:
             # Already numeric
             duration_ns = float(duration)
@@ -737,8 +737,9 @@ class RunTS:
             # Python datetime.timedelta
             duration_ns = duration.total_seconds() * 1e9
         elif hasattr(duration, "view"):
-            # numpy timedelta64
-            duration_ns = float(duration.view("int64"))
+            # numpy timedelta64 - convert to nanoseconds
+            # duration / np.timedelta64(1, 'ns') gives us the value in nanoseconds
+            duration_ns = float(duration / np.timedelta64(1, "ns"))
         else:
             # Already numeric
             duration_ns = float(duration)
@@ -2034,11 +2035,19 @@ class RunTS:
 
         combined_ds = xr.combine_by_coords(combine_list, combine_attrs="override")
 
-        n_samples = (
-            merge_sample_rate
-            * float(combined_ds.time.max().values - combined_ds.time.min().values)
-            / 1e9
-        ) + 1
+        # Handle datetime.timedelta for Python 3.12+ compatibility
+        duration = combined_ds.time.max().values - combined_ds.time.min().values
+        if hasattr(duration, "total_seconds"):
+            # Python datetime.timedelta
+            duration_ns = duration.total_seconds() * 1e9
+        elif hasattr(duration, "view"):
+            # numpy timedelta64 - convert to nanoseconds
+            duration_ns = float(duration / np.timedelta64(1, "ns"))
+        else:
+            # Already numeric
+            duration_ns = float(duration)
+
+        n_samples = (merge_sample_rate * duration_ns / 1e9) + 1
 
         new_dt_index = make_dt_coordinates(
             combined_ds.time.min().values, merge_sample_rate, n_samples

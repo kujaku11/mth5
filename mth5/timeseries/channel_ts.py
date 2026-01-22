@@ -340,8 +340,8 @@ class ChannelTS:
             # Python datetime.timedelta
             duration_ns = duration.total_seconds() * 1e9
         elif hasattr(duration, "view"):
-            # numpy timedelta64
-            duration_ns = float(duration.view("int64"))
+            # numpy timedelta64 - convert to nanoseconds
+            duration_ns = float(duration / np.timedelta64(1, "ns"))
         else:
             # Already numeric
             duration_ns = float(duration)
