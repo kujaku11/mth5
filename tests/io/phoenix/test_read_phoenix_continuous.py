@@ -47,7 +47,7 @@ def phoenix_data_path():
 @pytest.fixture(scope="session")
 def rxcal_file(phoenix_data_path):
     """Get the path to the example rxcal file."""
-    return phoenix_data_path / "example_rxcal.json"
+    return phoenix_data_path / "10128_rxcal.json"
 
 
 @pytest.fixture(scope="session")
@@ -413,7 +413,7 @@ class TestChannelTimeSeriesConversion:
                 "location.latitude": pytest.approx(43.69625473022461, abs=1e-5),
                 "location.longitude": pytest.approx(-79.39364624023438, abs=1e-5),
                 "sensor.manufacturer": "Phoenix Geophysics",
-                "sensor.id": "0",  # All magnetic channels use sensor.id "0"
+                "sensor.id": "101",  # All magnetic channels use sensor.id "101"
             }
             common_metadata.update(magnetic_metadata)
         # Electric channels (1, 4) don't have location or sensor attributes
@@ -479,7 +479,7 @@ class TestChannelTimeSeriesConversion:
             expected_filter_names = [
                 f"mtu-5c_rmt03_10128_h{2 if channel_id == '0' else 1}_10000hz_lowpass",
                 "v_to_mv",
-                "coil_0_response",  # Both magnetic channels use coil_0_response
+                "coil_101_response",  # Both magnetic channels use coil_101_response
             ]
         else:  # Electric channels
             # Electric channels might have different filter structures

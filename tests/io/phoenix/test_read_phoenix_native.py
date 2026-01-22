@@ -56,6 +56,8 @@ def phoenix_base_path(phoenix_data_path):
 
 @pytest.fixture(scope="module")
 def rxcal_file(phoenix_data_path):
+    """Return the path to receiver calibration file."""
+    return phoenix_data_path / "10128_rxcal.json"
     """Return the path to the example rxcal.json file."""
     return phoenix_data_path / "example_rxcal.json"
 
@@ -194,7 +196,7 @@ def expected_channel_metadata_channel_0():
             ("measurement_azimuth", 90.0),
             ("measurement_tilt", 0.0),
             ("sample_rate", 24000.0),
-            ("sensor.id", "0"),
+            ("sensor.id", "101"),
             ("sensor.manufacturer", "Phoenix Geophysics"),
             ("sensor.model", "MTC-150"),
             ("sensor.type", "4"),
@@ -468,7 +470,7 @@ class TestPhoenixNativeReaderChannelTS:
             ("measurement_azimuth", 90.0),
             ("measurement_tilt", 0.0),
             ("sample_rate", 24000.0),
-            ("sensor.id", "0"),
+            ("sensor.id", "101"),
             ("sensor.manufacturer", "Phoenix Geophysics"),
             ("sensor.model", "MTC-150"),
             ("sensor.type", "4"),
@@ -502,7 +504,7 @@ class TestPhoenixNativeReaderChannelTS:
         expected_filter_names = [
             "mtu-5c_rmt03_10128_h2_10000hz_lowpass",
             "v_to_mv",
-            "coil_0_response",
+            "coil_101_response",
         ]
 
         for filt, expected_name in zip(filters, expected_filter_names):

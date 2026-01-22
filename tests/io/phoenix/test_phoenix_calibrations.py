@@ -37,7 +37,7 @@ except ImportError:
 @pytest.fixture
 def cal_file_path():
     """Fixture providing path to the example calibration file."""
-    return phx_data_path / "example_rxcal.json"
+    return phx_data_path / "10128_rxcal.json"
 
 
 @pytest.fixture
