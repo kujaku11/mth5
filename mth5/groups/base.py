@@ -741,3 +741,42 @@ class BaseGroup:
                 msg = f"{name} does not exist. Check station_list for existing names"
                 self.logger.debug(msg)
                 raise MTH5Error(msg)
+
+    def rename_group(self, new_name: str) -> None:
+        """
+        Rename the current group in the HDF5 file.
+
+        Parameters
+        ----------
+        new_name : str
+            New name for the group. Will be validated and normalized.
+
+        Raises
+        ------
+        MTH5Error
+            If renaming fails due to read-only mode or other issues.
+
+        Examples
+        --------
+        Rename a group
+
+        >>> print(survey_obj.hdf5_group.name)
+        '/OldSurveyName'
+        >>> survey_obj.rename_group('NewSurveyName')
+        >>> print(survey_obj.hdf5_group.name)
+        '/NewSurveyName'
+        """
+        new_name = validate_name(new_name)
+        try:
+            parent_group = self.hdf5_group.parent
+            parent_group.move(self.hdf5_group.name, new_name)
+            self.logger.info(f"Renamed group to {new_name}")
+            # Update hdf5 reference in metadata
+            self.metadata.hdf5_reference = self.hdf5_group.ref
+        except ValueError as error:
+            if "no write intent" in str(error):
+                self.logger.warning("File is in read-only mode, cannot rename group.")
+            else:
+                msg = f"Failed to rename group to {new_name}: {error}"
+                self.logger.error(msg)
+                raise MTH5Error(msg)
