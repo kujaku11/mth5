@@ -58,8 +58,6 @@ def phoenix_base_path(phoenix_data_path):
 def rxcal_file(phoenix_data_path):
     """Return the path to receiver calibration file."""
     return phoenix_data_path / "10128_rxcal.json"
-    """Return the path to the example rxcal.json file."""
-    return phoenix_data_path / "example_rxcal.json"
 
 
 @pytest.fixture(params=[0, 1, 2, 4])
