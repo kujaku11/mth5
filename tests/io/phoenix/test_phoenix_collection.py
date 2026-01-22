@@ -360,8 +360,10 @@ class TestPhoenixCollectionDataFrameOperations:
         assert pd.api.types.is_datetime64_any_dtype(df.start)
         assert pd.api.types.is_datetime64_any_dtype(df.end)
 
-        # Test object columns
-        assert df.instrument_id.dtype.type == np.object_
+        # Test string/object columns - accept both StringDtype (pandas 2.x) and object dtype (pandas 1.x)
+        assert pd.api.types.is_string_dtype(
+            df.instrument_id
+        ) or pd.api.types.is_object_dtype(df.instrument_id)
         assert df.calibration_fn.dtype.type == np.object_
 
     def test_survey_id_consistency(
@@ -495,7 +497,7 @@ class TestPhoenixCollectionRunOperations:
         """Test run data consistency with original dataframe."""
         for key, rdf in phoenix_runs[test_station].items():
             rdf = rdf.fillna(0)
-            df_subset = phoenix_dataframe[phoenix_dataframe.run == key]
+            df_subset = phoenix_dataframe[phoenix_dataframe.run == key].fillna(0)
 
             # Test that runs data matches dataframe subset
             # Note: Using iloc[0:4] to match first 4 rows as in original test

@@ -213,9 +213,13 @@ class TestZ3DCollectionBasic:
         assert pd.api.types.is_datetime64_any_dtype(df.start)
         assert pd.api.types.is_datetime64_any_dtype(df.end)
 
-        # Test object columns
-        assert df.instrument_id.dtype.type == np.object_
-        assert df.calibration_fn.dtype.type == np.object_
+        # Test object columns (pandas 2.x uses StringDtype)
+        assert pd.api.types.is_string_dtype(
+            df.instrument_id
+        ) or pd.api.types.is_object_dtype(df.instrument_id)
+        assert pd.api.types.is_string_dtype(
+            df.calibration_fn
+        ) or pd.api.types.is_object_dtype(df.calibration_fn)
 
     def test_survey_id(self, z3d_dataframe):
         """Test survey ID values."""
@@ -412,10 +416,16 @@ class TestZ3DCollectionDataframeProcessing:
         assert pd.api.types.is_datetime64_any_dtype(df_typed.start)
         assert pd.api.types.is_datetime64_any_dtype(df_typed.end)
 
-        # Object types
-        assert df_typed.station.dtype == object
-        assert df_typed.component.dtype == object
-        assert df_typed.run.dtype == object
+        # Object types (pandas 2.x uses StringDtype)
+        assert pd.api.types.is_string_dtype(
+            df_typed.station
+        ) or pd.api.types.is_object_dtype(df_typed.station)
+        assert pd.api.types.is_string_dtype(
+            df_typed.component
+        ) or pd.api.types.is_object_dtype(df_typed.component)
+        assert pd.api.types.is_string_dtype(
+            df_typed.run
+        ) or pd.api.types.is_object_dtype(df_typed.run)
 
     def test_dataframe_sorting(self, z3d_collection, z3d_dataframe):
         """Test dataframe sorting functionality."""
@@ -737,9 +747,13 @@ class TestZ3DCollectionPerformance:
         assert z3d_dataframe.file_size.dtype in [np.int64, np.int32, int]
         assert z3d_dataframe.n_samples.dtype in [np.int64, np.int32, int]
 
-        # Check object types for strings
-        assert z3d_dataframe.component.dtype == object
-        assert z3d_dataframe.station.dtype == object
+        # Check object types for strings (pandas 2.x uses StringDtype)
+        assert pd.api.types.is_string_dtype(
+            z3d_dataframe.component
+        ) or pd.api.types.is_object_dtype(z3d_dataframe.component)
+        assert pd.api.types.is_string_dtype(
+            z3d_dataframe.station
+        ) or pd.api.types.is_object_dtype(z3d_dataframe.station)
 
     def test_large_file_set_handling(self, empty_z3d_collection):
         """Test handling of large numbers of files."""

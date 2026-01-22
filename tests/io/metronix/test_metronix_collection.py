@@ -333,8 +333,13 @@ class TestMetronixCollectionDataFrame:
         # Check that _set_df_dtypes was called correctly
         assert pd.api.types.is_datetime64_any_dtype(df["start"])
         assert pd.api.types.is_datetime64_any_dtype(df["end"])
-        assert df["instrument_id"].dtype == "object"
-        assert df["calibration_fn"].dtype == "object"
+        # Accept both StringDtype (pandas 2.x) and object dtype (pandas 1.x)
+        assert pd.api.types.is_string_dtype(
+            df["instrument_id"]
+        ) or pd.api.types.is_object_dtype(df["instrument_id"])
+        assert pd.api.types.is_string_dtype(
+            df["calibration_fn"]
+        ) or pd.api.types.is_object_dtype(df["calibration_fn"])
 
         # Check numeric columns
         assert pd.api.types.is_numeric_dtype(df["sample_rate"])

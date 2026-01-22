@@ -377,9 +377,13 @@ class TestLEMICollectionDataFrameOperations:
         assert processed_df["start"].dtype == "datetime64[ns, UTC]"
         assert processed_df["end"].dtype == "datetime64[ns, UTC]"
 
-        # Check object type columns
-        assert processed_df["instrument_id"].dtype == "object"
-        assert processed_df["calibration_fn"].dtype == "object"
+        # Check object type columns (pandas 2.x uses StringDtype)
+        assert pd.api.types.is_string_dtype(
+            processed_df["instrument_id"]
+        ) or pd.api.types.is_object_dtype(processed_df["instrument_id"])
+        assert pd.api.types.is_string_dtype(
+            processed_df["calibration_fn"]
+        ) or pd.api.types.is_object_dtype(processed_df["calibration_fn"])
 
 
 class TestLEMICollectionRunOperations:

@@ -211,13 +211,28 @@ def get_sampling_step(
     dt_avg_raw = coord[-1] - coord[0]
     dt_first_raw = coord[1] - coord[0]
 
-    # Convert to float using . values if it's a numpy timedelta, otherwise direct conversion
+    # Convert to float - handle numpy timedelta64, pandas Timedelta, and datetime.timedelta
     if hasattr(dt_avg_raw, "values"):
-        dt_avg = (float(dt_avg_raw.values) / (len(coord) - 1)) / t_scale
-        dt_first = float(dt_first_raw.values) / t_scale
+        # xarray DataArray - get the underlying value
+        dt_avg_value = dt_avg_raw.values
+        dt_first_value = dt_first_raw.values
     else:
-        dt_avg = (float(dt_avg_raw) / (len(coord) - 1)) / t_scale
-        dt_first = float(dt_first_raw) / t_scale
+        dt_avg_value = dt_avg_raw
+        dt_first_value = dt_first_raw
+
+    # Convert timedelta objects to total_seconds() * 1e9 (nanoseconds)
+    if hasattr(dt_avg_value, "total_seconds"):
+        # Python datetime.timedelta
+        dt_avg = (dt_avg_value.total_seconds() * 1e9 / (len(coord) - 1)) / t_scale
+        dt_first = (dt_first_value.total_seconds() * 1e9) / t_scale
+    elif hasattr(dt_avg_value, "view"):
+        # numpy timedelta64 - convert to int64 view
+        dt_avg = (float(dt_avg_value.view("int64")) / (len(coord) - 1)) / t_scale
+        dt_first = float(dt_first_value.view("int64")) / t_scale
+    else:
+        # Already numeric
+        dt_avg = (float(dt_avg_value) / (len(coord) - 1)) / t_scale
+        dt_first = float(dt_first_value) / t_scale
 
     if abs(dt_avg - dt_first) > rtol * min(dt_first, dt_avg):
         # show warning at caller level to see which signal it is related to
