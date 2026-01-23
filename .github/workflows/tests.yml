@@ -51,7 +51,7 @@ jobs:
         conda install pytest-subtests
         conda install pytest-xdist[psutil]
         conda install pytest-benchmark
-        pip install git+https://github.com/kujaku11/mt_metadata.git@patches[obspy] 
+        pip install "git+https://github.com/kujaku11/mt_metadata.git@patches[obspy]"
         pip install git+https://github.com/kujaku11/mth5_test_data.git
     - name: Install Our Package
       run: |
