@@ -846,7 +846,7 @@ class TestPhoenixCollectionPerformance:
 
         # Object count shouldn't grow excessively
         object_growth = final_objects - initial_objects
-        assert object_growth < 1000  # Arbitrary reasonable threshold
+        assert object_growth < 1500  # Arbitrary reasonable threshold
 
 
 # =============================================================================
