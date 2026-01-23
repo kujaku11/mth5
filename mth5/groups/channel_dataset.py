@@ -137,11 +137,14 @@ class ChannelDataset:
         self.metadata.hdf5_reference = self.hdf5_dataset.ref
         self.metadata.mth5_type = self._class_name
         # if the input data set already has filled attributes, namely if the
-        # channel data already exists then read them in with our writing back
+        # channel data already exists then read them in without writing back
         if "mth5_type" in list(self.hdf5_dataset.attrs.keys()):
-            self.metadata.from_dict(
-                {self.hdf5_dataset.attrs["mth5_type"]: dict(self.hdf5_dataset.attrs)}
-            )
+            self.read_metadata()
+
+            # this causes issues because the attrs are in binary format
+            # self.metadata.from_dict(
+            #     {self.hdf5_dataset.attrs["mth5_type"]: dict(self.hdf5_dataset.attrs)}
+            # )
         # if metadata is input, make sure that its the same class type amd write
         # to the hdf5 dataset
         if dataset_metadata is not None:
@@ -536,10 +539,15 @@ class ChannelDataset:
         Loads all HDF5 attributes from the dataset and converts them to the
         appropriate Python types before populating the metadata object.
 
+        For older MTH5 files, this method attempts to coerce values to the
+        expected types based on the metadata schema to maintain backwards
+        compatibility.
+
         Notes
         -----
         This method automatically validates metadata through the metadata
-        container's validators.
+        container's validators. Type coercion is applied to handle older
+        file formats that may have stored metadata with different types.
 
         Examples
         --------
@@ -548,11 +556,23 @@ class ChannelDataset:
         'Ex'
         >>> print(channel.metadata.sample_rate)
         256.0
+
+        Handles type coercion for older files
+
+        >>> # If sample_rate was stored as string '256.0' in old file
+        >>> channel.read_metadata()
+        >>> print(type(channel.metadata.sample_rate))
+        <class 'float'>
         """
-        meta_dict = dict(self.hdf5_dataset.attrs)
-        for key, value in meta_dict.items():
-            meta_dict[key] = from_numpy_type(value)
-        self.metadata.from_dict({self._class_name: meta_dict})
+        meta_dict = read_attrs_to_dict(dict(self.hdf5_dataset.attrs), self.metadata)
+        # Defensive check: skip if meta_dict is empty
+        if not meta_dict:
+            self.logger.debug(
+                f"No metadata found for {self._class_name}, skipping from_dict."
+            )
+            return
+        self._metadata.from_dict({self._class_name: meta_dict})
+        self._has_read_metadata = True
 
     def write_metadata(self) -> None:
         """

@@ -23,6 +23,7 @@ from typing import Any, Type
 import h5py
 import numpy as np
 from loguru import logger
+from mt_metadata.base import MetadataBase
 from pydantic.fields import FieldInfo
 
 
@@ -462,6 +463,275 @@ def from_numpy_type(value: Any) -> Any:
             return np.array(value).tolist()
     else:
         raise TypeError("Type {0} not understood".format(type(value)))
+
+
+def coerce_value_to_expected_type(
+    self, key: str, value: Any, expected_type: Any
+) -> Any:
+    """
+    Coerce a value to the expected type based on metadata field definitions.
+
+    This method handles type conversions for older MTH5 files that may have
+    stored metadata with less strict type enforcement. Uses the metadata's
+    attribute_information method to get expected types.
+
+    Parameters
+    ----------
+    key : str
+        Metadata field name (may include dots for nested attributes).
+    value : Any
+        Value to coerce.
+    expected_type : Any
+        Expected value type (can be a type object or string representation).
+    Returns
+    -------
+    Any
+        Coerced value matching expected type, or original value if coercion fails.
+
+    Examples
+    --------
+    >>> coerced = channel._coerce_value_to_expected_type('sample_rate', '256.0', float)
+    >>> print(type(coerced), coerced)
+    <class 'float'> 256.0
+
+    >>> coerced = channel._coerce_value_to_expected_type('channel_number', 1.0, int)
+    >>> print(type(coerced), coerced)
+    <class 'int'> 1
+    """
+    # Return None values as-is
+    if value is None:
+        return value
+
+    try:
+        if expected_type is None:
+            return value
+
+        # Convert string representation to type if needed
+        if isinstance(expected_type, str):
+            try:
+                expected_type = get_data_type(expected_type)
+            except ValueError:
+                # Can't convert, return original value
+                return value
+
+        # Already the correct type
+        if isinstance(value, expected_type):
+            return value
+
+        # Handle common type coercions
+        if expected_type == float:
+            if isinstance(value, (int, str, np.integer, np.floating)):
+                try:
+                    return float(value)
+                except (ValueError, TypeError):
+                    self.logger.debug(f"Could not coerce {key}={value} to float")
+                    return value
+            elif isinstance(value, list):
+                if len(value) == 1:
+                    try:
+                        return float(value[0])
+                    except (ValueError, TypeError):
+                        self.logger.debug(f"Could not coerce {key}={value} to float")
+                        return value
+
+        elif expected_type == int:
+            if isinstance(value, (float, str, np.integer, np.floating)):
+                try:
+                    return int(value)
+                except (ValueError, TypeError):
+                    self.logger.debug(f"Could not coerce {key}={value} to int")
+                    return value
+            elif isinstance(value, list):
+                if len(value) == 1:
+                    try:
+                        return int(value[0])
+                    except (ValueError, TypeError):
+                        self.logger.debug(f"Could not coerce {key}={value} to int")
+                        return value
+
+        elif expected_type == str:
+            if isinstance(value, list):
+                if len(value) == 1:
+                    try:
+                        return str(value[0])
+                    except (ValueError, TypeError):
+                        self.logger.debug(f"Could not coerce {key}={value} to str")
+                        return value
+            elif not isinstance(value, str):
+                try:
+                    return str(value)
+                except (ValueError, TypeError):
+                    self.logger.debug(f"Could not coerce {key}={value} to str")
+                    return value
+
+        elif expected_type == bool:
+            if isinstance(value, (int, float, str, np.integer, np.floating)):
+                try:
+                    # Handle string representations
+                    if isinstance(value, str):
+                        return value.lower() in ("true", "1", "yes", "y")
+                    # Handle numeric representations
+                    return bool(value)
+                except (ValueError, TypeError):
+                    self.logger.debug(f"Could not coerce {key}={value} to bool")
+                    return value
+            elif isinstance(value, list):
+                if len(value) == 1:
+                    try:
+                        val = value[0]
+                        if isinstance(val, str):
+                            return val.lower() in ("true", "1", "yes", "y")
+                        return bool(val)
+                    except (ValueError, TypeError):
+                        self.logger.debug(f"Could not coerce {key}={value} to bool")
+                        return value
+
+        elif expected_type == list:
+            if isinstance(value, str):
+                # Handle string representations of lists
+                try:
+                    import json
+
+                    return json.loads(value)
+                except (json.JSONDecodeError, ValueError):
+                    # Try comma-separated values
+                    if "," in value:
+                        return [v.strip() for v in value.split(",")]
+                    self.logger.debug(f"Could not coerce {key}={value} to list")
+                    return value
+            elif not isinstance(value, list):
+                # Try to convert to list
+                try:
+                    return list(value)
+                except (ValueError, TypeError):
+                    self.logger.debug(f"Could not coerce {key}={value} to list")
+                    return value
+
+    except Exception as e:
+        # If anything goes wrong, log and return original value
+        self.logger.debug(f"Exception during type coercion for {key}: {e}")
+        return value
+
+    # Return original value if no coercion applied
+    return value
+
+
+def get_metadata_type_dict(metadata_class: MetadataBase) -> dict[str, Type[Any]]:
+    """
+    get dictionary of expected data types from the metadata object.
+
+    Parameters
+    ----------
+    metadata_class : MetadataBase
+        Metadata class to extract data types from
+
+    Returns
+    -------
+    dict[str, Type[Any]]
+        Dictionary mapping metadata field names to their expected data types.
+    """
+    type_dict = {}
+    for key, field_info in metadata_class.get_all_fields().items():
+        type_str = field_info.get("type")
+        if isinstance(type_str, type):
+            # Already a type object
+            type_dict[key] = type_str
+        elif isinstance(type_str, str):
+            # Convert string representation to type
+            try:
+                type_dict[key] = get_data_type(type_str)
+            except ValueError:
+                # If conversion fails, store the string
+                type_dict[key] = type_str
+        else:
+            type_dict[key] = type_str
+    return type_dict
+
+
+def get_data_type(string_representation: str) -> Type[Any]:
+    """
+    Get the Python data type from its string representation.
+
+    Parameters
+    ----------
+    string_representation : str
+        String representation of the data type (e.g., 'int', 'float', 'str').
+
+    Returns
+    -------
+    type
+        Corresponding Python data type.
+
+    Raises
+    ------
+    ValueError
+        If the string representation does not correspond to a known data type.
+
+    Notes
+    -----
+    This function maps common string representations of data types to their
+    corresponding Python types. It supports basic types like int, float, str,
+    bool, list, and dict.
+    """
+    type_mapping = {
+        "int": int,
+        "float": float,
+        "str": str,
+        "bool": bool,
+        "list": list,
+        "dict": dict,
+        "complex": complex,
+    }
+
+    dtype = (
+        string_representation.replace("'<class", "")
+        .replace("'>", "")
+        .replace("<class '", "")
+        .replace("'>", "")
+        .replace("<class", "")
+        .replace("'", "")
+        .replace(">", "")
+        .split("|")[0]
+        .strip()
+    )
+    if "[" in dtype and "]" in dtype:
+        dtype = dtype[: dtype.find("[")].strip()
+    try:
+        return type_mapping[dtype.lower()]
+    except KeyError:
+        raise ValueError(
+            f"Unknown data type string representation: {string_representation}"
+        )
+
+
+def read_attrs_to_dict(
+    attrs_dict: dict[str, Any], metadata_object: MetadataBase
+) -> dict[str, Any]:
+    """
+    Read HDF5 attributes from a group or dataset into a dictionary.
+
+    Parameters
+    ----------
+    attrs_dict : dict[str, Any]
+        Dictionary of attributes to read and convert.
+    metadata_object : MetadataBase
+        Metadata object to use for type information.
+
+    Returns
+    -------
+    dict[str, Any]
+        Dictionary containing attribute names and their corresponding values.
+    """
+    data_types = get_metadata_type_dict(metadata_object)
+
+    for key, value in attrs_dict.items():
+        # First convert from numpy types
+        value = from_numpy_type(value)
+        # Then coerce to expected type based on metadata schema
+        attrs_dict[key] = coerce_value_to_expected_type(
+            key, value, get_data_type(data_types[key])
+        )
+    return attrs_dict
 
 
 # =============================================================================

@@ -37,8 +37,8 @@ from mt_metadata.transfer_functions.tf import TransferFunction
 
 from mth5.helpers import (
     add_attributes_to_metadata_class_pydantic,
-    from_numpy_type,
     get_tree,
+    read_attrs_to_dict,
     to_numpy_type,
     validate_name,
 )
@@ -437,9 +437,7 @@ class BaseGroup:
         >>> print(f"Attributes: {attrs}")
         Attributes: ['id', 'comments', 'provenance']
         """
-        meta_dict = dict(self.hdf5_group.attrs)
-        for key, value in meta_dict.items():
-            meta_dict[key] = from_numpy_type(value)
+        meta_dict = read_attrs_to_dict(dict(self.hdf5_group.attrs), self.metadata)
         # Defensive check: skip if meta_dict is empty
         if not meta_dict:
             self.logger.debug(

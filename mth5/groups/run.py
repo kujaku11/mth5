@@ -821,28 +821,28 @@ class RunGroup(BaseGroup):
             self.logger.debug(msg)
             raise MTH5Error(msg)
         if ch_dataset.attrs["mth5_type"].lower() in ["electric"]:
-            ch_metadata = meta_classes["Electric"]()
-            ch_metadata.from_dict({"Electric": dict(ch_dataset.attrs)})
+            # ch_metadata = meta_classes["Electric"]()
+            # ch_metadata.from_dict({"Electric": dict(ch_dataset.attrs)})
             channel = ElectricDataset(
                 ch_dataset,
-                dataset_metadata=ch_metadata,
-                write_metadata=False,
+                # dataset_metadata=ch_metadata,
+                # write_metadata=False,
             )
         elif ch_dataset.attrs["mth5_type"].lower() in ["magnetic"]:
-            ch_metadata = meta_classes["Magnetic"]()
-            ch_metadata.from_dict({"Magnetic": dict(ch_dataset.attrs)})
+            # ch_metadata = meta_classes["Magnetic"]()
+            # ch_metadata.from_dict({"Magnetic": dict(ch_dataset.attrs)})
             channel = MagneticDataset(
                 ch_dataset,
-                dataset_metadata=ch_metadata,
-                write_metadata=False,
+                # dataset_metadata=ch_metadata,
+                # write_metadata=False,
             )
         elif ch_dataset.attrs["mth5_type"].lower() in ["auxiliary"]:
-            ch_metadata = meta_classes["Auxiliary"]()
-            ch_metadata.from_dict({"Auxiliary": dict(ch_dataset.attrs)})
+            # ch_metadata = meta_classes["Auxiliary"]()
+            # ch_metadata.from_dict({"Auxiliary": dict(ch_dataset.attrs)})
             channel = AuxiliaryDataset(
                 ch_dataset,
-                dataset_metadata=ch_metadata,
-                write_metadata=False,
+                # dataset_metadata=ch_metadata,
+                # write_metadata=False,
             )
         else:
             channel = ChannelDataset(ch_dataset)
