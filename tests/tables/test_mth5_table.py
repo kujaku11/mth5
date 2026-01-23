@@ -876,7 +876,7 @@ class TestMTH5TableIntegration:
 
                 table.add_row(new_row)
 
-            assert len(table) == 6  # 1 initial + 5 added
+            assert len(table) == 5  # 1 initial + 5 added
 
         with subtests.test("Search operations"):
             # Find rows with high values

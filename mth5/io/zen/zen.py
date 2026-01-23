@@ -1122,7 +1122,6 @@ class Z3D:
                 break
             data[data_count : data_count + len(test_str)] = test_str
             data_count += test_str.size
-        logger.info(f"read {data_count} samples from file {self.fn}")
 
         # # now we need to trim off the extra zeros at the end
         # data = data[:data_count]
@@ -1301,7 +1300,7 @@ class Z3D:
         # time it
         et = MTime().now()
         read_time = et - st
-        self.logger.info(f"Reading data took: {read_time:.3f} seconds")
+        self.logger.debug(f"Reading data took: {read_time:.3f} seconds")
 
     # =================================================
     def get_gps_stamp_index(

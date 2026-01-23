@@ -30,6 +30,7 @@ from mth5.helpers import (
     add_attributes_to_metadata_class_pydantic,
     from_numpy_type,
     inherit_doc_string,
+    read_attrs_to_dict,
     to_numpy_type,
 )
 from mth5.timeseries import ChannelTS
@@ -137,11 +138,14 @@ class ChannelDataset:
         self.metadata.hdf5_reference = self.hdf5_dataset.ref
         self.metadata.mth5_type = self._class_name
         # if the input data set already has filled attributes, namely if the
-        # channel data already exists then read them in with our writing back
+        # channel data already exists then read them in without writing back
         if "mth5_type" in list(self.hdf5_dataset.attrs.keys()):
-            self.metadata.from_dict(
-                {self.hdf5_dataset.attrs["mth5_type"]: dict(self.hdf5_dataset.attrs)}
-            )
+            self.read_metadata()
+
+            # this causes issues because the attrs are in binary format
+            # self.metadata.from_dict(
+            #     {self.hdf5_dataset.attrs["mth5_type"]: dict(self.hdf5_dataset.attrs)}
+            # )
         # if metadata is input, make sure that its the same class type amd write
         # to the hdf5 dataset
         if dataset_metadata is not None:
@@ -277,11 +281,14 @@ class ChannelDataset:
         >>> print(f"{station_meta.id}: {station_meta.location.latitude}, {station_meta.location.longitude}")
         'MT001: 40.5, -112.3'
         """
-        meta_dict = dict(self.hdf5_dataset.parent.parent.attrs)
-        for key, value in meta_dict.items():
-            meta_dict[key] = from_numpy_type(value)
         station_metadata = metadata.Station()
-        station_metadata.from_dict({"station": meta_dict})
+        station_metadata.from_dict(
+            {
+                "station": read_attrs_to_dict(
+                    dict(self.hdf5_dataset.parent.parent.attrs), station_metadata
+                )
+            }
+        )
         station_metadata.add_run(self.run_metadata)
         return station_metadata
 
@@ -303,11 +310,15 @@ class ChannelDataset:
         >>> print(f"Stations: {len(survey_meta.stations)}")
         Stations: 15
         """
-        meta_dict = dict(self.hdf5_dataset.parent.parent.parent.parent.attrs)
-        for key, value in meta_dict.items():
-            meta_dict[key] = from_numpy_type(value)
         survey_metadata = metadata.Survey()
-        survey_metadata.from_dict({"survey": meta_dict})
+        survey_metadata.from_dict(
+            {
+                "survey": read_attrs_to_dict(
+                    dict(self.hdf5_dataset.parent.parent.parent.parent.attrs),
+                    survey_metadata,
+                )
+            }
+        )
         survey_metadata.add_station(self.station_metadata)
         return survey_metadata
 
@@ -536,10 +547,15 @@ class ChannelDataset:
         Loads all HDF5 attributes from the dataset and converts them to the
         appropriate Python types before populating the metadata object.
 
+        For older MTH5 files, this method attempts to coerce values to the
+        expected types based on the metadata schema to maintain backwards
+        compatibility.
+
         Notes
         -----
         This method automatically validates metadata through the metadata
-        container's validators.
+        container's validators. Type coercion is applied to handle older
+        file formats that may have stored metadata with different types.
 
         Examples
         --------
@@ -548,11 +564,23 @@ class ChannelDataset:
         'Ex'
         >>> print(channel.metadata.sample_rate)
         256.0
+
+        Handles type coercion for older files
+
+        >>> # If sample_rate was stored as string '256.0' in old file
+        >>> channel.read_metadata()
+        >>> print(type(channel.metadata.sample_rate))
+        <class 'float'>
         """
-        meta_dict = dict(self.hdf5_dataset.attrs)
-        for key, value in meta_dict.items():
-            meta_dict[key] = from_numpy_type(value)
+        meta_dict = read_attrs_to_dict(dict(self.hdf5_dataset.attrs), self.metadata)
+        # Defensive check: skip if meta_dict is empty
+        if not meta_dict:
+            self.logger.debug(
+                f"No metadata found for {self._class_name}, skipping from_dict."
+            )
+            return
         self.metadata.from_dict({self._class_name: meta_dict})
+        self._has_read_metadata = True
 
     def write_metadata(self) -> None:
         """

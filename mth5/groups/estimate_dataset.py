@@ -263,7 +263,15 @@ class EstimateDataset:
         >>> print(est.metadata.name)  # Access updated name
 
         """
-        self.metadata.from_dict({self._class_name: dict(self.hdf5_dataset.attrs)})
+        meta_dict = read_attrs_to_dict(dict(self.hdf5_dataset.attrs), self.metadata)
+        # Defensive check: skip if meta_dict is empty
+        if not meta_dict:
+            self.logger.debug(
+                f"No metadata found for {self._class_name}, skipping from_dict."
+            )
+            return
+        self.metadata.from_dict({self._class_name: meta_dict})
+        self._has_read_metadata = True
 
     def write_metadata(self) -> None:
         """
