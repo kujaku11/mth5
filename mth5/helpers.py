@@ -692,6 +692,7 @@ def get_data_type(string_representation: str) -> Type[Any]:
         "dict": dict,
         "complex": complex,
         "object": str,  # Treat object type as str for HDF5 storage
+        "mt_metadata.common.mttime.MTime": str,
     }
 
     if isinstance(string_representation, type):
@@ -711,6 +712,10 @@ def get_data_type(string_representation: str) -> Type[Any]:
         return str
     if "<enum " in string_representation or "<class 'enum" in string_representation:
         # Old format from previous versions - treat as str
+        return str
+    if "MTime" in string_representation:
+        return str
+    if "EmailStr" in string_representation:
         return str
 
     dtype = (
@@ -754,9 +759,16 @@ def read_attrs_to_dict(
     """
     data_types = get_metadata_type_dict(metadata_object)
 
-    for key, value in attrs_dict.items():
+    for key, value in list(attrs_dict.items()):
         # First convert from numpy types
         value = from_numpy_type(value)
+
+        # Skip None values - let pydantic use defaults instead
+        # This handles legacy files where some fields weren't set
+        if value is None:
+            del attrs_dict[key]
+            continue
+
         # Then coerce to expected type based on metadata schema
         # Check if key exists in data_types (may not exist for legacy attributes)
         if key in data_types:

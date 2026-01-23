@@ -310,11 +310,15 @@ class ChannelDataset:
         >>> print(f"Stations: {len(survey_meta.stations)}")
         Stations: 15
         """
-        meta_dict = dict(self.hdf5_dataset.parent.parent.parent.parent.attrs)
-        for key, value in meta_dict.items():
-            meta_dict[key] = from_numpy_type(value)
         survey_metadata = metadata.Survey()
-        survey_metadata.from_dict({"survey": meta_dict})
+        survey_metadata.from_dict(
+            {
+                "survey": read_attrs_to_dict(
+                    dict(self.hdf5_dataset.parent.parent.parent.parent.attrs),
+                    survey_metadata,
+                )
+            }
+        )
         survey_metadata.add_station(self.station_metadata)
         return survey_metadata
 
