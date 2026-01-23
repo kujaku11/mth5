@@ -534,14 +534,14 @@ def coerce_value_to_expected_type(key: str, value: Any, expected_type: Any) -> A
                 try:
                     return float(value)
                 except (ValueError, TypeError):
-                    self.logger.debug(f"Could not coerce {key}={value} to float")
+                    logger.debug(f"Could not coerce {key}={value} to float")
                     return value
             elif isinstance(value, list):
                 if len(value) == 1:
                     try:
                         return float(value[0])
                     except (ValueError, TypeError):
-                        self.logger.debug(f"Could not coerce {key}={value} to float")
+                        logger.debug(f"Could not coerce {key}={value} to float")
                         return value
 
         elif expected_type == int:
@@ -549,14 +549,14 @@ def coerce_value_to_expected_type(key: str, value: Any, expected_type: Any) -> A
                 try:
                     return int(value)
                 except (ValueError, TypeError):
-                    self.logger.debug(f"Could not coerce {key}={value} to int")
+                    logger.debug(f"Could not coerce {key}={value} to int")
                     return value
             elif isinstance(value, list):
                 if len(value) == 1:
                     try:
                         return int(value[0])
                     except (ValueError, TypeError):
-                        self.logger.debug(f"Could not coerce {key}={value} to int")
+                        logger.debug(f"Could not coerce {key}={value} to int")
                         return value
 
         elif expected_type == str:
@@ -565,13 +565,13 @@ def coerce_value_to_expected_type(key: str, value: Any, expected_type: Any) -> A
                     try:
                         return str(value[0])
                     except (ValueError, TypeError):
-                        self.logger.debug(f"Could not coerce {key}={value} to str")
+                        logger.debug(f"Could not coerce {key}={value} to str")
                         return value
             elif not isinstance(value, str):
                 try:
                     return str(value)
                 except (ValueError, TypeError):
-                    self.logger.debug(f"Could not coerce {key}={value} to str")
+                    logger.debug(f"Could not coerce {key}={value} to str")
                     return value
 
         elif expected_type == bool:
@@ -583,7 +583,7 @@ def coerce_value_to_expected_type(key: str, value: Any, expected_type: Any) -> A
                     # Handle numeric representations
                     return bool(value)
                 except (ValueError, TypeError):
-                    self.logger.debug(f"Could not coerce {key}={value} to bool")
+                    logger.debug(f"Could not coerce {key}={value} to bool")
                     return value
             elif isinstance(value, list):
                 if len(value) == 1:
@@ -593,7 +593,7 @@ def coerce_value_to_expected_type(key: str, value: Any, expected_type: Any) -> A
                             return val.lower() in ("true", "1", "yes", "y")
                         return bool(val)
                     except (ValueError, TypeError):
-                        self.logger.debug(f"Could not coerce {key}={value} to bool")
+                        logger.debug(f"Could not coerce {key}={value} to bool")
                         return value
 
         elif expected_type == list:
@@ -607,19 +607,19 @@ def coerce_value_to_expected_type(key: str, value: Any, expected_type: Any) -> A
                     # Try comma-separated values
                     if "," in value:
                         return [v.strip() for v in value.split(",")]
-                    self.logger.debug(f"Could not coerce {key}={value} to list")
+                    logger.debug(f"Could not coerce {key}={value} to list")
                     return value
             elif not isinstance(value, list):
                 # Try to convert to list
                 try:
                     return list(value)
                 except (ValueError, TypeError):
-                    self.logger.debug(f"Could not coerce {key}={value} to list")
+                    logger.debug(f"Could not coerce {key}={value} to list")
                     return value
 
     except Exception as e:
         # If anything goes wrong, log and return original value
-        self.logger.debug(f"Exception during type coercion for {key}: {e}")
+        logger.debug(f"Exception during type coercion for {key}: {e}")
         return value
 
     # Return original value if no coercion applied
@@ -703,6 +703,25 @@ def get_data_type(string_representation: str) -> Type[Any]:
             f"Input must be a string representation of a data type, not "
             f"{type(string_representation)}"
         )
+
+    # Handle Union types (e.g., "ChannelOrientationEnum | None" or "HttpUrl | str | None")
+    # For Union types with "|", extract the first non-None type and treat as str if complex
+    if " | " in string_representation:
+        # Extract the first non-None type from the union
+        parts = [p.strip() for p in string_representation.split(" | ")]
+        non_none_parts = [p for p in parts if p.lower() != "none"]
+        if non_none_parts:
+            first_type = non_none_parts[0]
+            # If it's a complex type (has dots or is an Enum), return str
+            if "." in first_type or "Enum" in first_type or "Url" in first_type:
+                return str
+            # Otherwise try to get the data type for the first type
+            try:
+                return get_data_type(first_type)
+            except (ValueError, KeyError):
+                return str
+        # If only None in the union, return str
+        return str
 
     # Handle enum type patterns - both old format and new format
     # Old format: "<enum 'DataTypeEnum'>" or similar
