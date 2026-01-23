@@ -26,7 +26,7 @@ from mth5.groups import (
     ElectricDataset,
     MagneticDataset,
 )
-from mth5.helpers import from_numpy_type, to_numpy_type, validate_name
+from mth5.helpers import read_attrs_to_dict, to_numpy_type, validate_name
 from mth5.timeseries import ChannelTS, RunTS
 from mth5.utils.exceptions import MTH5Error
 
@@ -308,9 +308,8 @@ class RunGroup(BaseGroup):
         """
         meta_dict = dict(self.hdf5_group.parent.attrs)
         meta_dict["run_list"] = [self.metadata.id]
-        for key, value in meta_dict.items():
-            meta_dict[key] = from_numpy_type(value)
         station_metadata = metadata.Station()
+        meta_dict = read_attrs_to_dict(meta_dict, metadata.Station())
         station_metadata.from_dict({"station": meta_dict})
         station_metadata.add_run(self.metadata)
 
@@ -336,9 +335,9 @@ class RunGroup(BaseGroup):
         >>> print(survey_meta.id)
         CONUS_South
         """
-        meta_dict = dict(self.hdf5_group.parent.parent.parent.attrs)
-        for key, value in meta_dict.items():
-            meta_dict[key] = from_numpy_type(value)
+        meta_dict = read_attrs_to_dict(
+            dict(self.hdf5_group.parent.parent.parent.attrs), metadata.Survey()
+        )
         survey_metadata = metadata.Survey()
         survey_metadata.from_dict({"survey": meta_dict})
         survey_metadata.add_station(self.station_metadata)
@@ -368,8 +367,10 @@ class RunGroup(BaseGroup):
         electric
         """
         meta_dict = dict(self.hdf5_group[channel_name].attrs)
-        for key, value in meta_dict.items():
-            meta_dict[key] = from_numpy_type(value)
+        meta_dict = read_attrs_to_dict(
+            meta_dict,
+            meta_classes[meta_dict["type"].capitalize()](),
+        )
         ch_metadata = meta_classes[meta_dict["type"].capitalize()]()
         ch_metadata.from_dict(meta_dict)
         return ch_metadata
@@ -821,28 +822,16 @@ class RunGroup(BaseGroup):
             self.logger.debug(msg)
             raise MTH5Error(msg)
         if ch_dataset.attrs["mth5_type"].lower() in ["electric"]:
-            # ch_metadata = meta_classes["Electric"]()
-            # ch_metadata.from_dict({"Electric": dict(ch_dataset.attrs)})
             channel = ElectricDataset(
                 ch_dataset,
-                # dataset_metadata=ch_metadata,
-                # write_metadata=False,
             )
         elif ch_dataset.attrs["mth5_type"].lower() in ["magnetic"]:
-            # ch_metadata = meta_classes["Magnetic"]()
-            # ch_metadata.from_dict({"Magnetic": dict(ch_dataset.attrs)})
             channel = MagneticDataset(
                 ch_dataset,
-                # dataset_metadata=ch_metadata,
-                # write_metadata=False,
             )
         elif ch_dataset.attrs["mth5_type"].lower() in ["auxiliary"]:
-            # ch_metadata = meta_classes["Auxiliary"]()
-            # ch_metadata.from_dict({"Auxiliary": dict(ch_dataset.attrs)})
             channel = AuxiliaryDataset(
                 ch_dataset,
-                # dataset_metadata=ch_metadata,
-                # write_metadata=False,
             )
         else:
             channel = ChannelDataset(ch_dataset)

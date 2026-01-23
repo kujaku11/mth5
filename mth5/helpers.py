@@ -269,6 +269,18 @@ def to_numpy_type(value: Any) -> Any:
     if isinstance(value, h5py.h5r.Reference):
         value = str(value)
 
+    # Handle enum instances - convert to their string value
+    from enum import Enum
+
+    if isinstance(value, Enum):
+        return str(value.value)
+
+    # Handle enum type classes - store them in a recognizable format
+    # Check if value is a class that is a subclass of Enum
+    if isinstance(value, type) and issubclass(value, Enum):
+        # Store as "enum:module.ClassName" for later reconstruction
+        return f"enum:{value.__module__}.{value.__qualname__}"
+
     # Handle type objects and classes that might come from pydantic serialization
     if isinstance(value, type):
         # Use a stable, fully-qualified type name rather than the raw repr
@@ -465,9 +477,7 @@ def from_numpy_type(value: Any) -> Any:
         raise TypeError("Type {0} not understood".format(type(value)))
 
 
-def coerce_value_to_expected_type(
-    self, key: str, value: Any, expected_type: Any
-) -> Any:
+def coerce_value_to_expected_type(key: str, value: Any, expected_type: Any) -> Any:
     """
     Coerce a value to the expected type based on metadata field definitions.
 
@@ -681,7 +691,27 @@ def get_data_type(string_representation: str) -> Type[Any]:
         "list": list,
         "dict": dict,
         "complex": complex,
+        "object": str,  # Treat object type as str for HDF5 storage
     }
+
+    if isinstance(string_representation, type):
+        return string_representation
+    elif not isinstance(string_representation, str):
+        print(type(string_representation), string_representation)
+        raise ValueError(
+            f"Input must be a string representation of a data type, not "
+            f"{type(string_representation)}"
+        )
+
+    # Handle enum type patterns - both old format and new format
+    # Old format: "<enum 'DataTypeEnum'>" or similar
+    # New format: "enum:module.ClassName"
+    if string_representation.startswith("enum:"):
+        # New format - just return str as the expected type for enums
+        return str
+    if "<enum " in string_representation or "<class 'enum" in string_representation:
+        # Old format from previous versions - treat as str
+        return str
 
     dtype = (
         string_representation.replace("'<class", "")
@@ -728,9 +758,14 @@ def read_attrs_to_dict(
         # First convert from numpy types
         value = from_numpy_type(value)
         # Then coerce to expected type based on metadata schema
-        attrs_dict[key] = coerce_value_to_expected_type(
-            key, value, get_data_type(data_types[key])
-        )
+        # Check if key exists in data_types (may not exist for legacy attributes)
+        if key in data_types:
+            attrs_dict[key] = coerce_value_to_expected_type(
+                key, value, get_data_type(data_types[key])
+            )
+        else:
+            # Keep the value as-is if we don't have type information
+            attrs_dict[key] = value
     return attrs_dict
 
 

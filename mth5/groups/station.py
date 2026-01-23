@@ -23,7 +23,7 @@ from mth5.groups import (
     RunGroup,
     TransferFunctionsGroup,
 )
-from mth5.helpers import from_numpy_type
+from mth5.helpers import read_attrs_to_dict
 from mth5.utils.exceptions import MTH5Error
 
 
@@ -284,9 +284,9 @@ class StationGroup(BaseGroup):
     def survey_metadata(self) -> metadata.Survey:
         """Return survey metadata with this station appended."""
 
-        meta_dict = dict(self.hdf5_group.parent.parent.attrs)
-        for key, value in meta_dict.items():
-            meta_dict[key] = from_numpy_type(value)
+        meta_dict = read_attrs_to_dict(
+            dict(self.hdf5_group.parent.parent.attrs), metadata.Survey()
+        )
         survey_metadata = metadata.Survey()
         survey_metadata.from_dict({"survey": meta_dict})
         survey_metadata.add_station(self.metadata)

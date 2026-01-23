@@ -437,7 +437,7 @@ class BaseGroup:
         >>> print(f"Attributes: {attrs}")
         Attributes: ['id', 'comments', 'provenance']
         """
-        meta_dict = read_attrs_to_dict(dict(self.hdf5_group.attrs), self.metadata)
+        meta_dict = read_attrs_to_dict(dict(self.hdf5_group.attrs), self._metadata)
         # Defensive check: skip if meta_dict is empty
         if not meta_dict:
             self.logger.debug(

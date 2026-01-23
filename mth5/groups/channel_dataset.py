@@ -30,6 +30,7 @@ from mth5.helpers import (
     add_attributes_to_metadata_class_pydantic,
     from_numpy_type,
     inherit_doc_string,
+    read_attrs_to_dict,
     to_numpy_type,
 )
 from mth5.timeseries import ChannelTS
@@ -280,11 +281,14 @@ class ChannelDataset:
         >>> print(f"{station_meta.id}: {station_meta.location.latitude}, {station_meta.location.longitude}")
         'MT001: 40.5, -112.3'
         """
-        meta_dict = dict(self.hdf5_dataset.parent.parent.attrs)
-        for key, value in meta_dict.items():
-            meta_dict[key] = from_numpy_type(value)
         station_metadata = metadata.Station()
-        station_metadata.from_dict({"station": meta_dict})
+        station_metadata.from_dict(
+            {
+                "station": read_attrs_to_dict(
+                    dict(self.hdf5_dataset.parent.parent.attrs), station_metadata
+                )
+            }
+        )
         station_metadata.add_run(self.run_metadata)
         return station_metadata
 
@@ -571,7 +575,7 @@ class ChannelDataset:
                 f"No metadata found for {self._class_name}, skipping from_dict."
             )
             return
-        self._metadata.from_dict({self._class_name: meta_dict})
+        self.metadata.from_dict({self._class_name: meta_dict})
         self._has_read_metadata = True
 
     def write_metadata(self) -> None:
