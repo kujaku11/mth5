@@ -336,7 +336,7 @@ class MTH5Table:
             index = self.nrows
             if self.nrows == 1:
                 match = True
-                null_array = np.empty(1, dtype=self.dtype)
+                null_array = np.zeros(1, dtype=self.dtype)
                 if self.dtype.names is None:
                     raise TypeError("Table dtype must have named fields.")
                 for name in self.dtype.names:
