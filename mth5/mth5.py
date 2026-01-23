@@ -890,7 +890,11 @@ class MTH5:
             if self.h5_is_write():
                 self.channel_summary.summarize()
                 self.tf_summary.summarize()
-                self.fc_summary.summarize()
+                # older mth5 files may not have fc_summary
+                try:
+                    self.fc_summary.summarize()
+                except KeyError:
+                    pass
 
                 self.__hdf5_obj.flush()
             self.logger.info(f"Flushing and closing {str(self.filename)}")
