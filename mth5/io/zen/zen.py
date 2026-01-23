@@ -750,62 +750,62 @@ class Z3D:
 
         """
         return None
-        fap = None
-        find = False
-        return
-        if self.metadata.board_cal not in [None, []]:
-            if self.metadata.board_cal[0][0] == "":
-                return fap
-            sr_dict = {256: 0, 1024: 1, 4096: 4}
-            sr_int = sr_dict[int(self.sample_rate)]
-            fap_table = self.metadata.board_cal[
-                np.where(self.metadata.board_cal.rate == sr_int)
-            ]
-            frequency = fap_table.frequency
-            amplitude = fap_table.amplitude
-            phase = fap_table.phase / 1e3
-            find = True
-        elif self.metadata.cal_board is not None:
-            try:
-                fap_dict = self.metadata.cal_board[int(self.sample_rate)]
-                frequency = fap_dict["frequency"]
-                amplitude = fap_dict["amplitude"]
-                phase = fap_dict["phase"]
-                find = True
-            except KeyError:
-                try:
-                    fap_str = self.metadata.cal_board["cal.ch"]
-                    for ss in fap_str.split(";"):
-                        freq, _, resp = ss.split(",")
-                        ff, amp, phs = [float(item) for item in resp.split(":")]
-                        if float(freq) == self.sample_rate:
-                            frequency = ff
-                            amplitude = amp
-                            phase = phs / 1e3
-                    find = True
-                except KeyError:
-                    return fap
-        if find:
-            freq = np.logspace(np.log10(6.00000e-04), np.log10(8.19200e03), 48)
-            amp = np.ones(48)
-            phases = np.zeros(48)
-            for item_f, item_a, item_p in zip(frequency, amplitude, phase):
-                index = np.abs(freq - item_f).argmin()
-                freq[index] = item_f
-                amp[index] = item_a
-                phases[index] = item_p
-            fap = FrequencyResponseTableFilter()
-            fap.units_in = "milliVolt"
-            fap.units_out = "milliVolt"
-            fap.frequencies = freq
-            fap.amplitudes = amp
-            fap.phases = phases
-            fap.name = (
-                f"{self.header.data_logger.lower()}_{self.sample_rate:.0f}_response"
-            )
-            fap.comments = "data logger response read from z3d file"
-            return fap
-        return None
+        # fap = None
+        # find = False
+        # return
+        # if self.metadata.board_cal not in [None, []]:
+        #     if self.metadata.board_cal[0][0] == "":
+        #         return fap
+        #     sr_dict = {256: 0, 1024: 1, 4096: 4}
+        #     sr_int = sr_dict[int(self.sample_rate)]
+        #     fap_table = self.metadata.board_cal[
+        #         np.where(self.metadata.board_cal.rate == sr_int)
+        #     ]
+        #     frequency = fap_table.frequency
+        #     amplitude = fap_table.amplitude
+        #     phase = fap_table.phase / 1e3
+        #     find = True
+        # elif self.metadata.cal_board is not None:
+        #     try:
+        #         fap_dict = self.metadata.cal_board[int(self.sample_rate)]
+        #         frequency = fap_dict["frequency"]
+        #         amplitude = fap_dict["amplitude"]
+        #         phase = fap_dict["phase"]
+        #         find = True
+        #     except KeyError:
+        #         try:
+        #             fap_str = self.metadata.cal_board["cal.ch"]
+        #             for ss in fap_str.split(";"):
+        #                 freq, _, resp = ss.split(",")
+        #                 ff, amp, phs = [float(item) for item in resp.split(":")]
+        #                 if float(freq) == self.sample_rate:
+        #                     frequency = ff
+        #                     amplitude = amp
+        #                     phase = phs / 1e3
+        #             find = True
+        #         except KeyError:
+        #             return fap
+        # if find:
+        #     freq = np.logspace(np.log10(6.00000e-04), np.log10(8.19200e03), 48)
+        #     amp = np.ones(48)
+        #     phases = np.zeros(48)
+        #     for item_f, item_a, item_p in zip(frequency, amplitude, phase):
+        #         index = np.abs(freq - item_f).argmin()
+        #         freq[index] = item_f
+        #         amp[index] = item_a
+        #         phases[index] = item_p
+        #     fap = FrequencyResponseTableFilter()
+        #     fap.units_in = "milliVolt"
+        #     fap.units_out = "milliVolt"
+        #     fap.frequencies = freq
+        #     fap.amplitudes = amp
+        #     fap.phases = phases
+        #     fap.name = (
+        #         f"{self.header.data_logger.lower()}_{self.sample_rate:.0f}_response"
+        #     )
+        #     fap.comments = "data logger response read from z3d file"
+        #     return fap
+        # return None
 
     @property
     def channel_response(self):
@@ -1122,6 +1122,10 @@ class Z3D:
                 break
             data[data_count : data_count + len(test_str)] = test_str
             data_count += test_str.size
+        logger.info(f"read {data_count} samples from file {self.fn}")
+
+        # # now we need to trim off the extra zeros at the end
+        # data = data[:data_count]
         return data
 
     def _unpack_data(self, data: np.ndarray, gps_stamp_index: list[int]) -> np.ndarray:
@@ -1206,6 +1210,8 @@ class Z3D:
         # Concatenate all blocks to form clean time series
         if time_series_blocks:
             clean_data = np.concatenate(time_series_blocks)
+            # Remove any remaining zeros
+            clean_data = clean_data[np.nonzero(clean_data)]
         else:
             clean_data = np.array([], dtype=data.dtype)
 
@@ -1246,7 +1252,7 @@ class Z3D:
         if z3d_fn is not None:
             self.fn = z3d_fn
         self.logger.debug(f"Reading {self.fn}")
-        st = datetime.datetime.now()
+        st = MTime().now()
 
         # using the with statement works in Python versions 2.7 or higher
         # the added benefit of the with statement is that it will close the
@@ -1293,9 +1299,9 @@ class Z3D:
         self.logger.debug(f"found {self.time_series.size} data points")
 
         # time it
-        et = datetime.datetime.now()
-        read_time = (et - st).total_seconds()
-        self.logger.debug(f"Reading data took: {read_time:.3f} seconds")
+        et = MTime().now()
+        read_time = et - st
+        self.logger.info(f"Reading data took: {read_time:.3f} seconds")
 
     # =================================================
     def get_gps_stamp_index(
