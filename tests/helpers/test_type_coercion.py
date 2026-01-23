@@ -292,164 +292,152 @@ class TestCoerceValueToExpectedType:
 
     def test_none_returns_none(self, mock_logger):
         """Test that None values are returned as-is."""
-        result = coerce_value_to_expected_type(mock_logger, "test_key", None, float)
+        result = coerce_value_to_expected_type("test_key", None, float)
         assert result is None
 
-    def test_correct_type_returns_as_is(self, mock_logger, subtests):
+    def test_correct_type_returns_as_is(self, subtests):
         """Test that values of correct type are returned unchanged."""
         with subtests.test("float"):
-            result = coerce_value_to_expected_type(mock_logger, "key", 256.0, float)
+            result = coerce_value_to_expected_type("key", 256.0, float)
             assert result == 256.0
             assert isinstance(result, float)
 
         with subtests.test("int"):
-            result = coerce_value_to_expected_type(mock_logger, "key", 5, int)
+            result = coerce_value_to_expected_type("key", 5, int)
             assert result == 5
             assert isinstance(result, int)
 
         with subtests.test("str"):
-            result = coerce_value_to_expected_type(mock_logger, "key", "test", str)
+            result = coerce_value_to_expected_type("key", "test", str)
             assert result == "test"
             assert isinstance(result, str)
 
-    def test_coerce_to_float(self, mock_logger, subtests):
+    def test_coerce_to_float(self, subtests):
         """Test coercing various types to float."""
         with subtests.test("int to float"):
-            result = coerce_value_to_expected_type(mock_logger, "key", 256, float)
+            result = coerce_value_to_expected_type("key", 256, float)
             assert result == 256.0
             assert isinstance(result, float)
 
         with subtests.test("str to float"):
-            result = coerce_value_to_expected_type(mock_logger, "key", "256.5", float)
+            result = coerce_value_to_expected_type("key", "256.5", float)
             assert result == 256.5
             assert isinstance(result, float)
 
         with subtests.test("numpy int to float"):
-            result = coerce_value_to_expected_type(
-                mock_logger, "key", np.int32(100), float
-            )
+            result = coerce_value_to_expected_type("key", np.int32(100), float)
             assert result == 100.0
             assert isinstance(result, float)
 
         with subtests.test("numpy float to float"):
-            result = coerce_value_to_expected_type(
-                mock_logger, "key", np.float64(99.9), float
-            )
+            result = coerce_value_to_expected_type("key", np.float64(99.9), float)
             assert result == 99.9
             assert isinstance(result, float)
 
         with subtests.test("single element list to float"):
-            result = coerce_value_to_expected_type(mock_logger, "key", [256.0], float)
+            result = coerce_value_to_expected_type("key", [256.0], float)
             assert result == 256.0
             assert isinstance(result, float)
 
-    def test_coerce_to_int(self, mock_logger, subtests):
+    def test_coerce_to_int(self, subtests):
         """Test coercing various types to int."""
         with subtests.test("float to int"):
-            result = coerce_value_to_expected_type(mock_logger, "key", 5.0, int)
+            result = coerce_value_to_expected_type("key", 5.0, int)
             assert result == 5
             assert isinstance(result, int)
 
         with subtests.test("str to int"):
-            result = coerce_value_to_expected_type(mock_logger, "key", "42", int)
+            result = coerce_value_to_expected_type("key", "42", int)
             assert result == 42
             assert isinstance(result, int)
 
         with subtests.test("numpy float to int"):
-            result = coerce_value_to_expected_type(
-                mock_logger, "key", np.float64(10.0), int
-            )
+            result = coerce_value_to_expected_type("key", np.float64(10.0), int)
             assert result == 10
             assert isinstance(result, int)
 
         with subtests.test("single element list to int"):
-            result = coerce_value_to_expected_type(mock_logger, "key", [7], int)
+            result = coerce_value_to_expected_type("key", [7], int)
             assert result == 7
             assert isinstance(result, int)
 
-    def test_coerce_to_str(self, mock_logger, subtests):
+    def test_coerce_to_str(self, subtests):
         """Test coercing various types to str."""
         with subtests.test("int to str"):
-            result = coerce_value_to_expected_type(mock_logger, "key", 123, str)
+            result = coerce_value_to_expected_type("key", 123, str)
             assert result == "123"
             assert isinstance(result, str)
 
         with subtests.test("float to str"):
-            result = coerce_value_to_expected_type(mock_logger, "key", 45.6, str)
+            result = coerce_value_to_expected_type("key", 45.6, str)
             assert result == "45.6"
             assert isinstance(result, str)
 
         with subtests.test("single element list to str"):
-            result = coerce_value_to_expected_type(mock_logger, "key", ["test"], str)
+            result = coerce_value_to_expected_type("key", ["test"], str)
             assert result == "test"
             assert isinstance(result, str)
 
-    def test_coerce_to_bool(self, mock_logger, subtests):
+    def test_coerce_to_bool(self, subtests):
         """Test coercing various types to bool."""
         with subtests.test("int 1 to bool"):
-            result = coerce_value_to_expected_type(mock_logger, "key", 1, bool)
+            result = coerce_value_to_expected_type("key", 1, bool)
             assert result is True
 
         with subtests.test("int 0 to bool"):
-            result = coerce_value_to_expected_type(mock_logger, "key", 0, bool)
+            result = coerce_value_to_expected_type("key", 0, bool)
             assert result is False
 
         with subtests.test("str 'true' to bool"):
-            result = coerce_value_to_expected_type(mock_logger, "key", "true", bool)
+            result = coerce_value_to_expected_type("key", "true", bool)
             assert result is True
 
         with subtests.test("str 'false' to bool"):
-            result = coerce_value_to_expected_type(mock_logger, "key", "false", bool)
+            result = coerce_value_to_expected_type("key", "false", bool)
             assert result is False
 
         with subtests.test("str '1' to bool"):
-            result = coerce_value_to_expected_type(mock_logger, "key", "1", bool)
+            result = coerce_value_to_expected_type("key", "1", bool)
             assert result is True
 
         with subtests.test("str '0' to bool"):
-            result = coerce_value_to_expected_type(mock_logger, "key", "0", bool)
+            result = coerce_value_to_expected_type("key", "0", bool)
             assert result is False
 
         with subtests.test("single element list to bool"):
-            result = coerce_value_to_expected_type(mock_logger, "key", [1], bool)
+            result = coerce_value_to_expected_type("key", [1], bool)
             assert result is True
 
-    def test_coerce_to_list(self, mock_logger, subtests):
+    def test_coerce_to_list(self, subtests):
         """Test coercing various types to list."""
         with subtests.test("json string to list"):
-            result = coerce_value_to_expected_type(
-                mock_logger, "key", '["a", "b", "c"]', list
-            )
+            result = coerce_value_to_expected_type("key", '["a", "b", "c"]', list)
             assert result == ["a", "b", "c"]
             assert isinstance(result, list)
 
         with subtests.test("comma-separated string to list"):
-            result = coerce_value_to_expected_type(mock_logger, "key", "a, b, c", list)
+            result = coerce_value_to_expected_type("key", "a, b, c", list)
             assert result == ["a", "b", "c"]
             assert isinstance(result, list)
 
         with subtests.test("tuple to list"):
-            result = coerce_value_to_expected_type(mock_logger, "key", (1, 2, 3), list)
+            result = coerce_value_to_expected_type("key", (1, 2, 3), list)
             assert result == [1, 2, 3]
             assert isinstance(result, list)
 
-    def test_invalid_coercion_returns_original(self, mock_logger, subtests):
+    def test_invalid_coercion_returns_original(self, subtests):
         """Test that invalid coercions return the original value."""
         with subtests.test("invalid string to float"):
-            result = coerce_value_to_expected_type(
-                mock_logger, "key", "not_a_number", float
-            )
+            result = coerce_value_to_expected_type("key", "not_a_number", float)
             assert result == "not_a_number"
 
         with subtests.test("invalid string to int"):
-            result = coerce_value_to_expected_type(
-                mock_logger, "key", "not_an_int", int
-            )
+            result = coerce_value_to_expected_type("key", "not_an_int", int)
             assert result == "not_an_int"
 
     def test_expected_type_none_returns_original(self, mock_logger):
         """Test that None expected type returns original value."""
-        result = coerce_value_to_expected_type(mock_logger, "key", 123, None)
+        result = coerce_value_to_expected_type("key", 123, None)
         assert result == 123
 
 
@@ -483,7 +471,7 @@ class TestIntegrationWithMetadata:
         ],
     )
     def test_realistic_coercion_scenarios(
-        self, mock_logger, metadata_obj, field, old_value, expected_type, expected_value
+        self, metadata_obj, field, old_value, expected_type, expected_value
     ):
         """Test realistic scenarios of coercing old file values."""
         # Get the expected type from metadata
@@ -491,14 +479,12 @@ class TestIntegrationWithMetadata:
         field_type = type_dict.get(field, expected_type)
 
         # Coerce the value
-        result = coerce_value_to_expected_type(
-            mock_logger, field, old_value, field_type
-        )
+        result = coerce_value_to_expected_type(field, old_value, field_type)
 
         assert result == expected_value
         assert isinstance(result, expected_type)
 
-    def test_complete_workflow(self, mock_logger, electric_metadata, subtests):
+    def test_complete_workflow(self, electric_metadata, subtests):
         """Test complete workflow of getting types and coercing values."""
         # Step 1: Get type dictionary
         type_dict = get_metadata_type_dict(electric_metadata)
@@ -519,9 +505,7 @@ class TestIntegrationWithMetadata:
         coerced_data = {}
         for key, value in old_file_data.items():
             expected_type = type_dict.get(key)
-            coerced_data[key] = coerce_value_to_expected_type(
-                mock_logger, key, value, expected_type
-            )
+            coerced_data[key] = coerce_value_to_expected_type(key, value, expected_type)
 
         # Step 4: Verify coercions
         with subtests.test("sample_rate coerced to float"):
@@ -549,64 +533,62 @@ class TestIntegrationWithMetadata:
 class TestEdgeCases:
     """Test edge cases and error conditions."""
 
-    def test_empty_string_coercion(self, mock_logger, subtests):
+    def test_empty_string_coercion(self, subtests):
         """Test coercion of empty strings."""
         with subtests.test("empty string to float returns original"):
-            result = coerce_value_to_expected_type(mock_logger, "key", "", float)
+            result = coerce_value_to_expected_type("key", "", float)
             assert result == ""
 
         with subtests.test("empty string to int returns original"):
-            result = coerce_value_to_expected_type(mock_logger, "key", "", int)
+            result = coerce_value_to_expected_type("key", "", int)
             assert result == ""
 
-    def test_special_float_values(self, mock_logger, subtests):
+    def test_special_float_values(self, subtests):
         """Test coercion of special float values."""
         with subtests.test("inf string to float"):
-            result = coerce_value_to_expected_type(mock_logger, "key", "inf", float)
+            result = coerce_value_to_expected_type("key", "inf", float)
             assert np.isinf(result)
 
         with subtests.test("nan string to float"):
-            result = coerce_value_to_expected_type(mock_logger, "key", "nan", float)
+            result = coerce_value_to_expected_type("key", "nan", float)
             assert np.isnan(result)
 
-    def test_numpy_array_coercion(self, mock_logger, subtests):
+    def test_numpy_array_coercion(self, subtests):
         """Test coercion of numpy arrays."""
         with subtests.test("single element array to float"):
             arr = np.array([256.0])
-            result = coerce_value_to_expected_type(mock_logger, "key", arr, list)
+            result = coerce_value_to_expected_type("key", arr, list)
             assert isinstance(result, list)
 
     def test_unicode_strings(self, mock_logger):
         """Test coercion with unicode strings."""
         unicode_str = "测试"
-        result = coerce_value_to_expected_type(mock_logger, "key", unicode_str, str)
+        result = coerce_value_to_expected_type("key", unicode_str, str)
         assert result == unicode_str
         assert isinstance(result, str)
 
-    def test_large_numbers(self, mock_logger, subtests):
+    def test_large_numbers(self, subtests):
         """Test coercion of large numbers."""
         with subtests.test("large int"):
             large_int = 2**63 - 1
-            result = coerce_value_to_expected_type(mock_logger, "key", large_int, int)
+            result = coerce_value_to_expected_type("key", large_int, int)
             assert result == large_int
             assert isinstance(result, int)
 
         with subtests.test("large float"):
             large_float = 1e308
-            result = coerce_value_to_expected_type(
-                mock_logger, "key", large_float, float
-            )
+            result = coerce_value_to_expected_type("key", large_float, float)
             assert result == large_float
             assert isinstance(result, float)
 
-    def test_negative_numbers(self, mock_logger, subtests):
+    def test_negative_numbers(self, subtests):
         """Test coercion of negative numbers."""
         with subtests.test("negative int string to int"):
-            result = coerce_value_to_expected_type(mock_logger, "key", "-42", int)
+            result = coerce_value_to_expected_type("key", "-42", int)
             assert result == -42
             assert isinstance(result, int)
 
         with subtests.test("negative float string to float"):
-            result = coerce_value_to_expected_type(mock_logger, "key", "-3.14", float)
+            result = coerce_value_to_expected_type("key", "-3.14", float)
             assert result == -3.14
             assert isinstance(result, float)
