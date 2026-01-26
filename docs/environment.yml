@@ -18,6 +18,6 @@ dependencies:
   - xarray
   - PyYAML
   - pandas
-  - mt-metadata
   - pip:
     - loguru
+    - mt-metadata
