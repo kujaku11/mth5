@@ -178,5 +178,11 @@ History
 * Pydantic updates and transition to pytest by @kujaku11 in https://github.com/kujaku11/mth5/pull/306
 * Update code base to run with mt-metadata v1.0 and translate to pytest. by @kujaku11 in https://github.com/kujaku11/mth5/pull/311
 
+0.6.1 (2026-01-26)
+------------------------------
 
-**Full Changelog**: https://github.com/kujaku11/mth5/compare/v0.5.1...v0.6.0
+* 2026-01-20 — PR #311 — Improve PhoenixClient calibration handling and docs
+* 2026-01-20 — PR #306 — Pydantic updates and transition to pytest
+
+
+**Full Changelog**: https://github.com/kujaku11/mth5/compare/v0.6.0...v0.6.1
