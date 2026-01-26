@@ -44,7 +44,11 @@ class CoilResponse:
     @calibration_file.setter
     def calibration_file(self, fn):
         if fn is not None:
-            self._calibration_fn = Path(fn)
+            try:
+                self._calibration_fn = Path(fn)
+            except Exception as e:
+                self.logger.error(f"Cannot set calibration file path with: {e}")
+                self._calibration_fn = None
         else:
             self._calibration_fn = None
 
