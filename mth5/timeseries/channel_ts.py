@@ -1791,11 +1791,27 @@ class ChannelTS:
 
         combined_ds = xr.combine_by_coords(combine_list, combine_attrs="override")
 
-        n_samples = (
-            merge_sample_rate
-            * float(combined_ds.time.max().values - combined_ds.time.min().values)
-            / 1e9
-        ) + 1
+        # compute duration between max and min times robustly (handles
+        # numpy.timedelta64 and datetime.timedelta across Python versions)
+        time_max = combined_ds.time.max().values
+        time_min = combined_ds.time.min().values
+        delta = time_max - time_min
+
+        try:
+            # numpy.timedelta64 -> get seconds via division
+            seconds = delta / np.timedelta64(1, "s")
+        except Exception:
+            # fallback for datetime.timedelta or other types
+            import datetime
+
+            if isinstance(delta, datetime.timedelta):
+                seconds = delta.total_seconds()
+            else:
+                # as a last resort, use pandas to_timedelta which handles
+                # various timedelta-like representations
+                seconds = pd.to_timedelta(delta).total_seconds()
+
+        n_samples = int(merge_sample_rate * float(seconds)) + 1
 
         new_dt_index = make_dt_coordinates(
             combined_ds.time.min().values, merge_sample_rate, n_samples
