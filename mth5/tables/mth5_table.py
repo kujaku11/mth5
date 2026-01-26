@@ -336,7 +336,7 @@ class MTH5Table:
             index = self.nrows
             if self.nrows == 1:
                 match = True
-                null_array = np.empty(1, dtype=self.dtype)
+                null_array = np.zeros(1, dtype=self.dtype)
                 if self.dtype.names is None:
                     raise TypeError("Table dtype must have named fields.")
                 for name in self.dtype.names:
@@ -493,32 +493,38 @@ class MTH5Table:
         dataset options.
         """
 
-        new_dtype = self._validate_dtype_names(self._validate_dtype(new_dtype))
+        try:
+            new_dtype = self._validate_dtype_names(self._validate_dtype(new_dtype))
 
-        # need to do this manually otherwise get an error of not safe
-        new_array = np.ones(self.array.shape, dtype=new_dtype)
-        for key in self.array.dtype.fields.keys():
-            new_array[key] = self.array[key][()]
+            # need to do this manually otherwise get an error of not safe
+            new_array = np.ones(self.array.shape, dtype=new_dtype)
+            for key in self.array.dtype.fields.keys():
+                new_array[key] = self.array[key][()]
 
-        root = self.array.parent
-        if not isinstance(root, (h5py.Group, h5py.File)):
-            raise TypeError("Unexpected parent type; expected Group or File.")
-        name = str(self.array.name).split("/")[-1]
-        ds_options = {
-            "compression": self.array.compression,
-            "compression_opts": self.array.compression_opts,
-            "shuffle": self.array.shuffle,
-            "fletcher32": self.array.fletcher32,
-        }
+            root = self.array.parent
+            if not isinstance(root, (h5py.Group, h5py.File)):
+                raise TypeError("Unexpected parent type; expected Group or File.")
+            name = str(self.array.name).split("/")[-1]
+            ds_options = {
+                "compression": self.array.compression,
+                "compression_opts": self.array.compression_opts,
+                "shuffle": self.array.shuffle,
+                "fletcher32": self.array.fletcher32,
+            }
 
-        del root[name]
+            del root[name]
 
-        self.array = root.create_dataset(
-            name,
-            data=new_array,
-            maxshape=(None,),
-            dtype=new_dtype,
-            **ds_options,
-        )
+            self.array = root.create_dataset(
+                name,
+                data=new_array,
+                maxshape=(None,),
+                dtype=new_dtype,
+                **ds_options,
+            )
 
-        self._default_dtype = new_dtype
+            self._default_dtype = new_dtype
+        except:
+            self.logger.info(
+                "Could not update table dtype, likely an older file.  Clearing table."
+            )
+            self.clear_table()

@@ -87,6 +87,7 @@ class PhoenixClient(ClientBase):
         >>> client.receiver_calibration_dict  # doctest: +SKIP
         {'RX001': Path('calibrations/RX001_rxcal.json'), ...}
         """
+        self._receiver_calibration_dict = {}
         if isinstance(value, dict):
             self._receiver_calibration_dict = value
         elif isinstance(value, (str, Path)):

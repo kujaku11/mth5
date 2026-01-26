@@ -13,7 +13,6 @@ Created on November 15, 2025
 from __future__ import annotations
 
 from collections import OrderedDict
-from pathlib import Path
 
 import pytest
 
@@ -45,7 +44,7 @@ def phoenix_data_path():
 @pytest.fixture(scope="module")
 def rxcal_fn():
     """Path to receiver calibration file."""
-    return Path(__file__).parent.joinpath("example_rxcal.json")
+    return phx_data_path / "10128_rxcal.json"
 
 
 @pytest.fixture(scope="function", params=["0", "1", "2", "4"])
@@ -359,7 +358,7 @@ def expected_filter_names():
         "0": [
             "mtu-5c_rmt03_10128_h2_10000hz_lowpass",
             "v_to_mv",
-            "coil_0_response",
+            "coil_101_response",
         ],
         "1": [
             "mtu-5c_rmt03_10128_e1_10000hz_lowpass",
@@ -369,7 +368,7 @@ def expected_filter_names():
         "2": [
             "mtu-5c_rmt03_10128_h1_10000hz_lowpass",
             "v_to_mv",
-            "coil_0_response",
+            "coil_101_response",
         ],
         "4": [
             "mtu-5c_rmt03_10128_e2_10000hz_lowpass",

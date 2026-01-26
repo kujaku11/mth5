@@ -15,12 +15,6 @@ Created on Fri Feb  4 15:53:21 2022
 import copy
 import time
 from gzip import BadGzipFile
-
-# from obspy.clients import fdsn
-# from obspy import UTCDateTime
-# from obspy import read as obsread
-# from obspy import read_inventory
-# from obspy.core.inventory import Inventory
 from pathlib import Path
 
 import numpy as np
@@ -30,6 +24,7 @@ from loguru import logger
 from mt_metadata.timeseries.stationxml import XMLInventoryMTExperiment
 from obspy.clients.fdsn import Client as FDSNClient
 
+from mth5.clients.base import ClientBase
 from mth5.mth5 import MTH5
 from mth5.timeseries import RunTS
 
@@ -37,9 +32,14 @@ from mth5.timeseries import RunTS
 # =============================================================================
 
 
-class FDSN:
-    def __init__(self, client="IRIS", mth5_version="0.2.0", **kwargs):
+class FDSN(ClientBase):
+    def __init__(self, client: str = "IRIS", **kwargs) -> None:
         self.logger = logger
+
+        super().__init__(
+            Path.cwd(),
+            **kwargs,
+        )
         self.request_columns = [
             "network",
             "station",
@@ -49,41 +49,12 @@ class FDSN:
             "end",
         ]
         self.client = client
-
-        # parameters of hdf5 file
-        self.h5_compression = "gzip"
-        self.h5_compression_opts = 4
-        self.h5_shuffle = True
-        self.h5_fletcher32 = True
-        self.h5_data_level = 1
-        self.mth5_version = mth5_version
-        self.mth5_file_mode = "w"
-        self.mth5_filename = None
+        self._streams = None
 
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-        # ivars
-        self._streams = None
-
-    @property
-    def h5_kwargs(self):
-        h5_params = dict(
-            file_version=self.mth5_version,
-            compression=self.h5_compression,
-            compression_opts=self.h5_compression_opts,
-            shuffle=self.h5_shuffle,
-            fletcher32=self.h5_fletcher32,
-            data_level=self.h5_data_level,
-        )
-
-        for key, value in self.__dict__.items():
-            if key.startswith("h5"):
-                h5_params[key[3:]] = value
-
-        return h5_params
-
-    def _validate_dataframe(self, df):
+    def _validate_dataframe(self, df: pd.DataFrame | str | Path) -> pd.DataFrame:
         if not isinstance(df, pd.DataFrame):
             if isinstance(df, (str, Path)):
                 fn = Path(df)
@@ -101,7 +72,7 @@ class FDSN:
         return df
 
     @property
-    def run_list_ne_stream_intervals_message(self):
+    def run_list_ne_stream_intervals_message(self) -> str:
         """note about not equal stream intervals"""
         return (
             "More or less runs have been requested by the user "
@@ -110,14 +81,14 @@ class FDSN:
             "time series data based on the users request."
         )
 
-    def _loop_stations(self, stations, m, survey_group=None):
+    def _loop_stations(self, stations: list[str], m: MTH5, survey_group=None) -> None:
         """
         loop over stations
         """
         for station_id in stations:
             self.wrangle_runs_into_containers(m, station_id, survey_group=survey_group)
 
-    def _run_010(self, unique_list, m, **kwargs):
+    def _run_010(self, unique_list: list[dict], m: MTH5, **kwargs) -> None:
         """
         kwargs are supported just to make this a general function that can be
         kept in a dict and used as in process_list
@@ -135,7 +106,7 @@ class FDSN:
         station_list = unique_list[0]["stations"]
         self._loop_stations(station_list, m)
 
-    def _run_020(self, unique_list, m, experiment=None):
+    def _run_020(self, unique_list: list[dict], m: MTH5, experiment=None) -> None:
         """
         mt_metadata translates mt survey id into survey id if it (which?) is
         provided which will be different from the fdsn network id, so we need
@@ -161,7 +132,7 @@ class FDSN:
             stations_list = survey_dict["stations"]
             self._loop_stations(stations_list, m, survey_group=survey_group)
 
-    def _process_list(self, experiment, unique_list, m):
+    def _process_list(self, experiment, unique_list: list[dict], m: MTH5) -> None:
         """
         Routes job to correct processing based on mth5_version
         Maintainable way to handle future file versions and send them to their
@@ -183,7 +154,9 @@ class FDSN:
         process_run = version_dict[self.mth5_version]
         process_run(unique_list, m, experiment=experiment)
 
-    def get_run_list_from_station_id(self, m, station_id, survey_id=None):
+    def get_run_list_from_station_id(
+        self, m: MTH5, station_id: str, survey_id: str | None = None
+    ) -> list[str]:
         """
         ignored_groups created to address issue #153.  This might be better placed
         closer to the core of mth5.
@@ -206,7 +179,9 @@ class FDSN:
         run_list = [x for x in run_list if x not in ignored_groups]
         return run_list
 
-    def stream_boundaries(self, streams):
+    def stream_boundaries(
+        self, streams: obspy.Stream
+    ) -> tuple[list[obspy.UTCDateTime], list[obspy.UTCDateTime]]:
         """
         Identify start and end times of streams
 
@@ -231,11 +206,11 @@ class FDSN:
         end_times = [obspy.UTCDateTime(x) for x in end_times]
         return start_times, end_times
 
-    def get_station_streams(self, station_id):
+    def get_station_streams(self, station_id: str) -> obspy.Stream:
         """Get streams for a certain station"""
         return self._streams.select(station=station_id)
 
-    def get_run_group(self, mth5_obj_or_survey, station_id, run_id):
+    def get_run_group(self, mth5_obj_or_survey, station_id: str, run_id: str):
         """
         This method is key to merging wrangle_runs_into_containers_v1 and
         wrangle_runs_into_containers_v2.
@@ -261,7 +236,7 @@ class FDSN:
         )
         return run_group
 
-    def pack_stream_into_run_group(self, run_group, run_stream):
+    def pack_stream_into_run_group(self, run_group, run_stream: obspy.Stream):
         """"""
         run_ts_obj = RunTS()
         run_ts_obj.from_obspy_stream(run_stream, run_group.metadata)
@@ -269,7 +244,9 @@ class FDSN:
 
         return run_group
 
-    def run_timings_match_stream_timing(self, run_group, stream_start, stream_end):
+    def run_timings_match_stream_timing(
+        self, run_group, stream_start: obspy.UTCDateTime, stream_end: obspy.UTCDateTime
+    ) -> bool:
         """
         Checks start and end times in the run.
         Compares start and end times of runs to start and end times of traces.
@@ -277,12 +254,15 @@ class FDSN:
 
         Parameters
         ----------
-        run_group
-        stream_start
-        stream_end
+        run_group: mth5.groups.run.RunGroup
+
+        stream_start: obspy.UTCDateTime
+
+        stream_end: obspy.UTCDateTime
 
         Returns
         -------
+        bool
 
         """
         streams_and_run_timings_match = False
@@ -301,7 +281,9 @@ class FDSN:
             streams_and_run_timings_match = True
         return streams_and_run_timings_match
 
-    def wrangle_runs_into_containers(self, m, station_id, survey_group=None):
+    def wrangle_runs_into_containers(
+        self, m: MTH5, station_id: str, survey_group=None
+    ) -> None:
         """
         Note 1: There used to be two separate functions for this, but now there
         is one run_group_source is defined as either m or survey_group depending
@@ -403,40 +385,59 @@ class FDSN:
             raise ValueError("Cannot add Run for some reason.")
         return
 
-    def make_mth5_from_fdsn_client(self, df, path=None, client=None, interact=False):
+    def make_mth5_from_fdsn_client(
+        self,
+        df: pd.DataFrame | str | Path,
+        path: str | Path | None = None,
+        client: str | None = None,
+        interact: bool = False,
+    ) -> Path:
         """
-        Make an MTH5 file from an FDSN data center
+        Create an MTH5 file from an FDSN data center request.
 
-        :param df: DataFrame with columns
+        Parameters
+        ----------
+        df : pandas.DataFrame or str or Path
+            DataFrame or path to CSV with columns:
+                - 'network'   : FDSN Network code
+                - 'station'   : FDSN Station code
+                - 'location'  : FDSN Location code
+                - 'channel'   : FDSN Channel code
+                - 'start'     : Start time YYYY-MM-DDThh:mm:ss
+                - 'end'       : End time YYYY-MM-DDThh:mm:ss
+        path : str or Path, optional
+            Path to save MTH5 file (default: current directory).
+        client : str, optional
+            FDSN client name (default: "IRIS").
+        interact : bool, optional
+            Deprecated. If True, logs a warning (default: False).
 
-            - 'network'   --> FDSN Network code
-            - 'station'   --> FDSN Station code
-            - 'location'  --> FDSN Location code
-            - 'channel'   --> FDSN Channel code
-            - 'start'     --> Start time YYYY-MM-DDThh:mm:ss
-            - 'end'       --> End time YYYY-MM-DDThh:mm:ss
+        Returns
+        -------
+        file_name : Path
+            Path to the created MTH5 file.
 
-        :type df: :class:`pandas.DataFrame`
-        :param path: Path to save MTH5 file to, defaults to None
-        :type path: string or :class:`pathlib.Path`, optional
-        :param client: FDSN client name, defaults to "IRIS"
-        :type client: string, optional
-        :raises AttributeError: If the input DataFrame is not properly
-        formatted an Attribute Error will be raised.
-        :raises ValueError: If the values of the DataFrame are not correct a
-        ValueError will be raised.
-        :return: MTH5 file name
-        :rtype: :class:`pathlib.Path`
+        Raises
+        ------
+        AttributeError
+            If the input DataFrame is not properly formatted.
+        ValueError
+            If the values of the DataFrame are not correct.
 
-
-        .. seealso:: https://docs.obspy.org/packages/obspy.clients.fdsn.html#id1
-
-        .. note:: If any of the column values are blank, then any value will
-        searched for.  For example if you leave 'station' blank, any station
-        within the given start and end time will be returned.
-
-
-
+        Examples
+        --------
+        >>> from mth5.clients.fdsn import FDSN
+        >>> import pandas as pd
+        >>> df = pd.DataFrame({
+        ...     'network': ['XX'],
+        ...     'station': ['1234'],
+        ...     'location': [''],
+        ...     'channel': ['LHZ'],
+        ...     'start': ['2022-01-01T00:00:00'],
+        ...     'end': ['2022-01-02T00:00:00']
+        ... })
+        >>> client = FDSN()
+        >>> file_path = client.make_mth5_from_fdsn_client(df)
         """
 
         if client is not None:
@@ -479,14 +480,36 @@ class FDSN:
         else:
             self._streams = streams
 
-    def make_mth5_from_inventory_and_streams(self, inventory, streams, save_path=None):
+    def make_mth5_from_inventory_and_streams(
+        self,
+        inventory: obspy.Inventory | str | Path,
+        streams: obspy.Stream | list[str | Path],
+        save_path: str | Path | None = None,
+    ) -> Path:
         """
-        Create an MTH5 from existing inventory and a stationXML
+        Create an MTH5 file from an ObsPy Inventory and waveform streams.
 
-        inventory can be an obspy.Inventory object or a string or path to a StationXML
+        Parameters
+        ----------
+        inventory : obspy.Inventory or str or Path
+            ObsPy Inventory object or path to StationXML file.
+        streams : obspy.Stream or list of str or Path
+            ObsPy Stream object or list of file paths to waveform data.
+        save_path : str or Path, optional
+            Path to save MTH5 file (default: current directory).
 
-        streams must be a Stream object or a list of paths
+        Returns
+        -------
+        file_name : Path
+            Path to the created MTH5 file.
 
+        Examples
+        --------
+        >>> from mth5.clients.fdsn import FDSN
+        >>> inv = ... # ObsPy Inventory
+        >>> streams = ... # ObsPy Stream
+        >>> client = FDSN()
+        >>> file_path = client.make_mth5_from_inventory_and_streams(inv, streams)
         """
 
         if not isinstance(inventory, obspy.Inventory):
@@ -518,20 +541,25 @@ class FDSN:
 
             return m.filename
 
-    def build_network_dict(self, df, client):
+    def build_network_dict(self, df: pd.DataFrame, client: FDSNClient) -> dict:
         """
-        Build out a dictionary of networks, keyed by network_id, start_time.
-        We could return this dict and use it as an auxilliary variable, but it seems easier to just add a column to
-        the df.
+        Build a dictionary of networks keyed by network_id and start_time.
 
         Parameters
         ----------
-        df: pd.DataFrame
-            This is a "request_df"
+        df : pandas.DataFrame
+            Request DataFrame.
+        client : obspy.clients.fdsn.Client
+            FDSN client instance.
 
         Returns
         -------
+        networks : dict
+            Dictionary of networks.
 
+        Examples
+        --------
+        >>> networks = client.build_network_dict(df, client)
         """
         # Build the dictionary
         networks = {}
@@ -565,18 +593,32 @@ class FDSN:
     #     df["network_object"] = network_column
     #     return df
 
-    def build_station_dict(self, df, client, networks_dict):
+    def build_station_dict(
+        self,
+        df: pd.DataFrame,
+        client: FDSNClient,
+        networks_dict: dict,
+    ) -> dict:
         """
-        Given the {network-id, starttime}-keyed dict of networks, we build a station layer below this
+        Build a dictionary of stations keyed by network_id and start_time.
 
         Parameters
         ----------
-        df
-        networks_dict
+        df : pandas.DataFrame
+            Request DataFrame.
+        client : obspy.clients.fdsn.Client
+            FDSN client instance.
+        networks_dict : dict
+            Dictionary of networks.
 
         Returns
         -------
+        stations : dict
+            Dictionary of stations.
 
+        Examples
+        --------
+        >>> stations = client.build_station_dict(df, client, networks_dict)
         """
         stations_dict = copy.deepcopy(networks_dict)
         for network_id in networks_dict.keys():
@@ -601,17 +643,25 @@ class FDSN:
                     ] = sta_inv.networks[0].stations[0]
         return stations_dict
 
-    def get_waveforms_from_request_row(self, client, row):
+    def get_waveforms_from_request_row(self, client: FDSNClient, row) -> obspy.Stream:
         """
+        Retrieve waveform data for a request row.
 
         Parameters
         ----------
-        client
-        row
+        client : obspy.clients.fdsn.Client
+            FDSN client instance.
+        row : pandas.Series
+            Row of request DataFrame.
 
         Returns
         -------
+        streams : obspy.Stream
+            ObsPy Stream object with waveform data.
 
+        Examples
+        --------
+        >>> streams = client.get_waveforms_from_request_row(client, row)
         """
         start = obspy.UTCDateTime(row.start)
         end = obspy.UTCDateTime(row.end)
@@ -620,50 +670,54 @@ class FDSN:
         )
         return streams
 
-    def get_inventory_from_df(self, df, client=None, data=True, max_tries=10):
+    def get_inventory_from_df(
+        self,
+        df: pd.DataFrame | str | Path,
+        client: str | None = None,
+        data: bool = True,
+        max_tries: int = 10,
+    ) -> tuple[obspy.Inventory, obspy.Stream]:
         """
-        20230806: The nested for looping here can make debugging complex, as well as lead to a lot of redundancies.
-        I propose that we build out a dictionary of networks, keyed by network_id, start_time.
-        It may actually be simpler to just add a column to the request_df that has the network_obj
+        Get an ObsPy Inventory and Stream from a DataFrame request.
 
-        networks = {}
-        networks[network_id] = {}
-        networks[network_id][start_time_1] = obspy_network_obj
-        networks[network_id][start_time_2] = obspy_network_obj
-        ...
+        Parameters
+        ----------
+        df : pandas.DataFrame or str or Path
+            DataFrame or path to CSV with columns:
+                - 'network'   : FDSN Network code
+                - 'station'   : FDSN Station code
+                - 'location'  : FDSN Location code
+                - 'channel'   : FDSN Channel code
+                - 'start'     : Start time YYYY-MM-DDThh:mm:ss
+                - 'end'       : End time YYYY-MM-DDThh:mm:ss
+        client : str, optional
+            FDSN client name (default: self.client).
+        data : bool, optional
+            If True, retrieves waveform data (default: True).
+        max_tries : int, optional
+            Maximum number of retry attempts (default: 10).
 
-        Then the role of "returned_network" can be replaced by accessing the appropriate element and the second for-loop
-        can move up by a layer of indentation.
+        Returns
+        -------
+        inventory : obspy.Inventory
+            Inventory of metadata requested.
+        streams : obspy.Stream
+            Stream of waveform data.
 
-
-        Will try to factor i
-        Get an :class:`obspy.Inventory` object from a
-        :class:`pandas.DataFrame`
-
-        :param df: DataFrame with columns
-
-            - 'network'   --> FDSN Network code
-            - 'station'   --> FDSN Station code
-            - 'location'  --> FDSN Location code
-            - 'channel'   --> FDSN Channel code
-            - 'start'     --> Start time YYYY-MM-DDThh:mm:ss
-            - 'end'       --> End time YYYY-MM-DDThh:mm:ss
-
-        :type df: :class:`pandas.DataFrame`
-        :param client: FDSN client
-        :type client: string
-        :param data: True if you want data False if you want just metadata,
-        defaults to True
-        :type data: boolean, optional
-        :return: An inventory of metadata requested and data
-        :rtype: :class:`obspy.Inventory` and :class:`obspy.Stream`
-
-        .. seealso:: https://docs.obspy.org/packages/obspy.clients.fdsn.html#id1
-
-        .. note:: If any of the column values are blank, then any value will
-        searched for.  For example if you leave 'station' blank, any station
-        within the given start and end time will be returned.
-
+        Examples
+        --------
+        >>> from mth5.clients.fdsn import FDSN
+        >>> import pandas as pd
+        >>> df = pd.DataFrame({
+        ...     'network': ['XX'],
+        ...     'station': ['1234'],
+        ...     'location': [''],
+        ...     'channel': ['LHZ'],
+        ...     'start': ['2022-01-01T00:00:00'],
+        ...     'end': ['2022-01-02T00:00:00']
+        ... })
+        >>> client = FDSN()
+        >>> inv, streams = client.get_inventory_from_df(df)
         """
         if client is not None:
             self.client = client
@@ -715,15 +769,23 @@ class FDSN:
                 inv.networks.append(networks_dict[network_key][start_key])
         return inv, streams
 
-    def get_df_from_inventory(self, inventory):
+    def get_df_from_inventory(self, inventory: obspy.Inventory) -> pd.DataFrame:
         """
-        Create an data frame from an inventory object
+        Create a DataFrame from an ObsPy Inventory object.
 
-        :param inventory: inventory object
-        :type inventory: :class:`obspy.Inventory`
-        :return: dataframe in proper format
-        :rtype: :class:`pandas.DataFrame`
+        Parameters
+        ----------
+        inventory : obspy.Inventory
+            ObsPy Inventory object.
 
+        Returns
+        -------
+        df : pandas.DataFrame
+            DataFrame in request format.
+
+        Examples
+        --------
+        >>> df = client.get_df_from_inventory(inventory)
         """
 
         rows = []
@@ -741,19 +803,23 @@ class FDSN:
                     rows.append(entry)
         return pd.DataFrame(rows, columns=self.request_columns)
 
-    def get_unique_networks_and_stations(self, df):
+    def get_unique_networks_and_stations(self, df: pd.DataFrame) -> list[dict]:
         """
-        Get unique lists of networks, stations, locations, and channels from
-        a given data frame.
+        Get unique networks and stations from a request DataFrame.
 
-        [{'network': FDSN code, "stations": [list of stations for network]}]
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            Request DataFrame.
 
-        :param df: request data frame
-        :type df: :class:`pandas.DataFrame`
-        :return: list of network dictionaries with
-        [{'network': FDSN code, "stations": [list of stations for network]}]
-        :rtype: list
+        Returns
+        -------
+        unique_list : list of dict
+            List of network dictionaries with stations.
 
+        Examples
+        --------
+        >>> unique_list = client.get_unique_networks_and_stations(df)
         """
         unique_list = []
         networks = df["network"].unique()
@@ -765,20 +831,31 @@ class FDSN:
             unique_list.append(network_dict)
         return unique_list
 
-    def make_filename(self, df):
+    def make_filename(self, df: pd.DataFrame) -> str:
         """
-        Make a filename from a data frame that is networks and stations
+        Make a filename from a request DataFrame of networks and stations.
 
-        :param df: request data frame
-        :type df: :class:`pandas.DataFrame`
-        :return: file name as network_01+stations_network_02+stations.h5
-        :rtype: string
+        Parameters
+        ----------
+        df : pandas.DataFrame
+            Request DataFrame.
 
+        Returns
+        -------
+        filename : str
+            Filename in the format network_01+stations_network_02+stations.h5
+
+        Examples
+        --------
+        >>> filename = client.make_filename(df)
         """
 
         if self.mth5_filename is not None:
-            print(f"Using user defined mth5 file name {self.mth5_filename}")
-            return self.mth5_filename
+            if self.mth5_filename != "from_client.h5":
+                self.logger.info(
+                    f"Using user defined mth5 file name {self.mth5_filename}"
+                )
+                return self.mth5_filename
 
         unique_list = self.get_unique_networks_and_stations(df)
 
@@ -787,7 +864,19 @@ class FDSN:
             + ".h5"
         )
 
-    def get_fdsn_channel_map(self):
+    def get_fdsn_channel_map(self) -> dict[str, str]:
+        """
+        Get mapping of FDSN channel codes to internal codes.
+
+        Returns
+        -------
+        FDSN_CHANNEL_MAP : dict
+            Dictionary mapping FDSN channel codes.
+
+        Examples
+        --------
+        >>> channel_map = client.get_fdsn_channel_map()
+        """
         FDSN_CHANNEL_MAP = {}
 
         FDSN_CHANNEL_MAP["BQ2"] = "BQ1"
@@ -813,20 +902,30 @@ class FDSN:
 
 def _fdsn_client_get_inventory(client, row, response_level, max_tries=10):
     """
-    Allows a few tries to get inventory, in case server is not very responsive
+    Attempt to retrieve inventory from FDSN client with retries.
+
     Parameters
     ----------
-    client: obspy.clients.fdsn.Client
-        obspy helper to get data from FDSN (e.g. EarthScope)
-    row: pandas.core.frame.Pandas
-        A row of a dataframe specifying the start and end times, station and network
-    response_level: ["network", "station", "response"]
+    client : obspy.clients.fdsn.Client
+        FDSN client instance (e.g., EarthScope).
+    row : pandas.core.frame.Pandas
+        Row of a DataFrame specifying start/end times, station, network.
+    response_level : {"network", "station", "response"}
+        Level of response to request from FDSN client.
+    max_tries : int, optional
+        Maximum number of retry attempts (default: 10).
 
     Returns
     -------
+    inventory : obspy.Inventory
+        Retrieved inventory object.
 
-    # TODO: Maybe these two cases can be the same call to client.get_stations?
-
+    Examples
+    --------
+    >>> from obspy.clients.fdsn import Client
+    >>> client = Client("IRIS")
+    >>> row = ... # DataFrame row with required fields
+    >>> inv = _fdsn_client_get_inventory(client, row, "network")
     """
     from lxml.etree import XMLSyntaxError
 
