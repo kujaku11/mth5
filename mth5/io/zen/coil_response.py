@@ -203,6 +203,9 @@ class CoilResponse:
         # ensure calibrations are loaded
         if not self.coil_calibrations:
             self.read_antenna_file(self.calibration_file)
+            self.logger.debug(
+                f"No calibrations loaded, reading calibration file {self.calibration_file}"
+            )
 
         if self.has_coil_number(coil_number):
             cal = self.coil_calibrations[str(int(coil_number))]

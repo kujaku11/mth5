@@ -645,7 +645,7 @@ class TestCoilResponseEdgeCases:
         # Should still work because get_coil_response_fap checks
         # However, calibrations will be empty
         with pytest.raises(KeyError):
-            cr.get_coil_response_fap(2173)
+            cr.get_coil_response_fap(2172)
 
 
 class TestCoilResponseIntegration:
