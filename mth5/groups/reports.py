@@ -47,6 +47,7 @@ class ReportsGroup(BaseGroup):
                     ("name", "S5"),
                     ("type", "S32"),
                     ("summary", "S200"),
+                    ("creation_time", "S32"),
                     ("hdf5_reference", h5py.ref_dtype),
                 ]
             ),
@@ -85,39 +86,30 @@ class ReportsGroup(BaseGroup):
                 raise FileNotFoundError(f"{filename} does not exist")
             extension = filename.suffix.lower()[1:]
             if extension in self._accepted_reports:
-                fn_bytes = filename.read_bytes()
+                data_bytes = filename.read_bytes()
 
-                # Save PDF bytes into HDF5
-                dataset = self.hdf5_group.create_dataset(report_name, data=fn_bytes)
-
-                # Add metadata if provided
-                if report_metadata is not None:
-                    for key, value in report_metadata.items():
-                        dataset.attrs[key] = value
-                else:
-                    dataset.attrs["description"] = f"{extension.upper()} report file"
-                    dataset.attrs["filename"] = filename.name
-                    dataset.attrs["file_type"] = extension
             elif extension in self._accepted_images:
                 # Open image and convert to numpy array
                 img = Image.open(filename)
-                img_data = np.array(img)
+                data_bytes = np.array(img)
 
-                # Save image data into HDF5
-                dataset = self.hdf5_group.create_dataset(report_name, data=img_data)
-
-                # Add metadata if provided
-                if report_metadata is not None:
-                    for key, value in report_metadata.items():
-                        dataset.attrs[key] = value
-                else:
-                    dataset.attrs["description"] = f"{extension.upper()} image file"
-                    dataset.attrs["filename"] = filename.name
-                    dataset.attrs["file_type"] = extension
             else:
                 self.logger.error(
                     f"Adding files of type {extension} is not implemented yet"
                 )
+
+            # Save image data into HDF5
+            dataset = self.hdf5_group.create_dataset(report_name, data=data_bytes)
+
+            # Add metadata if provided
+            if report_metadata is not None:
+                for key, value in report_metadata.items():
+                    dataset.attrs[key] = value
+            else:
+                dataset.attrs["description"] = f"{extension.upper()} image file"
+                dataset.attrs["filename"] = filename.name
+                dataset.attrs["file_type"] = extension
+                dataset.attrs["creation_time"] = str(filename.stat().st_ctime)
 
     def get_report(self, report_name: str) -> Path:
         """Extract a stored report or image to the current working directory.
@@ -147,11 +139,13 @@ class ReportsGroup(BaseGroup):
         dataset = self.hdf5_group[report_name]
         file_type = dataset.attrs["file_type"]
 
+        print(f"DEBUG: dataset content before bytes conversion: {dataset[()]}")
+
         if file_type in self._accepted_reports:
             report_data = bytes(dataset[()])
             fn_path = Path().cwd().joinpath(dataset.attrs["filename"])
             fn_path.write_bytes(report_data)
-            self.logger.info(f"Report written to {fn_path}")
+            self.logger.info(f"Report extracted to {fn_path}")
             return fn_path
 
         if file_type in self._accepted_images:
@@ -159,7 +153,41 @@ class ReportsGroup(BaseGroup):
             img = Image.fromarray(img_data)
             fn_path = Path().cwd().joinpath(dataset.attrs["filename"])
             img.save(fn_path)
-            self.logger.info(f"Image report written to {fn_path}")
+            self.logger.info(f"Image report extracted to {fn_path}")
             return fn_path
 
         raise ValueError(f"Unsupported file type '{file_type}' for {report_name}")
+
+    def list_reports(self) -> list[str]:
+        """List all stored reports and images in the group.
+
+        Returns
+        -------
+        list of str
+            Names of all stored datasets in the reports group.
+
+        Examples
+        --------
+        >>> report_names = reports.list_reports()  # doctest: +SKIP
+        >>> print(report_names)
+        ['site_report', 'manual', 'overview_image']
+        """
+        return list(self.hdf5_group.keys())
+
+    def remove_report(self, report_name: str) -> None:
+        """Remove a stored report or image from the group.
+
+        Parameters
+        ----------
+        report_name : str
+            Name of the stored dataset to remove.
+
+        Examples
+        --------
+        >>> reports.remove_report("manual")  # doctest: +SKIP
+        """
+        if report_name in self.hdf5_group:
+            del self.hdf5_group[report_name]
+            self.logger.info(f"Removed report '{report_name}' from the group.")
+        else:
+            self.logger.warning(f"Report '{report_name}' not found in the group.")
