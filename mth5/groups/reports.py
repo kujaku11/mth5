@@ -99,19 +99,32 @@ class ReportsGroup(BaseGroup):
                 )
 
             # Save image data into HDF5
-            dataset = self.hdf5_group.create_dataset(report_name, data=data_bytes)
+            try:
+                dataset = self.hdf5_group.create_dataset(report_name, data=data_bytes)
+            except ValueError as error:
+                if "name already exists" in str(error):
+                    self.logger.warning(
+                        f"Dataset {report_name} already exists. Suggest renaming or "
+                        f"deleting the existing report."
+                    )
+                    return
 
             # Add metadata if provided
+            dataset.attrs["description"] = f"{extension.upper()} image file"
+            dataset.attrs["filename"] = filename.name
+            dataset.attrs["file_type"] = extension
+            dataset.attrs["creation_time"] = str(filename.stat().st_ctime)
             if report_metadata is not None:
                 for key, value in report_metadata.items():
                     dataset.attrs[key] = value
-            else:
-                dataset.attrs["description"] = f"{extension.upper()} image file"
-                dataset.attrs["filename"] = filename.name
-                dataset.attrs["file_type"] = extension
-                dataset.attrs["creation_time"] = str(filename.stat().st_ctime)
 
-    def get_report(self, report_name: str) -> Path:
+        else:
+            self.logger.error(
+                "No filename provided to add_report method. Not adding report."
+            )
+            return
+
+    def get_report(self, report_name: str, write=True) -> Path:
         """Extract a stored report or image to the current working directory.
 
         Parameters
@@ -139,24 +152,25 @@ class ReportsGroup(BaseGroup):
         dataset = self.hdf5_group[report_name]
         file_type = dataset.attrs["file_type"]
 
-        print(f"DEBUG: dataset content before bytes conversion: {dataset[()]}")
+        if write:
+            if file_type in self._accepted_reports:
+                report_data = bytes(dataset[()])
+                fn_path = Path().cwd().joinpath(dataset.attrs["filename"])
+                fn_path.write_bytes(report_data)
+                self.logger.info(f"Report extracted to {fn_path}")
+                return fn_path
 
-        if file_type in self._accepted_reports:
-            report_data = bytes(dataset[()])
-            fn_path = Path().cwd().joinpath(dataset.attrs["filename"])
-            fn_path.write_bytes(report_data)
-            self.logger.info(f"Report extracted to {fn_path}")
-            return fn_path
+            if file_type in self._accepted_images:
+                img_data = np.array(dataset[()])
+                img = Image.fromarray(img_data)
+                fn_path = Path().cwd().joinpath(dataset.attrs["filename"])
+                img.save(fn_path)
+                self.logger.info(f"Image report extracted to {fn_path}")
+                return fn_path
 
-        if file_type in self._accepted_images:
-            img_data = np.array(dataset[()])
-            img = Image.fromarray(img_data)
-            fn_path = Path().cwd().joinpath(dataset.attrs["filename"])
-            img.save(fn_path)
-            self.logger.info(f"Image report extracted to {fn_path}")
-            return fn_path
+            raise ValueError(f"Unsupported file type '{file_type}' for {report_name}")
 
-        raise ValueError(f"Unsupported file type '{file_type}' for {report_name}")
+        return dataset
 
     def list_reports(self) -> list[str]:
         """List all stored reports and images in the group.
