@@ -88,12 +88,14 @@ class CoilResponse:
         else:
             self._calibration_fn = None
 
-    def file_exists(self):
+    def file_exists(self) -> bool:
         """
         Check to make sure the file exists
 
-        :return: True if it does, False if it does not
-        :rtype: boolean
+        Returns
+        -------
+        bool
+            True if the file exists, False if it does not
 
         """
         if self.calibration_file is None:
@@ -172,10 +174,29 @@ class CoilResponse:
         Apparently, the file includes the 6th and 8th harmonic of the given frequency, which
         is a fancy way of saying f * 6 and f * 8.
 
-        :param coil_number: ANT4 4 digit serial number
-        :type coil_number: int or string
-        :return: Frequency look up table
-        :rtype: :class:`mt_metadata.timeseries.filters.FrequencyResponseTableFilter`
+        Parameters
+        ----------
+        coil_number : int or str
+            ANT4 4 digit serial number
+        extrapolate : bool, optional
+            If True, extrapolate the frequency response to low and high frequencies,
+            by default True
+
+        Returns
+        -------
+        FrequencyResponseTableFilter
+            Frequency look up table for the specified coil number.
+
+        Raises
+        ------
+        KeyError
+            If the coil number is not found in the calibration file.
+
+        Notes
+        -----
+        Ensure that the antenna calibration file has been read prior to calling
+        this method. This can be done by providing the calibration file during
+        initialization or by calling :meth:`read_antenna_file`.
 
         """
 
@@ -251,10 +272,15 @@ class CoilResponse:
 
         Test if coil number is in the antenna file
 
-        :param coil_number: ANT4 serial number
-        :type coil_number: int or string
-        :return: True if the coil is found, False if it is not
-        :rtype: boolean
+        Parameters
+        ----------
+        coil_number : int or str or None
+            ANT4 serial number
+
+        Returns
+        -------
+        bool
+            True if the coil is found, False if it is not
 
         """
         if coil_number is None:
