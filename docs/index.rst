@@ -20,6 +20,7 @@ Welcome to MTH5's documentation!
     source/gotchas
     source/conventions
     source/mth5_format.ipynb
+    source/mth5_functionality_summary
     source/usage
     source/usage_v2
     source/structure
