@@ -13,17 +13,12 @@ Created on Wed Aug 24 11:24:57 2022
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, BinaryIO, Optional, Union
+from typing import Any, BinaryIO
 
 from loguru import logger
-
-# =============================================================================
-# Imports
-# =============================================================================
-from mt_metadata.common.mttime import MTime
+from mt_metadata.common import MTime
 
 
-# =============================================================================
 class Z3DSchedule:
     """
     Parser for Z3D file schedule information and metadata.
@@ -38,7 +33,7 @@ class Z3DSchedule:
 
     Parameters
     ----------
-    fn : Union[str, Path], optional
+    fn : str | pathlib.Path, optional
         Full path to Z3D file to read schedule information from.
         Can be string path or pathlib.Path object.
     fid : BinaryIO, optional
@@ -49,46 +44,46 @@ class Z3DSchedule:
 
     Attributes
     ----------
-    AutoGain : str or None
+    AutoGain : str | None
         Auto gain setting for the recording channel ['Y' or 'N'].
-    Comment : str or None
+    Comment : str | None
         User comments or notes for the schedule configuration.
-    Date : str or None
+    Date : str | None
         Date when the schedule action was started in YYYY-MM-DD format.
-    Duty : str or None
+    Duty : str | None
         Duty cycle percentage of the transmitter (0-100).
-    FFTStacks : str or None
+    FFTStacks : str | None
         Number of FFT stacks used by the transmitter.
-    Filename : str or None
+    Filename : str | None
         Original filename that the ZEN instrument assigns to the recording.
-    Gain : str or None
+    Gain : str | None
         Gain setting for the recording channel (e.g., '1.0000').
-    Log : str or None
+    Log : str | None
         Data logging enabled flag ['Y' or 'N'].
-    NewFile : str or None
+    NewFile : str | None
         Create new file for recording flag ['Y' or 'N'].
-    Period : str or None
+    Period : str | None
         Base period setting for the transmitter in seconds.
-    RadioOn : str or None
+    RadioOn : str | None
         Radio communication enabled flag ['Y', 'N', or 'X'].
-    SR : str or None
+    SR : str | None
         Sampling rate in Hz (originally 'S/R' in file, converted to 'SR').
-    SamplesPerAcq : str or None
+    SamplesPerAcq : str | None
         Number of samples per acquisition for transmitter mode.
-    Sleep : str or None
+    Sleep : str | None
         Sleep mode enabled flag ['Y' or 'N'].
-    Sync : str or None
+    Sync : str | None
         GPS synchronization enabled flag ['Y' or 'N'].
-    Time : str or None
+    Time : str | None
         Time when the schedule action started in HH:MM:SS format (GPS time).
     initial_start : MTime
         Parsed start time as MTime object with GPS time flag enabled.
         Combines Date and Time attributes for timestamp calculation.
-    fn : Union[str, Path] or None
+    fn : str | pathlib.Path | None
         Path to the Z3D file being processed.
-    fid : BinaryIO or None
+    fid : BinaryIO | None
         File object for reading the Z3D file.
-    meta_string : bytes or None
+    meta_string : bytes | None
         Raw schedule metadata string read from the file.
     _header_len : int
         Length of Z3D file header in bytes (512).
@@ -148,8 +143,8 @@ class Z3DSchedule:
 
     def __init__(
         self,
-        fn: Optional[Union[str, Path]] = None,
-        fid: Optional[BinaryIO] = None,
+        fn: str | Path | None = None,
+        fid: BinaryIO | None = None,
         **kwargs: Any,
     ) -> None:
         """
@@ -157,7 +152,7 @@ class Z3DSchedule:
 
         Parameters
         ----------
-        fn : Union[str, Path], optional
+        fn : str | pathlib.Path, optional
             Path to Z3D file. Can be string or pathlib.Path object.
         fid : BinaryIO, optional
             Open file object for reading Z3D file in binary mode.
@@ -165,31 +160,31 @@ class Z3DSchedule:
             Additional attributes to set on the instance.
         """
         self.logger = logger
-        self.fn: Optional[Union[str, Path]] = fn
-        self.fid: Optional[BinaryIO] = fid
-        self.meta_string: Optional[bytes] = None
+        self.fn: str | Path | None = fn
+        self.fid: BinaryIO | None = fid
+        self.meta_string: bytes | None = None
 
         # Z3D file format constants
         self._schedule_metadata_len: int = 512
         self._header_len: int = 512
 
         # Schedule metadata attributes (all stored as strings from Z3D format)
-        self.AutoGain: Optional[str] = None
-        self.Comment: Optional[str] = None
-        self.Date: Optional[str] = None
-        self.Duty: Optional[str] = None
-        self.FFTStacks: Optional[str] = None
-        self.Filename: Optional[str] = None
-        self.Gain: Optional[str] = None
-        self.Log: Optional[str] = None
-        self.NewFile: Optional[str] = None
-        self.Period: Optional[str] = None
-        self.RadioOn: Optional[str] = None
-        self.SR: Optional[str] = None  # Sampling Rate (S/R becomes SR)
-        self.SamplesPerAcq: Optional[str] = None
-        self.Sleep: Optional[str] = None
-        self.Sync: Optional[str] = None
-        self.Time: Optional[str] = None
+        self.AutoGain: str | None = None
+        self.Comment: str | None = None
+        self.Date: str | None = None
+        self.Duty: str | None = None
+        self.FFTStacks: str | None = None
+        self.Filename: str | None = None
+        self.Gain: str | None = None
+        self.Log: str | None = None
+        self.NewFile: str | None = None
+        self.Period: str | None = None
+        self.RadioOn: str | None = None
+        self.SR: str | None = None  # Sampling Rate (S/R becomes SR)
+        self.SamplesPerAcq: str | None = None
+        self.Sleep: str | None = None
+        self.Sync: str | None = None
+        self.Time: str | None = None
 
         # Parsed start time with GPS correction
         self.initial_start: MTime = MTime(time_stamp=None)
@@ -199,7 +194,7 @@ class Z3DSchedule:
             setattr(self, key, value)
 
     def read_schedule(
-        self, fn: Optional[Union[str, Path]] = None, fid: Optional[BinaryIO] = None
+        self, fn: str | Path | None = None, fid: BinaryIO | None = None
     ) -> None:
         """
         Read and parse schedule metadata from Z3D file.
@@ -211,7 +206,7 @@ class Z3DSchedule:
 
         Parameters
         ----------
-        fn : Union[str, Path], optional
+        fn : str | pathlib.Path, optional
             Path to Z3D file to read. Overrides instance fn if provided.
             Can be string path or pathlib.Path object.
         fid : BinaryIO, optional
