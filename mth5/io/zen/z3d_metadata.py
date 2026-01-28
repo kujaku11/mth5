@@ -11,7 +11,7 @@ Created on Wed Aug 24 11:35:59 2022
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, BinaryIO, Dict, Optional, Union
+from typing import Any, BinaryIO
 
 import numpy as np
 from loguru import logger
@@ -26,7 +26,7 @@ class Z3DMetadata:
 
     Parameters
     ----------
-    fn : str or pathlib.Path, optional
+    fn : str | pathlib.Path, optional
         Full path to Z3D file.
     fid : BinaryIO, optional
         File object (e.g., open(Z3Dfile, 'rb')).
@@ -41,75 +41,75 @@ class Z3DMetadata:
         Length of metadata blocks (512).
     _schedule_metadata_len : int
         Length of schedule meta data (512).
-    board_cal : np.ndarray or None
+    board_cal : np.ndarray | None
         Board calibration array with frequency, rate, amplitude, phase.
-    cal_ant : str or None
+    cal_ant : str | None
         Antenna calibration information.
-    cal_board : dict or None
+    cal_board : dict | None
         Board calibration dictionary.
-    cal_ver : str or None
+    cal_ver : str | None
         Calibration version.
-    ch_azimuth : str or None
+    ch_azimuth : str | None
         Channel azimuth.
-    ch_cmp : str or None
+    ch_cmp : str | None
         Channel component.
-    ch_length : str or None
+    ch_length : str | None
         Channel length (or number of coils).
-    ch_number : str or None
+    ch_number : str | None
         Channel number on the ZEN board.
-    ch_xyz1 : str or None
+    ch_xyz1 : str | None
         Channel xyz location.
-    ch_xyz2 : str or None
+    ch_xyz2 : str | None
         Channel xyz location.
-    ch_cres : str or None
+    ch_cres : str | None
         Channel resistance.
-    coil_cal : np.ndarray or None
+    coil_cal : np.ndarray | None
         Coil calibration array (frequency, amplitude, phase).
-    fid : BinaryIO or None
+    fid : BinaryIO | None
         File object.
     find_metadata : bool
         Boolean flag for finding metadata.
-    fn : str or pathlib.Path or None
+    fn : str | pathlib.Path | None
         Full path to Z3D file.
-    gdp_operator : str or None
+    gdp_operator : str | None
         Operator of the survey.
-    gdp_progver : str or None
+    gdp_progver : str | None
         Program version.
-    gdp_temp : str or None
+    gdp_temp : str | None
         GDP temperature.
-    gdp_volt : str or None
+    gdp_volt : str | None
         GDP voltage.
-    job_by : str or None
+    job_by : str | None
         Job performed by.
-    job_for : str or None
+    job_for : str | None
         Job for.
-    job_name : str or None
+    job_name : str | None
         Job name.
-    job_number : str or None
+    job_number : str | None
         Job number.
-    line_name : str or None
+    line_name : str | None
         Survey line name.
     m_tell : int
         Location in the file where the last metadata block was found.
-    notes : str or None
+    notes : str | None
         Additional notes from metadata.
-    rx_aspace : str or None
+    rx_aspace : str | None
         Electrode spacing.
-    rx_sspace : str or None
+    rx_sspace : str | None
         Receiver spacing.
-    rx_xazimuth : str or None
+    rx_xazimuth : str | None
         X azimuth of electrode.
-    rx_xyz0 : str or None
+    rx_xyz0 : str | None
         Receiver xyz coordinates.
-    rx_yazimuth : str or None
+    rx_yazimuth : str | None
         Y azimuth of electrode.
     rx_zpositive : str
         Z positive direction (default 'down').
-    station : str or None
+    station : str | None
         Station name.
-    survey_type : str or None
+    survey_type : str | None
         Type of survey.
-    unit_length : str or None
+    unit_length : str | None
         Length units (m).
     count : int
         Counter for metadata blocks read.
@@ -125,57 +125,57 @@ class Z3DMetadata:
 
     def __init__(
         self,
-        fn: Optional[Union[str, Path]] = None,
-        fid: Optional[BinaryIO] = None,
+        fn: str | Path | None = None,
+        fid: BinaryIO | None = None,
         **kwargs: Any,
     ) -> None:
         self.logger = logger
-        self.fn: Optional[Union[str, Path]] = fn
-        self.fid: Optional[BinaryIO] = fid
+        self.fn: str | Path | None = fn
+        self.fid: BinaryIO | None = fid
         self.find_metadata: bool = True
-        self.board_cal: Optional[Union[list, np.ndarray]] = None
-        self.coil_cal: Optional[Union[list, np.ndarray]] = None
+        self.board_cal: list | np.ndarray | None = None
+        self.coil_cal: list | np.ndarray | None = None
         self._metadata_length: int = 512
         self._header_length: int = 512
         self._schedule_metadata_len: int = 512
         self.m_tell: int = 0
 
-        self.cal_ant: Optional[str] = None
-        self.cal_board: Optional[Dict[str, Any]] = None
-        self.cal_ver: Optional[str] = None
-        self.ch_azimuth: Optional[str] = None
-        self.ch_cmp: Optional[str] = None
-        self.ch_length: Optional[str] = None
-        self.ch_number: Optional[str] = None
-        self.ch_xyz1: Optional[str] = None
-        self.ch_xyz2: Optional[str] = None
-        self.ch_cres: Optional[str] = None
-        self.gdp_operator: Optional[str] = None
-        self.gdp_progver: Optional[str] = None
-        self.gdp_volt: Optional[str] = None
-        self.gdp_temp: Optional[str] = None
-        self.job_by: Optional[str] = None
-        self.job_for: Optional[str] = None
-        self.job_name: Optional[str] = None
-        self.job_number: Optional[str] = None
-        self.rx_aspace: Optional[str] = None
-        self.rx_sspace: Optional[str] = None
-        self.rx_xazimuth: Optional[str] = None
-        self.rx_xyz0: Optional[str] = None
-        self.rx_yazimuth: Optional[str] = None
+        self.cal_ant: str | None = None
+        self.cal_board: dict[str, Any] | None = None
+        self.cal_ver: str | None = None
+        self.ch_azimuth: str | None = None
+        self.ch_cmp: str | None = None
+        self.ch_length: str | None = None
+        self.ch_number: str | None = None
+        self.ch_xyz1: str | None = None
+        self.ch_xyz2: str | None = None
+        self.ch_cres: str | None = None
+        self.gdp_operator: str | None = None
+        self.gdp_progver: str | None = None
+        self.gdp_volt: str | None = None
+        self.gdp_temp: str | None = None
+        self.job_by: str | None = None
+        self.job_for: str | None = None
+        self.job_name: str | None = None
+        self.job_number: str | None = None
+        self.rx_aspace: str | None = None
+        self.rx_sspace: str | None = None
+        self.rx_xazimuth: str | None = None
+        self.rx_xyz0: str | None = None
+        self.rx_yazimuth: str | None = None
         self.rx_zpositive: str = "down"
-        self.line_name: Optional[str] = None
-        self.survey_type: Optional[str] = None
-        self.unit_length: Optional[str] = None
-        self.station: Optional[str] = None
+        self.line_name: str | None = None
+        self.survey_type: str | None = None
+        self.unit_length: str | None = None
+        self.station: str | None = None
         self.count: int = 0
-        self.notes: Optional[str] = None
+        self.notes: str | None = None
 
         for key in kwargs:
             setattr(self, key, kwargs[key])
 
     def read_metadata(
-        self, fn: Optional[Union[str, Path]] = None, fid: Optional[BinaryIO] = None
+        self, fn: str | Path | None = None, fid: BinaryIO | None = None
     ) -> None:
         """
         Read metadata from Z3D file.
@@ -186,7 +186,7 @@ class Z3DMetadata:
 
         Parameters
         ----------
-        fn : str or pathlib.Path, optional
+        fn : str | pathlib.Path, optional
             Full path to file. If None, uses the instance's fn attribute.
         fid : BinaryIO, optional
             Open file object. If None, uses the instance's fid attribute or

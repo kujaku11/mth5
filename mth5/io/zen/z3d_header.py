@@ -23,7 +23,7 @@ Updated August 2020 (JP)
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, BinaryIO, Optional, Union
+from typing import Any, BinaryIO
 
 import numpy as np
 from loguru import logger
@@ -36,7 +36,7 @@ class Z3DHeader:
 
     Parameters
     ----------
-    fn : str or pathlib.Path, optional
+    fn : str | pathlib.Path, optional
         Full path to Z3D file.
     fid : BinaryIO, optional
         File object (e.g., open(Z3Dfile, 'rb')).
@@ -47,57 +47,57 @@ class Z3DHeader:
     ----------
     _header_len : int
         Length of header in bits (512).
-    ad_gain : float or None
+    ad_gain : float | None
         Gain of channel.
-    ad_rate : float or None
+    ad_rate : float | None
         Sampling rate in Hz.
-    alt : float or None
+    alt : float | None
         Altitude of the station (not reliable).
-    attenchannelsmask : str or None
+    attenchannelsmask : str | None
         Attenuation channels mask.
-    box_number : float or None
+    box_number : float | None
         ZEN box number.
-    box_serial : str or None
+    box_serial : str | None
         ZEN box serial number.
-    channel : float or None
+    channel : float | None
         Channel number of the file.
-    channelserial : str or None
+    channelserial : str | None
         Serial number of the channel board.
     ch_factor : float
         Channel factor (default 9.536743164062e-10).
     channelgain : float
         Channel gain (default 1.0).
-    duty : float or None
+    duty : float | None
         Duty cycle of the transmitter.
-    fid : BinaryIO or None
+    fid : BinaryIO | None
         File object.
-    fn : str or pathlib.Path or None
+    fn : str | pathlib.Path | None
         Full path to Z3D file.
-    fpga_buildnum : float or None
+    fpga_buildnum : float | None
         Build number of one of the boards.
     gpsweek : int
         GPS week (default 1740).
-    header_str : bytes or None
+    header_str : bytes | None
         Full header string.
-    lat : float or None
+    lat : float | None
         Latitude of station in degrees.
-    logterminal : str or None
+    logterminal : str | None
         Log terminal setting.
-    long : float or None
+    long : float | None
         Longitude of the station in degrees.
-    main_hex_buildnum : float or None
+    main_hex_buildnum : float | None
         Build number of the ZEN box in hexadecimal.
-    numsats : float or None
+    numsats : float | None
         Number of GPS satellites.
     old_version : bool
         Whether this is an old version Z3D file (default False).
-    period : float or None
+    period : float | None
         Period of the transmitter.
-    tx_duty : float or None
+    tx_duty : float | None
         Transmitter duty cycle.
-    tx_freq : float or None
+    tx_freq : float | None
         Transmitter frequency.
-    version : float or None
+    version : float | None
         Version of the firmware.
 
     Examples
@@ -110,38 +110,38 @@ class Z3DHeader:
 
     def __init__(
         self,
-        fn: Optional[Union[str, Path]] = None,
-        fid: Optional[BinaryIO] = None,
+        fn: str | Path | None = None,
+        fid: BinaryIO | None = None,
         **kwargs: Any,
     ) -> None:
         self.logger = logger
 
-        self.fn: Optional[Union[str, Path]] = fn
-        self.fid: Optional[BinaryIO] = fid
+        self.fn: str | Path | None = fn
+        self.fid: BinaryIO | None = fid
 
-        self.header_str: Optional[bytes] = None
+        self.header_str: bytes | None = None
         self._header_len: int = 512
 
-        self.ad_gain: Optional[float] = None
-        self.ad_rate: Optional[float] = None
-        self.alt: Optional[float] = None
-        self.attenchannelsmask: Optional[str] = None
-        self.box_number: Optional[float] = None
-        self.box_serial: Optional[str] = None
-        self.channel: Optional[float] = None
-        self.channelserial: Optional[str] = None
-        self.duty: Optional[float] = None
-        self.fpga_buildnum: Optional[float] = None
+        self.ad_gain: float | None = None
+        self.ad_rate: float | None = None
+        self.alt: float | None = None
+        self.attenchannelsmask: str | None = None
+        self.box_number: float | None = None
+        self.box_serial: str | None = None
+        self.channel: float | None = None
+        self.channelserial: str | None = None
+        self.duty: float | None = None
+        self.fpga_buildnum: float | None = None
         self.gpsweek: int = 1740
-        self.lat: Optional[float] = None
-        self.logterminal: Optional[str] = None
-        self.long: Optional[float] = None
-        self.main_hex_buildnum: Optional[float] = None
-        self.numsats: Optional[float] = None
-        self.period: Optional[float] = None
-        self.tx_duty: Optional[float] = None
-        self.tx_freq: Optional[float] = None
-        self.version: Optional[float] = None
+        self.lat: float | None = None
+        self.logterminal: str | None = None
+        self.long: float | None = None
+        self.main_hex_buildnum: float | None = None
+        self.numsats: float | None = None
+        self.period: float | None = None
+        self.tx_duty: float | None = None
+        self.tx_freq: float | None = None
+        self.version: float | None = None
         self.old_version: bool = False
         self.ch_factor: float = 9.536743164062e-10
         self.channelgain: float = 1.0
@@ -167,7 +167,7 @@ class Z3DHeader:
         return f"ZEN{int(self.box_number):03}"
 
     def read_header(
-        self, fn: Optional[Union[str, Path]] = None, fid: Optional[BinaryIO] = None
+        self, fn: str | Path | None = None, fid: BinaryIO | None = None
     ) -> None:
         """
         Read the header information into appropriate attributes.
@@ -178,7 +178,7 @@ class Z3DHeader:
 
         Parameters
         ----------
-        fn : str or pathlib.Path, optional
+        fn : str | pathlib.Path, optional
             Full path to Z3D file. If None, uses the instance's fn attribute.
         fid : BinaryIO, optional
             File object (e.g., open(Z3Dfile, 'rb')). If None, uses the instance's
@@ -260,7 +260,7 @@ class Z3DHeader:
                     m_value = self.convert_value(m_key, m_value.strip())
                     setattr(self, m_key, m_value)
 
-    def convert_value(self, key_string: str, value_string: str) -> Union[float, str]:
+    def convert_value(self, key_string: str, value_string: str) -> float | str:
         """
         Convert the value to the appropriate units given the key.
 
