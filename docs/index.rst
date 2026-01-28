@@ -25,6 +25,7 @@ Welcome to MTH5's documentation!
     source/usage_v2
     source/structure
     source/ts
+    examples/notebooks/add_report.ipynb
     examples/notebooks/filters_example.ipynb
     examples/notebooks/remove_instrument_response_example.ipynb
     source/file_readers
