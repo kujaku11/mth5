@@ -33,6 +33,14 @@ Welcome to MTH5's documentation!
     source/examples
     source/parallel
     
+.. toctree::
+    :maxdepth: 2
+    :caption: MTH5 Validator:
+    
+    source/VALIDATOR_QUICKSTART.md
+    source/VALIDATOR_README.md
+    source/VALIDATOR_IMPLEMENTATION.md
+    
     
     
 .. toctree::
