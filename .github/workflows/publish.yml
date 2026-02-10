@@ -26,11 +26,16 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Install git-cliff
+      - name: Install tools
         run: |
+          pip install bump-my-version build
           sudo apt-get update
-          sudo apt-get install -y cargo
           cargo install git-cliff
+
+      - name: Set up Git user
+        run: |
+            git config --local user.email "github-actions@github.com"
+            git config --local user.name "GitHub Actions"
 
       - name: Detect dry-run mode
         id: dryrun
@@ -65,8 +70,6 @@ jobs:
       - name: Commit version bump
         if: steps.dryrun.outputs.dryrun == 'false'
         run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
           git add .
           git commit -m "Bump version (${{ steps.bump.outputs.type }}) [skip ci]" || echo "No changes to commit"
 
