@@ -1,19 +1,25 @@
 #!/usr/bin/env python
 """
-Build standalone MTH5 Validator executable using PyInstaller
+Build Standalone MTH5 Validator Executable
+===========================================
 
-This script creates a standalone executable for the MTH5 validator that can
-be distributed without requiring Python installation.
+Builds a lightweight executable (~20-30 MB) that only depends on h5py.
+
+Much smaller and simpler than the full mth5-based validator because:
+- No scipy/numpy/obspy dependencies
+- No matplotlib/pandas dependencies
+- No mth5 I/O stack
+- Just h5py + standard library
 
 Usage:
-    python build_executable.py
+    python build_standalone_validator.py
 
 Output:
-    dist/mth5-validator.exe (Windows)
+    dist/mth5-validator.exe (Windows) - ~20-30 MB
     dist/mth5-validator (Linux/Mac)
 
 Author: MTH5 Development Team
-Date: February 7, 2026
+Date: February 9, 2026
 """
 
 import os
@@ -23,104 +29,124 @@ import sys
 from pathlib import Path
 
 
-def check_pyinstaller():
-    """Check if PyInstaller is installed."""
+def check_dependencies():
+    """Check that required dependencies are installed."""
+    print("Checking dependencies...")
+
+    # Check h5py
+    try:
+        import h5py
+
+        print(f"  ✓ h5py {h5py.__version__}")
+    except ImportError:
+        print("  ✗ h5py not found - installing...")
+        os.system(f"{sys.executable} -m pip install h5py")
+
+    # Check PyInstaller
     try:
         import PyInstaller
 
-        print(f"✓ PyInstaller {PyInstaller.__version__} found")
+        print(f"  ✓ PyInstaller {PyInstaller.__version__}")
         return True
     except ImportError:
-        print("✗ PyInstaller not found")
-        print("\nInstalling PyInstaller...")
+        print("  ✗ PyInstaller not found - installing...")
         os.system(f"{sys.executable} -m pip install pyinstaller")
         try:
             import PyInstaller
 
-            print(f"✓ PyInstaller {PyInstaller.__version__} installed")
+            print(f"  ✓ PyInstaller {PyInstaller.__version__} installed")
             return True
         except ImportError:
-            print("✗ Failed to install PyInstaller")
+            print("  ✗ Failed to install PyInstaller")
             return False
 
 
 def clean_build_dirs():
     """Clean previous build artifacts."""
-    dirs_to_clean = ["build", "dist", "__pycache__"]
+    import stat
+    import time
+
+    def handle_remove_readonly(func, path, exc):
+        """Error handler for Windows read-only files."""
+        if func in (os.rmdir, os.remove, os.unlink):
+            try:
+                os.chmod(path, stat.S_IWRITE)
+                func(path)
+            except Exception:
+                pass
+
+    dirs_to_clean = ["build", "dist"]
     files_to_clean = ["*.spec"]
 
     print("\nCleaning previous build artifacts...")
+
     for dir_name in dirs_to_clean:
         if os.path.exists(dir_name):
-            shutil.rmtree(dir_name)
-            print(f"  Removed {dir_name}/")
+            try:
+                time.sleep(0.1)
+                shutil.rmtree(dir_name, onerror=handle_remove_readonly)
+                print(f"  Removed {dir_name}/")
+            except Exception as e:
+                print(f"  Warning: Could not fully remove {dir_name}/ ({e})")
 
     for pattern in files_to_clean:
         for file in Path(".").glob(pattern):
-            file.unlink()
-            print(f"  Removed {file}")
+            try:
+                file.unlink()
+                print(f"  Removed {file}")
+            except Exception as e:
+                print(f"  Warning: Could not remove {file} ({e})")
 
 
 def build_executable():
-    """Build the executable using PyInstaller."""
+    """Build the standalone validator executable."""
     import PyInstaller.__main__
 
-    # Determine platform-specific settings
     system = platform.system()
     exe_name = "mth5-validator"
     if system == "Windows":
         exe_name += ".exe"
 
-    print(f"\nBuilding executable for {system}...")
+    print(f"\nBuilding Standalone MTH5 Validator for {system}...")
     print("=" * 80)
 
-    # PyInstaller arguments
+    # Simple PyInstaller arguments - h5py + minimal numpy
     args = [
-        "mth5/utils/cli.py",  # Entry point
+        "mth5_validator_standalone.py",  # Standalone entry point
         "--onefile",  # Single executable
         f'--name={exe_name.replace(".exe", "")}',  # Output name
         "--console",  # Console application
         "--clean",  # Clean cache
-        # Hidden imports (h5py needs special handling)
+        # Collect h5py completely (includes numpy automatically)
+        "--collect-all=h5py",
         "--hidden-import=h5py.defs",
         "--hidden-import=h5py.utils",
         "--hidden-import=h5py._proxy",
         "--hidden-import=h5py.h5ac",
-        # Collect all submodules
-        "--collect-all=mt_metadata",
-        "--collect-all=mth5",
-        "--copy-metadata=mth5",
-        "--copy-metadata=mt_metadata",
         "--copy-metadata=h5py",
-        # Exclude unnecessary modules to reduce size
+        "--copy-metadata=numpy",
+        # Exclude heavy packages we don't need
         "--exclude-module=matplotlib",
+        "--exclude-module=scipy",
+        "--exclude-module=pandas",
         "--exclude-module=tkinter",
         "--exclude-module=PyQt5",
         "--exclude-module=PyQt6",
-        "--exclude-module=PySide2",
-        "--exclude-module=PySide6",
         "--exclude-module=jupyter",
-        "--exclude-module=notebook",
         "--exclude-module=IPython",
-        "--exclude-module=PIL",
         "--exclude-module=pytest",
+        "--exclude-module=obspy",
+        "--exclude-module=mt_metadata",
+        "--exclude-module=mth5",
         # Logging
         "--log-level=WARN",
     ]
 
-    # Add platform-specific options
-    if system == "Windows":
-        args.extend(
-            [
-                "--version-file=version_info.txt",  # Optional: version info
-            ]
-        )
-
     print("\nPyInstaller configuration:")
-    print(f"  Entry point: mth5/utils/cli.py")
+    print(f"  Entry point: mth5_validator_standalone.py")
     print(f"  Output name: {exe_name}")
     print(f"  Mode: Single file")
-    print(f"  Console: Yes")
+    print(f"  Dependencies: h5py only")
     print(f"  Platform: {system}")
 
     try:
@@ -178,8 +204,8 @@ def print_summary():
 
     if exe_path.exists():
         size_mb = exe_path.stat().st_size / (1024 * 1024)
-        print(f"\n✓ Executable created: {exe_path.absolute()}")
-        print(f"  Size: {size_mb:.1f} MB")
+        print(f"\n✓ Standalone executable created: {exe_path.absolute()}")
+        print(f"  Size: {size_mb:.1f} MB (lightweight - h5py only!)")
         print(f"  Platform: {system}")
 
         print("\n" + "-" * 80)
@@ -195,20 +221,20 @@ def print_summary():
         print(f"    {exe_path} validate data.mth5 --json")
 
         print("\n" + "-" * 80)
+        print("ADVANTAGES")
+        print("-" * 80)
+        print(f"\n  ✓ Small size: ~20-30 MB (vs 150+ MB for full mth5)")
+        print(f"  ✓ Simple dependencies: h5py only")
+        print(f"  ✓ No scipy/obspy/matplotlib bloat")
+        print(f"  ✓ Fast startup and execution")
+        print(f"  ✓ Standalone - no Python install needed")
+
+        print("\n" + "-" * 80)
         print("DISTRIBUTION")
         print("-" * 80)
         print(f"\n  The executable in dist/ can be distributed standalone.")
         print(f"  Users do NOT need Python or any dependencies installed.")
         print(f"  Copy {exe_name} to any system and run it directly.")
-
-        if system == "Windows":
-            print(f"\n  Windows Note:")
-            print(f"    First run may trigger Windows Defender.")
-            print(f"    Consider code signing for production distribution.")
-        elif system == "Darwin":
-            print(f"\n  macOS Note:")
-            print(f"    Users may need to allow in System Preferences > Security.")
-            print(f"    Consider signing and notarizing for distribution.")
     else:
         print(f"\n✗ Build failed - executable not found")
 
@@ -218,14 +244,20 @@ def print_summary():
 def main():
     """Main build process."""
     print("=" * 80)
-    print("MTH5 Validator - Standalone Executable Builder")
+    print("MTH5 Standalone Validator - Executable Builder")
     print("=" * 80)
     print(f"\nPlatform: {platform.system()} {platform.machine()}")
     print(f"Python: {sys.version.split()[0]}")
 
-    # Check PyInstaller
-    if not check_pyinstaller():
-        print("\n✗ Cannot proceed without PyInstaller")
+    # Check standalone script exists
+    if not Path("mth5_validator_standalone.py").exists():
+        print("\n✗ Error: mth5_validator_standalone.py not found!")
+        print("  Make sure you're running this from the mth5 repository root.")
+        sys.exit(1)
+
+    # Check dependencies
+    if not check_dependencies():
+        print("\n✗ Cannot proceed without required dependencies")
         sys.exit(1)
 
     # Clean previous builds
