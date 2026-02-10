@@ -686,7 +686,9 @@ class MTH5:
                 mth5_reader.close_mth5()
 
         **kwargs
-            Additional arguments passed to h5py.File()
+            Additional arguments passed to h5py.File(). Note that `libver='latest'`
+            is set by default for forward compatibility and SWMR support. You can
+            override this by explicitly passing a different libver value.
 
         Returns
         -------
@@ -727,7 +729,17 @@ class MTH5:
 
         Notes
         -----
-        SWMR mode allows one writer and multiple readers to access the same HDF5 file
+        **Default File Format**: As of MTH5 (with SWMR support), all files are created
+        with `libver='latest'` by default, using HDF5 file format version 3. This ensures:
+
+        - Compatibility with SWMR (Single Writer Multiple Reader) mode
+        - Support for modern HDF5 features
+        - Forward compatibility with future enhancements
+
+        Files created with `libver='latest'` are readable by h5py 2.10+ (2019) and
+        HDF5 1.10.0+ (2016). To use an older format, explicitly pass `libver='earliest'`.
+
+        **SWMR Mode**: SWMR mode allows one writer and multiple readers to access the same HDF5 file
         concurrently. This is useful for real-time data collection scenarios where
         data is being written while others need to read/process it.
 
@@ -735,12 +747,17 @@ class MTH5:
         restructure existing objects. Readers see a consistent view of the file
         and can access new data as it's flushed by the writer.
         """
+        # Set libver='latest' as default for forward compatibility and SWMR support
+        # Users can still override by explicitly passing a different libver
+        if "libver" not in kwargs:
+            kwargs["libver"] = "latest"
+
         # Handle SWMR mode configuration
         swmr = kwargs.get("swmr", single_writer_multiple_reader)
 
         # Validate SWMR usage
         if swmr:
-            # SWMR requires libver='latest'
+            # SWMR requires libver='latest' - ensure it's set even if user tried to override
             kwargs["libver"] = "latest"
 
             # Check mode compatibility
@@ -999,12 +1016,9 @@ class MTH5:
         ...     pass  # file closed automatically
         """
         try:
-            # update summary tables (only for writable files)
-            if self.h5_is_write():
-                # For SWMR writer, flush regularly to make data visible to readers
-                if self.is_swmr_mode():
-                    self.logger.info("Flushing SWMR writer before closing")
-
+            # update summary tables (only for writable files NOT in SWMR mode)
+            # In SWMR mode, we cannot delete/recreate tables, only append
+            if self.h5_is_write() and not self.is_swmr_mode():
                 self.channel_summary.summarize()
                 self.tf_summary.summarize()
                 try:
@@ -1012,7 +1026,12 @@ class MTH5:
                 except KeyError:
                     self.logger.info("Legacy file has no fc_summary dataset.")
 
+            # Always flush before closing
+            if self.h5_is_write():
                 self.__hdf5_obj.flush()
+                if self.is_swmr_mode():
+                    self.logger.info("Flushed SWMR writer before closing")
+
             self.logger.info(f"Flushing and closing {str(self.filename)}")
             self.__hdf5_obj.close()
         except (AttributeError, ValueError) as e:

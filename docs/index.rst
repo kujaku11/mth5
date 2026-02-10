@@ -47,6 +47,9 @@ Welcome to MTH5's documentation!
     :caption: Concurrent Access (SWMR):
     
     source/SWMR_GUIDE.md
+    source/SWMR_MIGRATION.md
+    source/SWMR_EXAMPLES_BASIC.md
+    source/SWMR_EXAMPLES_CONCURRENT.md
     
     
 .. toctree::
