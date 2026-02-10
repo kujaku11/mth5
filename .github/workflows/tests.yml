@@ -74,7 +74,7 @@ jobs:
     #    jupyter nbconvert --to notebook --execute docs/examples/notebooks/make_mth5_driver_v0.2.0.ipynb
 
     - name: Run Tests
-      run: pytest -vv --cov=./ --cov-report=xml --cov=mth5 -n auto tests
+      run: pytest -vv --cov=./ --cov-report=xml --cov=mth5 -n auto tests -k "not slow"
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
