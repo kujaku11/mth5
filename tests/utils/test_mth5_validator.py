@@ -13,6 +13,7 @@ from pathlib import Path
 
 import h5py
 import pytest
+from mt_metadata.timeseries import Station
 
 from mth5.mth5 import MTH5
 from mth5.utils.mth5_validator import MTH5Validator, validate_mth5_file
@@ -234,7 +235,7 @@ class TestValidatorIntegration:
             survey = m.add_survey("test_survey")
 
             # Add station with metadata
-            station_metadata = survey.stations_group.metadata.Station()
+            station_metadata = Station()
             station_metadata.id = "TEST001"
             station_metadata.location.latitude = 40.0
             station_metadata.location.longitude = -120.0
