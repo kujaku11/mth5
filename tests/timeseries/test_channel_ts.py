@@ -772,6 +772,20 @@ class TestChannelTSOperations:
         with subtests.test(name="component"):
             assert combined.channel_metadata.component == "ex"
 
+    def test_merge_operation(self, channel_pair, subtests):
+        """Test merge operation combines channels with gaps correctly"""
+        ch1, ch2 = channel_pair
+        merged = ch1.merge(ch2)
+
+        with subtests.test(name="data_size"):
+            assert merged.ts.size == 130
+
+        with subtests.test(name="sample_rate"):
+            assert merged.sample_rate == 1.0
+
+        with subtests.test(name="component"):
+            assert merged.channel_metadata.component == "ex"
+
 
 # =============================================================================
 # Run Tests

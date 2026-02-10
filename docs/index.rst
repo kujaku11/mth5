@@ -20,10 +20,12 @@ Welcome to MTH5's documentation!
     source/gotchas
     source/conventions
     source/mth5_format.ipynb
+    source/mth5_functionality_summary
     source/usage
     source/usage_v2
     source/structure
     source/ts
+    examples/notebooks/add_report.ipynb
     examples/notebooks/filters_example.ipynb
     examples/notebooks/remove_instrument_response_example.ipynb
     source/file_readers
@@ -31,6 +33,23 @@ Welcome to MTH5's documentation!
     source/examples
     source/parallel
     
+.. toctree::
+    :maxdepth: 2
+    :caption: MTH5 Validator:
+    
+    source/VALIDATOR_QUICKSTART.md
+    source/VALIDATOR_README.md
+    source/VALIDATOR_IMPLEMENTATION.md
+    
+    
+.. toctree::
+    :maxdepth: 2
+    :caption: Concurrent Access (SWMR):
+    
+    source/SWMR_GUIDE.md
+    source/SWMR_MIGRATION.md
+    source/SWMR_EXAMPLES_BASIC.md
+    source/SWMR_EXAMPLES_CONCURRENT.md
     
     
 .. toctree::

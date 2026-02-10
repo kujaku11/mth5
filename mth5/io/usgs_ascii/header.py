@@ -231,7 +231,9 @@ class AsciiMetadata:
             response = urlopen(nm_url)
         except HTTPError:
             self.logger.error("could not connect to get elevation from national map.")
-            self.logger.debug(nm_url.format(self.longitude, self.latitude))
+            self.logger.debug(
+                self.national_map_url.format(self.longitude, self.latitude)
+            )
             return self.station_metadata.location.elevation
         # read the json response and convert to a float.  Be defensive:
         # network requests may return non-json or empty responses in CI

@@ -13,6 +13,9 @@ Supported Clients include:
     * Phoenix MTU-5C
     * Zen
     * LEMI 424
+    * Phoenix legacy MTU (TODO)
+    * Metronix Geophysics
+    * USGS Geomagnetism
 
 
 Updated on Wed Aug  25 19:57:00 2021

@@ -16,7 +16,7 @@ Created on Wed Aug 31 10:32:44 2022
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 import pandas as pd
 
@@ -36,7 +36,7 @@ class NIMSCollection(Collection):
 
     Parameters
     ----------
-    file_path : str or Path, optional
+    file_path : str | Path | None, optional
         Path to the directory containing NIMS binary files.
     **kwargs : dict
         Additional keyword arguments passed to the parent Collection class.
@@ -61,13 +61,13 @@ class NIMSCollection(Collection):
     mth5.io.nims.NIMS : NIMS file reader
     """
 
-    def __init__(self, file_path: Union[str, Path, None] = None, **kwargs: Any) -> None:
+    def __init__(self, file_path: str | Path | None = None, **kwargs: Any) -> None:
         """
         Initialize NIMSCollection instance.
 
         Parameters
         ----------
-        file_path : str or Path, optional
+        file_path : str | Path | None, optional
             Path to the directory containing NIMS binary files.
         **kwargs : dict
             Additional keyword arguments passed to the parent Collection class.
@@ -78,9 +78,9 @@ class NIMSCollection(Collection):
 
     def to_dataframe(
         self,
-        sample_rates: Union[int, list[int]] = [1],
+        sample_rates: int | list[int] = [1],
         run_name_zeros: int = 2,
-        calibration_path: Union[str, Path, None] = None,
+        calibration_path: str | Path | None = None,
     ) -> pd.DataFrame:
         """
         Create a DataFrame of each NIMS binary file in the collection directory.
@@ -91,13 +91,13 @@ class NIMSCollection(Collection):
 
         Parameters
         ----------
-        sample_rates : int or list of int, default [1]
+        sample_rates : int | list[int], default [1]
             Sample rates to include in the DataFrame. Note that for NIMS data,
             this parameter is present for interface consistency but all files
             will be processed regardless of their sample rate.
         run_name_zeros : int, default 2
             Number of zeros to use when formatting run names in the output.
-        calibration_path : str or Path, optional
+        calibration_path : str | Path | None, optional
             Path to calibration files. Currently not used in NIMS processing
             but included for interface consistency.
 

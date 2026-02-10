@@ -38,6 +38,9 @@ Repository = "https://github.com/kujaku11/mth5"
 Documentation = "https://mth5.readthedocs.io/"
 "Bug Tracker" = "https://github.com/kujaku11/mth5/issues"
 
+[project.scripts]
+mth5-cli = "mth5.utils.cli:main"
+
 [project.optional-dependencies]
 obspy = ["obspy"]
 test = [
@@ -83,7 +86,8 @@ mth5 = [
 [tool.pytest.ini_options]
 markers = [
     "performance: mark test as performance test",
-    "integration: mark test as integration test"
+    "integration: mark test as integration test",
+    "slow: mark test as slow running"
 ]
 addopts = "--ignore=setup.py"
 testpaths = ["tests"]

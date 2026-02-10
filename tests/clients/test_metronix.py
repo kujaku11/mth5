@@ -97,9 +97,10 @@ def configured_metronix_client(temp_dir, temp_save_path):
 
 
 @pytest.fixture
-@requires_test_data
 def real_data_client(temp_save_path):
     """Create MetronixClient with real test data."""
+    if not has_test_data:
+        pytest.skip("Metronix test data not available")
     return MetronixClient(
         data_path=metronix_data_path,
         sample_rates=[128],
@@ -515,15 +516,17 @@ class TestMetronixClientMakeMTH5:
 class TestMetronixClientIntegration:
     """Integration tests using real data from mth5_test_data."""
 
-    @requires_test_data
     def test_real_data_client_initialization(self, real_data_client):
         """Test client initializes correctly with real data path."""
+        if not has_test_data:
+            pytest.skip("Metronix test data not available")
         assert real_data_client.data_path == metronix_data_path
         assert real_data_client.collection.file_path == metronix_data_path
 
-    @requires_test_data
     def test_real_data_get_run_dict(self, real_data_client):
         """Test get_run_dict with real Metronix data."""
+        if not has_test_data:
+            pytest.skip("Metronix test data not available")
         try:
             run_dict = real_data_client.get_run_dict(run_name_zeros=3)
 
@@ -546,12 +549,14 @@ class TestMetronixClientIntegration:
             # Real data might have empty dataframes or missing attributes
             pytest.skip(f"Real data structure issue: {e}")
 
-    @requires_test_data
     @pytest.mark.parametrize("run_name_zeros", [0, 2, 3])
     def test_real_data_different_zeros(
         self, metronix_data_path_fixture, run_name_zeros
     ):
         """Test run name zeros parameter with real data."""
+        if not has_test_data:
+            pytest.skip("Metronix test data not available")
+
         if not metronix_data_path_fixture:
             pytest.skip("Metronix test data not available")
 
@@ -576,9 +581,10 @@ class TestMetronixClientIntegration:
             # Real data might have empty dataframes or missing keys
             pytest.skip(f"Real data structure issue: {e}")
 
-    @requires_test_data
     def test_real_data_survey_extraction(self, real_data_client):
         """Test survey ID extraction from real data."""
+        if not has_test_data:
+            pytest.skip("Metronix test data not available")
         try:
             run_dict = real_data_client.get_run_dict()
 
