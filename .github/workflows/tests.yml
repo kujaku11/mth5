@@ -51,6 +51,7 @@ jobs:
         conda install pytest-subtests
         conda install pytest-xdist[psutil]
         conda install pytest-benchmark
+        pip install setuptools
         pip install mt_metadata[obspy]
         pip install git+https://github.com/kujaku11/mth5_test_data.git
     - name: Install Our Package
