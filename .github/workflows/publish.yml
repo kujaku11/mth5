@@ -2,24 +2,34 @@ name: Publish on PR merge
 
 on:
   pull_request:
-    types: [closed]
+    types: [opened, synchronize, reopened, labeled]
     branches:
       - master
 
 permissions:
   contents: write
   id-token: write
+  pull-requests: write
 
 jobs:
-  publish-testpypi:
-    if: github.event.pull_request.merged == true
+  update-version-and-changelog:
+    # Run when PR has release labels (but not yet merged)
+    if: |
+      github.event.pull_request.merged == false && (
+        contains(github.event.pull_request.labels.*.name, 'release:major') ||
+        contains(github.event.pull_request.labels.*.name, 'release:minor') ||
+        contains(github.event.pull_request.labels.*.name, 'release:patch') ||
+        contains(github.event.pull_request.labels.*.name, 'release-dry-run')
+      )
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out repository
+      - name: Check out PR branch
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.head_ref }}
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -34,8 +44,8 @@ jobs:
 
       - name: Set up Git user
         run: |
-            git config --local user.email "github-actions@github.com"
-            git config --local user.name "GitHub Actions"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
 
       - name: Detect dry-run mode
         id: dryrun
@@ -67,16 +77,6 @@ jobs:
         env:
           BMV_ALLOW_DIRTY: "true"
 
-      - name: Commit version bump
-        if: steps.dryrun.outputs.dryrun == 'false'
-        run: |
-          git add .
-          git commit -m "Bump version (${{ steps.bump.outputs.type }}) [skip ci]" || echo "No changes to commit"
-
-      - name: Push changes
-        if: steps.dryrun.outputs.dryrun == 'false'
-        run: git push
-
       - name: Extract version
         id: version
         run: |
@@ -88,12 +88,49 @@ jobs:
           git cliff -o CHANGELOG.md
           echo "Generated changelog for version ${{ steps.version.outputs.version }}"
 
-      - name: Commit changelog
+      - name: Commit and push changes to PR branch
         if: steps.dryrun.outputs.dryrun == 'false'
         run: |
-          git add CHANGELOG.md
-          git commit -m "Update changelog for version ${{ steps.version.outputs.version }}" || echo "No changes"
-          git push
+          git add .
+          git commit -m "chore: bump version to ${{ steps.version.outputs.version }} and update changelog [skip ci]" || echo "No changes to commit"
+          git push origin HEAD:${{ github.head_ref }}
+
+      - name: Comment on PR
+        if: steps.dryrun.outputs.dryrun == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `✅ Version bumped to **${{ steps.version.outputs.version }}** and changelog updated. Please review the changes before merging.`
+            })
+
+  publish-after-merge:
+    # Run only after PR is merged
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install tools
+        run: pip install bump-my-version build
+
+      - name: Extract version
+        id: version
+        run: |
+          VERSION=$(bump-my-version show current)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -101,22 +138,20 @@ jobs:
           tag_name: v${{ steps.version.outputs.version }}
           name: v${{ steps.version.outputs.version }}
           body_path: CHANGELOG.md
-          draft: ${{ steps.dryrun.outputs.dryrun }}
           generate_release_notes: false
 
       - name: Build package
         run: python -m build
 
       - name: Publish to TestPyPI
-        if: steps.dryrun.outputs.dryrun == 'false'
         uses: pypa/gh-action-pypi-publish@v1.10.0
         with:
           repository-url: https://test.pypi.org/legacy/
-          skip-existing: false
+          skip-existing: true
 
   publish-pypi:
-    needs: publish-testpypi
-    if: needs.publish-testpypi.result == 'success'
+    needs: publish-after-merge
+    if: needs.publish-after-merge.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -125,7 +160,17 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Build package
+        run: |
+          pip install build
+          python -m build
+
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@v1.10.0
         with:
-          skip-existing: false
+          skip-existing: true
