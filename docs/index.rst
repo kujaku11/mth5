@@ -42,6 +42,12 @@ Welcome to MTH5's documentation!
     source/VALIDATOR_IMPLEMENTATION.md
     
     
+.. toctree::
+    :maxdepth: 2
+    :caption: Concurrent Access (SWMR):
+    
+    source/SWMR_GUIDE.md
+    
     
 .. toctree::
     :maxdepth: 1

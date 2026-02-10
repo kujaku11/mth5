@@ -636,6 +636,7 @@ class MTH5:
         self,
         filename: str | Path | None = None,
         mode: str = "a",
+        single_writer_multiple_reader: bool = False,
         **kwargs,
     ) -> MTH5:
         """
@@ -658,6 +659,32 @@ class MTH5:
             * 'w-' : Write, fail if exists (same as 'x')
             * 'r+' : Read/write, file must exist
 
+        single_writer_multiple_reader : bool, default False
+            Enable SWMR (Single Writer Multiple Reader) mode.
+
+            **Important SWMR Notes:**
+
+            - **Writer**: Use mode='a' or 'r+' on existing file. SWMR activated after opening.
+            - **Reader**: Use mode='r' with swmr=True. Multiple readers can access simultaneously.
+            - **File must exist**: Cannot create new files in SWMR mode.
+            - **Requires libver='latest'**: Automatically set when swmr=True.
+            - **Writer restrictions**: Once activated, writer cannot delete/restructure, only append.
+            - **Flushing**: Writer should regularly flush for readers to see updates.
+
+            Example (Writer)::
+
+                mth5_writer = MTH5()
+                mth5_writer.open_mth5('data.mth5', mode='a', single_writer_multiple_reader=True)
+                # Add/modify data
+                mth5_writer.close_mth5()
+
+            Example (Reader)::
+
+                mth5_reader = MTH5()
+                mth5_reader.open_mth5('data.mth5', mode='r', single_writer_multiple_reader=True)
+                # Read data while writer is active
+                mth5_reader.close_mth5()
+
         **kwargs
             Additional arguments passed to h5py.File()
 
@@ -669,7 +696,8 @@ class MTH5:
         Raises
         ------
         MTH5Error
-            If file is invalid or mode is not understood.
+            If file is invalid or mode is not understood, or if SWMR mode
+            cannot be activated.
 
         Examples
         --------
@@ -683,21 +711,75 @@ class MTH5:
         >>> mth5_obj = MTH5(file_version='0.2.0')
         >>> mth5_obj.open_mth5('new_file.mth5', 'w')
 
+        Open as SWMR writer:
+
+        >>> mth5_writer = MTH5()
+        >>> mth5_writer.open_mth5('existing.mth5', mode='a', single_writer_multiple_reader=True)
+
+        Open as SWMR reader:
+
+        >>> mth5_reader = MTH5()
+        >>> mth5_reader.open_mth5('existing.mth5', mode='r', single_writer_multiple_reader=True)
+
         See Also
         --------
         close_mth5 : Close the MTH5 file
+
+        Notes
+        -----
+        SWMR mode allows one writer and multiple readers to access the same HDF5 file
+        concurrently. This is useful for real-time data collection scenarios where
+        data is being written while others need to read/process it.
+
+        The writer can append data and create new objects, but cannot delete or
+        restructure existing objects. Readers see a consistent view of the file
+        and can access new data as it's flushed by the writer.
         """
+        # Handle SWMR mode configuration
+        swmr = kwargs.get("swmr", single_writer_multiple_reader)
+
+        # Validate SWMR usage
+        if swmr:
+            # SWMR requires libver='latest'
+            kwargs["libver"] = "latest"
+
+            # Check mode compatibility
+            if mode in ["w", "w-", "x"]:
+                msg = (
+                    f"SWMR mode cannot be used with mode='{mode}'. "
+                    "SWMR requires an existing file. Use mode='a' or 'r+' for writer, "
+                    "or mode='r' for reader."
+                )
+                self.logger.error(msg)
+                raise MTH5Error(msg)
+
+            # For readers (mode='r'), set swmr flag directly
+            if mode == "r":
+                kwargs["swmr"] = True
+                self.logger.info("Opening in SWMR reader mode")
+            # For writers (mode='a' or 'r+'), we'll activate SWMR after opening
+            elif mode in ["a", "r+"]:
+                # Don't set swmr flag yet - will activate after opening
+                kwargs.pop("swmr", None)
+                self.logger.info(
+                    f"Will activate SWMR writer mode after opening in '{mode}' mode"
+                )
+
         if filename is not None:
             self.__filename = filename
         if not isinstance(self.__filename, Path):
             self.__filename = Path(filename)
+
+        # Check if we need to activate SWMR writer mode after opening
+        activate_swmr_writer = swmr and mode in ["a", "r+"]
+
         if self.__filename.exists():
             if mode in ["w"]:
                 self.logger.warning(
                     f"{self.__filename.name} will be overwritten in 'w' mode"
                 )
                 try:
-                    self._initialize_file(mode)
+                    self._initialize_file(mode, **kwargs)
                 except OSError as error:
                     msg = (
                         f"{error}. Need to close any references to {self.__filename} first. "
@@ -711,16 +793,44 @@ class MTH5:
                     msg = "Input file is not a valid MTH5 file"
                     self.logger.error(msg)
                     raise MTH5Error(msg)
+
+                # Activate SWMR writer mode if requested
+                if activate_swmr_writer:
+                    try:
+                        self.__hdf5_obj.swmr_mode = True
+                        self.logger.info("SWMR writer mode activated successfully")
+                    except Exception as e:
+                        msg = (
+                            f"Failed to activate SWMR writer mode: {e}. "
+                            "Ensure no dataset/group handles are open and file was "
+                            "created with libver='latest'."
+                        )
+                        self.logger.error(msg)
+                        raise MTH5Error(msg)
+
             elif mode in ["r"]:
                 self.__hdf5_obj = h5py.File(self.__filename, mode=mode, **kwargs)
                 self._set_default_groups()
                 self.validate_file()
+                if swmr:
+                    self.logger.info("Opened in SWMR reader mode")
             else:
                 msg = f"mode {mode} is not understood"
                 self.logger.error(msg)
                 raise MTH5Error(msg)
         else:
+            if swmr:
+                msg = (
+                    "Cannot use SWMR mode on non-existent file. "
+                    f"File '{self.__filename}' does not exist. "
+                    "Create the file first without SWMR, then reopen with SWMR enabled."
+                )
+                self.logger.error(msg)
+                raise MTH5Error(msg)
+
             if mode in ["a", "w", "w-", "x"]:
+                # If creating a file that might be used with SWMR later,
+                # use libver='latest' if specified in kwargs
                 self._initialize_file(mode=mode, **kwargs)
             else:
                 msg = f"Cannot open new file in mode {mode} "
@@ -871,6 +981,9 @@ class MTH5:
         Flushes all data to disk, updates summary tables, and closes the file.
         Safe to call on already-closed files.
 
+        For SWMR writer mode, this ensures all pending data is flushed before
+        closing so readers can access the complete dataset.
+
         Examples
         --------
         >>> mth5_obj = MTH5()
@@ -886,8 +999,12 @@ class MTH5:
         ...     pass  # file closed automatically
         """
         try:
-            # update summary tables
+            # update summary tables (only for writable files)
             if self.h5_is_write():
+                # For SWMR writer, flush regularly to make data visible to readers
+                if self.is_swmr_mode():
+                    self.logger.info("Flushing SWMR writer before closing")
+
                 self.channel_summary.summarize()
                 self.tf_summary.summarize()
                 try:
@@ -901,6 +1018,45 @@ class MTH5:
         except (AttributeError, ValueError) as e:
             self.logger.error(f"Error in close_mth5: {e}")
             helpers.close_open_files()
+
+    def flush(self) -> None:
+        """
+        Flush data to disk without closing the file.
+
+        This is particularly important in SWMR writer mode to make new data
+        visible to readers. The writer should call this regularly after adding
+        or modifying data.
+
+        Examples
+        --------
+        >>> # SWMR writer adding data incrementally
+        >>> mth5_writer = MTH5()
+        >>> mth5_writer.open_mth5('data.mth5', 'a', single_writer_multiple_reader=True)
+        >>>
+        >>> # Add some data
+        >>> station = mth5_writer.add_station('STA001', survey='survey_01')
+        >>> mth5_writer.flush()  # Make it visible to readers
+        >>>
+        >>> # Add more data
+        >>> run = station.add_run('run_001')
+        >>> mth5_writer.flush()  # Readers can now see the run
+
+        Notes
+        -----
+        In SWMR mode, readers will not see new data until the writer flushes.
+        It's good practice to flush after each significant data addition.
+        """
+        if self.h5_is_write():
+            try:
+                self.__hdf5_obj.flush()
+                if self.is_swmr_mode():
+                    self.logger.debug(
+                        "Flushed SWMR writer - data now visible to readers"
+                    )
+                else:
+                    self.logger.debug("Flushed data to disk")
+            except Exception as e:
+                self.logger.warning(f"Error flushing file: {e}")
 
     def h5_is_write(self) -> bool:
         """
@@ -949,6 +1105,29 @@ class MTH5:
                     return True
                 return False
             except ValueError:
+                return False
+        return False
+
+    def is_swmr_mode(self) -> bool:
+        """
+        Check if file is currently in SWMR mode.
+
+        Returns
+        -------
+        bool
+            True if file is open in SWMR mode, False otherwise.
+
+        Examples
+        --------
+        >>> mth5_obj = MTH5()
+        >>> mth5_obj.open_mth5('test.mth5', 'a', single_writer_multiple_reader=True)
+        >>> mth5_obj.is_swmr_mode()
+        True
+        """
+        if isinstance(self.__hdf5_obj, h5py.File):
+            try:
+                return self.__hdf5_obj.swmr_mode
+            except (AttributeError, ValueError):
                 return False
         return False
 
