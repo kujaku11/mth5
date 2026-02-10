@@ -1,0 +1,9 @@
+[changelog]
+header = "Changelog"
+body = """
+All notable changes to this project will be documented in this file.
+"""
+
+[git]
+conventional_commits = true
+filter_unconventional = false

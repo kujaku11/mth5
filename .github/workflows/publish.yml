@@ -26,11 +26,11 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Install tools
+      - name: Install git-cliff
         run: |
-          pip install bump-my-version build
           sudo apt-get update
-          sudo apt-get install -y git-cliff
+          sudo apt-get install -y cargo
+          cargo install git-cliff
 
       - name: Detect dry-run mode
         id: dryrun
