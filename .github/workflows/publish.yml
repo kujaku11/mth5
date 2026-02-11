@@ -67,6 +67,7 @@ jobs:
         id: version
         run: |
           VERSION=$(bump-my-version show current)
+          echo "Extracted version: $VERSION"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Generate changelog
@@ -76,15 +77,17 @@ jobs:
 
       - name: Update HISTORY.rst
         run: |
-          # Convert CHANGELOG.md to rst and append to HISTORY.rst
+          # Convert CHANGELOG.md to rst and prepend to HISTORY.rst
           if [ -f CHANGELOG.md ]; then
             pandoc CHANGELOG.md -f markdown -t rst -o CHANGELOG.rst
             # Prepend new changelog to HISTORY.rst
             if [ -f HISTORY.rst ]; then
-              cat CHANGELOG.rst HISTORY.rst > HISTORY_temp.rst
+              cat HISTORY.rst CHANGELOG.rst > HISTORY_temp.rst
               mv HISTORY_temp.rst HISTORY.rst
+              echo "Updated HISTORY.rst with version ${{ steps.version.outputs.version }}"
             else
               mv CHANGELOG.rst HISTORY.rst
+              echo "Created HISTORY.rst"
             fi
           fi
 
