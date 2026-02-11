@@ -2,7 +2,7 @@ name: Publish on PR merge
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, labeled]
+    types: [opened, synchronize, reopened, labeled, closed]
     branches:
       - master
 
