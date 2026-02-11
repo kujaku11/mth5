@@ -18,8 +18,7 @@ jobs:
       github.event.pull_request.merged == false && (
         contains(github.event.pull_request.labels.*.name, 'release:major') ||
         contains(github.event.pull_request.labels.*.name, 'release:minor') ||
-        contains(github.event.pull_request.labels.*.name, 'release:patch') ||
-        contains(github.event.pull_request.labels.*.name, 'release-dry-run')
+        contains(github.event.pull_request.labels.*.name, 'release:patch')
       )
     runs-on: ubuntu-latest
 
@@ -38,23 +37,15 @@ jobs:
 
       - name: Install tools
         run: |
-          pip install bump-my-version build
+          pip install bump-my-version build pandoc
           sudo apt-get update
+          sudo apt-get install -y pandoc
           cargo install git-cliff
 
       - name: Set up Git user
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-
-      - name: Detect dry-run mode
-        id: dryrun
-        run: |
-          if [[ "${{ contains(github.event.pull_request.labels.*.name, 'release-dry-run') }}" == "true" ]]; then
-            echo "dryrun=true" >> $GITHUB_OUTPUT
-          else
-            echo "dryrun=false" >> $GITHUB_OUTPUT
-          fi
 
       - name: Determine version bump type
         id: bump
@@ -68,12 +59,7 @@ jobs:
           fi
 
       - name: Bump version
-        run: |
-          if [[ "${{ steps.dryrun.outputs.dryrun }}" == "true" ]]; then
-            echo "Dry run: version bump simulated"
-          else
-            bump-my-version bump ${{ steps.bump.outputs.type }}
-          fi
+        run: bump-my-version bump ${{ steps.bump.outputs.type }}
         env:
           BMV_ALLOW_DIRTY: "true"
 
@@ -88,28 +74,34 @@ jobs:
           git cliff -o CHANGELOG.md
           echo "Generated changelog for version ${{ steps.version.outputs.version }}"
 
+      - name: Update HISTORY.rst
+        run: |
+          # Convert CHANGELOG.md to rst and append to HISTORY.rst
+          if [ -f CHANGELOG.md ]; then
+            pandoc CHANGELOG.md -f markdown -t rst -o CHANGELOG.rst
+            # Prepend new changelog to HISTORY.rst
+            if [ -f HISTORY.rst ]; then
+              cat CHANGELOG.rst HISTORY.rst > HISTORY_temp.rst
+              mv HISTORY_temp.rst HISTORY.rst
+            else
+              mv CHANGELOG.rst HISTORY.rst
+            fi
+          fi
+
       - name: Commit and push changes to PR branch
-        if: steps.dryrun.outputs.dryrun == 'false'
         run: |
           git add .
           git commit -m "chore: bump version to ${{ steps.version.outputs.version }} and update changelog [skip ci]" || echo "No changes to commit"
           git push origin HEAD:${{ github.head_ref }}
 
-      - name: Comment on PR
-        if: steps.dryrun.outputs.dryrun == 'false'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `✅ Version bumped to **${{ steps.version.outputs.version }}** and changelog updated. Please review the changes before merging.`
-            })
-
   publish-after-merge:
-    # Run only after PR is merged
-    if: github.event.pull_request.merged == true
+    # Run only after PR is merged with release labels
+    if: |
+      github.event.pull_request.merged == true && (
+        contains(github.event.pull_request.labels.*.name, 'release:major') ||
+        contains(github.event.pull_request.labels.*.name, 'release:minor') ||
+        contains(github.event.pull_request.labels.*.name, 'release:patch')
+      )
     runs-on: ubuntu-latest
 
     steps:
@@ -148,27 +140,6 @@ jobs:
         with:
           repository-url: https://test.pypi.org/legacy/
           skip-existing: true
-
-  publish-pypi:
-    needs: publish-after-merge
-    if: needs.publish-after-merge.result == 'success'
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-
-      - name: Build package
-        run: |
-          pip install build
-          python -m build
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@v1.10.0
