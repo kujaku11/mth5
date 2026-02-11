@@ -13,8 +13,9 @@ permissions:
 
 jobs:
   update-version-and-changelog:
-    # Run when PR has release labels (but not yet merged)
+    # Run only when a release label is added (not on every push)
     if: |
+      github.event.action == 'labeled' &&
       github.event.pull_request.merged == false && (
         contains(github.event.pull_request.labels.*.name, 'release:major') ||
         contains(github.event.pull_request.labels.*.name, 'release:minor') ||
