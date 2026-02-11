@@ -185,4 +185,23 @@ History
 * 2026-01-20 — PR #306 — Pydantic updates and transition to pytest
 
 
-**Full Changelog**: https://github.com/kujaku11/mth5/compare/v0.6.0...v0.6.1
+**Full Changelog**: https://github.com/kujaku11/mth5/compare/v0.6.0...v0.6.1Changelog All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.

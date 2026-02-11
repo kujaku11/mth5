@@ -145,6 +145,7 @@ jobs:
         with:
           repository-url: https://test.pypi.org/legacy/
           skip-existing: true
+          attestations: false
 
       - name: Publish to PyPI
         if: steps.test-pypi.outcome == 'success'
