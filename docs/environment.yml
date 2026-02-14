@@ -10,8 +10,8 @@ dependencies:
   - ipython
   - jupyter_client
   - nbsphinx
+  - setuptools<=70
   - obspy
-  - setuptools
   - sphinx>=2.3
   - sphinx_rtd_theme>=0.4
   - sphinx-autoapi
