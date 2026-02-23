@@ -32,10 +32,11 @@ Features
     - Z3D
     - NIMS BIN
     - USGS ASCII
-    - LEMI
+    - LEMI (423 + 424)
     - StationXML + miniseed
     - Metronix (`atss` + `json`)
     - Phoenix (MTU5C)
+    - EDL
 
 Introduction
 -------------

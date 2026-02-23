@@ -44,6 +44,14 @@ class TestReader(unittest.TestCase):
         key, reader_function = reader.get_reader("mseed")
         self.assertEqual(key, "miniseed")
 
+    def test_get_reader_b423(self):
+        key, reader_function = reader.get_reader("b423")
+        self.assertEqual(key, "lemi423")
+
+    def test_get_reader_bx(self):
+        key, reader_function = reader.get_reader("bx")
+        self.assertEqual(key, "uoa_pr624")
+
     def test_get_reader_fail(self):
         self.assertRaises(ValueError, reader.get_reader, "dat")
 

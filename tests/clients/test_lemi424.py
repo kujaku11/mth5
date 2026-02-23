@@ -12,7 +12,7 @@ import unittest
 
 from pathlib import Path
 
-from mth5.clients.lemi424 import LEMI424Client
+from mth5.clients.lemi import LEMIClient
 
 # =============================================================================
 
@@ -20,7 +20,7 @@ from mth5.clients.lemi424 import LEMI424Client
 class TestClientBase(unittest.TestCase):
     def setUp(self):
         self.file_path = Path(__file__).parent.joinpath("test.h5")
-        self.base = LEMI424Client(
+        self.base = LEMIClient(
             self.file_path.parent, **{"h5_mode": "w", "h5_driver": "sec2"}
         )
 
@@ -65,10 +65,10 @@ class TestClientBase(unittest.TestCase):
             self.assertEqual(self.base.save_path, self.file_path)
 
     def test_initial_fail_None(self):
-        self.assertRaises(ValueError, LEMI424Client, None)
+        self.assertRaises(ValueError, LEMIClient, None)
 
     def test_initial_fail_bad_directory(self):
-        self.assertRaises(IOError, LEMI424Client, r"a:\\")
+        self.assertRaises(IOError, LEMIClient, r"a:\\")
 
 
 # =============================================================================
