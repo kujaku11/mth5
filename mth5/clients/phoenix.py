@@ -102,6 +102,8 @@ class PhoenixClient(ClientBase):
                 self._receiver_calibration_dict = {}
                 key = receiver_path.stem.split("_")[0]
                 self._receiver_calibration_dict[key] = receiver_path
+        elif value is None:
+            pass
         else:
             raise TypeError(f"type {type(value)} not supported.")
 
@@ -159,6 +161,8 @@ class PhoenixClient(ClientBase):
                     raise IOError(f"Could not find {cal_path}")
                 key = cal_path.stem.split("_")[0]
                 self._sensor_calibration_dict[key] = PhoenixCalibration(cal_path)
+        elif value is None:
+            pass
         else:
             raise ValueError("calibration_path cannot be None")
 
