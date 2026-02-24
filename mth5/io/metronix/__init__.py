@@ -9,7 +9,8 @@ Created on Fri Nov 22 13:55:28 2024
 # Imports
 # =============================================================================
 from .metronix_metadata import MetronixFileNameMetadata, MetronixChannelJSON
-from .metronix_atss import ATSS, read_atss
+from .metronix_atss import ATSS # , read_atss
+from .read import read_metronix
 from .metronix_collection import MetronixCollection
 
 # =============================================================================
@@ -18,6 +19,6 @@ __all__ = [
     "MetronixFileNameMetadata",
     "MetronixChannelJSON",
     "ATSS",
-    "read_atss",
+    "read_metronix",
     "MetronixCollection",
 ]
