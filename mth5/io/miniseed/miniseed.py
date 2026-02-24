@@ -12,8 +12,11 @@ Created on Wed Sep 30 10:20:12 2020
 # Imports
 # =============================================================================
 from pathlib import Path
-from mth5.timeseries import RunTS
+
 from obspy import read as obspy_read
+
+from mth5.timeseries import RunTS
+
 
 # =============================================================================
 # read seismic file

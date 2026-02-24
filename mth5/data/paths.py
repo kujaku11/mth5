@@ -2,12 +2,13 @@
 Sets up paths for synthetic data testing.
 
 """
+import errno
 import pathlib
 import tempfile
-import errno
+from typing import Optional, Union
 
 from loguru import logger
-from typing import Optional, Union
+
 
 DEFAULT_SANDBOX_PATH = pathlib.Path(__file__).parent.resolve()
 
@@ -23,7 +24,7 @@ class SyntheticTestPaths:
     def __init__(
         self,
         sandbox_path: Optional[Union[pathlib.Path, None]] = None,
-        ascii_data_path: Optional[Union[pathlib.Path, None]] = None
+        ascii_data_path: Optional[Union[pathlib.Path, None]] = None,
     ):
         """
 
@@ -68,7 +69,6 @@ class SyntheticTestPaths:
             msg = f"mth5_path {self.mth5_path} is not writable -- cannot make test data"
             raise IOError(msg)
 
-
     def mkdirs(self) -> None:
         """
         Makes the directories that the tests will write results to.
@@ -92,7 +92,7 @@ def _is_writable(path: pathlib.Path) -> bool:
 
     """
     try:
-        testfile = tempfile.TemporaryFile(dir = path)
+        testfile = tempfile.TemporaryFile(dir=path)
         testfile.close()
     except OSError as e:
         if e.errno == errno.EACCES:  # 13
@@ -100,6 +100,7 @@ def _is_writable(path: pathlib.Path) -> bool:
         e.filename = path
         raise
     return True
+
 
 # def main():
 #     print(DEFAULT_SANDBOX_PATH.absolute())

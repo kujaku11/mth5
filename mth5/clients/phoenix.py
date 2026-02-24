@@ -12,11 +12,14 @@
 # =============================================================================
 from pathlib import Path
 
-from mth5.mth5 import MTH5
+from mt_metadata.timeseries import AppliedFilter
+
 from mth5 import read_file
 from mth5.clients.base import ClientBase
 from mth5.io.phoenix import PhoenixCollection
 from mth5.io.phoenix.readers.calibrations import PhoenixCalibration
+from mth5.mth5 import MTH5
+
 
 # =============================================================================
 
@@ -24,14 +27,14 @@ from mth5.io.phoenix.readers.calibrations import PhoenixCalibration
 class PhoenixClient(ClientBase):
     def __init__(
         self,
-        data_path,
-        sample_rates=[150, 24000],
-        save_path=None,
-        receiver_calibration_dict={},
-        sensor_calibration_dict={},
-        mth5_filename="from_phoenix.h5",
-        **kwargs,
-    ):
+        data_path: str | Path,
+        sample_rates: list[int] = [150, 24000],
+        save_path: str | Path | None = None,
+        receiver_calibration_dict: dict | str | Path = {},
+        sensor_calibration_dict: dict | str | Path = {},
+        mth5_filename: str = "from_phoenix.h5",
+        **kwargs: dict,
+    ) -> None:
         super().__init__(
             data_path,
             save_path=save_path,
@@ -46,15 +49,47 @@ class PhoenixClient(ClientBase):
         self.collection = PhoenixCollection(self.data_path)
 
     @property
-    def receiver_calibration_dict(self):
-        """receiver calibrations"""
+    def receiver_calibration_dict(self) -> dict:
+        """Receiver calibrations.
+
+        Returns
+        -------
+        dict
+            Dictionary mapping receiver IDs to calibration file paths.
+
+        Examples
+        --------
+        >>> client = PhoenixClient('data/path')
+        >>> client.receiver_calibration_dict = {'RX001': Path('RX001_rxcal.json')}
+        >>> client.receiver_calibration_dict
+        {'RX001': Path('RX001_rxcal.json')}
+        """
         return self._receiver_calibration_dict
 
     @receiver_calibration_dict.setter
-    def receiver_calibration_dict(self, value):
+    def receiver_calibration_dict(self, value: dict | str | Path) -> None:
+        """Set receiver calibration dictionary from dict or path.
+
+        Parameters
+        ----------
+        value : dict or str or Path
+            Dictionary of calibrations or path to calibration files.
+
+        Raises
+        ------
+        TypeError
+            If value is not a dict, str, or Path.
+
+        Examples
+        --------
+        >>> client = PhoenixClient('data/path')
+        >>> client.receiver_calibration_dict = 'calibrations/'
+        >>> client.receiver_calibration_dict  # doctest: +SKIP
+        {'RX001': Path('calibrations/RX001_rxcal.json'), ...}
+        """
+        self._receiver_calibration_dict = {}
         if isinstance(value, dict):
             self._receiver_calibration_dict = value
-
         elif isinstance(value, (str, Path)):
             receiver_path = Path(value)
             if receiver_path.is_dir():
@@ -65,26 +100,50 @@ class PhoenixClient(ClientBase):
                     self._receiver_calibration_dict[fn.stem.split("_")[0]] = fn
             elif receiver_path.is_file():
                 self._receiver_calibration_dict = {}
-                self._receiver_calibration_dict[fn.stem.split("_")[0]] = receiver_path
+                key = receiver_path.stem.split("_")[0]
+                self._receiver_calibration_dict[key] = receiver_path
         else:
             raise TypeError(f"type {type(value)} not supported.")
 
     @property
-    def sensor_calibration_dict(self):
-        """Path to calibration data"""
+    def sensor_calibration_dict(self) -> dict:
+        """Sensor calibration dictionary.
+
+        Returns
+        -------
+        dict
+            Dictionary mapping sensor IDs to PhoenixCalibration objects.
+
+        Examples
+        --------
+        >>> client = PhoenixClient('data/path')
+        >>> client.sensor_calibration_dict = {'H001': PhoenixCalibration('H001_scal.json')}
+        >>> client.sensor_calibration_dict['H001']  # doctest: +SKIP
+        <PhoenixCalibration object>
+        """
         return self._sensor_calibration_dict
 
     @sensor_calibration_dict.setter
-    def sensor_calibration_dict(self, value):
+    def sensor_calibration_dict(self, value: dict | str | Path) -> None:
+        """Set sensor calibration dictionary from dict or path.
+
+        Parameters
+        ----------
+        value : dict or str or Path
+            Dictionary of calibrations or path to calibration files.
+
+        Raises
+        ------
+        ValueError
+            If value is not a dict, str, or Path.
+
+        Examples
+        --------
+        >>> client = PhoenixClient('data/path')
+        >>> client.sensor_calibration_dict = 'calibrations/'
+        >>> client.sensor_calibration_dict  # doctest: +SKIP
+        {'H001': <PhoenixCalibration object>, ...}
         """
-
-        :param value: DESCRIPTION
-        :type value: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
         if isinstance(value, dict):
             self._sensor_calibration_dict = value
         elif isinstance(value, (str, Path)):
@@ -92,31 +151,38 @@ class PhoenixClient(ClientBase):
             cal_path = Path(value)
             if cal_path.is_dir():
                 for fn in cal_path.glob("*scal.json"):
-                    self._sensor_calibration_dict[fn.stem.split("_")[0]] = (
-                        PhoenixCalibration(fn)
-                    )
-            self._calibration_path = Path(value)
-            if not self._calibration_path.exists():
-                raise IOError(f"Could not find {self._calibration_path}")
-
+                    self._sensor_calibration_dict[
+                        fn.stem.split("_")[0]
+                    ] = PhoenixCalibration(fn)
+            elif cal_path.is_file():
+                if not cal_path.exists():
+                    raise IOError(f"Could not find {cal_path}")
+                key = cal_path.stem.split("_")[0]
+                self._sensor_calibration_dict[key] = PhoenixCalibration(cal_path)
         else:
             raise ValueError("calibration_path cannot be None")
 
-    def make_mth5_from_phoenix(self, **kwargs):
+    def make_mth5_from_phoenix(self, **kwargs: dict) -> str | Path | None:
+        """Make an MTH5 from Phoenix files.
+
+        Split into runs, account for filters. Updates the MTH5 file with Phoenix data.
+
+        Parameters
+        ----------
+        **kwargs : dict
+            Optional keyword arguments to override instance attributes.
+
+        Returns
+        -------
+        str, Path, or None
+            Path to the saved MTH5 file.
+
+        Examples
+        --------
+        >>> client = PhoenixClient('data/path', save_path='output.h5')
+        >>> client.make_mth5_from_phoenix()
+        'output.h5'
         """
-        Make an MTH5 from Phoenix files.  Split into runs, account for filters
-
-        :param data_path: DESCRIPTION, defaults to None
-        :type data_path: TYPE, optional
-        :param sample_rates: DESCRIPTION, defaults to None
-        :type sample_rates: TYPE, optional
-        :param save_path: DESCRIPTION, defaults to None
-        :type save_path: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
-
         for key, value in kwargs.items():
             if value is not None:
                 setattr(self, key, value)
@@ -124,8 +190,7 @@ class PhoenixClient(ClientBase):
         run_dict = self.get_run_dict()
 
         with MTH5(**self.h5_kwargs) as m:
-
-            m.open_mth5(self.save_path, "w")
+            m.open_mth5(self.save_path, self.mth5_file_mode)
 
             for station_id, station_dict in run_dict.items():
                 collection_metadata = self.collection.metadata_dict[station_id]
@@ -162,7 +227,6 @@ class PhoenixClient(ClientBase):
                             continue
 
                         if ch_ts.component in ["h1", "h2", "h3"]:
-
                             # for phx coils from generic response curves
                             if (
                                 ch_ts.channel_metadata.sensor.id
@@ -177,8 +241,10 @@ class PhoenixClient(ClientBase):
                                 coil_fap = getattr(pc, key)
 
                                 # add filter
-                                ch_ts.channel_metadata.filter.name.append(coil_fap.name)
-                                ch_ts.channel_metadata.filter.applied.append(True)
+                                applied_filter = AppliedFilter(
+                                    name=coil_fap.name, applied=True, stage=1
+                                )
+                                ch_ts.channel_metadata.add_filter(applied_filter)
                                 ch_ts.channel_response.filters_list.append(coil_fap)
                             else:
                                 self.logger.warning(

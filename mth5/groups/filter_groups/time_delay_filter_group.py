@@ -2,7 +2,7 @@
 """
 Created on Wed Jun  9 09:01:55 2021
 
-:copyright: 
+:copyright:
     Jared Peacock (jpeacock@usgs.gov)
 
 :license: MIT
@@ -15,6 +15,7 @@ Created on Wed Jun  9 09:01:55 2021
 from mt_metadata.timeseries.filters import TimeDelayFilter
 
 from mth5.groups.base import BaseGroup
+
 
 # =============================================================================
 # TimeDelay Group

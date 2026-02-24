@@ -58,9 +58,7 @@ class Collection:
             setattr(self, key, value)
 
     def __str__(self):
-        lines = [
-            f"Collection for file type {self.file_ext} in {self._file_path}"
-        ]
+        lines = [f"Collection for file type {self.file_ext} in {self._file_path}"]
 
         return "\n".join(lines)
 
@@ -95,6 +93,7 @@ class Collection:
 
         if file_path is None:
             self._file_path = None
+            return
         if not isinstance(file_path, Path):
             file_path = Path(file_path)
         self._file_path = file_path
@@ -114,15 +113,46 @@ class Collection:
 
         """
 
-        if isinstance(extension, (list, tuple)):
-            fn_list = []
-            for ext in extension:
-                fn_list += list(self.file_path.rglob(f"*.{ext}"))
-        else:
-            fn_list = list(self.file_path.rglob(f"*.{extension}"))
-        return sorted(list(set(fn_list)))
+        if self.file_path is None:
+            return []
 
-    def to_dataframe(self):
+        fn_list = []
+
+        # If an empty extension is requested, return all files under the
+        # directory (rglob "*"), letting callers filter as needed.
+        if extension == "":
+            fn_list = list(self.file_path.rglob("*"))
+            return sorted([p for p in fn_list if p.is_file()])
+
+        # If a list/tuple was passed, expand each provided extension to
+        # include lower/upper forms so searches are case-insensitive.
+        if isinstance(extension, (list, tuple)):
+            exts = []
+            for e in list(extension):
+                if not e:
+                    continue
+                # add the original plus lower/upper variants, avoiding duplicates
+                for candidate in (e, e.lower(), e.upper()):
+                    if candidate not in exts:
+                        exts.append(candidate)
+        else:
+            # For a single extension string, search case-insensitively by
+            # including lower/upper forms to accommodate filesystems that
+            # may be case-sensitive (e.g., Linux CI runners).
+            exts = [extension, extension.lower(), extension.upper()]
+
+        seen = set()
+        for ext in exts:
+            if not ext:
+                continue
+            for p in self.file_path.rglob(f"*.{ext}"):
+                if p.is_file() and p not in seen:
+                    seen.add(p)
+                    fn_list.append(p)
+
+        return sorted(fn_list)
+
+    def to_dataframe(self, sample_rates=None, run_name_zeros=4, calibration_path=None):
         """
         Get a data frame of the file summary with column names:
 
@@ -141,20 +171,38 @@ class Collection:
             - **instrument_id**: instrument id
             - **calibration_fn**: calibration file
 
+        :param sample_rates: list of sample rates to process, defaults to None
+        :type sample_rates: list, optional
+        :param run_name_zeros: number of zeros in run name, defaults to 4
+        :type run_name_zeros: int, optional
+        :param calibration_path: path to calibration files, defaults to None
+        :type calibration_path: str or Path, optional
         :return: summary table of file names,
-        :rtype: TYPE
+        :rtype: pandas.DataFrame
 
         """
-        pass
+        import pandas as pd
 
-    def assign_run_names(self):
+        # Base implementation returns empty DataFrame with proper columns
+        # Subclasses should override this method
+        return pd.DataFrame(columns=self._columns)
+
+    def assign_run_names(self, df, zeros=4):
         """
+        Assign run names to a dataframe. This is a base method that should
+        be overridden by subclasses.
 
-        :return: DESCRIPTION
-        :rtype: TYPE
-
+        :param df: dataframe with file information
+        :type df: pandas.DataFrame
+        :param zeros: number of zeros in run name, defaults to 4
+        :type zeros: int, optional
+        :return: dataframe with run names assigned
+        :rtype: pandas.DataFrame
         """
-        pass
+        # Base implementation - subclasses should override this
+        if "run" not in df.columns:
+            df["run"] = "sr1_0001"  # Default run name
+        return df
 
     def _set_df_dtypes(self, df):
         """

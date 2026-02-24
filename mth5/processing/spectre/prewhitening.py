@@ -1,11 +1,12 @@
 """
     This module has methods for pre-whitening time series to reduce spectral leakage before FFT.
 """
+from typing import Literal
+
 import numpy as np
 import xarray as xr
-
 from loguru import logger
-from typing import Literal, Optional
+
 
 def apply_prewhitening(
     prewhitening_type: Literal["first difference", ""],
@@ -43,7 +44,7 @@ def apply_prewhitening(
 
 
 def apply_recoloring(
-    prewhitening_type: Literal["first difference", ],
+    prewhitening_type: Literal["first difference",],
     stft_obj: xr.Dataset,
 ) -> xr.Dataset:
     """

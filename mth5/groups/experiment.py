@@ -15,6 +15,7 @@ Created on Wed Dec 23 16:59:45 2020
 # =============================================================================
 from mth5.groups import BaseGroup, MasterSurveyGroup
 
+
 # =============================================================================
 # Experiment Group
 # =============================================================================
@@ -75,7 +76,6 @@ class ExperimentGroup(BaseGroup):
     """
 
     def __init__(self, group, **kwargs):
-
         super().__init__(group, **kwargs)
 
     @BaseGroup.metadata.getter

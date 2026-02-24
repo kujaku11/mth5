@@ -44,21 +44,19 @@ The PR6-24 digitizer has specific hardware gains and voltage dividers:
    - Boosts electrode signals before logger
    - **Files contain the AMPLIFIED voltage**
    - **Must divide by 10 to get true electrode potential**
-   - Why: Improves SNR over long cable runs
 
 **Sensor Configurations**:
 
-Broadband Mode:
+Broadband:
     - Magnetic: LEMI-120 induction coils
-    - Electric: Non-polarizing electrodes
     - Frequency response from external .rsp calibration files
+    - Electric: Must divide by terminal box gain (×10) then by dipole length
 
-Long-Period Mode:
+Long-Period:
     - Magnetic: Bartington Mag-03 fluxgates
       * Bx, By: 0.007 nT/μV (after removing voltage divider for Bz)
       * Bz: 0.0175 nT/μV = 0.007 nT/μV × 2.5 (includes divider correction)
-    - Electric: Non-polarizing electrodes
-      * Must divide by terminal box gain (×10) then by dipole length
+    - Electric: Must divide by terminal box gain (×10) then by dipole length
 
 **Conversion Formulas**:
 
@@ -99,7 +97,7 @@ For Broadband (LEMI-120):
     ... )
 
 
-Author: 
+Author: ben kay
 
 Date: 2025-11-12
 """
@@ -265,9 +263,8 @@ def create_efield_gain_filter() -> CoefficientFilter:
     :rtype: CoefficientFilter
 
     **Why this filter**:
-    The E-field terminal box contains a fixed ×10 pre-amplifier to boost
-    the electrode signals before transmission over long cables. This improves
-    SNR. The ASCII files contain the amplified voltage. To get the actual
+    The E-field terminal box contains a fixed ×10 pre-amplifier.
+    The ASCII files contain the amplified voltage. To get the actual
     electrode potential, divide by 10.
     """
     efield_filter = CoefficientFilter()

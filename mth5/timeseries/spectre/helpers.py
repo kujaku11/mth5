@@ -1,22 +1,23 @@
 """
-    This is a placeholder module for functions that are used in testing and development of spectrograms.
+This is a placeholder module for functions that are used in testing and development of spectrograms.
 """
 
+import pathlib
+from typing import List, Literal, Optional, Union
+
+import xarray as xr
 from loguru import logger
-from mt_metadata.transfer_functions.processing.aurora import DecimationLevel as AuroraDecimationLevel
-from mt_metadata.transfer_functions.processing.fourier_coefficients import Decimation as FCDecimation
-from mt_metadata.transfer_functions.processing.fourier_coefficients.decimation import fc_decimations_creator
-from mt_metadata.transfer_functions.processing.fourier_coefficients.decimation import get_degenerate_fc_decimation
+from mt_metadata.processing.fourier_coefficients import Decimation as FCDecimation
+from mt_metadata.processing.fourier_coefficients.decimation import (
+    fc_decimations_creator,
+    get_degenerate_fc_decimation,
+)
+
+import mth5
 from mth5.mth5 import MTH5
 from mth5.processing.spectre.stft import run_ts_to_stft_scipy
 from mth5.utils.helpers import path_or_mth5_object
-from typing import List, Literal, Optional, Union
 
-import mth5
-import numpy as np
-import pathlib
-import scipy.signal as ssig
-import xarray as xr
 
 GROUPBY_COLUMNS = ["survey", "station", "sample_rate"]
 
@@ -25,7 +26,7 @@ GROUPBY_COLUMNS = ["survey", "station", "sample_rate"]
 def add_fcs_to_mth5(
     m: MTH5,
     fc_decimations: Optional[Union[str, list]] = None,
-    groupby_columns: List[str] = GROUPBY_COLUMNS
+    groupby_columns: List[str] = GROUPBY_COLUMNS,
 ) -> None:
     """
     Add Fourier Coefficient Levels ot an existing MTH5.
@@ -62,7 +63,13 @@ def add_fcs_to_mth5(
     logger.debug(f"Detected {len(grouper)} unique station-sample_rate instances")
 
     # loop over groups
-    for (survey, station, sample_rate), group in grouper:  # TODO: is there a way to use the groupby_columns var instead of this tuple?
+    for (
+        survey,
+        station,
+        sample_rate,
+    ), group in (
+        grouper
+    ):  # TODO: is there a way to use the groupby_columns var instead of this tuple?
         msg = f"\n\n\nsurvey: {survey}, station: {station}, sample_rate {sample_rate}"
         logger.info(msg)
         station_obj = m.get_station(station, survey)
@@ -70,9 +77,7 @@ def add_fcs_to_mth5(
 
         # Get the FC decimation schemes if not provided -- note that this depends only on sample rate
         fc_decimations = _fc_decimations_from_sample_rate(
-            fc_decimations=fc_decimations,
-            sample_rate=sample_rate
-
+            fc_decimations=fc_decimations, sample_rate=sample_rate
         )
 
         # TODO: Make this a function that can be done using df.apply()
@@ -119,7 +124,7 @@ def add_fcs_to_mth5(
 
                 _add_spectrogram_to_mth5(
                     fc_decimation=fc_decimation,
-                    run_obj= run_obj,
+                    run_obj=run_obj,
                     run_xrds=run_xrds,
                     fc_group=fc_group,
                 )
@@ -128,17 +133,17 @@ def add_fcs_to_mth5(
 
 
 def _fc_decimations_from_sample_rate(
-    sample_rate:float,
+    sample_rate: float,
     fc_decimations: Optional[Union[str, list]] = None,
 ) -> Union[str, list]:
     """
-        Helper function to get some fc_decimations.
-        Really only seems to be used by add_fcs_to_mth5.
+    Helper function to get some fc_decimations.
+    Really only seems to be used by add_fcs_to_mth5.
 
-        Development Notes:
-            This function is probably overslicing the add_fcs_to_mth5 function
+    Development Notes:
+        This function is probably overslicing the add_fcs_to_mth5 function
 
-        :return fc_decimations:  This is an iterable of
+    :return fc_decimations:  This is an iterable of
     """
     # Get the FC decimation schemes if not provided -- note that this depend only on sample rate
     if not fc_decimations:
@@ -152,6 +157,7 @@ def _fc_decimations_from_sample_rate(
             fc_decimations = get_degenerate_fc_decimation(sample_rate)
 
     return fc_decimations
+
 
 def _add_spectrogram_to_mth5(
     fc_decimation: FCDecimation,
@@ -204,28 +210,28 @@ def _add_spectrogram_to_mth5(
 def read_back_fcs(
     m: Union[MTH5, pathlib.Path, str],
     mode: str = "r",
-    groupby_columns: List[str] = GROUPBY_COLUMNS
+    groupby_columns: List[str] = GROUPBY_COLUMNS,
 ) -> None:
     """
-        Loops over stations in the channel summary of input (m) grouping by common sample_rate.
-        Then loop over the runs in the corresponding FC Group.  Finally, within an fc_group,
-        loop decimation levels and read data to xarray.  Log info about the shape of the xarray.
+    Loops over stations in the channel summary of input (m) grouping by common sample_rate.
+    Then loop over the runs in the corresponding FC Group.  Finally, within an fc_group,
+    loop decimation levels and read data to xarray.  Log info about the shape of the xarray.
 
-        This is a helper function for tests.  It was used as a sanity check while debugging the FC files, and
-        also is a good example for how to access the data at each level for each channel.
+    This is a helper function for tests.  It was used as a sanity check while debugging the FC files, and
+    also is a good example for how to access the data at each level for each channel.
 
-        Development Notes:
-        The Time axis of the FC array changes from decimation_level to decimation_level.
-        The frequency axis will shape will depend on the window length that was used to perform STFT.
-        This is currently storing all (positive frequency) fcs by default, but future versions can
-        also have selected bands within an FC container.
+    Development Notes:
+    The Time axis of the FC array changes from decimation_level to decimation_level.
+    The frequency axis will shape will depend on the window length that was used to perform STFT.
+    This is currently storing all (positive frequency) fcs by default, but future versions can
+    also have selected bands within an FC container.
 
-        Parameters
-        ----------
-        m: Union[MTH5, pathlib.Path, str]
-            Either a path to an mth5, or an MTH5 object that the FCs will be read back from.
-        mode: str
-            The mode to open the MTH5 file in. Defualts to (r)ead only.
+    Parameters
+    ----------
+    m: Union[MTH5, pathlib.Path, str]
+        Either a path to an mth5, or an MTH5 object that the FCs will be read back from.
+    mode: str
+        The mode to open the MTH5 file in. Defualts to (r)ead only.
 
 
     """
@@ -283,7 +289,6 @@ def calibrate_stft_obj(
         Time series of calibrated Fourier coefficients
     """
     for channel_id in stft_obj.keys():
-
         channel = run_obj.get_channel(channel_id)
         channel_response = channel.channel_response
         if not channel_response.filters_list:
@@ -298,7 +303,7 @@ def calibrate_stft_obj(
             include_decimation=False, include_delay=False
         )
         indices_to_flip = [
-            i for i in indices_to_flip if channel.metadata.filter.applied[i]
+            i for i in indices_to_flip if channel.metadata.filters[i].applied
         ]
         filters_to_remove = [channel_response.filters_list[i] for i in indices_to_flip]
         if not filters_to_remove:

@@ -11,6 +11,7 @@ Subpackages
    mth5.data
    mth5.groups
    mth5.io
+   mth5.processing
    mth5.tables
    mth5.timeseries
    mth5.utils

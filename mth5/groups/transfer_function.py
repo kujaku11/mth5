@@ -1,53 +1,119 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Thu Mar 10 08:22:33 2022
+from __future__ import annotations
 
-@author: jpeacock
-"""
+
+"""Transfer function HDF5 helpers for MTH5."""
+
+from typing import Any, Iterable
 
 # =============================================================================
 # Imports
 # =============================================================================
 import numpy as np
-import xarray as xr
 import pandas as pd
+import xarray as xr
 
 from mth5.groups import BaseGroup, EstimateDataset
-from mth5.helpers import validate_name, from_numpy_type
+from mth5.helpers import from_numpy_type, validate_name
 from mth5.utils.exceptions import MTH5Error
 
+
+def _check_channel_in_output(
+    output_channels: Iterable[str] | None, channel: str
+) -> bool:
+    """Return ``True`` if ``channel`` is present in an output list.
+
+    Handles both normal lists and corrupted serialization from HDF5 attributes
+    (for example ``['"ex"', '"ey"']``).
+
+    Parameters
+    ----------
+    output_channels : Iterable[str] or None
+        Output channel names, potentially serialized oddly in HDF5 attributes.
+    channel : str
+        Channel name to search for.
+
+    Returns
+    -------
+    bool
+        ``True`` when the channel is detected, otherwise ``False``.
+
+    Examples
+    --------
+    >>> _check_channel_in_output(["ex", "ey"], "ex")
+    True
+    >>> _check_channel_in_output(['"ex"', '"ey"'], "ex")
+    True
+    >>> _check_channel_in_output([], "hx")
+    False
+    """
+    if not output_channels:
+        return False
+
+    # Handle normal case
+    if channel in output_channels:
+        return True
+
+    # Handle corrupted HDF5 attribute serialization case
+    # where ['ex', 'ey', 'hz'] becomes ['["ex"', '"ey"', '"hz"]']
+    for item in output_channels:
+        if isinstance(item, str):
+            # Check if the channel appears in the corrupted string
+            if f'"{channel}"' in item or f"'{channel}'" in item:
+                return True
+                # Also check for cases where the quotes are missing
+            if channel in item:
+                return True
+
+    return False
+
+
+from mt_metadata.timeseries import Electric, Magnetic, Run
 from mt_metadata.transfer_functions.core import TF
-from mt_metadata.transfer_functions.tf import (
-    StatisticalEstimate,
-    Run,
-    Electric,
-    Magnetic,
-)
+from mt_metadata.transfer_functions.tf.statistical_estimate import StatisticalEstimate
 
 
 # =============================================================================
 # Transfer Functions Group
 # =============================================================================
 class TransferFunctionsGroup(BaseGroup):
+    """Container for transfer functions under a station.
+
+    Each child group is a single transfer function estimation managed by
+    :class:`TransferFunctionGroup`.
+
+    Examples
+    --------
+    >>> from mth5 import mth5
+    >>> m5 = mth5.MTH5()
+    >>> _ = m5.open_mth5("/tmp/example.mth5", mode="a")
+    >>> station = m5.stations_group.add_station("mt01")
+    >>> tf_group = station.transfer_functions_group
+    >>> tf_group.groups_list
+    []
     """
-    Object to hold transfer functions
 
-    The is the high level group, all transfer functions for the station are
-    held here and each one will have its own TransferFunctionGroup.
-
-    This has add, get, remove_transfer_function.
-    """
-
-    def __init__(self, group, **kwargs):
+    def __init__(self, group: Any, **kwargs: Any) -> None:
         super().__init__(group, **kwargs)
 
-    def tf_summary(self, as_dataframe=True):
-        """
-        Summary of all transfer functions in this group
+    def tf_summary(self, as_dataframe: bool = True) -> pd.DataFrame | np.ndarray:
+        """Summarize transfer functions stored for the station.
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Parameters
+        ----------
+        as_dataframe : bool, default True
+            If ``True`` return a pandas DataFrame, otherwise a NumPy structured array.
 
+        Returns
+        -------
+        pandas.DataFrame or numpy.ndarray
+            Summary rows including station reference, location, and TF metadata.
+
+        Examples
+        --------
+        >>> summary = tf_group.tf_summary()
+        >>> summary.columns[:4].tolist()  # doctest: +SKIP
+        ['station_hdf5_reference', 'station', 'latitude', 'longitude']
         """
 
         tf_list = []
@@ -57,9 +123,7 @@ class TransferFunctionsGroup(BaseGroup):
 
             tf_entry["station_hdf5_reference"][:] = self.hdf5_group.parent.ref
             tf_entry["station"][:] = self.hdf5_group.parent.attrs["id"]
-            tf_entry["latitude"][:] = self.hdf5_group.parent.attrs[
-                "location.latitude"
-            ]
+            tf_entry["latitude"][:] = self.hdf5_group.parent.attrs["location.latitude"]
             tf_entry["longitude"][:] = self.hdf5_group.parent.attrs[
                 "location.longitude"
             ]
@@ -74,21 +138,14 @@ class TransferFunctionsGroup(BaseGroup):
             return pd.DataFrame(tf_list.flatten())
         return tf_list
 
-    def _update_time_period_from_tf(self, tf_object):
-        """
-
-        :param tf_object: DESCRIPTION
-        :type tf_object: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
+    def _update_time_period_from_tf(self, tf_object: TF) -> None:
+        """Propagate run time bounds from a TF object into station metadata."""
 
         if "1980" not in tf_object.station_metadata.time_period.start:
             if "1980" in self.hdf5_group.parent.attrs["time_period.start"]:
-                self.hdf5_group.parent.attrs["time_period.start"] = (
-                    tf_object.station_metadata.time_period.start
-                )
+                self.hdf5_group.parent.attrs[
+                    "time_period.start"
+                ] = tf_object.station_metadata.time_period.start.isoformat()
 
             elif (
                 self.hdf5_group.parent.attrs["time_period.start"]
@@ -98,15 +155,15 @@ class TransferFunctionsGroup(BaseGroup):
                     self.hdf5_group.parent.attrs["time_period.start"]
                     > tf_object.station_metadata.time_period.start
                 ):
-                    self.hdf5_group.parent.attrs["time_period.start"] = (
-                        tf_object.station_metadata.time_period.start
-                    )
+                    self.hdf5_group.parent.attrs[
+                        "time_period.start"
+                    ] = tf_object.station_metadata.time_period.start.isoformat()
 
         if "1980" not in tf_object.station_metadata.time_period.end:
             if "1980" in self.hdf5_group.parent.attrs["time_period.end"]:
-                self.hdf5_group.parent.attrs["time_period.end"] = (
-                    tf_object.station_metadata.time_period.end
-                )
+                self.hdf5_group.parent.attrs[
+                    "time_period.end"
+                ] = tf_object.station_metadata.time_period.end.isoformat()
 
             elif (
                 self.hdf5_group.parent.attrs["time_period.end"]
@@ -116,29 +173,31 @@ class TransferFunctionsGroup(BaseGroup):
                     self.hdf5_group.parent.attrs["time_period.end"]
                     > tf_object.station_metadata.time_period.end
                 ):
-                    self.hdf5_group.parent.attrs["time_period.end"] = (
-                        tf_object.station_metadata.time_period.end
-                    )
+                    self.hdf5_group.parent.attrs[
+                        "time_period.end"
+                    ] = tf_object.station_metadata.time_period.end.isoformat()
 
-    def add_transfer_function(self, name, tf_object=None):
-        """
-        Add a transfer function to the group
+    def add_transfer_function(
+        self, name: str, tf_object: TF | None = None
+    ) -> "TransferFunctionGroup":
+        """Add a transfer function group under this station.
 
-        :param name: name of the transfer function
-        :type name: string
-        :param tf_object: Transfer Function object
-        :type tf_object: :class:`mt_metadata.transfer_function.core.TF`
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Parameters
+        ----------
+        name : str
+            Transfer function identifier.
+        tf_object : TF, optional
+            Transfer function instance to seed metadata and datasets.
 
-        >>> from mth5.mth5 import MTH5
-        >>> m = MTH5()
-        >>> m.open_mth5("example.h5", "a")
-        >>> station_group = m.get_station("mt01", survey="test")
-        >>> tf_group = station_group.transfer_functions_group
-        >>> tf_group.add_transfer_function("mt01_4096", tf_object)
+        Returns
+        -------
+        TransferFunctionGroup
+            Wrapper for the created or existing transfer function.
 
-
+        Examples
+        --------
+        >>> tf_group = station.transfer_functions_group
+        >>> _ = tf_group.add_transfer_function("mt01_4096")
         """
         name = validate_name(name)
 
@@ -158,53 +217,54 @@ class TransferFunctionsGroup(BaseGroup):
 
         return tf_group
 
-    def get_transfer_function(self, tf_id):
-        """
-        Get transfer function from id
+    def get_transfer_function(self, tf_id: str) -> "TransferFunctionGroup":
+        """Return an existing transfer function by id.
 
-        :param tf_id: name of transfer function
-        :type tf_id: string
-        :return: Transfer function group
-        :rtype: :class:`mth5.groups.TransferFunctionGroup`
+        Parameters
+        ----------
+        tf_id : str
+            Name of the transfer function.
 
-        >>> from mth5.mth5 import MTH5
-        >>> m = MTH5()
-        >>> m.open_mth5("example.h5", "a")
-        >>> station_group = m.get_station("mt01", survey="test")
-        >>> tf_group = station_group.transfer_functions_group.get_transfer_function("mt01_4096")
+        Returns
+        -------
+        TransferFunctionGroup
+            Wrapper for the requested transfer function.
 
+        Raises
+        ------
+        MTH5Error
+            If the transfer function does not exist.
 
+        Examples
+        --------
+        >>> existing = station.transfer_functions_group.get_transfer_function("mt01_4096")
+        >>> existing.name  # doctest: +SKIP
+        'mt01_4096'
         """
 
         tf_id = validate_name(tf_id)
         try:
-            return TransferFunctionGroup(
-                self.hdf5_group[tf_id], **self.dataset_options
-            )
+            return TransferFunctionGroup(self.hdf5_group[tf_id], **self.dataset_options)
         except KeyError:
-            msg = (
-                f"{tf_id} does not exist, "
-                + "check station_list for existing names"
-            )
+            msg = f"{tf_id} does not exist, " + "check station_list for existing names"
             self.logger.debug("Error" + msg)
             raise MTH5Error(msg)
 
-    def remove_transfer_function(self, tf_id):
-        """
-        Remove a transfer function from the group
+    def remove_transfer_function(self, tf_id: str) -> None:
+        """Delete a transfer function reference from the station.
 
-        :param tf_id: DESCRIPTION
-        :type tf_id: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Parameters
+        ----------
+        tf_id : str
+            Transfer function name.
 
-        >>> from mth5.mth5 import MTH5
-        >>> m = MTH5()
-        >>> m.open_mth5("example.h5", "a")
-        >>> station_group = m.get_station("mt01", survey="test")
-        >>> tf_group = station_group.transfer_functions_group
+        Notes
+        -----
+        HDF5 deletion removes the reference only; storage is not reclaimed.
+
+        Examples
+        --------
         >>> tf_group.remove_transfer_function("mt01_4096")
-
         """
 
         tf_id = validate_name(tf_id)
@@ -217,33 +277,26 @@ class TransferFunctionsGroup(BaseGroup):
                 " what you want into another file."
             )
         except KeyError:
-            msg = (
-                f"{tf_id} does not exist, "
-                "check station_list for existing names"
-            )
+            msg = f"{tf_id} does not exist, " "check station_list for existing names"
             self.logger.debug("Error" + msg)
             raise MTH5Error(msg)
 
-    def get_tf_object(self, tf_id):
-        """
-        This is the function you want to use to get a proper
-        :class:`mt_metadata.transfer_functions.core.TF` object with all the
-        appropriate metadata.
+    def get_tf_object(self, tf_id: str) -> TF:
+        """Return a populated :class:`mt_metadata.transfer_functions.core.TF`.
 
+        Parameters
+        ----------
+        tf_id : str
+            Transfer function name to convert.
 
-        :param tf_id: name of the transfer function to get
-        :type tf_id: string
-        :return: Full transfer function with appropriate metadata
-        :rtype: :class:`mt_metadata.transfer_functions.core.TF`
+        Returns
+        -------
+        mt_metadata.transfer_functions.core.TF
+            Transfer function populated with metadata and estimates.
 
-        >>> from mth5.mth5 import MTH5
-        >>> m = MTH5()
-        >>> m.open_mth5("example.h5", "a")
-        >>> station_group = m.get_station("mt01", survey="test")
-        >>> tf_group = station_group.transfer_functions_group
-        >>> tf_object = tf_group.get_tf_object("mt01_4096")
-
-
+        Examples
+        --------
+        >>> tf_obj = tf_group.get_tf_object("mt01_4096")  # doctest: +SKIP
         """
 
         tf_group = self.get_transfer_function(tf_id)
@@ -252,11 +305,9 @@ class TransferFunctionsGroup(BaseGroup):
 
 
 class TransferFunctionGroup(BaseGroup):
-    """
-    Object to hold a single transfer function estimation
-    """
+    """Wrapper for a single transfer function estimation."""
 
-    def __init__(self, group, **kwargs):
+    def __init__(self, group: Any, **kwargs: Any) -> None:
         super().__init__(group, **kwargs)
 
         self._accepted_estimates = [
@@ -273,16 +324,14 @@ class TransferFunctionGroup(BaseGroup):
         self._period_metadata = StatisticalEstimate(
             **{
                 "name": "period",
-                "data_type": "float",
+                "data_type": "real",
                 "description": "Periods at which transfer function is estimated",
                 "units": "samples per second",
             }
         )
 
-    def has_estimate(self, estimate):
-        """
-        has estimate
-        """
+    def has_estimate(self, estimate: str) -> bool:
+        """Return ``True`` if an estimate exists and is populated."""
 
         if estimate in self.groups_list:
             est = self.get_estimate(estimate)
@@ -293,17 +342,16 @@ class TransferFunctionGroup(BaseGroup):
             est = self.get_estimate("transfer_function")
             if est.hdf5_dataset.shape == (1, 1, 1):
                 return False
-            elif (
-                "ex" in est.metadata.output_channels
-                and "ey" in est.metadata.output_channels
-            ):
+            elif _check_channel_in_output(
+                est.metadata.output_channels, "ex"
+            ) and _check_channel_in_output(est.metadata.output_channels, "ey"):
                 return True
             return False
         elif estimate in ["tipper"]:
             est = self.get_estimate("transfer_function")
             if est.hdf5_dataset.shape == (1, 1, 1):
                 return False
-            elif "hz" in est.metadata.output_channels:
+            elif _check_channel_in_output(est.metadata.output_channels, "hz"):
                 return True
             return False
         elif estimate in ["covariance"]:
@@ -327,14 +375,8 @@ class TransferFunctionGroup(BaseGroup):
         return False
 
     @property
-    def period(self):
-        """
-        Get period from hdf5_group["period"]
-
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
+    def period(self) -> np.ndarray | None:
+        """Return period array stored in ``period`` dataset, if present."""
 
         try:
             return self.hdf5_group["period"][()]
@@ -342,7 +384,7 @@ class TransferFunctionGroup(BaseGroup):
             return None
 
     @period.setter
-    def period(self, period):
+    def period(self, period: Any) -> None:
         if period is not None:
             period = np.array(period, dtype=float)
 
@@ -360,21 +402,43 @@ class TransferFunctionGroup(BaseGroup):
 
     def add_statistical_estimate(
         self,
-        estimate_name,
-        estimate_data=None,
-        estimate_metadata=None,
-        max_shape=(None, None, None),
-        chunks=True,
-        **kwargs,
-    ):
-        """
-        Add a StatisticalEstimate
+        estimate_name: str,
+        estimate_data: np.ndarray | xr.DataArray | None = None,
+        estimate_metadata: StatisticalEstimate | None = None,
+        max_shape: tuple[int | None, int | None, int | None] = (None, None, None),
+        chunks: bool = True,
+        **kwargs: Any,
+    ) -> EstimateDataset:
+        """Add a statistical estimate dataset.
 
-        :param estimate: DESCRIPTION
-        :type estimate: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Parameters
+        ----------
+        estimate_name : str
+            Dataset name.
+        estimate_data : numpy.ndarray or xarray.DataArray, optional
+            Estimate values; if ``None`` a placeholder array is created.
+        estimate_metadata : StatisticalEstimate, optional
+            Metadata describing the estimate.
+        max_shape : tuple of int or None, default (None, None, None)
+            Maximum shape for resizable datasets.
+        chunks : bool, default True
+            Chunking flag forwarded to HDF5 dataset creation.
 
+        Returns
+        -------
+        EstimateDataset
+            Wrapper combining dataset and metadata.
+
+        Raises
+        ------
+        TypeError
+            If ``estimate_data`` is not array-like.
+
+        Examples
+        --------
+        >>> est = tf_group.add_statistical_estimate("transfer_function")
+        >>> isinstance(est, EstimateDataset)
+        True
         """
 
         estimate_name = validate_name(estimate_name)
@@ -424,20 +488,14 @@ class TransferFunctionGroup(BaseGroup):
             estimate_dataset = self.get_estimate(estimate_metadata.name)
         return estimate_dataset
 
-    def get_estimate(self, estimate_name):
-        """
-        Get a statistical estimate dataset
-        """
+    def get_estimate(self, estimate_name: str) -> EstimateDataset:
+        """Return a statistical estimate dataset by name."""
         estimate_name = validate_name(estimate_name)
 
         try:
             estimate_dataset = self.hdf5_group[estimate_name]
-            estimate_metadata = StatisticalEstimate(
-                **dict(estimate_dataset.attrs)
-            )
-            return EstimateDataset(
-                estimate_dataset, dataset_metadata=estimate_metadata
-            )
+            estimate_metadata = StatisticalEstimate(**dict(estimate_dataset.attrs))
+            return EstimateDataset(estimate_dataset, dataset_metadata=estimate_metadata)
         except KeyError:
             msg = (
                 f"{estimate_name} does not exist, "
@@ -449,16 +507,8 @@ class TransferFunctionGroup(BaseGroup):
             self.logger.error(error)
             raise MTH5Error(error)
 
-    def remove_estimate(self, estimate_name):
-        """
-        remove a statistical estimate
-
-        :param estimate_name: DESCRIPTION
-        :type estimate_name: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
+    def remove_estimate(self, estimate_name: str) -> None:
+        """Remove a statistical estimate dataset reference."""
 
         estimate_name = validate_name(estimate_name.lower())
 
@@ -478,14 +528,23 @@ class TransferFunctionGroup(BaseGroup):
             self.logger.error(msg)
             raise MTH5Error(msg)
 
-    def to_tf_object(self):
-        """
-        Create a mt_metadata.transfer_function.core.TF object from the
-        estimates in the group
+    def to_tf_object(self) -> TF:
+        """Convert this group into a populated :class:`TF` object.
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Returns
+        -------
+        mt_metadata.transfer_functions.core.TF
+            TF instance with survey, station, runs, channels, period, and
+            estimate datasets applied.
 
+        Raises
+        ------
+        ValueError
+            If no period dataset is present.
+
+        Examples
+        --------
+        >>> tf_obj = tf_group.to_tf_object()  # doctest: +SKIP
         """
 
         tf_obj = TF()
@@ -534,9 +593,7 @@ class TransferFunctionGroup(BaseGroup):
                     run_obj.add_channel(ch_obj)
                 tf_obj.station_metadata.add_run(run_obj)
             except KeyError:
-                self.logger.info(
-                    f"Could not get run {run_id} for transfer function"
-                )
+                self.logger.info(f"Could not get run {run_id} for transfer function")
         if self.period is not None:
             tf_obj.period = self.period
         else:
@@ -558,16 +615,24 @@ class TransferFunctionGroup(BaseGroup):
         tf_obj.survey_metadata.update_time_period()
         return tf_obj
 
-    def from_tf_object(self, tf_obj, update_metadata=True):
-        """
-        Create data sets from a :class:`mt_metadata.transfer_function.core.TF`
-        object.
+    def from_tf_object(self, tf_obj: TF, update_metadata: bool = True) -> None:
+        """Populate datasets from a :class:`TF` object.
 
-        :param tf_obj: DESCRIPTION
-        :type tf_obj: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Parameters
+        ----------
+        tf_obj : TF
+            Transfer function object containing estimates and metadata.
+        update_metadata : bool, default True
+            If ``True`` write transfer function metadata to HDF5.
 
+        Raises
+        ------
+        ValueError
+            If ``tf_obj`` is not a ``TF`` instance.
+
+        Examples
+        --------
+        >>> tf_group.from_tf_object(tf_obj)  # doctest: +SKIP
         """
 
         if not isinstance(tf_obj, TF):
@@ -591,10 +656,6 @@ class TransferFunctionGroup(BaseGroup):
                 if estimate is not None:
                     _ = self.add_statistical_estimate(estimate_name, estimate)
                 else:
-                    self.logger.debug(
-                        f"Did not find {estimate_name} in TF. Skipping"
-                    )
+                    self.logger.debug(f"Did not find {estimate_name} in TF. Skipping")
             except AttributeError:
-                self.logger.debug(
-                    f"Did not find {estimate_name} in TF. Skipping"
-                )
+                self.logger.debug(f"Did not find {estimate_name} in TF. Skipping")

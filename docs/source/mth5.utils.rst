@@ -20,14 +20,6 @@ mth5.utils.extract\_subset\_mth5 module
    :undoc-members:
    :show-inheritance:
 
-mth5.utils.fc\_tools module
----------------------------
-
-.. automodule:: mth5.utils.fc_tools
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 mth5.utils.fdsn\_tools module
 -----------------------------
 

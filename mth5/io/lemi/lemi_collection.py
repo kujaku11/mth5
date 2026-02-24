@@ -11,14 +11,17 @@ Created on Wed Aug 31 10:32:44 2022
 @author: jpeacock
 """
 
+import pathlib
+from pathlib import Path
+from typing import List
+
 # =============================================================================
 # Imports
 # =============================================================================
 import pandas as pd
-import pathlib
 
 from mth5.io.collection import Collection
-from mth5.io.lemi import LEMI424, LEMI423Reader
+from mth5.io.lemi import LEMI424, LEMI423
 from typing import Optional
 
 # =============================================================================
@@ -45,8 +48,7 @@ class LEMICollection(Collection):
      data frames.
 
     .. note:: LEMI data comes with little metadata about the station or survey,
-     therefore you should assign `station_id` and `survey_id`. For LEMI-423,
-     station_id can be auto-detected from folder name.
+     therefore you should assign `station_id` and `survey_id`.
 
     :LEMI-423 Sample Rates:
         The LEMI-423 instrument supports the following sample rates:
@@ -98,17 +100,54 @@ class LEMICollection(Collection):
 
         self.station_id = "mt001"
         self.survey_id = "mt"
+        self.calibration_dict = {}
+
+    def get_calibrations(self, calibration_path: str | Path) -> dict:
+        """
+        Get calibration dictionary for LEMI424 files.  This assumes that the
+        calibrations files are in JSON format and named as
+        'LEMI-424-<component>.json'
+
+        Parameters
+        ----------
+        calibration_path : str or pathlib.Path
+            Path to calibration files
+
+        Returns
+        -------
+        dict
+            Calibration dictionary for LEMI424 files
+
+        Examples
+        --------
+        >>> from mth5.io.lemi import LEMICollection
+        >>> lc = LEMICollection("/path/to/single/lemi/station")
+        >>> cal_dict = lc.get_calibrations(Path("/path/to/calibrations"))
+        """
+        calibration_path = Path(calibration_path)
+
+        calibration_dict = {}
+        for fn in calibration_path.rglob("*.json"):
+            comp = fn.stem.split("-")[-1].split(".", 1)[0]
+            calibration_dict[comp] = fn
+
+        return calibration_dict
 
     def to_dataframe(
-        self, sample_rates=[1], run_name_zeros=4, calibration_path=None
-    ):
+        self,
+        sample_rates: int | List[int] | None = None,
+        run_name_zeros: int = 4,
+        calibration_path: str | Path | None = None,
+    ) -> pd.DataFrame:
         """
         Create a data frame of LEMI files (both .txt and .B423) in a directory.
 
         Automatically detects file type and uses appropriate reader. For LEMI-423
-        files, sample rate is auto-detected from the tick counter (max_tick + 1).
+        files, sample rate is auto-detected from the tick counter (max_tick + 1). 
 
-        .. note:: This assumes the given directory contains a single station
+        Notes
+        -----
+        This assumes the given directory contains a single station
 
         :param sample_rates: Sample rates to include (files with other rates are skipped). Defaults to [1].
          - LEMI-424: Use [1] (always 1 Hz)
@@ -140,6 +179,17 @@ class LEMICollection(Collection):
             >>> lemi_df = lc.to_dataframe(sample_rates=[1000])
 
         """
+        if sample_rates is None:
+            sample_rates = [1]
+
+        if calibration_path is None:
+            calibration_path = Path(self.file_path)
+        self.calibration_dict = self.get_calibrations(calibration_path)
+        if not self.calibration_dict:
+            self.logger.warning(
+                f"No calibration files found in {calibration_path}, "
+                "proceeding without calibrations."
+            )
 
         entries = []
         for fn in self.get_files(self.file_ext):
@@ -160,7 +210,7 @@ class LEMICollection(Collection):
 
             elif fn_path.suffix.lower() in ['.b423']:
                 # LEMI-423 reader - read header only for metadata
-                lemi_obj = LEMI423Reader([fn])
+                lemi_obj = LEMI423([fn])
                 # Read header to get metadata without loading full data
                 df, hdr = lemi_obj._read_one(fn_path)
                 lemi_obj.header = hdr
@@ -216,10 +266,11 @@ class LEMICollection(Collection):
 
         return df
 
-    def assign_run_names(self, df, zeros=4):
+    def assign_run_names(self, df: pd.DataFrame, zeros: int = 4) -> pd.DataFrame:
         """
         Assign run names based on start and end times and sample rates.
 
+        Checks if a file has the same start time as the last end time.
         Checks if a file has the same start time as the last end time.
         Run names are assigned as sr{sample_rate}_{run_number:0{zeros}}.
 

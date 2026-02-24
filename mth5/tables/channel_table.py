@@ -1,55 +1,66 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Mar 23 14:09:38 2022
+from __future__ import annotations
 
-@author: jpeacock
-"""
+
+"""Channel summary utilities for MTH5 tables."""
+
+from typing import Any, Iterable
+
+import h5py
+import numpy as np
 
 # =============================================================================
 # Imports
 # =============================================================================
 import pandas as pd
-import numpy as np
-import h5py
-
-from mth5 import CHANNEL_DTYPE, RUN_SUMMARY_COLUMNS
-from mth5.tables import MTH5Table
-
 from mt_metadata.transfer_functions import (
     ALLOWED_INPUT_CHANNELS,
     ALLOWED_OUTPUT_CHANNELS,
 )
 
+from mth5 import CHANNEL_DTYPE, RUN_SUMMARY_COLUMNS
+from mth5.tables import MTH5Table
+
+
 # =============================================================================
 
 
 class ChannelSummaryTable(MTH5Table):
-    """
-    Object to hold the channel summary and provide some convenience functions
-    like fill, to_dataframe ...
+    """Convenience wrapper around the channel summary dataset.
 
+    Provides helpers to summarize channels, convert to pandas, and derive
+    run-level summaries.
+
+    Examples
+    --------
+    >>> ch_table = ChannelSummaryTable(hdf5_dataset)
+    >>> df = ch_table.to_dataframe()  # doctest: +SKIP
+    >>> run_df = ch_table.to_run_summary()  # doctest: +SKIP
     """
 
-    def __init__(self, hdf5_dataset):
+    def __init__(self, hdf5_dataset: h5py.Dataset) -> None:
         super().__init__(hdf5_dataset, CHANNEL_DTYPE)
 
-    def _has_entries(self):
-        """
-        check if table has been summarized yet
-        """
+    def _has_entries(self) -> bool:
+        """Return ``True`` if the summary table contains data."""
 
         if len(self.array) == 1:
             if self.array[0][0] == b"" and self.array[0][1] == b"":
                 return False
         return True
 
-    def to_dataframe(self):
-        """
-        Create a pandas DataFrame from the table for easier querying.
+    def to_dataframe(self) -> pd.DataFrame:
+        """Convert the channel summary to a pandas DataFrame.
 
-        :return: Channel Summary
-        :rtype: :class:`pandas.DataFrame`
+        Returns
+        -------
+        pandas.DataFrame
+            Channel summary with decoded string columns and parsed datetimes.
 
+        Examples
+        --------
+        >>> df = ch_table.to_dataframe()  # doctest: +SKIP
+        >>> df.head()  # doctest: +SKIP
         """
 
         df = pd.DataFrame(self.array[()])
@@ -63,9 +74,7 @@ class ChannelSummaryTable(MTH5Table):
         ]:
             setattr(df, key, getattr(df, key).str.decode("utf-8"))
         try:
-            df.start = pd.to_datetime(
-                df.start.str.decode("utf-8"), format="mixed"
-            )
+            df.start = pd.to_datetime(df.start.str.decode("utf-8"), format="mixed")
             df.end = pd.to_datetime(df.end.str.decode("utf-8"), format="mixed")
         except ValueError:
             df.start = pd.to_datetime(df.start.str.decode("utf-8"))
@@ -73,32 +82,26 @@ class ChannelSummaryTable(MTH5Table):
 
         return df
 
-    def summarize(self):
-        """
-
-        :return: DESCRIPTION
-        :rtype: TYPE
-
-        """
+    def summarize(self) -> None:
+        """Populate the summary table from channel datasets in the file."""
 
         self.clear_table()
 
-        def has_data(h5_dataset):
-            """check to see if has data"""
+        def has_data(h5_dataset: h5py.Dataset) -> bool:
+            """Return True when the dataset has any non-zero data."""
             if len(h5_dataset) > 0:
                 if len(np.nonzero(h5_dataset)[0]) > 0:
                     return True
-                else:
-                    return False
+                return False
             return False
 
-        def get_channel_entry(group, dtype=CHANNEL_DTYPE):
+        def get_channel_entry(
+            group: h5py.Dataset, dtype: Any = CHANNEL_DTYPE
+        ) -> np.ndarray:
             ch_entry = np.array(
                 [
                     (
-                        group.parent.parent.parent.parent.attrs["id"].encode(
-                            "utf-8"
-                        ),
+                        group.parent.parent.parent.parent.attrs["id"].encode("utf-8"),
                         group.parent.parent.attrs["id"].encode("utf-8"),
                         group.parent.attrs["id"].encode("utf-8"),
                         group.parent.parent.attrs["location.latitude"],
@@ -123,10 +126,8 @@ class ChannelSummaryTable(MTH5Table):
             )
             return ch_entry
 
-        def recursive_get_channel_entry(group):
-            """
-            a function to get channel entry
-            """
+        def recursive_get_channel_entry(group: h5py.Group | h5py.File) -> None:
+            """Traverse HDF5 tree and collect channel entries."""
             if isinstance(group, (h5py._hl.group.Group, h5py._hl.files.File)):
                 for key, node in group.items():
                     recursive_get_channel_entry(node)
@@ -151,70 +152,31 @@ class ChannelSummaryTable(MTH5Table):
 
     def to_run_summary(
         self,
-        allowed_input_channels=ALLOWED_INPUT_CHANNELS,
-        allowed_output_channels=ALLOWED_OUTPUT_CHANNELS,
-        sortby=["station", "start"],
-    ):
-        """
-        Method for compressing an mth5 channel_summary into a "run summary" which
-        has one row per run (not one row per channel)
-
-        Devlopment Notes:
-        TODO: replace station_id with station, and run_id with run
-        Note will need to modify: aurora/tests/config$ more test_dataset_dataframe.py
-        TODO: Add logic for handling input and output channels based on channel
-        summary.  Specifically, consider the case where there is no vertical magnetic
-        field, this information is available via ch_summary, and output channels should
-        then not include hz.
-        TODO: Just inherit all the run-level and higher el'ts of the channel_summary,
-        including n_samples?
-
-        When creating the dataset dataframe, make it have these columns:
-        [
-                "channel_scale_factors",
-                "duration",
-                "end",
-                "has_data",
-                "input_channels",
-                "mth5_path",
-                "n_samples",
-                "output_channels",
-                "run",
-                "sample_rate",
-                "start",
-                "station",
-                "survey",
-                "hdf5_reference",
-                "run_hdf5_reference",
-                "station_hdf5_reference",
-            ]
+        allowed_input_channels: Iterable[str] = ALLOWED_INPUT_CHANNELS,
+        allowed_output_channels: Iterable[str] = ALLOWED_OUTPUT_CHANNELS,
+        sortby: list[str] | None = None,
+    ) -> pd.DataFrame:
+        """Compress channel summary into a run-level summary (one row per run).
 
         Parameters
         ----------
-        ch_summary: mth5.tables.channel_table.ChannelSummaryTable or pandas DataFrame
-           If its a dataframe it is a representation of an mth5 channel_summary.
-            Maybe restricted to only have certain stations and runs before being passed to
-            this method
-        allowed_input_channels: list of strings
-            Normally ["hx", "hy", ]
-            These are the allowable input channel names for the processing.  See further
-            note under allowed_output_channels.
-        allowed_output_channels: list of strings
-            Normally ["ex", "ey", "hz", ]
-            These are the allowable output channel names for the processing.
-            A global list of these is kept at the top of this module.  The purpose of
-            this is to distinguish between runs that have different layouts, for example
-            some runs will have hz and some will not, and we cannot process for hz the
-            runs that do not have it.  By making this a kwarg we sort of prop the door
-            open for more general names (see issue #74).
-        sortby: bool or list
-            Default: ["station_id", "start"]
+        allowed_input_channels : Iterable[str], optional
+            Allowed input channel names, by default ``ALLOWED_INPUT_CHANNELS``.
+        allowed_output_channels : Iterable[str], optional
+            Allowed output channel names, by default ``ALLOWED_OUTPUT_CHANNELS``.
+        sortby : list of str or None, optional
+            Columns to sort by; defaults to ``["station", "start"]`` when ``None``.
 
         Returns
         -------
-        run_summary_df: pd.Dataframe
-            A table with one row per "acquistion run" that was in the input channel
-            summary table
+        pandas.DataFrame
+            Run-level summary including channels, durations, and references.
+
+        Examples
+        --------
+        >>> run_df = ch_table.to_run_summary()  # doctest: +SKIP
+        >>> run_df.columns[:4].tolist()  # doctest: +SKIP
+        ['survey', 'station', 'run', 'start']
         """
 
         if not self._has_entries():
@@ -256,6 +218,8 @@ class ChannelSummaryTable(MTH5Table):
             row_list.append(row)
 
         run_summary_df = pd.DataFrame(data=row_list)
+        if sortby is None:
+            sortby = ["station", "start"]
         if sortby:
             run_summary_df.sort_values(by=sortby, inplace=True)
 

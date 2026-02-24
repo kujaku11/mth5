@@ -1,6 +1,14 @@
 mth5.timeseries package
 =======================
 
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   mth5.timeseries.spectre
+
 Submodules
 ----------
 
@@ -40,6 +48,14 @@ mth5.timeseries.ts\_helpers module
 ----------------------------------
 
 .. automodule:: mth5.timeseries.ts_helpers
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+mth5.timeseries.xarray\_helpers module
+--------------------------------------
+
+.. automodule:: mth5.timeseries.xarray_helpers
    :members:
    :undoc-members:
    :show-inheritance:

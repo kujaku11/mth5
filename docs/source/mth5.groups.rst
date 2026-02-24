@@ -52,6 +52,22 @@ mth5.groups.fc\_dataset module
    :undoc-members:
    :show-inheritance:
 
+mth5.groups.feature\_dataset module
+-----------------------------------
+
+.. automodule:: mth5.groups.feature_dataset
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+mth5.groups.features module
+---------------------------
+
+.. automodule:: mth5.groups.features
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 mth5.groups.filters module
 --------------------------
 

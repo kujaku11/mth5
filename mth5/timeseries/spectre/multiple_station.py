@@ -14,24 +14,27 @@
 """
 
 from dataclasses import dataclass
-from loguru import logger
-from mth5.utils.exceptions import MTH5Error
-from mth5.timeseries.spectre.spectrogram import Spectrogram
-from typing import List, Literal, Optional, Tuple , Union
-import mth5.mth5
+from typing import List, Literal, Optional, Tuple, Union
+
 import numpy as np
 import pandas as pd
 import xarray as xr
+from loguru import logger
+
+import mth5.mth5
+from mth5.timeseries.spectre.spectrogram import Spectrogram
+from mth5.utils.exceptions import MTH5Error
 
 
 @dataclass
-class FCRunChunk():
+class FCRunChunk:
     """
 
     This class formalizes the required metadata to specify a chunk of a timeseries of Fourier coefficients.
 
     This may move to mt_metadata -- for now just use a dataclass as a prototype.
     """
+
     survey_id: str = "none"
     station_id: str = ""
     run_id: str = ""
@@ -54,7 +57,7 @@ class FCRunChunk():
 
 
 @dataclass
-class MultivariateLabelScheme():
+class MultivariateLabelScheme:
     """
     Class to store information about how a multivariate (MV) dataset will be lablelled.
 
@@ -78,12 +81,16 @@ class MultivariateLabelScheme():
     :param join_char: The string that is used to join the label elements.
 
     """
-    label_elements: tuple = "station", "component",
+
+    label_elements: tuple = (
+        "station",
+        "component",
+    )
     join_char: str = "_"
 
     @property
     def id(self) -> str:
-       return self.join(self.label_elements)
+        return self.join(self.label_elements)
 
     def join(self, elements: Union[list, tuple]) -> str:
         """
@@ -123,17 +130,18 @@ class MultivariateLabelScheme():
 
 class MultivariateDataset(Spectrogram):
     """
-        Here is a container for a multivariate spectral dataset.
-        The xarray is the main underlying item, but it will be useful to have functions that, for example returns a
-        list of the associated stations, or that return a list of channels that are associated with a station, etc.
+    Here is a container for a multivariate spectral dataset.
+    The xarray is the main underlying item, but it will be useful to have functions that, for example returns a
+    list of the associated stations, or that return a list of channels that are associated with a station, etc.
 
-        This is intended to be used as a multivariate spectral dotaset at one frequency band.
+    This is intended to be used as a multivariate spectral dotaset at one frequency band.
 
-        TODO: Consider making this an extension of Spectrogram
-        TODO: Rename this class to MultivariateSpectrogram.
+    TODO: Consider making this an extension of Spectrogram
+    TODO: Rename this class to MultivariateSpectrogram.
 
 
     """
+
     def __init__(
         self,
         dataset: xr.Dataset,
@@ -218,9 +226,7 @@ class MultivariateDataset(Spectrogram):
         return self._station_channels[station]
 
     def _get_station_channel_names(
-        self,
-        station: str,
-        multivariate_labels: bool = True
+        self, station: str, multivariate_labels: bool = True
     ) -> List[str]:
         """
 
@@ -240,10 +246,14 @@ class MultivariateDataset(Spectrogram):
 
         """
         station_channels = [
-                    x for x in self.channels if station == x.split(self.label_scheme.join_char)[0]
-                ]
+            x
+            for x in self.channels
+            if station == x.split(self.label_scheme.join_char)[0]
+        ]
         if not multivariate_labels:
-            station_channels = [x.split(self.label_scheme.join_char)[1] for x in station_channels]
+            station_channels = [
+                x.split(self.label_scheme.join_char)[1] for x in station_channels
+            ]
 
         return station_channels
 
@@ -251,7 +261,6 @@ class MultivariateDataset(Spectrogram):
         self,
         tf_station: str,
         with_fcs: bool = True,
-
     ):
         """
         tf_station: str
@@ -267,38 +276,35 @@ class MultivariateDataset(Spectrogram):
         -------
 
         """
-        pass
 
     # TODO: Replace with Spectrogram's covariance_matrix
     def cross_power(
-        self,
-        aweights: Optional[np.ndarray] = None,
-        bias: Optional[bool] = True
+        self, aweights: Optional[np.ndarray] = None, bias: Optional[bool] = True
     ) -> xr.DataArray:
         """
-            Calculate the cross-power from a multivariate, complex-valued array of Fourier coefficients.
+        Calculate the cross-power from a multivariate, complex-valued array of Fourier coefficients.
 
-            For a multivaraiate FC Dataset with n_time time windows, this returns an array with the same number of time
-            windows.  At each time _t_, the result is a covariance matrix.
+        For a multivaraiate FC Dataset with n_time time windows, this returns an array with the same number of time
+        windows.  At each time _t_, the result is a covariance matrix.
 
-            Caveats and Notes:
-              - This method calls numpy.cov, which means that the cross-power is computes as X@XH (rather than
-              XH@X). Sometimes X*XH is referred to as the Vozoff convention, whereas XH*X could be the
-              Bendat & Piersol convention.
-              - np.cov subtracts the meas before computing the cross terms.
-              - This methos will use the entire band of the spectrogram.
+        Caveats and Notes:
+          - This method calls numpy.cov, which means that the cross-power is computes as X@XH (rather than
+          XH@X). Sometimes X*XH is referred to as the Vozoff convention, whereas XH*X could be the
+          Bendat & Piersol convention.
+          - np.cov subtracts the meas before computing the cross terms.
+          - This methos will use the entire band of the spectrogram.
 
-            :param X: Multivariate time series as an xarray
-            :type X: xr.DataArray
-            :param aweights: This is a "passthrough" parameter to numpy.cov These relative weights are typically large for
-             observations considered "important" and smaller for observations considered less "important". If ``ddof=0``
-             the array of weights can be used to assign probabilities to observation vectors.
-            :type aweights: Optional[np.ndarray]
-            :param bias: bias=True normalizes by N instead of (N-1).
-            :type bias: bool
+        :param X: Multivariate time series as an xarray
+        :type X: xr.DataArray
+        :param aweights: This is a "passthrough" parameter to numpy.cov These relative weights are typically large for
+         observations considered "important" and smaller for observations considered less "important". If ``ddof=0``
+         the array of weights can be used to assign probabilities to observation vectors.
+        :type aweights: Optional[np.ndarray]
+        :param bias: bias=True normalizes by N instead of (N-1).
+        :type bias: bool
 
-            :rtype: xr.DataArray
-            :return: The covariance matrix of the data in xarray form.
+        :rtype: xr.DataArray
+        :return: The covariance matrix of the data in xarray form.
 
         """
         X = self.dataarray
@@ -311,11 +317,13 @@ class MultivariateDataset(Spectrogram):
         )
         return S
 
+
 # Weights vs masks
+
 
 def calculate_mask_from_feature(
     feature_series,
-    threshold_obj, # has lower/upper bound, can be -inf, inf
+    threshold_obj,  # has lower/upper bound, can be -inf, inf
 ):
     """
 
@@ -327,33 +335,34 @@ def calculate_mask_from_feature(
     mask2 = feature_series > threshold_obj.upper_bound
     return mask1 & mask2
 
+
 def calculate_weight_from_feature(
     feature_series,
-    threshold_obj, # has lower/upper bound, can be -inf, inf
+    threshold_obj,  # has lower/upper bound, can be -inf, inf
 ):
-        """
-            This calculates a weighting function based on the thresholds
-            and possibly some other info, such as the distribution of the features.
+    """
+        This calculates a weighting function based on the thresholds
+        and possibly some other info, such as the distribution of the features.
 
-            The weigth function is interpolated over the range of the feature values
-            and then evaluated at the feature values.
-        Parameters
-        ----------
-        feature_series
-        threshold_obj
+        The weigth function is interpolated over the range of the feature values
+        and then evaluated at the feature values.
+    Parameters
+    ----------
+    feature_series
+    threshold_obj
 
-        Returns
-        -------
+    Returns
+    -------
 
-        """
-        pass
+    """
+
 
 def merge_masks():
     """
-        calcualtes a "final mask" that is loaded and applied to the data
-        input to regression
+    calcualtes a "final mask" that is loaded and applied to the data
+    input to regression
     """
-    pass
+
 
 def merge_weights():
     """
@@ -363,17 +372,18 @@ def merge_weights():
     -------
 
     """
-    pass
+
 
 # TODO: add this method to tf-estimation right before robust regression.
 def apply_masks_and_weights():
     pass
 
+
 def make_multistation_spectrogram(
     m: mth5.mth5.MTH5,
     fc_run_chunks: list,
     label_scheme: Optional[MultivariateLabelScheme] = MultivariateLabelScheme(),
-    rtype: Optional[Literal["xrds"]] = None
+    rtype: Optional[Literal["xrds"]] = None,
 ) -> Union[xr.Dataset, MultivariateDataset]:
     """
 
@@ -414,7 +424,9 @@ def make_multistation_spectrogram(
         station_obj = m.get_station(fcrc.station_id, fcrc.survey_id)
         station_fc_group = station_obj.fourier_coefficients_group
         try:
-            run_fc_group = station_obj.fourier_coefficients_group.get_fc_group(fcrc.run_id)
+            run_fc_group = station_obj.fourier_coefficients_group.get_fc_group(
+                fcrc.run_id
+            )
         except MTH5Error as e:
             error_msg = f"Failed to get fc group {fcrc.run_id}"
             logger.error(error_msg)
@@ -422,7 +434,7 @@ def make_multistation_spectrogram(
             msg = f"{msg} {station_fc_group.groups_list}"
             logger.error(msg)
             logger.error(f"Maybe try adding FCs for {fcrc.run_id}")
-            raise e #MTH5Error(error_msg)
+            raise e  # MTH5Error(error_msg)
 
         fc_dec_level = run_fc_group.get_decimation_level(fcrc.decimation_level_id)
         if fcrc.channels:
@@ -436,9 +448,7 @@ def make_multistation_spectrogram(
         if fcrc.start:
             # TODO: Push slicing into the to_xarray() command so we only access what we need -- See issue #212
             cond = fc_dec_level_xrds.time >= fcrc.start_timestamp
-            msg = (
-                f"trimming  {sum(~cond.data)} samples to {fcrc.start} "
-            )
+            msg = f"trimming  {sum(~cond.data)} samples to {fcrc.start} "
             logger.info(msg)
             fc_dec_level_xrds = fc_dec_level_xrds.where(cond)
             fc_dec_level_xrds = fc_dec_level_xrds.dropna(dim="time")
@@ -446,15 +456,16 @@ def make_multistation_spectrogram(
         if fcrc.end:
             # TODO: Push slicing into the to_xarray() command so we only access what we need -- See issue #212
             cond = fc_dec_level_xrds.time <= fcrc.end_timestamp
-            msg = (
-                f"trimming  {sum(~cond.data)} samples to {fcrc.end} "
-            )
+            msg = f"trimming  {sum(~cond.data)} samples to {fcrc.end} "
             logger.info(msg)
             fc_dec_level_xrds = fc_dec_level_xrds.where(cond)
             fc_dec_level_xrds = fc_dec_level_xrds.dropna(dim="time")
 
-        if label_scheme.id == 'station_component':
-            name_dict = {f"{x}": label_scheme.join((fcrc.station_id, x)) for x in fc_dec_level_xrds.data_vars}
+        if label_scheme.id == "station_component":
+            name_dict = {
+                f"{x}": label_scheme.join((fcrc.station_id, x))
+                for x in fc_dec_level_xrds.data_vars
+            }
         else:
             msg = f"Label Scheme elements {label_scheme.id} not implemented"
             raise NotImplementedError(msg)

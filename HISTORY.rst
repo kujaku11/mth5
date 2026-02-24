@@ -163,3 +163,45 @@ History
 * Resolve SyntaxWarnings in Python 3.12 and above for invalid escape sequences by @jameswilburlewis in https://github.com/kujaku11/mth5/pull/256
 * Patches by @kujaku11 in https://github.com/kujaku11/mth5/pull/265
 * Update README.md by @kujaku11 in https://github.com/kujaku11/mth5/pull/266
+
+0.5.0 (2024-10-25)
+------------------------------
+
+0.6.0 (2026-01-20)
+------------------------------
+
+* Pydantic optimize tests by @kujaku11 in https://github.com/kujaku11/mth5/pull/305
+* updates to run_ts by @kkappler in https://github.com/kujaku11/mth5/pull/307
+* Adding legacy phoenix MTU reader by @kujaku11 in https://github.com/kujaku11/mth5/pull/308
+* Lemi calibrations by @kujaku11 in https://github.com/kujaku11/mth5/pull/309
+* NIMS Holder  by @jpopelar in https://github.com/kujaku11/mth5/pull/310
+* Pydantic updates and transition to pytest by @kujaku11 in https://github.com/kujaku11/mth5/pull/306
+* Update code base to run with mt-metadata v1.0 and translate to pytest. by @kujaku11 in https://github.com/kujaku11/mth5/pull/311
+
+0.6.1 (2026-01-26)
+------------------------------
+
+* 2026-01-20 — PR #311 — Improve PhoenixClient calibration handling and docs
+* 2026-01-20 — PR #306 — Pydantic updates and transition to pytest
+
+
+**Full Changelog**: https://github.com/kujaku11/mth5/compare/v0.6.0...v0.6.1Changelog All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.All notable changes to this project will be documented in this
+file.

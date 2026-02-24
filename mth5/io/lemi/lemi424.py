@@ -8,47 +8,60 @@ Created on Tue May 11 15:31:31 2021
 :license: MIT
 
 """
+import json
+import warnings
+from io import StringIO
+
 # =============================================================================
 # Imports
 # =============================================================================
 from pathlib import Path
-from io import StringIO
-import warnings
+from typing import Any
+
+import numpy as np
+
 
 # supress the future warning from pandas about using datetime parser.
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
+
 import pandas as pd
 from loguru import logger
-from datetime import datetime
+from mt_metadata.common.mttime import MTime
+from mt_metadata.timeseries import Auxiliary, Electric, Magnetic, Run, Station
+from mt_metadata.timeseries.filters import ChannelResponse, FrequencyResponseTableFilter
 
 from mth5.timeseries import ChannelTS, RunTS
-from mt_metadata.timeseries import Station, Run, Electric, Magnetic, Auxiliary
-from mt_metadata.utils.mttime import MTime
 
 
 # =============================================================================
-def lemi_date_parser(year, month, day, hour, minute, second):
+def lemi_date_parser(
+    year: int, month: int, day: int, hour: int, minute: int, second: int
+) -> pd.Series:
     """
-    convenience function to combine the date-time columns that are output by
-    lemi into a single column
+    Combine the date-time columns that are output by LEMI into a single column.
 
-    Assumes UTC
+    Assumes UTC timezone.
 
-    :param year: year
-    :type year: int
-    :param month: month
-    :type month: int
-    :param day: day of the month
-    :type day: int
-    :param hour: hour in 24 hr format
-    :type hour: int
-    :param minute: minutes in the hour
-    :type minute: int
-    :param second: seconds in the minute
-    :type second: int
-    :return: date time as a single column
-    :rtype: :class:`pandas.DateTime`
+    Parameters
+    ----------
+    year : int
+        Year value.
+    month : int
+        Month value (1-12).
+    day : int
+        Day of the month (1-31).
+    hour : int
+        Hour in 24-hour format (0-23).
+    minute : int
+        Minutes in the hour (0-59).
+    second : int
+        Seconds in the minute (0-59).
+
+    Returns
+    -------
+    pd.DatetimeIndex
+        Combined date-time as a pandas DatetimeIndex.
 
     """
     dt_df = pd.DataFrame(
@@ -68,20 +81,28 @@ def lemi_date_parser(year, month, day, hour, minute, second):
     return pd.to_datetime(dt_df)
 
 
-def lemi_position_parser(position):
+def lemi_position_parser(position: float) -> float:
     """
-    convenience function to parse the location strings into a decimal float
+    Parse LEMI location strings into decimal degrees.
+
     Uses the hemisphere for the sign.
 
-    .. note:: the format of the location is odd in that it is multiplied by
-     100 within the LEMI to provide a single floating point value that
-     includes the degrees and decimal degrees --> {degrees}{degrees[mm.ss]}.
-     For example 40.50166 would be represented as 4030.1.
+    Notes
+    -----
+    The format of the location is odd in that it is multiplied by
+    100 within the LEMI to provide a single floating point value that
+    includes the degrees and decimal degrees --> {degrees}{degrees[mm.ss]}.
+    For example 40.50166 would be represented as 4030.1.
 
-    :param position: DESCRIPTION
-    :type position: TYPE
-    :return: DESCRIPTION
-    :rtype: TYPE
+    Parameters
+    ----------
+    position : float
+        LEMI position value to parse.
+
+    Returns
+    -------
+    float
+        Decimal degrees position.
 
     """
     pos = f"{float(position) / 100}".split(".")
@@ -92,14 +113,22 @@ def lemi_position_parser(position):
     return location
 
 
-def lemi_hemisphere_parser(hemisphere):
+def lemi_hemisphere_parser(hemisphere: str) -> int:
     """
-    convert hemisphere into a value [-1, 1].  Assumes the prime meridian is 0.
+    Convert hemisphere into a value [-1, 1].
 
-    :param hemisphere: hemisphere string [ 'N' | 'S' | 'E' | 'W']
-    :type hemisphere: string
-    :return: unity with a sign for the given hemisphere
-    :rtype: signed integer
+    Assumes the prime meridian is 0.
+
+    Parameters
+    ----------
+    hemisphere : str
+        Hemisphere string. Valid values are 'N', 'S', 'E', 'W'.
+
+    Returns
+    -------
+    int
+        Unity with a sign for the given hemisphere.
+        Returns -1 for 'S' or 'W', 1 for 'N' or 'E'.
 
     """
     if hemisphere in ["S", "W"]:
@@ -109,77 +138,48 @@ def lemi_hemisphere_parser(hemisphere):
 
 class LEMI424:
     """
-    Read in a LEMI424 file, this is a place holder until IRIS finalizes
-    their reader.
+    Read and process LEMI424 magnetotelluric data files.
 
-    :param fn: full path to LEMI424 file
-    :type fn: :class:`pathlib.Path` or string
-    :param sample_rate: sample rate of the file, default is 1.0
-    :type sample_rate: float
-    :param chunk_size: chunk size for pandas to use, does not change reading
-     time much for a single day file. default is 8640
-    :type chunk_size: integer
-    :param file_column_names: column names of the LEMI424 file
-    :type file_column_names: list of strings
-    :param dtypes: data types for each column
-    :type dtypes: dictionary with keys of column names and values of data types
-    :param data_column_names: same as file_column names with and added column
-     for date, which is the combined date and time columns.
-    :type data_column_names: dictionary with keys of column names and values
-     of data types
+    This is a placeholder until IRIS finalizes their reader.
 
-    :LEMI424 File Column Names:
+    Parameters
+    ----------
+    fn : str or pathlib.Path, optional
+        Full path to LEMI424 file, by default None.
+    **kwargs : dict
+        Additional keyword arguments for configuration.
 
-        - **year**
-        - **month**
-        - **day**
-        - **hour**
-        - **minute**
-        - **second**
-        - **bx**
-        - **by**
-        - **bz**
-        - **temperature_e**
-        - **temperature_h**
-        - **e1**
-        - **e2**
-        - **e3**
-        - **e4**
-        - **battery**
-        - **elevation**
-        - **latitude**
-        - **lat_hemisphere**
-        - **longitude**
-        - **lon_hemisphere**
-        - **n_satellites**
-        - **gps_fix**
-        - **time_diff**
+    Attributes
+    ----------
+    sample_rate : float
+        Sample rate of the file, default is 1.0.
+    chunk_size : int
+        Chunk size for pandas to use, default is 8640.
+    file_column_names : list of str
+        Column names of the LEMI424 file.
+    dtypes : dict
+        Data types for each column.
+    data_column_names : list of str
+        Same as file_column_names with an added column for date.
+    data : pd.DataFrame or None
+        The loaded data.
 
-    :Data Column Names:
+    Notes
+    -----
+    LEMI424 File Column Names:
+        year, month, day, hour, minute, second, bx, by, bz,
+        temperature_e, temperature_h, e1, e2, e3, e4, battery,
+        elevation, latitude, lat_hemisphere, longitude,
+        lon_hemisphere, n_satellites, gps_fix, time_diff
 
-        - **date**
-        - **bx**
-        - **by**
-        - **bz**
-        - **temperature_e**
-        - **temperature_h**
-        - **e1**
-        - **e2**
-        - **e3**
-        - **e4**
-        - **battery**
-        - **elevation**
-        - **latitude**
-        - **lat_hemisphere**
-        - **longitude**
-        - **lon_hemisphere**
-        - **n_satellites**
-        - **gps_fix**
-        - **time_diff**
+    Data Column Names:
+        date, bx, by, bz, temperature_e, temperature_h, e1, e2,
+        e3, e4, battery, elevation, latitude, lat_hemisphere,
+        longitude, lon_hemisphere, n_satellites, gps_fix, time_diff
 
     """
 
-    def __init__(self, fn=None, **kwargs):
+    def __init__(self, fn: str | Path | None = None, **kwargs: Any) -> None:
         self.logger = logger
         self.fn = fn
         self.sample_rate = 1.0
@@ -239,7 +239,8 @@ class LEMI424:
 
         self.data_column_names = ["date"] + self.file_column_names[6:]
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Return string representation of LEMI424 object."""
         lines = ["LEMI 424 data", "-" * 20]
         lines.append(f"start:      {self.start.isoformat()}")
         lines.append(f"end:        {self.end.isoformat()}")
@@ -250,13 +251,30 @@ class LEMI424:
 
         return "\n".join(lines)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """Return string representation of LEMI424 object."""
         return self.__str__()
 
-    def __add__(self, other):
+    def __add__(self, other: "LEMI424 | pd.DataFrame") -> "LEMI424":
         """
-        Can append other LEMI424 objects together as long as the start and
-        end times match up.
+        Append other LEMI424 objects or DataFrames together.
+
+        The start and end times should match up for proper concatenation.
+
+        Parameters
+        ----------
+        other : LEMI424 or pd.DataFrame
+            Object to append to this LEMI424 instance.
+
+        Returns
+        -------
+        LEMI424
+            New LEMI424 object with combined data.
+
+        Raises
+        ------
+        ValueError
+            If data is None or if DataFrame columns don't match.
 
         """
         if not self._has_data():
@@ -267,7 +285,7 @@ class LEMI424:
             new.data = pd.concat([new.data, other.data])
             return new
         elif isinstance(other, pd.DataFrame):
-            if not other.columns != self.data.columns:
+            if not other.columns.equals(self.data.columns):
                 raise ValueError("DataFrame columns are not the same.")
             new = LEMI424()
             new.__dict__.update(self.__dict__)
@@ -277,51 +295,94 @@ class LEMI424:
             raise ValueError(f"Cannot add {type(other)} to pd.DataFrame.")
 
     @property
-    def data(self):
+    def data(self) -> pd.DataFrame | None:
         """
-        Data represented as a :class:`pandas.DataFrame` with data_column names
+        Data represented as a pandas DataFrame with data column names.
+
+        Returns
+        -------
+        pd.DataFrame or None
+            The loaded data or None if no data is loaded.
 
         """
         return self._data
 
     @data.setter
-    def data(self, data):
+    def data(self, data: pd.DataFrame | None) -> None:
         """
-        Make sure if data is set that it is a pandas data frame with the proper
-        column names
-        """
+        Set data ensuring it is a pandas DataFrame with proper column names.
 
+        Parameters
+        ----------
+        data : pd.DataFrame or None
+            Data to set. Must have proper column names if not None.
+
+        Raises
+        ------
+        ValueError
+            If column names don't match expected format.
+
+        """
         if data is None:
             self._data = None
         elif isinstance(data, pd.DataFrame):
             if len(data.columns) == len(self.file_column_names):
-                if data.columns != self.file_column_names:
+                if not data.columns.equals(pd.Index(self.file_column_names)):
                     raise ValueError(
                         "Column names are not the same. "
                         "Check LEMI424.column_names for accepted names"
                     )
             elif len(data.columns) == len(self.data_column_names):
-                if not data.columns == self.data_column_names:
+                if not data.columns.equals(pd.Index(self.data_column_names)):
                     raise ValueError(
                         "Column names are not the same. "
                         "Check LEMI424.column_names for accepted names"
                     )
-            else:
-                self._data = data
+            self._data = data
 
-    def _has_data(self):
-        """check to see if has data or not"""
+    def _has_data(self) -> bool:
+        """
+        Check if object has data loaded.
+
+        Returns
+        -------
+        bool
+            True if data is loaded, False otherwise.
+
+        """
         if self.data is not None:
             return True
         return False
 
     @property
-    def fn(self):
-        """full path to LEMI424 file"""
+    def fn(self) -> Path | None:
+        """
+        Full path to LEMI424 file.
+
+        Returns
+        -------
+        pathlib.Path or None
+            Path to the file or None if not set.
+
+        """
         return self._fn
 
     @fn.setter
-    def fn(self, value):
+    def fn(self, value: str | Path | None) -> None:
+        """
+        Set the file path.
+
+        Parameters
+        ----------
+        value : str, pathlib.Path, or None
+            Path to the LEMI424 file.
+
+        Raises
+        ------
+        IOError
+            If the file does not exist.
+
+        """
         if value is not None:
             value = Path(value)
             if not value.exists():
@@ -329,63 +390,130 @@ class LEMI424:
         self._fn = value
 
     @property
-    def file_size(self):
-        """size of file in bytes"""
+    def file_size(self) -> int | None:
+        """
+        Size of file in bytes.
+
+        Returns
+        -------
+        int or None
+            File size in bytes or None if no file is set.
+
+        """
         if self.fn is not None:
             return self.fn.stat().st_size
 
     @property
-    def start(self):
-        """start time of data collection in the LEMI424 file"""
+    def start(self) -> MTime | None:
+        """
+        Start time of data collection in the LEMI424 file.
+
+        Returns
+        -------
+        MTime or None
+            Start time or None if no data is loaded.
+
+        """
         if self._has_data():
-            return MTime(self.data.index[0])
+            return MTime(time_stamp=self.data.index[0])
 
     @property
-    def end(self):
-        """end time of data collection in the LEMI424 file"""
+    def end(self) -> MTime | None:
+        """
+        End time of data collection in the LEMI424 file.
+
+        Returns
+        -------
+        MTime or None
+            End time or None if no data is loaded.
+
+        """
         if self._has_data():
-            return MTime(self.data.index[-1])
+            return MTime(time_stamp=self.data.index[-1])
 
     @property
-    def latitude(self):
-        """median latitude where data have been collected in the LEMI424 file"""
+    def latitude(self) -> float | None:
+        """
+        Median latitude where data have been collected.
+
+        Returns
+        -------
+        float or None
+            Median latitude in degrees or None if no data is loaded.
+
+        """
         if self._has_data():
-            return (
-                self.data.latitude.median() * self.data.lat_hemisphere.median()
-            )
+            return self.data.latitude.median() * self.data.lat_hemisphere.median()
 
     @property
-    def longitude(self):
-        """median longitude where data have been collected in the LEMI424 file"""
+    def longitude(self) -> float | None:
+        """
+        Median longitude where data have been collected.
+
+        Returns
+        -------
+        float or None
+            Median longitude in degrees or None if no data is loaded.
+
+        """
         if self._has_data():
-            return (
-                self.data.longitude.median()
-                * self.data.lon_hemisphere.median()
-            )
+            return self.data.longitude.median() * self.data.lon_hemisphere.median()
 
     @property
-    def elevation(self):
-        """median elevation where data have been collected in the LEMI424 file"""
+    def elevation(self) -> float | None:
+        """
+        Median elevation where data have been collected.
+
+        Returns
+        -------
+        float or None
+            Median elevation in meters or None if no data is loaded.
+
+        """
         if self._has_data():
             return self.data.elevation.median()
 
     @property
-    def n_samples(self):
-        """number of samples in the file"""
+    def n_samples(self) -> int | None:
+        """
+        Number of samples in the file.
+
+        Returns
+        -------
+        int or None
+            Number of samples or None if no data/file available.
+
+        """
         if self._has_data():
             return self.data.shape[0]
         elif self.fn is not None and self.fn.exists():
             return round(self.fn.stat().st_size / 152.0)
 
     @property
-    def gps_lock(self):
-        """has GPS lock"""
+    def gps_lock(self) -> Any | None:
+        """
+        GPS lock status array.
+
+        Returns
+        -------
+        numpy.ndarray or None
+            GPS fix values or None if no data is loaded.
+
+        """
         if self._has_data():
             return self.data.gps_fix.values
 
     @property
-    def station_metadata(self):
-        """station metadata as :class:`mt_metadata.timeseries.Station`"""
+    def station_metadata(self) -> Station:
+        """
+        Station metadata as mt_metadata.timeseries.Station object.
+
+        Returns
+        -------
+        mt_metadata.timeseries.Station
+            Station metadata object.
+
+        """
         s = Station()
         if self._has_data():
             s.location.latitude = self.latitude
@@ -397,8 +525,16 @@ class LEMI424:
         return s
 
     @property
-    def run_metadata(self):
-        """run metadata as :class:`mt_metadata.timeseries.Run`"""
+    def run_metadata(self) -> Run:
+        """
+        Run metadata as mt_metadata.timeseries.Run object.
+
+        Returns
+        -------
+        mt_metadata.timeseries.Run
+            Run metadata object.
+
+        """
         r = Run()
         r.id = "a"
         r.sample_rate = self.sample_rate
@@ -418,29 +554,36 @@ class LEMI424:
                 r.add_channel(Magnetic(component=ch_h))
         return r
 
-    def read(self, fn=None, fast=True):
+    def read(self, fn: str | Path | None = None, fast: bool = True) -> None:
         """
-        Read a LEMI424 file using pandas.  The `fast` way will read in the
-        first and last line to get the start and end time to make a time index.
-        Then it will read in the data skipping parsing the date time columns.
-        It will check to make sure the expected amount of points are correct.
-        If not then it will read in the slower way which used the date time
-        parser to ensure any time gaps are respected.
+        Read a LEMI424 file using pandas.
 
-        :param fn: full path to file, defaults to None.  Uses LEMI424.fn if
-         not provided
-        :type fn: string or :class:`pathlib.Path`, optional
-        :param fast: read the fast way (True) or not (False)
-        :return: DESCRIPTION
-        :rtype: TYPE
+        The `fast` way will read in the first and last line to get the start
+        and end time to make a time index. Then it will read in the data
+        skipping parsing the date time columns. It will check to make sure
+        the expected amount of points are correct. If not then it will read
+        in the slower way which uses the date time parser to ensure any
+        time gaps are respected.
+
+        Parameters
+        ----------
+        fn : str, pathlib.Path, or None, optional
+            Full path to file. Uses LEMI424.fn if not provided, by default None.
+        fast : bool, optional
+            Read the fast way (True) or not (False), by default True.
+
+        Raises
+        ------
+        IOError
+            If file cannot be found.
 
         """
         if fn is not None:
             self.fn = fn
         if not self.fn.exists():
-            msg = "Could not find file %s"
-            self.logger.error(msg, self.fn)
-            raise IOError(msg % self.fn)
+            msg = f"Could not find file {self.fn}"
+            self.logger.error(msg)
+            raise IOError(msg)
         if fast:
             try:
                 self.read_metadata()
@@ -479,12 +622,10 @@ class LEMI424:
                 time_index = pd.date_range(
                     start=self.start.iso_no_tz,
                     end=self.end.iso_no_tz,
-                    freq="1000000000N",
+                    freq="1000000000ns",
                 )
                 if time_index.size != data.shape[0]:
-                    raise ValueError(
-                        "Missing a time stamp use read with fast=False"
-                    )
+                    raise ValueError("Missing a time stamp use read with fast=False")
                 data.index = time_index
                 self.data = data
                 return
@@ -495,83 +636,95 @@ class LEMI424:
         # read in chunks, this doesnt really speed up much as most of the
         # compute time is used in the date time parsing.
         if self.n_samples > self.chunk_size:
-            st = MTime().now()
-            dfs = list(
-                pd.read_csv(
-                    self.fn,
-                    delimiter=r"\s+",
-                    names=self.file_column_names,
-                    dtype=self.dtypes,
-                    parse_dates={
-                        "date": [
-                            "year",
-                            "month",
-                            "day",
-                            "hour",
-                            "minute",
-                            "second",
-                        ]
-                    },
-                    date_parser=lemi_date_parser,
-                    converters={
-                        "latitude": lemi_position_parser,
-                        "longitude": lemi_position_parser,
-                        "lat_hemisphere": lemi_hemisphere_parser,
-                        "lon_hemisphere": lemi_hemisphere_parser,
-                    },
-                    index_col="date",
-                    chunksize=self.chunk_size,
-                )
-            )
-
-            self.data = pd.concat(dfs)
-            et = MTime().now()
-            self.logger.debug(
-                f"Reading {self.fn.name} took {et - st:.2f} seconds"
-            )
-        else:
-            st = MTime().now()
-            self.data = pd.read_csv(
+            st = MTime(time_stamp=None).now()
+            dfs = []
+            for chunk in pd.read_csv(
                 self.fn,
                 delimiter=r"\s+",
                 names=self.file_column_names,
                 dtype=self.dtypes,
-                parse_dates={
-                    "date": [
-                        "year",
-                        "month",
-                        "day",
-                        "hour",
-                        "minute",
-                        "second",
-                    ]
-                },
-                date_parser=lemi_date_parser,
                 converters={
                     "latitude": lemi_position_parser,
                     "longitude": lemi_position_parser,
                     "lat_hemisphere": lemi_hemisphere_parser,
                     "lon_hemisphere": lemi_hemisphere_parser,
                 },
-                index_col="date",
-            )
-            et = MTime().now()
-            self.logger.debug(
-                f"Reading {self.fn.name} took {et - st:.2f} seconds"
+                chunksize=self.chunk_size,
+            ):
+                # Create date index for this chunk
+                chunk.index = lemi_date_parser(
+                    chunk["year"],
+                    chunk["month"],
+                    chunk["day"],
+                    chunk["hour"],
+                    chunk["minute"],
+                    chunk["second"],
+                )
+                chunk.index.name = "date"
+                chunk = chunk.drop(
+                    columns=["year", "month", "day", "hour", "minute", "second"]
+                )
+                dfs.append(chunk)
+
+            if not dfs:
+                raise ValueError("File is empty or contains no valid data")
+
+            self.data = pd.concat(dfs)
+            et = MTime(time_stamp=None).now()
+            self.logger.debug(f"Reading {self.fn.name} took {et - st:.2f} seconds")
+        else:
+            st = MTime(time_stamp=None).now()
+            self.data = pd.read_csv(
+                self.fn,
+                delimiter=r"\s+",
+                names=self.file_column_names,
+                dtype=self.dtypes,
+                converters={
+                    "latitude": lemi_position_parser,
+                    "longitude": lemi_position_parser,
+                    "lat_hemisphere": lemi_hemisphere_parser,
+                    "lon_hemisphere": lemi_hemisphere_parser,
+                },
             )
 
-    def read_metadata(self):
+            if self.data.empty:
+                raise ValueError("File is empty or contains no valid data")
+
+            # Create date index from individual date/time columns
+            self.data.index = lemi_date_parser(
+                self.data["year"],
+                self.data["month"],
+                self.data["day"],
+                self.data["hour"],
+                self.data["minute"],
+                self.data["second"],
+            )
+            self.data.index.name = "date"
+            self.data = self.data.drop(
+                columns=["year", "month", "day", "hour", "minute", "second"]
+            )
+
+            et = MTime(time_stamp=None).now()
+            self.logger.debug(f"Reading {self.fn.name} took {et - st:.2f} seconds")
+
+    def read_metadata(self) -> None:
         """
-        Read only first and last rows to get important metadata to use in
-        the collection.
+        Read only first and last rows to get important metadata.
+
+        This method is used to extract essential metadata from the collection
+        without loading the entire dataset.
 
         """
 
         with open(self.fn) as fid:
             first_line = fid.readline()
+            last_line = first_line  # Default to first line for single-line files
             for line in fid:
-                pass  # iterate to the end
-            last_line = line
+                last_line = line  # Update for multi-line files
+
+        if not first_line.strip():
+            raise ValueError("File is empty or contains no valid data")
+
         lines = StringIO(f"{first_line}\n{last_line}")
 
         self.data = pd.read_csv(
@@ -579,58 +732,144 @@ class LEMI424:
             delimiter=r"\s+",
             names=self.file_column_names,
             dtype=self.dtypes,
-            parse_dates={
-                "date": [
-                    "year",
-                    "month",
-                    "day",
-                    "hour",
-                    "minute",
-                    "second",
-                ]
-            },
-            date_parser=lemi_date_parser,
             converters={
                 "latitude": lemi_position_parser,
                 "longitude": lemi_position_parser,
                 "lat_hemisphere": lemi_hemisphere_parser,
                 "lon_hemisphere": lemi_hemisphere_parser,
             },
-            index_col="date",
         )
 
-    def to_run_ts(self, fn=None, e_channels=["e1", "e2"]):
-        """
-        Create a :class:`mth5.timeseries.RunTS` object from the data
+        # Create date index from individual date/time columns
+        self.data.index = lemi_date_parser(
+            self.data["year"],
+            self.data["month"],
+            self.data["day"],
+            self.data["hour"],
+            self.data["minute"],
+            self.data["second"],
+        )
+        self.data.index.name = "date"
+        self.data = self.data.drop(
+            columns=["year", "month", "day", "hour", "minute", "second"]
+        )
 
-        :param fn: full path to file, defaults to None.  Will use LEMI424.fn
-         if None.
-        :type fn: string or :class:`pathlib.Path`, optional
-        :param e_channels: columns for the electric channels to use,
-         defaults to ["e1", "e2"]
-        :type e_channels: list of strings, optional
-        :return: RunTS object
-        :rtype: :class:`mth5.timeseries.RunTS`
+    def read_calibration(self, fn: str | Path) -> FrequencyResponseTableFilter:
+        """
+        Read a LEMI424 calibration file.
+
+        Calibration files are assumed to be JSON files with the following format:
+        {
+            "Calibration": {
+                "gain": float,
+                "Freq": [float],
+                "Re": [float],
+                "Im": [float]
+            }
+        }
+
+
+        Parameters
+        ----------
+        fn : str or pathlib.Path
+            Full path to calibration file.
+
+        Returns
+        -------
+        mt_metadata.timeseries.filters.FrequencyResponseTableFilter
+            Calibration filter object.
+
+        """
+
+        with open(fn, "r") as cf:
+            try:
+                cal_data = json.load(cf)["Calibration"]
+
+            except json.JSONDecodeError as e:
+                self.logger.error(f"Error reading calibration file {fn}: {e}")
+                raise
+            except KeyError as e:
+                self.logger.error(f"Calibration key not found in file {fn}: {e}")
+                raise
+
+        gain = cal_data.get("gain", 1.0)
+        frequencies = np.array(cal_data.get("Freq", []))
+        real = np.array(cal_data.get("Re", []))
+        imag = np.array(cal_data.get("Im", []))
+
+        if real.size > 0 and imag.size > 0:
+            amplitudes = np.sqrt(real**2 + imag**2)
+            phases = np.degrees(np.arctan2(imag, real))
+
+        cal_filter = FrequencyResponseTableFilter(
+            frequencies=frequencies,
+            amplitudes=amplitudes,
+            phases=phases,
+            gain=gain,
+            instrument_type="flux gate magnetometer",
+            units_in="nanoTesla",
+            units_out="nanoTesla",
+            sequence_number=1,
+        )
+        return cal_filter
+
+    def to_run_ts(
+        self,
+        fn: str | Path | None = None,
+        e_channels: list[str] = ["e1", "e2"],
+        calibration_dict: dict | None = None,
+    ) -> RunTS:
+        """
+        Create a RunTS object from the data.
+
+        Parameters
+        ----------
+        fn : str, pathlib.Path, or None, optional
+            Full path to file. Will use LEMI424.fn if None, by default None.
+        e_channels : list of str, optional
+            Column names for the electric channels to use, by default ["e1", "e2"].
+        calibration_dict : dict, optional
+            Calibration dictionary to apply to the data, by default {}.  Keys are
+            the channel names and values are the calibration file path. The file
+            path is assumed to be in the format `lemi-{component}.sr.json`.
+
+        Returns
+        -------
+        mth5.timeseries.RunTS
+            RunTS object containing the data.
 
         """
 
         ch_list = []
+        if calibration_dict is None:
+            calibration_dict = {}
+        if not isinstance(calibration_dict, dict):
+            raise ValueError("calibration_dict must be a dictionary")
 
         for comp in (
-            ["bx", "by", "bz"]
-            + e_channels
-            + ["temperature_e", "temperature_h"]
+            ["bx", "by", "bz"] + e_channels + ["temperature_e", "temperature_h"]
         ):
+            channel_response = None
+            if comp in calibration_dict.keys():
+                fap_filter = self.read_calibration(calibration_dict[comp])
+                fap_filter.name = f"lemi424_{comp}_calibration"
+                channel_response = ChannelResponse(filters_list=[fap_filter])
+
             if comp[0] in ["h", "b"]:
                 ch = ChannelTS("magnetic")
+                ch.channel_metadata.units = "nT"
             elif comp[0] in ["e"]:
                 ch = ChannelTS("electric")
+                ch.channel_metadata.units = "mV/km"
             else:
                 ch = ChannelTS("auxiliary")
+                ch.channel_metadata.units = "C"
             ch.sample_rate = self.sample_rate
             ch.start = self.start
             ch.ts = self.data[comp].values
             ch.component = comp
+            if channel_response is not None:
+                ch.channel_response = channel_response
 
             ch_list.append(ch)
         return RunTS(
@@ -643,17 +882,31 @@ class LEMI424:
 # =============================================================================
 # define the reader
 # =============================================================================
-def read_lemi424(fn, e_channels=["e1", "e2"], fast=True):
+def read_lemi424(
+    fn: str | Path | list[str | Path],
+    e_channels: list[str] = ["e1", "e2"],
+    fast: bool = True,
+    calibration_dict: dict | None = None,
+) -> RunTS:
     """
     Read a LEMI 424 TXT file.
 
-    :param fn: input file name
-    :type fn: string or Path
-    :param e_channels: A list of electric channels to read,
-    defaults to ["e1", "e2"]
-    :type e_channels: list of strings, optional
-    :return: A RunTS object with appropriate metadata
-    :rtype: :class:`mth5.timeseries.RunTS`
+    Parameters
+    ----------
+    fn : str or pathlib.Path
+        Input file name.
+    e_channels : list of str, optional
+        A list of electric channels to read, by default ["e1", "e2"].
+    fast : bool, optional
+        Use fast reading method, by default True.
+    calibration_dict : dict, optional
+        Calibration dictionary to apply to the data, by default None.  Keys are
+        the channel names and values are the calibration file path.
+
+    Returns
+    -------
+    mth5.timeseries.RunTS
+        A RunTS object with appropriate metadata.
 
     """
 
@@ -668,4 +921,4 @@ def read_lemi424(fn, e_channels=["e1", "e2"], fast=True):
             other = LEMI424(txt_file)
             other.read()
             txt_obj += other
-    return txt_obj.to_run_ts(e_channels=e_channels)
+    return txt_obj.to_run_ts(e_channels=e_channels, calibration_dict=calibration_dict)

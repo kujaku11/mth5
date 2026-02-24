@@ -9,8 +9,9 @@ Created on Thu Jul 30 17:01:34 2020
 
 """
 
-from pathlib import Path
 import textwrap
+from pathlib import Path
+
 
 fn = Path(r"c:\Users\peaco\Documents\GitHub\mth5\mth5\docs\mt_metadata_guide.tex")
 

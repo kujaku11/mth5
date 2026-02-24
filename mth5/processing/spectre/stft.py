@@ -1,22 +1,22 @@
 """
-    This module has methods for applying the short-time-Fourier-transform.
+This module has methods for applying the short-time-Fourier-transform.
 
 
 """
-from .prewhitening import apply_prewhitening
-from .prewhitening import apply_recoloring
-from mt_metadata.transfer_functions.processing.aurora.decimation_level import (
-    DecimationLevel as AuroraDecimationLevel,
-)
-from mt_metadata.transfer_functions.processing.fourier_coefficients import (
-    Decimation as FCDecimation,
-)
-from mth5.timeseries.spectre.spectrogram import Spectrogram
+
 from typing import Union
 
 import numpy as np
 import scipy.signal as ssig
 import xarray as xr
+from mt_metadata.processing.aurora.decimation_level import (
+    DecimationLevel as AuroraDecimationLevel,
+)
+from mt_metadata.processing.fourier_coefficients import Decimation as FCDecimation
+
+from mth5.timeseries.spectre.spectrogram import Spectrogram
+
+from .prewhitening import apply_prewhitening, apply_recoloring
 
 
 def run_ts_to_stft_scipy(
@@ -59,7 +59,9 @@ def run_ts_to_stft_scipy(
         # drop Nyquist
         ff = ff[:-1]
         specgm = specgm[:-1, :]
-        specgm *= np.sqrt(2)  # compensate energy for keeping only positive harmonics (keep PSDs accurate)
+        specgm *= np.sqrt(
+            2
+        )  # compensate energy for keeping only positive harmonics (keep PSDs accurate)
 
         # make time_axis
         tt = tt - tt[0]

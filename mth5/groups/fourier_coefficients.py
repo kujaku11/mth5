@@ -1,27 +1,36 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Feb 24 12:49:32 2023
+Fourier Coefficient group management for MTH5 format.
 
-@author: jpeacock
+This module provides classes for organizing and managing Fourier Coefficient
+data at multiple decimation levels, including utilities for data import/export
+with different formats (numpy, xarray, pandas).
+
+:copyright:
+    Jared Peacock (jpeacock@usgs.gov)
+
 """
+
+from __future__ import annotations
+
+from typing import Optional
+
+import h5py
+import mt_metadata.processing.fourier_coefficients as fc
 
 # =============================================================================
 # Imports
 # =============================================================================
 import numpy as np
-import xarray as xr
 import pandas as pd
-import h5py
-from typing import Optional, Union, List, Dict
+import xarray as xr
 
 from mth5.groups import BaseGroup, FCChannelDataset
-
-# from mth5.groups import FCGroup
-
 from mth5.helpers import validate_name
 from mth5.utils.exceptions import MTH5Error
 
-import mt_metadata.transfer_functions.processing.fourier_coefficients as fc
+
+# from mth5.groups import FCGroup
 
 
 # =============================================================================
@@ -30,65 +39,127 @@ import mt_metadata.transfer_functions.processing.fourier_coefficients as fc
 
 class MasterFCGroup(BaseGroup):
     """
-    Master group to hold various Fourier coefficient estimations of time series
-    data.
-    No metadata needed as of yet.
+    Master container for all Fourier Coefficient estimations of time series data.
 
-    master -> processing run -> decimation levels -> channels
+    This class manages multiple Fourier Coefficient processing runs, each containing
+    different decimation levels. No metadata is required at the master level.
+
+    Hierarchy
+    ---------
+    MasterFCGroup -> FCGroup (processing runs) -> FCDecimationGroup (decimation levels)
+    -> FCChannelDataset (individual channels)
+
+    Parameters
+    ----------
+    group : h5py.Group
+        HDF5 group object for the master FC container.
+    **kwargs
+        Additional keyword arguments passed to BaseGroup.
+
+    Examples
+    --------
+    >>> import h5py
+    >>> from mth5.groups.fourier_coefficients import MasterFCGroup
+    >>> with h5py.File('data.h5', 'r') as f:
+    ...     master = MasterFCGroup(f['FC'])
+    ...     fc_group = master.add_fc_group('processing_run_1')
     """
 
-    def __init__(self, group, **kwargs):
+    def __init__(self, group: h5py.Group, **kwargs) -> None:
         super().__init__(group, **kwargs)
 
     @property
-    def fc_summary(self):
+    def fc_summary(self) -> pd.DataFrame:
         """
-        Summar of fourier coefficients
+        Get a summary of all Fourier Coefficient processing runs.
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Returns
+        -------
+        pd.DataFrame
+            Summary information for all FC groups including names and metadata.
 
-        """
-        pass
-
-    def add_fc_group(self, fc_name: str, fc_metadata=None):  # -> FCGroup:
-        """
-        Add a Fourier Coefficent group
-
-        :param fc_name: DESCRIPTION
-        :type fc_name: TYPE
-        :param fc_metadata: DESCRIPTION, defaults to None
-        :type fc_metadata: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
-
+        Examples
+        --------
+        >>> master = MasterFCGroup(h5_group)
+        >>> summary = master.fc_summary
         """
 
-        return self._add_group(
-            fc_name, FCGroup, group_metadata=fc_metadata, match="id"
-        )
-
-    def get_fc_group(self, fc_name):
+    def add_fc_group(
+        self,
+        fc_name: str,
+        fc_metadata: Optional[fc.Decimation] = None,
+    ) -> FCGroup:
         """
-        Get Fourier Coefficient group
+        Add a Fourier Coefficient processing run group.
 
-        :param fc_name: DESCRIPTION
-        :type fc_name: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Parameters
+        ----------
+        fc_name : str
+            Name for the FC group (usually identifies the processing run).
+        fc_metadata : fc.Decimation, optional
+            Metadata for the FC group. Default is None.
 
+        Returns
+        -------
+        FCGroup
+            Newly created Fourier Coefficient group.
+
+        Examples
+        --------
+        >>> master = MasterFCGroup(h5_group)
+        >>> fc_group = master.add_fc_group('processing_run_1')
+        >>> print(fc_group.name)
+        'processing_run_1'
+        """
+
+        return self._add_group(fc_name, FCGroup, group_metadata=fc_metadata, match="id")
+
+    def get_fc_group(self, fc_name: str) -> FCGroup:
+        """
+        Retrieve a Fourier Coefficient group by name.
+
+        Parameters
+        ----------
+        fc_name : str
+            Name of the FC group to retrieve.
+
+        Returns
+        -------
+        FCGroup
+            The requested Fourier Coefficient group.
+
+        Raises
+        ------
+        MTH5Error
+            If the FC group does not exist.
+
+        Examples
+        --------
+        >>> master = MasterFCGroup(h5_group)
+        >>> fc_group = master.get_fc_group('processing_run_1')
         """
         return self._get_group(fc_name, FCGroup)
 
     def remove_fc_group(self, fc_name: str) -> None:
         """
-        Remove an FC group
+        Remove a Fourier Coefficient group.
 
-        :param fc_name: DESCRIPTION
-        :type fc_name: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Deletes the specified FC group and all associated decimation levels and channels.
 
+        Parameters
+        ----------
+        fc_name : str
+            Name of the FC group to remove.
+
+        Raises
+        ------
+        MTH5Error
+            If the FC group does not exist.
+
+        Examples
+        --------
+        >>> master = MasterFCGroup(h5_group)
+        >>> master.remove_fc_group('processing_run_1')
         """
 
         self._remove_group(fc_name)
@@ -96,42 +167,58 @@ class MasterFCGroup(BaseGroup):
 
 class FCDecimationGroup(BaseGroup):
     """
-    Holds a single decimation level
+    Container for a single decimation level of Fourier Coefficient data.
 
-    FCDecimationGroup assumes two conditions on the data array (spectrogram):
-        1. The data are uniformly sampled in frequency domain
-        2. The data are uniformly sampled in time.
-        (i.e. the FFT moving window has a uniform step size)
+    This class manages all channels at a specific decimation level, assuming
+    uniform sampling in both frequency and time domains.
+
+    Data Assumptions
+    ----------------
+    1. Data uniformly sampled in frequency domain
+    2. Data uniformly sampled in time domain
+    3. FFT moving window has uniform step size
 
     Attributes
+    ----------
+    start_time : datetime
+        Start time of the decimation level
+    end_time : datetime
+        End time of the decimation level
+    channels : list
+        List of channel names in this decimation level
+    decimation_factor : int
+        Factor by which data was decimated
+    decimation_level : int
+        Level index in decimation hierarchy
+    sample_rate : float
+        Sample rate after decimation (Hz)
+    method : str
+        Method used (FFT, wavelet, etc.)
+    window : dict
+        Window parameters (length, overlap, type, sample rate)
 
-        - start time
-        - end time
-        - channels (list)
-        - decimation factor
-        - decimation level
-        - decimation sample rate
-        - method (FFT, wavelet, ...)
-        - anti alias filter
-        - prewhitening type
-        - per_window_detrend_type
-        - recoloring (True | False)
-        - harmonics_kept (index values of harmonics kept (list) | 'all')
-        - window parameters
-            - length
-            - overlap
-            - type
-            - type parameters
-            - window sample rate (method or property)
-        - [optional] masking or weighting information
+    Parameters
+    ----------
+    group : h5py.Group
+        HDF5 group object for this decimation level.
+    decimation_level_metadata : optional
+        Metadata for the decimation level. Default is None.
+    **kwargs
+        Additional keyword arguments passed to BaseGroup.
 
+    Examples
+    --------
+    >>> decimation = FCDecimationGroup(h5_group, decimation_level_metadata=metadata)
+    >>> channel = decimation.add_channel('Ex', fc_data=fc_array)
     """
 
-    def __init__(self, group, decimation_level_metadata=None, **kwargs):
-
-        super().__init__(
-            group, group_metadata=decimation_level_metadata, **kwargs
-        )
+    def __init__(
+        self,
+        group: h5py.Group,
+        decimation_level_metadata: Optional[fc.Decimation] = None,
+        **kwargs,
+    ) -> None:
+        super().__init__(group, group_metadata=decimation_level_metadata, **kwargs)
 
     @BaseGroup.metadata.getter
     def metadata(self):
@@ -145,13 +232,42 @@ class FCDecimationGroup(BaseGroup):
         return self._metadata
 
     @property
-    def channel_summary(self):
+    def channel_summary(self) -> pd.DataFrame:
         """
+        Get a summary of all channels in this decimation level.
 
-         summary of channels in run
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Returns a pandas DataFrame with detailed information about each Fourier
+        Coefficient channel including time ranges, dimensions, and sampling rates.
 
+        Returns
+        -------
+        pd.DataFrame
+            DataFrame with columns:
+
+            - component : str
+                Channel component name (e.g., 'Ex', 'Hy')
+            - start : datetime64[ns]
+                Start time of the channel data
+            - end : datetime64[ns]
+                End time of the channel data
+            - n_frequency : int64
+                Number of frequency bins
+            - n_windows : int64
+                Number of time windows
+            - sample_rate_decimation_level : float64
+                Decimation level sample rate (Hz)
+            - sample_rate_window_step : float64
+                Sample rate of window stepping (Hz)
+            - units : str
+                Physical units of the data
+            - hdf5_reference : h5py.ref_dtype
+                HDF5 reference to the channel dataset
+
+        Examples
+        --------
+        >>> decimation = FCDecimationGroup(h5_group)
+        >>> summary = decimation.channel_summary
+        >>> print(summary[['component', 'n_frequency', 'n_windows']])
         """
 
         ch_list = []
@@ -194,22 +310,38 @@ class FCDecimationGroup(BaseGroup):
         return pd.DataFrame(ch_summary)
 
     def from_dataframe(
-        self, df: pd.DataFrame, channel_key: str, time_key: str = "time", frequency_key: str = "frequency"
+        self,
+        df: pd.DataFrame,
+        channel_key: str,
+        time_key: str = "time",
+        frequency_key: str = "frequency",
     ) -> None:
         """
-        assumes channel_key is the coefficient values
+        Load Fourier Coefficient data from a pandas DataFrame.
 
-        :param df: DESCRIPTION
-        :type df: TYPE
-        :param channel_key: DESCRIPTION
-        :type channel_key: TYPE
-        :param time_key: DESCRIPTION, defaults to "time"
-        :type time_key: TYPE, optional
-        :param frequency_key: DESCRIPTION, defaults to "frequency"
-        :type frequency_key: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Assumes the channel_key column contains complex coefficient values
+        organized with time and frequency dimensions.
 
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Input DataFrame containing the coefficient data.
+        channel_key : str
+            Name of the column containing coefficient values.
+        time_key : str, default='time'
+            Name of the time coordinate column.
+        frequency_key : str, default='frequency'
+            Name of the frequency coordinate column.
+
+        Raises
+        ------
+        TypeError
+            If df is not a pandas DataFrame.
+
+        Examples
+        --------
+        >>> decimation = FCDecimationGroup(h5_group)
+        >>> decimation.from_dataframe(df, channel_key='Ex', time_key='time')
         """
 
         if not isinstance(df, pd.DataFrame):
@@ -221,30 +353,72 @@ class FCDecimationGroup(BaseGroup):
             xrds = df[col].to_xarray()
             self.add_channel(col, fc_data=xrds.to_numpy())
 
-    def from_xarray(self, data_array: Union[xr.Dataset, xr.DataArray], sample_rate_decimation_level: float) -> None:
+    def from_xarray(
+        self,
+        data_array: xr.Dataset | xr.DataArray,
+        sample_rate_decimation_level: float,
+    ) -> None:
         """
-        can input a dataarray or dataset
+        Load Fourier Coefficient data from an xarray DataArray or Dataset.
 
-        :param data_array: DESCRIPTION
-        :type data_array: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Automatically extracts metadata (time, frequency, units) from the xarray
+        object and creates appropriate FCChannelDataset instances for each
+        variable or the single DataArray.
 
+        Parameters
+        ----------
+        data_array : xr.DataArray or xr.Dataset
+            Input xarray object with 'time' and 'frequency' coordinates and
+            dimensions ['time', 'frequency'] (or transposed variant).
+        sample_rate_decimation_level : float
+            Sample rate of the decimation level (Hz).
+
+        Raises
+        ------
+        TypeError
+            If data_array is not an xarray Dataset or DataArray.
+
+        Notes
+        -----
+        Automatically handles both (time, frequency) and (frequency, time)
+        dimension ordering. Units are extracted from xarray attributes if available.
+
+        Examples
+        --------
+        >>> import xarray as xr
+        >>> import numpy as np
+        >>> decimation = FCDecimationGroup(h5_group)
+
+        Create sample xarray data:
+
+        >>> times = np.arange('2023-01-01', '2023-01-02', dtype='datetime64[s]')
+        >>> freqs = np.linspace(0.01, 100, 256)
+        >>> data_array = np.random.randn(len(times), len(freqs)) + \\
+        ...              1j * np.random.randn(len(times), len(freqs))
+        >>> xr_data = xr.DataArray(
+        ...     data_array,
+        ...     dims=['time', 'frequency'],
+        ...     coords={'time': times, 'frequency': freqs},
+        ...     name='Ex'
+        ... )
+
+        Load into decimation group:
+
+        >>> decimation.from_xarray(xr_data, sample_rate_decimation_level=0.5)
         """
 
         if not isinstance(data_array, (xr.Dataset, xr.DataArray)):
             msg = f"Must input a xarray Dataset or DataArray not {type(data_array)}"
             self.logger.error(msg)
             raise TypeError(msg)
-        ch_metadata = fc.Channel()
+        ch_metadata = fc.FCChannel()
         ch_metadata.time_period.start = data_array.time[0].values
         ch_metadata.time_period.end = data_array.time[-1].values
         ch_metadata.sample_rate_decimation_level = sample_rate_decimation_level
         ch_metadata.frequency_min = data_array.coords["frequency"].data.min()
         ch_metadata.frequency_max = data_array.coords["frequency"].data.max()
         step_size = (
-            data_array.coords["time"].data[1]
-            - data_array.coords["time"].data[0]
+            data_array.coords["time"].data[1] - data_array.coords["time"].data[0]
         )
         ch_metadata.sample_rate_window_step = step_size / np.timedelta64(1, "s")
         try:
@@ -259,7 +433,6 @@ class FCDecimationGroup(BaseGroup):
             )
         else:
             for ch in data_array.data_vars.keys():
-
                 ch_metadata.component = ch
                 if ch in self.channel_summary.component.to_list():
                     self.remove_channel(ch)
@@ -280,16 +453,37 @@ class FCDecimationGroup(BaseGroup):
                     )
         return
 
-    def to_xarray(self, channels: Optional[List[str]] = None) -> xr.Dataset:
+    def to_xarray(self, channels: Optional[list[str]] = None) -> xr.Dataset:
         """
-        create an xarray dataset from the desired channels. If none grabs all
-        channels in the decimation level.
+        Create an xarray Dataset from Fourier Coefficient channels.
 
-        :param channels: DESCRIPTION, defaults to None
-        :type channels: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
+        If no channels are specified, all channels in the decimation level
+        are included. Each channel becomes a data variable in the resulting Dataset.
 
+        Parameters
+        ----------
+        channels : list[str], optional
+            List of channel names to include. If None, all channels are used.
+            Default is None.
+
+        Returns
+        -------
+        xr.Dataset
+            xarray Dataset with channels as data variables and 'time' and
+            'frequency' as shared coordinates.
+
+        Examples
+        --------
+        >>> decimation = FCDecimationGroup(h5_group)
+        >>> xr_data = decimation.to_xarray()
+        >>> print(xr_data.data_vars)
+        Data variables:
+            Ex  (time, frequency) complex128
+            Ey  (time, frequency) complex128
+
+        Get specific channels:
+
+        >>> subset = decimation.to_xarray(channels=['Ex', 'Ey'])
         """
 
         if channels is None:
@@ -300,83 +494,136 @@ class FCDecimationGroup(BaseGroup):
             ch_dict[ch] = ch_ds.to_xarray()
         return xr.Dataset(ch_dict)
 
-    def from_numpy_array(self, nd_array: np.ndarray, ch_name: str) -> None:
+    def from_numpy_array(
+        self,
+        nd_array: np.ndarray,
+        ch_name: str | list[str],
+    ) -> None:
         """
-        assumes shape of (n_frequencies, n_windows) or
-        (n_channels, n_frequencies, n_windows)
+        Load Fourier Coefficient data from a numpy array.
 
-        :param nd_array: DESCRIPTION
-        :type nd_array: TYPE
-        :param ch_name: name of channel(s)
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Assumes array shape is either (n_frequencies, n_windows) for a single
+        channel or (n_channels, n_frequencies, n_windows) for multiple channels.
 
+        Parameters
+        ----------
+        nd_array : np.ndarray
+            Input numpy array containing coefficient data.
+        ch_name : str or list[str]
+            Channel name (for 2D array) or list of channel names
+            (for 3D array).
+
+        Raises
+        ------
+        TypeError
+            If nd_array is not a numpy ndarray.
+        ValueError
+            If array shape is not (n_frequencies, n_windows) or
+            (n_channels, n_frequencies, n_windows).
+
+        Examples
+        --------
+        >>> decimation = FCDecimationGroup(h5_group)
+
+        Load single channel:
+
+        >>> data_2d = np.random.randn(256, 100) + 1j * np.random.randn(256, 100)
+        >>> decimation.from_numpy_array(data_2d, ch_name='Ex')
+
+        Load multiple channels:
+
+        >>> data_3d = np.random.randn(2, 256, 100) + 1j * np.random.randn(2, 256, 100)
+        >>> decimation.from_numpy_array(data_3d, ch_name=['Ex', 'Ey'])
         """
 
-        if not isinstance(nd_array, (np.nd_array)):
+        if not isinstance(nd_array, np.ndarray):
             msg = f"Must input a numpy ndarray not {type(nd_array)}"
             self.logger.error(msg)
             raise TypeError(msg)
-        if len(nd_array.shape[0]) == 3:
+        if len(nd_array.shape) == 3:
             for index, ch in zip(nd_array.shape[0], ch_name):
                 self.add_channel(ch, fc_data=nd_array[index])
         elif len(nd_array.shape) == 2:
             self.add_channel(ch_name, fc_data=nd_array)
         else:
             raise ValueError(
-                "input array must be shaped (n_frequencies, n_windows)"
+                "input array must be shaped (n_frequencies, n_windows) or "
+                "(n_channels, n_frequencies, n_windows)"
             )
 
     def add_channel(
         self,
         fc_name: str,
         fc_data: Optional[np.ndarray] = None,
-        fc_metadata: Optional[fc.Channel] = None,
+        fc_metadata: Optional[fc.FCChannel] = None,
         max_shape: tuple = (None, None),
         chunks: bool = True,
         dtype: type = complex,
         **kwargs,
     ) -> FCChannelDataset:
         """
+        Add a Fourier Coefficient channel to the decimation level.
 
-        Add a set of Fourier coefficients for a single channel at a single
-        decimation level for a processing run.
+        Creates a new FCChannelDataset for a single channel at a single
+        decimation level. Input data can be provided as numpy array or created empty.
 
-        - time
-        - frequency [ integer as harmonic index or float ]
-        - fc (complex)
+        Parameters
+        ----------
+        fc_name : str
+            Name for the Fourier Coefficient channel (usually component name like 'Ex').
+        fc_data : np.ndarray, optional
+            Input data with shape (n_frequencies, n_windows). Default is None (creates empty).
+        fc_metadata : fc.FCChannel, optional
+            Metadata for the channel. Default is None.
+        max_shape : tuple, default=(None, None)
+            Maximum shape for HDF5 dataset dimensions (expandable if None).
+        chunks : bool, default=True
+            Whether to use HDF5 chunking.
+        dtype : type, default=complex
+            Data type for the dataset.
+        **kwargs
+            Additional keyword arguments for HDF5 dataset creation.
 
-        The input can be
+        Returns
+        -------
+        FCChannelDataset
+            Newly created FCChannelDataset object.
 
-        * a numpy array where the index values for the time, frequency, and
-         coefficients are supplied in channel_key, frequency_key, channel_key
-         as integer values.
-        * a numpy structured array, dataframe, or xarray dataset or dataarray
-         where the channel_key if not supplied is assumed to the same as the
-         fc_name.
+        Raises
+        ------
+        TypeError
+            If fc_data type is not supported.
 
-        haven't fully tested dataframe or xarray yet.
+        Notes
+        -----
+        Data layout assumes (time, frequency) organization:
 
-        Weights should be a separate data set as a 1D array along with matching
-        index as fcs.
+        - time index: window start times
+        - frequency index: harmonic indices or float values
+        - data: complex Fourier coefficients
 
-        - weight_channel (maybe)
-        - weight_band (maybe)
-        - weight_time (maybe)
+        If a channel with the same name already exists, the existing channel
+        is returned instead of creating a duplicate.
 
-        :param fc_datastet_name: DESCRIPTION
-        :type fc_datastet_name: TYPE
-        :param fc_dataset_metadata: DESCRIPTION, defaults to None
-        :type fc_dataset_metadata: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Examples
+        --------
+        >>> decimation = FCDecimationGroup(h5_group)
+        >>> metadata = fc.FCChannel(component='Ex')
 
+        Create from numpy array:
+
+        >>> fc_data = np.random.randn(100, 256) + 1j * np.random.randn(100, 256)
+        >>> channel = decimation.add_channel('Ex', fc_data=fc_data, fc_metadata=metadata)
+
+        Create empty channel (expandable):
+
+        >>> channel = decimation.add_channel('Ex', fc_metadata=metadata)
         """
 
         fc_name = validate_name(fc_name)
 
         if fc_metadata is None:
-            fc_metadata = fc.Channel(name=fc_name)
+            fc_metadata = fc.FCChannel(name=fc_name)
         if fc_data is not None:
             if not isinstance(
                 fc_data, (np.ndarray, xr.DataArray, xr.Dataset, pd.DataFrame)
@@ -411,19 +658,37 @@ class FCDecimationGroup(BaseGroup):
 
     def get_channel(self, fc_name: str) -> FCChannelDataset:
         """
-        get an fc dataset
+        Retrieve a Fourier Coefficient channel by name.
 
-        :param fc_dataset_name: DESCRIPTION
-        :type fc_dataset_name: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Parameters
+        ----------
+        fc_name : str
+            Name of the Fourier Coefficient channel to retrieve.
 
+        Returns
+        -------
+        FCChannelDataset
+            The requested Fourier Coefficient channel dataset.
+
+        Raises
+        ------
+        KeyError
+            If the channel does not exist in this decimation level.
+        MTH5Error
+            If unable to retrieve the channel from HDF5.
+
+        Examples
+        --------
+        >>> decimation = FCDecimationGroup(h5_group)
+        >>> channel = decimation.get_channel('Ex')
+        >>> print(channel.shape)
+        (100, 256)
         """
         fc_name = validate_name(fc_name)
 
         try:
             fc_dataset = self.hdf5_group[fc_name]
-            fc_metadata = fc.Channel(**dict(fc_dataset.attrs))
+            fc_metadata = fc.FCChannel(**dict(fc_dataset.attrs))
             return FCChannelDataset(fc_dataset, dataset_metadata=fc_metadata)
         except KeyError:
             msg = f"{fc_name} does not exist, check groups_list for existing names"
@@ -435,13 +700,31 @@ class FCDecimationGroup(BaseGroup):
 
     def remove_channel(self, fc_name: str) -> None:
         """
-        remove an fc dataset
+        Remove a Fourier Coefficient channel from the decimation level.
 
-        :param fc_dataset_name: DESCRIPTION
-        :type fc_dataset_name: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Deletes the HDF5 dataset associated with the channel. Note that this
+        removes the reference but does not reduce the HDF5 file size.
 
+        Parameters
+        ----------
+        fc_name : str
+            Name of the Fourier Coefficient channel to remove.
+
+        Raises
+        ------
+        MTH5Error
+            If the channel does not exist.
+
+        Notes
+        -----
+        Deleting a channel does not reduce the HDF5 file size; it simply
+        removes the reference to the data. To truly reduce file size, copy
+        the desired data to a new file.
+
+        Examples
+        --------
+        >>> decimation = FCDecimationGroup(h5_group)
+        >>> decimation.remove_channel('Ex')
         """
         fc_name = validate_name(fc_name.lower())
 
@@ -460,21 +743,35 @@ class FCDecimationGroup(BaseGroup):
 
     def update_metadata(self) -> None:
         """
-        update metadata from channels
+        Update decimation level metadata from all channels.
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Aggregates metadata from all FC channels in the decimation level
+        including time period, sample rates, and window step information.
+        Updates the internal metadata object and writes to HDF5.
 
+        Notes
+        -----
+        Collects the following information from channels:
+
+        - Time period start/end from channel data
+        - Sample rate decimation level
+        - Sample rate window step
+
+        Should be called after adding or modifying channels to keep
+        metadata synchronized.
+
+        Examples
+        --------
+        >>> decimation = FCDecimationGroup(h5_group)
+        >>> decimation.add_channel('Ex', fc_data=data_ex)
+        >>> decimation.add_channel('Ey', fc_data=data_ey)
+        >>> decimation.update_metadata()
         """
         channel_summary = self.channel_summary.copy()
 
         if not channel_summary.empty:
-            self._metadata.time_period.start = (
-                channel_summary.start.min().isoformat()
-            )
-            self._metadata.time_period.end = (
-                channel_summary.end.max().isoformat()
-            )
+            self._metadata.time_period.start = channel_summary.start.min().isoformat()
+            self._metadata.time_period.end = channel_summary.end.max().isoformat()
             self._metadata.sample_rate_decimation_level = (
                 channel_summary.sample_rate_decimation_level.unique()[0]
             )
@@ -487,44 +784,137 @@ class FCDecimationGroup(BaseGroup):
         self,
         feature_name: str,
         feature_data: Optional[np.ndarray] = None,
-        feature_metadata: Optional[Dict] = None,
+        feature_metadata: Optional[dict] = None,
         max_shape: tuple = (None, None, None),
         chunks: bool = True,
         **kwargs,
     ) -> None:
-        pass
+        """
+        Add a feature dataset to the decimation level.
+
+        Creates a new dataset for auxiliary features or derived quantities
+        related to Fourier Coefficients (e.g., SNR, coherency, power, etc.).
+
+        Parameters
+        ----------
+        feature_name : str
+            Name for the feature dataset.
+        feature_data : np.ndarray, optional
+            Input data for the feature. Default is None (creates empty).
+        feature_metadata : dict, optional
+            Metadata dictionary for the feature. Default is None.
+        max_shape : tuple, default=(None, None, None)
+            Maximum shape for HDF5 dataset dimensions (expandable if None).
+        chunks : bool, default=True
+            Whether to use HDF5 chunking.
+        **kwargs
+            Additional keyword arguments for HDF5 dataset creation.
+
+        Notes
+        -----
+        Feature types may include:
+
+        - Power: Total power in Fourier coefficients
+        - SNR: Signal-to-noise ratio
+        - Coherency: Cross-component coherence
+        - Weights: Channel-specific weights
+        - Flags: Data quality or processing flags
+
+        Examples
+        --------
+        >>> decimation = FCDecimationGroup(h5_group)
+        >>> snr_data = np.random.randn(100, 256)
+        >>> decimation.add_feature('snr', feature_data=snr_data)
+
+        Or create empty feature for later population:
+
+        >>> decimation.add_feature('power_Ex')
+        """
 
 
 class FCGroup(BaseGroup):
     """
-    Holds a set of Fourier Coefficients based on a single set of configuration
-    parameters. A processing run.
+    Manage a set of Fourier Coefficients from a single processing run.
 
-    .. note:: Must be calibrated FCs. Otherwise weird things will happen, can
-     always rerun the FC estimation if the metadata changes.
+    Holds Fourier Coefficient estimations organized by decimation level.
+    Each decimation level contains channels (Ex, Ey, Hz, etc.) with complex
+    frequency or time-frequency representations of the input signal.
 
-    Metadata should include:
+    All channels must use the same calibration. Recalibration requires
+    rerunning the Fourier Coefficient estimation.
 
-        - list of decimation levels
-        - start time (earliest)
-        - end time (latest)
-        - method (fft, wavelet, ...)
-        - list of channels (all inclusive)
-        - list of acquistion runs (maybe)
-        - starting sample rate
+    Attributes
+    ----------
+    hdf5_group : h5py.Group
+        The HDF5 group containing decimation levels
+    metadata : fc.Decimation
+        Decimation metadata including time period, sample rates, and channels
 
+    Notes
+    -----
+    Processing run structure:
+
+    - Multiple decimation levels at different sample rates
+    - Each decimation level contains multiple channels
+    - Each channel contains complex Fourier coefficients
+    - Time period and sample rates define the estimation window
+
+    Examples
+    --------
+    >>> with h5py.File('data.h5', 'r') as f:
+    ...     fc_run = FCGroup(f['Fourier_Coefficients/run_1'])
+    ...     print(fc_run.decimation_level_summary)
     """
 
-    def __init__(self, group, decimation_level_metadata=None, **kwargs):
+    def __init__(
+        self,
+        group: h5py.Group,
+        decimation_level_metadata: Optional[fc.Decimation] = None,
+        **kwargs,
+    ) -> None:
+        """
+        Initialize FCGroup.
 
-        super().__init__(
-            group, group_metadata=decimation_level_metadata, **kwargs
-        )
+        Parameters
+        ----------
+        group : h5py.Group
+            The HDF5 group containing decimation levels.
+        decimation_level_metadata : fc.Decimation, optional
+            Metadata object for the processing run. Default is None.
+        **kwargs
+            Additional keyword arguments passed to BaseGroup.
+        """
+        super().__init__(group, group_metadata=decimation_level_metadata, **kwargs)
 
     @BaseGroup.metadata.getter
     def metadata(self) -> fc.Decimation:
-        """Overwrite get metadata to include channel information in the runs"""
+        """
+        Get processing run metadata including all decimation levels.
 
+        Collects metadata from all decimation level groups and aggregates
+        into a single Decimation metadata object.
+
+        Returns
+        -------
+        fc.Decimation
+            Metadata containing time period, sample rates, and all decimation
+            level information.
+
+        Notes
+        -----
+        This getter automatically populates:
+
+        - Time period (start and end)
+        - List of all decimation levels and their metadata
+        - HDF5 reference to this group
+
+        Examples
+        --------
+        >>> fc_run = FCGroup(h5_group)
+        >>> metadata = fc_run.metadata
+        >>> print(metadata.time_period.start)
+        2023-01-01T00:00:00
+        """
         self._metadata.channels = []
         for dl in self.groups_list:
             dl_group = self.get_decimation_level(dl)
@@ -535,11 +925,34 @@ class FCGroup(BaseGroup):
     @property
     def decimation_level_summary(self) -> pd.DataFrame:
         """
+        Get a summary of all decimation levels in this processing run.
 
-        summary of channels in run
-        :return: DESCRIPTION
-        :rtype: pd.DataFrame
+        Returns information about each decimation level including sample rate,
+        decimation level value, and time span.
 
+        Returns
+        -------
+        pd.DataFrame
+            Summary with columns:
+
+            - decimation_level: Integer decimation level identifier
+            - start: ISO format start time of this decimation level
+            - end: ISO format end time of this decimation level
+            - hdf5_reference: Reference to the HDF5 group
+
+        Notes
+        -----
+        Each row represents a single decimation level containing multiple
+        channels with Fourier coefficients at different sample rates.
+
+        Examples
+        --------
+        >>> fc_run = FCGroup(h5_group)
+        >>> summary = fc_run.decimation_level_summary
+        >>> print(summary[['decimation_level', 'start', 'end']])
+           decimation_level                start                  end
+        0              0     2023-01-01T00:00:00.000000  2023-01-01T01:00:00.000000
+        1              1     2023-01-01T00:00:00.000000  2023-01-01T02:00:00.000000
         """
 
         ch_list = []
@@ -557,7 +970,7 @@ class FCGroup(BaseGroup):
                     )
             except KeyError as error:
                 self.logger.debug(f"Could not find key: {error}")
-    
+
         ch_summary = np.array(
             ch_list,
             dtype=np.dtype(
@@ -573,18 +986,34 @@ class FCGroup(BaseGroup):
         return pd.DataFrame(ch_summary)
 
     def add_decimation_level(
-        self, decimation_level_name: str, decimation_level_metadata: Optional[Union[Dict, fc.Decimation]] = None
+        self,
+        decimation_level_name: str,
+        decimation_level_metadata: Optional[dict | fc.Decimation] = None,
     ) -> FCDecimationGroup:
         """
-        add a Decimation level
+        Add a new decimation level to the processing run.
 
-        :param decimation_level_name: DESCRIPTION
-        :type decimation_level_name: TYPE
-        :param decimation_level_metadata: DESCRIPTION, defaults to None
-        :type decimation_level_metadata: TYPE, optional
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Creates a new FCDecimationGroup for a single decimation level containing
+        Fourier Coefficient channels at a specific sample rate.
 
+        Parameters
+        ----------
+        decimation_level_name : str
+            Identifier for the decimation level.
+        decimation_level_metadata : dict | fc.Decimation, optional
+            Metadata for the decimation level. Can be a dictionary or
+            fc.Decimation object. Default is None.
+
+        Returns
+        -------
+        FCDecimationGroup
+            Newly created decimation level group.
+
+        Examples
+        --------
+        >>> fc_run = FCGroup(h5_group)
+        >>> metadata = fc.Decimation(decimation_level=0)
+        >>> decimation = fc_run.add_decimation_level('0', metadata)
         """
 
         return self._add_group(
@@ -596,36 +1025,73 @@ class FCGroup(BaseGroup):
 
     def get_decimation_level(self, decimation_level_name: str) -> FCDecimationGroup:
         """
-        Get a Decimation Level
+        Retrieve a decimation level by name.
 
-        :param decimation_level_name: DESCRIPTION
-        :type decimation_level_name: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Parameters
+        ----------
+        decimation_level_name : str
+            Name or identifier of the decimation level.
 
+        Returns
+        -------
+        FCDecimationGroup
+            The requested decimation level group.
+
+        Examples
+        --------
+        >>> fc_run = FCGroup(h5_group)
+        >>> decimation = fc_run.get_decimation_level('0')
+        >>> channels = decimation.groups_list
         """
         return self._get_group(decimation_level_name, FCDecimationGroup)
 
     def remove_decimation_level(self, decimation_level_name: str) -> None:
         """
-        Remove decimation level
+        Remove a decimation level from the processing run.
 
-        :param decimation_level_name: DESCRIPTION
-        :type decimation_level_name: TYPE
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Deletes the HDF5 group and all its channels (FCChannelDataset objects).
 
+        Parameters
+        ----------
+        decimation_level_name : str
+            Name or identifier of the decimation level to remove.
+
+        Notes
+        -----
+        This removes the entire decimation level and all channels within it.
+        To remove individual channels, use FCDecimationGroup.remove_channel()
+        instead.
+
+        Examples
+        --------
+        >>> fc_run = FCGroup(h5_group)
+        >>> fc_run.remove_decimation_level('0')
         """
 
         self._remove_group(decimation_level_name)
 
     def update_metadata(self) -> None:
         """
-        update metadata from channels
+        Update processing run metadata from all decimation levels.
 
-        :return: DESCRIPTION
-        :rtype: TYPE
+        Aggregates time period information from all decimation levels
+        and writes updated metadata to HDF5.
 
+        Notes
+        -----
+        Collects:
+
+        - Earliest start time across all decimation levels
+        - Latest end time across all decimation levels
+
+        Should be called after adding or removing decimation levels.
+
+        Examples
+        --------
+        >>> fc_run = FCGroup(h5_group)
+        >>> fc_run.add_decimation_level('0', metadata0)
+        >>> fc_run.add_decimation_level('1', metadata1)
+        >>> fc_run.update_metadata()
         """
         decimation_level_summary = self.decimation_level_summary.copy()
         if not decimation_level_summary.empty:
@@ -638,32 +1104,55 @@ class FCGroup(BaseGroup):
             self.write_metadata()
 
     def supports_aurora_processing_config(
-        self, processing_config: 'aurora.config.metadata.processing.Processing', remote: bool
+        self,
+        processing_config: "aurora.config.metadata.processing.Processing",
+        remote: bool,
     ) -> bool:
         """
+        Check if all required decimation levels exist for Aurora processing.
 
-        An "all-or-nothing" check: Return True if every (valid) decimation needed to satisfy the processing_config
-         is available in the FCGroup (self) otherwise return False (and we will build all FCs).
+        Performs an all-or-nothing check: returns True only if every decimation
+        level required by the processing config is available in this FCGroup.
 
-        Logic:
-        1. Get a list of all fc groups in the FCGroup (self)
-        2. Loop the processing_config decimations, checking if there is a corresponding, already built FCDecimation
-         in the FCGroup.
+        Uses sequential logic to short-circuit: if any required decimation level
+        is missing, immediately returns False without checking remaining levels.
 
         Parameters
         ----------
-        processing_config: aurora.config.metadata.processing.Processing
-        remote: bool
+        processing_config : aurora.config.metadata.processing.Processing
+            Aurora processing configuration containing required decimation levels.
+        remote : bool
+            Whether to check for remote processing compatibility.
 
         Returns
         -------
+        bool
+            True if all required decimation levels are available and consistent,
+            False otherwise.
 
+        Notes
+        -----
+        Validation logic:
+
+        1. Extract list of decimation levels from processing config
+        2. Iterate through each required level in sequence
+        3. For each level, find a matching FCDecimation in this group
+        4. Check consistency using Aurora's validation method
+        5. If any level is missing or inconsistent, return False immediately
+        6. Return True only if all levels pass validation
+
+        Examples
+        --------
+        >>> fc_run = FCGroup(h5_group)
+        >>> config = aurora.config.metadata.processing.Processing(...)
+        >>> if fc_run.supports_aurora_processing_config(config, remote=False):
+        ...     # All decimation levels are available
+        ...     pass
         """
         pre_existing_fc_decimation_ids_to_check = self.groups_list
         levels_present = np.full(processing_config.num_decimation_levels, False)
 
         for i, aurora_decimation_level in enumerate(processing_config.decimations):
-
             # Quit checking if dec_level wasn't there
             if i > 0:
                 if not levels_present[i - 1]:
@@ -673,9 +1162,10 @@ class FCGroup(BaseGroup):
             for fc_decimation_id in pre_existing_fc_decimation_ids_to_check:
                 fc_dec_group = self.get_decimation_level(fc_decimation_id)
                 fc_decimation = fc_dec_group.metadata
-                levels_present[i] = aurora_decimation_level.is_consistent_with_archived_fc_parameters(
-                    fc_decimation=fc_decimation,
-                    remote=remote
+                levels_present[
+                    i
+                ] = aurora_decimation_level.is_consistent_with_archived_fc_parameters(
+                    fc_decimation=fc_decimation, remote=remote
                 )
                 if levels_present[i]:
                     pre_existing_fc_decimation_ids_to_check.remove(

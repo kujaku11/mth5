@@ -2,7 +2,7 @@
 """
 Created on Wed Jun  9 08:55:16 2021
 
-:copyright: 
+:copyright:
     Jared Peacock (jpeacock@usgs.gov)
 
 :license: MIT
@@ -15,6 +15,7 @@ Created on Wed Jun  9 08:55:16 2021
 from mt_metadata.timeseries.filters import PoleZeroFilter
 
 from mth5.groups.base import BaseGroup
+
 
 # =============================================================================
 # ZPK Group
@@ -150,8 +151,7 @@ class ZPKGroup(BaseGroup):
                 zpk_obj.poles = zpk_group["poles"][:]
             elif "real" in zpk_group["poles"].dtype.names:
                 zpk_obj.poles = (
-                    zpk_group["poles"][()]["real"]
-                    + 1j * zpk_group["poles"][()]["imag"]
+                    zpk_group["poles"][()]["real"] + 1j * zpk_group["poles"][()]["imag"]
                 )
             else:
                 raise ValueError(
@@ -166,8 +166,7 @@ class ZPKGroup(BaseGroup):
                 zpk_obj.zeros = zpk_group["zeros"][:]
             elif "real" in zpk_group["zeros"].dtype.names:
                 zpk_obj.zeros = (
-                    zpk_group["zeros"][()]["real"]
-                    + 1j * zpk_group["zeros"][()]["imag"]
+                    zpk_group["zeros"][()]["real"] + 1j * zpk_group["zeros"][()]["imag"]
                 )
             else:
                 raise ValueError(

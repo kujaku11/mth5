@@ -9,12 +9,12 @@ Created on Thu Jan 25 11:36:55 2024
 # Imports
 # =============================================================================
 from collections import OrderedDict
-import numpy as np
+
+from loguru import logger
 
 from mth5.mth5 import MTH5
 from mth5.timeseries import RunTS
 
-from loguru import logger
 
 # =============================================================================
 
@@ -113,9 +113,7 @@ class ZENC:
             try:
                 sorted_channel_map[ch] = channel_map[ch]
             except KeyError:
-                self.logger.info(
-                    f"Could not find {ch} in channel_map, skipping"
-                )
+                self.logger.info(f"Could not find {ch} in channel_map, skipping")
 
         return sorted_channel_map
 

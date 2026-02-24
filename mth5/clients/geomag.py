@@ -5,24 +5,25 @@ Created on Mon Nov 14 13:58:44 2022
 @author: jpeacock
 """
 
-# =============================================================================
-# Imports
-# =============================================================================
-import requests
 import json
-import sys
 import platform
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from mth5 import __version__ as mth5_version
-from mth5.timeseries import ChannelTS, RunTS
-from mth5.mth5 import MTH5
+# =============================================================================
+# Imports
+# =============================================================================
+import requests
+from mt_metadata.common.mttime import MTime
+from mt_metadata.timeseries import Magnetic, Run, Station, Survey
 
-from mt_metadata.utils.mttime import MTime
-from mt_metadata.timeseries import Survey, Station, Run, Magnetic
+from mth5 import __version__ as mth5_version
+from mth5.mth5 import MTH5
+from mth5.timeseries import ChannelTS, RunTS
+
 
 # =============================================================================
 
@@ -50,7 +51,6 @@ class GeomagClient:
     def __init__(self, **kwargs):
         self._base_url = r"https://geomag.usgs.gov/ws/data/"
         self._timeout = 120
-        self._max_length = 172800
 
         self._valid_observatories = [
             "BDT",
@@ -123,7 +123,7 @@ class GeomagClient:
         self.format = "json"
         self._timeout = 120
         self.observatory = "FRN"
-        self._max_length = 172800
+        self._max_length = 144000
         self.start = None
         self.end = None
 
@@ -140,9 +140,7 @@ class GeomagClient:
 
         """
         encoding = sys.getdefaultencoding() or "UTF-8"
-        platform_ = (
-            platform.platform().encode(encoding).decode("ascii", "ignore")
-        )
+        platform_ = platform.platform().encode(encoding).decode("ascii", "ignore")
 
         return f"MTH5 v{mth5_version} ({platform_}, Python {platform.python_version()})"
 
@@ -226,9 +224,7 @@ class GeomagClient:
             try:
                 value = int(value)
             except ValueError:
-                raise ValueError(
-                    f"{value} must be able to convert to an integer."
-                )
+                raise ValueError(f"{value} must be able to convert to an integer.")
 
         if not isinstance(value, (int, float)):
             raise TypeError(
@@ -249,7 +245,7 @@ class GeomagClient:
         if value is None:
             self._start = None
         else:
-            self._start = MTime(value)
+            self._start = MTime(time_stamp=value)
 
     @property
     def end(self):
@@ -260,11 +256,16 @@ class GeomagClient:
         if value is None:
             self._end = None
         else:
-            self._end = MTime(value)
+            self._end = MTime(time_stamp=value)
 
     def get_chunks(self):
         """
-        Get the number of chunks of allowable sized to request
+        Get the number of chunks of allowable sized to request, includes the elements
+
+        So the max length is the maximum time period that can be requested but includes
+        the number of elements in the request.  So if the max length is 172800 seconds
+        and the sampling period is 1 second, then the maximum number of elements that can
+        be requested is 172800 / (1 * len(elements)).
 
         :return: DESCRIPTION
         :rtype: TYPE
@@ -275,14 +276,20 @@ class GeomagClient:
             dt = np.arange(
                 np.datetime64(self._start.iso_no_tz),
                 np.datetime64(self._end.iso_no_tz),
-                np.timedelta64(self._max_length * self.sampling_period, "s"),
+                np.timedelta64(
+                    int(
+                        (round(self._max_length / len(self.elements)))
+                        * self.sampling_period
+                    ),
+                    "s",
+                ),
             )
             dt = np.append(dt, np.array([np.datetime64(self._end.iso_no_tz)]))
 
             dt_request = [
                 (
-                    f"{MTime(dt[ii]).iso_no_tz}Z",
-                    f"{MTime(dt[ii + 1]).iso_no_tz}Z",
+                    f"{MTime(time_stamp=dt[ii]).iso_no_tz}Z",
+                    f"{MTime(time_stamp=dt[ii + 1]).iso_no_tz}Z",
                 )
                 for ii in range(len(dt) - 1)
             ]
@@ -473,6 +480,7 @@ class USGSGeomag:
         self.h5_shuffle = True
         self.h5_fletcher32 = True
         self.h5_data_level = 1
+        self.mth5_file_mode = "w"
         self.mth5_version = "0.2.0"
         self._ch_map = {"x": "hx", "y": "hy", "z": "hz"}
 
@@ -526,9 +534,7 @@ class USGSGeomag:
                     f"Request must have columns {', '.join(self.request_columns)}"
                 )
         else:
-            if sorted(request_df.columns.tolist()) != sorted(
-                self.request_columns
-            ):
+            if sorted(request_df.columns.tolist()) != sorted(self.request_columns):
                 raise ValueError(
                     f"Request must have columns {', '.join(self.request_columns)}"
                 )
@@ -558,8 +564,7 @@ class USGSGeomag:
                 request_df.observatory == obs, "sampling_period"
             ].unique():
                 sr_df = request_df.loc[
-                    (request_df.observatory == obs)
-                    & (request_df.sampling_period == sr)
+                    (request_df.observatory == obs) & (request_df.sampling_period == sr)
                 ].sort_values("start")
                 request_df.loc[
                     (request_df.observatory == obs)
@@ -623,8 +628,7 @@ class USGSGeomag:
         fn = self._make_filename(self.save_path, request_df)
 
         with MTH5(**self.h5_kwargs) as m:
-
-            m.open_mth5(fn)
+            m.open_mth5(fn, self.mth5_file_mode)
 
             if self.mth5_version in ["0.1.0"]:
                 survey_group = m.survey_group
@@ -660,7 +664,7 @@ class USGSGeomag:
             survey_group.update_metadata()
 
         if self.interact:
-            m.open_mth5(m.filename)
+            m.open_mth5(m.filename, self.mth5_file_mode)
             return m
         else:
             return m.filename

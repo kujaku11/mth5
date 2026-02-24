@@ -3,9 +3,9 @@
 LEMI-423 Reader
 ===============
 
-Read LEMI-423 broadband magnetotelluric binary files (*.B423).
+Read LEMI-423 broadband magnetotelluric binary files (*.B423)
 
-Stores RAW counts with calibrations as unapplied filters (MTH5 standard).
+Stores RAW counts with calibrations as unapplied filters
 
 :author: ben kay
 """
@@ -296,7 +296,7 @@ def create_lemi423_linear_calibration_filter(
 
 
 # ---------- MTH5-facing reader ----------
-class LEMI423Reader:
+class LEMI423:
     """
     Read LEMI-423 binary files (*.B423) following MTH5 standard.
 
@@ -561,7 +561,7 @@ class LEMI423Reader:
         :rtype: :class:`mth5.timeseries.RunTS`
 
         :Example:
-            >>> reader = LEMI423Reader(['file1.B423', 'file2.B423'])
+            >>> reader = LEMI423(['file1.B423', 'file2.B423'])
             >>> run_ts = reader.read()
         """
         # Read all files, gather per-file metadata (use first header for station/run attrs)
@@ -760,5 +760,5 @@ def read_lemi423(fn: Union[str, Path, List[Union[str, Path]]], **kwargs) -> RunT
         :func:`read_lemi_coil_response` - Read LEMI-120 .rsp calibration files
     """
     files = [fn] if isinstance(fn, (str, Path)) else list(fn)
-    rdr = LEMI423Reader(files, **kwargs)
+    rdr = LEMI423(files, **kwargs)
     return rdr.read()

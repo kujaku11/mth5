@@ -6,8 +6,6 @@ Orange Box Magnetotelluric Reader for MTH5
 Reads binary magnetotelluric data from legacy University of Adelaide / Flinders
 University "Orange Box" long-period MT systems.
 
-**IMPORTANT**: This reader is for the specific UoA/Flinders Orange Box configuration.
-
 The Orange Box is a custom-built 8-channel long-period MT data logger that
 records data in binary format with minimal header information.
 
@@ -48,7 +46,6 @@ Electric channels (signed, inverted, dipole-normalized):
     - Store RAW counts (no calibration applied)
     - Create CoefficientFilter objects for each calibration step
     - Set filter.applied = False
-    - Matches Phoenix/Zen/NIMS/Metronix/LEMI-423/UoA-PR624 pattern
 
 **Example**:
     >>> from mth5.io.uoa import read_orange
@@ -64,15 +61,10 @@ Electric channels (signed, inverted, dipole-normalized):
     ...     elevation=150.0
     ... )
 
-**References**:
-    - Legacy Orange Box processing scripts (University of Adelaide)
-    - Flinders University MT deployment procedures
-    - ANSIR/AusLAMP long-period MT surveys
 
-Author: Claude Code (Anthropic) with A. Kelbert specifications
+Author: Ben Kay
+
 Date: 2025-11-07
-License: MIT
-
 """
 
 import logging
@@ -208,11 +200,6 @@ class OrangeDataReader:
     **Binary Format**:
         - 3 header lines (ASCII with \\n terminators)
         - Binary data stream (18 bytes per sample)
-
-    **NEW APPROACH** (following MTH5 standard):
-        - Returns RAW counts (no calibration applied)
-        - Calibrations described as unapplied filters
-        - Matches Phoenix/Zen/NIMS/Metronix/LEMI-423/UoA-PR624 pattern
 
     :param file_path: Path to .BIN file
     :type file_path: Path or str
@@ -378,11 +365,8 @@ class OrangeDataReader:
 class OrangeReader:
     """
     MTH5-compatible reader for Orange Box binary files.
-
-    **NEW APPROACH** (following MTH5 standard):
         - Stores RAW counts in data arrays (no calibrations applied)
         - Describes all calibrations as unapplied filters (filter.applied = False)
-        - Matches Phoenix/Zen/NIMS/Metronix/LEMI-423/UoA-PR624 pattern
 
     :param files: Single file path or list of .BIN files to read
     :type files: str, Path, or list

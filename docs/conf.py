@@ -20,10 +20,12 @@
 import os
 import sys
 
+
 sys.path.insert(0, os.path.abspath("."))
 sys.path.insert(0, os.path.abspath("../"))
 
 import mth5
+
 
 # -- General configuration ---------------------------------------------
 
@@ -45,6 +47,19 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.todo",
     "nbsphinx",
+    "autoapi.extension",
+    "myst_parser",
+]
+
+# AutoAPI configuration
+autoapi_dirs = ["../mth5"]
+autoapi_type = "python"
+autoapi_options = [
+    "members",
+    "undoc-members",
+    "show-inheritance",
+    "show-module-summary",
+    "imported-members",
 ]
 
 # nbsphinx_allow_errors = True
@@ -53,11 +68,21 @@ nbsphinx_execute = "never"
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
+# For myst-parser (recommended)
+myst_enable_extensions = [
+    "colon_fence",
+    "deflist",
+]
+
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-source_suffix = ".rst"
+# source_suffix = ".rst"# Supported file suffixes
+source_suffix = {
+    ".rst": "restructuredtext",
+    ".md": "markdown",
+}
 
 # The master toctree document.
 master_doc = "index"
@@ -115,7 +140,6 @@ html_static_path = ["_static"]
 html_logo = "source/images/mth5_logo.png"
 html_theme_options = {
     "logo_only": True,
-    "display_version": True,
 }
 
 intersphinx_mapping = {

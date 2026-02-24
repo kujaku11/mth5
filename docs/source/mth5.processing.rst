@@ -1,6 +1,14 @@
 mth5.processing package
 =======================
 
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   mth5.processing.spectre
+
 Submodules
 ----------
 
