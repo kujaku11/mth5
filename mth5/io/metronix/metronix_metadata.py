@@ -12,6 +12,21 @@ MetronixFileNameMetadata
 MetronixChannelJSON
     Read and parse Metronix JSON metadata files
 
+
+2026-02-24
+Updating to handle old .ats files.    
+Metronix Sample data of both flavors can be found in the MTHotel repository at:
+MTHotel/cpp/cpp/doc/old_survey_structure/Northern_Mining/ts/Sarıçam/meas_2009-08-20_13-22-00/
+MTHotel/cpp/cpp/doc/new_survey_structure/Northern_Mining/stations/Sarıçam/run_001/
+
+The filename conventions are slightly different between the old and new formats, 
+
+.ats example:
+084_V01_C00_R001_TEx_BL_2048H.ats
+
+.atss example:
+084_ADU-07e_C000_TEx_128Hz.atss
+
 Created on Fri Nov 22 13:23:42 2024
 
 @author: jpeacock
@@ -32,7 +47,7 @@ from mt_metadata.timeseries.filters import ChannelResponse, FrequencyResponseTab
 
 
 # =============================================================================
-
+SUPPORTED_TS_FILE_TYPES = ["atss", "ats"]
 
 class MetronixFileNameMetadata:
     """
@@ -162,12 +177,20 @@ class MetronixFileNameMetadata:
             return
 
         fn_list = fn.stem.split("_")
-        self.system_number = fn_list[0]
-        self.system_name = fn_list[1]
-        self.channel_number = self._parse_channel_number(fn_list[2])
-        self.component = self._parse_component(fn_list[3])
-        self.sample_rate = self._parse_sample_rate(fn_list[4])
-        self.file_type = self._get_file_type(fn)
+        if fn.suffix in [".json", ".atss"]:
+            self.system_number = fn_list[0]
+            self.system_name = fn_list[1]
+            self.channel_number = self._parse_channel_number(fn_list[2])
+            self.component = self._parse_component(fn_list[3])
+            self.sample_rate = self._parse_sample_rate(fn_list[4])
+            self.file_type = self._get_file_type(fn)
+        elif fn.suffix in [".ats"]:
+            self.system_number = fn_list[0]
+            self.system_name = fn_list[1]
+            self.channel_number = self._parse_channel_number(fn_list[2])
+            self.component = self._parse_component(fn_list[4])
+            self.sample_rate = self._parse_sample_rate(fn_list[6])
+            self.file_type = self._get_file_type(fn)
 
     def _parse_channel_number(self, value: str) -> int:
         """
@@ -227,6 +250,9 @@ class MetronixFileNameMetadata:
             return float(value.lower().replace("hz", ""))
         elif "s" in value.lower():
             return 1.0 / float(value.lower().replace("s", ""))
+        elif "h" in value.lower():
+            # add to handle .ats files.
+            return float(value.lower().replace("h", ""))
 
     def _get_file_type(self, value: Path) -> str:
         """
@@ -249,7 +275,7 @@ class MetronixFileNameMetadata:
         """
         if value.suffix in [".json"]:
             return "metadata"
-        elif value.suffix in [".atss"]:
+        elif value.suffix.lstrip(".") in SUPPORTED_TS_FILE_TYPES:
             return "timeseries"
         else:
             raise ValueError(f"Metronix file type {value} not supported.")

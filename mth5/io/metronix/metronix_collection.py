@@ -23,10 +23,12 @@ Created on Fri Nov 22 13:22:44 2024
 from pathlib import Path
 from typing import Any, Union
 
+from loguru import logger
 import pandas as pd
 
 from mth5.io.collection import Collection
 from mth5.io.metronix import ATSS
+from mth5.io.metronix import ATS
 
 
 # =============================================================================
@@ -62,7 +64,7 @@ class MetronixCollection(Collection):
 
     def __init__(self, file_path: Union[str, Path, None] = None, **kwargs: Any) -> None:
         super().__init__(file_path=file_path, **kwargs)
-        self.file_ext: list[str] = ["atss"]
+        self.file_ext: list[str] = ["atss", "ats"]
 
     def to_dataframe(
         self,
@@ -119,24 +121,33 @@ class MetronixCollection(Collection):
         >>> df = collection.to_dataframe(run_name_zeros=4)  # Zero-pad run names
         """
         entries = []
-        for atss_fn in set(self.get_files(self.file_ext)):
-            atss_obj = ATSS(atss_fn)
-            if not atss_obj.sample_rate in sample_rates:
+        all_files_set = set(self.get_files(self.file_ext))
+        for ts_file in all_files_set:
+            if ts_file.suffix.lower() == ".ats":
+                logger.warning(f"Under Construction:  .ats file: {ts_file} (use .atss files instead)")
+                ts_obj = ATS(ts_file)
+                print(f"OK: {ts_obj}")
+                # continue
+            elif ts_file.suffix.lower() == ".atss":
+                ts_obj = ATSS(ts_file)
+            if not ts_obj.sample_rate in sample_rates:
+                msg = f"Sample rate {ts_obj.sample_rate} not in requested sample rates {sample_rates}. Skipping file: {ts_file}"
+                logger.warning(msg)
                 continue
-            ch_metadata = atss_obj.channel_metadata
+            ch_metadata = ts_obj.channel_metadata
 
             entry = self.get_empty_entry_dict()
-            entry["survey"] = atss_obj.survey_id
-            entry["station"] = atss_obj.station_id
-            entry["run"] = atss_obj.run_id
+            entry["survey"] = ts_obj.survey_id
+            entry["station"] = ts_obj.station_id
+            entry["run"] = ts_obj.run_id
             entry["start"] = ch_metadata.time_period.start
             entry["end"] = ch_metadata.time_period.end
-            entry["channel_id"] = atss_obj.channel_number
-            entry["component"] = atss_obj.component
-            entry["fn"] = atss_fn
+            entry["channel_id"] = ts_obj.channel_number
+            entry["component"] = ts_obj.component
+            entry["fn"] = ts_file
             entry["sample_rate"] = ch_metadata.sample_rate
-            entry["file_size"] = atss_obj.file_size
-            entry["n_samples"] = atss_obj.n_samples
+            entry["file_size"] = ts_obj.file_size
+            entry["n_samples"] = ts_obj.n_samples
             entry["sequence_number"] = 0
             entry["dipole"] = 0
             if ch_metadata.type in ["magnetic"]:
@@ -150,7 +161,7 @@ class MetronixCollection(Collection):
                 entry["longitude"] = ch_metadata.positive.longitude
                 entry["elevation"] = ch_metadata.positive.elevation
 
-            entry["instrument_id"] = atss_obj.system_number
+            entry["instrument_id"] = ts_obj.system_number
             entry["calibration_fn"] = None
             entries.append(entry)
         # make pandas dataframe and set data types

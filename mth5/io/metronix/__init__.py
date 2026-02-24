@@ -10,6 +10,7 @@ Created on Fri Nov 22 13:55:28 2024
 # =============================================================================
 from .metronix_metadata import MetronixFileNameMetadata, MetronixChannelJSON
 from .metronix_atss import ATSS # , read_atss
+from .metronix_ats import ATS # , read_atss
 from .read import read_metronix
 from .metronix_collection import MetronixCollection
 
