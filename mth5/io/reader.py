@@ -54,11 +54,11 @@ Created on Wed Aug 26 10:32:45 2020
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from loguru import logger
 
-from mth5.io import lemi, metronix, miniseed, nims, phoenix, usgs_ascii, zen
+from mth5.io import lemi, metronix, miniseed, nims, phoenix, uoa, usgs_ascii, zen
 
 
 # =============================================================================
@@ -79,6 +79,10 @@ readers: dict[str, dict[str, Any]] = {
         "file_types": ["txt"],
         "reader": lemi.read_lemi424,
     },
+    "lemi423": {
+        "file_types": ["b423"],
+        "reader": lemi.read_lemi423,
+    },
     "phoenix": {
         "file_types": ["bin", "td_30", "td_150", "td_24k"],
         "reader": phoenix.read_phoenix,
@@ -87,10 +91,45 @@ readers: dict[str, dict[str, Any]] = {
         "file_types": ["atss"],
         "reader": metronix.read_atss,
     },
+    "uoa_pr624": {
+        "file_types": ["bx", "by", "bz", "ex", "ey"],
+        "reader": uoa.read_uoa,
+    },
+    "uoa_orange": {
+        "file_types": ["bin"],
+        "reader": uoa.read_orange,
+    },
 }
 
 
-def get_reader(extension: str) -> tuple[str, Callable]:
+def detect_orange_box(fn):
+    """
+    Check if a .BIN file is an Orange Box file.
+
+    Orange Box files start with ASCII hex sample rate (e.g., " 00008CA0 \n")
+    NIMS files start with ">>>>>>>>>>>>>>>..."
+
+    :param fn: Path to file
+    :return: True if Orange Box, False otherwise
+    """
+    try:
+        with open(fn, "rb") as f:
+            first_line = f.read(20)
+            # Orange Box: starts with space + hex digits
+            # Example: b' 00008CA0 \n' or b' 0000000A \n'
+            if first_line.startswith(b" ") and b"\n" in first_line[:15]:
+                header = first_line[: first_line.find(b"\n")].strip()
+                try:
+                    int(header, 16)  # Try to parse as hex
+                    return True
+                except ValueError:
+                    return False
+    except Exception:
+        pass
+    return False
+
+
+def get_reader(extension, fn=None):
     """
     Get the appropriate reader function for a file extension.
 
@@ -126,8 +165,12 @@ def get_reader(extension: str) -> tuple[str, Callable]:
     Some extensions like "bin" are ambiguous and could match multiple
     readers (NIMS or Phoenix). A warning is issued in such cases.
     """
-    if extension in ["bin"]:
-        logger.warning("Suggest inputing file type, bin could be nims or phoenix")
+    # For .bin files, try to auto-detect Orange Box vs NIMS/Phoenix
+    if extension.lower() == "bin" and fn:
+        if detect_orange_box(fn):
+            return "uoa_orange", readers["uoa_orange"]["reader"]
+        logger.warning("Suggest inputting file_type, bin could be nims or phoenix")
+
     for key, vdict in readers.items():
         if extension.lower() in vdict["file_types"]:
             return key, vdict["reader"]
@@ -206,13 +249,13 @@ def read_file(
     """
 
     if isinstance(fn, (list, tuple)):
-        fn = [Path(ff) for ff in fn]
-        if not fn[0].exists():
+        fn_list = [Path(ff) for ff in fn]
+        if not fn_list[0].exists():
             msg = f"Could not find file {fn}. Check path."
             logger.error(msg)
             raise IOError(msg)
-        file_ext = fn[0].suffix[1:]
-
+        file_ext = fn_list[0].suffix[1:]
+        fn_for_detection = fn_list[0]
     else:
         fn = Path(fn)
         if not fn.exists():
@@ -220,6 +263,7 @@ def read_file(
             logger.error(msg)
             raise IOError(msg)
         file_ext = fn.suffix[1:]
+        fn_for_detection = fn
 
     if file_type is not None:
         try:
@@ -232,5 +276,5 @@ def read_file(
             logger.error(msg)
             raise KeyError(msg)
     else:
-        file_type, file_reader = get_reader(file_ext)
+        file_type, file_reader = get_reader(file_ext, fn_for_detection)
     return file_reader(fn, **kwargs)
