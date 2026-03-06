@@ -917,8 +917,8 @@ def read_lemi424(
 
     # read a list of files into a single run
     if len(fn) > 1:
-        for txt_file in fn:
+        for txt_file in fn[1:]:
             other = LEMI424(txt_file)
-            other.read()
+            other.read(fast=fast)
             txt_obj += other
     return txt_obj.to_run_ts(e_channels=e_channels, calibration_dict=calibration_dict)
