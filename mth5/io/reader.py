@@ -58,7 +58,7 @@ from typing import Any, Callable
 
 from loguru import logger
 
-from mth5.io import lemi, metronix, miniseed, nims, phoenix, usgs_ascii, zen
+from mth5.io import lemi, lemi417, metronix, miniseed, nims, phoenix, usgs_ascii, zen
 
 
 # =============================================================================
@@ -78,6 +78,10 @@ readers: dict[str, dict[str, Any]] = {
     "lemi424": {
         "file_types": ["txt"],
         "reader": lemi.read_lemi424,
+    },
+    "lemi417": {
+        "file_types": ["txt"],
+        "reader": lemi417.read_lemi417,
     },
     "phoenix": {
         "file_types": ["bin", "td_30", "td_150", "td_24k"],
@@ -199,6 +203,7 @@ def read_file(
     - usgs_ascii: .asc, .zip (USGS ASCII format)
     - miniseed: .miniseed, .ms, .mseed (miniSEED format)
     - lemi424: .txt (LEMI-424 format)
+    - lemi417: .txt (LEMI-417 format)
     - phoenix: .bin, .td_30, .td_150, .td_24k (Phoenix formats)
     - metronix: .atss (Metronix ADU format)
 
