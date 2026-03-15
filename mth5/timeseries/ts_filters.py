@@ -581,22 +581,29 @@ class RemoveInstrumentResponse:
             ts = self.apply_zero_pad(ts)
             self.logger.debug(f"Step {step}: Applying Zero Padding")
             step += 1
+        
         # get the real frequencies of the FFT -- zero pad may have changed ts.size
         f = np.fft.rfftfreq(ts.size, d=self.sample_interval)
 
         # compute the complex response given the frequency range of the FFT
-        # the complex response assumes frequencies are in reverse order and flip them on input
-        # so we need to flip the complex reponse so it aligns with the fft.
         cr = self.channel_response.complex_response(
             f,
             filters_list=filters_to_remove,
-        )[::-1]
+        )
+
+        # TODO: FIXME, this doesn't look like a general solution
+        # 1. Setting the DC compensation term to the frequency next door is not correct for a coil.
+        # 2. Removing the DC term (and not replacing it) is not correct for a fluxgate magnetometer.
+        # Solution is to check the instrument type and apply the appropriate DC compensation
+        # for now, we will just set the DC term to the next frequency bin, but this should be
+        # updated based on the instrument type
+
         # remove the DC term at frequency == 0
-        cr[-1] = abs(cr[-2]) + 0.0j
+        cr[0] = abs(cr[1]) + 0.0j
 
         data = np.fft.rfft(ts)
         # remove DC term
-        data[-1] = abs(data[-1]) + 0.0j
+        data[0] = abs(data[1]) + 0.0j
 
         # if a window is requested then create it here and mulitply by the data
         # the windows are designed to be symmetrical about frequency = 0
@@ -609,22 +616,24 @@ class RemoveInstrumentResponse:
         # calibrate the time series, compute real part of fft, divide out
         # channel response, inverse fft
         if operation == "divide":
-            calibrated_ts = np.fft.irfft(data / cr)[0 : self.ts.size]
+            calibrated_spectrum = data / cr
             self.logger.debug(
                 f"Step {step}: Removing Calibration via divide channel response"
             )
-            step += 1
         elif operation == "multiply":
-            calibrated_ts = np.fft.irfft(data * cr)[0 : self.ts.size]
+            calibrated_spectrum = data * cr
             self.logger.warning(
                 f"Instrument response being applied rather that expected "
                 f"operation of removing the response"
             )
-            step += 1
         else:
             msg = f"Operation {operation} not recognized method of instrument response correction"
             logger.error(msg)
-            raise Exception
+            raise ValueError(msg)    
+        calibrated_ts = np.fft.irfft(calibrated_spectrum)
+        calibrated_ts = np.real(calibrated_ts)
+        calibrated_ts = calibrated_ts[0 : self.ts.size]  # TODO: Add doc ... should this be removing equal pads from both sides?
+        step += 1
 
         # If a time window was applied, need to un-apply it to reconstruct the signal.
         if self.t_window is not None:
