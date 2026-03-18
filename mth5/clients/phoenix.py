@@ -209,6 +209,18 @@ class PhoenixClient(ClientBase):
                 station_group = survey_group.stations_group.add_station(
                     station_metadata.id, station_metadata=station_metadata
                 )
+                # get receiver calibration file if it exists
+                try:
+                    rxcal_fn = self.receiver_calibration_dict[
+                        collection_metadata.instrument_id
+                    ]
+                except KeyError:
+                    rxcal_fn = None
+                    self.logger.warning(
+                        f"Could not find receiver {collection_metadata.instrument_id} in "
+                        f"receiver calibrations dict {self.receiver_calibration_dict}."
+                    )
+                # loop over runs for the station and add channels to the run group
                 for run_id, run_df in station_dict.items():
                     run_metadata = collection_metadata.run_metadata
                     run_metadata.id = run_id
@@ -223,13 +235,13 @@ class PhoenixClient(ClientBase):
                                 row.fn,
                                 **{
                                     "channel_map": collection_metadata.channel_map,
-                                    "rxcal_fn": self.receiver_calibration_dict[
-                                        collection_metadata.instrument_id
-                                    ],
+                                    "rxcal_fn": rxcal_fn,
                                 },
                             )
-                        except OSError:
-                            print(f"OSError: skipping {row.fn.name} likely too small")
+                        except OSError as error:
+                            self.logger.warning(
+                                f"OSError: skipping {row.fn.name} likely too small.  Error: {error}"
+                            )
                             continue
 
                         if ch_ts.component in ["h1", "h2", "h3"]:
