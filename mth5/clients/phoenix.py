@@ -94,13 +94,15 @@ class PhoenixClient(ClientBase):
             receiver_path = Path(value)
             if receiver_path.is_dir():
                 self._receiver_calibration_dict = {}
-                for fn in list(receiver_path.glob("*.rxcal.json")) + list(
-                    receiver_path.glob("*.rx_cal.json")
+                for fn in list(receiver_path.rglob("*.rxcal.json")) + list(
+                    receiver_path.rglob("*.rx_cal.json")
                 ):
-                    self._receiver_calibration_dict[fn.stem.split("_")[0]] = fn
+                    self._receiver_calibration_dict[
+                        fn.stem.split(".")[0].split("_")[0]
+                    ] = fn
             elif receiver_path.is_file():
                 self._receiver_calibration_dict = {}
-                key = receiver_path.stem.split("_")[0]
+                key = receiver_path.stem.split(".")[0].split("_")[0]
                 self._receiver_calibration_dict[key] = receiver_path
         elif value is None:
             pass
@@ -152,14 +154,14 @@ class PhoenixClient(ClientBase):
             self._sensor_calibration_dict = {}
             cal_path = Path(value)
             if cal_path.is_dir():
-                for fn in cal_path.glob("*scal.json"):
+                for fn in cal_path.rglob("*scal.json"):
                     self._sensor_calibration_dict[
-                        fn.stem.split("_")[0]
+                        fn.stem.split(".")[0].split("_")[0]
                     ] = PhoenixCalibration(fn)
             elif cal_path.is_file():
                 if not cal_path.exists():
                     raise IOError(f"Could not find {cal_path}")
-                key = cal_path.stem.split("_")[0]
+                key = cal_path.stem.split(".")[0].split("_")[0]
                 self._sensor_calibration_dict[key] = PhoenixCalibration(cal_path)
         elif value is None:
             pass
