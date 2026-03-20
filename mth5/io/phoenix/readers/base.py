@@ -601,28 +601,28 @@ class TSReaderBase(Header):
 
         filter_list = []
 
-        for filter_name in sorted(ch_metadata.filters, key=lambda obj: obj.stage):
+        for applied_filter in sorted(ch_metadata.filters, key=lambda obj: obj.stage):
             # receiver calibration
-            if "lowpass" in filter_name:
+            if "lowpass" in applied_filter.name:
                 if rxcal_fn is not None:
                     rx_filter = self.get_receiver_lowpass_filter(rxcal_fn)
                     if rx_filter is not None:
                         filter_list.append(rx_filter)
                     else:
                         self.logger.warning(
-                            f"Could not find lowpass filter {filter_name} for channel {ch_metadata.comp}"
+                            f"Could not find lowpass filter {applied_filter.name} for channel {ch_metadata.comp}"
                         )
                 else:
                     self.logger.warning(
-                        f"Lowpass filter {filter_name} specified in metadata but no receiver calibration file provided."
+                        f"Lowpass filter {applied_filter.name} specified in metadata but no receiver calibration file provided."
                     )
 
             # convert volts to millivolts
-            elif "v_to_mv" in filter_name:
+            elif "v_to_mv" in applied_filter.name:
                 filter_list.append(self.get_v_to_mv_filter())
 
             # dipole filter for electric field channels
-            elif ch_metadata.type in ["electric"] and "dipole" in ch_metadata.filters:
+            elif ch_metadata.type in ["electric"] and "dipole" in applied_filter.name:
                 dipole_filter = self.get_dipole_filter()
                 if dipole_filter is not None:
                     filter_list.append(dipole_filter)

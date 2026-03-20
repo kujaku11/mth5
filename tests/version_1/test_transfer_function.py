@@ -184,9 +184,8 @@ class TestStationMetadata:
                 ("geographic_name", "Nations Draw, NM, USA"),
                 ("id", "NMX20"),
                 ("location.datum", "WGS 84"),
-                ("location.declination.epoch", "2020.0")(
-                    "location.declination.model", "IGRF"
-                ),
+                ("location.declination.epoch", "2020.0"),
+                ("location.declination.model", "IGRF"),
                 ("location.declination.value", 9.09),
                 ("location.elevation", 1940.05),
                 ("location.elevation_uncertainty", 0.0),

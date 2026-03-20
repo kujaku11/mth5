@@ -269,13 +269,7 @@ class PhoenixClient(ClientBase):
                                 ch_ts.channel_metadata.add_filter(applied_filter)
 
                                 # update existing filter in channel response if it exists, otherwise add it
-                                try:
-                                    existing_filter = ch_ts.channel_response.get_filter(
-                                        coil_fap.name
-                                    )
-                                    existing_filter.update(coil_fap)
-                                except (AttributeError, KeyError, ValueError):
-                                    ch_ts.channel_response.add_filter(coil_fap)
+                                ch_ts.channel_response.replace_filter(coil_fap)
 
                             else:
                                 self.logger.warning(
