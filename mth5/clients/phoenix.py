@@ -258,17 +258,17 @@ class PhoenixClient(ClientBase):
                                         break
                                 coil_fap = getattr(pc, key)
 
-                                # add filter
+                                # create applied filter
                                 applied_filter = AppliedFilter(
-                                    name=coil_fap.name, applied=True, stage=1
+                                    name=coil_fap.name,
+                                    applied=True,
+                                    stage=len(ch_ts.channel_metadata.filters),
                                 )
-                                try:
-                                    existing_applied_filter = (
-                                        ch_ts.channel_metadata.get_filter(coil_fap.name)
-                                    )
-                                    existing_applied_filter.update(applied_filter)
-                                except (AttributeError, KeyError):
-                                    ch_ts.channel_metadata.add_filter(applied_filter)
+
+                                # update existing filter if it exists, otherwise add it
+                                ch_ts.channel_metadata.add_filter(applied_filter)
+
+                                # update existing filter in channel response if it exists, otherwise add it
                                 try:
                                     existing_filter = ch_ts.channel_response.get_filter(
                                         coil_fap.name
