@@ -409,7 +409,7 @@ class PhoenixReceiverMetadata:
             if hasattr(ch, "serial") and ch.serial is not None:
                 c.filters.append(
                     AppliedFilter(
-                        name=f"coil_{ch.serial}_response",
+                        name=f"{self.lp_filter_base_name}_{ch.serial}",
                         applied=True,
                         stage=3,
                         comments=Comment(

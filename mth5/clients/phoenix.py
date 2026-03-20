@@ -262,8 +262,14 @@ class PhoenixClient(ClientBase):
                                 applied_filter = AppliedFilter(
                                     name=coil_fap.name, applied=True, stage=1
                                 )
-                                ch_ts.channel_metadata.add_filter(applied_filter)
-                                ch_ts.channel_response.filters_list.append(coil_fap)
+                                try:
+                                    existing_applied_filter = ch_ts.channel_metadata.get_filter(coil_fap.name)
+                                    existing_applied_filter.update(applied_filter)
+                                except (AttributeError, KeyError):
+                                    ch_ts.channel_metadata.add_filter(applied_filter)
+                                if not coil_fap.name in ch_ts.channel_response.filters_list:
+                                    ch_ts.channel_response.filters_list.append(coil_fap)
+                                else:
                             else:
                                 self.logger.warning(
                                     f"Could not find coil {ch_ts.channel_metadata.sensor.id} in sensor calibrations."
