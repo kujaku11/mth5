@@ -274,7 +274,7 @@ class PhoenixClient(ClientBase):
                                         coil_fap.name
                                     )
                                     existing_filter.update(coil_fap)
-                                except (AttributeError, KeyError):
+                                except (AttributeError, KeyError, ValueError):
                                     ch_ts.channel_response.add_filter(coil_fap)
 
                             else:
