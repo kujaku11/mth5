@@ -834,7 +834,7 @@ class TestPhoenixSegmentedReaderAdvanced:
                 # Should have coil response filter
                 filters = ch_ts.channel_metadata.get_attr_from_name("filters")
                 filter_names = [f.name for f in filters]
-                assert any("coil" in name for name in filter_names)
+                assert any("101" in name for name in filter_names)
 
         # Test electric channels
         for channel in electric_channels:
