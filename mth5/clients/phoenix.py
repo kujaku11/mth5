@@ -269,7 +269,10 @@ class PhoenixClient(ClientBase):
                                 ch_ts.channel_metadata.add_filter(applied_filter)
 
                                 # update existing filter in channel response if it exists, otherwise add it
-                                ch_ts.channel_response.replace_filter(coil_fap)
+                                if coil_fap.name not in ch_ts.channel_response.names:
+                                    ch_ts.channel_response.add_filter(coil_fap)
+                                else:
+                                    ch_ts.channel_response.replace_filter(coil_fap)
 
                             else:
                                 self.logger.warning(
