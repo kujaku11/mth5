@@ -279,6 +279,11 @@ class PhoenixClient(ClientBase):
                                     f"Could not find coil {ch_ts.channel_metadata.sensor.id} in sensor calibrations."
                                 )
 
+                        # check to make sure all filters are applied True
+                        # this is a hack for now.
+                        for f in ch_ts.channel_metadata.filters:
+                            f.applied = True
+
                         # add channel to the run group
                         run_group.from_channel_ts(ch_ts)
 
