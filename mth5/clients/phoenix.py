@@ -258,16 +258,31 @@ class PhoenixClient(ClientBase):
                                         break
                                 coil_fap = getattr(pc, key)
 
-                                # add filter
+                                # create applied filter
                                 applied_filter = AppliedFilter(
-                                    name=coil_fap.name, applied=True, stage=1
+                                    name=coil_fap.name,
+                                    applied=True,
+                                    stage=len(ch_ts.channel_metadata.filters),
                                 )
+
+                                # update existing filter if it exists, otherwise add it
                                 ch_ts.channel_metadata.add_filter(applied_filter)
-                                ch_ts.channel_response.filters_list.append(coil_fap)
+
+                                # update existing filter in channel response if it exists, otherwise add it
+                                if coil_fap.name not in ch_ts.channel_response.names:
+                                    ch_ts.channel_response.add_filter(coil_fap)
+                                else:
+                                    ch_ts.channel_response.replace_filter(coil_fap)
+
                             else:
                                 self.logger.warning(
                                     f"Could not find coil {ch_ts.channel_metadata.sensor.id} in sensor calibrations."
                                 )
+
+                        # check to make sure all filters are applied True
+                        # this is a hack for now.
+                        for f in ch_ts.channel_metadata.filters:
+                            f.applied = True
 
                         # add channel to the run group
                         run_group.from_channel_ts(ch_ts)

@@ -528,7 +528,9 @@ class TSReaderBase(Header):
             # Support both newer mt_metadata API (filter_names) and older (filter.name)
             if hasattr(ch_metadata, "filter_names"):
                 filter_names = ch_metadata.filter_names or []
-            elif hasattr(ch_metadata, "filter") and getattr(ch_metadata.filter, "name", None):
+            elif hasattr(ch_metadata, "filter") and getattr(
+                ch_metadata.filter, "name", None
+            ):
                 filter_names = [ch_metadata.filter.name]
             else:
                 filter_names = []
@@ -599,38 +601,51 @@ class TSReaderBase(Header):
 
         filter_list = []
 
-        # Check if a lowpass filter already exists in metadata
-        has_lowpass = any("lowpass" in f.name for f in ch_metadata.filters)
-
-        if rxcal_fn is not None:
-            rx_filter = self.get_receiver_lowpass_filter(rxcal_fn)
-            if rx_filter is not None:
-                if has_lowpass:
-                    # Update the filter name to match existing metadata filter name
-                    existing_lowpass = next(
-                        f for f in ch_metadata.filters if "lowpass" in f.name
+        for applied_filter in sorted(ch_metadata.filters, key=lambda obj: obj.stage):
+            # receiver calibration
+            added_filter = None
+            if "lowpass" in applied_filter.name:
+                if rxcal_fn is not None:
+                    rx_filter = self.get_receiver_lowpass_filter(rxcal_fn)
+                    if rx_filter is not None:
+                        added_filter = rx_filter
+                    else:
+                        self.logger.warning(
+                            f"Could not find lowpass filter {applied_filter.name} for channel {ch_metadata.comp}"
+                        )
+                else:
+                    self.logger.warning(
+                        f"Lowpass filter {applied_filter.name} specified in metadata but no receiver calibration file provided."
                     )
-                    rx_filter.name = existing_lowpass.name
-                    self.logger.debug(
-                        f"Using existing lowpass filter name: {existing_lowpass.name}"
+
+            # convert volts to millivolts
+            elif "v_to_mv" in applied_filter.name:
+                added_filter = self.get_v_to_mv_filter()
+
+            # dipole filter for electric field channels
+            elif ch_metadata.type in ["electric"] and "dipole" in applied_filter.name:
+                dipole_filter = self.get_dipole_filter()
+                if dipole_filter is not None:
+                    added_filter = dipole_filter
+                else:
+                    self.logger.warning(
+                        f"Could not find dipole filter for channel {ch_metadata.comp}"
                     )
-                filter_list.append(rx_filter)
 
-        filter_list.append(self.get_v_to_mv_filter())
+            # sensor calibration for magnetic channels
+            elif ch_metadata.type in ["magnetic"] and scal_fn is not None:
+                sensor_filter = self.get_sensor_filter(scal_fn)
+                if sensor_filter is not None:
+                    added_filter = sensor_filter
+                else:
+                    self.logger.warning(
+                        "Could not find Phoenix coil sensor calibration filter "
+                        f"for channel {ch_metadata.comp}"
+                    )
 
-        if ch_metadata.type in ["magnetic"] and scal_fn is not None:
-            sensor_filter = self.get_sensor_filter(scal_fn)
-            if sensor_filter is not None:
-                filter_list.append(sensor_filter)
-            else:
-                self.logger.warning(
-                    "Could not find Phoenix coil sensor calibration filter "
-                    f"for channel {ch_metadata.comp}"
-                )
-
-        if ch_metadata.type in ["electric"]:
-            dipole_filter = self.get_dipole_filter()
-            if dipole_filter is not None:
-                filter_list.append(dipole_filter)
+            # add stage number to filter name for clarity
+            if added_filter is not None:
+                added_filter.sequence_number = applied_filter.stage
+                filter_list.append(added_filter)
 
         return ChannelResponse(filters_list=filter_list)
