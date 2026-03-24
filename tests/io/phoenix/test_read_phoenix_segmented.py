@@ -358,7 +358,7 @@ def expected_filter_names():
         "0": [
             "mtu-5c_rmt03_10128_h2_10000hz_lowpass",
             "v_to_mv",
-            "coil_101_response",
+            "mtu-5c_rmt03_10128_101",
         ],
         "1": [
             "mtu-5c_rmt03_10128_e1_10000hz_lowpass",
@@ -368,7 +368,7 @@ def expected_filter_names():
         "2": [
             "mtu-5c_rmt03_10128_h1_10000hz_lowpass",
             "v_to_mv",
-            "coil_101_response",
+            "mtu-5c_rmt03_10128_101",
         ],
         "4": [
             "mtu-5c_rmt03_10128_e2_10000hz_lowpass",
@@ -834,7 +834,7 @@ class TestPhoenixSegmentedReaderAdvanced:
                 # Should have coil response filter
                 filters = ch_ts.channel_metadata.get_attr_from_name("filters")
                 filter_names = [f.name for f in filters]
-                assert any("coil" in name for name in filter_names)
+                assert any("101" in name for name in filter_names)
 
         # Test electric channels
         for channel in electric_channels:
