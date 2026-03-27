@@ -55,10 +55,11 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any, Callable
+import fnmatch
 
 from loguru import logger
 
-from mth5.io import lemi, metronix, miniseed, nims, phoenix, usgs_ascii, zen
+from mth5.io import lemi, lemi417, metronix, miniseed, nims, phoenix, usgs_ascii, zen
 
 
 # =============================================================================
@@ -78,6 +79,10 @@ readers: dict[str, dict[str, Any]] = {
     "lemi424": {
         "file_types": ["txt"],
         "reader": lemi.read_lemi424,
+    },
+    "lemi417": {
+        "file_types": ["b*"],
+        "reader": lemi417.read_lemi417,
     },
     "phoenix": {
         "file_types": ["bin", "td_30", "td_150", "td_24k"],
@@ -129,8 +134,9 @@ def get_reader(extension: str) -> tuple[str, Callable]:
     if extension in ["bin"]:
         logger.warning("Suggest inputing file type, bin could be nims or phoenix")
     for key, vdict in readers.items():
-        if extension.lower() in vdict["file_types"]:
-            return key, vdict["reader"]
+        for file_type in vdict["file_types"]:
+            if fnmatch.fnmatch(extension.lower(), file_type.lower()):
+                return key, vdict["reader"]
     msg = f"Could not find a reader for file type {extension}"
     logger.error(msg)
     raise ValueError(msg)
@@ -199,6 +205,7 @@ def read_file(
     - usgs_ascii: .asc, .zip (USGS ASCII format)
     - miniseed: .miniseed, .ms, .mseed (miniSEED format)
     - lemi424: .txt (LEMI-424 format)
+    - lemi417: .B* (such as:.B16, .B21, LEMI-417 format)
     - phoenix: .bin, .td_30, .td_150, .td_24k (Phoenix formats)
     - metronix: .atss (Metronix ADU format)
 
