@@ -58,8 +58,7 @@ from typing import Any, Callable
 
 from loguru import logger
 
-from mth5.io import lemi, metronix, miniseed, nims, phoenix, usgs_ascii, zen
-
+from mth5.io import zen, nims, usgs_ascii, miniseed, lemi, phoenix, metronix, uoa
 
 # =============================================================================
 # Reader registry for MT data formats
@@ -79,6 +78,10 @@ readers: dict[str, dict[str, Any]] = {
         "file_types": ["txt"],
         "reader": lemi.read_lemi424,
     },
+    "lemi423": {
+        "file_types": ["b423"],
+        "reader": lemi.read_lemi423,
+    },
     "phoenix": {
         "file_types": ["bin", "td_30", "td_150", "td_24k"],
         "reader": phoenix.read_phoenix,
@@ -87,47 +90,63 @@ readers: dict[str, dict[str, Any]] = {
         "file_types": ["atss"],
         "reader": metronix.read_atss,
     },
+    "uoa_pr624": {
+        "file_types": ["bx", "by", "bz", "ex", "ey"],
+        "reader": uoa.read_uoa,
+    },
+    "uoa_orange": {
+        "file_types": ["bin"],
+        "reader": uoa.read_orange,
+    },
 }
 
 
-def get_reader(extension: str) -> tuple[str, Callable]:
+def detect_orange_box(fn):
     """
-    Get the appropriate reader function for a file extension.
+    Check if a .BIN file is an Orange Box file.
 
-    Searches the reader registry to find the correct parser function
-    for the given file extension. Handles ambiguous extensions by
-    issuing warnings when multiple readers might apply.
+    Orange Box files start with ASCII hex sample rate (e.g., " 00008CA0 \n")
+    NIMS files start with ">>>>>>>>>>>>>>>..."
 
-    Parameters
-    ----------
-    extension : str
-        File extension (without the dot) to find a reader for
-
-    Returns
-    -------
-    tuple[str, Callable]
-        Tuple containing:
-        - Reader name (str): Identifier for the reader type
-        - Reader function (Callable): Function to parse files of this type
-
-    Raises
-    ------
-    ValueError
-        If no reader is found for the given file extension
-
-    Examples
-    --------
-    >>> reader_name, reader_func = get_reader("z3d")
-    >>> print(reader_name)  # "zen"
-    >>> data = reader_func("/path/to/file.z3d")
-
-    Notes
-    -----
-    Some extensions like "bin" are ambiguous and could match multiple
-    readers (NIMS or Phoenix). A warning is issued in such cases.
+    :param fn: Path to file
+    :return: True if Orange Box, False otherwise
     """
-    if extension in ["bin"]:
-        logger.warning("Suggest inputing file type, bin could be nims or phoenix")
+    try:
+        with open(fn, 'rb') as f:
+            first_line = f.read(20)
+            # Orange Box: starts with space + hex digits
+            # Example: b' 00008CA0 \n' or b' 0000000A \n'
+            if first_line.startswith(b' ') and b'\n' in first_line[:15]:
+                header = first_line[:first_line.find(b'\n')].strip()
+                try:
+                    int(header, 16)  # Try to parse as hex
+                    return True
+                except ValueError:
+                    return False
+    except Exception:
+        pass
+    return False
+
+
+def get_reader(extension, fn=None):
+    """
+
+    get the proper reader for file extension
+
+    :param extension: file extension
+    :type extension: string
+    :param fn: file path (for .bin detection)
+    :type fn: Path or str
+    :return: the correct function to read the file
+    :rtype: function
+
+    """
+    # For .bin files, try to auto-detect Orange Box vs NIMS/Phoenix
+    if extension.lower() == "bin" and fn:
+        if detect_orange_box(fn):
+            return "uoa_orange", readers["uoa_orange"]["reader"]
+        logger.warning("Suggest inputting file_type, bin could be nims or phoenix")
+
     for key, vdict in readers.items():
         if extension.lower() in vdict["file_types"]:
             return key, vdict["reader"]
@@ -206,13 +225,13 @@ def read_file(
     """
 
     if isinstance(fn, (list, tuple)):
-        fn = [Path(ff) for ff in fn]
-        if not fn[0].exists():
+        fn_list = [Path(ff) for ff in fn]
+        if not fn_list[0].exists():
             msg = f"Could not find file {fn}. Check path."
             logger.error(msg)
             raise IOError(msg)
-        file_ext = fn[0].suffix[1:]
-
+        file_ext = fn_list[0].suffix[1:]
+        fn_for_detection = fn_list[0]
     else:
         fn = Path(fn)
         if not fn.exists():
@@ -220,6 +239,7 @@ def read_file(
             logger.error(msg)
             raise IOError(msg)
         file_ext = fn.suffix[1:]
+        fn_for_detection = fn
 
     if file_type is not None:
         try:
@@ -232,5 +252,5 @@ def read_file(
             logger.error(msg)
             raise KeyError(msg)
     else:
-        file_type, file_reader = get_reader(file_ext)
+        file_type, file_reader = get_reader(file_ext, fn_for_detection)
     return file_reader(fn, **kwargs)

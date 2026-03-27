@@ -43,6 +43,32 @@ class TestReadersRegistry:
                 value["file_types"], list
             ), f"Reader {key} file_types should be a list"
 
+<<<<<<< HEAD
+    def test_get_reader_td_24k(self):
+        key, reader_function = reader.get_reader("td_24k")
+        self.assertEqual(key, "phoenix")
+
+    def test_get_reader_miniseed(self):
+        key, reader_function = reader.get_reader("mseed")
+        self.assertEqual(key, "miniseed")
+
+    def test_get_reader_b423(self):
+        key, reader_function = reader.get_reader("b423")
+        self.assertEqual(key, "lemi423")
+
+    def test_get_reader_bx(self):
+        key, reader_function = reader.get_reader("bx")
+        self.assertEqual(key, "uoa_pr624")
+
+    def test_get_reader_fail(self):
+        self.assertRaises(ValueError, reader.get_reader, "dat")
+
+    def test_input_fail(self):
+        self.assertRaises(IOError, reader.read_file, "y.txt")
+
+    def test_input_fail_list(self):
+        self.assertRaises(IOError, reader.read_file, ["y.txt"])
+=======
             # Check reader is callable
             assert callable(value["reader"]), f"Reader {key} reader should be callable"
 
@@ -300,6 +326,7 @@ class TestModuleDocumentation:
         import mth5.io.reader as reader_module
 
         assert reader_module.__doc__ is not None or hasattr(reader_module, "__all__")
+>>>>>>> master
 
 
 if __name__ == "__main__":

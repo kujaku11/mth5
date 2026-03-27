@@ -18,8 +18,12 @@ from unittest.mock import MagicMock, Mock, patch
 # =============================================================================
 import pytest
 
+<<<<<<< HEAD
+from mth5.clients.lemi import LEMIClient
+=======
 from mth5.clients.lemi424 import LEMI424Client
 from mth5.io.lemi import LEMICollection
+>>>>>>> master
 
 
 # =============================================================================
@@ -27,6 +31,13 @@ from mth5.io.lemi import LEMICollection
 # =============================================================================
 
 
+<<<<<<< HEAD
+class TestClientBase(unittest.TestCase):
+    def setUp(self):
+        self.file_path = Path(__file__).parent.joinpath("test.h5")
+        self.base = LEMIClient(
+            self.file_path.parent, **{"h5_mode": "w", "h5_driver": "sec2"}
+=======
 @pytest.fixture
 def temp_data_dir():
     """Create a temporary directory for test data."""
@@ -133,6 +144,7 @@ class TestLEMI424ClientInitialization:
             mth5_filename=custom_filename,
             h5_compression="lzf",
             mth5_version="0.1.0",
+>>>>>>> master
         )
 
         assert client.mth5_filename == custom_filename
@@ -214,11 +226,28 @@ class TestLEMI424ClientH5Parameters:
             temp_data_dir, h5_custom_param="test_value", h5_another_param=42
         )
 
+<<<<<<< HEAD
+    def test_set_save_path(self):
+        self.base.save_path = self.file_path
+        with self.subTest("_save_path"):
+            self.assertEqual(self.base._save_path, self.file_path.parent)
+        with self.subTest("filename"):
+            self.assertEqual(self.base.mth5_filename, self.file_path.name)
+        with self.subTest("save_path"):
+            self.assertEqual(self.base.save_path, self.file_path)
+
+    def test_initial_fail_None(self):
+        self.assertRaises(ValueError, LEMIClient, None)
+
+    def test_initial_fail_bad_directory(self):
+        self.assertRaises(IOError, LEMIClient, r"a:\\")
+=======
         h5_kwargs = client.h5_kwargs
         assert "custom_param" in h5_kwargs
         assert "another_param" in h5_kwargs
         assert h5_kwargs["custom_param"] == "test_value"
         assert h5_kwargs["another_param"] == 42
+>>>>>>> master
 
 
 # =============================================================================
