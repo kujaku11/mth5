@@ -479,7 +479,7 @@ class TestChannelTimeSeriesConversion:
             expected_filter_names = [
                 f"mtu-5c_rmt03_10128_h{2 if channel_id == '0' else 1}_10000hz_lowpass",
                 "v_to_mv",
-                "coil_101_response",  # Both magnetic channels use coil_101_response
+                "mtu-5c_rmt03_10128_101",  # Both magnetic channels use mtu-5c_rmt03_10128_101
             ]
         else:  # Electric channels
             # Electric channels might have different filter structures

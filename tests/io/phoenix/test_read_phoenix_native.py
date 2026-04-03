@@ -502,7 +502,7 @@ class TestPhoenixNativeReaderChannelTS:
         expected_filter_names = [
             "mtu-5c_rmt03_10128_h2_10000hz_lowpass",
             "v_to_mv",
-            "coil_101_response",
+            "mtu-5c_rmt03_10128_101",
         ]
 
         for filt, expected_name in zip(filters, expected_filter_names):
