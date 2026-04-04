@@ -84,8 +84,8 @@ readers: dict[str, dict[str, Any]] = {
         "reader": phoenix.read_phoenix,
     },
     "metronix": {
-        "file_types": ["atss"],
-        "reader": metronix.read_atss,
+        "file_types": ["atss", "ats"],
+        "reader": metronix.read_metronix,
     },
 }
 
