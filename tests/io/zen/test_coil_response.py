@@ -21,9 +21,8 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from mt_io.zen.coil_response import CoilResponse
 from mt_metadata.timeseries.filters import FrequencyResponseTableFilter
-
-from mth5.io.zen.coil_response import CoilResponse
 
 
 # =============================================================================

@@ -21,9 +21,8 @@ import pandas as pd
 # Imports
 # ==============================================================================
 import pytest
+from mt_io.lemi import LEMI424, LEMICollection
 from mt_metadata.common.mttime import MTime
-
-from mth5.io.lemi import LEMI424, LEMICollection
 
 
 # ==============================================================================
@@ -296,7 +295,7 @@ class TestLEMICollectionFileOperations:
 class TestLEMICollectionDataFrameOperations:
     """Test DataFrame creation and manipulation."""
 
-    @patch("mth5.io.lemi.lemi_collection.LEMI424")
+    @patch("mt_io.lemi.lemi_collection.LEMI424")
     def test_to_dataframe_basic(
         self, mock_lemi424_class, mock_directory_structure, mock_lemi424_obj
     ):
@@ -316,7 +315,7 @@ class TestLEMICollectionDataFrameOperations:
         assert all(df["survey"] == "test")
         assert all(df["station"] == "mt01")
 
-    @patch("mth5.io.lemi.lemi_collection.LEMI424")
+    @patch("mt_io.lemi.lemi_collection.LEMI424")
     def test_to_dataframe_empty_directory(self, mock_lemi424_class, tmp_path):
         """Test to_dataframe with empty directory."""
         empty_dir = tmp_path / "empty"
@@ -331,7 +330,7 @@ class TestLEMICollectionDataFrameOperations:
             assert len(df) == 0
             mock_logger.warning.assert_any_call("No entries found for LEMI collection")
 
-    @patch("mth5.io.lemi.lemi_collection.LEMI424")
+    @patch("mt_io.lemi.lemi_collection.LEMI424")
     def test_to_dataframe_column_consistency(
         self, mock_lemi424_class, mock_directory_structure, mock_lemi424_obj
     ):
@@ -344,7 +343,7 @@ class TestLEMICollectionDataFrameOperations:
         expected_columns = lc._columns
         assert list(df.columns) == expected_columns
 
-    @patch("mth5.io.lemi.lemi_collection.LEMI424")
+    @patch("mt_io.lemi.lemi_collection.LEMI424")
     def test_to_dataframe_data_types(
         self, mock_lemi424_class, mock_directory_structure, mock_lemi424_obj
     ):
@@ -481,7 +480,7 @@ class TestLEMICollectionRunOperations:
 
         assert result_df["run"].iloc[0] == "sr1_000001"
 
-    @patch("mth5.io.lemi.lemi_collection.LEMI424")
+    @patch("mt_io.lemi.lemi_collection.LEMI424")
     def test_get_runs(
         self, mock_lemi424_class, mock_directory_structure, mock_lemi424_obj
     ):
@@ -583,7 +582,7 @@ class TestLEMICollectionEdgeCases:
         assert isinstance(df, pd.DataFrame)
         assert len(df) == 0
 
-    @patch("mth5.io.lemi.lemi_collection.LEMI424")
+    @patch("mt_io.lemi.lemi_collection.LEMI424")
     def test_corrupted_file_handling(
         self, mock_lemi424_class, mock_directory_structure
     ):
@@ -619,7 +618,7 @@ class TestLEMICollectionEdgeCases:
         lemi_dir.mkdir()
         (lemi_dir / "single.TXT").write_text("mock data")
 
-        with patch("mth5.io.lemi.lemi_collection.LEMI424") as mock_lemi424_class:
+        with patch("mt_io.lemi.lemi_collection.LEMI424") as mock_lemi424_class:
             mock_obj = Mock(spec=LEMI424)
             mock_obj.n_samples = 60
             mock_obj.sample_rate = 1.0
@@ -643,7 +642,7 @@ class TestLEMICollectionEdgeCases:
 class TestLEMICollectionIntegration:
     """Test integration scenarios and full workflows."""
 
-    @patch("mth5.io.lemi.lemi_collection.LEMI424")
+    @patch("mt_io.lemi.lemi_collection.LEMI424")
     def test_full_workflow(self, mock_lemi424_class, mock_directory_structure):
         """Test complete workflow from initialization to run creation."""
         # Setup mock
@@ -677,7 +676,7 @@ class TestLEMICollectionIntegration:
         assert isinstance(runs, OrderedDict)
         assert "mt01" in runs
 
-    @patch("mth5.io.lemi.lemi_collection.LEMI424")
+    @patch("mt_io.lemi.lemi_collection.LEMI424")
     def test_multiple_sample_rates(self, mock_lemi424_class, mock_directory_structure):
         """Test handling multiple sample rates."""
 

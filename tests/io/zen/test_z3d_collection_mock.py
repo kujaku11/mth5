@@ -18,10 +18,9 @@ import pandas as pd
 # Imports
 # =============================================================================
 import pytest
+from mt_io.zen import Z3D, Z3DCollection
+from mt_io.zen.coil_response import CoilResponse
 from mt_metadata.timeseries import Station
-
-from mth5.io.zen import Z3D, Z3DCollection
-from mth5.io.zen.coil_response import CoilResponse
 
 
 try:
@@ -232,7 +231,7 @@ class TestZ3DCollectionFileOperations:
         assert callable(z3d_collection_empty.get_files)
 
         # Mock the parent class method
-        with patch("mth5.io.collection.Collection.get_files") as mock_get_files:
+        with patch("mt_io.collection.Collection.get_files") as mock_get_files:
             mock_get_files.return_value = [Path("/test/file1.Z3D")]
 
             result = z3d_collection_empty.get_files(["z3d"])
@@ -259,7 +258,7 @@ class TestZ3DCollectionCalibration:
         assert callable(z3d_collection_empty.get_calibrations)
 
     @patch("builtins.open", mock_open(read_data="mock antenna file content"))
-    @patch("mth5.io.zen.coil_response.CoilResponse.__init__", return_value=None)
+    @patch("mt_io.zen.coil_response.CoilResponse.__init__", return_value=None)
     def test_get_calibrations_with_file_mock(self, mock_init, z3d_collection_empty):
         """Test calibration with file system mock."""
         # Mock the CoilResponse initialization to avoid file operations
@@ -363,7 +362,7 @@ class TestZ3DCollectionRunProcessing:
 
         # Mock the get_runs method behavior since we need to call the real method
         with patch(
-            "mth5.io.zen.Z3DCollection.get_runs",
+            "mt_io.zen.Z3DCollection.get_runs",
             side_effect=z3d_collection_empty.get_runs,
         ) as mock_get_runs:
             # Call to_dataframe first to set up the dataframe
@@ -535,7 +534,7 @@ class TestZ3DCollectionPerformance:
         unique_files = set(test_files)
         assert len(unique_files) == 2  # Should deduplicate
 
-    @patch("mth5.io.zen.Z3DCollection.get_files")
+    @patch("mt_io.zen.Z3DCollection.get_files")
     def test_large_file_list_handling(self, mock_get_files, z3d_collection_with_path):
         """Test handling of large numbers of files."""
         # Create a large list of mock files

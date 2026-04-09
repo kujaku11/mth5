@@ -23,8 +23,7 @@ import numpy as np
 # Imports
 # =============================================================================
 import pytest
-
-from mth5.io.zen import Z3DMetadata
+from mt_io.zen import Z3DMetadata
 
 
 try:

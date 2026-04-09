@@ -16,9 +16,8 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from mt_io.zen import Z3D
 from mt_metadata.timeseries.filters import ChannelResponse, CoefficientFilter
-
-from mth5.io.zen import Z3D
 
 
 try:
@@ -790,7 +789,7 @@ class TestZ3DChannelConversion:
         channel_ts = z3d_ey.to_channelts()
 
         # Should return a ChannelTS object
-        from mth5.timeseries import ChannelTS
+        from mt_timeseries import ChannelTS
 
         assert isinstance(channel_ts, ChannelTS)
 
@@ -1002,8 +1001,8 @@ class TestZ3DUtilityFunctions:
     @pytest.mark.skipif(z3d_data_path is None, reason="mth5_test_data not available")
     def test_read_z3d_function(self):
         """Test standalone read_z3d function."""
-        from mth5.io.zen import read_z3d
-        from mth5.timeseries import ChannelTS
+        from mt_io.zen import read_z3d
+        from mt_timeseries import ChannelTS
 
         fn = z3d_data_path / "bm100_20220517_131017_256_EY.Z3D"
         channel_ts = read_z3d(fn)

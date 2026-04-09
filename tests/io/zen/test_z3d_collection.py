@@ -18,9 +18,8 @@ from unittest.mock import Mock, patch
 import numpy as np
 import pandas as pd
 import pytest
+from mt_io.zen import Z3D, Z3DCollection
 from mt_metadata.timeseries import Station
-
-from mth5.io.zen import Z3D, Z3DCollection
 
 
 try:
@@ -318,7 +317,7 @@ class TestZ3DCollectionFileOperations:
 
     def test_get_files_with_extension_list(self, empty_z3d_collection):
         """Test get_files with list of extensions."""
-        with patch("mth5.io.collection.Collection.get_files") as mock_get_files:
+        with patch("mt_io.collection.Collection.get_files") as mock_get_files:
             mock_get_files.return_value = [
                 Path("/test/file1.Z3D"),
                 Path("/test/file2.z3d"),
@@ -330,7 +329,7 @@ class TestZ3DCollectionFileOperations:
 
     def test_get_files_empty_directory(self, empty_z3d_collection):
         """Test get_files with empty directory."""
-        with patch("mth5.io.collection.Collection.get_files") as mock_get_files:
+        with patch("mt_io.collection.Collection.get_files") as mock_get_files:
             mock_get_files.return_value = []
 
             result = empty_z3d_collection.get_files(["z3d"])
@@ -346,7 +345,7 @@ class TestZ3DCollectionFileOperations:
             Path("/test/other_file.txt"),
         ]
 
-        with patch("mth5.io.collection.Collection.get_files") as mock_get_files:
+        with patch("mt_io.collection.Collection.get_files") as mock_get_files:
             mock_get_files.return_value = test_files[:3]  # Only Z3D files
 
             result = empty_z3d_collection.get_files(["z3d"])
@@ -594,7 +593,7 @@ class TestZ3DCollectionCalibration:
 
     @patch("builtins.open")
     @patch("pathlib.Path.exists", return_value=True)
-    @patch("mth5.io.zen.coil_response.CoilResponse")
+    @patch("mt_io.zen.coil_response.CoilResponse")
     def test_get_calibrations_file_processing(
         self, mock_coil_response, mock_path_exists, mock_open, empty_z3d_collection
     ):
@@ -652,7 +651,7 @@ class TestZ3DCollectionErrorHandling:
     def test_corrupted_z3d_file_handling(self, empty_z3d_collection):
         """Test handling of corrupted Z3D files."""
         # Mock a scenario where Z3D file reading fails
-        with patch("mth5.io.zen.Z3D") as mock_z3d_class:
+        with patch("mt_io.zen.Z3D") as mock_z3d_class:
             mock_z3d_class.side_effect = Exception("Corrupted file")
 
             with patch.object(empty_z3d_collection, "get_files") as mock_get_files:

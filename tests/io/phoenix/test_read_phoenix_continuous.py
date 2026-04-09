@@ -16,9 +16,8 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from mt_io.phoenix import open_phoenix
 from mt_metadata.common.mttime import MTime
-
-from mth5.io.phoenix import open_phoenix
 
 
 try:

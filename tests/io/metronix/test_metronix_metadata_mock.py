@@ -11,10 +11,9 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from mt_io.metronix import MetronixChannelJSON, MetronixFileNameMetadata
 from mt_metadata.timeseries import Electric, Magnetic
 from mt_metadata.timeseries.filters import ChannelResponse, FrequencyResponseTableFilter
-
-from mth5.io.metronix import MetronixChannelJSON, MetronixFileNameMetadata
 
 
 try:
@@ -921,7 +920,7 @@ class TestErrorHandling:
 def test_imports():
     """Test that all required imports work"""
 
-    from mth5.io.metronix import MetronixChannelJSON, MetronixFileNameMetadata
+    from mt_io.metronix import MetronixChannelJSON, MetronixFileNameMetadata
 
     # Basic instantiation test
     assert MetronixFileNameMetadata() is not None

@@ -14,15 +14,14 @@ from collections import OrderedDict
 
 import numpy as np
 import pytest
-
-from mth5.io.phoenix import open_phoenix
-from mth5.io.phoenix.readers.native.native_reader import (
+from mt_io.phoenix import open_phoenix
+from mt_io.phoenix.readers.native.native_reader import (
     AD_IN_AD_UNITS,
     AD_INPUT_VOLTS,
     INSTRUMENT_INPUT_VOLTS,
     NativeReader,
 )
-from mth5.timeseries import ChannelTS
+from mt_timeseries import ChannelTS
 
 
 try:

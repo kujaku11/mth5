@@ -18,15 +18,14 @@ from unittest.mock import Mock, patch, PropertyMock
 
 import numpy as np
 import pytest
-from mt_metadata.common.mttime import MTime
-
-from mth5.io.phoenix.readers.segmented.decimated_segmented_reader import (
+from mt_io.phoenix.readers.segmented.decimated_segmented_reader import (
     DecimatedSegmentCollection,
     DecimatedSegmentedReader,
     Segment,
     SubHeader,
 )
-from mth5.timeseries import ChannelTS
+from mt_metadata.common.mttime import MTime
+from mt_timeseries import ChannelTS
 
 
 try:
@@ -476,7 +475,7 @@ class TestDecimatedSegmentedReader:
     """Test DecimatedSegmentedReader class functionality."""
 
     @patch(
-        "mth5.io.phoenix.readers.segmented.decimated_segmented_reader.TSReaderBase.__init__"
+        "mt_io.phoenix.readers.segmented.decimated_segmented_reader.TSReaderBase.__init__"
     )
     def test_initialization(self, mock_super_init, mock_phoenix_segmented_file):
         """Test DecimatedSegmentedReader initialization."""

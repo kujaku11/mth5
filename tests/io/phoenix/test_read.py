@@ -17,14 +17,8 @@ Created on January 13, 2026
 from unittest.mock import Mock, patch
 
 import pytest
-
-from mth5.io.phoenix.read import (
-    get_file_extenstion,
-    open_phoenix,
-    read_phoenix,
-    READERS,
-)
-from mth5.io.phoenix.readers import (
+from mt_io.phoenix.read import get_file_extenstion, open_phoenix, read_phoenix, READERS
+from mt_io.phoenix.readers import (
     DecimatedContinuousReader,
     DecimatedSegmentedReader,
     MTUTable,
@@ -199,7 +193,7 @@ class TestOpenPhoenix:
         mock_instance = Mock(spec=expected_reader)
         mock_class = Mock(return_value=mock_instance)
 
-        with patch.dict("mth5.io.phoenix.read.READERS", {extension: mock_class}):
+        with patch.dict("mt_io.phoenix.read.READERS", {extension: mock_class}):
             result = open_phoenix(file_path)
             mock_class.assert_called_once()
             assert result == mock_instance
@@ -212,7 +206,7 @@ class TestOpenPhoenix:
         mock_reader_instance = Mock(spec=NativeReader)
         mock_reader_class = Mock(return_value=mock_reader_instance)
 
-        with patch.dict("mth5.io.phoenix.read.READERS", {"bin": mock_reader_class}):
+        with patch.dict("mt_io.phoenix.read.READERS", {"bin": mock_reader_class}):
             result = open_phoenix(file_path, custom_arg="value", another_arg=123)
 
             mock_reader_class.assert_called_once()
@@ -242,7 +236,7 @@ class TestOpenPhoenix:
         mock_instance = Mock(spec=reader_class)
         mock_class = Mock(return_value=mock_instance)
 
-        with patch.dict("mth5.io.phoenix.read.READERS", {extension: mock_class}):
+        with patch.dict("mt_io.phoenix.read.READERS", {extension: mock_class}):
             result = open_phoenix(file_path)
             mock_class.assert_called_once()
             assert result == mock_instance
@@ -256,7 +250,7 @@ class TestOpenPhoenix:
         mock_instance = Mock(spec=MTUTSN)
         mock_class = Mock(return_value=mock_instance)
 
-        with patch.dict("mth5.io.phoenix.read.READERS", {extension: mock_class}):
+        with patch.dict("mt_io.phoenix.read.READERS", {extension: mock_class}):
             result = open_phoenix(file_path)
             mock_class.assert_called_once()
             assert result == mock_instance
@@ -269,7 +263,7 @@ class TestOpenPhoenix:
         mock_instance = Mock(spec=MTUTable)
         mock_class = Mock(return_value=mock_instance)
 
-        with patch.dict("mth5.io.phoenix.read.READERS", {"TBL": mock_class}):
+        with patch.dict("mt_io.phoenix.read.READERS", {"TBL": mock_class}):
             result = open_phoenix(file_path)
             mock_class.assert_called_once()
             assert result == mock_instance
@@ -288,7 +282,7 @@ class TestReadPhoenix:
         mock_channel_ts = Mock()
         mock_reader.to_channel_ts.return_value = mock_channel_ts
 
-        with patch("mth5.io.phoenix.read.open_phoenix", return_value=mock_reader):
+        with patch("mt_io.phoenix.read.open_phoenix", return_value=mock_reader):
             result = read_phoenix(file_path)
 
             mock_reader.to_channel_ts.assert_called_once()
@@ -304,7 +298,7 @@ class TestReadPhoenix:
         mock_channel_ts = Mock()
         mock_reader.to_channel_ts.return_value = mock_channel_ts
 
-        with patch("mth5.io.phoenix.read.open_phoenix", return_value=mock_reader):
+        with patch("mt_io.phoenix.read.open_phoenix", return_value=mock_reader):
             result = read_phoenix(file_path, rxcal_fn=rxcal_fn, scal_fn=scal_fn)
 
             mock_reader.to_channel_ts.assert_called_once_with(
@@ -320,7 +314,7 @@ class TestReadPhoenix:
         mock_run_ts = Mock()
         mock_mtu.to_runts.return_value = mock_run_ts
 
-        with patch("mth5.io.phoenix.read.open_phoenix", return_value=mock_mtu):
+        with patch("mt_io.phoenix.read.open_phoenix", return_value=mock_mtu):
             result = read_phoenix(file_path)
 
             mock_mtu.to_runts.assert_called_once_with(
@@ -337,7 +331,7 @@ class TestReadPhoenix:
         mock_run_ts = Mock()
         mock_mtu.to_runts.return_value = mock_run_ts
 
-        with patch("mth5.io.phoenix.read.open_phoenix", return_value=mock_mtu):
+        with patch("mt_io.phoenix.read.open_phoenix", return_value=mock_mtu):
             result = read_phoenix(file_path, table_filepath=table_filepath)
 
             mock_mtu.to_runts.assert_called_once_with(
@@ -350,7 +344,7 @@ class TestReadPhoenix:
 
         mock_table = Mock()
 
-        with patch("mth5.io.phoenix.read.open_phoenix", return_value=mock_table):
+        with patch("mt_io.phoenix.read.open_phoenix", return_value=mock_table):
             result = read_phoenix(file_path)
 
             assert result == mock_table
@@ -373,7 +367,7 @@ class TestReadPhoenix:
         mock_reader.to_channel_ts.return_value = Mock()
 
         with patch(
-            "mth5.io.phoenix.read.open_phoenix", return_value=mock_reader
+            "mt_io.phoenix.read.open_phoenix", return_value=mock_reader
         ) as mock_open:
             read_phoenix(
                 file_path,
@@ -401,7 +395,7 @@ class TestReadPhoenix:
         mock_mtu.to_runts.return_value = Mock()
 
         with patch(
-            "mth5.io.phoenix.read.open_phoenix", return_value=mock_mtu
+            "mt_io.phoenix.read.open_phoenix", return_value=mock_mtu
         ) as mock_open:
             read_phoenix(file_path, table_filepath="table.TBL", other_arg="value")
 
@@ -423,7 +417,7 @@ class TestReadPhoenixIntegration:
         mock_reader = Mock()
         mock_reader.to_channel_ts.return_value = mock_channel_ts
 
-        with patch("mth5.io.phoenix.read.READERS") as mock_readers:
+        with patch("mt_io.phoenix.read.READERS") as mock_readers:
             mock_readers.__getitem__.return_value = Mock(return_value=mock_reader)
 
             result = read_phoenix(file_path, rxcal_fn="cal.txt")
@@ -439,7 +433,7 @@ class TestReadPhoenixIntegration:
         mock_mtu = Mock()
         mock_mtu.to_runts.return_value = mock_run_ts
 
-        with patch("mth5.io.phoenix.read.READERS") as mock_readers:
+        with patch("mt_io.phoenix.read.READERS") as mock_readers:
             mock_readers.__getitem__.return_value = Mock(return_value=mock_mtu)
 
             result = read_phoenix(file_path, table_filepath="table.TBL")
@@ -459,7 +453,7 @@ class TestReadPhoenixIntegration:
             else:
                 mock_obj.to_runts.return_value = Mock()
 
-            with patch("mth5.io.phoenix.read.open_phoenix", return_value=mock_obj):
+            with patch("mt_io.phoenix.read.open_phoenix", return_value=mock_obj):
                 result = read_phoenix(file_path)
                 assert result is not None
 
@@ -541,7 +535,7 @@ class TestParametrizedReaders:
         mock_instance = Mock(spec=reader_class)
         mock_class = Mock(return_value=mock_instance)
 
-        with patch.dict("mth5.io.phoenix.read.READERS", {extension: mock_class}):
+        with patch.dict("mt_io.phoenix.read.READERS", {extension: mock_class}):
             result = open_phoenix(file_path)
             mock_class.assert_called_once()
             assert result == mock_instance

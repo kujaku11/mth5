@@ -17,9 +17,8 @@ from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import pytest
-
-from mth5.io.phoenix import PhoenixCollection
-from mth5.io.phoenix.readers.calibrations import PhoenixCalibration
+from mt_io.phoenix import PhoenixCollection
+from mt_io.phoenix.readers.calibrations import PhoenixCalibration
 
 
 try:
@@ -297,7 +296,7 @@ class TestPhoenixCollectionInitialization:
 class TestPhoenixCollectionFileOperations:
     """Test file system operations."""
 
-    @patch("mth5.io.phoenix.phoenix_collection.PhoenixReceiverMetadata")
+    @patch("mt_io.phoenix.phoenix_collection.PhoenixReceiverMetadata")
     def test_read_receiver_metadata_json_success(
         self, mock_metadata_class, temp_directory
     ):
@@ -349,8 +348,8 @@ class TestPhoenixCollectionFileOperations:
 class TestPhoenixCollectionDataFrameOperations:
     """Test dataframe creation and manipulation."""
 
-    @patch("mth5.io.phoenix.phoenix_collection.open_phoenix")
-    @patch("mth5.io.phoenix.phoenix_collection.PhoenixReceiverMetadata")
+    @patch("mt_io.phoenix.phoenix_collection.open_phoenix")
+    @patch("mt_io.phoenix.phoenix_collection.PhoenixReceiverMetadata")
     def test_to_dataframe_basic(
         self,
         mock_metadata_class,
@@ -399,7 +398,7 @@ class TestPhoenixCollectionDataFrameOperations:
                     mock_open_phoenix.assert_called()
                     mock_sort.assert_called_once()
 
-    @patch("mth5.io.phoenix.open_phoenix")
+    @patch("mt_io.phoenix.open_phoenix")
     def test_to_dataframe_skip_calibration_files(
         self, mock_open_phoenix, temp_directory
     ):
@@ -437,7 +436,7 @@ class TestPhoenixCollectionDataFrameOperations:
                             # The test passes if no exceptions are raised
                             assert True  # Test passes if no calibration files are processed
 
-    @patch("mth5.io.phoenix.open_phoenix")
+    @patch("mt_io.phoenix.open_phoenix")
     def test_to_dataframe_handle_oserror(
         self, mock_open_phoenix, temp_directory, caplog
     ):
@@ -752,8 +751,8 @@ class TestPhoenixCalibration:
 class TestPhoenixCollectionIntegration:
     """Integration tests combining multiple components."""
 
-    @patch("mth5.io.phoenix.open_phoenix")
-    @patch("mth5.io.phoenix.PhoenixReceiverMetadata")
+    @patch("mt_io.phoenix.open_phoenix")
+    @patch("mt_io.phoenix.PhoenixReceiverMetadata")
     def test_full_workflow(
         self,
         mock_metadata_class,
@@ -981,7 +980,7 @@ class TestPhoenixCollectionEdgeCases:
                             # It's acceptable if the method raises KeyError for invalid sample rates
                             pass
 
-    @patch("mth5.io.phoenix.open_phoenix")
+    @patch("mt_io.phoenix.open_phoenix")
     def test_corrupted_data_files(self, mock_open_phoenix, temp_directory):
         """Test handling of corrupted data files."""
         mock_open_phoenix.side_effect = [

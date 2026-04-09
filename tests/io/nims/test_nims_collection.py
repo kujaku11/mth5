@@ -15,8 +15,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
-
-from mth5.io.nims import NIMSCollection
+from mt_io.nims import NIMSCollection
 
 
 try:

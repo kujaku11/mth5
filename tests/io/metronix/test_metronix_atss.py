@@ -22,8 +22,7 @@ import numpy as np
 # Imports
 # =============================================================================
 import pytest
-
-from mth5.io.metronix import ATSS, MetronixChannelJSON, MetronixFileNameMetadata
+from mt_io.metronix import ATSS, MetronixChannelJSON, MetronixFileNameMetadata
 
 
 # =============================================================================
@@ -463,7 +462,7 @@ class TestATSSChannelTS:
     @requires_test_data
     def test_to_channel_ts_with_metadata(self, atss_instance):
         """Test to_channel_ts with real metadata."""
-        from mth5.timeseries import ChannelTS
+        from mt_timeseries import ChannelTS
 
         result = atss_instance.to_channel_ts()
         assert isinstance(result, ChannelTS)
@@ -549,15 +548,15 @@ class TestATSSUtilityFunction:
 
     def test_read_atss_function_exists(self):
         """Test that read_atss function is importable."""
-        from mth5.io.metronix import read_atss
+        from mt_io.metronix import read_atss
 
         assert callable(read_atss)
 
     @requires_test_data
     def test_read_atss_function_call(self, sample_magnetic_file):
         """Test calling read_atss function."""
-        from mth5.io.metronix import read_atss
-        from mth5.timeseries import ChannelTS
+        from mt_io.metronix import read_atss
+        from mt_timeseries import ChannelTS
 
         result = read_atss(sample_magnetic_file["atss"])
         assert isinstance(result, ChannelTS)

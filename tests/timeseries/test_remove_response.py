@@ -21,8 +21,7 @@ from mt_metadata.timeseries.filters import (
     PoleZeroFilter,
     TimeDelayFilter,
 )
-
-from mth5.timeseries import ChannelTS
+from mt_timeseries import ChannelTS
 
 
 # =============================================================================

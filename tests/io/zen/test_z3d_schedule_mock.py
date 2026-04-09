@@ -22,9 +22,8 @@ from unittest.mock import Mock, mock_open, patch
 # Imports
 # =============================================================================
 import pytest
+from mt_io.zen import Z3DSchedule
 from mt_metadata.common.mttime import MTime
-
-from mth5.io.zen import Z3DSchedule
 
 
 try:

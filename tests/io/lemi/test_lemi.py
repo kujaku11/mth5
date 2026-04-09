@@ -22,11 +22,10 @@ import pandas as pd
 # Imports
 # ==============================================================================
 import pytest
+from mt_io.lemi import LEMI424, read_lemi424
 from mt_metadata.common.mttime import MTime
 from mt_metadata.timeseries import Run, Station
-
-from mth5.io.lemi import LEMI424, read_lemi424
-from mth5.timeseries import RunTS
+from mt_timeseries import RunTS
 
 
 # ==============================================================================

@@ -9,7 +9,7 @@ Created on Fri Nov 22 16:00:00 2024
 Pytest translation and expansion of test_nims_gps.py with additional
 coverage for missing functionality.
 
-Status: 78/78 tests passing (100% pass rate) ✅
+Status: 78/78 tests passing (100% pass rate) [OK]
 Coverage: Complete GPS functionality including:
 - GPRMC and GPGGA parsing and validation
 - String validation and binary data sanitization
@@ -29,8 +29,7 @@ from unittest.mock import patch
 # Imports
 # =============================================================================
 import pytest
-
-from mth5.io.nims import GPS, GPSError
+from mt_io.nims import GPS, GPSError
 
 
 # =============================================================================

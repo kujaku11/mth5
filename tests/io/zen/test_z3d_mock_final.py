@@ -8,8 +8,7 @@ from unittest.mock import Mock
 
 import numpy as np
 import pytest
-
-from mth5.io.zen import Z3D
+from mt_io.zen import Z3D
 
 
 # =============================================================================
@@ -449,7 +448,7 @@ class TestZ3DPerformance:
 
 def test_module_imports():
     """Test that all required modules can be imported"""
-    from mth5.io.zen import Z3D
+    from mt_io.zen import Z3D
 
     assert Z3D is not None
 

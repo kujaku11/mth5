@@ -27,15 +27,14 @@ import numpy as np
 # Imports
 # =============================================================================
 import pytest
+from mt_io.nims import Response
+from mt_io.nims.response_filters import ResponseError
 from mt_metadata.timeseries.filters import (
     ChannelResponse,
     CoefficientFilter,
     PoleZeroFilter,
     TimeDelayFilter,
 )
-
-from mth5.io.nims import Response
-from mth5.io.nims.response_filters import ResponseError
 
 
 # =============================================================================
@@ -550,7 +549,7 @@ class TestFilterIntegration:
         assert filters[0].units_out == "Volt per meter"
         assert filters[1].units_in == "Volt per meter"
         assert filters[1].units_out == "Volt"
-        # Subsequent filters should maintain Volt → Volt → digital counts → digital counts
+        # Subsequent filters should maintain Volt -> Volt -> digital counts -> digital counts
         assert filters[-1].units_out == "digital counts"
 
     def test_magnetic_filter_chain_units(self, response):

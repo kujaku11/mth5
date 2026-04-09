@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Simplified pytest suite for mth5.io.reader module with effective mocking.
+Simplified pytest suite for mt_io.reader module with effective mocking.
 
 This test suite focuses on testing the reader module's core functionality
 without deep integration into the actual file reading implementations.
@@ -12,7 +12,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 # Import the module under test
-from mth5.io.reader import get_reader, read_file, readers
+from mt_io.reader import get_reader, read_file, readers
 
 
 class TestReadersRegistry:
@@ -94,7 +94,7 @@ class TestGetReaderFunction:
 class TestReadFileBasic:
     """Test read_file function with basic mocking."""
 
-    @patch("mth5.io.reader.Path")
+    @patch("mt_io.reader.Path")
     def test_read_file_file_not_exists(self, mock_path_class):
         """Test read_file raises error when file doesn't exist."""
         mock_path_instance = Mock()
@@ -106,7 +106,7 @@ class TestReadFileBasic:
         ):  # The function raises IOError, not FileNotFoundError
             read_file("/nonexistent/file.z3d")
 
-    @patch("mth5.io.reader.Path")
+    @patch("mt_io.reader.Path")
     def test_read_file_unsupported_extension(self, mock_path_class):
         """Test read_file with unsupported file extension."""
         mock_path_instance = Mock()
@@ -117,8 +117,8 @@ class TestReadFileBasic:
         with pytest.raises(ValueError, match="Could not find a reader"):
             read_file("/path/file.unsupported")
 
-    @patch("mth5.io.reader.get_reader")
-    @patch("mth5.io.reader.Path")
+    @patch("mt_io.reader.get_reader")
+    @patch("mt_io.reader.Path")
     def test_read_file_calls_correct_reader(self, mock_path_class, mock_get_reader):
         """Test that read_file calls the correct reader function."""
         # Setup mocks
@@ -139,10 +139,10 @@ class TestReadFileBasic:
         assert result == "test_data"
 
     @patch(
-        "mth5.io.reader.readers",
+        "mt_io.reader.readers",
         {"zen": {"reader": Mock(return_value="explicit_data")}},
     )
-    @patch("mth5.io.reader.Path")
+    @patch("mt_io.reader.Path")
     def test_read_file_explicit_file_type(self, mock_path_class):
         """Test read_file with explicit file_type parameter."""
         mock_path_instance = Mock()
@@ -154,8 +154,8 @@ class TestReadFileBasic:
 
         assert result == "explicit_data"
 
-    @patch("mth5.io.reader.get_reader")
-    @patch("mth5.io.reader.Path")
+    @patch("mt_io.reader.get_reader")
+    @patch("mt_io.reader.Path")
     def test_read_file_with_kwargs(self, mock_path_class, mock_get_reader):
         """Test read_file passes kwargs to reader function."""
         mock_path_instance = Mock()
@@ -177,8 +177,8 @@ class TestReadFileBasic:
 class TestReadFileListInput:
     """Test read_file function with list inputs."""
 
-    @patch("mth5.io.reader.get_reader")
-    @patch("mth5.io.reader.Path")
+    @patch("mt_io.reader.get_reader")
+    @patch("mt_io.reader.Path")
     def test_read_file_list_input(self, mock_path_class, mock_get_reader):
         """Test read_file with list of file paths."""
         # Mock multiple Path instances
@@ -239,8 +239,8 @@ class TestPerformance:
 class TestErrorHandling:
     """Test error handling and edge cases."""
 
-    @patch("mth5.io.reader.get_reader")
-    @patch("mth5.io.reader.Path")
+    @patch("mt_io.reader.get_reader")
+    @patch("mt_io.reader.Path")
     def test_reader_function_exception_propagation(
         self, mock_path_class, mock_get_reader
     ):
@@ -264,8 +264,8 @@ class TestErrorHandling:
             (IOError, "IO error occurred"),
         ],
     )
-    @patch("mth5.io.reader.get_reader")
-    @patch("mth5.io.reader.Path")
+    @patch("mt_io.reader.get_reader")
+    @patch("mt_io.reader.Path")
     def test_various_reader_exceptions(
         self, mock_path_class, mock_get_reader, exception_type, error_msg
     ):
@@ -297,7 +297,7 @@ class TestModuleDocumentation:
 
     def test_module_level_documentation(self):
         """Test that module has proper documentation."""
-        import mth5.io.reader as reader_module
+        import mt_io.reader as reader_module
 
         assert reader_module.__doc__ is not None or hasattr(reader_module, "__all__")
 

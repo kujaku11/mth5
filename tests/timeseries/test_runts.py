@@ -18,8 +18,7 @@ import numpy as np
 import pytest
 from mt_metadata.common.mttime import MTime
 from mt_metadata.timeseries.filters import ChannelResponse, PoleZeroFilter
-
-from mth5.timeseries import ChannelTS, RunTS
+from mt_timeseries import ChannelTS, RunTS
 
 
 # =============================================================================

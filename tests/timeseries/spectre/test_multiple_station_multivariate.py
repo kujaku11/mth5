@@ -10,8 +10,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
-
-from mth5.timeseries.spectre import (
+from mt_timeseries.spectre import (
     FCRunChunk,
     MultivariateDataset,
     MultivariateLabelScheme,
@@ -375,7 +374,7 @@ class TestMultivariateDatasetBasics:
 
         with subtests.test("is_spectrogram_subclass"):
             # Should inherit from Spectrogram
-            from mth5.timeseries.spectre import Spectrogram
+            from mt_timeseries.spectre import Spectrogram
 
             assert isinstance(mvd, Spectrogram)
 
@@ -513,7 +512,7 @@ class TestPerformanceAndEdgeCases:
 def test_module_imports():
     """Test that all required modules can be imported."""
     try:
-        from mth5.timeseries.spectre import (
+        from mt_timeseries.spectre import (
             FCRunChunk,
             MultivariateDataset,
             MultivariateLabelScheme,

@@ -21,9 +21,8 @@ from unittest.mock import MagicMock, patch, PropertyMock
 
 import numpy as np
 import pytest
+from mt_io.phoenix.readers.base import TSReaderBase
 from mt_metadata.timeseries.filters import ChannelResponse
-
-from mth5.io.phoenix.readers.base import TSReaderBase
 
 
 try:
@@ -474,7 +473,7 @@ class TestTSReaderBaseMetadataObjects:
         """Test successful config object creation."""
         reader = ts_reader_mock_files
 
-        with patch("mth5.io.phoenix.readers.base.PhoenixConfig") as mock_config_class:
+        with patch("mt_io.phoenix.readers.base.PhoenixConfig") as mock_config_class:
             mock_config = MagicMock()
             mock_config_class.return_value = mock_config
 
@@ -503,7 +502,7 @@ class TestTSReaderBaseMetadataObjects:
         reader.rx_metadata = None  # Reset to test
 
         with patch(
-            "mth5.io.phoenix.readers.base.PhoenixReceiverMetadata"
+            "mt_io.phoenix.readers.base.PhoenixReceiverMetadata"
         ) as mock_meta_class:
             mock_metadata = MagicMock()
             mock_meta_class.return_value = mock_metadata
@@ -533,7 +532,7 @@ class TestTSReaderBaseFilterMethods:
         """Test voltage to millivolt filter creation."""
         reader = ts_reader_mock_files
 
-        with patch("mth5.io.phoenix.readers.base.CoefficientFilter") as mock_filter:
+        with patch("mt_io.phoenix.readers.base.CoefficientFilter") as mock_filter:
             mock_filter_obj = MagicMock()
             mock_filter.return_value = mock_filter_obj
 
@@ -560,7 +559,7 @@ class TestTSReaderBaseFilterMethods:
         mock_channel_metadata.component = "h2"
         reader._channel_metadata = mock_channel_metadata
 
-        with patch("mth5.io.phoenix.readers.base.PhoenixCalibration") as mock_cal_class:
+        with patch("mt_io.phoenix.readers.base.PhoenixCalibration") as mock_cal_class:
             mock_cal = MagicMock()
             mock_cal._has_read.return_value = True
             mock_filter = MagicMock()
@@ -578,7 +577,7 @@ class TestTSReaderBaseFilterMethods:
         """Test receiver lowpass filter with no calibration."""
         reader = ts_reader_mock_files
 
-        with patch("mth5.io.phoenix.readers.base.PhoenixCalibration") as mock_cal_class:
+        with patch("mt_io.phoenix.readers.base.PhoenixCalibration") as mock_cal_class:
             mock_cal = MagicMock()
             mock_cal._has_read.return_value = False
             mock_cal_class.return_value = mock_cal
@@ -592,7 +591,7 @@ class TestTSReaderBaseFilterMethods:
         """Test getting sensor filter."""
         reader = ts_reader_mock_files
 
-        with patch("mth5.io.phoenix.readers.base.PhoenixCalibration") as mock_cal_class:
+        with patch("mt_io.phoenix.readers.base.PhoenixCalibration") as mock_cal_class:
             mock_cal = MagicMock()
             mock_filter = MagicMock()
             mock_cal.get_sensor_filter.return_value = mock_filter

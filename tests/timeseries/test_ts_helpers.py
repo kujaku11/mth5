@@ -11,8 +11,7 @@ import unittest
 # Imports
 # =============================================================================
 from mt_metadata.common.mttime import MTime
-
-from mth5.timeseries.ts_helpers import (
+from mt_timeseries.ts_helpers import (
     _count_decimal_sig_figs,
     get_decimation_sample_rates,
     make_dt_coordinates,

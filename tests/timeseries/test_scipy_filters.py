@@ -34,8 +34,8 @@ import xarray as xr
 
 # Import the module under test
 try:
-    from mth5.timeseries.channel_ts import make_dt_coordinates
-    from mth5.timeseries.scipy_filters import (
+    from mt_timeseries.channel_ts import make_dt_coordinates
+    from mt_timeseries.scipy_filters import (
         bandpass,
         bandstop,
         decimate,

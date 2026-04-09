@@ -11,7 +11,7 @@ Created on Thu Jan 25 12:04:17 2024
 import unittest
 from collections import OrderedDict
 
-from mth5.io.scripps.zenc import ZENC
+from mt_io.scripps.zenc import ZENC
 
 
 # =============================================================================

@@ -18,8 +18,7 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
-
-from mth5.io.metronix.metronix_collection import MetronixCollection
+from mt_io.metronix.metronix_collection import MetronixCollection
 
 
 # =============================================================================
@@ -147,7 +146,7 @@ class TestMetronixCollectionProperties:
 
     def test_inherits_from_collection(self, empty_collection):
         """Test that MetronixCollection inherits from Collection."""
-        from mth5.io.collection import Collection
+        from mt_io.collection import Collection
 
         assert isinstance(empty_collection, Collection)
 
@@ -760,11 +759,11 @@ def test_skip_when_no_data():
 
 def test_imports():
     """Test that all necessary imports work correctly."""
-    import mth5.io.metronix.metronix_collection
-    from mth5.io.collection import Collection
-    from mth5.io.metronix.metronix_collection import MetronixCollection
+    import mt_io.metronix.metronix_collection
+    from mt_io.collection import Collection
+    from mt_io.metronix.metronix_collection import MetronixCollection
 
-    assert hasattr(mth5.io.metronix.metronix_collection, "MetronixCollection")
+    assert hasattr(mt_io.metronix.metronix_collection, "MetronixCollection")
     assert issubclass(MetronixCollection, Collection)
 
 

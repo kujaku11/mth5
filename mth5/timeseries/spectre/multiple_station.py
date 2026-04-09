@@ -20,9 +20,9 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from loguru import logger
+from mt_timeseries.spectre.spectrogram import Spectrogram
 
 import mth5.mth5
-from mth5.timeseries.spectre.spectrogram import Spectrogram
 from mth5.utils.exceptions import MTH5Error
 
 

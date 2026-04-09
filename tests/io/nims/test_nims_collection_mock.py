@@ -16,8 +16,7 @@ from unittest.mock import Mock, patch
 
 import pandas as pd
 import pytest
-
-from mth5.io.nims import NIMSCollection
+from mt_io.nims import NIMSCollection
 
 
 try:
@@ -182,7 +181,7 @@ class TestNIMSCollectionFileHandling:
 class TestNIMSCollectionDataFrameCreation:
     """Test DataFrame creation from NIMS files."""
 
-    @patch("mth5.io.nims.nims_collection.NIMS")
+    @patch("mt_io.nims.nims_collection.NIMS")
     def test_to_dataframe_basic_simple(self, mock_nims_class, nims_collection):
         """Test basic DataFrame creation with simplified mocking."""
         # Create simple mock without MTime objects

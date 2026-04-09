@@ -14,10 +14,9 @@ from unittest.mock import Mock, patch
 
 import numpy as np
 import pytest
+from mt_io.phoenix.readers import PhoenixCalibration
 from mt_metadata.common.mttime import MTime
 from mt_metadata.timeseries.filters import FrequencyResponseTableFilter
-
-from mth5.io.phoenix.readers import PhoenixCalibration
 
 
 try:
@@ -253,7 +252,7 @@ class TestPhoenixCalibrationMethods:
         expected = "mtu-5c_rmt03_10128_test_sensor"
         assert result == expected
 
-    @patch("mth5.io.phoenix.readers.calibrations.read_json_to_object")
+    @patch("mt_io.phoenix.readers.calibrations.read_json_to_object")
     def test_read_method_with_file_parameter(
         self, mock_read_json, mock_calibration_object, temp_cal_file
     ):
@@ -275,7 +274,7 @@ class TestPhoenixCalibrationMethods:
         with pytest.raises(IOError, match="Could not find"):
             cal.read()
 
-    @patch("mth5.io.phoenix.readers.calibrations.read_json_to_object")
+    @patch("mt_io.phoenix.readers.calibrations.read_json_to_object")
     def test_read_method_receiver_calibration(
         self, mock_read_json, mock_calibration_object, temp_cal_file
     ):
@@ -291,7 +290,7 @@ class TestPhoenixCalibrationMethods:
         assert isinstance(e1_data, dict)
         assert 10000 in e1_data
 
-    @patch("mth5.io.phoenix.readers.calibrations.read_json_to_object")
+    @patch("mt_io.phoenix.readers.calibrations.read_json_to_object")
     def test_read_method_sensor_calibration(
         self, mock_read_json, mock_calibration_object, temp_cal_file
     ):
@@ -564,7 +563,7 @@ class TestPhoenixCalibrationPerformance:
 class TestPhoenixCalibrationMocking:
     """Test using mocks for isolated testing."""
 
-    @patch("mth5.io.phoenix.readers.calibrations.read_json_to_object")
+    @patch("mt_io.phoenix.readers.calibrations.read_json_to_object")
     def test_read_method_isolated(
         self, mock_read_json, mock_calibration_object, temp_cal_file
     ):
@@ -579,7 +578,7 @@ class TestPhoenixCalibrationMocking:
         mock_read_json.assert_called_once_with(temp_cal_file)
         assert cal.obj == mock_calibration_object
 
-    @patch("mth5.io.phoenix.readers.calibrations.Path")
+    @patch("mt_io.phoenix.readers.calibrations.Path")
     def test_file_existence_check_mocked(self, mock_path):
         """Test file existence check using mocked Path."""
         mock_path_instance = Mock()

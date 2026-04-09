@@ -13,10 +13,9 @@ Requirements:
 from pathlib import Path
 
 import pytest
+from mt_io.miniseed.miniseed import read_miniseed
+from mt_timeseries import RunTS
 from mth5_test_data import get_test_data_path
-
-from mth5.io.miniseed.miniseed import read_miniseed
-from mth5.timeseries import RunTS
 
 
 # =============================================================================

@@ -19,8 +19,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pandas as pd
 import pytest
-
-from mth5.io.metronix.metronix_collection import MetronixCollection
+from mt_io.metronix.metronix_collection import MetronixCollection
 
 
 try:
@@ -197,7 +196,7 @@ class TestMetronixCollectionProperties:
 
     def test_inherits_from_collection(self, empty_collection):
         """Test that MetronixCollection inherits from Collection."""
-        from mth5.io.collection import Collection
+        from mt_io.collection import Collection
 
         assert isinstance(empty_collection, Collection)
 
@@ -237,7 +236,7 @@ class TestMetronixCollectionFileOperations:
         files = empty_collection.get_files(empty_collection.file_ext)
         assert len(files) == 0
 
-    @patch("mth5.io.metronix.metronix_collection.ATSS")
+    @patch("mt_io.metronix.metronix_collection.ATSS")
     def test_get_files_with_atss_files(self, mock_atss_class, populated_collection):
         """Test get_files with ATSS files present."""
         files = populated_collection.get_files(populated_collection.file_ext)
@@ -248,7 +247,7 @@ class TestMetronixCollectionFileOperations:
 class TestMetronixCollectionDataFrame:
     """Test DataFrame creation functionality."""
 
-    @patch("mth5.io.metronix.metronix_collection.ATSS")
+    @patch("mt_io.metronix.metronix_collection.ATSS")
     def test_to_dataframe_empty_result(self, mock_atss_class, populated_collection):
         """Test to_dataframe when no files match criteria."""
         # Mock ATSS to return wrong sample rate
@@ -291,7 +290,7 @@ class TestMetronixCollectionDataFrame:
             # This is acceptable as it indicates an area for improvement
             assert "'DataFrame' object has no attribute 'start'" in str(e)
 
-    @patch("mth5.io.metronix.metronix_collection.ATSS")
+    @patch("mt_io.metronix.metronix_collection.ATSS")
     def test_to_dataframe_electric_channel(
         self, mock_atss_class, populated_collection, mock_atss_object
     ):
@@ -314,7 +313,7 @@ class TestMetronixCollectionDataFrame:
             pd.isna(df["coil_number"])
         )  # Electric channels don't have coil numbers
 
-    @patch("mth5.io.metronix.metronix_collection.ATSS")
+    @patch("mt_io.metronix.metronix_collection.ATSS")
     def test_to_dataframe_magnetic_channel(
         self, mock_atss_class, populated_collection, mock_magnetic_atss_object
     ):
@@ -328,7 +327,7 @@ class TestMetronixCollectionDataFrame:
         assert all(df["component"] == "hx")
         assert all(df["coil_number"] == "MFS-06")  # Magnetic channels have coil numbers
 
-    @patch("mth5.io.metronix.metronix_collection.ATSS")
+    @patch("mt_io.metronix.metronix_collection.ATSS")
     def test_to_dataframe_multiple_sample_rates(
         self, mock_atss_class, populated_collection, mock_atss_object
     ):
@@ -340,7 +339,7 @@ class TestMetronixCollectionDataFrame:
         assert isinstance(df, pd.DataFrame)
         assert len(df) == 3  # Should include files matching any of the sample rates
 
-    @patch("mth5.io.metronix.metronix_collection.ATSS")
+    @patch("mt_io.metronix.metronix_collection.ATSS")
     def test_to_dataframe_default_parameters(
         self, mock_atss_class, populated_collection, mock_atss_object
     ):
@@ -353,7 +352,7 @@ class TestMetronixCollectionDataFrame:
         # Should use default sample_rates=[128] and run_name_zeros=0
         assert len(df) == 3
 
-    @patch("mth5.io.metronix.metronix_collection.ATSS")
+    @patch("mt_io.metronix.metronix_collection.ATSS")
     def test_to_dataframe_data_types(
         self, mock_atss_class, populated_collection, mock_atss_object
     ):
@@ -408,7 +407,7 @@ class TestMetronixCollectionRunNames:
 class TestMetronixCollectionIntegration:
     """Test integrated workflows and complex scenarios."""
 
-    @patch("mth5.io.metronix.metronix_collection.ATSS")
+    @patch("mt_io.metronix.metronix_collection.ATSS")
     def test_full_workflow_electric_and_magnetic(
         self, mock_atss_class, populated_collection
     ):
@@ -473,7 +472,7 @@ class TestMetronixCollectionIntegration:
         assert all(pd.isna(electric_rows["coil_number"]))
         assert all(pd.notna(magnetic_rows["coil_number"]))
 
-    @patch("mth5.io.metronix.metronix_collection.ATSS")
+    @patch("mt_io.metronix.metronix_collection.ATSS")
     def test_dataframe_sorting_and_processing(
         self, mock_atss_class, populated_collection, mock_atss_object
     ):
@@ -514,7 +513,7 @@ class TestMetronixCollectionIntegration:
 class TestMetronixCollectionErrorHandling:
     """Test error handling and edge cases."""
 
-    @patch("mth5.io.metronix.metronix_collection.ATSS")
+    @patch("mt_io.metronix.metronix_collection.ATSS")
     def test_atss_initialization_error(self, mock_atss_class, populated_collection):
         """Test handling of ATSS initialization errors."""
         mock_atss_class.side_effect = Exception("ATSS initialization failed")
@@ -536,7 +535,7 @@ class TestMetronixCollectionErrorHandling:
             # This is acceptable and indicates the behavior with empty results
             assert "'DataFrame' object has no attribute 'start'" in str(e)
 
-    @patch("mth5.io.metronix.metronix_collection.ATSS")
+    @patch("mt_io.metronix.metronix_collection.ATSS")
     def test_metadata_access_error(self, mock_atss_class, populated_collection):
         """Test handling of metadata access errors."""
         mock_atss = Mock()
@@ -564,7 +563,7 @@ class TestMetronixCollectionErrorHandling:
 class TestMetronixCollectionEdgeCases:
     """Test edge cases and boundary conditions."""
 
-    @patch("mth5.io.metronix.metronix_collection.ATSS")
+    @patch("mt_io.metronix.metronix_collection.ATSS")
     def test_duplicate_files_handling(
         self, mock_atss_class, populated_collection, mock_atss_object
     ):
@@ -578,7 +577,7 @@ class TestMetronixCollectionEdgeCases:
         assert isinstance(df, pd.DataFrame)
         assert len(df) <= 3  # Should not exceed number of unique files
 
-    @patch("mth5.io.metronix.metronix_collection.ATSS")
+    @patch("mt_io.metronix.metronix_collection.ATSS")
     def test_very_large_file_sizes(self, mock_atss_class, populated_collection):
         """Test handling of very large file sizes."""
         mock_atss = Mock()
@@ -610,7 +609,7 @@ class TestMetronixCollectionEdgeCases:
         assert df["file_size"].iloc[0] == 2**31
         assert df["n_samples"].iloc[0] == 2**27
 
-    @patch("mth5.io.metronix.metronix_collection.ATSS")
+    @patch("mt_io.metronix.metronix_collection.ATSS")
     def test_extreme_run_name_zeros(
         self, mock_atss_class, populated_collection, mock_atss_object
     ):
@@ -627,7 +626,7 @@ class TestMetronixCollectionEdgeCases:
 class TestMetronixCollectionPerformance:
     """Test performance characteristics."""
 
-    @patch("mth5.io.metronix.metronix_collection.ATSS")
+    @patch("mt_io.metronix.metronix_collection.ATSS")
     def test_many_files_performance(
         self, mock_atss_class, empty_collection, mock_atss_object
     ):
@@ -642,7 +641,7 @@ class TestMetronixCollectionPerformance:
             assert len(df) == 100
             assert isinstance(df, pd.DataFrame)
 
-    @patch("mth5.io.metronix.metronix_collection.ATSS")
+    @patch("mt_io.metronix.metronix_collection.ATSS")
     def test_memory_efficiency_large_dataset(
         self, mock_atss_class, empty_collection, mock_atss_object
     ):
@@ -662,7 +661,7 @@ class TestMetronixCollectionPerformance:
 class TestMetronixCollectionMockingStrategies:
     """Test different mocking strategies and scenarios."""
 
-    @patch("mth5.io.metronix.metronix_collection.ATSS")
+    @patch("mt_io.metronix.metronix_collection.ATSS")
     def test_mock_inheritance_chain(self, mock_atss_class, populated_collection):
         """Test mocking the full inheritance chain."""
         # Mock the ATSS class to test inheritance behavior
@@ -709,7 +708,7 @@ class TestMetronixCollectionParametrized:
             ([64, 128, 256], 3),  # Multiple rates including valid one
         ],
     )
-    @patch("mth5.io.metronix.metronix_collection.ATSS")
+    @patch("mt_io.metronix.metronix_collection.ATSS")
     def test_to_dataframe_various_sample_rates(
         self,
         mock_atss_class,
@@ -763,7 +762,7 @@ class TestMetronixCollectionParametrized:
             ("hz", "magnetic"),
         ],
     )
-    @patch("mth5.io.metronix.metronix_collection.ATSS")
+    @patch("mt_io.metronix.metronix_collection.ATSS")
     def test_channel_types_parametrized(
         self, mock_atss_class, populated_collection, component, channel_type
     ):
@@ -812,7 +811,7 @@ class TestMetronixCollectionParametrized:
 class TestMetronixCollectionSubtests:
     """Test MetronixCollection using multiple assertions for complex scenarios."""
 
-    @patch("mth5.io.metronix.metronix_collection.ATSS")
+    @patch("mt_io.metronix.metronix_collection.ATSS")
     def test_dataframe_columns_completeness(
         self, mock_atss_class, populated_collection, mock_atss_object
     ):
@@ -856,7 +855,7 @@ class TestMetronixCollectionSubtests:
 
     def test_collection_inheritance_chain(self, empty_collection):
         """Test the inheritance chain and method availability."""
-        from mth5.io.collection import Collection
+        from mt_io.collection import Collection
 
         # Test inheritance
         assert isinstance(empty_collection, Collection)
@@ -883,11 +882,11 @@ class TestMetronixCollectionSubtests:
 
 def test_imports():
     """Test that all necessary imports work correctly."""
-    import mth5.io.metronix.metronix_collection
-    from mth5.io.collection import Collection
-    from mth5.io.metronix.metronix_collection import MetronixCollection
+    import mt_io.metronix.metronix_collection
+    from mt_io.collection import Collection
+    from mt_io.metronix.metronix_collection import MetronixCollection
 
-    assert hasattr(mth5.io.metronix.metronix_collection, "MetronixCollection")
+    assert hasattr(mt_io.metronix.metronix_collection, "MetronixCollection")
     assert issubclass(MetronixCollection, Collection)
 
 

@@ -15,8 +15,7 @@ from __future__ import annotations
 from collections import OrderedDict
 
 import pytest
-
-from mth5.io.phoenix import open_phoenix
+from mt_io.phoenix import open_phoenix
 
 
 try:
@@ -411,7 +410,7 @@ class TestPhoenixSegmentedReader:
     ):
         """Test subheader values for multiple channels."""
         # Create fresh reader to avoid shared state issues
-        from mth5.io.phoenix import open_phoenix
+        from mt_io.phoenix import open_phoenix
 
         channel_files = {
             "0": "10128_608783F4_0_00000001.td_24k",
@@ -509,7 +508,7 @@ class TestPhoenixSegmentedReader:
     ):
         """Test reader attributes for multiple channels."""
         # Create fresh reader to avoid shared state issues
-        from mth5.io.phoenix import open_phoenix
+        from mt_io.phoenix import open_phoenix
 
         channel_files = {
             "0": "10128_608783F4_0_00000001.td_24k",
@@ -546,7 +545,7 @@ class TestPhoenixSegmentedReader:
     ):
         """Test channel TS conversion for channel 0."""
         # Create a fresh reader to avoid any fixture caching issues
-        from mth5.io.phoenix import open_phoenix
+        from mt_io.phoenix import open_phoenix
 
         reader = open_phoenix(
             phoenix_data_path
@@ -603,7 +602,7 @@ class TestPhoenixSegmentedReader:
     ):
         """Test channel TS conversion for multiple channels."""
         # Create fresh reader to avoid shared state issues
-        from mth5.io.phoenix import open_phoenix
+        from mt_io.phoenix import open_phoenix
 
         channel_files = {
             "0": "10128_608783F4_0_00000001.td_24k",
@@ -672,7 +671,7 @@ class TestPhoenixSegmentedReaderAdvanced:
     def test_read_segment_with_data(self, phoenix_data_path, rxcal_fn):
         """Test reading segment with data."""
         # Create a fresh reader instance to avoid state corruption
-        from mth5.io.phoenix import open_phoenix
+        from mt_io.phoenix import open_phoenix
 
         reader = open_phoenix(
             phoenix_data_path
@@ -693,7 +692,7 @@ class TestPhoenixSegmentedReaderAdvanced:
     def test_segment_timing(self, phoenix_data_path):
         """Test segment timing calculations."""
         # Create a fresh reader instance
-        from mth5.io.phoenix import open_phoenix
+        from mt_io.phoenix import open_phoenix
 
         reader = open_phoenix(
             phoenix_data_path
@@ -717,7 +716,7 @@ class TestPhoenixSegmentedReaderAdvanced:
     def test_channel_response_structure(self, phoenix_data_path, rxcal_fn, channel):
         """Test channel response structure for different channels."""
         # Create fresh reader to avoid shared state issues
-        from mth5.io.phoenix import open_phoenix
+        from mt_io.phoenix import open_phoenix
 
         channel_files = {
             "0": "10128_608783F4_0_00000001.td_24k",
@@ -755,7 +754,7 @@ class TestPhoenixSegmentedReaderAdvanced:
     def test_channel_metadata_consistency(self, phoenix_data_path, rxcal_fn):
         """Test consistency of channel metadata across channels."""
         # Create fresh readers to avoid shared state issues
-        from mth5.io.phoenix import open_phoenix
+        from mt_io.phoenix import open_phoenix
 
         channel_files = {
             "0": "10128_608783F4_0_00000001.td_24k",
@@ -804,7 +803,7 @@ class TestPhoenixSegmentedReaderAdvanced:
     def test_electric_vs_magnetic_channels(self, phoenix_data_path, rxcal_fn):
         """Test differences between electric and magnetic channels."""
         # Create fresh readers to avoid shared state issues
-        from mth5.io.phoenix import open_phoenix
+        from mt_io.phoenix import open_phoenix
 
         magnetic_channels = ["0", "2"]
         electric_channels = ["1", "4"]
@@ -859,7 +858,7 @@ class TestPhoenixSegmentedReaderAdvanced:
     def test_data_integrity(self, phoenix_data_path):
         """Test data integrity across channels."""
         # Create fresh readers to avoid shared state issues
-        from mth5.io.phoenix import open_phoenix
+        from mt_io.phoenix import open_phoenix
 
         channel_files = {
             "0": "10128_608783F4_0_00000001.td_24k",
@@ -916,7 +915,7 @@ class TestPhoenixSegmentedReaderAdvanced:
         """Test error handling for invalid files."""
         from pathlib import Path
 
-        from mth5.io.phoenix import open_phoenix
+        from mt_io.phoenix import open_phoenix
 
         # Test with non-existent file
         invalid_path = Path("nonexistent.td_24k")
@@ -956,7 +955,7 @@ class TestPhoenixSegmentedReaderAdvanced:
     def test_filter_calibration_dependency(self, phoenix_data_path, rxcal_fn):
         """Test filter behavior with and without calibration."""
         # Create fresh reader instances to avoid state corruption
-        from mth5.io.phoenix import open_phoenix
+        from mt_io.phoenix import open_phoenix
 
         reader_with_cal = open_phoenix(
             phoenix_data_path
@@ -995,7 +994,7 @@ class TestPhoenixSegmentedReaderAdvanced:
     ):
         """Test channel component mapping correctness."""
         # Create fresh readers to avoid shared state issues
-        from mth5.io.phoenix import open_phoenix
+        from mt_io.phoenix import open_phoenix
 
         expected_components = {"0": "h2", "1": "e1", "2": "h1", "4": "e2"}
 

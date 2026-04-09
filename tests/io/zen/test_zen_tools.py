@@ -17,8 +17,7 @@ from unittest.mock import Mock, mock_open, patch
 # Imports
 # =============================================================================
 import pytest
-
-from mth5.io.zen import zen_tools
+from mt_io.zen import zen_tools
 
 
 # =============================================================================
@@ -216,7 +215,7 @@ class TestSplitStation:
 class TestDriveFunctions:
     """Test Windows drive detection functions"""
 
-    @patch("mth5.io.zen.zen_tools.win32api", create=True)
+    @patch("mt_io.zen.zen_tools.win32api", create=True)
     def test_get_drives_success(self, mock_win32api):
         """Test successful drive detection"""
         # Mock bitmask that represents drives C, D, E (bits 2, 3, 4)
@@ -229,7 +228,7 @@ class TestDriveFunctions:
         assert "E" in drives
         assert len(drives) == 3
 
-    @patch("mth5.io.zen.zen_tools.win32api", create=True)
+    @patch("mt_io.zen.zen_tools.win32api", create=True)
     def test_get_drives_no_drives(self, mock_win32api):
         """Test when no drives are detected"""
         mock_win32api.GetLogicalDrives.return_value = 0
@@ -238,7 +237,7 @@ class TestDriveFunctions:
 
         assert drives == []
 
-    @patch("mth5.io.zen.zen_tools.win32api", create=True)
+    @patch("mt_io.zen.zen_tools.win32api", create=True)
     def test_get_drive_names_success(self, mock_win32api):
         """Test successful drive name detection"""
         mock_win32api.GetLogicalDrives.return_value = 0b1100  # C and D drives
@@ -251,7 +250,7 @@ class TestDriveFunctions:
 
         assert drive_names == {"C": "CH1-BOX1", "D": "CH2-BOX1"}
 
-    @patch("mth5.io.zen.zen_tools.win32api", create=True)
+    @patch("mt_io.zen.zen_tools.win32api", create=True)
     def test_get_drive_names_no_ch_drives(self, mock_win32api):
         """Test when no CH drives are found"""
         mock_win32api.GetLogicalDrives.return_value = 0b1100
@@ -264,7 +263,7 @@ class TestDriveFunctions:
 
         assert drive_names is None
 
-    @patch("mth5.io.zen.zen_tools.win32api", create=True)
+    @patch("mt_io.zen.zen_tools.win32api", create=True)
     def test_get_drive_names_mixed_drives(self, mock_win32api):
         """Test mixed drive types"""
         mock_win32api.GetLogicalDrives.return_value = 0b111000  # D, E, F (bits 3, 4, 5)
@@ -712,8 +711,8 @@ class TestScheduleFileOperations:
 class TestSDCardOperations:
     """Test SD card copy and delete operations"""
 
-    @patch("mth5.io.zen.zen_tools.get_drive_names")
-    @patch("mth5.io.zen.zen_tools.Z3D")
+    @patch("mt_io.zen.zen_tools.get_drive_names")
+    @patch("mt_io.zen.zen_tools.Z3D")
     def test_copy_from_sd_basic(
         self, mock_z3d_class, mock_get_drive_names, temp_directory
     ):
@@ -743,7 +742,7 @@ class TestSDCardOperations:
                 assert len(fn_list) >= 0  # May be empty due to mocking
                 assert save_path.exists()
 
-    @patch("mth5.io.zen.zen_tools.get_drive_names")
+    @patch("mt_io.zen.zen_tools.get_drive_names")
     def test_copy_from_sd_no_drives(self, mock_get_drive_names, temp_directory):
         """Test SD card copying when no drives are found"""
         mock_get_drive_names.return_value = None
@@ -755,8 +754,8 @@ class TestSDCardOperations:
         assert fn_list == []
         assert save_path.exists()
 
-    @patch("mth5.io.zen.zen_tools.get_drive_names")
-    @patch("mth5.io.zen.zen_tools.Z3D")
+    @patch("mt_io.zen.zen_tools.get_drive_names")
+    @patch("mt_io.zen.zen_tools.Z3D")
     def test_copy_from_sd_with_date_filter(
         self, mock_z3d_class, mock_get_drive_names, temp_directory
     ):
@@ -798,8 +797,8 @@ class TestSDCardOperations:
                 # Verify the function executes without error
                 assert isinstance(fn_list, list)
 
-    @patch("mth5.io.zen.zen_tools.get_drive_names")
-    @patch("mth5.io.zen.zen_tools.Z3D")
+    @patch("mt_io.zen.zen_tools.get_drive_names")
+    @patch("mt_io.zen.zen_tools.Z3D")
     def test_delete_files_from_sd_basic(
         self, mock_z3d_class, mock_get_drive_names, temp_directory
     ):
@@ -823,7 +822,7 @@ class TestSDCardOperations:
 
                 assert isinstance(deleted_files, list)
 
-    @patch("mth5.io.zen.zen_tools.get_drive_names")
+    @patch("mt_io.zen.zen_tools.get_drive_names")
     def test_delete_files_from_sd_no_drives(self, mock_get_drive_names):
         """Test deletion when no drives are found"""
         mock_get_drive_names.return_value = None
@@ -831,8 +830,8 @@ class TestSDCardOperations:
         with pytest.raises(OSError, match="No drives found."):
             zen_tools.delete_files_from_sd()
 
-    @patch("mth5.io.zen.zen_tools.get_drive_names")
-    @patch("mth5.io.zen.zen_tools.Z3D")
+    @patch("mt_io.zen.zen_tools.get_drive_names")
+    @patch("mt_io.zen.zen_tools.Z3D")
     def test_delete_files_from_sd_date_filtering(
         self, mock_z3d_class, mock_get_drive_names, temp_directory
     ):

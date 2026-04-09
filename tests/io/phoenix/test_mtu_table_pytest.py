@@ -13,9 +13,8 @@ import struct
 from pathlib import Path
 
 import pytest
+from mt_io.phoenix.readers.mtu.mtu_table import MTUTable
 from mth5_test_data import get_test_data_path
-
-from mth5.io.phoenix.readers.mtu.mtu_table import MTUTable
 
 
 # =============================================================================

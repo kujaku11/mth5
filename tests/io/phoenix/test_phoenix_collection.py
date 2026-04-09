@@ -17,9 +17,8 @@ import pandas as pd
 # Imports
 # =============================================================================
 import pytest
-
-from mth5.io.phoenix import PhoenixCollection
-from mth5.io.phoenix.readers.calibrations import PhoenixCalibration
+from mt_io.phoenix import PhoenixCollection
+from mt_io.phoenix.readers.calibrations import PhoenixCalibration
 
 
 try:
@@ -289,7 +288,7 @@ class TestPhoenixCollectionFileOperations:
         assert len(files) > 0
         assert all(f.suffix == ".td_24k" for f in files)
 
-    @patch("mth5.io.phoenix.phoenix_collection.PhoenixReceiverMetadata")
+    @patch("mt_io.phoenix.phoenix_collection.PhoenixReceiverMetadata")
     def test_read_receiver_metadata_json_success(
         self, mock_metadata_class, mock_station_directory
     ):

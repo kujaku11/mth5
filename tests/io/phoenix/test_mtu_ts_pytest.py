@@ -13,9 +13,8 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from mt_io.phoenix.readers.mtu.mtu_ts import MTUTSN
 from mth5_test_data import get_test_data_path
-
-from mth5.io.phoenix.readers.mtu.mtu_ts import MTUTSN
 
 
 # =============================================================================
@@ -661,7 +660,7 @@ class TestToRunTS:
         run_ts = reader.to_runts(table_filepath=sample_tbl_file)
 
         # Verify RunTS object is created
-        from mth5.timeseries import RunTS
+        from mt_timeseries import RunTS
 
         assert isinstance(run_ts, RunTS)
 
@@ -671,7 +670,7 @@ class TestToRunTS:
         # Should auto-detect 1690C16C.TBL from 1690C16C.TS3
         run_ts = reader.to_runts()
 
-        from mth5.timeseries import RunTS
+        from mt_timeseries import RunTS
 
         assert isinstance(run_ts, RunTS)
 
@@ -680,7 +679,7 @@ class TestToRunTS:
         reader = MTUTSN(sample_ts3_file)
         run_ts = reader.to_runts(sample_tbl_file)
 
-        from mth5.timeseries import RunTS
+        from mt_timeseries import RunTS
 
         assert isinstance(run_ts, RunTS)
         assert hasattr(run_ts, "channels")

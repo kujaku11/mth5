@@ -20,8 +20,7 @@ from unittest.mock import Mock, mock_open, patch
 # Imports
 # =============================================================================
 import pytest
-
-from mth5.io.zen import Z3DSchedule
+from mt_io.zen import Z3DSchedule
 
 
 # =============================================================================

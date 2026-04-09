@@ -7,7 +7,7 @@ Created on Fri Nov 22 15:30:00 2024
 Comprehensive pytest suite for ATSS class testing.
 Tests binary file I/O, metadata handling, inheritance, and ChannelTS conversion.
 
-Status: 78/78 tests passing (100% pass rate) ✅
+Status: 78/78 tests passing (100% pass rate) [OK]
 Coverage: All major ATSS functionality including:
 - Inheritance from MetronixFileNameMetadata
 - Binary file I/O operations (read/write)
@@ -32,8 +32,7 @@ import numpy as np
 # Imports
 # =============================================================================
 import pytest
-
-from mth5.io.metronix import ATSS, MetronixChannelJSON, MetronixFileNameMetadata
+from mt_io.metronix import ATSS, MetronixChannelJSON, MetronixFileNameMetadata
 
 
 try:
@@ -550,7 +549,7 @@ class TestATSSUtilityFunction:
 
     def test_read_atss_function_exists(self):
         """Test that read_atss function is importable."""
-        from mth5.io.metronix import read_atss
+        from mt_io.metronix import read_atss
 
         assert callable(read_atss)
 
@@ -558,9 +557,9 @@ class TestATSSUtilityFunction:
         self, create_atss_with_metadata, sample_binary_data
     ):
         """Test calling read_atss function."""
-        from mth5.io.metronix import read_atss
+        from mt_io.metronix import read_atss
 
-        with patch("mth5.io.metronix.metronix_atss.ATSS") as mock_atss_class:
+        with patch("mt_io.metronix.metronix_atss.ATSS") as mock_atss_class:
             mock_atss_instance = Mock()
             mock_atss_instance.to_channel_ts.return_value = Mock()
             mock_atss_class.return_value = mock_atss_instance

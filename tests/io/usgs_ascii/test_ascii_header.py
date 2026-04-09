@@ -80,8 +80,8 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from mt_io.usgs_ascii import AsciiMetadata
 
-from mth5.io.usgs_ascii import AsciiMetadata
 from mth5.utils.helpers import get_compare_dict
 
 

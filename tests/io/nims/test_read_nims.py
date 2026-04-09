@@ -17,8 +17,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-
-from mth5.io.nims import NIMS, read_nims
+from mt_io.nims import NIMS, read_nims
 
 
 try:

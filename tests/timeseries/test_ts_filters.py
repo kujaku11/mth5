@@ -75,8 +75,7 @@ import unittest
 # Imports
 # =============================================================================
 import numpy as np
-
-from mth5.timeseries.ts_filters import butter_bandpass, butter_bandpass_filter
+from mt_timeseries.ts_filters import butter_bandpass, butter_bandpass_filter
 
 
 # =============================================================================

@@ -27,13 +27,13 @@ USAGE:
 import numpy as np
 import pytest
 from mt_metadata.processing.aurora import FrequencyBands
+from mt_timeseries.spectre import MultivariateDataset, Spectrogram
+from mt_timeseries.spectre.helpers import add_fcs_to_mth5, read_back_fcs
 from scipy.constants import mu_0
 
 from mth5.helpers import close_open_files
 from mth5.mth5 import MTH5
 from mth5.processing.spectre.frequency_band_helpers import half_octave
-from mth5.timeseries.spectre import MultivariateDataset, Spectrogram
-from mth5.timeseries.spectre.helpers import add_fcs_to_mth5, read_back_fcs
 
 
 # =============================================================================
@@ -73,7 +73,7 @@ def create_spectrogram_from_mth5(
 
 def create_multivariate_spectrogram_from_mth5(mth5_path):
     """Create a multivariate Spectrogram object from an MTH5 file with multiple stations."""
-    from mth5.timeseries.spectre.multiple_station import (
+    from mt_timeseries.spectre.multiple_station import (
         FCRunChunk,
         make_multistation_spectrogram,
     )

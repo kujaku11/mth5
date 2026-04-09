@@ -18,8 +18,7 @@ from unittest.mock import Mock, mock_open, patch
 import numpy as np
 import pandas as pd
 import pytest
-
-from mth5.io.nims import NIMS, read_nims
+from mt_io.nims import NIMS, read_nims
 
 
 try:
@@ -340,7 +339,7 @@ class TestNIMSPerformance:
 class TestNIMSIntegration:
     """Test NIMS integration scenarios."""
 
-    @patch("mth5.io.nims.nims.NIMS")
+    @patch("mt_io.nims.nims.NIMS")
     def test_read_nims_function(self, mock_nims_class):
         """Test the read_nims convenience function."""
         mock_instance = Mock()

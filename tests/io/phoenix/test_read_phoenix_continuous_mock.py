@@ -16,12 +16,11 @@ from unittest.mock import Mock, patch, PropertyMock
 
 import numpy as np
 import pytest
-from mt_metadata.common.mttime import MTime
-
-from mth5.io.phoenix import open_phoenix
-from mth5.io.phoenix.readers.contiguous.decimated_continuous_reader import (
+from mt_io.phoenix import open_phoenix
+from mt_io.phoenix.readers.contiguous.decimated_continuous_reader import (
     DecimatedContinuousReader,
 )
+from mt_metadata.common.mttime import MTime
 
 
 try:
@@ -244,10 +243,10 @@ def mock_decimated_reader():
 
         # Import ChannelTS from the same location as the module being tested
         # This allows the patch to work correctly
-        import mth5.io.phoenix.readers.contiguous.decimated_continuous_reader
+        import mt_io.phoenix.readers.contiguous.decimated_continuous_reader
 
         ChannelTS = (
-            mth5.io.phoenix.readers.contiguous.decimated_continuous_reader.ChannelTS
+            mt_io.phoenix.readers.contiguous.decimated_continuous_reader.ChannelTS
         )
 
         return ChannelTS(
@@ -342,7 +341,7 @@ class TestDecimatedContinuousReaderInitialization:
     """Test DecimatedContinuousReader initialization."""
 
     @patch(
-        "mth5.io.phoenix.readers.contiguous.decimated_continuous_reader.TSReaderBase.__init__"
+        "mt_io.phoenix.readers.contiguous.decimated_continuous_reader.TSReaderBase.__init__"
     )
     def test_initialization_default_parameters(
         self, mock_super_init, mock_phoenix_file
@@ -371,7 +370,7 @@ class TestDecimatedContinuousReaderInitialization:
             assert reader.data_size is None
 
     @patch(
-        "mth5.io.phoenix.readers.contiguous.decimated_continuous_reader.TSReaderBase.__init__"
+        "mt_io.phoenix.readers.contiguous.decimated_continuous_reader.TSReaderBase.__init__"
     )
     def test_initialization_with_parameters(self, mock_super_init, mock_phoenix_file):
         """Test initialization with custom parameters."""
@@ -671,7 +670,7 @@ class TestDecimatedContinuousReaderChannelTS:
             "sequence_end",
             new_callable=lambda: MTime(time_stamp="2021-04-26T20:24:29+00:00"),
         ), patch(
-            "mth5.io.phoenix.readers.contiguous.decimated_continuous_reader.ChannelTS"
+            "mt_io.phoenix.readers.contiguous.decimated_continuous_reader.ChannelTS"
         ) as mock_channel_ts:
             mock_decimated_reader.to_channel_ts()
 
@@ -708,7 +707,7 @@ class TestDecimatedContinuousReaderChannelTS:
             "sequence_end",
             new_callable=lambda: MTime(time_stamp="2021-04-26T20:24:29+00:00"),
         ), patch(
-            "mth5.io.phoenix.readers.contiguous.decimated_continuous_reader.ChannelTS"
+            "mt_io.phoenix.readers.contiguous.decimated_continuous_reader.ChannelTS"
         ):
             mock_decimated_reader.to_channel_ts(rxcal_fn=rxcal_fn, scal_fn=scal_fn)
 
@@ -735,7 +734,7 @@ class TestDecimatedContinuousReaderChannelTS:
         with patch.object(
             mock_decimated_reader, "read_sequence", return_value=mock_data
         ), patch(
-            "mth5.io.phoenix.readers.contiguous.decimated_continuous_reader.ChannelTS"
+            "mt_io.phoenix.readers.contiguous.decimated_continuous_reader.ChannelTS"
         ):
             # Directly set the expected values before calling to_channel_ts
             mock_decimated_reader.sequence_start = start_time
@@ -806,7 +805,7 @@ class TestDecimatedContinuousReaderChannelTS:
             "sequence_end",
             new_callable=lambda: MTime(time_stamp="2021-04-27T03:30:23+00:00"),
         ), patch(
-            "mth5.io.phoenix.readers.contiguous.decimated_continuous_reader.ChannelTS"
+            "mt_io.phoenix.readers.contiguous.decimated_continuous_reader.ChannelTS"
         ) as mock_channel_ts:
             # Mock ChannelTS to have ts attribute with expected size
             mock_ts_instance = Mock()
