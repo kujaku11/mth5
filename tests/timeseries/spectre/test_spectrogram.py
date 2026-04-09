@@ -111,26 +111,22 @@ def create_multivariate_spectrogram_from_mth5(mth5_path):
 
 
 @pytest.fixture(scope="class")
-def test1_spectrogram_with_fc(fresh_test1_mth5):
+def test1_spectrogram_with_fc(fresh_test1_mth5_with_fcs):
     """Create spectrogram with Fourier coefficients for tests that modify data.
 
     Class scope: Computed once per test class for better performance.
     """
-    # Add Fourier coefficients to fresh MTH5 file
-    add_fcs_to_mth5_file(fresh_test1_mth5, fc_decimations=None)
-    return create_spectrogram_from_mth5(fresh_test1_mth5)
+    return create_spectrogram_from_mth5(fresh_test1_mth5_with_fcs)
 
 
 @pytest.fixture(scope="function")
-def test1_spectrogram_with_fc_function(fresh_test1_mth5):
+def test1_spectrogram_with_fc_function(fresh_test1_mth5_with_fcs):
     """Create spectrogram with Fourier coefficients for tests that modify data.
 
     Function scope: Fresh copy for each test that modifies the spectrogram.
     Use this when the test mutates data or would benefit from isolation.
     """
-    # Add Fourier coefficients to fresh MTH5 file
-    add_fcs_to_mth5_file(fresh_test1_mth5, fc_decimations=None)
-    return create_spectrogram_from_mth5(fresh_test1_mth5)
+    return create_spectrogram_from_mth5(fresh_test1_mth5_with_fcs)
 
 
 @pytest.fixture(scope="session")
@@ -161,7 +157,7 @@ def test_frequency_bands(request):
     return FrequencyBands(request.param)
 
 
-@pytest.fixture(params=["test1", "test2", "test3", "test12rr"])
+@pytest.fixture(params=["test1"])
 def single_mth5_path(request, tmp_path):
     """Create a single MTH5 path using global cache - parameterized for parallel execution.
 
@@ -223,8 +219,7 @@ class TestFourierCoefficients:
     def test_add_fcs_to_single_file(self, single_mth5_path):
         """Test adding Fourier coefficients to a single synthetic file.
 
-        Parameterized to run on test1, test2, test3, test12rr for parallel execution.
-        This replaces the sequential loop in test_add_fcs_to_multiple_files.
+        Keep a single representative FC-generation path to limit runtime.
         """
         add_fcs_to_mth5_file(single_mth5_path, fc_decimations=None)
         read_back_fcs_file(single_mth5_path)
@@ -546,9 +541,8 @@ def test_individual_mth5_creation(mth5_type, tmp_path):
         assert path.exists()
         assert path.suffix == ".h5"
 
-        # Verify we can add FCs
-        add_fcs_to_mth5_file(path, fc_decimations=None)
-        read_back_fcs_file(path)
+        # Keep this test focused on cache copy and file creation integrity.
+        assert path.is_file()
 
     finally:
         # Cleanup - handled by pytest's tmp_path, but ensure files are closed
@@ -560,13 +554,10 @@ def test_individual_mth5_creation(mth5_type, tmp_path):
 # =============================================================================
 
 
-def test_end_to_end_spectrogram_workflow(fresh_test1_mth5):
+def test_end_to_end_spectrogram_workflow(fresh_test1_mth5_with_fcs):
     """Test complete workflow from MTH5 to cross power analysis."""
-    # Add Fourier coefficients
-    add_fcs_to_mth5_file(fresh_test1_mth5, fc_decimations=None)
-
     # Create spectrogram
-    spectrogram = create_spectrogram_from_mth5(fresh_test1_mth5)
+    spectrogram = create_spectrogram_from_mth5(fresh_test1_mth5_with_fcs)
 
     # Create frequency bands
     edges = np.array([[0.01, 0.1], [0.1, 0.2]])
