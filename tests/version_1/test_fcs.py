@@ -17,9 +17,9 @@ import pandas as pd
 import pytest
 import xarray as xr
 from mt_metadata.common.mttime import MTime
-from mt_timeseries.spectre import FCRunChunk, make_multistation_spectrogram
 
 from mth5.mth5 import MTH5
+from mth5.timeseries.spectre import FCRunChunk, make_multistation_spectrogram
 from mth5.utils.exceptions import MTH5Error
 
 

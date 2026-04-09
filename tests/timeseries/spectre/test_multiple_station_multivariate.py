@@ -10,7 +10,8 @@ import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
-from mt_timeseries.spectre import (
+
+from mth5.timeseries.spectre import (
     FCRunChunk,
     MultivariateDataset,
     MultivariateLabelScheme,

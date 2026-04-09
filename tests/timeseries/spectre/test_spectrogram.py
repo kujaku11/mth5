@@ -27,13 +27,14 @@ USAGE:
 import numpy as np
 import pytest
 from mt_metadata.processing.aurora import FrequencyBands
-from mt_timeseries.spectre import MultivariateDataset, Spectrogram
-from mt_timeseries.spectre.helpers import add_fcs_to_mth5, read_back_fcs
+from mt_timeseries.spectre import Spectrogram
 from scipy.constants import mu_0
 
 from mth5.helpers import close_open_files
 from mth5.mth5 import MTH5
 from mth5.processing.spectre.frequency_band_helpers import half_octave
+from mth5.timeseries.spectre import MultivariateDataset
+from mth5.timeseries.spectre.helpers import add_fcs_to_mth5, read_back_fcs
 
 
 # =============================================================================

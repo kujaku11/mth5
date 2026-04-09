@@ -15,7 +15,8 @@ from unittest.mock import patch
 # Imports
 # =============================================================================
 import pytest
-from mt_io.conversion import MTH5ToMiniSEEDStationXML
+
+from mth5.io.conversion import MTH5ToMiniSEEDStationXML
 
 
 # =============================================================================
