@@ -34,7 +34,6 @@ from pathlib import Path
 
 import pytest
 from loguru import logger
-from mt_timeseries.spectre.helpers import add_fcs_to_mth5
 
 from mth5.data.make_mth5_from_asc import (
     create_test1_h5,
@@ -44,6 +43,7 @@ from mth5.data.make_mth5_from_asc import (
 )
 from mth5.helpers import close_open_files
 from mth5.mth5 import MTH5
+from mth5.timeseries.spectre.helpers import add_fcs_to_mth5
 
 
 # =============================================================================
