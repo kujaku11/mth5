@@ -74,7 +74,7 @@ def create_spectrogram_from_mth5(
 
 def create_multivariate_spectrogram_from_mth5(mth5_path):
     """Create a multivariate Spectrogram object from an MTH5 file with multiple stations."""
-    from mt_timeseries.spectre.multiple_station import (
+    from mth5.timeseries.spectre.multiple_station import (
         FCRunChunk,
         make_multistation_spectrogram,
     )

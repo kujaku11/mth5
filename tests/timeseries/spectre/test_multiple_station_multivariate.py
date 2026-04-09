@@ -5,7 +5,6 @@ This is an optimized pytest version of test_multiple_station.py with comprehensi
 test coverage, fixtures, and subtests. Designed for pytest-xdist compatibility.
 """
 
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -513,7 +512,7 @@ class TestPerformanceAndEdgeCases:
 def test_module_imports():
     """Test that all required modules can be imported."""
     try:
-        from mt_timeseries.spectre import (
+        from mth5.timeseries.spectre import (
             FCRunChunk,
             MultivariateDataset,
             MultivariateLabelScheme,

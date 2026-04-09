@@ -259,7 +259,7 @@ class TestMTH5ToMiniSEEDStationXMLErrorHandling:
         # any created files are properly cleaned up
 
         with patch(
-            "mt_io.conversion.MTH5ToMiniSEEDStationXML.convert_mth5_to_ms_stationxml"
+            "mth5.io.conversion.MTH5ToMiniSEEDStationXML.convert_mth5_to_ms_stationxml"
         ) as mock_convert:
             # Mock the conversion to raise an exception after creating some files
             mock_convert.side_effect = RuntimeError("Simulated conversion error")
