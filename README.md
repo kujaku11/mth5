@@ -19,7 +19,8 @@ This project is developed in cooperation with the Incorporated Research Institut
 - Python: 3.10+
 - Documentation: https://mth5.readthedocs.io/
 - Examples and how-to guides: https://iaga-dvi-datastandards.github.io/mth5_documentation.github.io/
-- Notebook examples: see `docs/examples/notebooks` or launch the Binder environment above
+- Notebook examples: https://github.com/IAGA-DVI-DataStandards/mth5_tutorial
+- IAGA Division VI Data Standards Working Group: https://github.com/IAGA-DVI-DataStandards
 - Suggested citation: Peacock, J. R., Kappler, K., Ronan, T., Heagy, L., Kelbert, A., Frassetto, A. (2022). MTH5: An archive and exchangeable data format for magnetotelluric time series data. *Computers & Geoscience*, 162. https://doi.org/10.1016/j.cageo.2022.105102
 
 ## Features
