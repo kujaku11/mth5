@@ -17,7 +17,7 @@ This project is developed in cooperation with the Incorporated Research Institut
 - Version: 0.6.5
 - License: MIT
 - Python: 3.10+
-- Documentation: https://mth5.readthedocs.io/
+- API Documentation: https://mth5.readthedocs.io/
 - Examples and how-to guides: https://iaga-dvi-datastandards.github.io/mth5_documentation.github.io/
 - Notebook examples: https://github.com/IAGA-DVI-DataStandards/mth5_tutorial
 - IAGA Division VI Data Standards Working Group: https://github.com/IAGA-DVI-DataStandards
