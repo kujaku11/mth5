@@ -36,10 +36,14 @@ jobs:
 
       - name: Install tools
         run: |
-          pip install bump-my-version pandoc
+          pip install bump-my-version
           sudo apt-get update
           sudo apt-get install -y pandoc
-          cargo install git-cliff
+
+      - name: Install git-cliff
+        uses: kenji-miyake/setup-git-cliff@v2
+        with:
+          git-cliff-version: "2.12.0"
 
       - name: Set up Git user
         run: |
