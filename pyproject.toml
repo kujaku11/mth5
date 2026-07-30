@@ -47,6 +47,10 @@ mth5-cli = "mth5.utils.cli:main"
 
 [project.optional-dependencies]
 obspy = ["obspy"]
+panel = [
+    "panel>=1.4",
+    "param>=2.0",
+]
 test = [
     "pytest>=3",
     "pytest-xdist",
