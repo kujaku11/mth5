@@ -29,8 +29,7 @@ from mth5.groups.base import BaseGroup
 from mth5.tables import MTH5Table
 from mth5.utils.exceptions import MTH5TableError
 
-# standards are static for the life of a process; summarizing them costs tens
-# of milliseconds and every new file asks for the same answer
+# the standards are static for the life of a process
 _STANDARDS_SUMMARY_CACHE: dict[tuple, np.ndarray] = {}
 
 
@@ -342,7 +341,7 @@ class StandardsGroup(BaseGroup):
         cached = _STANDARDS_SUMMARY_CACHE.get(key)
         if cached is None:
             summaries = []
-            for module in modules:
+            for module in key:
                 summaries.append(
                     summarize_standards(
                         module, output_type="array", dtype=STANDARDS_DTYPE
@@ -351,9 +350,7 @@ class StandardsGroup(BaseGroup):
             cached = np.concatenate(summaries)
             _STANDARDS_SUMMARY_CACHE[key] = cached
 
-        # the standards are static for the life of the process, so the
-        # summary is built once per module set; a copy keeps the cache
-        # safe from mutation by the caller
+        # a copy keeps the cache safe from mutation by the caller
         return cached.copy()
 
     def summary_table_from_array(self, array: np.ndarray) -> None:
