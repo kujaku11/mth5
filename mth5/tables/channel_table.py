@@ -89,10 +89,12 @@ class ChannelSummaryTable(MTH5Table):
 
         def has_data(h5_dataset: h5py.Dataset) -> bool:
             """Return True when the dataset has any non-zero data."""
-            if len(h5_dataset) > 0:
-                if len(np.nonzero(h5_dataset)[0]) > 0:
+            # scan in blocks and stop at the first non-zero sample rather
+            # than reading the whole channel back
+            step = 2**22
+            for start in range(0, len(h5_dataset), step):
+                if np.any(h5_dataset[start : start + step]):
                     return True
-                return False
             return False
 
         def get_channel_entry(

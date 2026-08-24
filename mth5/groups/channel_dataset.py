@@ -1049,11 +1049,12 @@ class ChannelDataset:
         >>> empty_channel.has_data()
         False
         """
-        if len(self.hdf5_dataset) > 0:
-            if len(np.nonzero(self.hdf5_dataset)[0]) > 0:
+        # scan in blocks and stop at the first non-zero sample rather
+        # than reading the whole channel back
+        step = 2**22
+        for start in range(0, len(self.hdf5_dataset), step):
+            if np.any(self.hdf5_dataset[start : start + step]):
                 return True
-            else:
-                return False
         return False
 
     def to_channel_ts(self) -> ChannelTS:
