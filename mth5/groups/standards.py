@@ -29,6 +29,10 @@ from mth5.groups.base import BaseGroup
 from mth5.tables import MTH5Table
 from mth5.utils.exceptions import MTH5TableError
 
+# standards are static for the life of a process; summarizing them costs tens
+# of milliseconds and every new file asks for the same answer
+_STANDARDS_SUMMARY_CACHE: dict[tuple, np.ndarray] = {}
+
 
 ts_classes = dict(inspect.getmembers(timeseries, inspect.isclass))
 flt_classes = dict(inspect.getmembers(filters, inspect.isclass))
@@ -334,13 +338,23 @@ class StandardsGroup(BaseGroup):
         if modules is None:
             modules = self._modules
 
-        summaries = []
-        for module in modules:
-            summaries.append(
-                summarize_standards(module, output_type="array", dtype=STANDARDS_DTYPE)
-            )
+        key = tuple(modules)
+        cached = _STANDARDS_SUMMARY_CACHE.get(key)
+        if cached is None:
+            summaries = []
+            for module in modules:
+                summaries.append(
+                    summarize_standards(
+                        module, output_type="array", dtype=STANDARDS_DTYPE
+                    )
+                )
+            cached = np.concatenate(summaries)
+            _STANDARDS_SUMMARY_CACHE[key] = cached
 
-        return np.concatenate(summaries)
+        # the standards are static for the life of the process, so the
+        # summary is built once per module set; a copy keeps the cache
+        # safe from mutation by the caller
+        return cached.copy()
 
     def summary_table_from_array(self, array: np.ndarray) -> None:
         """
@@ -367,8 +381,7 @@ class StandardsGroup(BaseGroup):
         """
         summary_table = self._get_summary_table()
 
-        for index, row in enumerate(np.nditer(array)):
-            index = summary_table.add_row(row)
+        index = summary_table.add_rows(array)
         self.logger.debug(f"Added {index} rows to Standards Group")
 
     def initialize_group(self) -> None:
