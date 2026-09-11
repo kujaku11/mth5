@@ -289,7 +289,7 @@ class PhoenixClient(ClientBase):
 
                     run_group.update_metadata()
 
-            station_group.update_metadata()
+                station_group.update_metadata()
             survey_group.update_metadata()
 
         return self.save_path

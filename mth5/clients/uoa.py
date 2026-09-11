@@ -16,7 +16,7 @@ Created on Thu Nov 7 15:35:00 2025
 # =============================================================================
 from pathlib import Path
 
-from mt_io.uoa import read_orange, read_uoa
+from mt_io.uoa import UoACollection, read_orange, read_uoa
 
 from mth5.clients.base import ClientBase
 from mth5.mth5 import MTH5
@@ -66,16 +66,33 @@ class UoAClient(ClientBase):
 
     """
 
+    # reader arguments the collection also needs
+    _collection_keys = (
+        "sample_rate",
+        "dipole_length_ex",
+        "dipole_length_ey",
+        "latitude",
+        "longitude",
+        "elevation",
+    )
+
     def __init__(
         self,
         data_path,
         save_path=None,
         instrument_type="pr624",
+        sample_rates=None,
         mth5_filename="from_uoa.h5",
         **kwargs,
     ):
+        # EDL carries no header, so the rate usually arrives as sample_rate
+        self.sample_rates_given = sample_rates is not None
         super().__init__(
-            data_path, save_path=save_path, mth5_filename=mth5_filename, **kwargs
+            data_path,
+            save_path=save_path,
+            sample_rates=sample_rates if sample_rates is not None else [1],
+            mth5_filename=mth5_filename,
+            **kwargs,
         )
 
         self.instrument_type = instrument_type.lower()
@@ -84,15 +101,23 @@ class UoAClient(ClientBase):
                 f"instrument_type must be 'pr624' or 'orange', got '{instrument_type}'"
             )
 
+        # the Orange Box writes one file per deployment and has no collection
+        if self.instrument_type == "pr624":
+            self.collection = UoACollection(self.data_path)
+
     def make_mth5_from_uoa(self, survey_id, station_id, run_id="001", **kwargs):
         """
         Create an MTH5 file from UoA instrument data.
 
         :param survey_id: Survey identifier
         :type survey_id: str
+        PR6-24 stations are split into runs on the gaps. The station id comes
+        from the file names, so a mid-deployment rename gives two stations.
+
         :param station_id: Station identifier
         :type station_id: str
-        :param run_id: Run identifier, defaults to "001"
+        :param run_id: Run identifier for the Orange Box, which records one
+         run per deployment. PR6-24 run names come from the collection.
         :type run_id: str, optional
         :param kwargs: Additional keyword arguments for reader:
 
@@ -144,20 +169,19 @@ class UoAClient(ClientBase):
 
         """
 
-        # Read data using appropriate reader
         if self.instrument_type == "pr624":
-            run_ts = read_uoa(self.data_path, station_id=station_id, **kwargs)
-        else:  # orange
-            # For Orange Box, handle both single file and directory
-            data_path = Path(self.data_path)
-            if data_path.is_dir():
-                # Get all .BIN files in directory
-                bin_files = sorted(data_path.glob("*.BIN"))
-                if not bin_files:
-                    raise FileNotFoundError(f"No .BIN files found in {data_path}")
-                run_ts = read_orange(bin_files, station_id=station_id, **kwargs)
-            else:
-                run_ts = read_orange(self.data_path, station_id=station_id, **kwargs)
+            return self._make_mth5_from_pr624(survey_id, station_id, **kwargs)
+
+        # For Orange Box, handle both single file and directory
+        data_path = Path(self.data_path)
+        if data_path.is_dir():
+            # Get all .BIN files in directory
+            bin_files = sorted(data_path.glob("*.BIN"))
+            if not bin_files:
+                raise FileNotFoundError(f"No .BIN files found in {data_path}")
+            run_ts = read_orange(bin_files, station_id=station_id, **kwargs)
+        else:
+            run_ts = read_orange(self.data_path, station_id=station_id, **kwargs)
 
         # Set run ID
         run_ts.run_metadata.id = run_id
@@ -171,6 +195,56 @@ class UoAClient(ClientBase):
             run_group.from_runts(run_ts)
             station_group.metadata.update(run_ts.station_metadata)
             station_group.write_metadata()
+            survey_group.update_metadata()
+
+        return self.save_path
+
+    def _make_mth5_from_pr624(self, survey_id, station_id, **kwargs):
+        """
+        Build the MTH5 run by run, using the collection to find the runs.
+
+        The collection knows where a recording stops and starts again.
+
+        :param survey_id: Survey identifier
+        :type survey_id: str
+        :param station_id: Station identifier
+        :type station_id: str
+        :param kwargs: Keyword arguments for :func:`mt_io.uoa.read_uoa`
+        :type kwargs: dict
+        :return: Path to created MTH5 file
+        :rtype: pathlib.Path
+        """
+
+        self.collection.survey_id = survey_id
+        for key in self._collection_keys:
+            if kwargs.get(key) is not None:
+                setattr(self.collection, key, kwargs[key])
+
+        # the collection selects on sample rate
+        if not self.sample_rates_given and kwargs.get("sample_rate") is not None:
+            self.sample_rates = [kwargs["sample_rate"]]
+
+        runs = self.get_run_dict()
+
+        with MTH5(**self.h5_kwargs) as m:
+            m.open_mth5(self.save_path, "w")
+            survey_group = m.add_survey(self.collection.survey_id)
+
+            for found_station, run_dict in runs.items():
+                station_group = survey_group.stations_group.add_station(
+                    found_station
+                )
+                for run_id, run_df in run_dict.items():
+                    run_group = station_group.add_run(run_id)
+                    run_ts = read_uoa(
+                        run_df.fn.to_list(), station_id=found_station, **kwargs
+                    )
+                    run_ts.run_metadata.id = run_id
+                    run_group.from_runts(run_ts)
+
+                station_group.metadata.update(run_ts.station_metadata)
+                station_group.write_metadata()
+
             survey_group.update_metadata()
 
         return self.save_path

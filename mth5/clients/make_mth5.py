@@ -24,6 +24,7 @@ Updated on Wed Aug  25 19:57:00 2021
 
 @author: jpeacock + tronan
 """
+
 # =============================================================================
 # Imports
 # =============================================================================
@@ -463,7 +464,7 @@ class MakeMTH5:
         )
 
         return geomag_client.make_mth5_from_geomag(request_df)
-        
+
     @classmethod
     def from_intermag(cls, request_df: pd.DataFrame | str | Path, **kwargs):
         """
@@ -1114,7 +1115,7 @@ class MakeMTH5:
             **kw_dict,
         )
 
-        return zc.make_mth5_from_zen(survey_id=survey_id, combine=combine, **kwargs)
+        return nc.make_mth5_from_nims(survey_id=survey_id, combine=combine, **kwargs)
 
     @classmethod
     def from_phoenix(

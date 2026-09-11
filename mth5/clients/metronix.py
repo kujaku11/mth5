@@ -120,7 +120,7 @@ class MetronixClient(ClientBase):
                         run_group.from_channel_ts(ch_ts)
                     run_group.update_metadata()
                 station_group.update_metadata()
-                survey_group.update_metadata
+                survey_group.update_metadata()
 
         self.logger.info(f"Wrote MTH5 file to: {self.save_path}")
 

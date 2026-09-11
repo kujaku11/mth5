@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mth5"
-version = "0.6.8"
+version = "0.6.9"
 description = "Archivable and exchangeable format for magnetotelluric data"
 authors = [
     {name = "Jared Peacock", email = "jpeacock@usgs.gov"},
@@ -47,6 +47,10 @@ mth5-cli = "mth5.utils.cli:main"
 
 [project.optional-dependencies]
 obspy = ["obspy"]
+panel = [
+    "panel>=1.4",
+    "param>=2.0",
+]
 test = [
     "pytest>=3",
     "pytest-xdist",
@@ -129,7 +133,7 @@ use_parentheses = true
 ensure_newline_before_comments = true
 
 [tool.bumpversion]
-current_version = "0.6.8"
+current_version = "0.6.9"
 commit = true
 tag = true
 
