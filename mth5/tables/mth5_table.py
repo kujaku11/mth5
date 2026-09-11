@@ -353,11 +353,79 @@ class MTH5Table:
             else:
                 new_shape = tuple([self.nrows + 1] + [ii for ii in self.shape[1:]])
                 self.array.resize(new_shape)
-        # add the row
+        # add the row.  The row is left out of the debug message on purpose:
+        # formatting a structured row is paid even when the message is dropped.
         self.array[index] = row
-        self.logger.debug(f"Added row as index {index} with values {row}")
+        self.logger.debug(f"Added row as index {index}")
 
         return index
+
+    def add_rows(self, rows: np.ndarray) -> int:
+        """
+        Add many rows in one resize and one write.
+
+        Parameters
+        ----------
+        rows : numpy.ndarray
+            Rows to append. Must have the same dtype (or same field names,
+            allowing safe casting) as the table.
+
+        Returns
+        -------
+        int
+            Index of the last row in the table.
+
+        Raises
+        ------
+        TypeError
+            If `rows` is not a `numpy.ndarray`.
+        ValueError
+            If the dtype is incompatible with the table.
+        """
+
+        if not isinstance(rows, np.ndarray):
+            msg = f"Input must be an numpy.ndarray not {type(rows)}"
+            self.logger.exception(msg)
+            raise TypeError(msg)
+        if not self.check_dtypes(rows.dtype):
+            if rows.dtype.names == self.dtype.names:
+                rows = rows.astype(self.dtype)
+            else:
+                msg = (
+                    f"Data types are not equal. Input dtypes: "
+                    f"{rows.dtype} Table dtypes: {self.dtype}"
+                )
+                self.logger.error(msg)
+                raise ValueError(msg)
+        # one row per leading index, whatever the table's row shape
+        rows = np.ascontiguousarray(rows).reshape((-1,) + tuple(self.shape[1:]))
+        n_rows = rows.shape[0]
+        if n_rows == 0:
+            return self.nrows - 1
+
+        start = self.nrows
+        # a fresh table holds a single null placeholder row; overwrite it
+        # rather than appending after it, the same way add_row does
+        if start == 1:
+            null_array = np.zeros(1, dtype=self.dtype)
+            if self.dtype.names is None:
+                raise TypeError("Table dtype must have named fields.")
+            match = True
+            for name in self.dtype.names:
+                if "reference" in name:
+                    continue
+                if self.array[name][0] != null_array[name][0]:
+                    match = False
+                    break
+            if match:
+                start = 0
+
+        new_shape = tuple([start + n_rows] + [ii for ii in self.shape[1:]])
+        self.array.resize(new_shape)
+        self.array[start:] = rows
+        self.logger.debug(f"Added {n_rows} rows ending at index {start + n_rows - 1}")
+
+        return start + n_rows - 1
 
     def update_row(self, entry: np.ndarray) -> int:
         """
