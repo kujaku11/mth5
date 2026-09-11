@@ -4,7 +4,7 @@
    inkscape:export-xdpi="300"
    inkscape:export-filename="example_mt_file_structure_v2.png"
    sodipodi:docname="example_mt_file_structure_v2.svg"
-   inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
+   inkscape:version="1.4.3 (0d15f75, 2025-12-25)"
    id="svg8"
    version="1.1"
    viewBox="0 0 210 297"
@@ -958,17 +958,17 @@
   </defs>
   <sodipodi:namedview
      inkscape:document-rotation="0"
-     inkscape:window-maximized="0"
-     inkscape:window-y="0"
-     inkscape:window-x="64"
-     inkscape:window-height="1243"
-     inkscape:window-width="2308"
+     inkscape:window-maximized="1"
+     inkscape:window-y="-8"
+     inkscape:window-x="-8"
+     inkscape:window-height="1369"
+     inkscape:window-width="2560"
      showgrid="false"
      inkscape:current-layer="layer1"
      inkscape:document-units="mm"
-     inkscape:cy="627.80981"
-     inkscape:cx="696.50018"
-     inkscape:zoom="0.98994949"
+     inkscape:cy="586.64609"
+     inkscape:cx="231.57747"
+     inkscape:zoom="1.979899"
      inkscape:pageshadow="2"
      inkscape:pageopacity="0.0"
      borderopacity="1.0"
@@ -1265,6 +1265,27 @@
            x="7.2618647"
            id="tspan819"
            sodipodi:role="line">Survey 01</tspan></text>
+    </g>
+    <g
+       id="g1">
+      <rect
+         y="129.68051"
+         x="35.764381"
+         height="7.0557132"
+         width="19.251167"
+         id="rect841-8"
+         style="fill:#f9ab78;fill-opacity:1;stroke:#000000;stroke-width:0.2553;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
+      <text
+         id="text821-8"
+         y="134.45616"
+         x="39.080315"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.48635px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.145264;stroke-opacity:1"
+         xml:space="preserve"><tspan
+           style="font-size:3.48635px;stroke:none;stroke-width:0.145264;stroke-opacity:1"
+           y="134.45616"
+           x="39.080315"
+           id="tspan819-2"
+           sodipodi:role="line">Stations</tspan></text>
     </g>
     <g
        transform="matrix(0.65975825,0,0,0.65975825,12.775868,66.727786)"
@@ -2009,88 +2030,6 @@
        style="fill:none;stroke:#000000;stroke-width:0.499999;stroke-dasharray:none"
        d="m 108.24746,211.63237 h 3.02381"
        id="path7335-3" />
-    <g
-       id="g7468-2"
-       transform="translate(19.377875,8.4991933)">
-      <g
-         id="g869-3-9-4-6-8-40"
-         transform="matrix(0.54903186,0,0,0.54903186,110.50273,185.9802)">
-        <rect
-           y="26.709852"
-           x="37.358845"
-           height="12.851191"
-           width="30.419155"
-           id="rect841-9-6-9-4-4-2-65"
-           style="opacity:1;fill:#ddafe9;fill-opacity:1;stroke:none;stroke-width:0.465;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
-        <text
-           id="text817-1-7-7-3-5-4"
-           y="35.408176"
-           x="38.847023"
-           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-           xml:space="preserve"><tspan
-             style="font-size:6.35px;stroke-width:0.264583"
-             y="35.408176"
-             x="38.847023"
-             id="tspan815-2-6-3-2-6-4"
-             sodipodi:role="line">Feature 1</tspan></text>
-      </g>
-      <g
-         id="g869-3-9-4-6-8-2-5"
-         transform="matrix(0.54903186,0,0,0.54903186,110.50273,194.48466)">
-        <rect
-           y="26.709852"
-           x="37.358845"
-           height="12.851191"
-           width="30.662556"
-           id="rect841-9-6-9-4-4-2-9-9"
-           style="opacity:1;fill:#ddafe9;fill-opacity:1;stroke:none;stroke-width:0.465;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
-        <text
-           id="text817-1-7-7-3-5-2-8"
-           y="35.408176"
-           x="38.847023"
-           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-           xml:space="preserve"><tspan
-             style="font-size:6.35px;stroke-width:0.264583"
-             y="35.408176"
-             x="38.847023"
-             id="tspan815-2-6-3-2-6-1-1"
-             sodipodi:role="line">Feature 2</tspan></text>
-      </g>
-      <g
-         id="g869-3-9-4-6-8-4-5"
-         transform="matrix(0.54903186,0,0,0.54903186,110.50273,202.98913)">
-        <rect
-           y="26.709852"
-           x="37.358845"
-           height="12.851191"
-           width="30.175755"
-           id="rect841-9-6-9-4-4-2-6-6"
-           style="opacity:1;fill:#ddafe9;fill-opacity:1;stroke:none;stroke-width:0.465;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
-        <text
-           id="text817-1-7-7-3-5-0-7"
-           y="35.408176"
-           x="38.847023"
-           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-           xml:space="preserve"><tspan
-             style="font-size:6.35px;stroke-width:0.264583"
-             y="35.408176"
-             x="38.847023"
-             id="tspan815-2-6-3-2-6-9-1"
-             sodipodi:role="line">Feature 3</tspan></text>
-      </g>
-      <path
-         style="fill:none;stroke:#000000;stroke-width:0.5;stroke-dasharray:none"
-         d="m 127.94494,197.36904 v 24.37947 h 2.83482"
-         id="path6747-5" />
-      <path
-         style="fill:none;stroke:#000000;stroke-width:0.499999;stroke-dasharray:none"
-         d="m 127.85044,212.96056 h 3.02381"
-         id="path7335-2" />
-      <path
-         style="fill:none;stroke:#000000;stroke-width:0.499999;stroke-dasharray:none"
-         d="m 127.85044,204.26711 h 3.02381"
-         id="path7335-3-4" />
-    </g>
     <g
        id="g3287"
        transform="translate(1.3363476,3.4745039)">
@@ -3089,88 +3028,6 @@
          style="fill:none;stroke:#000000;stroke-width:0.499999;stroke-dasharray:none"
          d="m 108.92321,211.63237 h 3.02381"
          id="path7335-3-9" />
-      <g
-         id="g7468-2-6"
-         transform="translate(20.053625,8.4991933)">
-        <g
-           id="g869-3-9-4-6-8-40-3"
-           transform="matrix(0.54903186,0,0,0.54903186,110.50273,185.9802)">
-          <rect
-             y="26.709852"
-             x="37.358845"
-             height="12.851191"
-             width="30.419155"
-             id="rect841-9-6-9-4-4-2-65-4"
-             style="opacity:1;fill:#ddafe9;fill-opacity:1;stroke:none;stroke-width:0.465;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
-          <text
-             id="text817-1-7-7-3-5-4-6"
-             y="35.408176"
-             x="38.847023"
-             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-             xml:space="preserve"><tspan
-               style="font-size:6.35px;stroke-width:0.264583"
-               y="35.408176"
-               x="38.847023"
-               id="tspan815-2-6-3-2-6-4-9"
-               sodipodi:role="line">Feature 1</tspan></text>
-        </g>
-        <g
-           id="g869-3-9-4-6-8-2-5-7"
-           transform="matrix(0.54903186,0,0,0.54903186,110.50273,194.48466)">
-          <rect
-             y="26.709852"
-             x="37.358845"
-             height="12.851191"
-             width="30.662556"
-             id="rect841-9-6-9-4-4-2-9-9-6"
-             style="opacity:1;fill:#ddafe9;fill-opacity:1;stroke:none;stroke-width:0.465;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
-          <text
-             id="text817-1-7-7-3-5-2-8-2"
-             y="35.408176"
-             x="38.847023"
-             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-             xml:space="preserve"><tspan
-               style="font-size:6.35px;stroke-width:0.264583"
-               y="35.408176"
-               x="38.847023"
-               id="tspan815-2-6-3-2-6-1-1-2"
-               sodipodi:role="line">Feature 2</tspan></text>
-        </g>
-        <g
-           id="g869-3-9-4-6-8-4-5-5"
-           transform="matrix(0.54903186,0,0,0.54903186,110.50273,202.98913)">
-          <rect
-             y="26.709852"
-             x="37.358845"
-             height="12.851191"
-             width="30.175755"
-             id="rect841-9-6-9-4-4-2-6-6-0"
-             style="opacity:1;fill:#ddafe9;fill-opacity:1;stroke:none;stroke-width:0.465;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
-          <text
-             id="text817-1-7-7-3-5-0-7-3"
-             y="35.408176"
-             x="38.847023"
-             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:6.35px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-             xml:space="preserve"><tspan
-               style="font-size:6.35px;stroke-width:0.264583"
-               y="35.408176"
-               x="38.847023"
-               id="tspan815-2-6-3-2-6-9-1-7"
-               sodipodi:role="line">Feature 3</tspan></text>
-        </g>
-        <path
-           style="fill:none;stroke:#000000;stroke-width:0.5;stroke-dasharray:none"
-           d="m 127.94494,197.36904 v 24.37947 h 2.83482"
-           id="path6747-5-0" />
-        <path
-           style="fill:none;stroke:#000000;stroke-width:0.499999;stroke-dasharray:none"
-           d="m 127.85044,212.96056 h 3.02381"
-           id="path7335-2-7" />
-        <path
-           style="fill:none;stroke:#000000;stroke-width:0.499999;stroke-dasharray:none"
-           d="m 127.85044,204.26711 h 3.02381"
-           id="path7335-3-4-6" />
-      </g>
     </g>
     <path
        style="fill:#bc5fd3;stroke:#000000;stroke-width:0.4;stroke-dasharray:none;stroke-opacity:1"
@@ -3397,5 +3254,27 @@
        d="m 190.54175,295.62377 v 4.33481"
        id="path3343-5"
        sodipodi:nodetypes="cc" />
+    <g
+       id="g1-5"
+       transform="translate(-0.04893057,124.66649)">
+      <rect
+         y="129.68051"
+         x="35.764381"
+         height="7.0557132"
+         width="19.251167"
+         id="rect841-8-5"
+         style="fill:#f9ab78;fill-opacity:1;stroke:#000000;stroke-width:0.2553;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:35.75;stroke-opacity:1" />
+      <text
+         id="text821-8-1"
+         y="134.45616"
+         x="39.080315"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.48635px;line-height:1.25;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.145264;stroke-opacity:1"
+         xml:space="preserve"><tspan
+           style="font-size:3.48635px;stroke:none;stroke-width:0.145264;stroke-opacity:1"
+           y="134.45616"
+           x="39.080315"
+           id="tspan819-2-7"
+           sodipodi:role="line">Stations</tspan></text>
+    </g>
   </g>
 </svg>
