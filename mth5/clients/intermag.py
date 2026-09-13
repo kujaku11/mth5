@@ -10,7 +10,6 @@ import platform
 import sys
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 # =============================================================================
@@ -479,10 +478,7 @@ class IntermagClient:
         ch = dict([(c.lower(), []) for c in self.elements])
         
         request_obj = self._request_data(
-            self._get_request_dictionary(
-                np.datetime64(self._start.iso_no_tz), 
-                np.datetime64(self._end.iso_no_tz)
-            )
+            self._get_request_dictionary(self.start, self.end)
         )
         if request_obj.status_code == 200:
             request_json = json.loads(request_obj.content)
