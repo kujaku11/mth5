@@ -8,6 +8,8 @@ Translated from test_transfer_function.py for optimized efficiency.
 
 from pathlib import Path
 
+import numpy as np
+
 # =============================================================================
 # Imports
 # =============================================================================
@@ -441,3 +443,63 @@ if __name__ == "__main__":
     if "--fast" in sys.argv or "-m fast" in " ".join(sys.argv):
         args.extend(["-m", "not slow"])
     pytest.main(args)
+
+
+class TestModelErrorRoundTrip:
+    """Model errors must be written to and read back from the MTH5 file."""
+
+    @pytest.fixture
+    def tf_with_model_error(self, tf_obj_from_xml):
+        tf_obj = tf_obj_from_xml.copy()
+        tf_obj.transfer_function_model_error = tf_obj.transfer_function_error * 2
+        return tf_obj
+
+    @pytest.fixture
+    def round_trip(self, tf_with_model_error, make_worker_safe_path):
+        path = make_worker_safe_path("test_model_error.mth5", Path(__file__).parent)
+        with MTH5(file_version="0.2.0") as m:
+            m.open_mth5(path, mode="a")
+            tf_group = m.add_transfer_function(tf_with_model_error)
+            has_model_error = tf_group.has_estimate("transfer_function_model_error")
+            has_redundant = [
+                e
+                for e in ("impedance_model_error", "tipper_model_error")
+                if e in tf_group.groups_list
+            ]
+            tf_h5 = m.get_transfer_function(
+                tf_with_model_error.station,
+                tf_with_model_error.tf_id,
+                survey=tf_with_model_error.survey_metadata.id,
+            )
+            yield tf_with_model_error, tf_h5, has_model_error, has_redundant
+        if path.exists():
+            path.unlink()
+
+    def test_model_error_saved(self, round_trip):
+        _, _, has_model_error, has_redundant = round_trip
+        assert has_model_error
+        assert has_redundant == []
+
+    def test_model_error_values_round_trip(self, round_trip):
+        tf_in, tf_h5, _, _ = round_trip
+        np.testing.assert_array_equal(
+            tf_in.transfer_function_model_error.to_numpy(),
+            tf_h5.transfer_function_model_error.to_numpy(),
+        )
+        np.testing.assert_array_equal(
+            tf_in.impedance_model_error.to_numpy(),
+            tf_h5.impedance_model_error.to_numpy(),
+        )
+        np.testing.assert_array_equal(
+            tf_in.tipper_model_error.to_numpy(),
+            tf_h5.tipper_model_error.to_numpy(),
+        )
+
+    def test_zero_model_error_not_saved(self, tf_obj_from_xml, make_worker_safe_path):
+        path = make_worker_safe_path("test_no_model_error.mth5", Path(__file__).parent)
+        with MTH5(file_version="0.2.0") as m:
+            m.open_mth5(path, mode="a")
+            tf_group = m.add_transfer_function(tf_obj_from_xml.copy())
+            assert "transfer_function_model_error" not in tf_group.groups_list
+        if path.exists():
+            path.unlink()

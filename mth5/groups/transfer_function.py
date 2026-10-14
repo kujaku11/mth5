@@ -313,12 +313,25 @@ class TransferFunctionGroup(BaseGroup):
         self._accepted_estimates = [
             "transfer_function",
             "transfer_function_error",
+            "transfer_function_model_error",
             "inverse_signal_power",
             "residual_covariance",
             "impedance",
             "impedance_error",
+            "impedance_model_error",
             "tipper",
             "tipper_error",
+            "tipper_model_error",
+        ]
+        # impedance and tipper estimates are redundant when a full transfer
+        # function is available
+        self._redundant_estimates = [
+            "impedance",
+            "impedance_error",
+            "impedance_model_error",
+            "tipper",
+            "tipper_error",
+            "tipper_model_error",
         ]
 
         self._period_metadata = StatisticalEstimate(
@@ -651,12 +664,20 @@ class TransferFunctionGroup(BaseGroup):
         # if transfer function is available then impedance and tipper are
         # redundant.
         if tf_obj.has_transfer_function():
-            accepted_estimates = self._accepted_estimates[0:4]
+            accepted_estimates = [
+                e
+                for e in self._accepted_estimates
+                if e not in self._redundant_estimates
+            ]
         else:
             accepted_estimates = self._accepted_estimates
         for estimate_name in accepted_estimates:
             try:
                 estimate = getattr(tf_obj, estimate_name)
+                if estimate is not None and estimate_name.endswith("model_error"):
+                    # model errors default to zeros; only store real values
+                    if not np.any(np.asarray(estimate)):
+                        estimate = None
                 if estimate is not None:
                     _ = self.add_statistical_estimate(estimate_name, estimate)
                 else:
